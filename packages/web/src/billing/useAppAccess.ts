@@ -1,4 +1,6 @@
+import { useContext } from "react";
 import { type BillingSubscriptionStatus } from "@core/types/user.types";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import {
   useAppConfigQuery,
   useBillingStatusQuery,
@@ -27,10 +29,13 @@ export type AppAccess =
  * unconfigured-Stripe state never locks a paying user out of their calendar.
  */
 export function useAppAccess(): AppAccess {
+  const { authenticated } = useContext(SessionContext);
   const trial = useTrialStatus();
   const configQuery = useAppConfigQuery();
   const billingEnabled =
-    !trial.isAnonymousTrial && configQuery.data?.billing.isConfigured === true;
+    authenticated &&
+    !trial.isAnonymousTrial &&
+    configQuery.data?.billing.isConfigured === true;
   const billingQuery = useBillingStatusQuery(billingEnabled);
 
   if (trial.isAnonymousTrial) {
@@ -39,6 +44,10 @@ export function useAppAccess(): AppAccess {
       isExpired: trial.isExpired,
       daysLeft: trial.daysLeft,
     };
+  }
+
+  if (!authenticated) {
+    return { kind: "open" };
   }
 
   if (

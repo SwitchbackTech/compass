@@ -7,12 +7,18 @@ import {
   type BillingStatusResponse,
 } from "@core/types/billing.types";
 import { zObjectId } from "@core/types/type.utils";
+import { BillingHttpError } from "@backend/billing/billing.errors";
 import billingService from "@backend/billing/services/billing.service";
 import stripeService from "@backend/billing/services/stripe.service";
 
 const logger = Logger("app:billing");
 
 const sendBillingError = (res: Response, e: unknown) => {
+  if (e instanceof BillingHttpError) {
+    logger.error(e.message, e.cause ?? e);
+    res.status(e.status).json({ error: e.clientMessage });
+    return;
+  }
   const message = e instanceof Error ? e.message : "Unexpected error";
   if (message === "User not found") {
     res.status(Status.NOT_FOUND).json({ error: "User not found" });

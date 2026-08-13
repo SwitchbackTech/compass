@@ -93,6 +93,15 @@ export const getApiErrorCode = (error: ApiError): string | undefined => {
   return typeof code === "string" ? code : undefined;
 };
 
+/** Safe `error` string from a JSON `{ error: string }` API body, if present. */
+export const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (!isApiError(error)) return undefined;
+  const data = getApiErrorData(error);
+  if (!data || typeof data !== "object" || !("error" in data)) return undefined;
+  const message = (data as { error?: unknown }).error;
+  return typeof message === "string" && message.trim() ? message : undefined;
+};
+
 export const parseApiError = <T>(
   error: ApiError,
   schema: ZodType<T>,

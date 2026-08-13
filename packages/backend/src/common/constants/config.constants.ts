@@ -91,8 +91,10 @@ const toStr = (
   value: string | number | null | undefined,
 ): string | undefined => (value != null ? String(value) : undefined);
 
-const nonEmpty = (value: string | null | undefined): string | undefined =>
-  value?.trim() ? value : undefined;
+const nonEmpty = (value: string | null | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
 
 export function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
@@ -151,9 +153,9 @@ export function parseConfigFromEnv(
     SYNC_EXECUTION: nonEmpty(rawEnv["SYNC_EXECUTION"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
-    STRIPE_SECRET_KEY: rawEnv["STRIPE_SECRET_KEY"],
-    STRIPE_WEBHOOK_SECRET: rawEnv["STRIPE_WEBHOOK_SECRET"],
-    STRIPE_PRICE_ID: rawEnv["STRIPE_PRICE_ID"],
+    STRIPE_SECRET_KEY: nonEmpty(rawEnv["STRIPE_SECRET_KEY"]),
+    STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
+    STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
   });
 }
 

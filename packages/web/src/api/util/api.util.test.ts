@@ -14,6 +14,7 @@ import {
 import {
   createApiError as buildApiError,
   getApiErrorCode,
+  getApiErrorMessage,
   getErrorStatus,
   handleErrorResponse,
   isSessionLevelError,
@@ -139,6 +140,24 @@ describe("shouldShowContextualLoadError", () => {
         createApiError({ status: Status.UNAUTHORIZED }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("getApiErrorMessage", () => {
+  it("returns the error string from a JSON body", () => {
+    const error = createApiError({
+      data: { error: "Couldn't start billing. Please try again in a moment." },
+    });
+    expect(getApiErrorMessage(error)).toBe(
+      "Couldn't start billing. Please try again in a moment.",
+    );
+  });
+
+  it("returns undefined when the body has no error string", () => {
+    expect(
+      getApiErrorMessage(createApiError({ data: { code: "X" } })),
+    ).toBeUndefined();
+    expect(getApiErrorMessage(new Error("nope"))).toBeUndefined();
   });
 });
 

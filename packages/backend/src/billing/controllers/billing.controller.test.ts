@@ -81,4 +81,29 @@ describe("BillingController", () => {
     );
     expect(json).toHaveBeenCalledWith({ error: "Internal server error" });
   });
+
+  it("maps BillingHttpError to its status and client message", async () => {
+    const { BillingHttpError } = await import(
+      "@backend/billing/billing.errors"
+    );
+    spyOn(billingService, "getStatus").mockRejectedValue(
+      new BillingHttpError(
+        502,
+        "Couldn't start billing. Please try again in a moment.",
+      ),
+    );
+
+    const { res, json } = jsonRes();
+    await billingController.getStatus(
+      sessionReq("507f1f77bcf86cd799439011"),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      502,
+    );
+    expect(json).toHaveBeenCalledWith({
+      error: "Couldn't start billing. Please try again in a moment.",
+    });
+  });
 });
