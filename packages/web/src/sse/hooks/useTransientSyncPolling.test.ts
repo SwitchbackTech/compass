@@ -30,14 +30,14 @@ describe("useTransientSyncPolling", () => {
   beforeEach(() => {
     intervalCallback = undefined;
     mockRefreshUserMetadata.mockClear();
-    setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(((
+    setIntervalSpy = spyOn(window, "setInterval").mockImplementation(((
       callback: TimerHandler,
     ) => {
       if (typeof callback === "function") {
         intervalCallback = () => callback();
       }
-      return 1 as unknown as ReturnType<typeof setInterval>;
-    }) as unknown as typeof setInterval);
+      return 1;
+    }) as typeof window.setInterval);
     clearIntervalSpy = spyOn(globalThis, "clearInterval").mockImplementation(
       () => {},
     );

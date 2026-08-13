@@ -1,5 +1,4 @@
 import * as corsLib from "cors";
-import { ObjectId } from "mongodb";
 import superTokensNode from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
@@ -464,6 +463,42 @@ describe("supertokens.middleware", () => {
       });
       expect(googleAuthService.handleGoogleAuth).toHaveBeenCalledWith(
         successPayload,
+        { hasExistingSession: false },
+      );
+    });
+
+    it("tells handleGoogleAuth when ThirdParty signInUpPOST already has a session", async () => {
+      const responsePayload = { status: "OK" };
+      const successPayload = { providerUser: { id: "u1" } };
+      const existingSession = { getUserId: () => "existing-user" };
+
+      (createGoogleSignInSuccess as Mock).mockReturnValue(successPayload);
+
+      initSupertokens();
+
+      const thirdPartyConfig = getFirstCallArg<{
+        override: {
+          apis: (originalImplementation: {
+            signInUpPOST?: (input: unknown) => Promise<unknown>;
+          }) => {
+            signInUpPOST: (input: unknown) => Promise<unknown>;
+          };
+        };
+      }>(ThirdParty.init);
+
+      const originalImplementation = {
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
+      };
+
+      const overridden = thirdPartyConfig.override.apis(originalImplementation);
+      const input = { session: existingSession, some: "input" };
+
+      await overridden.signInUpPOST(input);
+
+      expect(originalImplementation.signInUpPOST).toHaveBeenCalledWith(input);
+      expect(googleAuthService.handleGoogleAuth).toHaveBeenCalledWith(
+        successPayload,
+        { hasExistingSession: true },
       );
     });
 
@@ -663,6 +698,7 @@ describe("supertokens.middleware", () => {
       expect(createGoogleSignInSuccess).toHaveBeenCalledTimes(2);
       expect(googleAuthService.handleGoogleAuth).toHaveBeenCalledWith(
         expect.objectContaining({ recipeUserId: "compass-user-id" }),
+        { hasExistingSession: false },
       );
     });
 
