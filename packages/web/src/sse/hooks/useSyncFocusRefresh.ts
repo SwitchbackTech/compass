@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { useVisibleAfterHidden } from "@web/common/hooks/useVisibleAfterHidden";
@@ -19,8 +20,10 @@ const MIN_HIDDEN_DURATION_MS = 30_000;
  * browser-wide refresh coordinator, so a focus refresh and a manual click
  * share work and status instead of racing each other.
  *
- * No-ops while there's no established connection worth refreshing (not yet
- * connected, reconnect required, or still on the initial import).
+ * Provider refresh no-ops while there's no established connection worth
+ * refreshing (not yet connected, reconnect required, or still on the initial
+ * import). Metadata always reconciles on mount and on visible-after-hidden —
+ * including during IMPORTING, which is exactly when the UI used to get stuck.
  *
  * `useConnectGoogleImpl` is a test seam (default: the real hook) so tests can
  * pass a fake implementation instead of mock.module-ing a hook other files
@@ -30,19 +33,30 @@ export const useSyncFocusRefresh = (
   useConnectGoogleImpl: () => UseConnectGoogleResult = useConnectGoogle,
 ) => {
   const { isAvailable, refresh, state } = useConnectGoogleImpl();
-  const didRefreshOnMount = useRef(false);
+  const didReconcileMetadataOnMount = useRef(false);
+  const didProviderRefreshOnMount = useRef(false);
   const canRefresh =
     isAvailable && (state === "HEALTHY" || state === "ATTENTION");
   const silentRefresh = useCallback(() => refresh({ silent: true }), [refresh]);
+  const reconcileMetadata = useCallback(() => {
+    void refreshUserMetadata({ force: true });
+  }, []);
 
   useEffect(() => {
-    if (!canRefresh || didRefreshOnMount.current) return;
+    if (didReconcileMetadataOnMount.current) return;
+    didReconcileMetadataOnMount.current = true;
+    reconcileMetadata();
+  }, [reconcileMetadata]);
+
+  useEffect(() => {
+    if (!canRefresh || didProviderRefreshOnMount.current) return;
     // Metadata briefly changes the connection state while a refresh is
     // requested. A mount refresh must not run again when that state settles,
     // or every completion enqueues another pull forever.
-    didRefreshOnMount.current = true;
+    didProviderRefreshOnMount.current = true;
     silentRefresh();
   }, [canRefresh, silentRefresh]);
 
   useVisibleAfterHidden(silentRefresh, MIN_HIDDEN_DURATION_MS, canRefresh);
+  useVisibleAfterHidden(reconcileMetadata, MIN_HIDDEN_DURATION_MS, true);
 };

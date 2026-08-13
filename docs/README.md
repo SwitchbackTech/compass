@@ -24,6 +24,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Event Domain Model](./architecture/event-domain-model.md)
+- [Multi-account Sync](./architecture/multi-account-sync.md)
 - [Glossary](./architecture/glossary.md)
 
 ## Development And Operations

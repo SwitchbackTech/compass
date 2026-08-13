@@ -60,8 +60,6 @@ describe("computeHealthSnapshot", () => {
       capabilities: ["readEvents"],
       state,
       stateReason: state === "actionRequired" ? "authorizationRevoked" : null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
 
   it("aggregates connection states, jobs, subscriptions, and freshness", async () => {

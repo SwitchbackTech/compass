@@ -202,7 +202,10 @@ async function adoptConnection(
   );
 }
 
-async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
+async function handleGoogleAuth(
+  success: GoogleSignInSuccess,
+  options?: { hasExistingSession?: boolean },
+): Promise<void> {
   const {
     providerUser,
     oAuthTokens,
@@ -237,6 +240,12 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
 
   switch (decision.authMode) {
     case "SIGNUP": {
+      if (options?.hasExistingSession) {
+        throw error(
+          AuthError.GoogleSignInWhileAuthenticated,
+          "You're already signed in — use Settings → Add account to connect this Google account.",
+        );
+      }
       const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;
       if (!isNewUser) {
         // Edge case: no Compass user found but SuperTokens says not new

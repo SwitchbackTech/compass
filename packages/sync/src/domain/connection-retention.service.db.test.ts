@@ -82,8 +82,6 @@ describe("purgeExpiredDisconnectedConnections", () => {
       capabilities: ["readEvents"],
       state: "healthy",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
     if (disconnectedAt) {
       await connections.markDisconnected(
@@ -287,8 +285,6 @@ describe("purgeExpiredDisconnectedConnections", () => {
       capabilities: ["readEvents"],
       state: "healthy",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
 
     const purged = await purgeExpiredDisconnectedConnections(

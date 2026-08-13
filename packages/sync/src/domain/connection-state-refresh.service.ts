@@ -131,10 +131,13 @@ export async function gatherConnectionStateEvidence(
   // this just for taking a while.
   const bootstrapOverdue = activeCalendars.some((c) => {
     const resource = eventsByCalendar.get(c._id);
-    if (!resource || resource.bootstrapState === "ready") return false;
-    return (
-      now.getTime() - resource.updatedAt.getTime() >= BOOTSTRAP_STALLED_AFTER_MS
-    );
+    if (resource?.bootstrapState === "ready") return false;
+    // An active calendar with no events resource used to skip this check
+    // entirely and stay "importing" forever. Fall back to the calendar row's
+    // own updatedAt so a missing resource still trips delayed after the stall
+    // window; Refresh then re-runs calendar-list discovery to heal it.
+    const basis = resource?.updatedAt ?? c.updatedAt;
+    return now.getTime() - basis.getTime() >= BOOTSTRAP_STALLED_AFTER_MS;
   });
 
   // "Last synced" must be as old as the least-recent active calendar. Taking

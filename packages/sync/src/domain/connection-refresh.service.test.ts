@@ -28,12 +28,14 @@ describe("refreshPrincipalCalendars", () => {
     ];
 
     const requeueFailedByConnection = mock(async () => 0);
+    const listByPrincipal = mock(async () => [{ _id: "c1" }]);
     const tally = await refreshPrincipalCalendars(
       {
         resources: {
           listEventsByPrincipal: mock(async () => resources),
         } as never,
         jobs: { enqueueUrgent, requeueFailedByConnection } as never,
+        connections: { listByPrincipal } as never,
       },
       "t1" as TenantId,
       "p1" as PrincipalId,
@@ -49,8 +51,14 @@ describe("refreshPrincipalCalendars", () => {
     });
     // One call per distinct connection touched, not per resource.
     expect(requeueFailedByConnection).toHaveBeenCalledTimes(1);
-    expect(enqueueUrgent).toHaveBeenCalledTimes(2);
+    expect(enqueueUrgent).toHaveBeenCalledTimes(3);
     expect(enqueueUrgent.mock.calls[0]?.[0]).toMatchObject({
+      kind: "calendarListSync",
+      resourceId: null,
+      coalescingKey: "calendarListSync:c1",
+      priority: JOB_PRIORITY.user,
+    });
+    expect(enqueueUrgent.mock.calls[1]?.[0]).toMatchObject({
       kind: "incrementalPull",
       resourceId: "r1",
       coalescingKey: "incrementalPull:r1",
@@ -66,10 +74,12 @@ describe("refreshPrincipalCalendars", () => {
       "inFlight",
     ] as const;
     let i = 0;
-    const enqueueUrgent = mock(async () => ({
-      job: {},
-      outcome: outcomes[i++]!,
-    }));
+    const enqueueUrgent = mock(async (job: { kind: string }) => {
+      if (job.kind === "calendarListSync") {
+        return { job: {}, outcome: "created" as const };
+      }
+      return { job: {}, outcome: outcomes[i++]! };
+    });
     const resources = outcomes.map((id) => ({
       _id: id,
       tenantId: "t1" as TenantId,
@@ -84,6 +94,9 @@ describe("refreshPrincipalCalendars", () => {
           listEventsByPrincipal: mock(async () => resources),
         } as never,
         jobs: { enqueueUrgent, requeueFailedByConnection } as never,
+        connections: {
+          listByPrincipal: mock(async () => [{ _id: "c1" }]),
+        } as never,
       },
       "t1" as TenantId,
       "p1" as PrincipalId,

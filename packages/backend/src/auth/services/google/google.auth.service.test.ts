@@ -193,6 +193,33 @@ describe("handleGoogleAuth", () => {
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
       expect(adoptCalls).toHaveLength(0);
     });
+
+    it("does not create a user when an existing session would otherwise SIGNUP", async () => {
+      const success: GoogleSignInSuccess = {
+        providerUser: makeProviderUser(),
+        oAuthTokens: makeOAuthTokens(),
+        createdNewRecipeUser: true,
+        recipeUserId: faker.database.mongodbObjectId(),
+        loginMethodsLength: 1,
+      };
+
+      mockDetermineGoogleAuthMode.mockResolvedValue(
+        makeDecision({ authMode: "SIGNUP" }),
+      );
+
+      await expect(
+        googleAuthService.handleGoogleAuth(success, {
+          hasExistingSession: true,
+        }),
+      ).rejects.toMatchObject({
+        result:
+          "You're already signed in — use Settings → Add account to connect this Google account.",
+        code: "GOOGLE_SIGNIN_WHILE_AUTHENTICATED",
+      });
+
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(adoptCalls).toHaveLength(0);
+    });
   });
 
   describe("SIGNIN path", () => {

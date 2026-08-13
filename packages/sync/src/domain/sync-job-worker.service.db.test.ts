@@ -21,6 +21,7 @@ import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -128,6 +129,7 @@ describe("SyncJobWorker", () => {
     resources,
     calendars,
     connections,
+    credentials: new CredentialRepository(storage.db()),
     discovery: discoveryOverride,
     commands,
     jobs,
@@ -600,8 +602,6 @@ describe("SyncJobWorker", () => {
       capabilities: ["readEvents", "readBusy", "writeEvents"],
       state: "importing",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
     const job = await jobs.enqueue({
       tenantId: connection.tenantId,

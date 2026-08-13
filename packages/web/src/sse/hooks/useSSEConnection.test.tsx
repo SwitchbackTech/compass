@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
 const mockUseUser = mock();
+const mockRefreshUserMetadata = mock().mockResolvedValue(undefined);
 const openStream = mock();
 const closeStream = mock();
 let reopenHandler: (() => void) | null = null;
@@ -22,6 +23,9 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 }));
 mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: mockUseUser,
+}));
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata: mockRefreshUserMetadata,
 }));
 mock.module("../client/sse.client", () => ({
   openStream,
@@ -43,6 +47,7 @@ describe("useSSEConnection", () => {
     openStream.mockClear();
     closeStream.mockClear();
     onStreamReopen.mockClear();
+    mockRefreshUserMetadata.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: mock(),
@@ -75,5 +80,6 @@ describe("useSSEConnection", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: calendarQueryKeys.all,
     });
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 });

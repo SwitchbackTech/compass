@@ -520,11 +520,7 @@ describe("CalendarList", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the local calendar entirely once any account is connected", () => {
-    // Once connected, the local calendar can no longer gain new events
-    // (LCV1/LCV2) and stops explaining itself the way an account-owned
-    // calendar does - drop the orphan row rather than render it alongside
-    // real accounts (local-calendar-visibility LCV3).
+  it("shows the local calendar under the Compass email section once Google is connected", () => {
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -542,7 +538,15 @@ describe("CalendarList", () => {
       ],
     });
 
-    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
+    const compassSection = screen.getByRole("region", {
+      name: `Calendars for ${HEADER_EMAIL}`,
+    });
+    expect(within(compassSection).getByText("Compass")).toBeInTheDocument();
+    expect(
+      within(compassSection).getByRole("button", {
+        name: "Hide Compass calendar",
+      }),
+    ).toBeInTheDocument();
     for (const email of ["ahab@pequod.com", "ahab@gmail.com"]) {
       expect(
         within(
@@ -552,15 +556,42 @@ describe("CalendarList", () => {
     }
   });
 
-  it("un-hides the local calendar once the only connected account disconnects", () => {
-    // ensureLocalCalendar exists precisely so a disconnected user never loses
-    // every writable calendar - the row LCV3 hides must come back the moment
-    // its precondition (a connected account) stops holding, not stay stuck
-    // hidden with no calendar left to show instead. useDisconnectGoogleAccount
-    // calls userMetadataActions.removeConnection synchronously on success,
-    // before its network refetch even resolves - simulate exactly that,
-    // rather than the eventual refetch, since the row must not wait on it
-    // (local-calendar-visibility LCV5).
+  it("keeps the local calendar toggleable after Google is connected", async () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([work, local], {
+      connections: [makeConnection("ahab@pequod.com")],
+    });
+
+    const toggle = screen.getByRole("button", {
+      name: "Hide Compass calendar",
+    });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await user.click(toggle);
+    expect(
+      screen.getByRole("button", { name: "Show Compass calendar" }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("renders a connected account's header even before any calendars have imported", () => {
+    renderCalendarList([], {
+      connections: [makeConnection("ahab@pequod.com")],
+    });
+
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "ahab@pequod.com" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the local calendar visible after a connected account disconnects", () => {
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -570,7 +601,7 @@ describe("CalendarList", () => {
 
     renderCalendarList([work, local], { connections: [onlyConnection] });
 
-    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
+    expect(screen.getByText("Compass")).toBeInTheDocument();
 
     act(() => {
       userMetadataActions.removeConnection(onlyConnection.id);
@@ -612,7 +643,7 @@ describe("CalendarList", () => {
     expect(screen.getByText("Work")).toBeInTheDocument();
   });
 
-  it("keeps the local calendar hidden regardless of account collapse state", async () => {
+  it("keeps the local Compass section visible when Google accounts are collapsed", async () => {
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -634,7 +665,7 @@ describe("CalendarList", () => {
     await user.click(screen.getByRole("button", { name: "ahab@pequod.com" }));
     await user.click(screen.getByRole("button", { name: "ahab@gmail.com" }));
 
-    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
+    expect(screen.getByText("Compass")).toBeInTheDocument();
   });
 
   it("renders no placeholder text while calendars are pending, to avoid a layout shift once they load", () => {

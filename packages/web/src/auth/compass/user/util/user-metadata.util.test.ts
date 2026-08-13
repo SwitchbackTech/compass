@@ -1,10 +1,14 @@
 import { type UserMetadata } from "@core/types/user.types";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { UserApi } from "@web/api/user.api";
 import { resetGoogleReconnectRequiredForTests } from "@web/auth/google/state/google.reconnect.state";
 import { GOOGLE_DELAYED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { applyUserMetadataSideEffects } from "./user-metadata.util";
-import { beforeEach, describe, expect, it } from "bun:test";
+import {
+  applyUserMetadataSideEffects,
+  refreshUserMetadata,
+} from "./user-metadata.util";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const healthy: UserMetadata = { google: { connectionState: "HEALTHY" } };
 const attention: UserMetadata = { google: { connectionState: "ATTENTION" } };
@@ -62,5 +66,27 @@ describe("applyUserMetadataSideEffects - delayed toast lifecycle", () => {
       expect.anything(),
       expect.objectContaining({ toastId: GOOGLE_DELAYED_TOAST_ID }),
     );
+  });
+});
+
+describe("refreshUserMetadata force coalescing", () => {
+  it("chains concurrent force calls onto one trailing fetch", async () => {
+    let resolveFirst!: (value: UserMetadata) => void;
+    const first = new Promise<UserMetadata>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const getMetadata = spyOn(UserApi, "getMetadata")
+      .mockImplementationOnce(() => first)
+      .mockResolvedValue(healthy);
+
+    const inFlight = refreshUserMetadata();
+    const forceA = refreshUserMetadata({ force: true });
+    const forceB = refreshUserMetadata({ force: true });
+
+    resolveFirst(attention);
+    await Promise.all([inFlight, forceA, forceB]);
+
+    expect(getMetadata).toHaveBeenCalledTimes(2);
+    getMetadata.mockRestore();
   });
 });

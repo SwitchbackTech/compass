@@ -449,9 +449,11 @@ describe("groupCalendarsByAccount", () => {
     expect(groups[0]?.calendars).toEqual([work]);
   });
 
-  it("omits a connected account with no calendars yet", () => {
+  it("keeps a connected account with no calendars yet", () => {
     const { groups } = groupCalendarsByAccount([], [connection("old@x.com")]);
 
-    expect(groups).toHaveLength(0);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.accountEmail).toBe("old@x.com");
+    expect(groups[0]?.calendars).toEqual([]);
   });
 });

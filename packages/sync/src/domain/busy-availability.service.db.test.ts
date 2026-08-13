@@ -54,9 +54,21 @@ describe("computeBusyAvailability", () => {
       capabilities: ["readEvents"],
       state,
       stateReason: null,
-      lastSyncedAt,
-      lastHealthyAt: lastSyncedAt,
     });
+    if (lastSyncedAt !== null) {
+      await connections.updateDerivedState(
+        tenantId,
+        principalId,
+        connection._id,
+        {
+          state,
+          stateReason: null,
+          lastSyncedAt,
+          lastHealthyAt: lastSyncedAt,
+        },
+        NOW,
+      );
+    }
     return connection._id;
   };
 

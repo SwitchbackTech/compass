@@ -18,6 +18,7 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
@@ -856,6 +857,30 @@ describe("URL Parameter Support", () => {
       expect(
         screen.getByRole("heading", { name: /hey, welcome back/i }),
       ).toBeInTheDocument();
+    });
+  });
+
+  it("ignores ?auth= while a session already exists", async () => {
+    const router = createTestRouter(
+      <SessionContext.Provider
+        value={{ authenticated: true, setAuthenticated: () => {} }}
+      >
+        <AuthModalProvider>
+          <AuthModal />
+        </AuthModalProvider>
+      </SessionContext.Provider>,
+      { initialEntries: ["/?auth=login"] },
+    );
+    render(<RouterProvider router={router} />);
+    await waitForRouterIdle(router);
+
+    expect(
+      screen.queryByRole("heading", { name: /hey, welcome back/i }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.search).not.toEqual(
+        expect.objectContaining({ auth: "login" }),
+      );
     });
   });
 

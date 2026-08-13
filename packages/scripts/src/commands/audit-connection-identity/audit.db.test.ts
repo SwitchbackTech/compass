@@ -54,8 +54,6 @@ describe("auditConnectionIdentity (db)", () => {
       capabilities: ["readEvents", "readBusy", "writeEvents"],
       state: "healthy",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
   };
 
