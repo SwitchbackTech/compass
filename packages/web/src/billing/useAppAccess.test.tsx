@@ -4,6 +4,7 @@ import { rest } from "msw";
 import { type PropsWithChildren } from "react";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { billingQueryKeys } from "@web/billing/billing.query";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -13,15 +14,17 @@ import { beforeEach, describe, expect, it } from "bun:test";
 const daysAgo = (days: number) =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-const createWrapper = (authenticated = false) => {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+const createWrapper = (authenticated = false, client?: QueryClient) => {
+  const queryClient =
+    client ??
+    new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
   return ({ children }: PropsWithChildren) => (
     <SessionContext.Provider
       value={{ authenticated, setAuthenticated: () => {} }}
     >
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </SessionContext.Provider>
   );
 };
@@ -196,6 +199,37 @@ describe("useAppAccess", () => {
 
     const { result } = renderHook(() => useAppAccess(), {
       wrapper: createWrapper(false),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({ kind: "open" });
+    });
+    expect(billingHits).toBe(0);
+  });
+
+  it("does not keep a cached read-only billing gate after the session is gone", async () => {
+    persistentBrowserStore.set(
+      STORAGE_KEYS.AUTH,
+      JSON.stringify({ hasAuthenticated: true }),
+    );
+    stubConfig(true);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    client.setQueryData(billingQueryKeys.status, {
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: null,
+      isReadOnly: true,
+    });
+    let billingHits = 0;
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) => {
+        billingHits += 1;
+        return res(ctx.status(401));
+      }),
+    );
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(false, client),
     });
     await waitFor(() => {
       expect(result.current).toEqual({ kind: "open" });

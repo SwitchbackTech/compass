@@ -46,6 +46,10 @@ export function useAppAccess(): AppAccess {
     };
   }
 
+  if (!authenticated) {
+    return { kind: "open" };
+  }
+
   if (
     configQuery.isError ||
     configQuery.isPending ||
