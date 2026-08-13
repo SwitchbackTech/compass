@@ -52,11 +52,12 @@ export interface ProviderEventReader {
 
 // Why a page read could not complete. `cursorExpired` (the stored sync token is
 // too old) is not retryable with the same token — the caller must re-import in
-// full. `authExpired` is a rejected access token — retryable, but only after
-// the caller invalidates the cached token so the next attempt mints a fresh
-// one. `transient` is a retryable network/provider failure; `readFailed` is an
-// unrecoverable rejection. Distinct from ProviderEventError, which is a
-// per-event normalization failure the reader absorbs into `skipped`.
+// full. `authExpired` is a rejected access token — retryable in-process after
+// the caller invalidates the cached token and mints a fresh one. A second
+// `authExpired` on that fresh token is treated as a dead grant. `transient` is
+// a retryable network/provider failure; `readFailed` is an unrecoverable
+// rejection. Distinct from ProviderEventError, which is a per-event
+// normalization failure the reader absorbs into `skipped`.
 export type ProviderEventReadErrorReason =
   | "cursorExpired"
   | "authExpired"

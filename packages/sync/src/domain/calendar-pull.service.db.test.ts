@@ -35,7 +35,11 @@ class FakeReader implements ProviderEventReader {
   #pages: ProviderEventPage[];
   #error?: unknown;
 
-  constructor(pages: ProviderEventPage[], error?: unknown) {
+  constructor(
+    pages: ProviderEventPage[],
+    error?: unknown,
+    private readonly errorOnce = false,
+  ) {
     this.#pages = [...pages];
     this.#error = error;
   }
@@ -44,7 +48,11 @@ class FakeReader implements ProviderEventReader {
     input: ProviderEventReadInput,
   ): Promise<ProviderEventPage> {
     this.calls.push(input);
-    if (this.#error) throw this.#error;
+    if (this.#error) {
+      const error = this.#error;
+      if (this.errorOnce) this.#error = undefined;
+      throw error;
+    }
     const page = this.#pages.shift();
     if (!page) throw new Error("FakeReader: no page scripted");
     return page;
@@ -445,6 +453,44 @@ describe("pullCalendarChanges", () => {
     if (result.status !== "applied") throw new Error("expected applied");
     expect(result.deleted).toBe(0);
     expect(result.resource.syncCursor).toBe("cursor-1");
+  });
+
+  it("retries the page with a reminted token after a one-off 401", async () => {
+    const calendar = await seedCalendar();
+    await seedImported(calendar);
+    const reader = new FakeReader(
+      [page([single("a")], { nextSyncToken: "cursor-1" })],
+      new ProviderEventReadError("authExpired", "401"),
+      true,
+    );
+    const invalidated: string[] = [];
+    const tokens: string[] = [];
+    const custody = {
+      getValidAccessToken: async () => {
+        const token = tokens.length === 0 ? "stale-token" : "fresh-token";
+        tokens.push(token);
+        return token;
+      },
+      discardRevoked: async () => {},
+      invalidateAccessToken: async (connectionId: string) => {
+        invalidated.push(connectionId);
+      },
+    };
+
+    const result = await pullCalendarChanges(
+      { ...deps(reader), custody },
+      calendar,
+      now,
+    );
+
+    if (result.status !== "applied") throw new Error("expected applied");
+    expect(result.changed).toBe(1);
+    expect(result.resource.syncCursor).toBe("cursor-1");
+    expect(invalidated).toEqual([calendar.connectionId]);
+    expect(reader.calls.map((call) => call.accessToken)).toEqual([
+      "stale-token",
+      "fresh-token",
+    ]);
   });
 
   it("hands off to repair on an expired cursor without touching it", async () => {

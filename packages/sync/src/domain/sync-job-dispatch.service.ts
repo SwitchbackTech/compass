@@ -113,13 +113,12 @@ export async function dispatchSyncJob(
       };
     }
 
-    // The provider rejected the cached access token (401). Invalidate it so
-    // the retry that the worker's generic catch schedules mints a fresh token
-    // instead of replaying the same rejected one — otherwise every attempt in
-    // the retry ladder fails the same way and the job dead-letters even though
-    // a fresh token would have worked. If the refresh itself then fails with
-    // authorizationRevoked, that surfaces as ProviderAuthError on the next
-    // attempt and is handled by the branch above.
+    // The provider rejected the cached access token (401). Event reads
+    // (pull/import/repair) remint in-process via listEventPageWithAuthRetry;
+    // this fallback covers any path that still throws authExpired. Invalidate
+    // so the worker retry mints a fresh token instead of replaying the same
+    // rejected one. If the refresh then fails with authorizationRevoked, that
+    // surfaces as ProviderAuthError on the next attempt and is handled above.
     if (
       error instanceof ProviderEventReadError &&
       error.reason === "authExpired"

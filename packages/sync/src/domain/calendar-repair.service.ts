@@ -1,4 +1,5 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
+import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
@@ -86,7 +87,7 @@ export async function repairCalendar(
           resource._id,
         );
 
-  const accessToken = await deps.custody.getValidAccessToken(
+  let accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
   );
 
@@ -106,12 +107,14 @@ export async function repairCalendar(
   let pageToken: string | null = null;
   let cursor: string | null = null;
   do {
-    const page = await deps.reader.listEventPage({
+    const read = await listEventPageWithAuthRetry(deps, calendar.connectionId, {
       accessToken,
       calendarId: calendar.providerCalendarId,
       pageToken,
       colorLabels,
     });
+    const page = read.page;
+    accessToken = read.accessToken;
     await applier.applyPage(page.events);
     pageToken = page.nextPageToken;
     cursor = page.nextSyncToken ?? cursor;

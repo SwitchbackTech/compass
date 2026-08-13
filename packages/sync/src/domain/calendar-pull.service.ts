@@ -1,4 +1,5 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
+import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { type ProviderEventCancellation } from "@sync/providers/provider-event.port";
@@ -88,7 +89,7 @@ export async function pullCalendarChanges(
     return { status: "notImported", resource };
   }
 
-  const accessToken = await deps.custody.getValidAccessToken(
+  let accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
   );
 
@@ -114,15 +115,21 @@ export async function pullCalendarChanges(
   do {
     let page: Awaited<ReturnType<ProviderEventReader["listEventPage"]>>;
     try {
-      page = await deps.reader.listEventPage({
-        accessToken,
-        calendarId: calendar.providerCalendarId,
-        // The cursor applies only to the first request of a batch; paging then
-        // continues by pageToken alone.
-        cursor: pageToken === null ? cursor : null,
-        pageToken,
-        colorLabels,
-      });
+      const read = await listEventPageWithAuthRetry(
+        deps,
+        calendar.connectionId,
+        {
+          accessToken,
+          calendarId: calendar.providerCalendarId,
+          // The cursor applies only to the first request of a batch; paging then
+          // continues by pageToken alone.
+          cursor: pageToken === null ? cursor : null,
+          pageToken,
+          colorLabels,
+        },
+      );
+      page = read.page;
+      accessToken = read.accessToken;
     } catch (error) {
       // An expired cursor cannot be resumed; hand off to repair without
       // touching the stored cursor.
