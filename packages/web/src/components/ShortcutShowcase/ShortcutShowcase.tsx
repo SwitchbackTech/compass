@@ -88,6 +88,8 @@ const ShowcaseTakeover: FC = () => {
   const graduate = () => {
     beginDismiss(() => shortcutShowcaseActions.finish());
   };
+  const graduateRef = useRef(graduate);
+  graduateRef.current = graduate;
 
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
@@ -214,7 +216,7 @@ const ShowcaseTakeover: FC = () => {
 
       if (currentStepId === "graduation" && event.key === "Enter") {
         event.preventDefault();
-        graduate();
+        graduateRef.current();
         return;
       }
 
