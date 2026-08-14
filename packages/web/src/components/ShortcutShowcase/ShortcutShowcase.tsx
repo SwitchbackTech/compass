@@ -37,6 +37,7 @@ import {
   SHOWCASE_STEP_IDS,
   STRETCH_KEYCAPS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
+import { markShortcutShowcaseSeen } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   selectShowcaseActive,
   selectShowcaseConfirmingSkip,
@@ -86,6 +87,9 @@ const ShowcaseTakeover: FC = () => {
   useAppLockReason("shortcutShowcase", true);
 
   const graduate = () => {
+    // Persist before the curtain so a reload during the reveal does not
+    // relaunch the takeover. finish() marks seen again when it unmounts.
+    markShortcutShowcaseSeen();
     beginDismiss(() => shortcutShowcaseActions.finish());
   };
   const graduateRef = useRef(graduate);
@@ -169,7 +173,6 @@ const ShowcaseTakeover: FC = () => {
       const store = useShortcutShowcaseStore.getState();
       if (!store.isActive) return;
       if (closingRef.current) {
-        event.preventDefault();
         event.stopPropagation();
         return;
       }

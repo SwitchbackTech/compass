@@ -127,6 +127,9 @@ describe("ShortcutShowcase", () => {
       "data-closing",
     );
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).toBe("true");
 
     await waitFor(
       () => {
