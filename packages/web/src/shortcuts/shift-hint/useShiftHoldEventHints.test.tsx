@@ -1,5 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
+import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
@@ -259,6 +260,18 @@ describe("useShiftHoldEventHints", () => {
     });
 
     expect(onSequence).toHaveBeenCalledWith("start");
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    const { result } = mountHints();
+
+    expect(() => {
+      dispatchMissingKey("keydown");
+      dispatchMissingKey("keyup");
+    }).not.toThrow();
+
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });

@@ -48,7 +48,10 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import {
+  isBareLetterKey,
+  keyboardKey,
+} from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { ARM_WINDOW_MS } from "@web/shortcuts/useEditSequenceShortcut";
@@ -272,7 +275,7 @@ const ShowcaseTakeover: FC = () => {
       ) {
         event.preventDefault();
         const hints = Object.values(practiceRef.current.jumpChips);
-        const typed = jumpBufferRef.current + event.key.toLowerCase();
+        const typed = jumpBufferRef.current + keyboardKey(event).toLowerCase();
         if (hints.includes(typed)) {
           jumpBufferRef.current = "";
           apply((state) => jumpToChipHint(state, typed));
@@ -306,7 +309,10 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        keyboardKey(event).toLowerCase() === "z"
+      ) {
         event.preventDefault();
         const before = practiceRef.current;
         if (event.shiftKey) {

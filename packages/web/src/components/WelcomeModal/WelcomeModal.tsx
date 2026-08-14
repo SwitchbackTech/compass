@@ -13,6 +13,7 @@ import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
@@ -66,7 +67,7 @@ export function WelcomeModal() {
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const key = e.key.toLowerCase();
+    const key = keyboardKey(e).toLowerCase();
     if (key === "u") {
       e.preventDefault();
       handOffToAuth("sign_up");
