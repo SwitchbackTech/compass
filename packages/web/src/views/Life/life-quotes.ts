@@ -53,16 +53,10 @@ export const LIFE_QUOTES = [
   "“Life moves pretty fast. If you don’t stop and look around once in a while, you could miss it.” (Ferris Bueller’s Day Off)",
 ] as const;
 
-export function getRandomLifeQuote(
-  currentQuote?: string,
-  random = getSecureRandomNumber,
-) {
-  const quotes = currentQuote
-    ? LIFE_QUOTES.filter((quote) => quote !== currentQuote)
-    : LIFE_QUOTES;
+export function getRandomLifeQuote(random = getSecureRandomNumber) {
   const index = Math.min(
-    quotes.length - 1,
-    Math.floor(random() * quotes.length),
+    LIFE_QUOTES.length - 1,
+    Math.floor(random() * LIFE_QUOTES.length),
   );
-  return quotes[index] ?? LIFE_QUOTES[0];
+  return LIFE_QUOTES[index] ?? LIFE_QUOTES[0];
 }
