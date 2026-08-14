@@ -8,6 +8,30 @@ Self-host installs omit the `stripe:` config block. `/api/config` then reports
 `billing.isConfigured: false`, the web never shows a paid gate, and event
 writes stay open.
 
+## Pausing enforcement
+
+`billing.enforcement` is a separate, independent switch — the operator's global
+kill switch for turning the whole trial/billing product on or off, regardless
+of whether Stripe is configured. It defaults to `false` (paused): every user,
+signed in or not, sees `{kind: "open"}` from `useAppAccess`, no chip, no gate
+modal, no `localStorage` clock stamp, and `assertBillingAllowsWrites` no-ops
+even with valid Stripe keys present. This lets Stripe keys and Checkout/webhook
+work stay live in an environment while the product feels free to every user.
+
+Set it via `billing.enforcement: true` in `compass.yaml`, or the
+`BILLING_ENFORCEMENT` GitHub Environment var for hosted deploys. Flipping it
+requires a redeploy (or `./compass restart` if the yaml is already current) —
+it is read once at backend startup, not polled. Web-side, it flows through
+`/api/config`, which is fetched asynchronously and fails open: a pending or
+errored config request always reads as paused, never as enforced, so a slow
+network never flashes a gate at a user before the real value loads.
+
+**Enable-day caveat:** existing signed-in accounts are not grandfathered (see
+below) — flipping `enforcement: true` while Stripe is configured immediately
+puts any hosted user without a Stripe subscription id into `awaiting_checkout`
+and shows them `BillingGateModal`. Run `bun run cli backfill-billing` (or set
+`BACKFILL_CUTOFF`) first if that's not the intended effect for existing users.
+
 ## What users see
 
 - **Never signed up:** the existing 7-day anonymous `localStorage` trial and

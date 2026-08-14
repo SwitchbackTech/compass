@@ -44,8 +44,27 @@ describe("ConfigController.get sync cutover posture", () => {
     });
     expect(config.billing).toEqual({
       isConfigured: false,
+      enforcement: false,
       priceDisplay: "$7.99/month",
       trialLengthDays: 7,
     });
+  });
+});
+
+describe("ConfigController.get billing enforcement", () => {
+  const original = CONFIG.BILLING_ENFORCEMENT;
+
+  afterEach(() => {
+    CONFIG.BILLING_ENFORCEMENT = original;
+  });
+
+  it("defaults to paused", () => {
+    CONFIG.BILLING_ENFORCEMENT = false;
+    expect(invokeGet().billing.enforcement).toBe(false);
+  });
+
+  it("reports true once the operator enables it", () => {
+    CONFIG.BILLING_ENFORCEMENT = true;
+    expect(invokeGet().billing.enforcement).toBe(true);
   });
 });

@@ -21,16 +21,21 @@ export const AppConfigSchema = z.object({
   /**
    * Hosted billing. `isConfigured: false` is the self-host escape hatch:
    * the web must not render a paid gate, and the backend must not enforce
-   * read-only. Defaults keep old `/api/config` payloads parseable.
+   * read-only. `enforcement: false` is the operator pause switch: trial and
+   * billing gates stay off for everyone regardless of `isConfigured`, until
+   * the operator is ready to turn the product on. Defaults keep old
+   * `/api/config` payloads parseable and default to paused.
    */
   billing: z
     .object({
       isConfigured: z.boolean(),
+      enforcement: z.boolean().default(false),
       priceDisplay: z.string(),
       trialLengthDays: z.number(),
     })
     .default({
       isConfigured: false,
+      enforcement: false,
       priceDisplay: BILLING_PLAN.PRICE_DISPLAY,
       trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
     }),

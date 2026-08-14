@@ -24,3 +24,7 @@ export const isStripeConfigured = (
   isStripeValueValid(env.STRIPE_SECRET_KEY) &&
   isStripeValueValid(env.STRIPE_WEBHOOK_SECRET) &&
   isStripeValueValid(env.STRIPE_PRICE_ID);
+
+export const isBillingEnforced = (
+  env: Pick<Config, "BILLING_ENFORCEMENT">,
+): boolean => env.BILLING_ENFORCEMENT;

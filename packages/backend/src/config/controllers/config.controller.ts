@@ -3,6 +3,7 @@ import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { type AppConfig, AppConfigSchema } from "@core/types/config.types";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
+  isBillingEnforced,
   isGoogleConfigured,
   isStripeConfigured,
 } from "@backend/common/constants/config.util";
@@ -21,6 +22,7 @@ class ConfigController {
         },
         billing: {
           isConfigured: isStripeConfigured(CONFIG),
+          enforcement: isBillingEnforced(CONFIG),
           priceDisplay: BILLING_PLAN.PRICE_DISPLAY,
           trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
         },

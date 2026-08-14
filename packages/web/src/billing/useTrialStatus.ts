@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { track } from "@web/auth/posthog/track";
+import { useBillingEnforced } from "@web/billing/billing.query";
 import {
   ensureTrialStarted,
   getTrialDaysLeft,
@@ -31,13 +32,19 @@ export type TrialStatus = {
  * months-old trial.started-at behind. Gating on that alone would flash "your
  * trial has ended" at a signed-up user on every load. hasUserEverAuthenticated
  * reads localStorage synchronously, so the gate never renders for them.
+ *
+ * While the operator pause switch (`billing.enforcement`) is off, everyone is
+ * exempt and the clock is never stamped — flipping enforcement on later
+ * should not instantly expire visitors who browsed during the pause.
  */
 export function useTrialStatus(): TrialStatus {
   const { authenticated } = useContext(SessionContext);
-  const isGateExempt = authenticated || hasUserEverAuthenticated();
+  const enforced = useBillingEnforced();
+  const isGateExempt = !enforced || authenticated || hasUserEverAuthenticated();
   const [daysLeft, setDaysLeft] = useState(() => getTrialDaysLeft());
 
   useEffect(() => {
+    if (!enforced) return;
     if (ensureTrialStarted()) {
       track("trial_started");
     }
@@ -51,7 +58,7 @@ export function useTrialStatus(): TrialStatus {
       document.removeEventListener("visibilitychange", recompute);
       window.removeEventListener("focus", recompute);
     };
-  }, [isGateExempt]);
+  }, [enforced, isGateExempt]);
 
   if (isGateExempt) {
     return {

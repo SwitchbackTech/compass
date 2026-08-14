@@ -15,6 +15,12 @@ const logger = Logger("app:constants");
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 
+// Accept a yaml boolean or the strings "true"/"false" (env vars are strings).
+// Mirrors packages/sync/src/config/sync.config.ts's BooleanFromInput.
+const BooleanFromInput = z
+  .union([z.boolean(), z.enum(["true", "false"])])
+  .transform((value) => value === true || value === "true");
+
 const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
@@ -49,6 +55,9 @@ const ConfigSchema = z
     STRIPE_SECRET_KEY: z.string().nonempty().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
     STRIPE_PRICE_ID: z.string().nonempty().optional(),
+    // Operator pause switch: when false, trial/billing gates stay off for
+    // everyone regardless of Stripe configuration.
+    BILLING_ENFORCEMENT: BooleanFromInput.default(false),
   })
   .strict()
   .superRefine((env, context) => {
@@ -122,6 +131,7 @@ export function parseRawConfig(config: CompassConfig): Config {
     STRIPE_SECRET_KEY: nonEmpty(config.stripe?.secretKey),
     STRIPE_WEBHOOK_SECRET: nonEmpty(config.stripe?.webhookSecret),
     STRIPE_PRICE_ID: nonEmpty(config.stripe?.priceId),
+    BILLING_ENFORCEMENT: config.billing?.enforcement,
   });
 }
 
@@ -156,6 +166,7 @@ export function parseConfigFromEnv(
     STRIPE_SECRET_KEY: nonEmpty(rawEnv["STRIPE_SECRET_KEY"]),
     STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
     STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
+    BILLING_ENFORCEMENT: nonEmpty(rawEnv["BILLING_ENFORCEMENT"]),
   });
 }
 
