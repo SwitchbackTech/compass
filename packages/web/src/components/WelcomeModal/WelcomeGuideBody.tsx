@@ -24,7 +24,7 @@ export function WelcomeGuideBody() {
 
   return (
     <>
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
           The keyboard-first calendar
         </h2>
@@ -32,12 +32,13 @@ export function WelcomeGuideBody() {
           Rediscover the joy of shortcuts as you build your perfect schedule. No
           mouse required.
         </p>
-        <div className="flex justify-center pt-1">
-          <ProductHuntBadge />
-        </div>
       </div>
 
-      <div className="flex flex-col divide-y divide-border">
+      <div className="flex w-full justify-center">
+        <ProductHuntBadge />
+      </div>
+
+      <div className="flex w-full flex-col divide-y divide-border">
         {FAQ_ITEMS.map((item, index) => {
           const isExpanded = expandedFaqs.has(item.question);
           const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;

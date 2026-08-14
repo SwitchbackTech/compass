@@ -9,7 +9,7 @@ export function ProductHuntBadge() {
       href={PRODUCT_HUNT_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="c-focus-ring inline-flex rounded-sm"
+      className="c-focus-ring mx-auto flex w-fit rounded-sm"
     >
       <img
         alt="Compass Calendar - The keyboard-first calendar. Get organized quickly. | Product Hunt"
