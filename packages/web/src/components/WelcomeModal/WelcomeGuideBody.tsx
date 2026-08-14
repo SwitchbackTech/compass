@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { FAQ_ITEMS } from "./faq";
+import { ProductHuntBadge } from "./ProductHuntBadge";
 
 export function WelcomeGuideBody() {
   const disclosureIdPrefix = useId();
@@ -23,7 +24,7 @@ export function WelcomeGuideBody() {
 
   return (
     <>
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
           The keyboard-first calendar
         </h2>
@@ -33,7 +34,11 @@ export function WelcomeGuideBody() {
         </p>
       </div>
 
-      <div className="flex flex-col divide-y divide-border">
+      <div className="flex w-full justify-center">
+        <ProductHuntBadge />
+      </div>
+
+      <div className="flex w-full flex-col divide-y divide-border">
         {FAQ_ITEMS.map((item, index) => {
           const isExpanded = expandedFaqs.has(item.question);
           const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
