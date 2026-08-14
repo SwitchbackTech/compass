@@ -169,6 +169,9 @@ describe("LifeView", () => {
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/ctrl\+scroll|pinch/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Shuffle life quote" }),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the birth date picker when Enter is pressed on the focused field", async () => {
