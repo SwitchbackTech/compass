@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
@@ -62,6 +63,19 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.skip());
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(isAppLocked()).toBe(false);
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.start());
+
+    expect(() => {
+      act(() => {
+        dispatchMissingKey("keydown");
+      });
+    }).not.toThrow();
+
+    expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
   it("advances through every lesson by doing, and graduates on Enter", async () => {
