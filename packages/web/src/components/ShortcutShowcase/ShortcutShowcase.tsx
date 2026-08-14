@@ -7,7 +7,9 @@ import {
   useState,
 } from "react";
 import { track } from "@web/auth/posthog/track";
+import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
 import {
   clearFocus,
@@ -75,10 +77,17 @@ const ShowcaseTakeover: FC = () => {
   );
   const stepId = stepIdAt(stepIndex);
   const step = getShowcaseStep(stepId);
+  const { closing, beginDismiss } = useDismissTransition(SHOWCASE_REVEAL_MS);
+  const closingRef = useRef(false);
+  closingRef.current = closing;
 
   // The takeover owns the keyboard: silence every real app handler
   // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
   useAppLockReason("shortcutShowcase", true);
+
+  const graduate = () => {
+    beginDismiss(() => shortcutShowcaseActions.finish());
+  };
 
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
@@ -157,6 +166,11 @@ const ShowcaseTakeover: FC = () => {
     const onKeyDown = (event: KeyboardEvent) => {
       const store = useShortcutShowcaseStore.getState();
       if (!store.isActive) return;
+      if (closingRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       const currentStepId = stepIdAt(store.stepIndex);
 
       if (store.isConfirmingSkip) {
@@ -200,7 +214,7 @@ const ShowcaseTakeover: FC = () => {
 
       if (currentStepId === "graduation" && event.key === "Enter") {
         event.preventDefault();
-        shortcutShowcaseActions.finish();
+        graduate();
         return;
       }
 
@@ -408,11 +422,12 @@ const ShowcaseTakeover: FC = () => {
   return (
     <section
       aria-label="Shortcut practice"
-      className="fixed inset-0 flex items-center justify-center bg-background"
+      className="fixed inset-0 flex items-center justify-center bg-background transition-opacity duration-500 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      data-closing={closing || undefined}
       data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_MODAL }}
     >
-      <div className="flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8">
+      <div className="flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 transition-[opacity,transform] duration-500 ease-out data-closing:scale-95 data-closing:opacity-0 motion-reduce:transition-none">
         <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
           {isConfirmingSkip ? (
             <>
@@ -467,7 +482,8 @@ const ShowcaseTakeover: FC = () => {
                   <button
                     type="button"
                     className={PRIMARY_BUTTON_CLASS}
-                    onClick={shortcutShowcaseActions.finish}
+                    disabled={closing}
+                    onClick={graduate}
                   >
                     Enter Compass
                   </button>

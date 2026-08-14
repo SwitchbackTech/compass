@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -123,10 +123,68 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByText(/young cap'n/)).toBeTruthy();
 
     pressKey("Enter");
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
+      "data-closing",
+    );
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
+    await waitFor(() => {
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    });
+    expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
+  });
+
+  it("fades the takeover on Enter Compass, then unmounts", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    showStep("graduation");
+
+    await user.click(screen.getByRole("button", { name: "Enter Compass" }));
+    expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
+      "data-closing",
+    );
+    expect(
+      screen.getByRole("button", { name: "Enter Compass" }),
+    ).toBeDisabled();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
+    pressKey("Enter");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
+    });
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  it("graduates immediately when reduced motion is preferred", async () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = (query: string) =>
+      ({
+        matches: query.includes("prefers-reduced-motion"),
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList;
+
+    try {
+      render(<ShortcutShowcase />);
+      showStep("graduation");
+      pressKey("Enter");
+      await waitFor(() => {
+        expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+      });
+      expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
   });
 
   it("offers 'Do it for me' from the first step, and swaps it out at graduation", async () => {
