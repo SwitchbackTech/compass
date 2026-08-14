@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { FAQ_ITEMS } from "./faq";
+import { ProductHuntBadge } from "./ProductHuntBadge";
 
 export function WelcomeGuideBody() {
   const disclosureIdPrefix = useId();
@@ -31,6 +32,9 @@ export function WelcomeGuideBody() {
           Rediscover the joy of shortcuts as you build your perfect schedule. No
           mouse required.
         </p>
+        <div className="flex justify-center pt-1">
+          <ProductHuntBadge />
+        </div>
       </div>
 
       <div className="flex flex-col divide-y divide-border">

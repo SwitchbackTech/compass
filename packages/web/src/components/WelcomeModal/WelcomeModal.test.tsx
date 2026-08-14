@@ -72,6 +72,14 @@ describe("WelcomeModal", () => {
     expect(screen.getByText(/Rediscover the joy of shortcuts/)).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
+    expect(
+      screen.getByRole("link", {
+        name: "Compass Calendar - The keyboard-first calendar. Get organized quickly. | Product Hunt",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.producthunt.com/products/compass-calendar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-compass-calendar-2",
+    );
   });
 
   it("opens the auth modal from the Log in pill", async () => {
