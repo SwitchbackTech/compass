@@ -32,8 +32,8 @@ function parseArgs(argv: string[]): {
 }
 
 /**
- * Places existing accounts (no billing.subscriptionStatus) onto a 7-day
- * trial. Dry-run by default; pass `--apply` to write.
+ * Places existing accounts (no billing.subscriptionStatus) into
+ * awaiting_checkout. Dry-run by default; pass `--apply` to write.
  *
  * Usage:
  *   bun run cli backfill-billing [--apply] [--batch-size 500] [--cutoff ISO]

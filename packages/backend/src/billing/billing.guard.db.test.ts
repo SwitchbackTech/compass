@@ -79,4 +79,20 @@ describe("assertBillingAllowsWrites", () => {
       mutationCode: "BILLING_REQUIRED",
     });
   });
+
+  it("rejects missing billing and local trialing without a Stripe subscription", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const missing = await insertUser();
+    const localTrial = await insertUser({
+      subscriptionStatus: "trialing",
+      trialEndsAt: new Date("2099-01-01T00:00:00.000Z"),
+    });
+
+    await expect(assertBillingAllowsWrites(missing)).rejects.toMatchObject({
+      mutationCode: "BILLING_REQUIRED",
+    });
+    await expect(assertBillingAllowsWrites(localTrial)).rejects.toMatchObject({
+      mutationCode: "BILLING_REQUIRED",
+    });
+  });
 });

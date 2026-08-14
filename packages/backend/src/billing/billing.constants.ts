@@ -39,7 +39,7 @@ export const WRITE_ACCESS_BY_STATUS: Record<
   BillingSubscriptionStatus,
   boolean
 > = {
-  none: true,
+  none: false,
   awaiting_checkout: false,
   trialing: true,
   active: true,

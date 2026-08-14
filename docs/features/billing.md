@@ -21,11 +21,13 @@ writes stay open.
 There is no `POST /api/billing/trial/start`. A trial only begins through
 Stripe Checkout (`trial_period_days` on the first subscription).
 
-Existing accounts are not grandfathered. `bun run cli backfill-billing` places
-rows without `billing.subscriptionStatus` onto a 7-day trial. The default
-`BACKFILL_CUTOFF` is far in the future so every such row is included; set it
-to a past instant to grandfather newer signups. Those rows have no Stripe
-subscription id, so they self-expire locally when `trialEndsAt` passes.
+Existing accounts are not grandfathered. Hosted users without a Stripe
+subscription id (including missing billing, `none`, and local/backfill
+`trialing` rows) derive as `awaiting_checkout` and see the Start-trial gate.
+`bun run cli backfill-billing` stamps `awaiting_checkout` on rows that still
+lack `billing.subscriptionStatus`. The default `BACKFILL_CUTOFF` is far in
+the future so every such row is included; set it to a past instant to skip
+newer signups. A trial only begins through Stripe Checkout.
 
 ## Staging
 

@@ -15,7 +15,7 @@ Primary file:
 | Command | Implementation | Notes |
 | --- | --- | --- |
 | `bun run cli purge-user --email <address> [--apply] [--out report.json]` | `packages/scripts/src/commands/purge-user.ts` | Deletes one user's API, Sync, and SuperTokens data. Defaults to dry-run. |
-| `bun run cli backfill-billing [--apply] [--batch-size 500] [--cutoff ISO]` | `packages/scripts/src/commands/backfill-billing.ts` | Places existing accounts without billing status onto a 7-day trial. Defaults to dry-run. |
+| `bun run cli backfill-billing [--apply] [--batch-size 500] [--cutoff ISO]` | `packages/scripts/src/commands/backfill-billing.ts` | Places existing accounts without billing status into awaiting_checkout. Defaults to dry-run. |
 | `bun run cli purge-corrupt-sync-events [--apply]` | `packages/scripts/src/commands/purge-corrupt-sync-events.ts` | Deletes invalid Sync event documents. Defaults to dry-run. |
 | `bun run cli refresh-connection-states [--apply]` | `packages/scripts/src/commands/refresh-connection-states.ts` | Re-derives Sync connection state. Defaults to dry-run. |
 | `bun run cli manage-failed-jobs <list\|clear\|requeue> …` | `packages/scripts/src/commands/manage-failed-jobs.ts` | Operator tooling for Sync jobs that exhausted the self-heal requeue budget. Defaults to dry-run; pass `--apply` to persist. |

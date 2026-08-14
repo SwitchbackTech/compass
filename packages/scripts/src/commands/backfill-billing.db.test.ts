@@ -48,7 +48,7 @@ describe("backfill-billing (db)", () => {
     expect(stored?.billing).toBeUndefined();
   });
 
-  it("applies a trialing window and is idempotent", async () => {
+  it("stamps awaiting_checkout and is idempotent", async () => {
     await mongoService.user.insertOne({
       email: "old@example.com",
       name: "Old",
@@ -79,9 +79,10 @@ describe("backfill-billing (db)", () => {
     const stored = await mongoService.user.findOne({
       email: "old@example.com",
     });
-    expect(stored?.billing?.subscriptionStatus).toBe("trialing");
+    expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
     expect(stored?.billing?.backfilledAt).toEqual(NOW);
     expect(stored?.billing?.stripeSubscriptionId).toBeUndefined();
+    expect(stored?.billing?.trialEndsAt).toBeUndefined();
 
     const second = await backfillBilling(mongoService.user, {
       dryRun: false,
