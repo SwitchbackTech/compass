@@ -424,12 +424,14 @@ const ShowcaseTakeover: FC = () => {
   return (
     <section
       aria-label="Shortcut practice"
-      className="fixed inset-0 flex items-center justify-center bg-background transition-opacity duration-500 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
       data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_MODAL }}
     >
-      <div className="flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 transition-[opacity,transform] duration-500 ease-out data-closing:scale-95 data-closing:opacity-0 motion-reduce:transition-none">
+      <div
+        className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
+      >
         <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
           {isConfirmingSkip ? (
             <>

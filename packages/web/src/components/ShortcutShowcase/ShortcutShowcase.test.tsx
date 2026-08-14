@@ -128,9 +128,12 @@ describe("ShortcutShowcase", () => {
     );
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
 
-    await waitFor(() => {
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+      },
+      { timeout: 2000 },
+    );
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
@@ -154,9 +157,12 @@ describe("ShortcutShowcase", () => {
     pressKey("Enter");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
 
-    await waitFor(() => {
-      expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
-    });
+    await waitFor(
+      () => {
+        expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
+      },
+      { timeout: 2000 },
+    );
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
