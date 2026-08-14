@@ -61,7 +61,15 @@ class StripeService {
       customerId = customer.id;
       await mongoService.user.updateOne(
         { _id },
-        { $set: { "billing.stripeCustomerId": customerId } },
+        {
+          $set: {
+            "billing.stripeCustomerId": customerId,
+            ...(!user.billing?.subscriptionStatus ||
+            user.billing.subscriptionStatus === "none"
+              ? { "billing.subscriptionStatus": "awaiting_checkout" }
+              : {}),
+          },
+        },
       );
     }
 

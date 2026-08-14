@@ -38,8 +38,8 @@ describe("BillingService (db)", () => {
 
     const status = await billingService.startTrial(userId.toString());
 
-    expect(status.subscriptionStatus).toBe("trialing");
-    expect(status.isReadOnly).toBe(false);
+    expect(status.subscriptionStatus).toBe("awaiting_checkout");
+    expect(status.isReadOnly).toBe(true);
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.stripeCustomerId).toBe("cus_keep");

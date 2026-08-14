@@ -10,40 +10,43 @@ import mongoService from "@backend/common/services/mongo.service";
  * Pure status derivation. Writability is a total map over the status union
  * so adding a state without deciding it is a compile error.
  *
- * Date override (asymmetric on purpose):
- * - `trialing` with no `stripeSubscriptionId` (legacy / backfill) self-expires
- *   when `trialEndsAt <= now`.
- * - `trialing` with a `stripeSubscriptionId` never self-expires locally —
- *   Stripe's webhook is authoritative, so a late `active` event cannot lock
- *   out a customer whose card just succeeded.
+ * A hosted trial starts only via Stripe Checkout. Missing billing, a billing
+ * object with no `subscriptionStatus`, `none`, and `trialing` with no
+ * `stripeSubscriptionId` (legacy / backfill local trials) all surface as
+ * `awaiting_checkout` so the Start-trial gate shows.
+ *
+ * `trialing` with a `stripeSubscriptionId` never self-expires locally —
+ * Stripe's webhook is authoritative, so a late `active` event cannot lock
+ * out a customer whose card just succeeded.
  */
 export const deriveBillingStatus = (
   billing: Schema_UserBilling | undefined,
-  now: Date,
+  _now: Date,
 ): BillingStatusResponse => {
-  if (!billing || billing.subscriptionStatus === "none") {
+  const storedStatus = billing?.subscriptionStatus;
+  if (!billing || !storedStatus || storedStatus === "none") {
     return {
-      subscriptionStatus: "none",
-      trialEndsAt: null,
-      isReadOnly: !WRITE_ACCESS_BY_STATUS.none,
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: billing?.trialEndsAt?.toISOString() ?? null,
+      isReadOnly: true,
     };
   }
 
-  const trialEndsAt = billing.trialEndsAt ?? null;
-  let subscriptionStatus = billing.subscriptionStatus;
-
-  if (subscriptionStatus === "trialing" && !billing.stripeSubscriptionId) {
-    const trialExpired =
-      trialEndsAt !== null && trialEndsAt.getTime() <= now.getTime();
-    if (trialExpired) {
-      subscriptionStatus = "expired";
-    }
+  if (
+    billing.subscriptionStatus === "trialing" &&
+    !billing.stripeSubscriptionId
+  ) {
+    return {
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: billing.trialEndsAt?.toISOString() ?? null,
+      isReadOnly: true,
+    };
   }
 
   return {
-    subscriptionStatus,
-    trialEndsAt: trialEndsAt?.toISOString() ?? null,
-    isReadOnly: !WRITE_ACCESS_BY_STATUS[subscriptionStatus],
+    subscriptionStatus: billing.subscriptionStatus,
+    trialEndsAt: billing.trialEndsAt?.toISOString() ?? null,
+    isReadOnly: !WRITE_ACCESS_BY_STATUS[billing.subscriptionStatus],
   };
 };
 

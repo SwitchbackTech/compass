@@ -35,10 +35,12 @@ export interface Schema_User {
  * Total subscription union. Adding a member without updating
  * `WRITE_ACCESS_BY_STATUS` is a compile error.
  *
- * - `none` — legacy row, pre-backfill. writable.
+ * - `none` — legacy row, pre-backfill. Hosted derivation maps this to
+ *   `awaiting_checkout` (read-only). Self-host never consults this map.
  * - `awaiting_checkout` — account exists, no Stripe subscription. read-only.
- * - `trialing` — in trial. writable. Legacy rows without a Stripe
- *   subscription id self-expire locally; Stripe-backed trials do not.
+ * - `trialing` — Stripe Checkout trial in progress. writable. Local
+ *   `trialing` rows without a Stripe subscription id also derive as
+ *   `awaiting_checkout`.
  * - `active` — paid. writable.
  * - `past_due` — dunning window. writable + banner.
  * - `canceled` — subscription canceled. read-only.

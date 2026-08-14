@@ -1,5 +1,4 @@
 import { type Collection, type ObjectId } from "mongodb";
-import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { type Schema_User } from "@core/types/user.types";
 
 export type BackfillBillingReport = {
@@ -20,8 +19,6 @@ export async function backfillBilling(
   },
 ): Promise<BackfillBillingReport> {
   const now = options.now ?? new Date();
-  const trialEndsAt = new Date(now);
-  trialEndsAt.setDate(trialEndsAt.getDate() + BILLING_PLAN.TRIAL_LENGTH_DAYS);
 
   const filter = {
     "billing.subscriptionStatus": { $exists: false },
@@ -60,9 +57,7 @@ export async function backfillBilling(
       { _id: { $in: ids }, "billing.subscriptionStatus": { $exists: false } },
       {
         $set: {
-          "billing.subscriptionStatus": "trialing",
-          "billing.trialStartedAt": now,
-          "billing.trialEndsAt": trialEndsAt,
+          "billing.subscriptionStatus": "awaiting_checkout",
           "billing.backfilledAt": now,
         },
       },

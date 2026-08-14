@@ -85,6 +85,7 @@ describe("StripeService", () => {
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.stripeCustomerId).toBe("cus_1");
+    expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
   });
 
   it("reuses an existing Stripe customer id", async () => {
