@@ -70,6 +70,30 @@ describe("filterPosthogBeforeSend", () => {
     ).toBeNull();
   });
 
+  it("drops the ResizeObserver loop completed browser warning", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([
+          {
+            type: "Error",
+            value:
+              "ResizeObserver loop completed with undelivered notifications.",
+          },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("drops the Firefox ResizeObserver loop limit exceeded variant", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([
+          { type: "Error", value: "ResizeObserver loop limit exceeded" },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
   it("keeps Script error. when stack frames are present", () => {
     const event = exceptionEvent([
       {
