@@ -66,6 +66,17 @@ const CompassConfigSchema = z
         priceId: optionalString,
       })
       .nullish(),
+    // Operator pause switch for trial/billing gates, independent of whether
+    // Stripe is configured. Omit or set false to keep the app free for
+    // everyone while `stripe:` stays populated for in-progress work.
+    // Accepts a yaml boolean or a "true"/"false" string (env-sourced deploy
+    // values arrive as strings) — normalized downstream in backend
+    // config.constants.ts, mirroring sync.enforceLeastPrivilege below.
+    billing: z
+      .object({
+        enforcement: z.union([z.boolean(), z.string()]).optional(),
+      })
+      .nullish(),
     // Compass Sync service configuration. Every deployment runs Sync (self-host
     // included) and delegates provider-connection and event routes to it — there
     // is no more legacy-vs-sync choice to make. The block itself stays optional

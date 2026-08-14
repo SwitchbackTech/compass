@@ -47,6 +47,12 @@ supertokens:
 #   priceId: REPLACE_WITH_STRIPE_PRICE_ID
 # Omit the whole block for self-host. All three values are required together.
 
+# billing:
+#   enforcement: false # operator pause switch — keep the app free for everyone
+# Independent of `stripe:` above: you can keep Stripe keys configured while
+# enforcement stays false, so Checkout/webhook work can continue without
+# gating any user. Defaults to false when omitted.
+
 # Compass Sync service — required. The backend exits at startup without
 # serviceUrl/internalAuthToken, and self-host runs Sync by default. mongoUri
 # MUST point at an isolated database/user that cannot read the backend's

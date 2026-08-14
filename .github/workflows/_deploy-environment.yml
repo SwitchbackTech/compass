@@ -80,6 +80,8 @@ jobs:
           # Sync cutover knobs (optional; omit → enabled/passive defaults).
           SYNC_CLOUD_MUTATION_MODE: ${{ vars.SYNC_CLOUD_MUTATION_MODE }}
           SYNC_EXECUTION: ${{ vars.SYNC_EXECUTION }}
+          # Billing operator pause switch (optional; omit → false/paused).
+          BILLING_ENFORCEMENT: ${{ vars.BILLING_ENFORCEMENT }}
           WEB_IMAGE: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
           # Sensitive
           COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
@@ -201,6 +203,12 @@ jobs:
                 "  priceId: \"${STRIPE_PRICE_ID}\""
             else
               echo "Stripe config: omitting stripe block (environment=${{ inputs.environment }}; secretKey=$([ -n "$STRIPE_SECRET_KEY" ] && echo present || echo empty); webhookSecret=$([ -n "$STRIPE_WEBHOOK_SECRET" ] && echo present || echo empty); priceId=$([ -n "$STRIPE_PRICE_ID" ] && echo present || echo empty))" >&2
+            fi
+            # Billing operator pause switch (optional; omit → schema default false).
+            if [ -n "$BILLING_ENFORCEMENT" ]; then
+              printf '%s\n' \
+                'billing:' \
+                "  enforcement: ${BILLING_ENFORCEMENT}"
             fi
             printf '%s\n' \
               'sync:' \

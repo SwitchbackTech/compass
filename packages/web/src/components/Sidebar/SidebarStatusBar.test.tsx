@@ -85,7 +85,7 @@ describe("SidebarStatusBar", () => {
     expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
-  it("reserves space for the status line when idle, showing the anonymous trial chip", () => {
+  it("reserves space for the status line when idle, showing the anonymous trial chip", async () => {
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -93,8 +93,10 @@ describe("SidebarStatusBar", () => {
     // No SessionContext.Provider means these tests render as anonymous, so
     // an idle bar falls back to the trial countdown chip rather than blank
     // space — there is no truly empty state for an anonymous user anymore.
+    // The chip depends on the (async, MSW-stubbed) /config enforcement
+    // check, so this settles a beat after the initial render.
     expect(
-      screen.getByRole("button", { name: /Trial: \d+ days? left/ }),
+      await screen.findByRole("button", { name: /Trial: \d+ days? left/ }),
     ).toBeInTheDocument();
   });
 

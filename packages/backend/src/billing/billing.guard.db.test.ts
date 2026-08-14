@@ -21,6 +21,7 @@ const stripeConfigured = {
   STRIPE_SECRET_KEY: "rk_test_123",
   STRIPE_WEBHOOK_SECRET: "whsec_test",
   STRIPE_PRICE_ID: "price_test",
+  BILLING_ENFORCEMENT: true,
 };
 
 const insertUser = async (billing?: Schema_UserBilling) => {
@@ -45,6 +46,20 @@ describe("assertBillingAllowsWrites", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops when Stripe is unconfigured", async () => {
+    using _env = mockEnv({ BILLING_ENFORCEMENT: true });
+    const userId = await insertUser({
+      subscriptionStatus: "awaiting_checkout",
+    });
+    await expect(assertBillingAllowsWrites(userId)).resolves.toBeUndefined();
+  });
+
+  it("no-ops when enforcement is paused, even with Stripe fully configured", async () => {
+    using _env = mockEnv({
+      STRIPE_SECRET_KEY: "rk_test_123",
+      STRIPE_WEBHOOK_SECRET: "whsec_test",
+      STRIPE_PRICE_ID: "price_test",
+      BILLING_ENFORCEMENT: false,
+    });
     const userId = await insertUser({
       subscriptionStatus: "awaiting_checkout",
     });

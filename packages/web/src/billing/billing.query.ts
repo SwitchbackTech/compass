@@ -39,6 +39,22 @@ export function useAppConfigQuery() {
 }
 
 /**
+ * The operator pause switch. False (paused) whenever config is pending or
+ * errored, not just when the server says so — a signed visitor with an
+ * expired anonymous clock must never see a gate flash before config loads.
+ */
+export function isBillingEnforced(
+  config: { billing: { enforcement: boolean } } | undefined,
+): boolean {
+  return config?.billing.enforcement === true;
+}
+
+export function useBillingEnforced(): boolean {
+  const configQuery = useAppConfigQuery();
+  return isBillingEnforced(configQuery.data);
+}
+
+/**
  * After Stripe Checkout returns `?checkout=success`, keep refetching billing
  * status for a short window so a late webhook does not leave the gate up.
  */

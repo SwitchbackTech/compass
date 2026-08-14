@@ -30,7 +30,7 @@ const createWrapper = (authenticated = false, client?: QueryClient) => {
   );
 };
 
-const stubConfig = (isConfigured: boolean) => {
+const stubConfig = (isConfigured: boolean, enforcement = true) => {
   server.use(
     rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) =>
       res(
@@ -38,6 +38,7 @@ const stubConfig = (isConfigured: boolean) => {
           google: { isConfigured: false },
           billing: {
             isConfigured,
+            enforcement,
             priceDisplay: "$7.99/month",
             trialLengthDays: 7,
           },
@@ -204,6 +205,59 @@ describe("useAppAccess", () => {
     expect(result.current).toEqual({ kind: "open" });
     expect(billingHits).toBe(0);
     hasUserEverAuthenticatedSpy.mockRestore();
+  });
+
+  it("returns open when enforcement is paused, even with an expired trial stamp", async () => {
+    persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(8));
+    stubConfig(true, false);
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({ kind: "open" });
+    });
+  });
+
+  it("returns open when enforcement is paused for an authenticated, read-only account", async () => {
+    stubConfig(true, false);
+    stubBilling({
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: null,
+      isReadOnly: true,
+    });
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(true),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({ kind: "open" });
+    });
+  });
+
+  it("fails open while config is pending, even with an expired trial stamp", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(8));
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) =>
+        res(
+          ctx.delay(500),
+          ctx.json({
+            google: { isConfigured: false },
+            billing: {
+              isConfigured: true,
+              enforcement: true,
+              priceDisplay: "$7.99/month",
+              trialLengthDays: 7,
+            },
+          }),
+        ),
+      ),
+    );
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current).toEqual({ kind: "open" });
   });
 
   it("does not keep a cached read-only billing gate after the session is gone", () => {

@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { type BillingSubscriptionStatus } from "@core/types/user.types";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import {
+  isBillingEnforced,
   useAppConfigQuery,
   useBillingStatusQuery,
 } from "@web/billing/billing.query";
@@ -25,18 +26,25 @@ export type AppAccess =
  * Reconciles the anonymous localStorage trial with server billing.
  *
  * Never-signed-up visitors keep today's anonymous trial (and TrialGateModal).
- * Signed-in users read `/api/billing/status`. Fail open: a loading, error, or
- * unconfigured-Stripe state never locks a paying user out of their calendar.
+ * Signed-in users read `/api/billing/status`. Fail open: a loading, error,
+ * unconfigured-Stripe, or paused-enforcement state never locks a paying user
+ * out of their calendar.
  */
 export function useAppAccess(): AppAccess {
   const { authenticated } = useContext(SessionContext);
   const trial = useTrialStatus();
   const configQuery = useAppConfigQuery();
+  const enforced = isBillingEnforced(configQuery.data);
   const billingEnabled =
+    enforced &&
     authenticated &&
     !trial.isAnonymousTrial &&
     configQuery.data?.billing.isConfigured === true;
   const billingQuery = useBillingStatusQuery(billingEnabled);
+
+  if (!enforced) {
+    return { kind: "open" };
+  }
 
   if (trial.isAnonymousTrial) {
     return {
