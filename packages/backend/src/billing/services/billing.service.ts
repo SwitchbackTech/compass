@@ -10,9 +10,10 @@ import mongoService from "@backend/common/services/mongo.service";
  * Pure status derivation. Writability is a total map over the status union
  * so adding a state without deciding it is a compile error.
  *
- * A hosted trial starts only via Stripe Checkout. Missing billing, `none`,
- * and `trialing` with no `stripeSubscriptionId` (legacy / backfill local
- * trials) all surface as `awaiting_checkout` so the Start-trial gate shows.
+ * A hosted trial starts only via Stripe Checkout. Missing billing, a billing
+ * object with no `subscriptionStatus`, `none`, and `trialing` with no
+ * `stripeSubscriptionId` (legacy / backfill local trials) all surface as
+ * `awaiting_checkout` so the Start-trial gate shows.
  *
  * `trialing` with a `stripeSubscriptionId` never self-expires locally —
  * Stripe's webhook is authoritative, so a late `active` event cannot lock
@@ -22,10 +23,11 @@ export const deriveBillingStatus = (
   billing: Schema_UserBilling | undefined,
   _now: Date,
 ): BillingStatusResponse => {
-  if (!billing || billing.subscriptionStatus === "none") {
+  const storedStatus = billing?.subscriptionStatus;
+  if (!billing || !storedStatus || storedStatus === "none") {
     return {
       subscriptionStatus: "awaiting_checkout",
-      trialEndsAt: null,
+      trialEndsAt: billing?.trialEndsAt?.toISOString() ?? null,
       isReadOnly: true,
     };
   }

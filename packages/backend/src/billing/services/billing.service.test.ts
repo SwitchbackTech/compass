@@ -1,4 +1,7 @@
-import { type BillingSubscriptionStatus } from "@core/types/user.types";
+import {
+  type BillingSubscriptionStatus,
+  type Schema_UserBilling,
+} from "@core/types/user.types";
 import { WRITE_ACCESS_BY_STATUS } from "@backend/billing/billing.constants";
 import { deriveBillingStatus } from "./billing.service";
 import { describe, expect, it } from "bun:test";
@@ -16,6 +19,19 @@ describe("deriveBillingStatus", () => {
 
   it("treats none as awaiting_checkout", () => {
     expect(deriveBillingStatus({ subscriptionStatus: "none" }, now)).toEqual({
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: null,
+      isReadOnly: true,
+    });
+  });
+
+  it("treats a billing object with a customer id but no status as awaiting_checkout", () => {
+    expect(
+      deriveBillingStatus(
+        { stripeCustomerId: "cus_partial" } as Schema_UserBilling,
+        now,
+      ),
+    ).toEqual({
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
