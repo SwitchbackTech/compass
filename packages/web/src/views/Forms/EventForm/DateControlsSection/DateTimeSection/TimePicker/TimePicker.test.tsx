@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -82,5 +82,31 @@ describe("TimePicker", () => {
 
     expect(screen.getByText("1 PM")).toBeInTheDocument();
     expect(screen.queryByText("1:30 PM")).not.toBeInTheDocument();
+  });
+
+  it("does not commit while IME composition is active", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "1:30");
+    fireEvent.keyDown(combobox, { key: "Tab", isComposing: true });
+
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.getByText("1 PM")).toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("announces that Tab selects the focused option", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(screen.getByRole("combobox", { name: "Start time" }));
+
+    expect(
+      screen.getByText(/press Tab to select the option and exit the menu/i),
+    ).toBeInTheDocument();
   });
 });
