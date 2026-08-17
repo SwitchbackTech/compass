@@ -314,6 +314,98 @@ describe("dispatchSyncJob", () => {
     });
   });
 
+  it("re-pulls when a notification lands after the pull already read the provider", async () => {
+    // The notification's own enqueue coalesces onto this job's CLAIMED row and
+    // does nothing, and the row is deleted the moment the job settles — so
+    // without this second pass the change waits for the reconcile sweep's
+    // 15-minute staleness threshold instead of the ~30s the push path promises.
+    // A followup job cannot do it: the worker enqueues followups BEFORE
+    // completing, so one sharing `incrementalPull:<resourceId>` would coalesce
+    // onto the very row it replaces.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reads: string[] = [];
+
+    const reader: ProviderEventReader = {
+      provider: "google",
+      listEventPage: async () => {
+        reads.push("read");
+        if (reads.length === 1) {
+          // The notification arrives now — after this pass has read Google.
+          await resources.markChangeNotified(
+            calendar.tenantId,
+            calendar.principalId,
+            resource._id,
+            new Date("2026-07-10T00:00:03.000Z"),
+          );
+          return page([single("first")], "cursor-1");
+        }
+        return page([single("second")], "cursor-2");
+      },
+    };
+
+    await dispatchSyncJob(
+      { ...deps(new FakeReader([])), reader },
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(reads).toHaveLength(2);
+    // The second pass served the marker, so nothing is left pending.
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.changeNotifiedAt).toBeNull();
+    expect(stored?.syncCursor).toBe("cursor-2");
+  });
+
+  it("stops re-pulling after the pass bound and leaves the rest to the sweep", async () => {
+    // A calendar changing on every pass must not hold a worker lane forever.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reads: string[] = [];
+    const warnings: string[] = [];
+
+    const reader: ProviderEventReader = {
+      provider: "google",
+      listEventPage: async () => {
+        reads.push("read");
+        // Every pass is overtaken by a newer notification.
+        await resources.markChangeNotified(
+          calendar.tenantId,
+          calendar.principalId,
+          resource._id,
+          new Date(`2026-07-10T00:00:0${reads.length}.000Z`),
+        );
+        return page([single(`e-${reads.length}`)], `cursor-${reads.length}`);
+      },
+    };
+
+    await dispatchSyncJob(
+      {
+        ...deps(new FakeReader([])),
+        reader,
+        log: { warn: (message) => warnings.push(message) },
+      },
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(reads).toHaveLength(3);
+    expect(
+      warnings.some((message) => message.includes("after 3 pull passes")),
+    ).toBe(true);
+    // Marker deliberately left set so the reconcile sweep picks up the rest.
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.changeNotifiedAt).not.toBeNull();
+  });
+
   it("bootstraps a push channel when an applied pull finds the calendar has none", async () => {
     // The initialImport followup used to be the only thing that ever opened a
     // channel, and the renewal sweep only renews channels that already exist,

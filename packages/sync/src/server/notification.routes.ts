@@ -88,6 +88,20 @@ export function registerNotificationRoutes(
       // Only an authentic change schedules work. Coalescing on the resource
       // collapses duplicate deliveries of the same change into one job.
       if (verdict.status === "process" && resource) {
+        // Stamp BEFORE enqueuing. The enqueue below no-ops whenever a job
+        // already holds this coalescing key — including the CLAIMED row of a
+        // pull already in flight, which may have read the provider before this
+        // change existed. The marker is what survives that: the running pull's
+        // compare-and-clear fails against it and the pull goes round again.
+        // Stamping first also keeps the ordering safe if the enqueue throws —
+        // a marker with no job is recovered by the reconcile sweep, whereas a
+        // job with no marker could clear a change it never read.
+        await resources.markChangeNotified(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          now,
+        );
         await new JobRepository(deps.mongo.db).enqueue({
           tenantId: resource.tenantId,
           principalId: resource.principalId,

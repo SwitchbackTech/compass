@@ -58,8 +58,12 @@ export interface SyncJobDispatchDeps {
   // Optional: a bootstrap/repair job settling "done" is otherwise invisible
   // (drops and errors are logged; "done" is not) - an hour of a resource
   // repairing every ~2 minutes produced zero log lines (2026-08-04 staging).
-  // Defaults to a no-op so tests stay dependency-free.
-  log?: { warn: (message: string) => void };
+  // Defaults to a no-op so tests stay dependency-free. `info` is optional on
+  // top of that so existing callers passing only `warn` keep type-checking.
+  log?: {
+    warn: (message: string) => void;
+    info?: (message: string) => void;
+  };
 }
 
 // The decision a dispatch makes about a claimed job. The worker loop (a later
@@ -283,7 +287,7 @@ async function runSyncJob(
       return { result: "done", followup: subscriptionFollowup(resource, now) };
     }
     case "incrementalPull": {
-      const pull = await pullCalendarChanges(deps, calendar, now);
+      const pull = await pullUntilQuiet(deps, calendar, now);
       if (pull.status === "applied") {
         await appendCalendarInvalidation(deps, calendar, now());
         // Bootstrap a channel for an imported calendar that has none. The
@@ -327,7 +331,7 @@ async function runSyncJob(
       // provider watch durable. It deliberately has its own job kind so an
       // unrelated reconcile/manual pull can never make a new connection look
       // ready before watch setup has completed.
-      const pull = await pullCalendarChanges(deps, calendar, now);
+      const pull = await pullUntilQuiet(deps, calendar, now);
       if (pull.status === "applied") {
         await deps.resources.setBootstrapState(
           resource.tenantId,
@@ -415,6 +419,66 @@ async function runSyncJob(
       return { result: "done" };
     }
   }
+}
+
+// How many extra passes a single pull job will make to absorb notifications
+// that land while it is running. A busy calendar can always produce one more
+// change mid-pull; the bound stops that from holding a worker lane forever.
+// On giving up, the change marker is left set and the reconcile sweep covers
+// the remainder — slow, but bounded and visible in the log.
+const MAX_PULL_PASSES = 3;
+
+// Pull until no notification arrives mid-pull, then report the last result.
+//
+// A pull that reads the provider and THEN receives a notification has missed
+// that change: the notification's enqueue coalesced onto this job's own claimed
+// row and did nothing (JobRepository.enqueue is $setOnInsert-only), and this
+// job's row is deleted the moment it settles. Re-pulling here is what closes
+// that window. It cannot be done with a followup job — the worker enqueues
+// followups BEFORE completing the current job (sync-job-worker.service.ts), so
+// a followup sharing the `incrementalPull:<resourceId>` key would coalesce onto
+// the very row it is meant to replace and vanish the same way.
+//
+// Each pass re-reads from the cursor the previous pass advanced, so a pass with
+// nothing new is one cheap empty page.
+async function pullUntilQuiet(
+  deps: SyncJobDispatchDeps,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<Awaited<ReturnType<typeof pullCalendarChanges>>> {
+  let pull = await pullCalendarChanges(deps, calendar, now);
+  let passes = 1;
+
+  while (
+    pull.status === "applied" &&
+    pull.changedDuringPull &&
+    passes < MAX_PULL_PASSES
+  ) {
+    deps.log?.info?.(
+      `Sync resource ${pull.resource._id} (calendar ${calendar._id}): notification landed mid-pull, re-pulling (pass ${passes + 1}/${MAX_PULL_PASSES})`,
+    );
+    pull = await pullCalendarChanges(deps, calendar, now);
+    passes += 1;
+  }
+
+  if (pull.status === "applied") {
+    if (pull.changedDuringPull) {
+      deps.log?.warn(
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): still receiving notifications after ${MAX_PULL_PASSES} pull passes; leaving the rest to the reconcile sweep`,
+      );
+    }
+    if (pull.pushLatencyMs !== null) {
+      // The number that says whether the push path is meeting its ~30s bar or
+      // quietly degrading to the 15-minute reconcile fallback. Nothing measured
+      // this before, so "late" and "dropped" were indistinguishable after the
+      // fact.
+      deps.log?.info?.(
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms over ${passes} pass(es), ${pull.changed} changed, ${pull.deleted} deleted`,
+      );
+    }
+  }
+
+  return pull;
 }
 
 function repairFollowup(
