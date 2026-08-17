@@ -277,6 +277,39 @@ describe("GoogleCalendarAdapter", () => {
     expect(active).toEqual({ live: true, gone: false, hidden: false });
   });
 
+  it("keeps a hidden calendar active when Google is still showing it", async () => {
+    const api = new FakeCalendarListApi([
+      page({
+        items: [
+          entry({ id: "shown-hidden", hidden: true, selected: true }),
+          entry({ id: "unselected-hidden", hidden: true, selected: false }),
+          entry({ id: "hidden-omitted-selected", hidden: true }),
+          entry({
+            id: "deleted-but-selected",
+            deleted: true,
+            selected: true,
+          }),
+        ],
+        nextSyncToken: "s",
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const { calendars } = await adapter.discoverCalendars({
+      accessToken: "at",
+    });
+    const active = Object.fromEntries(
+      calendars.map((c) => [c.providerCalendarId, c.active]),
+    );
+
+    expect(active).toEqual({
+      "shown-hidden": true,
+      "unselected-hidden": false,
+      "hidden-omitted-selected": false,
+      "deleted-but-selected": false,
+    });
+  });
+
   it("falls back through summaryOverride, summary, then id for the display name", async () => {
     const api = new FakeCalendarListApi([
       page({

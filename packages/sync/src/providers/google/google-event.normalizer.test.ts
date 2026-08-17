@@ -253,22 +253,24 @@ describe("normalizeGoogleEvent", () => {
     );
   });
 
-  it("throws when a timed event carries no time zone", () => {
-    const error = (() => {
-      try {
-        normalizeGoogleEvent(
-          gEvent({
-            start: { dateTime: "2025-01-15T09:00:00-05:00" },
-            end: { dateTime: "2025-01-15T10:00:00-05:00" },
-          }),
-        );
-      } catch (e) {
-        return e;
-      }
-    })() as ProviderEventError;
+  it("keeps an offset-only timed event instead of dropping it", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({
+          start: { dateTime: "2025-01-15T09:00:00-05:00" },
+          end: { dateTime: "2025-01-15T10:00:00-05:00" },
+        }),
+      ),
+    );
+    if (read.schedule.kind !== "timed") throw new Error("expected timed");
 
-    expect(error).toBeInstanceOf(ProviderEventError);
-    expect(error.reason).toBe("unmappableSchedule");
+    expect(read.schedule.timeZone).toBe("UTC");
+    expect(Date.parse(read.schedule.start)).toBe(
+      Date.parse("2025-01-15T09:00:00-05:00"),
+    );
+    expect(Date.parse(read.schedule.end)).toBe(
+      Date.parse("2025-01-15T10:00:00-05:00"),
+    );
   });
 
   it("falls back to UTC for a fixed-offset time zone instead of dropping the event", () => {

@@ -1,5 +1,6 @@
 import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
+import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
@@ -39,6 +40,8 @@ export interface GoogleEventListApi {
 export type GoogleEventListApiFactory = (
   accessToken: string,
 ) => GoogleEventListApi;
+
+const logger = Logger("sync:google-event-reader");
 
 const defaultApiFactory: GoogleEventListApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
@@ -84,8 +87,14 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
 
   #makeApi: GoogleEventListApiFactory;
 
-  constructor(makeApi: GoogleEventListApiFactory = defaultApiFactory) {
+  #log: { warn: (message: string) => void };
+
+  constructor(
+    makeApi: GoogleEventListApiFactory = defaultApiFactory,
+    log?: { warn: (message: string) => void },
+  ) {
     this.#makeApi = makeApi;
+    this.#log = log ?? logger;
   }
 
   async listEventPage(
@@ -109,6 +118,9 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
         // dropped so one bad row never fails the whole page or the import.
         if (error instanceof ProviderEventError) {
           skipped++;
+          this.#log.warn(
+            `Skipped unusable Google event ${item.id ?? "(no id)"} (${error.reason})`,
+          );
           continue;
         }
         throw error;

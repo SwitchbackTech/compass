@@ -52,12 +52,15 @@ const page = (
   ...overrides,
 });
 
-function adapterWith(api: GoogleEventListApi) {
+function adapterWith(
+  api: GoogleEventListApi,
+  log?: { warn: (message: string) => void },
+) {
   const tokensSeen: string[] = [];
   const adapter = new GoogleEventReaderAdapter((accessToken) => {
     tokensSeen.push(accessToken);
     return api;
-  });
+  }, log);
   return { adapter, tokensSeen };
 }
 
@@ -159,6 +162,33 @@ describe("GoogleEventReaderAdapter", () => {
 
     expect(result.events.map((e) => e.providerEventId)).toEqual(["ok"]);
     expect(result.skipped).toBe(1);
+  });
+
+  it("logs the skip reason and provider event id, never the title", async () => {
+    const warnings: string[] = [];
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({
+            id: "no-etag",
+            etag: undefined,
+            summary: "Secret title must not be logged",
+          }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api, {
+      warn: (message) => warnings.push(message),
+    });
+
+    await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(warnings).toEqual([
+      "Skipped unusable Google event no-etag (missingIdentity)",
+    ]);
   });
 
   it("skips a content-oversized event instead of failing the whole page", async () => {
