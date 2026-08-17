@@ -218,6 +218,23 @@ describe("LifeView", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows calendar age before the birthday rather than weeks divided by 52", async () => {
+    renderWithStore(<LifeView today={new Date(2026, 7, 12)} />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("complementary", { name: "Sidebar" }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
+      target: { value: "1993-09-14" },
+    });
+
+    expect(
+      screen.getByText("1,717 weeks lived - 32 years - 43%"),
+    ).toBeInTheDocument();
+  });
+
   it("updates the grid size when the lifespan changes", async () => {
     await renderLifeViewWithSidebar();
 
