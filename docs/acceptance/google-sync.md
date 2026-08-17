@@ -79,7 +79,8 @@ Use this guide to validate:
 - Google access revoked — reconnect-required UX shown early and congruently
 - re-connecting Google after revocation
 - per-calendar visibility hide/show and its server-side read filtering
-- Google-side calendar add/rename/recolor/hide/delete reconciling into Compass
+- Google-side calendar add/rename/recolor/uncheck/remove/delete reconciling
+  into Compass
 - watch repair self-healing after an expired/deleted watch
 - freeBusyReader calendars showing availability without event details
 - revoked access keeping last-known events read-only while other accounts stay usable
@@ -111,9 +112,10 @@ Helpful notes:
   settings (`myaccount.google.com/permissions`) or when Google reports
   expired/revoked credentials.
 - All eligible Google calendars import by default — there's no UI to opt a
-  calendar out of import. The sidebar's "Calendars" list controls per-calendar
-  *visibility* in Compass instead (Scenario 9); a hidden calendar keeps
-  syncing in the background, it just stops showing events.
+  calendar out of import, and unchecking a calendar in Google does not opt it
+  out either (Scenario 10). The sidebar's "Calendars" list controls
+  per-calendar *visibility* in Compass instead (Scenario 9); a calendar hidden
+  there keeps syncing in the background, it just stops showing events.
 - Google status lives under the account email as a live status line (plus an
   optional “Updated …” timestamp when healthy). Action CTAs are separate
   buttons, not email tooltips.
@@ -452,9 +454,23 @@ reloads and other sessions, and the server filters what it sends based on it.
 
 ### UX
 
-Adding, renaming, recoloring, hiding, or deleting a calendar in Google
-Calendar reconciles into the Compass sidebar automatically. None of these
-require a reconnect or a full reimport of the account.
+Adding, renaming, recoloring, unchecking, removing, or deleting a calendar in
+Google Calendar reconciles into the Compass sidebar automatically. None of
+these require a reconnect or a full reimport of the account.
+
+Google models two separate things that are easy to confuse, and Compass treats
+them differently:
+
+- **Unchecking** a calendar in "My calendars" clears Google's `selected` flag.
+  The calendar is still in the account's list, so Compass keeps syncing it.
+- **Removing it from the list** sets Google's `hidden` flag. That is what
+  stops Compass syncing it — unless Google still reports `selected: true`,
+  which means Google is showing its events and Compass keeps importing so a
+  still-live calendar cannot be silently skipped while the account reports
+  healthy.
+
+So a calendar goes inactive in Compass when Google reports it deleted, or
+reports it hidden *and* not selected.
 
 ### Steps
 
@@ -465,10 +481,13 @@ require a reconnect or a full reimport of the account.
    Compass sidebar.
 4. Rename the new calendar in Google Calendar, and change its color.
 5. Check Compass again.
-6. Hide the calendar in Google Calendar (uncheck it in "My calendars"
-   without deleting it), then check Compass.
-7. Unhide it in Google Calendar, then check Compass.
-8. Delete the calendar entirely in Google Calendar.
+6. Uncheck the calendar in "My calendars" (leave it in the list), then check
+   Compass.
+7. Re-check it.
+8. Remove the calendar from your list in Google Calendar (its overflow menu →
+   "Hide from list"), without deleting it. Then check Compass.
+9. Restore it to the list in Google Calendar, then check Compass.
+10. Delete the calendar entirely in Google Calendar.
 
 ### Expected Results
 
@@ -476,10 +495,14 @@ require a reconnect or a full reimport of the account.
   full reimport; any of its existing events import normally.
 - The rename and recolor both reconcile into the sidebar's name and color
   marker.
-- Hiding it in Google removes it from the Compass sidebar and stops syncing
-  its events, without touching any other calendar's events or visibility.
-- Unhiding it restores it under the same Compass identity — the same
-  visibility preference as before, not reset to a default.
+- Unchecking it in Google changes nothing in Compass: it stays in the sidebar
+  and keeps syncing. Compass visibility is its own preference (Scenario 9)
+  and is not driven by Google's checkbox.
+- Removing it from the Google list drops it from the Compass sidebar and stops
+  syncing its events, without touching any other calendar's events or
+  visibility.
+- Restoring it to the list brings it back under the same Compass identity —
+  the same visibility preference as before, not reset to a default.
 - Deleting it in Google removes it, and only its own events, from Compass.
 - Throughout, every other calendar's events, visibility, and sync state stay
   undisturbed.
@@ -610,7 +633,9 @@ If time is limited, run these checks before shipping Google sync changes:
 12. Re-connecting after revocation triggers a fresh import, restores writes,
     and clears every reconnect warning together.
 13. Hiding/showing a calendar in the sidebar persists across reload, and the server excludes hidden-calendar events from event reads.
-14. A Google-side calendar add/rename/recolor/hide/delete reconciles into the sidebar without a full reset.
+14. A Google-side calendar add/rename/recolor/remove/delete reconciles into the
+    sidebar without a full reset, and unchecking one in Google does not stop it
+    syncing.
 15. Reopening the app after a watch expires or is deleted repairs it automatically, with no manual action.
 16. A freeBusyReader calendar's busy blocks show no title, details, or event actions.
 17. Revoking one account keeps its last-known events read-only, hard-blocks
