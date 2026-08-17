@@ -18,6 +18,7 @@ import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";
 import {
+  getAgeInYears,
   getCurrentWeekLabel,
   getRandomLifespan,
   getTotalLifeDots,
@@ -61,8 +62,11 @@ export function LifeView({ today }: LifeViewProps) {
     [preferences.birthDate, totalDots, currentDate],
   );
   const hasBirthDate = parseLifeDate(preferences.birthDate) !== null;
+  const yearsLived = hasBirthDate
+    ? getAgeInYears(preferences.birthDate, currentDate)
+    : null;
   const summary = hasBirthDate
-    ? `${formatWeeks(weeksLived)} weeks lived - ${Math.floor(weeksLived / 52)} years - ${Math.round((weeksLived / totalDots) * 100)}%`
+    ? `${formatWeeks(weeksLived)} weeks lived - ${yearsLived} years - ${Math.round((weeksLived / totalDots) * 100)}%`
     : "Birth date not set";
   const currentWeekLabel = hasBirthDate
     ? getCurrentWeekLabel(currentDate, weeksLived, totalDots)
