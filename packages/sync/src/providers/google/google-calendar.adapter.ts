@@ -221,9 +221,12 @@ async function mapCalendar(
     color: item.backgroundColor || null,
     eventLabels: await api.getEventLabels(item.id),
     primary: item.primary === true,
-    // deleted appears in incremental results; hidden means the user removed it
-    // from their list. Either makes the calendar inactive, not gone.
-    active: item.deleted !== true && item.hidden !== true,
+    // Deleted calendars are gone. Hidden-from-list is not the same as
+    // "Google is not showing this": the Calendar UI still displays events
+    // when selected is true. Import those so connection health cannot stay
+    // green while a selected calendar is silently skipped.
+    active:
+      item.deleted !== true && (item.hidden !== true || item.selected === true),
     accessRole,
     capabilities: CAPABILITIES_BY_ROLE[accessRole],
   };

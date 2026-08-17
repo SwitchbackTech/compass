@@ -193,17 +193,13 @@ function mapSchedule(item: gSchema$Event) {
   }
 
   if (start.dateTime && end.dateTime) {
+    // Google requires either an RFC3339 offset on dateTime or a timeZone.
+    // Clients often send only the offset; dropping those events hid them
+    // from Compass while Google still showed them. Missing or non-IANA
+    // zones fall back to UTC — the instant is preserved, wall-clock zone
+    // is not (same as the GMT-07:00 path below).
     const timeZone = start.timeZone ?? end.timeZone;
-    if (!timeZone) {
-      throw new ProviderEventError(
-        "unmappableSchedule",
-        "Timed event carried no time zone",
-      );
-    }
-    // Resolve to a valid IANA zone before re-anchoring: toOffsetIso's .tz()
-    // call needs one, and a fixed-offset string ("GMT-07:00") would otherwise
-    // reach it unvalidated.
-    const ianaTimeZone = toIanaTimeZone(timeZone);
+    const ianaTimeZone = timeZone ? toIanaTimeZone(timeZone) : "UTC";
     return parseSchedule({
       kind: "timed",
       start: toOffsetIso({ ...start, timeZone: ianaTimeZone }),
