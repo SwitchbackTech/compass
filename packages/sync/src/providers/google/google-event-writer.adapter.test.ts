@@ -5,6 +5,7 @@ import {
   deriveGoogleEventId,
   type GoogleEventsApi,
   GoogleEventWriter,
+  googleInstanceEventId,
 } from "@sync/providers/google/google-event-writer.adapter";
 import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
@@ -50,6 +51,7 @@ const scriptedInstance = (
 });
 
 type Behavior = gSchema$Event | Error | undefined;
+type InstancesBehavior = gSchema$Events | Error;
 
 // A scriptable fake for the four Google event calls. Each method records its
 // params and either returns its scripted result or throws its scripted error.
@@ -62,13 +64,15 @@ class FakeEventsApi implements GoogleEventsApi {
     instances: [] as Parameters<GoogleEventsApi["instances"]>[0][],
   };
 
+  #instancesIndex = 0;
+
   constructor(
     private readonly behavior: {
       insert?: Behavior;
       patch?: Behavior;
       delete?: Behavior;
       get?: Behavior;
-      instances?: gSchema$Events | Error;
+      instances?: InstancesBehavior | InstancesBehavior[];
     } = {},
   ) {}
 
@@ -106,9 +110,12 @@ class FakeEventsApi implements GoogleEventsApi {
     params: Parameters<GoogleEventsApi["instances"]>[0],
   ): Promise<gSchema$Events> {
     this.calls.instances.push(params);
-    if (this.behavior.instances instanceof Error) throw this.behavior.instances;
+    const scripted = Array.isArray(this.behavior.instances)
+      ? this.behavior.instances[this.#instancesIndex++]
+      : this.behavior.instances;
+    if (scripted instanceof Error) throw scripted;
     return (
-      this.behavior.instances ?? {
+      scripted ?? {
         kind: "calendar#events",
         items: [
           scriptedInstance(`${params.eventId}_instance`, params.originalStart),
@@ -586,6 +593,7 @@ describe("GoogleEventWriter", () => {
   it("returns null when no instance exists at that instant", async () => {
     const api = new FakeEventsApi({
       instances: { kind: "calendar#events", items: [] },
+      get: gError(404),
     });
     const { writer } = writerWith(api);
 
@@ -598,6 +606,168 @@ describe("GoogleEventWriter", () => {
     });
 
     expect(read).toBeNull();
+    expect(api.calls.get[0]?.eventId).toBe(
+      googleInstanceEventId("series-1", "2025-01-15T09:00:00-05:00", "timed"),
+    );
+  });
+
+  it("retries an all-day originalStart as RFC3339 UTC midnight after Google 400s the date-only filter", async () => {
+    const api = new FakeEventsApi({
+      instances: [
+        gError(400),
+        {
+          kind: "calendar#events",
+          items: [
+            {
+              kind: "calendar#event",
+              id: "series-1_20260820",
+              etag: '"v1"',
+              status: "confirmed",
+              summary: "T",
+              recurringEventId: "series-1",
+              originalStartTime: { date: "2026-08-20" },
+              start: { date: "2026-08-20" },
+              end: { date: "2026-08-21" },
+            },
+          ],
+        },
+      ],
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2026-08-20T00:00:00.000Z",
+      scheduleKind: "allDay",
+    });
+
+    expect(api.calls.instances.map((call) => call.originalStart)).toEqual([
+      "2026-08-20",
+      "2026-08-20T00:00:00Z",
+    ]);
+    expect(read?.kind).toBe("event");
+    expect(read?.providerEventId).toBe("series-1_20260820");
+    expect(api.calls.get).toHaveLength(0);
+  });
+
+  it("still returns the instance id when Google content fails the neutral contract", async () => {
+    const api = new FakeEventsApi({
+      instances: {
+        kind: "calendar#events",
+        items: [
+          {
+            kind: "calendar#event",
+            id: "series-1_20260820",
+            etag: '"v1"',
+            status: "confirmed",
+            summary: "T",
+            recurringEventId: "series-1",
+            originalStartTime: { date: "2026-08-20" },
+            start: { date: "2026-08-20" },
+            end: { date: "2026-08-21" },
+            attendees: [
+              { email: "guest@example.com", displayName: "x".repeat(300) },
+            ],
+          },
+        ],
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2026-08-20T00:00:00.000Z",
+      scheduleKind: "allDay",
+    });
+
+    expect(read?.kind).toBe("event");
+    expect(read?.providerEventId).toBe("series-1_20260820");
+  });
+
+  it("GETs the constructed Google instance id when the originalStart filter matches nothing", async () => {
+    const constructedId = googleInstanceEventId(
+      "series-1",
+      "2026-08-20T00:00:00.000Z",
+      "allDay",
+    );
+    const api = new FakeEventsApi({
+      instances: { kind: "calendar#events", items: [] },
+      get: {
+        kind: "calendar#event",
+        id: constructedId,
+        etag: '"v1"',
+        status: "confirmed",
+        summary: "T",
+        recurringEventId: "series-1",
+        originalStartTime: { date: "2026-08-20" },
+        start: { date: "2026-08-20" },
+        end: { date: "2026-08-21" },
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2026-08-20T00:00:00.000Z",
+      scheduleKind: "allDay",
+    });
+
+    expect(constructedId).toBe("series-1_20260820");
+    expect(api.calls.get[0]?.eventId).toBe(constructedId);
+    expect(read?.providerEventId).toBe(constructedId);
+  });
+
+  it("does not treat the series master as the occurrence; GETs the constructed instance id instead", async () => {
+    const constructedId = googleInstanceEventId(
+      "series-1",
+      "2026-08-20T00:00:00.000Z",
+      "allDay",
+    );
+    const api = new FakeEventsApi({
+      instances: {
+        kind: "calendar#events",
+        items: [
+          {
+            kind: "calendar#event",
+            id: "series-1",
+            etag: '"master"',
+            status: "confirmed",
+            summary: "Series",
+            recurrence: ["RRULE:FREQ=DAILY"],
+            start: { date: "2026-08-01" },
+            end: { date: "2026-08-02" },
+          },
+        ],
+      },
+      get: {
+        kind: "calendar#event",
+        id: constructedId,
+        etag: '"v1"',
+        status: "confirmed",
+        summary: "T",
+        recurringEventId: "series-1",
+        originalStartTime: { date: "2026-08-20" },
+        start: { date: "2026-08-20" },
+        end: { date: "2026-08-21" },
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2026-08-20T00:00:00.000Z",
+      scheduleKind: "allDay",
+    });
+
+    expect(read?.providerEventId).toBe(constructedId);
   });
 
   it("returns null (not an error) when the series itself is gone", async () => {
