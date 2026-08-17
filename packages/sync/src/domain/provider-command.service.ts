@@ -954,7 +954,8 @@ export async function executeProviderOccurrenceDelete(
     );
   }
   const instance =
-    fetchInstanceResult.value?.kind === "event"
+    fetchInstanceResult.value?.kind === "event" &&
+    fetchInstanceResult.value.providerEventId !== seriesProviderEventId
       ? fetchInstanceResult.value
       : null;
 

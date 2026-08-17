@@ -39,12 +39,17 @@ const EventApi = {
   },
 
   replace: async (id: EventId, input: ReplaceEventInput): Promise<Event> => {
-    const response = await BaseApi.put<unknown>(`/event/${id}`, input);
+    const response = await BaseApi.put<unknown>(
+      `/event/${encodeURIComponent(id)}`,
+      input,
+    );
     return EventResponseSchema.parse(response.data).event;
   },
 
   delete: (id: EventId, scope: "this" | "thisAndFollowing" | "all") => {
-    return BaseApi.delete<void>(`/event/${id}?scope=${scope}`);
+    return BaseApi.delete<void>(
+      `/event/${encodeURIComponent(id)}?scope=${scope}`,
+    );
   },
 };
 

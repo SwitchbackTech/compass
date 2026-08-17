@@ -11,7 +11,11 @@ import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
-import { type ProviderEventRead } from "@sync/providers/provider-event.port";
+import {
+  type ProviderEvent,
+  ProviderEventError,
+  type ProviderEventRead,
+} from "@sync/providers/provider-event.port";
 import {
   type InvitationIntent,
   type ProviderCreateInput,
@@ -250,20 +254,9 @@ export class GoogleEventWriter implements ProviderEventWriter {
   ): Promise<ProviderEventRead | null> {
     const api = this.#makeApi(input.accessToken);
     try {
-      const page = await api.instances({
-        calendarId: input.calendarId,
-        eventId: input.seriesProviderEventId,
-        originalStart: toOriginalStartFilter(
-          input.originalStartAt,
-          input.scheduleKind,
-        ),
-      });
-      const item = page.items?.[0];
-      // No instance at that instant: never materialized (a rule that never
-      // actually produced an occurrence there), or the series itself is gone
-      // — either way, nothing for the caller to patch/delete.
+      const item = await resolveInstanceItem(api, input);
       if (!item) return null;
-      return normalizeGoogleEvent(item);
+      return readResolvedInstance(item, input);
     } catch (error) {
       // A 404 on the SERIES itself (not just the instance) surfaces here too
       // — both mean "nothing to resolve", so both return null rather than
@@ -365,6 +358,151 @@ function toOriginalStartFilter(
     .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 }
 
+function toRfc3339UtcMidnight(originalStartAt: string): string {
+  return dayjs.utc(originalStartAt).format(dayjs.DateFormat.RFC3339);
+}
+
+// Google instance ids are `{seriesId}_{originalStart}`: all-day YYYYMMDD,
+// timed YYYYMMDDTHHMMSSZ (always UTC). Used when events.instances with
+// originalStart returns nothing or 400s — GET of this id still addresses
+// the occurrence, including after it was moved (the suffix is the ORIGINAL
+// start, not the current one).
+export function googleInstanceEventId(
+  seriesProviderEventId: string,
+  originalStartAt: string,
+  scheduleKind: "timed" | "allDay",
+): string {
+  const instant = dayjs.utc(originalStartAt);
+  const suffix =
+    scheduleKind === "allDay"
+      ? instant.format(dayjs.DateFormat.YEAR_MONTH_DAY_COMPACT_FORMAT)
+      : instant.format(dayjs.DateFormat.RFC5545);
+  return `${seriesProviderEventId}_${suffix}`;
+}
+
+function isOccurrenceItem(
+  item: gSchema$Event | undefined,
+  seriesProviderEventId: string,
+): item is gSchema$Event {
+  return Boolean(item?.id && item.id !== seriesProviderEventId);
+}
+
+async function resolveInstanceItem(
+  api: GoogleEventsApi,
+  input: ProviderInstanceFetchInput,
+): Promise<gSchema$Event | null> {
+  const filters =
+    input.scheduleKind === "allDay"
+      ? [
+          toOriginalStartFilter(input.originalStartAt, "allDay"),
+          toRfc3339UtcMidnight(input.originalStartAt),
+        ]
+      : [input.originalStartAt];
+
+  let sawBadRequest = false;
+  for (let index = 0; index < filters.length; index += 1) {
+    const originalStart = filters[index] as string;
+    try {
+      const page = await api.instances({
+        calendarId: input.calendarId,
+        eventId: input.seriesProviderEventId,
+        originalStart,
+      });
+      const item = page.items?.[0];
+      if (isOccurrenceItem(item, input.seriesProviderEventId)) return item;
+      // Empty page or the series master itself: do not retry RFC3339 unless
+      // Google rejected the previous filter. Fall through to constructed GET.
+      break;
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      if (googleStatus(error) === 400 && index < filters.length - 1) {
+        sawBadRequest = true;
+        continue;
+      }
+      if (googleStatus(error) === 400) {
+        sawBadRequest = true;
+        break;
+      }
+      throw error;
+    }
+  }
+
+  try {
+    const event = await api.get({
+      calendarId: input.calendarId,
+      eventId: googleInstanceEventId(
+        input.seriesProviderEventId,
+        input.originalStartAt,
+        input.scheduleKind,
+      ),
+    });
+    if (isOccurrenceItem(event, input.seriesProviderEventId)) return event;
+    return null;
+  } catch (error) {
+    if (isNotFound(error)) return null;
+    if (sawBadRequest && googleStatus(error) === 400) return null;
+    throw error;
+  }
+}
+
+function readResolvedInstance(
+  item: gSchema$Event,
+  input: ProviderInstanceFetchInput,
+): ProviderEventRead | null {
+  if (!isOccurrenceItem(item, input.seriesProviderEventId)) return null;
+  try {
+    return normalizeGoogleEvent(item);
+  } catch (error) {
+    if (!(error instanceof ProviderEventError)) throw error;
+    return identityOnlyInstance(item, input);
+  }
+}
+
+// Delete (and a subsequent patch) only need the instance's provider id. A
+// content/schedule the contract rejects must not strand the command pending.
+function identityOnlyInstance(
+  item: gSchema$Event,
+  input: ProviderInstanceFetchInput,
+): ProviderEvent {
+  const start = dayjs.utc(input.originalStartAt);
+  const schedule =
+    input.scheduleKind === "allDay"
+      ? {
+          kind: "allDay" as const,
+          start: start.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+          end: start
+            .add(1, "day")
+            .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+        }
+      : {
+          kind: "timed" as const,
+          start: input.originalStartAt,
+          end: input.originalStartAt,
+          timeZone: "UTC",
+        };
+  return {
+    kind: "event",
+    providerEventId: item.id as string,
+    providerVersion: item.etag?.trim() || "missing",
+    providerUpdatedAt: item.updated ?? null,
+    content: {
+      title: "",
+      description: "",
+      location: "",
+      organizer: null,
+      attendees: [],
+      conference: null,
+    },
+    schedule: schedule as EventSchedule,
+    busy: true,
+    recurrence: {
+      kind: "instance",
+      seriesProviderId: input.seriesProviderEventId,
+      recurrenceId: new Date(input.originalStartAt).toISOString(),
+    },
+  };
+}
+
 // Google's sendUpdates values are exactly the neutral invitation intents.
 function toSendUpdates(invitation: InvitationIntent): string {
   return invitation;
@@ -382,6 +520,15 @@ function classifyWriteError(error: unknown): ProviderWriteError {
   // An already-classified error (e.g. a missing-identity result) must not be
   // re-wrapped as transient just because it carries no HTTP status.
   if (error instanceof ProviderWriteError) return error;
+  // A per-event normalize failure has no HTTP status. Mapping it to
+  // `transient` left occurrence deletes pending forever (HTTP 502 on every
+  // retry). The lookup path now recovers identity without a full read; any
+  // leftover throw is a permanent rejection, not a blip.
+  if (error instanceof ProviderEventError) {
+    return new ProviderWriteError("permanentProviderError", error.message, {
+      cause: redactedCause(error),
+    });
+  }
 
   const status = googleStatus(error);
   const cause = redactedCause(error);
