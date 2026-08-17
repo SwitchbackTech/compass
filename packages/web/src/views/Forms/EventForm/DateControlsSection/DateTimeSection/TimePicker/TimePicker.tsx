@@ -33,6 +33,25 @@ const timePickerTextStyles = {
   placeholder: themeColor("var(--text-muted)"),
 };
 
+const TIMEPICKER = "timepicker";
+
+function optionFromFocusedMenu(
+  container: HTMLElement | null,
+  options: TimeOption[] | undefined,
+  currentValue: string | undefined,
+): TimeOption | undefined {
+  const focusedLabel = container
+    ?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0]
+    ?.textContent?.trim();
+  if (!focusedLabel) return undefined;
+
+  const listed = options?.find((option) => option.label === focusedLabel);
+  if (listed) return listed;
+
+  const created = parseUserTime(focusedLabel, currentValue);
+  return created?.label === focusedLabel ? created : undefined;
+}
+
 export const TimePicker = ({
   isMenuOpen,
   onChange: _onChange,
@@ -42,7 +61,6 @@ export const TimePicker = ({
   value,
   ...props
 }: Props) => {
-  const TIMEPICKER = "timepicker";
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
   const layerId = useId();
@@ -108,6 +126,18 @@ export const TimePicker = ({
           }
 
           if (key === "Tab") {
+            // Commit the focused option ourselves. react-select's
+            // tabSelectsValue preventDefaults Tab and, with blurInputOnSelect,
+            // leaves focus on the document instead of the next field.
+            if (e.nativeEvent.isComposing) return;
+            if (!e.shiftKey) {
+              const option = optionFromFocusedMenu(
+                containerRef.current,
+                options,
+                value?.value,
+              );
+              if (option) _onChange(option);
+            }
             setIsMenuOpen(false);
           }
         }}
@@ -122,6 +152,28 @@ export const TimePicker = ({
         openMenuOnFocus={true}
         options={options}
         tabSelectsValue={false}
+        ariaLiveMessages={{
+          guidance: ({
+            context,
+            isSearchable,
+            isMulti,
+            isInitialFocus,
+            "aria-label": ariaLabel,
+          }) => {
+            switch (context) {
+              case "menu":
+                return "Use Up and Down to choose options, press Enter to select the currently focused option, press Escape to exit the menu, press Tab to select the option and exit the menu.";
+              case "input":
+                return isInitialFocus
+                  ? `${ariaLabel || "Select"} is focused ${isSearchable ? ",type to refine list" : ""}, press Down to open the menu, ${isMulti ? " press left to focus selected values" : ""}`
+                  : "";
+              case "value":
+                return "Use left and right to toggle between focused values, press Backspace to remove the currently focused value";
+              default:
+                return "";
+            }
+          },
+        }}
         isValidNewOption={(inputValue) => {
           const parsed = parseUserTime(inputValue, value?.value);
           if (!parsed) return false;
