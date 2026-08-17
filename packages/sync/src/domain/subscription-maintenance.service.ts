@@ -39,8 +39,15 @@ export type SubscriptionMaintenanceOutcome =
   // there is nothing to do here and retrying will not help.
   | { readonly status: "authRevoked" };
 
-// One day. Google event channels last about a week, so renewing a full day
-// ahead leaves generous margin over any reasonable maintenance cadence.
+// One day, deliberately paired with the 48h channel lifetime the Google
+// notification adapter requests (DEFAULT_TTL_MS): a channel becomes renewable
+// about a day after it is opened, so the renewal sweep replaces every channel
+// roughly daily. That cadence is the point, not a side effect — a channel can
+// stop delivering WITHOUT expiring (Google drops one whose callbacks keep
+// failing), and since every liveness path we have selects on
+// subscriptionExpiresAt, re-watching on a cadence is what bounds how long such
+// a channel can stay silently dead. Raising the provider TTL without raising
+// this, or vice versa, changes that window — keep the two in step.
 const DEFAULT_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
 
 // Ensure a calendar's events resource has a live push channel: open one if it

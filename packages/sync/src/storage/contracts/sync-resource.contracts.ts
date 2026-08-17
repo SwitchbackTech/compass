@@ -90,6 +90,24 @@ export const SyncResourceRecordSchema = z.strictObject({
   subscriptionResourceId: z.string().min(1).nullable(),
   subscriptionToken: z.string().min(1).nullable(),
   subscriptionExpiresAt: z.date().nullable(),
+  // When the provider last told us this calendar changed, and we have not yet
+  // completed a pull that observed it. Set on every accepted push notification,
+  // cleared by the pull that serves it — but ONLY if it still holds the value
+  // that pull started with. A notification landing mid-pull therefore fails
+  // that compare-and-clear, which is exactly how the pull learns it read too
+  // early and must go round again.
+  //
+  // Without this, such a notification was lost outright: the job enqueue
+  // coalesces on `incrementalPull:<resourceId>`, and $setOnInsert no-ops
+  // against the CLAIMED row of the pull already running, so the change waited
+  // for the reconcile sweep (15min stale threshold on a ~10min cycle) instead
+  // of the ~30s the push path promises.
+  //
+  // Doubles as the push-latency clock: notified-at to pull-applied is the
+  // end-to-end number, previously unmeasurable.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt above.
+  changeNotifiedAt: z.date().nullable().default(null),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

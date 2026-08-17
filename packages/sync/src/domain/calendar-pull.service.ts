@@ -31,6 +31,15 @@ export type CalendarPullResult =
       resource: SyncResourceRecord;
       changed: number;
       deleted: number;
+      // A push notification for this calendar landed AFTER this pull had
+      // already read the provider, so the change it announced is in neither
+      // this pull nor any queued job (the enqueue coalesced onto this pull's
+      // own claimed row). The caller must pull again rather than leave it to
+      // the 15-minute reconcile sweep.
+      changedDuringPull: boolean;
+      // End-to-end push latency: provider notification to applied, in ms. Null
+      // when this pull served no notification (a sweep or bootstrap pull).
+      pushLatencyMs: number | null;
     }
   | {
       // The stored cursor is too old (410 Gone). The caller starts a full
@@ -88,6 +97,12 @@ export async function pullCalendarChanges(
   if (resource.syncCursor === null) {
     return { status: "notImported", resource };
   }
+
+  // Read the change marker BEFORE the first provider read. Everything this pull
+  // observes is a snapshot at or after this instant, so a marker still holding
+  // this value at the end means no change arrived that this pull could have
+  // missed. Any other value did arrive too late to be in the pages below.
+  const notifiedAtStart = resource.changeNotifiedAt;
 
   let accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
@@ -168,6 +183,18 @@ export async function pullCalendarChanges(
     now(),
   );
 
+  // Retire the change this pull served — but only if nothing moved the marker
+  // while the pages above were being read. A failed match is the signal that a
+  // notification landed mid-pull; leave that newer marker in place so the next
+  // pass owns it.
+  const appliedAt = now();
+  const served = await deps.resources.clearChangeNotifiedIfUnchanged(
+    resource.tenantId,
+    resource.principalId,
+    resource._id,
+    notifiedAtStart,
+  );
+
   const updated = await deps.resources.findById(
     resource.tenantId,
     resource.principalId,
@@ -178,6 +205,10 @@ export async function pullCalendarChanges(
     resource: updated ?? resource,
     changed: applier.importedCount,
     deleted,
+    changedDuringPull: !served,
+    pushLatencyMs: notifiedAtStart
+      ? appliedAt.getTime() - notifiedAtStart.getTime()
+      : null,
   };
 }
 

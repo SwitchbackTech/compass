@@ -530,4 +530,95 @@ describe("pullCalendarChanges", () => {
     expect(reader.calls[1].pageToken).toBe("p2");
     expect(result.changed).toBe(2);
   });
+
+  describe("push change marker", () => {
+    // A notification stamps changeNotifiedAt; the pull that observes it clears
+    // the marker and reports how long the provider-to-applied hop took.
+    it("clears the marker it served and reports push latency", async () => {
+      const calendar = await seedCalendar();
+      const resource = await seedImported(calendar);
+      const notifiedAt = new Date("2026-07-09T23:59:55.000Z");
+      await resources.markChangeNotified(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+        notifiedAt,
+      );
+      const reader = new FakeReader([
+        page([single("a")], { nextSyncToken: "c" }),
+      ]);
+
+      const result = await pullCalendarChanges(deps(reader), calendar, now);
+
+      if (result.status !== "applied") throw new Error("expected applied");
+      expect(result.changedDuringPull).toBe(false);
+      // now() is 2026-07-10T00:00:00Z, five seconds after the notification.
+      expect(result.pushLatencyMs).toBe(5_000);
+      const stored = await resources.findById(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+      );
+      expect(stored?.changeNotifiedAt).toBeNull();
+    });
+
+    it("reports no latency and leaves the marker null when no notification drove the pull", async () => {
+      const calendar = await seedCalendar();
+      const resource = await seedImported(calendar);
+      const reader = new FakeReader([page([], { nextSyncToken: "c" })]);
+
+      const result = await pullCalendarChanges(deps(reader), calendar, now);
+
+      if (result.status !== "applied") throw new Error("expected applied");
+      expect(result.pushLatencyMs).toBeNull();
+      expect(result.changedDuringPull).toBe(false);
+      const stored = await resources.findById(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+      );
+      expect(stored?.changeNotifiedAt).toBeNull();
+    });
+
+    // The regression this whole field exists for: the notification's own
+    // enqueue coalesced onto this pull's claimed row and did nothing, so if the
+    // pull also cleared the marker the change would be lost until the 15-minute
+    // reconcile sweep.
+    it("reports changedDuringPull and keeps the newer marker when a notification lands mid-pull", async () => {
+      const calendar = await seedCalendar();
+      const resource = await seedImported(calendar);
+      const arrivedDuringPull = new Date("2026-07-10T00:00:03.000Z");
+
+      // Stamps the marker as a side effect of the provider read — i.e. the
+      // notification lands after this pull has already seen the provider.
+      const reader: ProviderEventReader = {
+        provider: "google",
+        listEventPage: async () => {
+          await resources.markChangeNotified(
+            calendar.tenantId,
+            calendar.principalId,
+            resource._id,
+            arrivedDuringPull,
+          );
+          return page([single("a")], { nextSyncToken: "c" });
+        },
+      };
+
+      const result = await pullCalendarChanges(
+        { ...deps(new FakeReader([])), reader },
+        calendar,
+        now,
+      );
+
+      if (result.status !== "applied") throw new Error("expected applied");
+      expect(result.changedDuringPull).toBe(true);
+      const stored = await resources.findById(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+      );
+      // Left set on purpose: the next pass owns it.
+      expect(stored?.changeNotifiedAt).toEqual(arrivedDuringPull);
+    });
+  });
 });
