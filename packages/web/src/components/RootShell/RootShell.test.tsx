@@ -1,11 +1,21 @@
 import "@testing-library/jest-dom";
+import { type ReactElement } from "react";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { RootShell } from "@web/components/RootShell/RootShell";
-import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
   .useAppAccess;
@@ -17,8 +27,23 @@ mock.module("@web/billing/useAppAccess", () => ({
     isAppAccessMocked ? access : actualUseAppAccess(...args),
 }));
 
-const renderShell = async (initialPath = "/") => {
-  const router = createTestRouter(<RootShell />, {
+const anonymousSession = {
+  authenticated: false,
+  setAuthenticated: () => {},
+};
+
+const renderShell = async (
+  initialPath = "/",
+  { anonymous = false }: { anonymous?: boolean } = {},
+) => {
+  const ui: ReactElement = anonymous ? (
+    <SessionContext.Provider value={anonymousSession}>
+      <RootShell />
+    </SessionContext.Provider>
+  ) : (
+    <RootShell />
+  );
+  const router = createTestRouter(ui, {
     initialEntries: [initialPath],
   });
   render(<div />, { router });
@@ -68,12 +93,12 @@ describe("RootShell billing gates", () => {
 });
 
 describe("RootShell calendar onboarding on /life", () => {
-  afterEach(() => {
+  beforeEach(() => {
     access = { kind: "open" };
   });
 
   it("does not show welcome or the practice card on /life, and does not burn flags", async () => {
-    await renderShell("/life");
+    await renderShell("/life", { anonymous: true });
 
     expect(
       screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
@@ -93,7 +118,7 @@ describe("RootShell calendar onboarding on /life", () => {
   });
 
   it("still shows welcome on /week for a first-time anonymous visitor", async () => {
-    await renderShell("/week");
+    await renderShell("/week", { anonymous: true });
 
     expect(
       screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
@@ -104,7 +129,7 @@ describe("RootShell calendar onboarding on /life", () => {
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
 
-    await renderShell("/life");
+    await renderShell("/life", { anonymous: true });
 
     expect(
       screen.queryByRole("complementary", {
@@ -118,7 +143,7 @@ describe("RootShell calendar onboarding on /life", () => {
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
 
-    await renderShell("/week");
+    await renderShell("/week", { anonymous: true });
 
     expect(
       screen.getByRole("complementary", {
