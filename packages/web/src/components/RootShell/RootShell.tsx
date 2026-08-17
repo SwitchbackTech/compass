@@ -1,4 +1,4 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { useCheckoutReturn } from "@web/billing/billing.query";
@@ -19,6 +19,7 @@ import {
   useCalendarShellShortcuts,
   useNavigationShortcuts,
 } from "@web/shortcuts/useGlobalShortcuts";
+import { isLifePathname } from "./isLifePathname";
 
 /**
  * The auth modal is driven by the router's `?auth=` search param, so its
@@ -27,6 +28,8 @@ import {
  * available on every matched route, including 404s.
  */
 export function RootShell() {
+  const { pathname } = useLocation();
+  const deferCalendarOnboarding = isLifePathname(pathname);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
   useCheckoutReturn();
@@ -67,9 +70,9 @@ export function RootShell() {
       {showPastDue && <BillingPastDueBanner />}
       <Outlet />
       <AuthModal />
-      <WelcomeModal />
-      <ShortcutShowcase />
-      <OnboardingChecklist />
+      {!deferCalendarOnboarding && <WelcomeModal />}
+      {!deferCalendarOnboarding && <ShortcutShowcase />}
+      {!deferCalendarOnboarding && <OnboardingChecklist />}
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
     </AuthModalProvider>
   );
