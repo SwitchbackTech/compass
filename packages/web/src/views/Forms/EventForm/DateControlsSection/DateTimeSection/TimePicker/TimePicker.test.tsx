@@ -42,4 +42,41 @@ describe("TimePicker", () => {
 
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
+
+  it("commits the focused filtered option when the user presses Tab", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    await user.type(combobox, "1:30");
+    await user.tab();
+
+    expect(combobox).toHaveTextContent("1:30 PM");
+    expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
+  });
+
+  it("keeps the original value when Tabbing without choosing a new option", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    await user.tab();
+
+    expect(combobox).toHaveTextContent("1 PM");
+    expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
+  });
+
+  it("discards typed filter on Escape instead of committing", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const combobox = screen.getByRole("combobox");
+    await user.click(combobox);
+    await user.type(combobox, "1:30");
+    await user.keyboard("{Escape}");
+
+    expect(combobox).toHaveTextContent("1 PM");
+  });
 });

@@ -121,7 +121,8 @@ export const TimePicker = ({
         }}
         openMenuOnFocus={true}
         options={options}
-        tabSelectsValue={false}
+        // Tab commits the focused (filtered) option and moves to the next field.
+        tabSelectsValue={true}
         isValidNewOption={(inputValue) => {
           const parsed = parseUserTime(inputValue, value?.value);
           if (!parsed) return false;
