@@ -54,7 +54,7 @@ const page = (
 
 function adapterWith(
   api: GoogleEventListApi,
-  log?: { warn: (message: string) => void },
+  log: { warn: (message: string) => void } = { warn: () => {} },
 ) {
   const tokensSeen: string[] = [];
   const adapter = new GoogleEventReaderAdapter((accessToken) => {
