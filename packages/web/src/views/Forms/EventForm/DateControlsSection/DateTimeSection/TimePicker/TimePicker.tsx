@@ -108,6 +108,27 @@ export const TimePicker = ({
           }
 
           if (key === "Tab") {
+            // Commit the focused option ourselves. react-select's
+            // tabSelectsValue preventDefaults Tab and, with blurInputOnSelect,
+            // leaves focus on the document instead of the next field.
+            if (!e.shiftKey) {
+              const focusedEl = containerRef.current?.getElementsByClassName(
+                `${TIMEPICKER}__option--is-focused`,
+              )[0];
+              const focusedLabel = focusedEl?.textContent?.trim();
+              if (focusedLabel) {
+                const listed = options?.find(
+                  (o) => (o as TimeOption).label === focusedLabel,
+                ) as TimeOption | undefined;
+                const created = parseUserTime(focusedLabel, value?.value);
+                const option =
+                  listed ??
+                  (created?.label === focusedLabel ? created : undefined);
+                if (option) {
+                  _onChange(option);
+                }
+              }
+            }
             setIsMenuOpen(false);
           }
         }}
@@ -121,8 +142,7 @@ export const TimePicker = ({
         }}
         openMenuOnFocus={true}
         options={options}
-        // Tab commits the focused (filtered) option and moves to the next field.
-        tabSelectsValue={true}
+        tabSelectsValue={false}
         isValidNewOption={(inputValue) => {
           const parsed = parseUserTime(inputValue, value?.value);
           if (!parsed) return false;

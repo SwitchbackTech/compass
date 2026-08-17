@@ -18,6 +18,7 @@ function Harness() {
   return (
     <div>
       <TimePicker
+        aria-label="Start time"
         inputId="startTimePicker"
         isMenuOpen={isMenuOpen}
         onChange={setValue}
@@ -35,7 +36,7 @@ describe("TimePicker", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByRole("combobox", { name: "Start time" }));
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Description" }));
@@ -47,12 +48,13 @@ describe("TimePicker", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    const combobox = screen.getByRole("combobox");
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
     await user.type(combobox, "1:30");
     await user.tab();
 
-    expect(combobox).toHaveTextContent("1:30 PM");
+    expect(screen.getByText("1:30 PM")).toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
   });
 
@@ -60,11 +62,12 @@ describe("TimePicker", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    const combobox = screen.getByRole("combobox");
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
     await user.tab();
 
-    expect(combobox).toHaveTextContent("1 PM");
+    expect(screen.getByText("1 PM")).toBeInTheDocument();
+    expect(screen.queryByText("1:30 PM")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
   });
 
@@ -72,11 +75,12 @@ describe("TimePicker", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    const combobox = screen.getByRole("combobox");
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
     await user.type(combobox, "1:30");
     await user.keyboard("{Escape}");
 
-    expect(combobox).toHaveTextContent("1 PM");
+    expect(screen.getByText("1 PM")).toBeInTheDocument();
+    expect(screen.queryByText("1:30 PM")).not.toBeInTheDocument();
   });
 });
