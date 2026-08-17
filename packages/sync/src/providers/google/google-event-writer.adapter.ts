@@ -415,15 +415,9 @@ async function resolveInstanceItem(
       break;
     } catch (error) {
       if (isNotFound(error)) return null;
-      if (googleStatus(error) === 400 && index < filters.length - 1) {
-        sawBadRequest = true;
-        continue;
-      }
-      if (googleStatus(error) === 400) {
-        sawBadRequest = true;
-        break;
-      }
-      throw error;
+      if (googleStatus(error) !== 400) throw error;
+      sawBadRequest = true;
+      if (index >= filters.length - 1) break;
     }
   }
 
