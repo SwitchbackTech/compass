@@ -16,6 +16,7 @@ Use this guide to validate:
 - navigating between views with the keyboard (D, W)
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
+- scrolling the timed grid with PageUp / PageDown, including while an event is focused
 - opening and using the command palette (Cmd+K), including undo/redo rows
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
@@ -59,6 +60,7 @@ Helpful notes:
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
+| `PageUp` / `PageDown`       | Day view  | Scroll the timed grid up/down     |
 | `I`                         | Day view  | Focus sidebar                     |
 | `U`                         | Day view  | Focus first calendar event        |
 | `S`                         | Day view  | Toggle event jump keys            |
@@ -82,6 +84,7 @@ Helpful notes:
 | `J`                         | Week view | Previous week                     |
 | `K`                         | Week view | Next week                         |
 | `T`                         | Week view | Go to today                       |
+| `PageUp` / `PageDown`       | Week view | Scroll the timed grid up/down     |
 | `C`                         | Week view | Create timed event                |
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
@@ -412,6 +415,27 @@ All view-navigation and action shortcuts are suppressed when the user is focused
 
 ---
 
+## Scenario 15: Scroll The Timed Grid With PageUp / PageDown
+
+### UX
+
+PageUp and PageDown always scroll the timed grid by one viewport, even when focus is on an event card, the sidebar, or another control. Arrow keys still move event focus; J/K still change the visible day or week. The shortcuts do not fire while typing in an input.
+
+### Steps
+
+1. Navigate to `/week` (or `/day`).
+2. Click an event so it is focused.
+3. Press PageDown, then PageUp.
+4. Open an event form, focus the title, and press PageDown.
+
+### Expected Results
+
+- PageDown moves the timed grid later in the day; PageUp moves it earlier.
+- The focused event does not change solely because of PageUp / PageDown.
+- PageDown does nothing while the title input is focused.
+
+---
+
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping shortcut-related changes:
@@ -432,3 +456,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips.
 16. `H` enters Hardcore Mode (clicks blocked, indicator visible); Esc or another `H` exits. Shift-Shift does not.
+17. PageUp / PageDown scroll the timed grid in Day and Week view even when an event is focused; they do not fire in a text input.

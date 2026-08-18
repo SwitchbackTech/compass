@@ -75,6 +75,37 @@ describe("shortcuts.data", () => {
       ]);
     });
 
+    it("lists PageUp/PageDown grid scroll in day and week, not life", () => {
+      for (const view of ["day", "week"] as const) {
+        const [navigate] = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+        });
+
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+          keys: ["PageUp"],
+          label: "Scroll grid up",
+        });
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+          keys: ["PageDown"],
+          label: "Scroll grid down",
+        });
+      }
+
+      const [lifeNavigate] = getShortcutMenuSections({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      });
+      expect(stripMetadata(lifeNavigate.shortcuts)).not.toContainEqual({
+        keys: ["PageUp"],
+        label: "Scroll grid up",
+      });
+      expect(stripMetadata(lifeNavigate.shortcuts)).not.toContainEqual({
+        keys: ["PageDown"],
+        label: "Scroll grid down",
+      });
+    });
+
     it("lists the Up Next shortcuts in both views", () => {
       for (const view of ["day", "week"] as const) {
         const [navigate] = getShortcutMenuSections({

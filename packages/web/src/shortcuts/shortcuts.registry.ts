@@ -79,6 +79,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Go to today",
     section: "navigate",
   },
+  {
+    id: "nav-scroll-up",
+    keys: ["PageUp"],
+    label: "Scroll grid up",
+    section: "navigate",
+  },
+  {
+    id: "nav-scroll-down",
+    keys: ["PageDown"],
+    label: "Scroll grid down",
+    section: "navigate",
+  },
 
   // Navigate - View switchers (all views)
   {

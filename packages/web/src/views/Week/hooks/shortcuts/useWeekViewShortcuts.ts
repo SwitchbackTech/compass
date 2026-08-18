@@ -1,3 +1,4 @@
+import { useGridScrollShortcuts } from "@web/grid/shortcuts/useGridScrollShortcuts";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
@@ -15,6 +16,7 @@ export interface WeekViewShortcutsConfig {
 /**
  * Registers Week view keyboard shortcuts only. Behavior lives in the owner
  * (see `useWeekShortcutOwner`), matching Day's thin callback boundary.
+ * PageUp/PageDown scroll the timed grid via `useGridScrollShortcuts`.
  */
 export function useWeekViewShortcuts(config: WeekViewShortcutsConfig) {
   const {
@@ -27,6 +29,8 @@ export function useWeekViewShortcuts(config: WeekViewShortcutsConfig) {
     onCreateTimedDraft,
     onFocusCalendar,
   } = config;
+
+  useGridScrollShortcuts();
 
   useAppShortcutUp("J", () => {
     onPreviousWeek?.();
