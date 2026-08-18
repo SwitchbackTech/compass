@@ -7,7 +7,7 @@ This runbook covers keyboard shortcut parity in Compass. The principle: anything
 Two files matter, at different depths:
 
 - `packages/web/src/shortcuts/shortcuts.registry.ts` is the display registry: every shortcut's legend entry (label, keys, section, context). When adding a shortcut, update the registry and it appears in the legend overlay (opened with `?`), which is searchable and context-aware.
-- `packages/web/src/shortcuts/keymap.ts` is the runtime binding source for the shortcuts the onboarding Shortcut Showcase teaches (create, save, arrow focus, edit sequence, event jump, move, edge cycle, undo/redo, hardcore). The real handlers, the showcase, and its hint keycaps all import these bindings, and `keymap.test.ts` pins the registry rows against them. Remapping a taught shortcut means editing `keymap.ts` plus the registry row; the test fails if they disagree. Shortcuts outside the keymap still bind via literals at their handler sites.
+- `packages/web/src/shortcuts/keymap.ts` is the runtime binding source for the shortcuts the onboarding flow teaches — the Shortcut Showcase gates its exit on create and save, and its practice arena plus the post-showcase checklist cover arrow focus, edit sequence, event jump, move, edge cycle, undo/redo, and hardcore. The real handlers, the showcase, and its hint keycaps all import these bindings, and `keymap.test.ts` pins the registry rows against them. Remapping a taught shortcut means editing `keymap.ts` plus the registry row; the test fails if they disagree. Shortcuts outside the keymap still bind via literals at their handler sites.
 
 ## Scope
 

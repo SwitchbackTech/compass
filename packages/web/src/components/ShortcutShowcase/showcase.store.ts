@@ -11,18 +11,23 @@ import {
 export type ShortcutShowcaseState = {
   isActive: boolean;
   stepIndex: number;
-  /** True while the "skip the shortcuts?" inline confirm is showing. */
-  isConfirmingSkip: boolean;
-  /** Once per entry: after the first confirm, Escape skips directly. */
-  hasShownSkipConfirm: boolean;
+  /**
+   * Bumped every time the showcase is marked seen. Storage stays the source of
+   * truth; this is the re-render signal for components that read it, because a
+   * localStorage write notifies nobody. Without it the checklist stayed hidden
+   * until the next render for anyone who skipped past the practice entirely.
+   */
+  seenRevision: number;
 };
 
 export const initialShortcutShowcaseState: ShortcutShowcaseState = {
   isActive: false,
   stepIndex: 0,
-  isConfirmingSkip: false,
-  hasShownSkipConfirm: false,
+  seenRevision: 0,
 };
+
+/** Where a user who left early went next, so the funnel can tell them apart. */
+export type ShowcaseExit = "calendar" | "signup";
 
 export const useShortcutShowcaseStore = create<ShortcutShowcaseState>()(() => ({
   ...initialShortcutShowcaseState,
@@ -31,36 +36,40 @@ export const useShortcutShowcaseStore = create<ShortcutShowcaseState>()(() => ({
 export const stepIdAt = (index: number) =>
   SHOWCASE_STEP_IDS[index] ?? SHOWCASE_STEP_IDS[0];
 
-/** Shared by finish/skip: mark seen so it never auto-launches again. */
-const endShowcase = () => {
+/** Persist the seen flag and wake everyone reading it. */
+const markSeen = () => {
   markShortcutShowcaseSeen();
-  useShortcutShowcaseStore.setState({ ...initialShortcutShowcaseState });
+  useShortcutShowcaseStore.setState((state) => ({
+    seenRevision: state.seenRevision + 1,
+  }));
 };
 
-const activate = (
-  entry: "start_now" | "escape" | "post_signup" | "palette",
-) => {
-  useShortcutShowcaseStore.setState({
-    ...initialShortcutShowcaseState,
-    isActive: true,
-  });
+/** Shared by finish/skip: mark seen so it never auto-launches again. */
+const endShowcase = () => {
+  markSeen();
+  useShortcutShowcaseStore.setState({ isActive: false, stepIndex: 0 });
+};
+
+/**
+ * Only two ways in now. The welcome modal used to launch the takeover before
+ * anyone had committed to anything; signing up and connecting a calendar comes
+ * first, and the practice is offered once there is a real calendar behind it.
+ */
+const activate = (entry: "post_signup" | "palette") => {
+  useShortcutShowcaseStore.setState({ isActive: true, stepIndex: 0 });
   track("shortcut_showcase_started", { entry });
 };
 
 export const shortcutShowcaseActions = {
-  /** Welcome modal Start Now / Escape: launch unless already seen. */
-  start: (entry: "start_now" | "escape" = "start_now") => {
-    if (hasSeenShortcutShowcase()) return;
-    activate(entry);
-  },
   /** Palette re-entry: always allowed, always from the first step. */
   replay: () => {
     activate("palette");
   },
+  /** Graduation persists the flag before its reveal animation finishes. */
+  markSeen,
   advance: () => {
-    const { isActive, stepIndex, isConfirmingSkip } =
-      useShortcutShowcaseStore.getState();
-    if (!isActive || isConfirmingSkip) return;
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+    if (!isActive) return;
     track("shortcut_showcase_step_completed", { step: stepIdAt(stepIndex) });
     if (stepIndex >= SHOWCASE_STEP_IDS.length - 1) {
       shortcutShowcaseActions.finish();
@@ -70,9 +79,8 @@ export const shortcutShowcaseActions = {
   },
   /** Step back to redo the previous lesson; no-op on the first step. */
   back: () => {
-    const { isActive, stepIndex, isConfirmingSkip } =
-      useShortcutShowcaseStore.getState();
-    if (!isActive || isConfirmingSkip || stepIndex === 0) return;
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+    if (!isActive || stepIndex === 0) return;
     track("shortcut_showcase_step_redone", { step: stepIdAt(stepIndex - 1) });
     useShortcutShowcaseStore.setState({ stepIndex: stepIndex - 1 });
   },
@@ -80,41 +88,27 @@ export const shortcutShowcaseActions = {
     track("shortcut_showcase_finished");
     endShowcase();
   },
-  skip: () => {
-    const { stepIndex } = useShortcutShowcaseStore.getState();
-    track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex) });
+  /**
+   * Leaving before graduation. There is no "are you sure?" in the way: the
+   * showcase is an offer, and the flow it guards (sign up, connect a calendar)
+   * matters more than the two lessons.
+   */
+  skip: (exit: ShowcaseExit = "calendar") => {
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+    if (!isActive) return;
+    track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex), exit });
     endShowcase();
   },
   /**
-   * Escape or the Skip button. First time this entry: show the
-   * keyboard-first confirm. Once the user has seen it, skip directly.
-   */
-  requestSkipConfirm: () => {
-    const { isActive, hasShownSkipConfirm } =
-      useShortcutShowcaseStore.getState();
-    if (!isActive) return;
-    if (hasShownSkipConfirm) {
-      shortcutShowcaseActions.skip();
-      return;
-    }
-    useShortcutShowcaseStore.setState({
-      isConfirmingSkip: true,
-      hasShownSkipConfirm: true,
-    });
-  },
-  cancelSkipConfirm: () => {
-    useShortcutShowcaseStore.setState({ isConfirmingSkip: false });
-  },
-  /**
-   * Welcome-modal auth handoff: signing up defers the offer to right after
-   * signup completes; log-in and plain dismiss burn it immediately.
+   * Welcome-modal exit: signing up defers the offer to right after signup
+   * completes; log-in and exploring without an account burn it immediately.
    */
   markSkippedWithoutStarting: (options?: { pendingSignup?: boolean }) => {
     if (options?.pendingSignup) {
       markShowcaseOfferPending();
       return;
     }
-    markShortcutShowcaseSeen();
+    markSeen();
   },
   /** Called once, right after signup completes, to redeem a pending offer. */
   offerAfterSignupIfPending: () => {
@@ -130,5 +124,5 @@ export const selectShowcaseActive = (state: ShortcutShowcaseState) =>
 export const selectShowcaseStepIndex = (state: ShortcutShowcaseState) =>
   state.stepIndex;
 
-export const selectShowcaseConfirmingSkip = (state: ShortcutShowcaseState) =>
-  state.isConfirmingSkip;
+export const selectShowcaseSeenRevision = (state: ShortcutShowcaseState) =>
+  state.seenRevision;

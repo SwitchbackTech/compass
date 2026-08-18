@@ -73,27 +73,8 @@ describe("keymap ↔ showcase hint parity", () => {
   it("showcase hints reference the keymap's keycaps, not copies", () => {
     expect(getShowcaseStep("create").keycaps).toBe(KEYMAP.createEvent.keycaps);
     expect(getShowcaseStep("save").keycaps).toBe(KEYMAP.saveDraft.keycaps);
-    expect(getShowcaseStep("moveFocus").keycaps).toBe(KEYMAP.moveFocus.keycaps);
-    expect(getShowcaseStep("editTitle").keycaps).toBe(KEYMAP.editTitle.keycaps);
-    expect(getShowcaseStep("eventJump").keycaps).toBe(KEYMAP.eventJump.keycaps);
-    expect(getShowcaseStep("moveEvent").keycaps).toBe(KEYMAP.moveEvent.keycaps);
-    expect(getShowcaseStep("resizeEdge").keycaps).toBe(
-      KEYMAP.edgeFocus.keycaps,
-    );
-    expect(getShowcaseStep("placeDraft").keycaps).toBe(
-      KEYMAP.moveEvent.keycaps,
-    );
-    expect(getShowcaseStep("hardcore").keycaps).toBe(KEYMAP.hardcore.keycaps);
-
-    const undoRedoBody = getShowcaseStep("undoRedo").body;
-    expect(Array.isArray(undoRedoBody)).toBe(true);
-    const undoRedoChords = (
-      undoRedoBody as readonly { keys?: readonly string[] }[]
-    )
-      .filter((part) => typeof part !== "string" && "keys" in part)
-      .map((part) => part.keys);
-    expect(undoRedoChords[0]).toBe(KEYMAP.undo.keycaps);
-    expect(undoRedoChords[1]).toBe(KEYMAP.redo.keycaps);
+    // graduation is the exit, not a lesson, so it hints no chord.
+    expect(getShowcaseStep("graduation").keycaps).toBeUndefined();
   });
 });
 

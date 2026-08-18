@@ -74,8 +74,8 @@ labels outside the registry.
 Anonymous calendar onboarding is three stacked surfaces, all mounted from
 `RootShell` except on `/life` (see `isLifePathname`).
 
-- Welcome modal (**Start Now** / Escape both hand off to the showcase): `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
-- Shortcut Showcase (takeover practice calendar): `packages/web/src/components/ShortcutShowcase/` (`showcase.steps.ts` is the taught-step order)
+- Welcome modal (**Continue with Google** / **Sign up with email** / **Explore without an account**; only signup queues the showcase): `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
+- Shortcut Showcase (takeover practice calendar, entered post-signup or from the palette): `packages/web/src/components/ShortcutShowcase/` (`showcase.steps.ts` is the taught-step order)
 - Post-showcase checklist over real events: `packages/web/src/components/OnboardingChecklist/`
 - Replay from the command palette (“Practice shortcuts”, “Show welcome guide”): `packages/web/src/components/CommandPalette/navigation.cmd.constants.ts`
 - Legacy tour seen-flag is honored once so established users are not ambushed: `packages/web/src/components/ShortcutShowcase/showcase.storage.ts`

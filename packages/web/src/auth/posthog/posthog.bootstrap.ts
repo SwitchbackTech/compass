@@ -1,5 +1,6 @@
 import { type PostHog } from "posthog-js";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
+import { filterPosthogDeadClick } from "@web/auth/posthog/posthog-dead-click-filter.util";
 import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
@@ -37,8 +38,9 @@ export function initPosthog(): PostHog | undefined {
     },
     // Drop known-unactionable exception signatures (SuperTokens/browser
     // network blips, CefSharp scanner noise, opaque "Script error.") before
-    // they become issues.
-    before_send: filterPosthogBeforeSend,
+    // they become issues, then the dead clicks posthog's own mutation clock
+    // mis-scores on our static onboarding overlays.
+    before_send: [filterPosthogBeforeSend, filterPosthogDeadClick],
     opt_in_site_apps: true,
     person_profiles: "always",
   });
