@@ -38,8 +38,12 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Day view route and content: `packages/web/src/views/Day/view`
 - Day view header (includes sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
-- Day keyboard shortcuts: `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
-- Sidebar toggle (`]`): `packages/web/src/views/Week/hooks/shortcuts/useGlobalShortcuts.ts`
+- Day keyboard shortcuts (thin key registration): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+- Week keyboard shortcuts (thin key registration): `packages/web/src/views/Week/hooks/shortcuts/useWeekViewShortcuts.ts`
+- Week shortcut owner (draft create/nav/focus + bus): `packages/web/src/views/Week/hooks/shortcuts/useWeekShortcutOwner.ts`
+- Shared grid edit/focus shortcuts: `packages/web/src/grid/shortcuts/useGridEventEditShortcuts.ts`, `focus-adjacent-grid-event.ts`
+- Day column set when Google is connected (hides local Compass column): `packages/web/src/views/Day/components/Calendar/dayCalendarColumns.util.ts`
+- All-day event color wash on day columns: `packages/web/src/grid/utils/allDayColumnTint.util.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
 - Responsive layout controller (auto-collapse on breakpoint crossings): `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`
@@ -48,11 +52,40 @@ Use this document to find the first files to inspect for common Compass changes.
   - week view: `packages/web/src/views/Week/WeekView.tsx`
   - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
+## Keyboard Shortcuts
+
+Authoritative legend data and taught bindings live under
+`packages/web/src/shortcuts`. View owners register keys; do not duplicate
+labels outside the registry.
+
+- Registry (source of truth for `?` legend): `packages/web/src/shortcuts/shortcuts.registry.ts`
+- Overlay sections derived from the registry: `packages/web/src/shortcuts/data/shortcuts.data.ts`
+- Taught bindings (handlers + Shortcut Showcase keycaps): `packages/web/src/shortcuts/keymap.ts`
+- Global shell shortcuts (sidebar `]`, palette, settings, navigation): `packages/web/src/shortcuts/useGlobalShortcuts.ts`
+- Event-jump chips (`S`): `packages/web/src/shortcuts/shift-hint/`
+- Hardcore Mode (`H`; clicks inert until Esc / `H` / refresh): `packages/web/src/shortcuts/keyboard-only/`
+- Escape ownership (modals/form before lower handlers): `packages/web/src/shortcuts/escape-ownership.ts`
+- App lock (suppress shortcuts while a modal owns the UI): `packages/web/src/shortcuts/app-lock.ts`
+- Mount point for global + Hardcore Mode hooks: `packages/web/src/components/RootShell/RootShell.tsx`
+- Acceptance runbook: [Shortcuts](../acceptance/shortcuts.md)
+
+## Welcome, Showcase, And Checklist
+
+Anonymous calendar onboarding is three stacked surfaces, all mounted from
+`RootShell` except on `/life` (see `isLifePathname`).
+
+- Welcome modal (**Start Now** / Escape both hand off to the showcase): `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
+- Shortcut Showcase (takeover practice calendar): `packages/web/src/components/ShortcutShowcase/` (`showcase.steps.ts` is the taught-step order)
+- Post-showcase checklist over real events: `packages/web/src/components/OnboardingChecklist/`
+- Replay from the command palette (“Practice shortcuts”, “Show welcome guide”): `packages/web/src/components/CommandPalette/navigation.cmd.constants.ts`
+- Legacy tour seen-flag is honored once so established users are not ambushed: `packages/web/src/components/ShortcutShowcase/showcase.storage.ts`
+
 ## Sidebar
 
 - Shared sidebar shell: `packages/web/src/components/Sidebar/Sidebar.tsx`
 - Month picker: `packages/web/src/components/Sidebar/MonthPicker/MonthPicker.tsx`
-- Account identity/sync indicator: `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`
+- Shared account sync-status + CTA labels: `packages/web/src/components/Sidebar/CalendarList/useAccountHeaderStatus.ts`
+- Account identity/sync indicator: `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`, `AccountSectionHeader.tsx`
 - Sidebar actions and shortcuts overlay: `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`, `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 - Week mount point: `packages/web/src/views/Week/WeekView.tsx`
 - Day mount point: `packages/web/src/views/Day/view/DayViewContent.tsx`
@@ -88,6 +121,8 @@ see [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md) for
 the full picture.
 
 - Service entrypoint + internal routes: `packages/sync/src/app.ts`, `packages/sync/src/server/`
+- Failed-job self-heal sweep: `packages/sync/src/domain/failed-job-requeue.service.ts` (wired from `packages/sync/src/app.ts`)
+- Operator CLI for exhausted jobs: [CLI](./cli.md#manage-exhausted-sync-jobs)
 - Diagnostics / retention / principal purge: `packages/sync/src/server/diagnostic.routes.ts`, `packages/sync/src/domain/connection-retention.service.ts`, `packages/sync/src/domain/principal-purge.service.ts`
 - Sync DB backup/restore CLI: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
 

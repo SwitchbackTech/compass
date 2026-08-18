@@ -69,6 +69,39 @@ consistent.
 2. Verify auth-state implications in `packages/web/src/auth/compass/session/SessionProvider.tsx` and auth-state helpers.
 3. Test both never-authenticated and previously-authenticated behavior.
 
+## Add Or Change A Keyboard Shortcut
+
+1. Add or update the entry in `packages/web/src/shortcuts/shortcuts.registry.ts`
+   (id, keys, label, section, optional `when`). The `?` legend and overlay
+   sections read from this registry — do not hard-code a second label list.
+2. If the Shortcut Showcase teaches the binding, also update
+   `packages/web/src/shortcuts/keymap.ts`. `keymap.test.ts` fails if the
+   registry row and keymap disagree.
+3. Register the key in the owning hook:
+   - global / shell: `packages/web/src/shortcuts/useGlobalShortcuts.ts`
+   - week: `packages/web/src/views/Week/hooks/shortcuts/useWeekViewShortcuts.ts`
+     (+ behavior in `useWeekShortcutOwner.ts`)
+   - day: `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+   - shared grid edit/focus: `packages/web/src/grid/shortcuts/`
+   - event jump (`S`): `packages/web/src/shortcuts/shift-hint/`
+   - Hardcore Mode (`H`): `packages/web/src/shortcuts/keyboard-only/`
+4. Respect `app-lock`, `escape-ownership`, and “do not fire while typing in
+   inputs” (use the existing `useAppShortcut` helpers; do not attach bare
+   `window` listeners for new app shortcuts). Bare-letter shortcuts (`S`, `H`,
+   `E`…) must yield to an armed edit sequence.
+5. Add or update registry/data tests and the owning hook tests. Update
+   [Shortcuts acceptance](../acceptance/shortcuts.md) when user-visible
+   behavior changes.
+
+Common pitfalls:
+
+- **Legend-only change** — updating the registry without a handler (or the
+  reverse) ships a lie in the `?` overlay.
+- **Showcase drift** — remapping a taught shortcut in the handler but not
+  `keymap.ts` leaves the practice calendar teaching the old keycaps.
+- **App-lock blind spots** — shortcuts that fire while Auth/Settings/Welcome
+  own the UI feel broken; follow the helpers that already gate on lock state.
+
 ## Change A Shared Hotkey Dialog (Day + Week)
 
 Use this for overlays mounted in both `WeekView` and `DayViewContent` (for example Dedication).

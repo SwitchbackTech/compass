@@ -52,6 +52,47 @@ Important behavior:
 
 This is the shell for the main desktop app experience.
 
+## Welcome, Showcase, And Checklist
+
+Files:
+
+- `packages/web/src/components/RootShell/RootShell.tsx`
+- `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
+- `packages/web/src/components/ShortcutShowcase/`
+- `packages/web/src/components/OnboardingChecklist/`
+
+`RootShell` mounts the welcome modal, Shortcut Showcase, onboarding
+checklist, global navigation / calendar-shell shortcuts, and Hardcore Mode.
+Those calendar-onboarding overlays are skipped on `/life`.
+
+Welcome → showcase → checklist contract:
+
+- unauthenticated users who have not seen welcome get `WelcomeModal`
+- **Start Now** and backdrop / Escape both start the Shortcut Showcase (neither
+  path dumps the user onto a blank calendar)
+- Log In / Sign Up hand off to auth; a pending showcase offer can still run
+  after signup (`showcase.storage.ts`)
+- showcase step order lives in `showcase.steps.ts`; taught keycaps come from
+  `packages/web/src/shortcuts/keymap.ts`
+- after the showcase, `OnboardingChecklist` is practice missions on the real
+  calendar (not an app-lock modal)
+- command palette can reopen practice (“Practice shortcuts”) or the welcome
+  guide (“Show welcome guide”)
+- users who already finished or skipped the retired guided tour are treated as
+  having seen the showcase so it does not ambush them
+
+Hardcore Mode (`H`, also mounted from `RootShell`):
+
+- blocks pointer clicks while active; scroll and hover remain
+- clicks inside `[data-onboarding-ui]` still work so the showcase/checklist
+  stay usable
+- exits via Escape when nothing higher owns Escape, another `H`, or refresh
+- entering Hardcore clears event-jump chips so there is not a second Esc owner
+
+See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
+[Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for
+file pointers.
+
 ## Session Runtime
 
 File:
