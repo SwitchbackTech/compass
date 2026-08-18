@@ -1,5 +1,6 @@
 import mergeWith from "lodash/mergeWith";
 import { type UserMetadata } from "@core/types/user.types";
+import { stripPrototypePollutingKeys } from "@core/util/prototype-pollution.util";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import {
   type GoogleConnectionFromSync,
@@ -67,9 +68,13 @@ class UserMetadataService {
     const value = hasLegacyEmailUpdatesMetadata(storedMetadata)
       ? removeLegacyEmailUpdatesMetadata(storedMetadata)
       : storedMetadata;
-    const cleanData = hasLegacyEmailUpdatesMetadata(data)
-      ? removeLegacyEmailUpdatesMetadata(data)
-      : data;
+    // `data` comes straight off the request body, so strip prototype-polluting
+    // keys before it reaches the recursive merge below.
+    const cleanData = stripPrototypePollutingKeys(
+      hasLegacyEmailUpdatesMetadata(data)
+        ? removeLegacyEmailUpdatesMetadata(data)
+        : data,
+    );
 
     const update = mergeWith(value, cleanData) as UserMetadata;
 

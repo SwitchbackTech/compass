@@ -42,6 +42,26 @@ describe("UserMetadataService", () => {
       expect(persisted.sync?.importGCal).toBe("RESTART");
     });
 
+    it("ignores prototype-polluting keys in the update payload", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      const data = JSON.parse(
+        '{"sync":{"importGCal":"RESTART"},"__proto__":{"polluted":true}}',
+      ) as Partial<UserMetadata>;
+
+      const metadata = await driver.updateUserMetadata({ userId, data });
+
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(({} as Record<string, unknown>)["polluted"]).toBeUndefined();
+
+      const stored = await getUserMetadataStore().getUserMetadata(userId);
+
+      expect(Object.getOwnPropertyNames(stored.metadata)).not.toContain(
+        "__proto__",
+      );
+    });
+
     it("does not persist email subscription metadata from an update", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
