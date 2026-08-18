@@ -193,6 +193,7 @@ async function start(): Promise<void> {
     nodeEnv: config.NODE_ENV,
     posthogKey: config.POSTHOG_KEY,
     posthogHost: config.POSTHOG_HOST,
+    version: config.VERSION,
   });
 
   // Build the mongo service before the app so the internal connection API can

@@ -7,6 +7,7 @@ export function startPostHogLogs(): void {
     nodeEnv: CONFIG.NODE_ENV,
     posthogKey: CONFIG.POSTHOG_KEY,
     posthogHost: CONFIG.POSTHOG_HOST,
+    version: CONFIG.VERSION,
   });
 }
 

@@ -1,0 +1,91 @@
+name: Error autofix
+
+# Reacts to GitHub issues that PostHog's error-tracking integration files
+# automatically (author posthog[bot]). See .github/prompts/error-autofix.md
+# for the agent's triage/fix/confidence rubric, and
+# docs/CI-CD (or the compass-calendar-internal plan) for the rollout phases.
+#
+# Kill switch: repo variable ERROR_AUTOFIX_ENABLED (default false/unset).
+# Mode: repo variable AUTOFIX_MODE — triage | pr | merge.
+#   triage: comment diagnosis only, no PR.
+#   pr:     open a fix PR, human merges.
+#   merge:  open a fix PR and auto-merge it when the agent is confident and
+#           the deterministic gate below agrees.
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: error-autofix
+  cancel-in-progress: false
+
+jobs:
+  autofix:
+    if: >-
+      vars.ERROR_AUTOFIX_ENABLED == 'true' &&
+      github.event.issue.user.login == 'posthog[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      proceed: ${{ steps.preflight.outputs.proceed }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Preflight guards
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+        run: .github/scripts/autofix-preflight.sh "${{ github.event.issue.number }}"
+
+      - name: Write PostHog MCP config
+        if: steps.preflight.outputs.proceed == 'true'
+        run: |
+          cat > "${RUNNER_TEMP}/posthog-mcp.json" <<EOF
+          {"mcpServers":{"posthog":{"type":"http","url":"https://mcp.posthog.com/mcp","headers":{"Authorization":"Bearer ${{ secrets.POSTHOG_PERSONAL_API_KEY }}"}}}}
+          EOF
+
+      # Deliberately does NOT pass github_token: the action mints its own
+      # Claude GitHub App installation token, whose PR/push events trigger
+      # CI (the default GITHUB_TOKEN's events do not). Without this, an
+      # agent-opened PR would sit with zero checks and never satisfy the
+      # required-status-checks gate added in Phase 3.
+      - name: Run autofix agent
+        if: steps.preflight.outputs.proceed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "posthog"
+          prompt: |
+            Read .github/prompts/error-autofix.md and follow it exactly.
+            Mode: ${{ vars.AUTOFIX_MODE }}
+            Target issue: #${{ github.event.issue.number }}
+          claude_args: |
+            --max-turns 80
+            --allowedTools "Bash,Read,Write,Edit,Glob,Grep,mcp__posthog__*"
+            --mcp-config ${{ runner.temp }}/posthog-mcp.json
+
+  gate-and-merge:
+    needs: autofix
+    if: vars.AUTOFIX_MODE == 'merge' && needs.autofix.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      # Uses a PAT, not GITHUB_TOKEN: the merge push must fire
+      # release-on-main.yml (see comment above), which GITHUB_TOKEN-authored
+      # events do not do.
+      - name: Deterministic merge guard + enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+        run: .github/scripts/autofix-merge-guard.sh "${{ github.event.issue.number }}"
