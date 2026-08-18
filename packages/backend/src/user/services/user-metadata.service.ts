@@ -1,6 +1,5 @@
 import mergeWith from "lodash/mergeWith";
 import { type UserMetadata } from "@core/types/user.types";
-import { stripPrototypePollutingKeys } from "@core/util/prototype-pollution.util";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import {
   type GoogleConnectionFromSync,
@@ -25,6 +24,15 @@ function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
     metadata as UserMetadata & Record<string, unknown>;
 
   return cleanMetadata as T;
+}
+
+/** Untrusted request-body JSON: drop prototype-polluting keys at every depth. */
+function stripUnsafeKeys<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data), (key, value) =>
+    key === "__proto__" || key === "constructor" || key === "prototype"
+      ? undefined
+      : value,
+  ) as T;
 }
 
 class UserMetadataService {
@@ -70,7 +78,7 @@ class UserMetadataService {
       : storedMetadata;
     // `data` comes straight off the request body, so strip prototype-polluting
     // keys before it reaches the recursive merge below.
-    const cleanData = stripPrototypePollutingKeys(
+    const cleanData = stripUnsafeKeys(
       hasLegacyEmailUpdatesMetadata(data)
         ? removeLegacyEmailUpdatesMetadata(data)
         : data,
