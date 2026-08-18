@@ -5,10 +5,13 @@ import {
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
+import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import { track } from "@web/auth/posthog/track";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
+import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
@@ -27,6 +30,9 @@ const SOCIAL_ICONS = {
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal, isOpen: isAuthModalOpen } = useAuthModal();
+  const isGoogleAvailable = useIsGoogleAvailable();
+  const { loading: isGoogleAuthLoading, startGoogleAuthorization } =
+    useStartGoogleAuthorization({ intent: "signIn" });
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
   );
@@ -34,6 +40,10 @@ export function WelcomeModal() {
   // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
   // seats its own focus; restoring the underlay first causes a focus flash.
   const skipFocusRestoreRef = useRef(false);
+  // Seat focus on the email signup button rather than the panel's first
+  // focusable (now Log in) or the Google button: Enter on an OAuth redirect
+  // would fling a first-time visitor off-site before they read anything.
+  const signUpButtonRef = useRef<HTMLButtonElement>(null);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
@@ -55,29 +65,16 @@ export function WelcomeModal() {
 
   // Fade the backdrop and gently scale the panel before unmounting, so the
   // first reveal of the sidebar underneath feels smooth rather than abrupt.
-  const dismiss = (cta: "start_now" | "dismissed" = "dismissed") => {
+  const dismiss = (cta: "explore" | "dismissed" = "dismissed") => {
     if (closing) return;
     markWelcomeSeen();
-    // Backdrop / Escape never traps the user in this modal, but it also
-    // never dead-ends into a blank calendar: both paths start the showcase.
-    shortcutShowcaseActions.start(cta === "start_now" ? "start_now" : "escape");
+    // Exploring without an account lands straight on the calendar. The
+    // shortcut practice is an educational layer for people who have a real
+    // calendar to practice on, so it waits for signup (or the palette); the
+    // checklist teaches the same moves on the sample events meanwhile.
+    shortcutShowcaseActions.markSkippedWithoutStarting();
     track("welcome_modal_dismissed", { cta });
     beginDismiss(() => setIsOpen(false));
-  };
-
-  const handleShortcutKey = (e: React.KeyboardEvent) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const key = keyboardKey(e).toLowerCase();
-    if (key === "u") {
-      e.preventDefault();
-      handOffToAuth("sign_up");
-    } else if (key === "i") {
-      e.preventDefault();
-      handOffToAuth("log_in");
-    } else if (key === "s") {
-      e.preventDefault();
-      dismiss("start_now");
-    }
   };
 
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
@@ -93,12 +90,43 @@ export function WelcomeModal() {
     openModal(cta === "log_in" ? "login" : "signUp");
   };
 
+  // The shortest path to the thing that makes Compass worth keeping: one
+  // round trip that signs the user up and grants calendar access together,
+  // because the Google scopes Compass asks for include the calendar.
+  const handOffToGoogle = () => {
+    skipFocusRestoreRef.current = true;
+    markWelcomeSeen();
+    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    track("welcome_modal_dismissed", { cta: "sign_up_google" });
+    track("signup_started", { source: "welcome_modal_google" });
+    void startGoogleAuthorization();
+  };
+
+  const handleShortcutKey = (e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = keyboardKey(e).toLowerCase();
+    if (key === "g" && isGoogleAvailable) {
+      e.preventDefault();
+      handOffToGoogle();
+    } else if (key === "u") {
+      e.preventDefault();
+      handOffToAuth("sign_up");
+    } else if (key === "i") {
+      e.preventDefault();
+      handOffToAuth("log_in");
+    } else if (key === "s") {
+      e.preventDefault();
+      dismiss("explore");
+    }
+  };
+
   return (
     <OverlayPanel
       align="start"
       ariaLabel="Welcome to Compass Calendar"
       backdropClassName="overflow-y-auto py-8"
       closing={closing}
+      initialFocusRef={signUpButtonRef}
       onDismiss={dismiss}
       skipFocusRestoreRef={skipFocusRestoreRef}
       widthClassName="w-120"
@@ -122,14 +150,6 @@ export function WelcomeModal() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => handOffToAuth("sign_up")}
-              className="c-button-compact c-button-primary rounded-3xl px-4 py-1.5 text-xs"
-            >
-              Sign up
-              <ShortcutHint className="ml-2">U</ShortcutHint>
-            </button>
-            <button
-              type="button"
               onClick={() => handOffToAuth("log_in")}
               className="c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs"
             >
@@ -141,14 +161,40 @@ export function WelcomeModal() {
 
         <WelcomeGuideBody />
 
-        {/* CTA */}
-        <div className="flex justify-center">
+        {/* CTA: connecting a calendar is the moment Compass starts being
+            useful, so the Google round trip - which signs up and grants
+            calendar access at once - leads, and everything else is a fallback
+            from it. */}
+        <div className="flex w-full flex-col items-center gap-3">
+          {isGoogleAvailable && (
+            <>
+              <GoogleButton
+                onClick={handOffToGoogle}
+                disabled={isGoogleAuthLoading}
+                label="Continue with Google"
+                style={{ width: "100%" }}
+              />
+              <p className="text-center text-text-muted text-xs">
+                Signs you up and connects your Google Calendar.
+                <ShortcutHint className="ml-2">G</ShortcutHint>
+              </p>
+            </>
+          )}
           <button
             type="button"
-            onClick={() => dismiss("start_now")}
+            ref={signUpButtonRef}
+            onClick={() => handOffToAuth("sign_up")}
             className="c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
           >
-            Start Now
+            {isGoogleAvailable ? "Sign up with email" : "Sign up"}
+            <ShortcutHint className="ml-2">U</ShortcutHint>
+          </button>
+          <button
+            type="button"
+            onClick={() => dismiss("explore")}
+            className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+          >
+            Explore without an account
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
         </div>

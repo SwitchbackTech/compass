@@ -25,7 +25,7 @@ describe("shortcutShowcaseActions", () => {
   });
 
   it("starts and advances through every step, finishing at the end", () => {
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.replay();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
 
@@ -42,12 +42,14 @@ describe("shortcutShowcaseActions", () => {
     ).toBe("true");
   });
 
-  it("never auto-starts once seen, but replay always works", () => {
-    shortcutShowcaseActions.start();
+  it("never offers itself twice after signup, but replay always works", () => {
+    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.replay();
     shortcutShowcaseActions.skip();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
-    shortcutShowcaseActions.start();
+    // The offer is still pending, but the practice has now been seen.
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
     shortcutShowcaseActions.replay();
@@ -57,12 +59,13 @@ describe("shortcutShowcaseActions", () => {
 
   it("treats legacy tour finishers as having seen the showcase", () => {
     localStorage.setItem(LEGACY_TOUR_SEEN_KEY, "true");
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
   it("steps back to redo a lesson and no-ops on the first step", () => {
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.replay();
     shortcutShowcaseActions.advance();
     expect(useShortcutShowcaseStore.getState().stepIndex).toBe(1);
 
@@ -73,7 +76,7 @@ describe("shortcutShowcaseActions", () => {
   });
 
   it("skips on the first request, from any step and either exit", () => {
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.replay();
     shortcutShowcaseActions.advance();
     shortcutShowcaseActions.skip("signup");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -100,12 +103,12 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("burns the offer on plain dismiss or log-in handoff", () => {
+  it("burns the offer when exploring without an account or logging in", () => {
     shortcutShowcaseActions.markSkippedWithoutStarting();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 });

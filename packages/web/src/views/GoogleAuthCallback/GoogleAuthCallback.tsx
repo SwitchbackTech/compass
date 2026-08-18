@@ -31,6 +31,12 @@ export async function completeGoogleAuthCallback({
     showErrorToast(result.message);
   } else if (result.isNewUser) {
     track("signup_completed", { method: "google" });
+    // completeGoogleAuthorization only reports "completed" once Google granted
+    // every required scope, calendar included, so signing up with Google *is*
+    // the connect. Only the sync service's redirect-after-connect used to fire
+    // this, which is why activation looked like it barely happened: the path
+    // most new users actually take never reported it.
+    track("calendar_connected", { source: "signup_google" });
     shortcutShowcaseActions.offerAfterSignupIfPending();
   } else {
     track("login_completed", { method: "google" });

@@ -56,7 +56,7 @@ describe("ShortcutShowcase", () => {
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(isAppLocked()).toBe(false);
 
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
     expect(isAppLocked()).toBe(true);
 
@@ -67,7 +67,7 @@ describe("ShortcutShowcase", () => {
 
   it("ignores KeyboardEvents with no key instead of throwing", () => {
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     expect(() => {
       act(() => {
@@ -81,7 +81,7 @@ describe("ShortcutShowcase", () => {
   it("teaches create then save, and graduates on Enter", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
 
     // create: C opens a draft with its title editor.
@@ -120,7 +120,7 @@ describe("ShortcutShowcase", () => {
 
   it("keeps answering the shortcuts it no longer gates the exit on", () => {
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     // S flashes the day-prefix chips, typing one jumps, and none of it
     // advances a lesson any more.
@@ -192,7 +192,7 @@ describe("ShortcutShowcase", () => {
   it("offers 'Do it for me' from the first step, and swaps it out at graduation", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     // No idle wait or failed attempt required: the way out is always offered.
     await user.click(screen.getByRole("button", { name: "Do it for me" }));
@@ -206,7 +206,7 @@ describe("ShortcutShowcase", () => {
   it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
 
     // No confirm in the way, and no lesson to finish first.
@@ -221,7 +221,7 @@ describe("ShortcutShowcase", () => {
   it("Skip to calendar leaves straight away, without a confirm", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     await user.click(screen.getByRole("button", { name: "Skip to calendar" }));
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -230,7 +230,7 @@ describe("ShortcutShowcase", () => {
 
   it("Escape skips the showcase outright", () => {
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -239,7 +239,7 @@ describe("ShortcutShowcase", () => {
   it("Previous restores the prior step's board so it can be redone", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     pressKey("c");
     expect(currentStepId()).toBe("save");
@@ -256,7 +256,7 @@ describe("ShortcutShowcase", () => {
   it("Escape inside the title editor closes the editor, not the showcase", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.start());
+    act(() => shortcutShowcaseActions.replay());
 
     pressKey("c");
     expect(currentStepId()).toBe("save");

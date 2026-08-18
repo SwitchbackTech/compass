@@ -16,6 +16,7 @@ import { useChecklistDetection } from "@web/components/OnboardingChecklist/useCh
 import { hasSeenShortcutShowcase } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   selectShowcaseActive,
+  selectShowcaseSeenRevision,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
@@ -145,6 +146,10 @@ const ChecklistCard: FC = () => {
  */
 export const OnboardingChecklist: FC = () => {
   const isShowcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
+  // Subscribed for the signal, not the value: the seen flag lives in storage,
+  // which notifies nobody, and someone who skipped past the practice entirely
+  // would otherwise wait for an unrelated render before the card appeared.
+  useShortcutShowcaseStore(selectShowcaseSeenRevision);
   const isDone = useChecklistStore(selectChecklistDone);
   // Without storage (private mode), progress and dismissal can never
   // persist, so the card would haunt every reload; better to not show it.

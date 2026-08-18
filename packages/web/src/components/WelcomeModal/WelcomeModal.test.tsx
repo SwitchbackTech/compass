@@ -3,7 +3,23 @@ import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  registerUseStartGoogleAuthorizationForTests,
+  resetUseStartGoogleAuthorizationForTests,
+} from "@web/auth/google/authorization/useStartGoogleAuthorization";
+import {
+  resetGoogleAvailabilityForTests,
+  setGoogleAvailabilityForTests,
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
 const mockOpenModal = mock();
 const mockCloseModal = mock();
@@ -185,13 +201,13 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("data-state", "closed");
   });
 
-  it("shows shortcut keycaps on auth and start actions without hover", () => {
+  it("shows shortcut keycaps on auth and explore actions without hover", () => {
     render(<WelcomeModal />);
 
     for (const [name, key] of [
       ["Sign up", "U"],
       ["Log in", "I"],
-      ["Start Now", "S"],
+      ["Explore without an account", "S"],
     ] as const) {
       const hint = within(screen.getByRole("button", { name })).getByText(key);
       expect(hint.className).not.toMatch(/opacity-0/);
@@ -218,13 +234,35 @@ describe("WelcomeModal", () => {
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
   });
 
-  it("dismisses with the S shortcut", async () => {
+  it("explores without an account on S, and never queues the takeover", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);
 
     await user.keyboard("s");
 
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+    // Straight to the calendar: the practice is for people who committed.
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE)).toBe(
+      "true",
+    );
+    expect(
+      localStorage.getItem(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER),
+    ).toBeNull();
+  });
+
+  it("defers the practice offer to after signup", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.click(screen.getByRole("button", { name: "Sign up" }));
+
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER)).toBe(
+      "true",
+    );
+    expect(
+      localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
   });
 
   it("ignores KeyboardEvents with no key instead of throwing", () => {
@@ -251,7 +289,7 @@ describe("WelcomeModal", () => {
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
   });
 
-  it("focuses the first control and keeps Tab inside the dialog", async () => {
+  it("focuses the sign up CTA and keeps Tab inside the dialog", async () => {
     const user = userEvent.setup();
 
     render(
@@ -261,6 +299,8 @@ describe("WelcomeModal", () => {
       </>,
     );
 
+    // Not the panel's first focusable (Log in): the primary action is signing
+    // up, so that is where focus lands.
     const signUp = screen.getByRole("button", { name: "Sign up" });
     expect(signUp).toHaveFocus();
 
@@ -269,9 +309,67 @@ describe("WelcomeModal", () => {
     expect(terms).toHaveFocus();
 
     await user.tab();
-    expect(signUp).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Log in" })).toHaveFocus();
     expect(
       screen.getByRole("button", { name: "Outside calendar" }),
     ).not.toHaveFocus();
+  });
+
+  describe("with Google available", () => {
+    const startGoogleAuthorization = mock();
+
+    beforeEach(() => {
+      startGoogleAuthorization.mockClear();
+      registerUseStartGoogleAuthorizationForTests(() => ({
+        loading: false,
+        startGoogleAuthorization,
+      }));
+      resetGoogleAvailabilityForTests();
+      setGoogleAvailabilityForTests("available");
+    });
+
+    afterEach(() => {
+      resetUseStartGoogleAuthorizationForTests();
+      resetGoogleAvailabilityForTests();
+    });
+
+    it("leads with the Google round trip that also connects the calendar", () => {
+      render(<WelcomeModal />);
+
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(/Signs you up and connects your Google Calendar/),
+      ).toBeTruthy();
+      // Email signup steps aside to a clearly secondary label.
+      expect(
+        screen.getByRole("button", { name: "Sign up with email" }),
+      ).toBeTruthy();
+    });
+
+    it("starts Google auth from the button and queues the practice offer", async () => {
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+
+      await user.click(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      );
+
+      expect(startGoogleAuthorization).toHaveBeenCalled();
+      expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+      expect(
+        localStorage.getItem(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER),
+      ).toBe("true");
+    });
+
+    it("starts Google auth with the G shortcut", async () => {
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+
+      await user.keyboard("g");
+
+      expect(startGoogleAuthorization).toHaveBeenCalled();
+    });
   });
 });

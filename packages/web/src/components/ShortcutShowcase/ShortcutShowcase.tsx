@@ -1,11 +1,13 @@
 import {
   type FC,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
 import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
@@ -35,7 +37,6 @@ import {
   getShowcaseStep,
   SHOWCASE_STEP_IDS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
-import { markShortcutShowcaseSeen } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   selectShowcaseActive,
   selectShowcaseStepIndex,
@@ -84,6 +85,9 @@ const ShowcaseTakeover: FC = () => {
   const closingRef = useRef(false);
   closingRef.current = closing;
   const { openModal } = useAuthModal();
+  // Post-signup is now the showcase's main entry, and "sign up" is not an exit
+  // for someone who just did.
+  const { authenticated } = useContext(SessionContext);
 
   // The takeover owns the keyboard: silence every real app handler
   // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
@@ -92,7 +96,7 @@ const ShowcaseTakeover: FC = () => {
   const graduate = () => {
     // Persist before the curtain so a reload during the reveal does not
     // relaunch the takeover. finish() marks seen again when it unmounts.
-    markShortcutShowcaseSeen();
+    shortcutShowcaseActions.markSeen();
     beginDismiss(() => shortcutShowcaseActions.finish());
   };
   const graduateRef = useRef(graduate);
@@ -395,13 +399,15 @@ const ShowcaseTakeover: FC = () => {
                 >
                   Do it for me
                 </button>
-                <button
-                  type="button"
-                  className={SECONDARY_BUTTON_CLASS}
-                  onClick={skipToSignup}
-                >
-                  Skip to sign up
-                </button>
+                {!authenticated && (
+                  <button
+                    type="button"
+                    className={SECONDARY_BUTTON_CLASS}
+                    onClick={skipToSignup}
+                  >
+                    Skip to sign up
+                  </button>
+                )}
               </>
             )}
             {stepIndex > 0 && stepId !== "graduation" && (

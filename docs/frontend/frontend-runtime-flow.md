@@ -65,23 +65,30 @@ Files:
 checklist, global navigation / calendar-shell shortcuts, and Hardcore Mode.
 Those calendar-onboarding overlays are skipped on `/life`.
 
-Welcome → showcase → checklist contract:
+Welcome → signup → checklist contract:
 
 - unauthenticated users who have not seen welcome get `WelcomeModal`
-- **Start Now** and backdrop / Escape both start the Shortcut Showcase (neither
-  path dumps the user onto a blank calendar)
-- Log In / Sign Up hand off to auth; a pending showcase offer can still run
-  after signup (`showcase.storage.ts`)
-- showcase step order lives in `showcase.steps.ts`; taught keycaps come from
-  `packages/web/src/shortcuts/keymap.ts`. Two lessons gate the exit (create,
-  save); the arena still answers every other shortcut, it just does not make
-  them a condition of leaving
-- every showcase step offers **Skip to sign up** (straight to the signup form)
-  and **Skip** (straight to the calendar); Escape does the latter. There is no
-  confirm in the way
-- after the showcase, `OnboardingChecklist` is practice missions on the real
-  calendar (not an app-lock modal), and it re-teaches the shortcuts the
-  showcase no longer walks through
+- the welcome CTA order is **Continue with Google** (`G`, when Google is
+  available), **Sign up with email** (`U`), then **Explore without an account**
+  (`S`). Google leads because the scopes Compass requests include the calendar,
+  so that one round trip signs the user up *and* connects it — the moment the
+  product starts being worth keeping
+- **Explore without an account**, the backdrop, and Escape all land straight on
+  the calendar. None of them starts a takeover
+- signing up (either route) defers a showcase offer via `showcase.storage.ts`;
+  `offerAfterSignupIfPending()` redeems it once, right after signup completes
+- the Shortcut Showcase therefore has exactly two entries: post-signup, and the
+  command palette's "Practice shortcuts". `showcase.steps.ts` holds the order;
+  taught keycaps come from `packages/web/src/shortcuts/keymap.ts`. Two lessons
+  gate the exit (create, save); the arena still answers every other shortcut,
+  it just does not make them a condition of leaving
+- every showcase step offers **Skip to calendar**, and **Skip to sign up** for
+  anyone not already signed in; Escape does the former. There is no confirm in
+  the way
+- `OnboardingChecklist` is practice missions on the real calendar (not an
+  app-lock modal), shown once the showcase has been seen *or* skipped past —
+  including the explore-without-an-account path. It re-teaches the shortcuts
+  the showcase no longer walks through
 - command palette can reopen practice (“Practice shortcuts”) or the welcome
   guide (“Show welcome guide”)
 - users who already finished or skipped the retired guided tour are treated as
@@ -163,6 +170,13 @@ PostHog's `before_send` runs two filters, in order:
 
 Neither filter touches `$rageclick`: repeated clicking is real frustration
 whatever the DOM did.
+
+`calendar_connected` has two sources, distinguished by a `source` property:
+`signup_google` from `GoogleAuthCallback` (a new user whose Google grant
+included the calendar scopes) and `connect_redirect` from
+`google-connect-status.util.ts` (the sync service's add-account round trip).
+Only the second used to fire, so the activation metric missed the path most new
+users actually take.
 
 ## Client Version Polling
 
