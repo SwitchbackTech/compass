@@ -50,8 +50,9 @@ export type SubscriptionMaintenanceOutcome =
 // this, or vice versa, changes that window — keep the two in step.
 const DEFAULT_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
 
-// Ensure a calendar's events resource has a live push channel: open one if it
-// has none, or replace one that is near expiry. The new channel is persisted
+// Ensure a resource has a live push channel: events.watch for a calendar, or
+// calendarList.watch for the connection's calendar list. Open one if it has
+// none, or replace one that is near expiry. The new channel is persisted
 // BEFORE the old one is stopped, so a callback is always matchable — the reverse
 // order would open a window where neither the old nor the new channel delivers.
 //
@@ -67,7 +68,7 @@ const DEFAULT_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
 // PostHog exceptions across 20 attempts before failing).
 export async function maintainSubscription(
   deps: SubscriptionMaintenanceDeps,
-  calendar: ProviderCalendarRecord,
+  calendar: ProviderCalendarRecord | null,
   resource: SyncResourceRecord,
   now: () => Date,
   options: SubscriptionMaintenanceOptions = {},
@@ -85,7 +86,7 @@ export async function maintainSubscription(
   }
 
   const accessToken = await deps.custody.getValidAccessToken(
-    calendar.connectionId,
+    resource.connectionId,
   );
 
   // The channel id and per-channel token are chosen here so the association is
@@ -96,13 +97,27 @@ export async function maintainSubscription(
 
   let channel: Awaited<ReturnType<ProviderNotificationAdapter["watchEvents"]>>;
   try {
-    channel = await deps.notifications.watchEvents({
-      accessToken,
-      calendarId: calendar.providerCalendarId,
-      channelId,
-      token: channelToken,
-      callbackUrl: deps.callbackUrl,
-    });
+    if (resource.resourceKind === "calendarList") {
+      channel = await deps.notifications.watchCalendarList({
+        accessToken,
+        channelId,
+        token: channelToken,
+        callbackUrl: deps.callbackUrl,
+      });
+    } else {
+      if (!calendar) {
+        throw new Error(
+          `events subscription for resource ${resource._id} is missing its calendar`,
+        );
+      }
+      channel = await deps.notifications.watchEvents({
+        accessToken,
+        calendarId: calendar.providerCalendarId,
+        channelId,
+        token: channelToken,
+        callbackUrl: deps.callbackUrl,
+      });
+    }
   } catch (error) {
     if (error instanceof ProviderNotificationError) {
       if (
@@ -134,7 +149,7 @@ export async function maintainSubscription(
         return { status: "unsupported" };
       }
       if (error.reason === "authorizationRevoked") {
-        await deps.custody.discardRevoked(calendar.connectionId);
+        await deps.custody.discardRevoked(resource.connectionId);
         return { status: "authRevoked" };
       }
     }

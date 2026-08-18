@@ -19,6 +19,9 @@ export interface GoogleChannelsApi {
     calendarId: string;
     requestBody: calendar_v3.Schema$Channel;
   }): Promise<calendar_v3.Schema$Channel>;
+  watchCalendarList(params: {
+    requestBody: calendar_v3.Schema$Channel;
+  }): Promise<calendar_v3.Schema$Channel>;
   stopChannel(params: {
     requestBody: calendar_v3.Schema$Channel;
   }): Promise<void>;
@@ -41,6 +44,10 @@ const defaultApiFactory: GoogleChannelsApiFactory = (accessToken) => {
       const { data } = await gcal.events.watch({ calendarId, requestBody });
       return data;
     },
+    async watchCalendarList({ requestBody }) {
+      const { data } = await gcal.calendarList.watch({ requestBody });
+      return data;
+    },
     async stopChannel({ requestBody }) {
       await gcal.channels.stop({ requestBody });
     },
@@ -61,6 +68,24 @@ const defaultApiFactory: GoogleChannelsApiFactory = (accessToken) => {
 // maintainSubscription persists the replacement BEFORE stopping the old channel
 // so a renewal never opens a delivery gap.
 const DEFAULT_TTL_MS = 48 * 60 * 60 * 1000;
+
+function channelBody(
+  input: {
+    channelId: string;
+    token: string;
+    callbackUrl: string;
+  },
+  expirationMs: number,
+): calendar_v3.Schema$Channel {
+  return {
+    id: input.channelId,
+    type: "web_hook",
+    address: input.callbackUrl,
+    token: input.token,
+    // Google expects an absolute expiration in epoch milliseconds.
+    expiration: String(expirationMs),
+  };
+}
 
 // Google callback headers, lower-cased (Node lower-cases request headers).
 const HEADER_CHANNEL_ID = "x-goog-channel-id";
@@ -94,21 +119,49 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
     ttlMs?: number;
   }): Promise<NotificationChannel> {
     const api = this.#makeApi(input.accessToken);
-    const expiration = this.#now().getTime() + (input.ttlMs ?? DEFAULT_TTL_MS);
+    const expirationMs = this.#expirationMs(input.ttlMs);
+    return this.#openChannel(
+      () =>
+        api.watchEvents({
+          calendarId: input.calendarId,
+          requestBody: channelBody(input, expirationMs),
+        }),
+      input.channelId,
+      expirationMs,
+    );
+  }
 
+  async watchCalendarList(input: {
+    accessToken: string;
+    channelId: string;
+    token: string;
+    callbackUrl: string;
+    ttlMs?: number;
+  }): Promise<NotificationChannel> {
+    const api = this.#makeApi(input.accessToken);
+    const expirationMs = this.#expirationMs(input.ttlMs);
+    return this.#openChannel(
+      () =>
+        api.watchCalendarList({
+          requestBody: channelBody(input, expirationMs),
+        }),
+      input.channelId,
+      expirationMs,
+    );
+  }
+
+  #expirationMs(ttlMs?: number): number {
+    return this.#now().getTime() + (ttlMs ?? DEFAULT_TTL_MS);
+  }
+
+  async #openChannel(
+    watch: () => Promise<calendar_v3.Schema$Channel>,
+    channelId: string,
+    expirationMs: number,
+  ): Promise<NotificationChannel> {
     let channel: calendar_v3.Schema$Channel;
     try {
-      channel = await api.watchEvents({
-        calendarId: input.calendarId,
-        requestBody: {
-          id: input.channelId,
-          type: "web_hook",
-          address: input.callbackUrl,
-          token: input.token,
-          // Google expects an absolute expiration in epoch milliseconds.
-          expiration: String(expiration),
-        },
-      });
+      channel = await watch();
     } catch (error) {
       throw classifyWatchError(error);
     }
@@ -120,11 +173,11 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
       );
     }
     return {
-      channelId: input.channelId,
+      channelId,
       resourceId: channel.resourceId,
       // Google's returned expiration wins over the requested one; fall back to
       // the requested expiry only if it omitted one.
-      expiresAt: parseExpiration(channel.expiration, expiration),
+      expiresAt: parseExpiration(channel.expiration, expirationMs),
     };
   }
 

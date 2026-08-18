@@ -133,7 +133,15 @@ describe("syncCalendarList", () => {
 
     const result = await syncCalendarList(deps(discovery), conn, now);
 
-    expect(result).toEqual({ discovered: 3, imported: 2 });
+    expect(result).toMatchObject({
+      discovered: 3,
+      imported: 2,
+      changedDuringSync: false,
+    });
+    // The returned resource is the post-pass read, so the caller can gate the
+    // watch followup on its subscription fields.
+    expect(result.resource.resourceKind).toBe("calendarList");
+    expect(result.resource.syncCursor).toBe("cur-1");
     expect(await calendarDocs(conn)).toHaveLength(3);
     // One initial import per ACTIVE calendar (2), none for the inactive one.
     const enqueued = await importJobs();
@@ -436,6 +444,111 @@ describe("syncCalendarList", () => {
       (d) => d.providerCalendarId === "team",
     );
     expect(team?.active).toBe(true);
+  });
+
+  it("updates the stored display name when rediscovery reports a rename", async () => {
+    const conn = connection();
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [
+              { ...discovered("mens-group"), displayName: "mens-group" },
+            ],
+            cursor: "cur-1",
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [
+              {
+                ...discovered("mens-group"),
+                displayName: "journey-mens-group",
+              },
+            ],
+            cursor: "cur-2",
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const renamed = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "mens-group",
+    );
+    expect(renamed?.displayName).toBe("journey-mens-group");
+  });
+
+  it("clears a change marker the pass has served", async () => {
+    const conn = connection();
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: "cur-1" },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    // A webhook stamped the marker before this pass claimed the job.
+    const resource = await calendarListResource(conn);
+    await resources.markChangeNotified(
+      conn.tenantId,
+      conn.principalId,
+      String(resource?._id),
+      now(),
+    );
+
+    const result = await syncCalendarList(
+      deps(new FakeDiscovery([{ calendars: [], cursor: "cur-2" }])),
+      conn,
+      now,
+    );
+
+    expect(result.changedDuringSync).toBe(false);
+    expect((await calendarListResource(conn))?.changeNotifiedAt).toBeNull();
+  });
+
+  it("keeps the marker and reports changedDuringSync when a notification lands mid-pass", async () => {
+    const conn = connection();
+    const inner = new FakeDiscovery([
+      { calendars: [discovered("primary")], cursor: "cur-1" },
+    ]);
+    const midPassStamp = new Date("2026-07-10T00:00:05.000Z");
+    // A notification arriving while the provider is being read moves the
+    // marker AFTER the pass captured it, so the compare-and-clear must fail.
+    const discovery: ProviderCalendarAdapter = {
+      provider: "google",
+      discoverCalendars: async (input) => {
+        const resource = await calendarListResource(conn);
+        await resources.markChangeNotified(
+          conn.tenantId,
+          conn.principalId,
+          String(resource?._id),
+          midPassStamp,
+        );
+        return inner.discoverCalendars(input);
+      },
+    };
+
+    const result = await syncCalendarList(
+      { calendars, resources, jobs, discovery, custody },
+      conn,
+      now,
+    );
+
+    expect(result.changedDuringSync).toBe(true);
+    expect((await calendarListResource(conn))?.changeNotifiedAt).toEqual(
+      midPassStamp,
+    );
   });
 
   it("re-lists in full when the incremental cursor has expired", async () => {

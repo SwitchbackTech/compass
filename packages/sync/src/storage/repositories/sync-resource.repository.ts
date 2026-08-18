@@ -523,21 +523,18 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
-  // Events resources whose push subscription expires before `before` (soonest
-  // first, bounded). This is the subscription-maintenance sweep's input, so like
-  // listStaleEvents it is a GLOBAL scan across owners (system liveness, not a
-  // user request) — each returned resource carries its own (tenantId,
-  // principalId) for the job the caller enqueues. Only resources that ALREADY
-  // hold a channel are returned; a resource with no subscription is bootstrapped
-  // by the initialImport followup, not here, so an unwatchable calendar is not
-  // re-selected forever. Uses the subscription_expiry index.
+  // Resources whose push subscription expires before `before` (soonest
+  // first, bounded). Events channels and the connection's calendar-list
+  // channel share this sweep. Only resources that ALREADY hold a channel are
+  // returned; a resource with no subscription is bootstrapped by the import
+  // (events) or calendarListSync (calendar list) followup, not here.
   async listExpiringSubscriptions(
     before: Date,
     limit: number,
   ): Promise<SyncResourceRecord[]> {
     const records = await this.collection
       .find({
-        resourceKind: "events",
+        resourceKind: { $in: ["events", "calendarList"] },
         subscriptionId: { $ne: null },
         subscriptionExpiresAt: { $lt: before },
       })

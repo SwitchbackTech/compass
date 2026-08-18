@@ -90,32 +90,48 @@ export function registerNotificationRoutes(
       if (verdict.status === "process" && resource) {
         // Stamp BEFORE enqueuing. The enqueue below no-ops whenever a job
         // already holds this coalescing key — including the CLAIMED row of a
-        // pull already in flight, which may have read the provider before this
-        // change existed. The marker is what survives that: the running pull's
-        // compare-and-clear fails against it and the pull goes round again.
-        // Stamping first also keeps the ordering safe if the enqueue throws —
-        // a marker with no job is recovered by the reconcile sweep, whereas a
-        // job with no marker could clear a change it never read.
+        // job already in flight, which may have read the provider before this
+        // change existed. The marker is what survives that: the running job's
+        // compare-and-clear (events pull and calendar-list sync alike) fails
+        // against it and the job goes round again. Stamping first also keeps
+        // the ordering safe if the enqueue throws — a marker with no job is
+        // recovered by the sweeps, whereas a job with no marker could clear a
+        // change it never read.
         await resources.markChangeNotified(
           resource.tenantId,
           resource.principalId,
           resource._id,
           now,
         );
-        await new JobRepository(deps.mongo.db).enqueue({
-          tenantId: resource.tenantId,
-          principalId: resource.principalId,
-          connectionId: resource.connectionId,
-          resourceId: resource._id,
-          commandId: null,
-          kind: "incrementalPull",
-          // Background on purpose: webhooks are provider-paced. Promoting them
-          // to user priority would make the entire steady state urgent and
-          // defeat the tier that protects Refresh / post-OAuth work.
-          priority: JOB_PRIORITY.background,
-          runAfter: now,
-          coalescingKey: `incrementalPull:${resource._id}`,
-        });
+        const job =
+          resource.resourceKind === "calendarList"
+            ? {
+                tenantId: resource.tenantId,
+                principalId: resource.principalId,
+                connectionId: resource.connectionId,
+                resourceId: null,
+                commandId: null,
+                kind: "calendarListSync" as const,
+                priority: JOB_PRIORITY.background,
+                runAfter: now,
+                coalescingKey: `calendarListSync:${resource.connectionId}`,
+              }
+            : {
+                tenantId: resource.tenantId,
+                principalId: resource.principalId,
+                connectionId: resource.connectionId,
+                resourceId: resource._id,
+                commandId: null,
+                kind: "incrementalPull" as const,
+                // Background on purpose: webhooks are provider-paced. Promoting
+                // them to user priority would make the entire steady state
+                // urgent and defeat the tier that protects Refresh / post-OAuth
+                // work.
+                priority: JOB_PRIORITY.background,
+                runAfter: now,
+                coalescingKey: `incrementalPull:${resource._id}`,
+              };
+        await new JobRepository(deps.mongo.db).enqueue(job);
       }
       res.status(Status.OK).end();
     } catch (error) {

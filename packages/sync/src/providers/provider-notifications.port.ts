@@ -55,6 +55,17 @@ export interface ProviderNotificationAdapter {
     readonly ttlMs?: number;
   }): Promise<NotificationChannel>;
 
+  // Open a push channel for the account's calendar list so a rename, add,
+  // hide, or unshare is delivered without waiting for the daily rediscovery
+  // sweep. Same channel association contract as watchEvents.
+  watchCalendarList(input: {
+    readonly accessToken: string;
+    readonly channelId: string;
+    readonly token: string;
+    readonly callbackUrl: string;
+    readonly ttlMs?: number;
+  }): Promise<NotificationChannel>;
+
   // Stop a channel. Idempotent: stopping an already-gone channel resolves.
   stopChannel(input: {
     readonly accessToken: string;
