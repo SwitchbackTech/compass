@@ -12,8 +12,10 @@ describe("resolveTimePickerSelection", () => {
       options,
     );
     const listed = options.find((option) => option.value === "5:30 PM");
+    if (!listed) {
+      throw new Error("expected 5:30 PM in getTimeOptions()");
+    }
 
-    expect(listed).toBeDefined();
     expect(value).toBe(listed);
     expect(value).not.toBe(constructed);
     expect(nextOptions).toBe(options);
