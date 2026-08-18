@@ -65,9 +65,9 @@ export const SidebarStatusBar: FC = () => {
   const isEdgeFocus = useEdgeFocusStore(selectEdgeFocusActive);
   const edgeFocusAnnouncement = useEdgeFocusStore(selectEdgeFocusAnnouncement);
   const showEdgeFocus = isEdgeFocus || Boolean(edgeFocusAnnouncement);
-  const isKeyboardPlace =
-    useDraftStore(selectDraftActivity) === "keyboardPlace" &&
-    !useDraftStore(selectIsEventFormOpen);
+  const draftActivity = useDraftStore(selectDraftActivity);
+  const isDraftFormOpen = useDraftStore(selectIsEventFormOpen);
+  const isKeyboardPlace = draftActivity === "keyboardPlace" && !isDraftFormOpen;
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
