@@ -1,0 +1,33 @@
+name: Error autofix post-deploy verification
+
+# "Deploy staging" is a workflow_call reused inside release-on-main.yml, so
+# it never emits its own workflow_run event. We watch the top-level
+# "Release on main" workflow instead and resolve the release tag from its
+# head SHA.
+on:
+  workflow_run:
+    workflows: ["Release on main"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Notify autofix release outcome
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: .github/scripts/autofix-postdeploy-notify.sh
