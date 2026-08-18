@@ -9,15 +9,18 @@ import {
   scheduleDatesFromDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
+import { getFormDates } from "../form.datetime.util";
 import { TimePickers } from "./TimePickers";
 import { describe, expect, it } from "bun:test";
 
 const START_DATE = new Date("2026-04-24T14:00:00.000Z");
 const END_DATE = new Date("2026-04-24T15:00:00.000Z");
 
-// Mirrors EventForm, which derives the selected dates from the draft
-// (scheduleDateStrings(draft)) rather than holding them independently, so a
-// draft update moves the dates the next change is measured against.
+// The selected dates come from getFormDates over the draft's schedule, which
+// is how EventForm builds them (createDateTimeState). That mapping matters
+// here: for a same-day draft getFormDates returns the *start* instant as the
+// end date, so the two dates only diverge once a draft crosses midnight.
+// startTime/endTime stay component state, as they are in EventForm.
 function Harness({
   start = START_DATE,
   end = END_DATE,
@@ -33,36 +36,42 @@ function Harness({
   );
   const [endTime, setEndTime] = useState(getTimeOptionByValue(dayjs(end)));
 
-  const dates = scheduleDatesFromDraft(draft);
+  const { startDate, endDate } = scheduleDatesFromDraft(draft);
+  const formDates = getFormDates(startDate, endDate);
 
   return (
     <>
       <TimePickers
         draft={draft}
         endTime={endTime}
-        selectedEndDate={dayjs(dates.endDate).toDate()}
-        selectedStartDate={dayjs(dates.startDate).toDate()}
+        selectedEndDate={formDates.endDate}
+        selectedStartDate={formDates.startDate}
         setDraft={setDraft}
         setEndTime={setEndTime}
         setStartTime={setStartTime}
         startTime={startTime}
       />
-      <span data-testid="draft-start">{dates.startDate}</span>
-      <span data-testid="draft-end">{dates.endDate}</span>
+      <p>{`draft: ${startDate} / ${endDate}`}</p>
     </>
   );
 }
 
+// Selects by the option's accessible name rather than typing, so a label that
+// is a substring of another ("12 AM" vs "12:30 AM") can never quietly commit
+// the wrong option.
 const pick = async (
   user: ReturnType<typeof userEvent.setup>,
   picker: "Start time" | "End time",
-  text: string,
+  optionName: string,
 ) => {
-  const combobox = screen.getByRole("combobox", { name: picker });
-  await user.click(combobox);
-  await user.type(combobox, text);
-  await user.tab();
+  await user.click(screen.getByRole("combobox", { name: picker }));
+  await user.click(screen.getByRole("option", { name: optionName }));
 };
+
+const expectDraft = (startDate: string, endDate: string) =>
+  expect(
+    screen.getByText(`draft: ${startDate} / ${endDate}`),
+  ).toBeInTheDocument();
 
 describe("TimePickers", () => {
   it("gives the start and end pickers distinct accessible names", () => {
@@ -87,16 +96,11 @@ describe("TimePickers", () => {
       />,
     );
 
-    await pick(user, "End time", "12:00 AM");
+    await pick(user, "End time", "12 AM");
 
     // 30-minute duration preserved by starting the previous evening, rather
     // than 11:30 PM on the 24th, which would end before it starts.
-    expect(screen.getByTestId("draft-start").textContent).toBe(
-      "2026-04-23T23:30:00+00:00",
-    );
-    expect(screen.getByTestId("draft-end").textContent).toBe(
-      "2026-04-24T00:00:00+00:00",
-    );
+    expectDraft("2026-04-23T23:30:00+00:00", "2026-04-24T00:00:00+00:00");
   });
 
   it("moves the end to the next day when correcting it forwards past midnight", async () => {
@@ -110,11 +114,23 @@ describe("TimePickers", () => {
 
     await pick(user, "Start time", "11:30 PM");
 
-    expect(screen.getByTestId("draft-start").textContent).toBe(
-      "2026-04-24T23:30:00+00:00",
+    expectDraft("2026-04-24T23:30:00+00:00", "2026-04-25T00:30:00+00:00");
+  });
+
+  // The day carry belongs on the date of the side the user changed. Applying
+  // it to the compliment's date instead counts an already-overnight draft's
+  // span twice, silently stretching this event to 47 hours.
+  it("does not add a second day when correcting a draft that already crosses midnight", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        start={new Date("2026-04-24T23:30:00.000Z")}
+        end={new Date("2026-04-25T00:30:00.000Z")}
+      />,
     );
-    expect(screen.getByTestId("draft-end").textContent).toBe(
-      "2026-04-25T00:30:00+00:00",
-    );
+
+    await pick(user, "Start time", "11 PM");
+
+    expectDraft("2026-04-24T23:00:00+00:00", "2026-04-25T22:00:00+00:00");
   });
 });

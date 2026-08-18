@@ -90,9 +90,11 @@ export const TimePickers: FC<Props> = ({
     );
 
     if (endTime.value && endTime.value !== option.value) {
-      // A start correction that wrapped backwards past midnight belongs on the
-      // previous calendar day.
-      const startDate = dayjs(selectedStartDate).add(dayOffset, "day").toDate();
+      // The corrected start reduces to (picked end - duration), so it is
+      // anchored to the end's date, and the day carry applies there. Anchoring
+      // it to selectedStartDate instead would double-count the span of a draft
+      // that already crosses midnight.
+      const startDate = dayjs(selectedEndDate).add(dayOffset, "day").toDate();
 
       const schedule = mapToBackend({
         startDate,
@@ -124,9 +126,9 @@ export const TimePickers: FC<Props> = ({
     );
 
     if (startTime.value && startTime.value !== option.value) {
-      // An end correction that wrapped forwards past midnight belongs on the
-      // next calendar day.
-      const endDate = dayjs(selectedEndDate).add(dayOffset, "day").toDate();
+      // The corrected end reduces to (picked start + duration), so it is
+      // anchored to the start's date, and the day carry applies there.
+      const endDate = dayjs(selectedStartDate).add(dayOffset, "day").toDate();
 
       const schedule = mapToBackend({
         startDate: selectedStartDate,
