@@ -19,13 +19,13 @@ describe("shortcutShowcaseActions", () => {
   });
 
   // Module-level singleton shared across the bun process: never leave the
-  // showcase active (or mid-confirm) for suites that run after this file.
+  // showcase active for suites that run after this file.
   afterEach(() => {
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
   });
 
   it("starts and advances through every step, finishing at the end", () => {
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.replay();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
 
@@ -42,12 +42,14 @@ describe("shortcutShowcaseActions", () => {
     ).toBe("true");
   });
 
-  it("never auto-starts once seen, but replay always works", () => {
-    shortcutShowcaseActions.start();
+  it("never offers itself twice after signup, but replay always works", () => {
+    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.replay();
     shortcutShowcaseActions.skip();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
-    shortcutShowcaseActions.start();
+    // The offer is still pending, but the practice has now been seen.
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
     shortcutShowcaseActions.replay();
@@ -57,48 +59,34 @@ describe("shortcutShowcaseActions", () => {
 
   it("treats legacy tour finishers as having seen the showcase", () => {
     localStorage.setItem(LEGACY_TOUR_SEEN_KEY, "true");
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
   it("steps back to redo a lesson and no-ops on the first step", () => {
-    shortcutShowcaseActions.start();
-    shortcutShowcaseActions.advance();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(1);
-
-    shortcutShowcaseActions.back();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
-    shortcutShowcaseActions.back();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
-  });
-
-  it("confirms the first skip request, then skips directly after that", () => {
-    shortcutShowcaseActions.start();
-    shortcutShowcaseActions.requestSkipConfirm();
-    expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(true);
-
-    shortcutShowcaseActions.cancelSkipConfirm();
-    expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(false);
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-
-    // The confirm already ran once this entry: the next request skips.
-    shortcutShowcaseActions.requestSkipConfirm();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-
-    // A fresh entry resets the once-per-entry memory.
     shortcutShowcaseActions.replay();
-    shortcutShowcaseActions.requestSkipConfirm();
-    expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(true);
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    shortcutShowcaseActions.advance();
+    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(1);
+
+    shortcutShowcaseActions.back();
+    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
+    shortcutShowcaseActions.back();
+    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
   });
 
-  it("blocks advance and back while the skip confirm is showing", () => {
-    shortcutShowcaseActions.start();
+  it("skips on the first request, from any step and either exit", () => {
+    shortcutShowcaseActions.replay();
     shortcutShowcaseActions.advance();
-    shortcutShowcaseActions.requestSkipConfirm();
-    shortcutShowcaseActions.advance();
-    shortcutShowcaseActions.back();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(1);
+    shortcutShowcaseActions.skip("signup");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).toBe("true");
+
+    // Skipping an inactive showcase is a no-op, not a second skip event.
+    shortcutShowcaseActions.skip();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
   it("defers the offer through signup and redeems it exactly once", () => {
@@ -115,12 +103,12 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("burns the offer on plain dismiss or log-in handoff", () => {
+  it("burns the offer when exploring without an account or logging in", () => {
     shortcutShowcaseActions.markSkippedWithoutStarting();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
-    shortcutShowcaseActions.start();
+    shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 });

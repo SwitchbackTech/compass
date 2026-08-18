@@ -64,7 +64,7 @@ function fireGoogleConnectStatusToast(status: GoogleConnectStatus): void {
   const toast = getToast();
   switch (status) {
     case "connected":
-      track("calendar_connected");
+      track("calendar_connected", { source: "connect_redirect" });
       toast.success("Google Calendar connected.", {
         ...getToastDefaultOptions(),
         toastId: CONNECT_SUCCESS_TOAST_ID,
