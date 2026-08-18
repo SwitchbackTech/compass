@@ -10,7 +10,10 @@ import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalenda
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
-import { refocusEventElement } from "@web/common/utils/event/event.util";
+import {
+  getCalendarEventIdFromElement,
+  refocusEventElement,
+} from "@web/common/utils/event/event.util";
 import {
   convertAllDayToTimedDates,
   type EventEdge,
@@ -25,7 +28,13 @@ import {
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
 } from "@web/common/utils/form/form.util";
-import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  duplicateGridEventDraft,
+  getGridDraftId,
+  gridEventDraftToGridEvent,
+  replaceGridDraftSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { commitDuplicateEvent } from "@web/events/mutations/duplicate-event";
 import {
   type EventMutationDependencies,
@@ -70,6 +79,40 @@ const isArrowKey = (
   key === "ArrowDown" ||
   key === "ArrowLeft" ||
   key === "ArrowRight";
+
+/**
+ * Form-closed grid draft whose card currently has DOM focus. Drafts stamp
+ * interaction ids but are not registered as saved drag/resize targets, so
+ * `targeting.getFocused()` cannot see them.
+ */
+const getFocusedFormClosedDraft = (): GridEvent | null => {
+  if (isEventFormOpen()) return null;
+
+  const { gridDraft } = useDraftStore.getState();
+  if (!gridDraft) return null;
+
+  const draftId = getGridDraftId(gridDraft);
+  if (!draftId) return null;
+
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return null;
+  if (getCalendarEventIdFromElement(active) !== draftId) return null;
+
+  return gridEventDraftToGridEvent(gridDraft);
+};
+
+const applyNudgedDatesToDraft = (
+  draft: GridEventDraft,
+  nudgedEvent: GridEvent,
+) => {
+  const start = dayjs(nudgedEvent.startDate).toDate();
+  const end = dayjs(nudgedEvent.endDate).toDate();
+  const schedule =
+    draft.values.schedule.kind === "allDay"
+      ? { kind: "allDay" as const, start, end }
+      : { ...draft.values.schedule, start, end };
+  return replaceGridDraftSchedule(draft, schedule);
+};
 
 export type GridEventEditDayBoundary =
   | {
@@ -213,6 +256,33 @@ export function useGridEventEditShortcuts({
     return `${edgeName} ${label}`;
   };
 
+  const wouldAllDayEdgeLeaveVisibleWeek = (
+    event: GridEvent,
+    edge: EventEdge,
+    movement: { days: number },
+  ) => {
+    if (dayBoundary.kind !== "clamp" || !event.isAllDay) return false;
+
+    const { weekDays } = dayBoundary;
+    // All-day endDate is stored exclusive (the day after the last occupied
+    // day), so it's shifted back a day to compare against the inclusive
+    // weekDays window — matching nudgeAllDayEdgeDates's own inclusiveEnd.
+    const edgeDate =
+      edge === "startDate"
+        ? dayjs(event.startDate)
+        : dayjs(event.endDate).subtract(1, "day");
+    if (movement.days === -1 && !edgeDate.isAfter(weekDays[0], "day")) {
+      return true;
+    }
+    if (
+      movement.days === 1 &&
+      !edgeDate.isBefore(weekDays[weekDays.length - 1], "day")
+    ) {
+      return true;
+    }
+    return false;
+  };
+
   const moveFocusedEventEdge = (
     keyboardEvent: KeyboardEvent,
     event: GridEvent,
@@ -225,26 +295,7 @@ export function useGridEventEditShortcuts({
       Boolean(event.isAllDay),
     );
     if (!movement) return;
-
-    if (dayBoundary.kind === "clamp" && event.isAllDay) {
-      const { weekDays } = dayBoundary;
-      // All-day endDate is stored exclusive (the day after the last occupied
-      // day), so it's shifted back a day to compare against the inclusive
-      // weekDays window — matching nudgeAllDayEdgeDates's own inclusiveEnd.
-      const edgeDate =
-        edge === "startDate"
-          ? dayjs(event.startDate)
-          : dayjs(event.endDate).subtract(1, "day");
-      if (movement.days === -1 && !edgeDate.isAfter(weekDays[0], "day")) {
-        return;
-      }
-      if (
-        movement.days === 1 &&
-        !edgeDate.isBefore(weekDays[weekDays.length - 1], "day")
-      ) {
-        return;
-      }
-    }
+    if (wouldAllDayEdgeLeaveVisibleWeek(event, edge, movement)) return;
 
     nudgeEventEdgeFromKeyboard({
       edge,
@@ -259,6 +310,48 @@ export function useGridEventEditShortcuts({
           nextEdge,
           describeEdgeDate(nudgedEvent, nextEdge),
         );
+      },
+    });
+  };
+
+  const moveFocusedDraftEdge = (
+    keyboardEvent: KeyboardEvent,
+    event: GridEvent,
+    edge: EventEdge,
+  ) => {
+    if (!event._id) return;
+
+    const { gridDraft } = useDraftStore.getState();
+    if (!gridDraft) return;
+
+    const movement = getArrowKeyMovement(
+      keyboardEvent.key,
+      Boolean(event.isAllDay),
+    );
+    if (!movement) return;
+    if (wouldAllDayEdgeLeaveVisibleWeek(event, edge, movement)) return;
+
+    const previousStart = dayjs(event.startDate).startOf("day");
+
+    nudgeEventEdgeFromKeyboard({
+      edge,
+      event,
+      keyboardEvent,
+      onNudge: (nudgedEvent, nextEdge) => {
+        draftActions.setGridDraft(
+          applyNudgedDatesToDraft(gridDraft, nudgedEvent),
+        );
+        edgeFocusActions.setEdge(
+          event._id!,
+          nextEdge,
+          describeEdgeDate(nudgedEvent, nextEdge),
+        );
+        if (dayBoundary.kind === "follow") {
+          const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
+          if (!nextStart.isSame(previousStart, "day")) {
+            dayBoundary.onCrossed(nextStart);
+          }
+        }
       },
     });
   };
@@ -327,9 +420,19 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    // No focused mutable saved event: reposition a form-closed draft, or
+    // No focused mutable saved event: if a form-closed draft has an edge
+    // focused, nudge that edge. Otherwise reposition the whole draft, or
     // place one when the grid is idle. Do not place over an existing draft
     // (failed clamp/midnight move) or while a read-only/draft card is focused.
+    const draftEvent = getFocusedFormClosedDraft();
+    if (draftEvent?._id) {
+      const edgeFocus = useEdgeFocusStore.getState();
+      if (edgeFocus.eventId === draftEvent._id && edgeFocus.edge) {
+        moveFocusedDraftEdge(keyboardEvent, draftEvent, edgeFocus.edge);
+        return;
+      }
+    }
+
     const didMoveDraft = repositionDraftByKey(keyboardEvent.key);
     if (didMoveDraft) {
       keyboardEvent.preventDefault();
@@ -348,7 +451,8 @@ export function useGridEventEditShortcuts({
     if (isEventFormOpen() || isEditableKeyboardTarget(keyboardEvent)) return;
     if (isFocusInSidebar()) return;
 
-    const event = getFocusedMutableCalendarEvent();
+    const event =
+      getFocusedMutableCalendarEvent() ?? getFocusedFormClosedDraft();
     if (!event?._id) return;
 
     const forward = !keyboardEvent.shiftKey;
@@ -402,14 +506,20 @@ export function useGridEventEditShortcuts({
   // on nothing (the brief focus-to-body gap mid-remount) is ambiguous, so
   // that case alone waits a tick for refocusEventElement to restore focus
   // before treating it as "focus left the event".
+  // Draft cards are not registered, so targeting.getFocused() is null while
+  // a draft is still focused — resolve those via the draft store + DOM id.
   useEffect(() => {
     let timer = 0;
+    const resolveFocusedEventId = () =>
+      targetingRef.current.getFocused()?.eventId ??
+      getFocusedFormClosedDraft()?._id ??
+      null;
     const checkAfterDelay = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         const { eventId } = useEdgeFocusStore.getState();
         if (!eventId) return;
-        if (targetingRef.current.getFocused()?.eventId !== eventId) {
+        if (resolveFocusedEventId() !== eventId) {
           edgeFocusActions.reset();
         }
       }, 0);
@@ -418,12 +528,12 @@ export function useGridEventEditShortcuts({
       const { eventId } = useEdgeFocusStore.getState();
       if (!eventId) return;
 
-      const focused = targetingRef.current.getFocused();
-      if (!focused) {
+      const focusedId = resolveFocusedEventId();
+      if (!focusedId) {
         checkAfterDelay();
         return;
       }
-      if (focused.eventId !== eventId) {
+      if (focusedId !== eventId) {
         window.clearTimeout(timer);
         edgeFocusActions.reset();
       }

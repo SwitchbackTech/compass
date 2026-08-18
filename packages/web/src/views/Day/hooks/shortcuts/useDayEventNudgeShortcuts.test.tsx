@@ -31,7 +31,10 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
-import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
+import {
+  dayEventRegistry,
+  getDayInteractionTargetAttributes,
+} from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import {
   afterEach,
@@ -46,6 +49,7 @@ import {
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const LATER_TIMED_EVENT_ID = "cccccccccccccccccccccccc";
 const ALL_DAY_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const DRAFT_ID = "dddddddddddddddddddddddd";
 
 const timedEvent: GridEvent = {
   _id: TIMED_EVENT_ID,
@@ -118,6 +122,33 @@ const focusCalendarTarget = (
     eventId,
     eventType,
   });
+  button.focus();
+  return button;
+};
+
+const seedFocusedKeyboardPlaceDraft = () => {
+  const draft = createGridEventDraft(
+    timedGridSchedule(
+      new Date("2026-05-20T09:00:00.000"),
+      new Date("2026-05-20T10:00:00.000"),
+    ),
+    EventIdSchema.parse(DRAFT_ID),
+  );
+  draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+  const button = document.createElement("button");
+  Object.defineProperty(button, "offsetParent", {
+    configurable: true,
+    get: () => document.body,
+  });
+  const attributes = getDayInteractionTargetAttributes({
+    eventId: DRAFT_ID,
+    eventType: "timed",
+  });
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value !== undefined) button.setAttribute(key, value);
+  }
+  button.setAttribute("data-grid-event-surface", "draft");
+  document.body.appendChild(button);
   button.focus();
   return button;
 };
@@ -838,5 +869,66 @@ describe("useDayEventNudgeShortcuts", () => {
     });
 
     expect(useEdgeFocusStore.getState().eventId).toBeNull();
+  });
+
+  it("cycles edge focus with Tab on a form-closed keyboardPlace draft", () => {
+    seedFocusedKeyboardPlaceDraft();
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState()).toMatchObject({
+      eventId: DRAFT_ID,
+      edge: "startDate",
+    });
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+  });
+
+  it("lets Tab leave a draft natively past the end edge instead of trapping focus", () => {
+    seedFocusedKeyboardPlaceDraft();
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    const thirdTab = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "Tab",
+    });
+    document.dispatchEvent(thirdTab);
+
+    expect(thirdTab.defaultPrevented).toBe(false);
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("does not cycle edge focus on a draft while the form is open", () => {
+    seedFocusedKeyboardPlaceDraft();
+    draftActions.setFormOpen(true);
+    renderEditShortcuts();
+
+    pressKey("Tab");
+
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
+  });
+
+  it("moves only the draft start edge with Shift+ArrowUp when that edge is focused", () => {
+    seedFocusedKeyboardPlaceDraft();
+    const { queryClient } = renderEditShortcuts();
+    pressKey("Tab");
+
+    pressKey("ArrowUp", shiftKey);
+
+    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
+    expect(dayjs(schedule?.start).format()).toBe(
+      dayjs("2026-05-20T09:00:00.000").subtract(15, "minutes").format(),
+    );
+    expect(dayjs(schedule?.end).format()).toBe(
+      dayjs("2026-05-20T10:00:00.000").format(),
+    );
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 });
