@@ -37,10 +37,16 @@ export const TimePickers: FC<Props> = ({
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false);
 
+  // shouldAdjustComplimentTime does its math on a fixed calendar-day anchor, so
+  // a correction that crosses midnight lands on an adjacent day. Formatting it
+  // back to a bare "h:mm A" drops that day, and pairing the wrapped time with an
+  // unchanged date produced an inverted schedule that made mapToBackend throw an
+  // unhandled ZodError. Return the day delta so the caller can shift the date
+  // with it.
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string,
-  ): TimeOption => {
+  ): { option: TimeOption; dayOffset: number } => {
     const start = changed === "start" ? value : startTime.value;
     const end = changed === "end" ? value : endTime.value;
 
@@ -55,34 +61,43 @@ export const TimePickers: FC<Props> = ({
     );
 
     if (shouldAdjust) {
+      const corrected =
+        changed === "start"
+          ? compliment.add(adjustment, "minutes")
+          : compliment.subtract(adjustment, "minutes");
+      const option = getTimeOptionByValue(corrected);
+      const dayOffset = corrected
+        .startOf("day")
+        .diff(compliment.startOf("day"), "day");
+
       if (changed === "start") {
-        const _correctedEnd = compliment.add(adjustment, "minutes");
-        const correctedEnd = getTimeOptionByValue(_correctedEnd);
-        setEndTime(correctedEnd);
-        return correctedEnd;
+        setEndTime(option);
+      } else {
+        setStartTime(option);
       }
 
-      if (changed === "end") {
-        const _correctedStart = compliment.subtract(adjustment, "minutes");
-        const correctedStart = getTimeOptionByValue(_correctedStart);
-        setStartTime(correctedStart);
-        return correctedStart;
-      }
+      return { option, dayOffset };
     }
 
-    const defaultOption = changed === "start" ? endTime : startTime;
-    return defaultOption;
+    return { option: changed === "start" ? endTime : startTime, dayOffset: 0 };
   };
 
   const onEndSelected = (option: SelectOption<string>) => {
     setEndTime(option);
-    const correctedStart = adjustComplimentTimeIfNeeded("end", option.value);
+    const { option: correctedStart, dayOffset } = adjustComplimentTimeIfNeeded(
+      "end",
+      option.value,
+    );
 
     if (endTime.value && endTime.value !== option.value) {
+      // A start correction that wrapped backwards past midnight belongs on the
+      // previous calendar day.
+      const startDate = dayjs(selectedStartDate).add(dayOffset, "day").toDate();
+
       const schedule = mapToBackend({
-        startDate: selectedStartDate,
+        startDate,
         endDate: selectedEndDate,
-        startTime: correctedStart ? correctedStart : startTime,
+        startTime: correctedStart,
         endTime: option,
         isAllDay: false,
       });
@@ -103,14 +118,21 @@ export const TimePickers: FC<Props> = ({
 
   const onStartSelected = (option: SelectOption<string>) => {
     setStartTime(option);
-    const correctedEnd = adjustComplimentTimeIfNeeded("start", option.value);
+    const { option: correctedEnd, dayOffset } = adjustComplimentTimeIfNeeded(
+      "start",
+      option.value,
+    );
 
     if (startTime.value && startTime.value !== option.value) {
+      // An end correction that wrapped forwards past midnight belongs on the
+      // next calendar day.
+      const endDate = dayjs(selectedEndDate).add(dayOffset, "day").toDate();
+
       const schedule = mapToBackend({
         startDate: selectedStartDate,
-        endDate: selectedEndDate,
+        endDate,
         startTime: option,
-        endTime: correctedEnd ? correctedEnd : endTime,
+        endTime: correctedEnd,
         isAllDay: false,
       });
 
