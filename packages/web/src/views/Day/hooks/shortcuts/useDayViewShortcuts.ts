@@ -1,3 +1,4 @@
+import { useGridScrollShortcuts } from "@web/grid/shortcuts/useGridScrollShortcuts";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
@@ -21,6 +22,7 @@ interface KeyboardShortcutsConfig {
  * Mirrors the Week view's create/focus semantics: "c" creates a timed event,
  * "a" an all-day event, "u" the calendar. "i" (focus sidebar) is registered
  * separately via useFocusSidebarShortcut, shared with Week.
+ * PageUp/PageDown scroll the timed grid via `useGridScrollShortcuts`.
  */
 export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
@@ -31,6 +33,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onPrevDay,
     onGoToToday,
   } = config;
+
+  useGridScrollShortcuts();
 
   useAppShortcutUp("J", () => {
     onPrevDay?.();
