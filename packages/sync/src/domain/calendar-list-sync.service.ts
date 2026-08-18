@@ -6,6 +6,7 @@ import {
 } from "@sync/providers/provider-calendar.port";
 import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
+import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -28,6 +29,13 @@ export interface CalendarListSyncResult {
   readonly discovered: number;
   // How many active calendars had an initial import enqueued.
   readonly imported: number;
+  // The connection's calendarList resource, re-read after the pass so the
+  // caller sees the subscription fields as this pass left them.
+  readonly resource: SyncResourceRecord;
+  // A change notification landed while this pass was reading the provider, so
+  // the pass may have listed a snapshot that predates it. The marker is left in
+  // place; the caller owns going round again.
+  readonly changedDuringSync: boolean;
 }
 
 // Discover a connection's calendars and bootstrap their sync. This is the front
@@ -67,6 +75,12 @@ export async function syncCalendarList(
   // every sweep cycle (the 2026-07-29 dead-credential tie-break pathology,
   // here for calendarList instead of events).
   await deps.resources.markAttempt(tenantId, principalId, resource._id, now());
+
+  // Read the change marker BEFORE the provider read, mirroring the events
+  // pull: everything this pass observes is a snapshot at or after this
+  // instant, so a marker still holding this value at the end means no change
+  // arrived that this pass could have missed.
+  const notifiedAtStart = resource.changeNotifiedAt;
 
   const accessToken = await deps.custody.getValidAccessToken(connectionId);
 
@@ -223,5 +237,26 @@ export async function syncCalendarList(
     now(),
   );
 
-  return { discovered: discovery.calendars.length, imported };
+  // Retire the change this pass served — but only if nothing moved the marker
+  // while the provider was being read. A failed match means a notification
+  // landed mid-pass (its enqueue coalesced onto this very job and vanished);
+  // leave the newer marker in place and tell the caller to go round again.
+  const served = await deps.resources.clearChangeNotifiedIfUnchanged(
+    tenantId,
+    principalId,
+    resource._id,
+    notifiedAtStart,
+  );
+
+  const updated = await deps.resources.findById(
+    tenantId,
+    principalId,
+    resource._id,
+  );
+  return {
+    discovered: discovery.calendars.length,
+    imported,
+    resource: updated ?? resource,
+    changedDuringSync: !served,
+  };
 }

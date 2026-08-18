@@ -91,10 +91,12 @@ export function registerNotificationRoutes(
         // Stamp BEFORE enqueuing. The enqueue below no-ops whenever a job
         // already holds this coalescing key — including the CLAIMED row of a
         // job already in flight, which may have read the provider before this
-        // change existed. The marker is what survives that: an events pull's
-        // compare-and-clear fails against it and the pull goes round again.
-        // A calendar-list rediscovery does not yet consume the marker; the
-        // next webhook or daily sweep covers a rename that lands mid-pass.
+        // change existed. The marker is what survives that: the running job's
+        // compare-and-clear (events pull and calendar-list sync alike) fails
+        // against it and the job goes round again. Stamping first also keeps
+        // the ordering safe if the enqueue throws — a marker with no job is
+        // recovered by the sweeps, whereas a job with no marker could clear a
+        // change it never read.
         await resources.markChangeNotified(
           resource.tenantId,
           resource.principalId,

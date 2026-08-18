@@ -1095,6 +1095,97 @@ describe("dispatchSyncJob", () => {
     expect(invalidationCount).toBe(1);
   });
 
+  it("re-lists when a notification lands mid-discovery, then clears the marker", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    // The first pass gets a change notification while it is reading the
+    // provider (its enqueue coalesced onto this very job and vanished); the
+    // moved marker must make dispatch go round again.
+    let calls = 0;
+    const restlessDiscovery: SyncJobDispatchDeps["discovery"] = {
+      provider: "google" as const,
+      discoverCalendars: async () => {
+        calls += 1;
+        if (calls === 1) {
+          const resource = await storage
+            .db()
+            .collection(SYNC_COLLECTIONS.syncResources)
+            .findOne({ connectionId, resourceKind: "calendarList" });
+          await resources.markChangeNotified(
+            tenantId as SyncResourceRecord["tenantId"],
+            principalId as SyncResourceRecord["principalId"],
+            String(resource?._id),
+            new Date("2026-07-10T00:00:05.000Z"),
+          );
+        }
+        return discovery.discoverCalendars();
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, notifications, restlessDiscovery),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome).toMatchObject({ result: "done" });
+    expect(calls).toBe(2);
+    // The second pass served the mid-pass change and retired its marker.
+    const resource = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ connectionId, resourceKind: "calendarList" });
+    expect(resource?.changeNotifiedAt).toBeNull();
+  });
+
+  it("skips the watch followup when the provider refused calendar-list watch", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    // Seed a cursored calendarList resource marked unwatchable: the pass runs
+    // incrementally (no full-pass clear of the verdict), so the followup gate
+    // must leave the refused watch to the daily rediscovery cadence.
+    const resource = await resources.ensure({
+      tenantId: tenantId as SyncResourceRecord["tenantId"],
+      principalId: principalId as SyncResourceRecord["principalId"],
+      connectionId: connectionId as SyncResourceRecord["connectionId"],
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "cursor-0",
+      now(),
+    );
+    await resources.markWatchUnsupported(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+  });
+
   it("drops a calendarListSync whose connection no longer exists", async () => {
     stubbedConnection = null; // findById returns nothing
 

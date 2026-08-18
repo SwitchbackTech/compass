@@ -218,7 +218,26 @@ async function runSyncJob(
     if (!connection) {
       return { result: "drop", reason: "connection no longer exists" };
     }
-    await syncCalendarList(deps, connection, now);
+    // Re-list while notifications land mid-pass, mirroring pullUntilQuiet: a
+    // webhook that arrives while this job is CLAIMED coalesces onto it and
+    // vanishes, so the moved change marker is the only signal that this pass
+    // listed a snapshot from before the change. Bounded for the same reason as
+    // pulls; on giving up the marker stays set and the daily rediscovery sweep
+    // covers the remainder.
+    let list = await syncCalendarList(deps, connection, now);
+    let passes = 1;
+    while (list.changedDuringSync && passes < MAX_PULL_PASSES) {
+      deps.log?.info?.(
+        `Sync connection ${job.connectionId}: notification landed mid-discovery, re-listing (pass ${passes + 1}/${MAX_PULL_PASSES})`,
+      );
+      list = await syncCalendarList(deps, connection, now);
+      passes += 1;
+    }
+    if (list.changedDuringSync) {
+      deps.log?.warn(
+        `Sync connection ${job.connectionId}: still receiving calendar-list notifications after ${MAX_PULL_PASSES} discovery passes; leaving the rest to the rediscovery sweep`,
+      );
+    }
     // Discovery upserts display names, colors, and membership. Without a
     // connection invalidation the open SPA keeps the stale calendar list
     // (S40 gap: event pulls already invalidate, calendar-list sync did not).
@@ -231,19 +250,17 @@ async function runSyncJob(
       },
       emittedAt: now(),
     });
-    const calendarList = (
-      await deps.resources.listByConnection(
-        job.tenantId,
-        job.principalId,
-        job.connectionId,
-      )
-    ).find((resource) => resource.resourceKind === "calendarList");
-    // Open a calendar-list push channel once. Renewals are the expiry sweep;
-    // a rediscovery that already has a live channel must not churn it.
-    if (calendarList && calendarList.subscriptionId === null) {
+    // Open a calendar-list push channel once. Renewals are the expiry sweep; a
+    // rediscovery that already has a live channel must not churn it, and one
+    // the provider refused (watchUnsupportedAt) polls via the daily sweep until
+    // the next full pass clears the verdict for a fresh attempt.
+    if (
+      list.resource.subscriptionId === null &&
+      list.resource.watchUnsupportedAt === null
+    ) {
       return {
         result: "done",
-        followup: subscriptionFollowup(calendarList, now),
+        followup: subscriptionFollowup(list.resource, now),
       };
     }
     return { result: "done" };
