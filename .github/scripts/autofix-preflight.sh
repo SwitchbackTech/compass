@@ -6,21 +6,16 @@
 set -uo pipefail
 
 ISSUE_NUMBER=${1:?usage: autofix-preflight.sh <issue-number>}
-REPO=${GH_REPO:-$GITHUB_REPOSITORY}
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-notify() {
-  "$SCRIPT_DIR/discord-notify.sh" "$1" || true
-}
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autofix-lib.sh"
 
 proceed() {
   printf 'proceed=%s\n' "$1" >>"$GITHUB_OUTPUT"
 }
 
+# Runs only under runs-on: ubuntu-latest (see error-autofix.yml), where GNU
+# date's "N hours ago" form is always available — no BSD fallback needed.
 since_hours_ago() {
-  local hours=$1
-  date -u -d "${hours} hours ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null ||
-    date -u -v-"${hours}"H +%Y-%m-%dT%H:%M:%SZ
+  date -u -d "${1} hours ago" +%Y-%m-%dT%H:%M:%SZ
 }
 
 already_labeled() {

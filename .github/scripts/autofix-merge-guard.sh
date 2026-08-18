@@ -10,8 +10,7 @@
 set -uo pipefail
 
 ISSUE_NUMBER=${1:?usage: autofix-merge-guard.sh <issue-number>}
-REPO=${GH_REPO:-$GITHUB_REPOSITORY}
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autofix-lib.sh"
 
 # Paths an autofix PR must never touch, even if the agent judged itself
 # confident. Mirrors the rubric in error-autofix.md; kept here as the
@@ -43,10 +42,6 @@ DENIED_PATH_PATTERNS=(
 
 MAX_FILES=8
 MAX_LINES=250
-
-notify() {
-  "$SCRIPT_DIR/discord-notify.sh" "$1" || true
-}
 
 downgrade() {
   local pr_number=$1

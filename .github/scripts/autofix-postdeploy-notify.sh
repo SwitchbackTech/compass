@@ -5,14 +5,9 @@
 # manual step — this script never dispatches the deploy itself.
 set -uo pipefail
 
-REPO=${GH_REPO:-$GITHUB_REPOSITORY}
 HEAD_SHA=${HEAD_SHA:?missing HEAD_SHA}
 CONCLUSION=${CONCLUSION:-success}
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-
-notify() {
-  "$SCRIPT_DIR/discord-notify.sh" "$1" || true
-}
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autofix-lib.sh"
 
 main() {
   local tag

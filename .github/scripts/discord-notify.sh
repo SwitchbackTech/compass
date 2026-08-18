@@ -5,10 +5,6 @@
 # yet (e.g. during Phase 1 rollout before the secret exists).
 set -uo pipefail
 
-json_escape() {
-  sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e ':a;N;$!ba;s/\n/\\n/g'
-}
-
 main() {
   local message=${1:-}
   if [ -z "$message" ]; then
@@ -20,12 +16,16 @@ main() {
     return 0
   fi
 
-  local escaped
-  escaped=$(printf '%s' "$message" | json_escape)
-  curl -fsS \
-    -H 'Content-Type: application/json' \
-    -d "{\"content\":\"${escaped}\"}" \
-    "$DISCORD_ERRORS_WEBHOOK_URL" >/dev/null
+  # jq handles JSON string escaping correctly for any input (control
+  # characters included) — a hand-rolled sed escaper only covering
+  # backslash/quote/newline would silently emit invalid JSON for a message
+  # containing e.g. a tab, and this webhook's messages are LLM-authored
+  # summaries where that's a real possibility, not a hypothetical.
+  jq -n --arg content "$message" '{content: $content}' |
+    curl -fsS \
+      -H 'Content-Type: application/json' \
+      -d @- \
+      "$DISCORD_ERRORS_WEBHOOK_URL" >/dev/null
 }
 
 main "$@"
