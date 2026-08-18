@@ -13,6 +13,7 @@ import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-tes
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Categories_Event } from "@web/common/types/web.event.types";
+import { focusEventFormField } from "@web/common/utils/form/form.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
@@ -21,9 +22,22 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+/**
+ * The `Mod+E` leader lives in one place for the whole app (Week/Day mount it
+ * via useGridEventFormFieldSequences), not in EventForm. When no grid card is
+ * focused and the form is open, that owner dispatches straight to
+ * focusEventFormField, which is what this harness reproduces so the form's own
+ * fields can still be tested against the real leader.
+ */
+function WithEditLeader({ children }: { children: React.ReactNode }) {
+  useEditSequenceShortcut({ onSequence: focusEventFormField });
+  return <>{children}</>;
+}
 
 type CapturedDateTimeSectionProps = Pick<
   DateTimeSectionProps,
@@ -92,7 +106,11 @@ mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 
-function dispatchModKey(target: HTMLElement, key: string) {
+function dispatchModKey(
+  target: HTMLElement,
+  key: string,
+  { shift = false }: { shift?: boolean } = {},
+) {
   const modifierKey = resolveModifier("Mod");
   const isControl = modifierKey === "Control";
 
@@ -104,8 +122,20 @@ function dispatchModKey(target: HTMLElement, key: string) {
       ctrlKey: isControl,
       key,
       metaKey: !isControl,
+      shiftKey: shift,
     }),
   );
+}
+
+function dispatchKey(target: HTMLElement, key: string) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key,
+  });
+  target.dispatchEvent(event);
+  return event;
 }
 
 function dispatchArrowDown(target: HTMLElement) {
@@ -327,6 +357,160 @@ describe("EventForm", () => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
     expect(onDuplicate).toHaveBeenCalledWith(draft);
+  });
+
+  it("jumps focus to the location field with Mod+E then L from the title field", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    const followEvent = dispatchKey(titleField, "l");
+
+    expect(followEvent.defaultPrevented).toBe(true);
+    expect(screen.getByRole("textbox", { name: "Location" })).toHaveFocus();
+  });
+
+  it("jumps focus to the description field with Mod+E then D from the location field", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft({ description: "Plan the launch" })}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const locationField = screen.getByRole("textbox", { name: "Location" });
+    act(() => locationField.focus());
+
+    dispatchModKey(locationField, "e");
+    dispatchKey(locationField, "d");
+
+    expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
+  });
+
+  it("jumps focus out of the TipTap description editor to the title field with Mod+E then T", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft({ description: "Plan the launch" })}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
+    act(() => descriptionField.focus());
+
+    dispatchModKey(descriptionField, "e");
+    dispatchKey(descriptionField, "t");
+
+    expect(screen.getByPlaceholderText("Title")).toHaveFocus();
+  });
+
+  it("does not crash jumping to the account field on an edit draft, where the picker isn't rendered", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    expect(() => dispatchKey(titleField, "a")).not.toThrow();
+    expect(titleField).toHaveFocus();
+  });
+
+  it("jumps focus to the color picker with Mod+E then C from the title field", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    dispatchKey(titleField, "c");
+
+    expect(
+      screen.getByRole("radio", { name: "Calendar default" }),
+    ).toHaveFocus();
+  });
+
+  it("does not jump focus when a bare letter is typed without the Mod+E leader", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    const event = dispatchKey(titleField, "l");
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(titleField).toHaveFocus();
   });
 
   it("closes a draft event immediately when deleting from the menu", async () => {

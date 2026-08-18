@@ -2,7 +2,8 @@ import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
@@ -22,6 +23,7 @@ import {
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -38,6 +40,7 @@ export interface SyncJobDispatchDeps {
   // syncCalendarList resolves the connection a calendarListSync job targets,
   // discovers its calendars, and enqueues an initial import per active calendar.
   connections: ProviderConnectionRepository;
+  credentials: CredentialRepository;
   discovery: ProviderCalendarAdapter;
   jobs: JobRepository;
   // pullCalendarChanges consults pending commands before deleting an event.
@@ -55,8 +58,12 @@ export interface SyncJobDispatchDeps {
   // Optional: a bootstrap/repair job settling "done" is otherwise invisible
   // (drops and errors are logged; "done" is not) - an hour of a resource
   // repairing every ~2 minutes produced zero log lines (2026-08-04 staging).
-  // Defaults to a no-op so tests stay dependency-free.
-  log?: { warn: (message: string) => void };
+  // Defaults to a no-op so tests stay dependency-free. `info` is optional on
+  // top of that so existing callers passing only `warn` keep type-checking.
+  log?: {
+    warn: (message: string) => void;
+    info?: (message: string) => void;
+  };
 }
 
 // The decision a dispatch makes about a claimed job. The worker loop (a later
@@ -108,6 +115,20 @@ export async function dispatchSyncJob(
         result: "drop",
         reason: `credential unusable (${error.reason}) for connection ${job.connectionId}; sync resumes on reconnect`,
       };
+    }
+
+    // The provider rejected the cached access token (401). Event reads
+    // (pull/import/repair) remint in-process via listEventPageWithAuthRetry;
+    // this fallback covers any path that still throws authExpired. Invalidate
+    // so the worker retry mints a fresh token instead of replaying the same
+    // rejected one. If the refresh then fails with authorizationRevoked, that
+    // surfaces as ProviderAuthError on the next attempt and is handled above.
+    if (
+      error instanceof ProviderEventReadError &&
+      error.reason === "authExpired"
+    ) {
+      await deps.custody.invalidateAccessToken(job.connectionId);
+      throw error;
     }
 
     // A DURABLE read rejection: Google answered with a 4xx that is not 410
@@ -266,7 +287,7 @@ async function runSyncJob(
       return { result: "done", followup: subscriptionFollowup(resource, now) };
     }
     case "incrementalPull": {
-      const pull = await pullCalendarChanges(deps, calendar, now);
+      const pull = await pullUntilQuiet(deps, calendar, now);
       if (pull.status === "applied") {
         await appendCalendarInvalidation(deps, calendar, now());
         // Bootstrap a channel for an imported calendar that has none. The
@@ -310,7 +331,7 @@ async function runSyncJob(
       // provider watch durable. It deliberately has its own job kind so an
       // unrelated reconcile/manual pull can never make a new connection look
       // ready before watch setup has completed.
-      const pull = await pullCalendarChanges(deps, calendar, now);
+      const pull = await pullUntilQuiet(deps, calendar, now);
       if (pull.status === "applied") {
         await deps.resources.setBootstrapState(
           resource.tenantId,
@@ -319,6 +340,7 @@ async function runSyncJob(
           "ready",
         );
         await appendCalendarInvalidation(deps, calendar, now());
+        await refreshConnectionStateAfterBootstrap(deps, job);
         return { result: "done" };
       }
       if (pull.status === "notImported") {
@@ -379,6 +401,7 @@ async function runSyncJob(
           "ready",
         );
         await appendCalendarInvalidation(deps, calendar, now());
+        await refreshConnectionStateAfterBootstrap(deps, job);
         return { result: "done" };
       }
       if (subscription.status !== "authRevoked") {
@@ -396,6 +419,66 @@ async function runSyncJob(
       return { result: "done" };
     }
   }
+}
+
+// How many extra passes a single pull job will make to absorb notifications
+// that land while it is running. A busy calendar can always produce one more
+// change mid-pull; the bound stops that from holding a worker lane forever.
+// On giving up, the change marker is left set and the reconcile sweep covers
+// the remainder — slow, but bounded and visible in the log.
+const MAX_PULL_PASSES = 3;
+
+// Pull until no notification arrives mid-pull, then report the last result.
+//
+// A pull that reads the provider and THEN receives a notification has missed
+// that change: the notification's enqueue coalesced onto this job's own claimed
+// row and did nothing (JobRepository.enqueue is $setOnInsert-only), and this
+// job's row is deleted the moment it settles. Re-pulling here is what closes
+// that window. It cannot be done with a followup job — the worker enqueues
+// followups BEFORE completing the current job (sync-job-worker.service.ts), so
+// a followup sharing the `incrementalPull:<resourceId>` key would coalesce onto
+// the very row it is meant to replace and vanish the same way.
+//
+// Each pass re-reads from the cursor the previous pass advanced, so a pass with
+// nothing new is one cheap empty page.
+async function pullUntilQuiet(
+  deps: SyncJobDispatchDeps,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<Awaited<ReturnType<typeof pullCalendarChanges>>> {
+  let pull = await pullCalendarChanges(deps, calendar, now);
+  let passes = 1;
+
+  while (
+    pull.status === "applied" &&
+    pull.changedDuringPull &&
+    passes < MAX_PULL_PASSES
+  ) {
+    deps.log?.info?.(
+      `Sync resource ${pull.resource._id} (calendar ${calendar._id}): notification landed mid-pull, re-pulling (pass ${passes + 1}/${MAX_PULL_PASSES})`,
+    );
+    pull = await pullCalendarChanges(deps, calendar, now);
+    passes += 1;
+  }
+
+  if (pull.status === "applied") {
+    if (pull.changedDuringPull) {
+      deps.log?.warn(
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): still receiving notifications after ${MAX_PULL_PASSES} pull passes; leaving the rest to the reconcile sweep`,
+      );
+    }
+    if (pull.pushLatencyMs !== null) {
+      // The number that says whether the push path is meeting its ~30s bar or
+      // quietly degrading to the 15-minute reconcile fallback. Nothing measured
+      // this before, so "late" and "dropped" were indistinguishable after the
+      // fact.
+      deps.log?.info?.(
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms over ${passes} pass(es), ${pull.changed} changed, ${pull.deleted} deleted`,
+      );
+    }
+  }
+
+  return pull;
 }
 
 function repairFollowup(
@@ -451,6 +534,31 @@ function bootstrapCatchupFollowup(
 
 function needsBootstrapCompletion(resource: SyncResourceRecord): boolean {
   return resource.bootstrapState !== "ready";
+}
+
+// Push derived connection state after bootstrap evidence changes. At dispatch
+// time the current job is still claimed, so derivation lands on catchingUp
+// (still a change from importing → invalidation fires → client refetches →
+// the read-path refresh after the job settles lands healthy). Never fail the
+// job: state refresh is observational, not part of the provider work.
+async function refreshConnectionStateAfterBootstrap(
+  deps: SyncJobDispatchDeps,
+  job: JobRecord,
+): Promise<void> {
+  try {
+    const connection = await deps.connections.findById(
+      job.tenantId,
+      job.principalId,
+      job.connectionId,
+    );
+    if (!connection) return;
+    await refreshConnectionState(deps, connection);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    deps.log?.warn(
+      `Failed to refresh connection state after bootstrap for connection ${job.connectionId}: ${detail}`,
+    );
+  }
 }
 
 async function appendCalendarInvalidation(

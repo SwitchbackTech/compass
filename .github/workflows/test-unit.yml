@@ -20,6 +20,7 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out Git repository
@@ -53,6 +54,7 @@ jobs:
 
   knip:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out Git repository
@@ -88,6 +90,7 @@ jobs:
 
   type-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out Git repository
@@ -121,6 +124,7 @@ jobs:
 
   unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:

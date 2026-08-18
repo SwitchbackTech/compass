@@ -1,5 +1,4 @@
 export interface ShortcutContext {
-  eventFocused?: boolean;
   isFormOpen?: boolean;
   lifeView?: boolean;
 }

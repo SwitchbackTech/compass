@@ -25,20 +25,20 @@ describe("getNavigationCommandItems", () => {
       "Go to Week",
       "Go to Life",
       "Show shortcuts",
-      "Toggle keyboard-only mode",
+      "Toggle Hardcore Mode",
     ]);
   });
 
-  it("lists the onboarding tour restart next to the welcome guide", () => {
+  it("lists the shortcut practice replay next to the welcome guide", () => {
     const labels = getNavigationCommandItems({
       ...noopHandlers,
-      onShowOnboardingTour: () => {},
+      onPracticeShortcuts: () => {},
       onShowWelcomeGuide: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toContain("Restart onboarding tour");
+    expect(labels).toContain("Practice shortcuts");
     expect(labels).toContain("Show welcome guide");
-    expect(labels.indexOf("Restart onboarding tour")).toBeLessThan(
+    expect(labels.indexOf("Practice shortcuts")).toBeLessThan(
       labels.indexOf("Show welcome guide"),
     );
   });
@@ -52,7 +52,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Day",
       "Go to Week",
       "Go to Life",
-      "Toggle keyboard-only mode",
+      "Toggle Hardcore Mode",
     ]);
   });
 
@@ -77,11 +77,7 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual([
-      "Go to Day",
-      "Go to Week",
-      "Toggle keyboard-only mode",
-    ]);
+    expect(labels).toEqual(["Go to Day", "Go to Week", "Toggle Hardcore Mode"]);
   });
 
   it("runs the matching navigation callbacks", () => {
@@ -132,13 +128,13 @@ describe("getNavigationCommandItems", () => {
       expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
     });
 
-    it("advertises Shift Shift as the shortcut", () => {
+    it("advertises h as the shortcut", () => {
       const item = getNavigationCommandItems({
         onNavigateToView: () => {},
       }).find((entry) => entry.id === "enter-keyboard-only");
 
-      expect(item?.label).toBe("Toggle keyboard-only mode");
-      expect(item?.shortcut).toEqual(["Shift", "Shift"]);
+      expect(item?.label).toBe("Toggle Hardcore Mode");
+      expect(item?.shortcut).toEqual(["h"]);
     });
   });
 });

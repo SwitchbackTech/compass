@@ -5,10 +5,8 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
-import {
-  selectKeyboardOnlyActive,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
@@ -21,7 +19,7 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
-import { subscribeToShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
+import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 export type ShiftHintFocusTarget = {
   eventId: string;
@@ -112,10 +110,9 @@ const buildDayJumpAssignments = (
 };
 
 /**
- * Tap Shift to toggle day-prefix jump labels on grid events. Esc or another
- * Shift tap exits. Day letters (and digits after a day) win over global
- * shortcuts while active. Shift+chords never toggle; Shift-Shift forces off
- * so keyboard-only mode can enter.
+ * Press `s` to show day-prefix jump labels. Esc exits. Day letters (and digits
+ * after a day) win over global shortcuts while active. In day view, a second
+ * `s` toggles off; in week view `s` keeps Sunday/Saturday prefix meaning.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
@@ -200,7 +197,6 @@ export function useShiftHoldEventHints({
 
     const activate = () => {
       if (isAppLocked()) return;
-      if (selectKeyboardOnlyActive(useKeyboardOnlyStore.getState())) return;
       const assignments = rebuildAssignments();
       if (assignments.length === 0) return;
       isActiveRef.current = true;
@@ -210,15 +206,11 @@ export function useShiftHoldEventHints({
       setHints(toActiveHints(assignments, visibleByIdRef.current));
     };
 
-    const deactivate = (announceOff = true) => {
+    const deactivate = () => {
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
-      if (announceOff) {
-        eventJumpActions.setActive(false);
-      } else {
-        eventJumpActions.silenceOff();
-      }
+      eventJumpActions.setActive(false);
     };
 
     const focusEvent = (eventId: string) => {
@@ -259,7 +251,21 @@ export function useShiftHoldEventHints({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (!isActiveRef.current) return;
+
+      if (!isActiveRef.current) {
+        if (!isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) return;
+        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+        if (isEditSequenceArmed()) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        activate();
+        if (isActiveRef.current) {
+          suppressKeyUpRef.current.add("s");
+        }
+        return;
+      }
+
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
         deactivate();
         return;
@@ -288,6 +294,8 @@ export function useShiftHoldEventHints({
       if (key.length !== 1) return;
 
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
+      // Leave bare `h` alone so Hardcore can toggle (child listeners register
+      // before RootShell, so jump would otherwise mark the event prevented).
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
         key,
@@ -295,15 +303,23 @@ export function useShiftHoldEventHints({
         mode: modeRef.current,
       });
 
-      event.preventDefault();
-      event.stopPropagation();
-      suppressKeyUpRef.current.add(key);
-
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
+        if (key === "h") return;
+        event.preventDefault();
+        event.stopPropagation();
+        suppressKeyUpRef.current.add(key);
+        // Day view has no letter prefixes; a second `s` toggles off.
+        if (modeRef.current === "day" && key === "s") {
+          deactivate();
+        }
         return;
       }
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressKeyUpRef.current.add(key);
 
       if (match.kind === "prefix") {
         bufferRef.current = match.buffer;
@@ -354,20 +370,6 @@ export function useShiftHoldEventHints({
       if (isActiveRef.current) deactivate();
     };
 
-    // Single tap toggles hints on/off; a following second tap (double tap)
-    // cancels whatever the first tap just did, so keyboard-only mode can win.
-    const unsubscribeShiftGesture = subscribeToShiftTapGesture((event) => {
-      if (event.type === "singleTap") {
-        if (isActiveRef.current) {
-          deactivate();
-        } else {
-          activate();
-        }
-        return;
-      }
-      if (isActiveRef.current) deactivate(false);
-    });
-
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("blur", onBlur);
@@ -375,7 +377,6 @@ export function useShiftHoldEventHints({
     return () => {
       clearAmbiguousCommitTimer();
       suppressKeyUpRef.current.clear();
-      unsubscribeShiftGesture();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);
@@ -392,8 +393,15 @@ export function useShiftHoldEventHints({
     .join(",");
 
   useEffect(() => {
-    if (!isActive) return;
-    // Read eventIdsKey so the effect re-runs when the visible event id set changes.
+    if (!isActive) {
+      // External reset (e.g. Hardcore `h`) clears the store without going
+      // through deactivate(); drop local chips/buffer to match.
+      bufferRef.current = "";
+      assignmentsRef.current = [];
+      visibleByIdRef.current = new Map();
+      setHints([]);
+      return;
+    }
     void eventIdsKey;
 
     const { assignments, visibleById } = buildDayJumpAssignments(

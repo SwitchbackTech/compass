@@ -83,7 +83,11 @@ describe("GoogleNotificationAdapter watch/stop", () => {
         type: "web_hook",
         address: "https://sync.example.com/callbacks/google",
         token: "chan-token",
-        expiration: String(new Date("2026-01-08T00:00:00Z").getTime()),
+        // 48h, not the week Google allows: a channel can stop delivering
+        // without expiring, and the renewal sweep only selects on expiry, so
+        // the short lifetime is what forces a daily re-watch and bounds that
+        // blind window.
+        expiration: String(new Date("2026-01-03T00:00:00Z").getTime()),
       },
     });
     expect(channel).toEqual({

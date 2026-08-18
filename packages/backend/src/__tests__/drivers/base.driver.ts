@@ -79,6 +79,12 @@ export class BaseDriver {
   openSSEStream(user?: { userId: string; sessionId?: string }): {
     close: () => void;
     waitForEvent: (eventName: string, timeoutMs?: number) => Promise<unknown>;
+    /**
+     * Resolves once a short event-loop settle passes with no matching event.
+     * Prefer this over a fixed multi-hundred-ms timeout when asserting that a
+     * publish did not fan out to this stream.
+     */
+    waitForNoEvent: (eventName: string, settleMs?: number) => Promise<void>;
   } {
     if (!this.serverUri) throw new Error("did you forget to call `listen`?");
 
@@ -183,6 +189,32 @@ export class BaseDriver {
             clearTimeout(timer);
             resolve(data);
           });
+          eventListeners.set(eventName, listeners);
+        }),
+      waitForNoEvent: (eventName: string, settleMs = 40) =>
+        new Promise((resolve, reject) => {
+          if ((pendingEvents.get(eventName)?.length ?? 0) > 0) {
+            reject(
+              new Error(`Unexpected SSE event already queued: ${eventName}`),
+            );
+            return;
+          }
+
+          const timer = setTimeout(() => {
+            const listeners = eventListeners.get(eventName) ?? [];
+            eventListeners.set(
+              eventName,
+              listeners.filter((cb) => cb !== onEvent),
+            );
+            resolve();
+          }, settleMs);
+
+          const onEvent = () => {
+            clearTimeout(timer);
+            reject(new Error(`Unexpected SSE event: ${eventName}`));
+          };
+          const listeners = eventListeners.get(eventName) ?? [];
+          listeners.push(onEvent);
           eventListeners.set(eventName, listeners);
         }),
     };

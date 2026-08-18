@@ -68,14 +68,32 @@ export const globalHandlers = [
   rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json({}));
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        subscriptionStatus: "active",
+        trialEndsAt: null,
+        isReadOnly: false,
+      }),
+    );
+  }),
+  rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        google: { isConfigured: false },
+        billing: {
+          isConfigured: false,
+          enforcement: true,
+          priceDisplay: "$7.99/month",
+          trialLengthDays: 7,
+        },
+      }),
+    );
+  }),
   rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json(req.json()));
-  }),
-  rest.get(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ status: "unavailable" }));
-  }),
-  rest.put(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ status: "subscribed" }));
   }),
   rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
     return res(ctx.json({ isNewUser: true }));

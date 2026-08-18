@@ -22,6 +22,50 @@ export interface Schema_User {
    *  every (re)connect, distinct from `lastLoggedInAt`'s sign-in moment.
    *  Used to tell an active user apart from an abandoned account (A40). */
   lastSeenAt?: Date;
+  /**
+   * Trial/subscription state. Optional and absent for every user who
+   * existed before this field shipped -- treat absence as "none" (never
+   * started a trial), matching the established incremental-field pattern
+   * for this schema.
+   */
+  billing?: Schema_UserBilling;
+}
+
+/**
+ * Total subscription union. Adding a member without updating
+ * `WRITE_ACCESS_BY_STATUS` is a compile error.
+ *
+ * - `none` — legacy row, pre-backfill. Hosted derivation maps this to
+ *   `awaiting_checkout` (read-only). Self-host never consults this map.
+ * - `awaiting_checkout` — account exists, no Stripe subscription. read-only.
+ * - `trialing` — Stripe Checkout trial in progress. writable. Local
+ *   `trialing` rows without a Stripe subscription id also derive as
+ *   `awaiting_checkout`.
+ * - `active` — paid. writable.
+ * - `past_due` — dunning window. writable + banner.
+ * - `canceled` — subscription canceled. read-only.
+ * - `expired` — trial or unpaid ended. read-only.
+ */
+export type BillingSubscriptionStatus =
+  | "none"
+  | "awaiting_checkout"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "expired";
+
+export interface Schema_UserBilling {
+  subscriptionStatus: BillingSubscriptionStatus;
+  trialStartedAt?: Date;
+  trialEndsAt?: Date;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  currentPeriodEnd?: Date;
+  cancelAtPeriodEnd?: boolean;
+  lastStripeEventAt?: Date;
+  backfilledAt?: Date;
 }
 
 /**

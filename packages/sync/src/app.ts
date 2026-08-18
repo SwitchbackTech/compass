@@ -1,9 +1,15 @@
 import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  SYNC_JOB_TERMINAL_FAILURE_EVENT,
   SYNC_RECONCILE_SWEEP_EVENT,
+  SyncJobTerminalFailureEventSchema,
   SyncReconcileSweepEventSchema,
 } from "@core/types/sync/health.contracts";
+import {
+  isTransientMongoNetworkError,
+  withTransientMongoRetry,
+} from "@core/util/mongo-network-error.util";
 import {
   createInternalAuthMiddleware,
   createInternalServiceAuthMiddleware,
@@ -39,6 +45,7 @@ import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
+import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
@@ -86,6 +93,17 @@ export function createSyncService(
   });
   const readiness = new ReadinessRegistry();
   const shutdown = new ShutdownCoordinator();
+
+  // Unset POST_CONNECT_REDIRECT_URL silently falls back to this service's own
+  // CALLBACK_BASE_URL (an API host, not the web app) - every OAuth connect
+  // and reconnect would drop the browser there instead of back on the
+  // calendar. Only worth warning about in active mode: passive never
+  // completes an OAuth round-trip.
+  if (config.EXECUTION === "active" && !config.POST_CONNECT_REDIRECT_URL) {
+    logger.warn(
+      "sync.postConnectRedirectUrl is not set - Google connect/reconnect will redirect users to this service's own URL instead of the web app. Set it to the web app's origin.",
+    );
+  }
 
   // The internal connection API mounts only when storage is provided. Its
   // routes read the connected db per request, so the app is still built before
@@ -326,18 +344,28 @@ function buildHealthSnapshotSweep(
     {
       // SweepScheduler always passes `before`; health ignore it and use now.
       sweep: async () => {
-        await emitHealthSnapshot({
-          deps: { mongo, identity },
-          client,
-        });
+        // A single Atlas/DNS blip must not skip the whole 5-minute gauge.
+        await withTransientMongoRetry(() =>
+          emitHealthSnapshot({
+            deps: { mongo, identity },
+            client,
+          }),
+        );
         return 1;
       },
     },
     {
       intervalMs: HEALTH_SNAPSHOT_INTERVAL_MS,
       jitterRatio: 0.05,
-      onError: (error) =>
-        logger.error("Sync health snapshot emit failed", error),
+      onError: (error) => {
+        // Transient Mongo network failures are expected blips; warn so they
+        // stay visible without opening a PostHog exception alert.
+        if (isTransientMongoNetworkError(error)) {
+          logger.warn("Sync health snapshot emit failed", error);
+          return;
+        }
+        logger.error("Sync health snapshot emit failed", error);
+      },
     },
   );
 }
@@ -395,7 +423,16 @@ function buildSchedulers(
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;
   const jobs = repos.jobs;
-  const buildDrain = (): SyncScheduler => {
+  // Long-running kinds excluded from a reserved lane. initialImport and
+  // repair are the two that can run for minutes on a large calendar; every
+  // other kind is quick, so a reserved lane still drains the whole rest of
+  // the queue, just never adopts one of these two.
+  const RESERVED_LANE_EXCLUDED_KINDS: JobRecord["kind"][] = [
+    "initialImport",
+    "repair",
+  ];
+
+  const buildDrain = (reservedForPulls: boolean): SyncScheduler => {
     const owner = randomUUID();
     const worker = new SyncJobWorker(
       {
@@ -404,6 +441,7 @@ function buildSchedulers(
         resources,
         calendars: repos.calendars,
         connections: repos.connections,
+        credentials: repos.credentials,
         discovery: new GoogleCalendarAdapter(),
         commands: repos.commands,
         jobs,
@@ -429,6 +467,32 @@ function buildSchedulers(
           ),
         onDrop: (job, reason) =>
           logger.warn(`Sync job ${job.kind} (${job._id}) dropped: ${reason}`),
+        // A terminal failure is invisible otherwise: the job sits state:"failed"
+        // holding its coalescing key with nothing paging anyone. Alertable so an
+        // operator can set a PostHog alert on this event over launch weekend.
+        onFail: (job) => {
+          logger.error(
+            `Sync job ${job.kind} (${job._id}) exhausted retries and failed for resource ${
+              job.resourceId ?? "none (connection-wide)"
+            } on connection ${job.connectionId}`,
+          );
+          void captureSafely(posthog, {
+            event: SYNC_JOB_TERMINAL_FAILURE_EVENT,
+            // One service-level distinct id — never a user id (R-SEC-04).
+            distinctId: "compass-sync",
+            properties: SyncJobTerminalFailureEventSchema.parse({
+              environment: identity.environment,
+              service: "compass-sync",
+              jobKind: job.kind,
+              connectionId: job.connectionId,
+              resourceId: job.resourceId,
+              attempt: job.attempt,
+            }),
+          });
+        },
+        excludeKinds: reservedForPulls
+          ? RESERVED_LANE_EXCLUDED_KINDS
+          : undefined,
       },
     );
     return new SyncScheduler(
@@ -439,7 +503,13 @@ function buildSchedulers(
       },
     );
   };
-  const drains = Array.from({ length: config.MAX_CONCURRENCY }, buildDrain);
+  // Of the MAX_CONCURRENCY drains, the first RESERVED_PULL_LANES never claim
+  // initialImport/repair — reserved so webhook/reconcile pulls always have a
+  // lane free even when every other drain is busy on a long import (S40-
+  // style starvation, 2026-07-29). The rest claim everything, unchanged.
+  const drains = Array.from({ length: config.MAX_CONCURRENCY }, (_, index) =>
+    buildDrain(index < config.RESERVED_PULL_LANES),
+  );
 
   // Shared per-resource enqueue-failure logging for the resource sweeps below.
   const onEnqueueError =
@@ -595,11 +665,10 @@ function buildSchedulers(
       },
     },
     {
-      // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
-      // update/delete command that hit a transient provider failure
-      // mid-execute. Those run inline from the HTTP request (not as a job),
-      // and nothing else ever revisits a command left nonterminal that way -
-      // see stale-command-retry.service.ts. Looks BACK, like
+      // Self-heal sweep for stuck inline cloud commands (create/update/delete)
+      // that hit a transient provider failure mid-execute. Those run inline from
+      // the HTTP request (not as a job); this sweep revisits them after the
+      // stale window — see stale-command-retry.service.ts. Looks BACK, like
       // reconcile/failedJobRequeue.
       name: "staleCommandRetry",
       windowMs: -STALE_COMMAND_RETRY_AFTER_MS,
@@ -617,6 +686,11 @@ function buildSchedulers(
               writer: eventWriter,
               custody: new CredentialCustody(repos.credentials, authAdapter),
             },
+            onRetryError: (error, commandId) =>
+              logger.error(
+                `Sync stale-command sweep could not retry command ${commandId}; skipping it and continuing`,
+                error,
+              ),
           },
           before,
           () => new Date(),

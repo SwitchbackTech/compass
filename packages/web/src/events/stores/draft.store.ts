@@ -12,6 +12,11 @@ export type Activity_DraftEvent =
   | "eventRightClick"
   | "gridClick"
   | "keyboardEdit"
+  /**
+   * Shift+Arrow place-create: timed draft on the grid with the form closed so
+   * the user can keep repositioning before opening details with Enter.
+   */
+  | "keyboardPlace"
   | "sidebarClick";
 
 export interface Status_DraftEvent {
@@ -69,6 +74,7 @@ export const draftActions = {
       | "eventRightClick"
       | "gridClick"
       | "keyboardEdit"
+      | "keyboardPlace"
     >;
     draft: GridEventDraft;
   }) =>

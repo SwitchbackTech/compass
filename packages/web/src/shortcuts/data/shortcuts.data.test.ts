@@ -126,35 +126,34 @@ describe("shortcuts.data", () => {
           label: "Create all-day event",
         },
       );
+      expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
+        keys: ["Shift", "Arrow keys"],
+        label: "Place timed draft on grid",
+      });
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
+        {
+          keys: ["Shift", "Arrow keys"],
+          label: "Place timed draft on grid",
+        },
+      );
     });
 
     it("lists u/i focus shortcuts per view", () => {
-      const findFocus = (view: "day" | "week", eventFocused = false) =>
+      const findFocus = (view: "day" | "week") =>
         getShortcutMenuSections({
           view,
           isViewingCurrentPeriod: true,
-          eventFocused,
         }).find((section) => section.id === "focus");
 
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
-      ]);
-      expect(stripMetadata(findFocus("week", true)?.shortcuts ?? [])).toEqual([
-        { keys: ["i"], label: "Focus sidebar" },
-        { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
-      ]);
-      expect(stripMetadata(findFocus("day", true)?.shortcuts ?? [])).toEqual([
-        { keys: ["i"], label: "Focus sidebar" },
-        { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
     });
 
@@ -189,15 +188,13 @@ describe("shortcuts.data", () => {
           keys: ["ArrowLeft"],
           label:
             view === "day"
-              ? "Previous day and focus first event"
+              ? "Focus previous event"
               : "Focus event on previous day",
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowRight"],
           label:
-            view === "day"
-              ? "Next day and focus first event"
-              : "Focus event on next day",
+            view === "day" ? "Focus next event" : "Focus event on next day",
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Enter"],
@@ -206,24 +203,13 @@ describe("shortcuts.data", () => {
       }
     });
 
-    it("lists e-then-field edit sequences only when an event is focused", () => {
+    it("lists e-then-field edit sequences with nothing focused", () => {
       for (const view of ["day", "week"] as const) {
-        const idleEdit = getShortcutMenuSections({
+        const edit = getShortcutMenuSections({
           view,
           isViewingCurrentPeriod: true,
-          eventFocused: false,
         }).find((section) => section.id === "edit");
-        expect(stripMetadata(idleEdit?.shortcuts ?? [])).not.toContainEqual({
-          keys: ["e", "t"],
-          label: "Edit title",
-        });
-
-        const focusedEdit = getShortcutMenuSections({
-          view,
-          isViewingCurrentPeriod: true,
-          eventFocused: true,
-        }).find((section) => section.id === "edit");
-        const shortcuts = stripMetadata(focusedEdit?.shortcuts ?? []);
+        const shortcuts = stripMetadata(edit?.shortcuts ?? []);
 
         expect(shortcuts).toContainEqual({
           keys: ["e", "t"],
@@ -246,8 +232,12 @@ describe("shortcuts.data", () => {
           label: "Edit recurrence",
         });
         expect(shortcuts).toContainEqual({
+          keys: ["e", "a"],
+          label: "Edit account",
+        });
+        expect(shortcuts).toContainEqual({
           keys: ["e", "c"],
-          label: "Edit calendar",
+          label: "Edit color",
         });
       }
     });
@@ -269,8 +259,8 @@ describe("shortcuts.data", () => {
         label: "Undo last change",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
-        keys: ["Shift", "Shift"],
-        label: "Toggle keyboard-only mode",
+        keys: ["h"],
+        label: "Toggle Hardcore Mode",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],

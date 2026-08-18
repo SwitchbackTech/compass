@@ -37,12 +37,21 @@ supertokens:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 
-# email:
-#   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
-
 # posthog:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
+
+# stripe:
+#   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY # sk_test_... is fine for staging
+#   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
+#   priceId: REPLACE_WITH_STRIPE_PRICE_ID
+# Omit the whole block for self-host. All three values are required together.
+
+# billing:
+#   enforcement: false # operator pause switch — keep the app free for everyone
+# Independent of `stripe:` above: you can keep Stripe keys configured while
+# enforcement stays false, so Checkout/webhook work can continue without
+# gating any user. Defaults to false when omitted.
 
 # Compass Sync service — required. The backend exits at startup without
 # serviceUrl/internalAuthToken, and self-host runs Sync by default. mongoUri
@@ -54,10 +63,12 @@ sync:
   mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
   callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
+  postConnectRedirectUrl: http://localhost:9080 # where the browser lands after connect/reconnect — set to web.url. Unset falls back to callbackBaseUrl (this service's own host), stranding the user there.
   serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; compose uses http://sync:3010
   # cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
   # execution: passive # passive | active — active required for OAuth begin + provider import/jobs
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google
   # maxConcurrency: 4
+  # reservedPullLanes: 1 # of maxConcurrency, how many drains never claim initialImport/repair — keeps pulls from starving behind a wave of long imports. Must stay < maxConcurrency.
   # enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
   # compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to

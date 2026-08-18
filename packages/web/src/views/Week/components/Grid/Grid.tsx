@@ -1,7 +1,9 @@
 import { type FC, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
@@ -39,6 +41,7 @@ export const Grid: FC<Props> = ({
   // their load without issuing a second fetch.
   const {
     allDayEvents,
+    error: eventsError,
     isPending,
     isFetching,
     isError: isErrorEvents,
@@ -49,15 +52,30 @@ export const Grid: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const googleState = useGoogleUiState();
+  const { connection, state: googleState } = useConnectGoogle();
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load events" / Retry for the same failure.
+  const showEventsLoadError = shouldShowContextualLoadError(
+    isErrorEvents,
+    eventsError,
+  );
   const isLoadingEvents = isEventGridLoading(
     isPending,
-    isErrorEvents,
+    showEventsLoadError,
     isFetching,
   );
   const hasVisibleEvents = (data?.ids?.length ?? 0) > 0;
+  // googleState alone can't tell a first-ever import apart from an
+  // already-established account's routine catch-up - both collapse to the
+  // same aggregate IMPORTING state. Without isFirstImportInProgress, an
+  // established user viewing a genuinely empty week during ordinary
+  // background catch-up would see the empty-import scouting overlay as if
+  // this were a brand-new account.
   const isImportingEmpty =
-    isSuccess && !hasVisibleEvents && googleState === "IMPORTING";
+    isSuccess &&
+    !hasVisibleEvents &&
+    googleState === "IMPORTING" &&
+    isFirstImportInProgress(connection);
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
@@ -118,7 +136,7 @@ export const Grid: FC<Props> = ({
                 allDayGridOffsetTopPx={GRID_Y_START}
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
-                isErrorEvents={isErrorEvents}
+                isErrorEvents={showEventsLoadError}
                 isImportingEmpty={isImportingEmpty}
                 isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}

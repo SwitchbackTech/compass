@@ -8,6 +8,9 @@ export interface EventNudgeMovement {
   minutes: number;
 }
 
+/** Matches the drag-resize handle vocabulary (EVENT_RESIZE_HANDLE_ATTRIBUTE). */
+export type EventEdge = "startDate" | "endDate";
+
 export const getArrowKeyMovement = (
   key: string,
   isAllDay: boolean,
@@ -24,6 +27,31 @@ export const getArrowKeyMovement = (
     default:
       return null;
   }
+};
+
+// Mirrors CROSS_ROW_TIMED_DURATION_MIN (grid/interaction/math/cross-row.drag.ts),
+// the duration invented when a mouse drag converts an all-day event into the
+// timed grid. Kept as a local constant to avoid a common-utils -> grid/interaction
+// dependency for one shared number.
+const CONVERTED_TIMED_DURATION_MIN = 60;
+
+/**
+ * All-day -> timed via Shift+ArrowDown. Mirrors the drag conversion: start of
+ * day plus a caller-supplied visible start minute, fixed duration. A
+ * multi-day span collapses onto its start day - the keyboard has no drop
+ * column to say otherwise.
+ */
+export const convertAllDayToTimedDates = (
+  event: Pick<CompassEvent, "startDate">,
+  startMinute: number,
+): { startDate: string; endDate: string } => {
+  const start = dayjs(event.startDate)
+    .startOf("day")
+    .add(startMinute, "minute");
+  return {
+    startDate: start.format(),
+    endDate: start.add(CONVERTED_TIMED_DURATION_MIN, "minute").format(),
+  };
 };
 
 export const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
@@ -95,4 +123,118 @@ export const nudgeEventDates = (
   }
 
   return { startDate: nextStart.format(), endDate: nextEnd.format() };
+};
+
+/**
+ * Shifts only one edge of a focused event by a single arrow-key step. Timed
+ * events only accept minute movement (Up/Down); all-day events only accept
+ * day movement (Left/Right) — the caller's `getArrowKeyMovement(key, isAllDay)`
+ * already returns null for the other axis on all-day events, but timed events
+ * still resolve day movement, so it's rejected here explicitly.
+ *
+ * Mirrors the mouse drag-resize flip (timed.resize.ts / all-day.resize.ts):
+ * pushing an edge past the minimum duration swaps it to the other edge. Each
+ * keystroke moves by exactly one step, so the flipped span is always exactly
+ * one step wide.
+ */
+export const nudgeEventEdgeDates = (
+  event: Pick<CompassEvent, "startDate" | "endDate" | "isAllDay">,
+  edge: EventEdge,
+  movement: EventNudgeMovement,
+): { startDate: string; endDate: string; edge: EventEdge } | null => {
+  if (!event.startDate || !event.endDate) return null;
+
+  if (event.isAllDay) {
+    if (movement.days === 0) return null;
+    return nudgeAllDayEdgeDates(event, edge, movement.days);
+  }
+
+  if (movement.minutes === 0) return null;
+  return nudgeTimedEdgeDates(event, edge, movement.minutes);
+};
+
+const nudgeTimedEdgeDates = (
+  event: Pick<CompassEvent, "startDate" | "endDate">,
+  edge: EventEdge,
+  minutesDelta: number,
+): { startDate: string; endDate: string; edge: EventEdge } | null => {
+  const start = dayjs(event.startDate);
+  const end = dayjs(event.endDate);
+
+  if (edge === "startDate") {
+    const candidateStart = start.add(minutesDelta, "minute");
+    const latestStart = end.subtract(GRID_TIME_STEP, "minute");
+
+    if (!candidateStart.isAfter(latestStart)) {
+      if (!isTimedEventInsideOneDay(candidateStart, end)) return null;
+      return {
+        startDate: candidateStart.format(),
+        endDate: end.format(),
+        edge: "startDate",
+      };
+    }
+
+    const flippedEnd = end.add(GRID_TIME_STEP, "minute");
+    if (!isTimedEventInsideOneDay(end, flippedEnd)) return null;
+    return {
+      startDate: end.format(),
+      endDate: flippedEnd.format(),
+      edge: "endDate",
+    };
+  }
+
+  const candidateEnd = end.add(minutesDelta, "minute");
+  const earliestEnd = start.add(GRID_TIME_STEP, "minute");
+
+  if (!candidateEnd.isBefore(earliestEnd)) {
+    if (!isTimedEventInsideOneDay(start, candidateEnd)) return null;
+    return {
+      startDate: start.format(),
+      endDate: candidateEnd.format(),
+      edge: "endDate",
+    };
+  }
+
+  const flippedStart = start.subtract(GRID_TIME_STEP, "minute");
+  if (!isTimedEventInsideOneDay(flippedStart, start)) return null;
+  return {
+    startDate: flippedStart.format(),
+    endDate: start.format(),
+    edge: "startDate",
+  };
+};
+
+const nudgeAllDayEdgeDates = (
+  event: Pick<CompassEvent, "startDate" | "endDate">,
+  edge: EventEdge,
+  daysDelta: number,
+): { startDate: string; endDate: string; edge: EventEdge } => {
+  const startDay = dayjs(event.startDate).startOf("day");
+  const inclusiveEnd = dayjs(event.endDate).startOf("day").subtract(1, "day");
+
+  if (edge === "startDate") {
+    const candidate = startDay.add(daysDelta, "day");
+    const [nextStart, nextInclusiveEnd, nextEdge] = candidate.isAfter(
+      inclusiveEnd,
+    )
+      ? ([inclusiveEnd, candidate, "endDate"] as const)
+      : ([candidate, inclusiveEnd, "startDate"] as const);
+
+    return {
+      startDate: nextStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: nextInclusiveEnd.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
+      edge: nextEdge,
+    };
+  }
+
+  const candidate = inclusiveEnd.add(daysDelta, "day");
+  const [nextStart, nextInclusiveEnd, nextEdge] = candidate.isBefore(startDay)
+    ? ([candidate, startDay, "startDate"] as const)
+    : ([startDay, candidate, "endDate"] as const);
+
+  return {
+    startDate: nextStart.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: nextInclusiveEnd.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
+    edge: nextEdge,
+  };
 };

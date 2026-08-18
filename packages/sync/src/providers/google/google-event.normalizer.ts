@@ -82,7 +82,7 @@ function cancellationSeries(
   if (!item.recurringEventId || !item.originalStartTime) return null;
   return {
     seriesProviderId: item.recurringEventId,
-    recurrenceId: toOffsetIso(item.originalStartTime),
+    recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
   };
 }
 
@@ -193,17 +193,13 @@ function mapSchedule(item: gSchema$Event) {
   }
 
   if (start.dateTime && end.dateTime) {
+    // Google requires either an RFC3339 offset on dateTime or a timeZone.
+    // Clients often send only the offset; dropping those events hid them
+    // from Compass while Google still showed them. Missing or non-IANA
+    // zones fall back to UTC — the instant is preserved, wall-clock zone
+    // is not (same as the GMT-07:00 path below).
     const timeZone = start.timeZone ?? end.timeZone;
-    if (!timeZone) {
-      throw new ProviderEventError(
-        "unmappableSchedule",
-        "Timed event carried no time zone",
-      );
-    }
-    // Resolve to a valid IANA zone before re-anchoring: toOffsetIso's .tz()
-    // call needs one, and a fixed-offset string ("GMT-07:00") would otherwise
-    // reach it unvalidated.
-    const ianaTimeZone = toIanaTimeZone(timeZone);
+    const ianaTimeZone = timeZone ? toIanaTimeZone(timeZone) : "UTC";
     return parseSchedule({
       kind: "timed",
       start: toOffsetIso({ ...start, timeZone: ianaTimeZone }),
@@ -249,10 +245,24 @@ function mapRecurrence(item: gSchema$Event): ProviderEventRecurrence {
     return {
       kind: "instance",
       seriesProviderId: item.recurringEventId,
-      recurrenceId: toOffsetIso(item.originalStartTime),
+      // Canonical UTC form — must match Compass projection / command
+      // recurrenceIds (Date#toISOString). An offset string for the same
+      // instant would miss series_exception_identity and collide
+      // provider_event_identity when a scope-"this" write upserts.
+      recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
     };
   }
   return { kind: "single" };
+}
+
+// Recurrence identity as Compass mints it everywhere else: UTC ISO with
+// milliseconds (Date#toISOString). Schedule start/end keep offset form via
+// toOffsetIso so the wall-clock zone stays visible; only the identity key
+// must be byte-identical across import, projection, and command paths.
+function toCanonicalRecurrenceId(
+  eventDateTime: calendar_v3.Schema$EventDateTime,
+): string {
+  return new Date(toOffsetIso(eventDateTime)).toISOString();
 }
 
 // A Google event date-time as a deterministic RFC3339 offset string, never

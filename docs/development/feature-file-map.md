@@ -54,33 +54,31 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Keyboard Shortcuts
 
-Authoritative legend data and shared gesture behavior live under
+Authoritative legend data and taught bindings live under
 `packages/web/src/shortcuts`. View owners register keys; do not duplicate
 labels outside the registry.
 
 - Registry (source of truth for `?` legend): `packages/web/src/shortcuts/shortcuts.registry.ts`
 - Overlay sections derived from the registry: `packages/web/src/shortcuts/data/shortcuts.data.ts`
+- Taught bindings (handlers + Shortcut Showcase keycaps): `packages/web/src/shortcuts/keymap.ts`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `packages/web/src/shortcuts/useGlobalShortcuts.ts`
-- Shared Shift-tap gesture (single tap vs Shift-Shift): `packages/web/src/shortcuts/shift-tap-gesture.ts`
-- Event-jump chips (Shift tap): `packages/web/src/shortcuts/shift-hint/`
-- Keyboard-only mode (Shift-Shift; clicks inert until Esc / Shift-Shift): `packages/web/src/shortcuts/keyboard-only/`
+- Event-jump chips (`S`): `packages/web/src/shortcuts/shift-hint/`
+- Hardcore Mode (`H`; clicks inert until Esc / `H` / refresh): `packages/web/src/shortcuts/keyboard-only/`
 - Escape ownership (modals/form before lower handlers): `packages/web/src/shortcuts/escape-ownership.ts`
 - App lock (suppress shortcuts while a modal owns the UI): `packages/web/src/shortcuts/app-lock.ts`
-- Mount point for global + keyboard-only hooks: `packages/web/src/components/RootShell/RootShell.tsx`
+- Mount point for global + Hardcore Mode hooks: `packages/web/src/components/RootShell/RootShell.tsx`
 - Acceptance runbook: [Shortcuts](../acceptance/shortcuts.md)
 
-## Onboarding Tour
+## Welcome, Showcase, And Checklist
 
-Interactive coachmarks after Welcome **Start Now**. Not an app-lock modal —
-calendar shortcuts stay live so each step can advance by doing the action.
+Anonymous calendar onboarding is three stacked surfaces, all mounted from
+`RootShell` except on `/life` (see `isLifePathname`).
 
-- Steps (order + copy): `packages/web/src/components/OnboardingTour/onboarding.tour.steps.ts`
-- Store + start/skip/finish: `packages/web/src/components/OnboardingTour/onboarding.tour.store.ts`
-- Seen flag (browser storage): `packages/web/src/components/OnboardingTour/onboarding.tour.storage.ts`
-- Progress listeners (advance on C / save / palette / `?`): `packages/web/src/components/OnboardingTour/useOnboardingTourProgress.ts`
-- UI: `packages/web/src/components/OnboardingTour/OnboardingTour.tsx`
-- Started from Welcome **Start Now**: `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
-- Restart from command palette (“Restart onboarding tour”): `packages/web/src/components/CommandPalette/navigation.cmd.constants.ts`
+- Welcome modal (**Start Now** / Escape both hand off to the showcase): `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
+- Shortcut Showcase (takeover practice calendar): `packages/web/src/components/ShortcutShowcase/` (`showcase.steps.ts` is the taught-step order)
+- Post-showcase checklist over real events: `packages/web/src/components/OnboardingChecklist/`
+- Replay from the command palette (“Practice shortcuts”, “Show welcome guide”): `packages/web/src/components/CommandPalette/navigation.cmd.constants.ts`
+- Legacy tour seen-flag is honored once so established users are not ambushed: `packages/web/src/components/ShortcutShowcase/showcase.storage.ts`
 
 ## Sidebar
 
@@ -133,6 +131,14 @@ the full picture.
 - User queries/services: `packages/backend/src/user`
 - User metadata service: `packages/backend/src/user/services/user-metadata.service.ts`
 - Mobile waitlist gate (web-only external link): `packages/web/src/components/MobileGate/MobileGate.tsx`
+
+## Billing And Trial
+
+- Shared plan/price copy: `packages/core/src/constants/billing.constants.ts`
+- Anonymous trial clock: `packages/web/src/billing/trial.storage.ts`, `packages/web/src/billing/useTrialStatus.ts`
+- Server access + paid gate: `packages/web/src/billing/useAppAccess.ts`, `packages/web/src/billing/BillingGateModal.tsx`
+- Backend billing: `packages/backend/src/billing`
+- Overview: [Billing And Trial](../features/billing.md)
 
 ## Environment And Infra
 

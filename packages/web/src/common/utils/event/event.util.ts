@@ -9,10 +9,14 @@ import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
+import { getErrorStatus, isSessionLevelError } from "@web/api/util/api.util";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
-import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  EVENT_SAVE_UNAVAILABLE_TOAST_ID,
+  GENERIC_ERROR_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -219,18 +223,25 @@ const showCatchallToast = (message: string) =>
 
 export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
+    // No HTTP response reached us at all (offline, DNS, dropped connection)
+    // or a 502/503/504 - the optimistic edit is about to roll back with
+    // nothing else on screen to explain why. The BackendDownView full-page
+    // gate only covers a SUSTAINED outage (and only for authenticated users);
+    // this covers the single failed save, including a transient blip that
+    // never trips the page-level gate at all.
+    showErrorToast(
+      "Couldn't save - check your connection. Your change was not applied.",
+      { toastId: EVENT_SAVE_UNAVAILABLE_TOAST_ID },
+    );
     return;
   }
 
   // Prefer the structured status on ApiError; fall back to the trailing
   // status digits in the message for errors that only carry text.
-  const code =
-    (error as ApiError).response?.status ??
-    parseInt(error.message.slice(-3), 10);
+  const code = getErrorStatus(error) ?? Number.NaN;
 
-  // GONE/UNAUTHORIZED are session-level failures — the api interceptor signs
-  // the user out, which has its own messaging, so nothing more is shown here.
-  if (code === Status.GONE || code === Status.UNAUTHORIZED) {
+  // Session recovery already owns the toast — do not stack a second message.
+  if (isSessionLevelError(error)) {
     return;
   }
   // NOT_FOUND is not a session failure (e.g. syncing onto a calendar the

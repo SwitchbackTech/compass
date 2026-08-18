@@ -1,5 +1,4 @@
 import { enterTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
-import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { createHash } from "node:crypto";
 
@@ -37,15 +36,7 @@ export async function setupTestDb(testFileUrl: string): Promise<void> {
 export async function cleanupCollections(): Promise<void> {
   const collections = await mongoService.db.collections();
 
-  const SKIP_COLLECTIONS = [Collections.USER];
-
-  const selectedCollections = collections.filter(
-    (collection) => !SKIP_COLLECTIONS.includes(collection.collectionName),
-  );
-
-  await Promise.all(
-    selectedCollections.map((collection) => collection.deleteMany({})),
-  );
+  await Promise.all(collections.map((collection) => collection.deleteMany({})));
 }
 
 export async function cleanupTestDb(): Promise<void> {

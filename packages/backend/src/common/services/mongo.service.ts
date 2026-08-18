@@ -11,6 +11,8 @@ import {
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type Schema_User } from "@core/types/user.types";
+import { isTransientMongoNetworkError } from "@core/util/mongo-network-error.util";
+import { type BillingEventRecord } from "@backend/billing/billing-event.record";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -21,6 +23,7 @@ const logger = Logger("app:mongo.service");
 interface InternalClient {
   db: Db;
   client: MongoClient;
+  billingEvent: Collection<BillingEventRecord>;
   calendar: Collection<CalendarRecord>;
   event: Collection<EventRecord>;
   user: Collection<Schema_User>;
@@ -40,6 +43,14 @@ class MongoService {
    */
   get calendar(): InternalClient["calendar"] {
     return this.#accessInternalCollectionProps("calendar");
+  }
+
+  /**
+   * Stripe webhook dedupe. `_id` is the Stripe event id so no secondary
+   * index is required.
+   */
+  get billingEvent(): InternalClient["billingEvent"] {
+    return this.#accessInternalCollectionProps("billingEvent");
   }
 
   /**
@@ -69,6 +80,12 @@ class MongoService {
   }
 
   private onError(error: Error): void {
+    // Client "error" events include brief Atlas/DNS blips; warn those so they
+    // do not open PostHog exception alerts. Unexpected client errors still page.
+    if (isTransientMongoNetworkError(error)) {
+      logger.warn(error.message, error);
+      return;
+    }
     logger.error(error.message, error);
   }
 
@@ -86,6 +103,9 @@ class MongoService {
     return {
       db,
       client,
+      billingEvent: db.collection<BillingEventRecord>(
+        Collections.BILLING_EVENT,
+      ),
       calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
       event: db.collection<EventRecord>(Collections.EVENT),
       user: db.collection<Schema_User>(Collections.USER),

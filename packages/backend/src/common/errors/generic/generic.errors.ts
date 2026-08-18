@@ -22,17 +22,19 @@ export const GenericError: GenericErrors = {
   },
   NotImplemented: {
     description: "Not implemented yet",
-    status: Status.UNSURE,
+    status: Status.NOT_IMPLEMENTED,
     isOperational: true,
   },
+  // Prefer typed Sync/auth/event errors on live paths. Kept as a last-resort
+  // operational 500 — never Status.UNSURE (600), which is not a real HTTP status.
   NotSure: {
     description: "Not sure why error occurred. See logs",
-    status: Status.UNSURE,
+    status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
   OperationTimeout: {
     description: "Operation timed out",
-    status: Status.UNSURE,
+    status: Status.GATEWAY_TIMEOUT,
     isOperational: true,
   },
 };

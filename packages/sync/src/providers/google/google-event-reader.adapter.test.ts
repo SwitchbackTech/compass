@@ -52,12 +52,15 @@ const page = (
   ...overrides,
 });
 
-function adapterWith(api: GoogleEventListApi) {
+function adapterWith(
+  api: GoogleEventListApi,
+  log: { warn: (message: string) => void } = { warn: () => {} },
+) {
   const tokensSeen: string[] = [];
   const adapter = new GoogleEventReaderAdapter((accessToken) => {
     tokensSeen.push(accessToken);
     return api;
-  });
+  }, log);
   return { adapter, tokensSeen };
 }
 
@@ -161,6 +164,33 @@ describe("GoogleEventReaderAdapter", () => {
     expect(result.skipped).toBe(1);
   });
 
+  it("logs the skip reason and provider event id, never the title", async () => {
+    const warnings: string[] = [];
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({
+            id: "no-etag",
+            etag: undefined,
+            summary: "Secret title must not be logged",
+          }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api, {
+      warn: (message) => warnings.push(message),
+    });
+
+    await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(warnings).toEqual([
+      "Skipped unusable Google event no-etag (missingIdentity)",
+    ]);
+  });
+
   it("skips a content-oversized event instead of failing the whole page", async () => {
     const api = new FakeEventListApi([
       page({
@@ -230,6 +260,58 @@ describe("GoogleEventReaderAdapter", () => {
         }),
       ).rejects.toMatchObject({ reason: "transient" });
     }
+  });
+
+  it("maps a 401 to authExpired (the caller must invalidate the cached token before retrying)", async () => {
+    const api = new FakeEventListApi([], { response: { status: 401 } });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "authExpired" });
+  });
+
+  it("maps a quota-shaped 403 to transient, like discovery/watch/write already do", async () => {
+    for (const reason of [
+      "rateLimitExceeded",
+      "userRateLimitExceeded",
+      "quotaExceeded",
+      "dailyLimitExceeded",
+    ]) {
+      const api = new FakeEventListApi([], {
+        response: {
+          status: 403,
+          data: { error: { errors: [{ reason }] } },
+        },
+      });
+      const { adapter } = adapterWith(api);
+      await expect(
+        adapter.listEventPage({
+          accessToken: "tok",
+          calendarId: "primary@google.com",
+        }),
+      ).rejects.toMatchObject({ reason: "transient" });
+    }
+  });
+
+  it("maps a permission-refusal 403 (no quota reason) to readFailed", async () => {
+    const api = new FakeEventListApi([], {
+      response: {
+        status: 403,
+        data: { error: { errors: [{ reason: "forbidden" }] } },
+      },
+    });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "readFailed" });
   });
 
   it("maps a networkless failure to transient", async () => {

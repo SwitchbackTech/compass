@@ -11,3 +11,20 @@ export const isGoogleConfigured = (
 ): boolean =>
   isGoogleClientIdValid(env.GOOGLE_CLIENT_ID) &&
   isGoogleClientSecretValid(env.GOOGLE_CLIENT_SECRET);
+
+const isStripeValueValid = (value?: string): boolean =>
+  Boolean(value && value !== "undefined");
+
+export const isStripeConfigured = (
+  env: Pick<
+    Config,
+    "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "STRIPE_PRICE_ID"
+  >,
+): boolean =>
+  isStripeValueValid(env.STRIPE_SECRET_KEY) &&
+  isStripeValueValid(env.STRIPE_WEBHOOK_SECRET) &&
+  isStripeValueValid(env.STRIPE_PRICE_ID);
+
+export const isBillingEnforced = (
+  env: Pick<Config, "BILLING_ENFORCEMENT">,
+): boolean => env.BILLING_ENFORCEMENT;

@@ -5,7 +5,7 @@ import {
   type CalendarImportDeps,
   importCalendarEvents,
 } from "@sync/domain/calendar-import.service";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type ProviderEvent,
   type ProviderEventRead,
@@ -55,6 +55,7 @@ class FakeReader implements ProviderEventReader {
 const tokenSource: AccessTokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 const schedule = {
@@ -478,6 +479,7 @@ describe("importCalendarEvents", () => {
         throw new Error("token fetch failed");
       },
       discardRevoked: async () => {},
+      invalidateAccessToken: async () => {},
     };
 
     await expect(

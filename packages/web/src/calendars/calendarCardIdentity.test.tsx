@@ -10,6 +10,7 @@ import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   resolveCalendarCardIdentity,
+  resolveCalendarFocusColor,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -63,12 +64,14 @@ const makeGridEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
 function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
   const calendarIdentity = resolveCalendarCardIdentity(lookup, event);
+  const focusColor = resolveCalendarFocusColor(lookup, event);
 
   return (
     <TimedEventCard
       calendarIdentity={calendarIdentity}
       displayMode="saved"
       event={event}
+      focusColor={focusColor}
       motionMode="idle"
       position={POSITION}
     />
@@ -78,11 +81,13 @@ function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
 function AllDayCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
   const calendarIdentity = resolveCalendarCardIdentity(lookup, event);
+  const focusColor = resolveCalendarFocusColor(lookup, event);
 
   return (
     <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
+      focusColor={focusColor}
       isPlaceholder={false}
       position={POSITION}
     />
@@ -167,5 +172,54 @@ describe("Calendar identity on event cards", () => {
 
     const card = screen.getByRole("button", { name: /Team sync/ });
     expect(card.getAttribute("aria-label")).not.toMatch(/calendar$/);
+  });
+});
+
+describe("resolveCalendarFocusColor", () => {
+  it("returns the calendar color for a single-calendar account", () => {
+    const only = makeCalendar({ backgroundColor: "#9e9e9e" });
+    const lookup = new Map([[only.id, only]]);
+
+    expect(resolveCalendarFocusColor(lookup, { calendarId: only.id })).toBe(
+      "#9e9e9e",
+    );
+  });
+
+  it("returns the calendar color when multiple calendars are active", () => {
+    const work = makeCalendar({ backgroundColor: "#3b82f6" });
+    const personal = makeCalendar({ backgroundColor: "#ef4444" });
+    const lookup = new Map([
+      [work.id, work],
+      [personal.id, personal],
+    ]);
+
+    expect(resolveCalendarFocusColor(lookup, { calendarId: personal.id })).toBe(
+      "#ef4444",
+    );
+  });
+
+  it("returns null when the calendar is missing or the event has no calendarId", () => {
+    const work = makeCalendar();
+    const lookup = new Map([[work.id, work]]);
+
+    expect(resolveCalendarFocusColor(lookup, { calendarId: null })).toBeNull();
+    expect(
+      resolveCalendarFocusColor(lookup, {
+        calendarId: CalendarIdSchema.parse(createObjectIdString()),
+      }),
+    ).toBeNull();
+  });
+
+  it("sets --event-focus-color from the calendar on a single-calendar timed card", () => {
+    const onlyCalendar = makeCalendar({ backgroundColor: "#616161" });
+    const event = makeGridEvent({ calendarId: onlyCalendar.id });
+
+    renderWithCalendars(<TimedCardWithResolvedIdentity event={event} />, [
+      onlyCalendar,
+    ]);
+
+    const card = screen.getByRole("button", { name: /Team sync/ });
+    expect(card.style.getPropertyValue("--event-focus-color")).toBe("#616161");
+    expect(card.className).not.toContain("ring-accent");
   });
 });

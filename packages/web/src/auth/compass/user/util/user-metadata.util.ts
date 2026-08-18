@@ -10,7 +10,10 @@ import {
   findPrimaryGoogleSyncConnectionFromMetadata,
   userMetadataActions,
 } from "@web/auth/state/user-metadata.store";
-import { showGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
+import {
+  dismissGoogleDelayedToast,
+  showGoogleDelayedToast,
+} from "@web/common/utils/toast/google-delayed.toast";
 import {
   clearGoogleReconnectToastGate,
   dismissGoogleReconnectToast,
@@ -20,6 +23,7 @@ import {
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 let hasShownDelayedToastThisLoad = false;
+let metadataFetchEpoch = 0;
 
 /**
  * Keep session reconnect overrides and sticky toasts congruent with the latest
@@ -60,12 +64,17 @@ export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
     clearGoogleReconnectToastGate();
   }
 
-  if (
-    metadata.google?.connectionState === "ATTENTION" &&
-    !hasShownDelayedToastThisLoad
-  ) {
-    hasShownDelayedToastThisLoad = true;
-    showGoogleDelayedToast();
+  if (metadata.google?.connectionState === "ATTENTION") {
+    if (!hasShownDelayedToastThisLoad) {
+      hasShownDelayedToastThisLoad = true;
+      showGoogleDelayedToast();
+    }
+  } else if (hasShownDelayedToastThisLoad) {
+    // Recovered: a CRITICAL toast (autoClose: false) never closes on its
+    // own, so leaving it up would contradict its own "delayed" copy once
+    // the connection is healthy again.
+    hasShownDelayedToastThisLoad = false;
+    dismissGoogleDelayedToast();
   }
 };
 
@@ -77,16 +86,19 @@ export const refreshUserMetadata = async (options?: {
       return refreshUserMetadataRequest;
     }
 
-    // The in-flight request predates whatever invalidated the metadata (e.g.
-    // a Google revocation prune), so its response is stale. Let it settle,
-    // then fetch fresh.
+    // Concurrent force calls chain onto one trailing fetch: each waits for
+    // the in-flight request, then `refreshUserMetadata()` without force joins
+    // whichever fetch the first waiter already started. A burst of SSE
+    // signals cannot stampede.
     return refreshUserMetadataRequest.then(() => refreshUserMetadata());
   }
 
   userMetadataActions.setLoading();
+  const epoch = ++metadataFetchEpoch;
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
+      if (epoch !== metadataFetchEpoch) return;
       userMetadataActions.set(metadata);
       applyUserMetadataSideEffects(metadata);
     })

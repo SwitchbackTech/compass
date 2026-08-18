@@ -159,6 +159,67 @@ describe("JobRepository", () => {
       expect(third?.coalescingKey).toBe("bg-older");
     });
 
+    it("excludeKinds skips a due job of an excluded kind and claims another that is due", async () => {
+      await repo.enqueue(
+        enqueue({
+          coalescingKey: "import-due",
+          kind: "initialImport",
+          runAfter: past(2000),
+        }),
+      );
+      await repo.enqueue(
+        enqueue({
+          coalescingKey: "pull-due",
+          kind: "incrementalPull",
+          runAfter: past(1000),
+        }),
+      );
+
+      const claimed = await repo.claimDueJob("reserved-lane", NOW, LEASE_MS, [
+        "initialImport",
+      ]);
+
+      expect(claimed?.coalescingKey).toBe("pull-due");
+      // The excluded job is untouched: still pending, unclaimed.
+      const imports = await db
+        .collection("jobs")
+        .findOne({ coalescingKey: "import-due" });
+      expect(imports?.state).toBe("pending");
+      expect(imports?.leaseOwner).toBeNull();
+    });
+
+    it("excludeKinds returns null rather than claiming an excluded job when nothing else is due", async () => {
+      await repo.enqueue(
+        enqueue({ kind: "initialImport", runAfter: past(1000) }),
+      );
+
+      expect(
+        await repo.claimDueJob("reserved-lane", NOW, LEASE_MS, [
+          "initialImport",
+        ]),
+      ).toBeNull();
+    });
+
+    it("excludeKinds also excludes an expired-lease job of that kind from reclaim", async () => {
+      const created = await repo.enqueue(
+        enqueue({ kind: "repair", runAfter: past(200_000) }),
+      );
+      // Claim well before NOW with a short lease, so the lease has since
+      // expired relative to NOW.
+      await repo.claimDueJob("stalled-worker", past(120_000), 1000);
+
+      const reclaimed = await repo.claimDueJob("reserved-lane", NOW, LEASE_MS, [
+        "repair",
+      ]);
+
+      expect(reclaimed).toBeNull();
+      const stillClaimed = await db
+        .collection("jobs")
+        .findOne({ _id: created._id as never });
+      expect(stillClaimed?.state).toBe("claimed");
+      expect(stillClaimed?.leaseOwner).toBe("stalled-worker");
+    });
+
     it("enqueueUrgent boosts a pending job without pushing back an earlier runAfter", async () => {
       const coalescingKey = "urgent:pending";
       const earlier = past(5000);
@@ -505,6 +566,82 @@ describe("JobRepository", () => {
         state: "failed",
         requeuedCount: 2,
       });
+    });
+
+    it("requeueFailedByConnection revives every failed job kind for the connection", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const pull = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        kind: "incrementalPull",
+        coalescingKey: `incrementalPull:${objectId()}`,
+      });
+      const repairJob = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        kind: "repair",
+        coalescingKey: `repair:${objectId()}`,
+      });
+      // A different connection's failed job must not be touched.
+      const otherConnectionId = objectId() as JobEnqueue["connectionId"];
+      const otherJob = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId: otherConnectionId,
+        kind: "incrementalPull",
+        coalescingKey: `incrementalPull:${objectId()}`,
+      });
+
+      const revivedCount = await repo.requeueFailedByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+
+      expect(revivedCount).toBe(2);
+      for (const id of [pull, repairJob]) {
+        const revived = await repo.findByIdUnscoped(id);
+        expect(revived?.state).toBe("pending");
+        expect(revived?.attempt).toBe(0);
+        expect(revived?.leaseOwner).toBeNull();
+        expect(revived?.failureClass).toBeNull();
+        expect(revived?.runAfter).toEqual(NOW);
+      }
+      expect(await repo.findByIdUnscoped(otherJob)).toMatchObject({
+        state: "failed",
+      });
+    });
+
+    it("requeueFailedByConnection leaves pending/claimed jobs alone", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const pending = await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(60 * 60_000),
+          coalescingKey: `repair:${objectId()}`,
+        }),
+      );
+
+      const revivedCount = await repo.requeueFailedByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+
+      expect(revivedCount).toBe(0);
+      expect(
+        await repo.findById(tenantId, principalId, pending._id),
+      ).toMatchObject({ state: "pending" });
     });
 
     it("requeue resets a failed job to pending with a fresh attempt budget", async () => {

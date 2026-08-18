@@ -20,9 +20,14 @@ import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { getGridDraftId } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { useDraftStore } from "@web/events/stores/draft.store";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
+import {
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -64,6 +69,22 @@ const leftmostEvent = createMockEvent({
     start: "2026-05-18T09:00:00.000Z",
     end: "2026-05-18T10:00:00.000Z",
     timeZone: "UTC",
+  }),
+});
+const LEFTMOST_ALL_DAY_EVENT_ID = EventIdSchema.parse(
+  "eeeeeeeeeeeeeeeeeeeeeeee",
+);
+const leftmostAllDayEvent = createMockEvent({
+  id: LEFTMOST_ALL_DAY_EVENT_ID,
+  content: {
+    kind: "details",
+    title: "Leftmost all-day event",
+    description: "",
+  },
+  schedule: EventScheduleSchema.parse({
+    kind: "allDay",
+    start: "2026-05-18",
+    end: "2026-05-19",
   }),
 });
 
@@ -136,6 +157,8 @@ const getEditMutation = (queryClient: QueryClient) =>
 beforeEach(() => {
   HotkeyManager.resetInstance();
   repositionDraftByKeyboard = mock();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  draftActions.discard();
 });
 
 afterEach(() => {
@@ -144,6 +167,8 @@ afterEach(() => {
   pendingEventIds = [];
   weekEventRegistry.clear();
   useViewStore.setState(initialViewState);
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  draftActions.discard();
 });
 
 const addCalendarTarget = (
@@ -358,17 +383,26 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
   it("duplicates the focused calendar event with Mod+D", () => {
     const button = addCalendarTarget();
     button.focus();
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
 
     pressKey("d", {
       keyDownInit: { ctrlKey: true },
       keyUpInit: { ctrlKey: true },
     });
 
+    const created = queryClient
+      .getMutationCache()
+      .getAll()
+      .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+    const { input } = created?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.calendarId).toBe(editableEvent.calendarId);
+    expect(input.content.title).toBe("Editable event");
+
     const state = useDraftStore.getState();
-    expect(state.status?.isFormOpen).toBe(true);
-    expect(state.gridDraft?.kind).toBe("create");
-    expect(state.gridDraft?.values.title).toBe("Editable event");
+    expect(state.status?.isFormOpen).toBe(false);
+    expect(state.gridDraft).toBeNull();
   });
 
   it("keeps ArrowDown on the same day when a later event exists that day", () => {
@@ -573,6 +607,8 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
       await Promise.resolve();
     });
     expect(getEditMutation(queryClient)).toBeUndefined();
+    // Read-only focus must not fall through into place-create either.
+    expect(useDraftStore.getState().gridDraft).toBeNull();
   });
 
   it("moves the focused timed event by 15 minutes with Shift+ArrowUp and Shift+ArrowDown", async () => {
@@ -655,6 +691,137 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     pressKey("ArrowRight", shiftKey);
 
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", async () => {
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("keyboardPlace");
+      expect(status?.isFormOpen).toBe(false);
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
+    });
+  });
+
+  it("repositions a keyboardPlace draft with a later Shift+Arrow", async () => {
+    repositionDraftByKeyboard = mock(() =>
+      Boolean(useDraftStore.getState().gridDraft),
+    );
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+  });
+
+  it("does not reseed a keyboardPlace draft when Shift+Arrow cannot move it", async () => {
+    repositionDraftByKeyboard = mock(() => false);
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+    const placedId = getGridDraftId(useDraftStore.getState().gridDraft!);
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(getGridDraftId(useDraftStore.getState().gridDraft!)).toBe(placedId);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+  });
+});
+
+describe("useWeekShortcutOwner edge focus", () => {
+  it("cycles edge focus with Tab and moves only the focused edge", async () => {
+    const button = addCalendarTarget();
+    button.focus();
+    const { queryClient } = renderShortcuts();
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState()).toMatchObject({
+      eventId: EVENT_1_ID,
+      edge: "startDate",
+    });
+
+    pressKey("ArrowUp", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes")),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs("2026-05-20T10:00:00.000Z")),
+    );
+  });
+
+  it("refuses an all-day start-edge move that would leave the visible week", () => {
+    const button = addCalendarTarget(LEFTMOST_ALL_DAY_EVENT_ID, "all-day");
+    button.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [leftmostAllDayEvent],
+    });
+
+    pressKey("Tab");
+    pressKey("ArrowLeft", shiftKey);
+
+    expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("allows an all-day end-edge move into the visible week's last day", async () => {
+    // weekDays run 2026-05-18..2026-05-24; this event's last occupied day is
+    // 05-23 (exclusive endDate 05-24), so extending into 05-24 is in bounds -
+    // regression test for an off-by-one that compared the exclusive endDate
+    // directly against the inclusive week boundary.
+    const RIGHTMOST_ALL_DAY_EVENT_ID = EventIdSchema.parse(
+      "ffffffffffffffffffffffff",
+    );
+    const rightmostAllDayEvent = createMockEvent({
+      id: RIGHTMOST_ALL_DAY_EVENT_ID,
+      content: {
+        kind: "details",
+        title: "Rightmost all-day event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "allDay",
+        start: "2026-05-22",
+        end: "2026-05-24",
+      }),
+    });
+    const button = addCalendarTarget(RIGHTMOST_ALL_DAY_EVENT_ID, "all-day");
+    button.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [rightmostAllDayEvent],
+    });
+
+    pressKey("Tab");
+    pressKey("Tab");
+    pressKey("ArrowRight", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe("2026-05-22");
+    expect(input.schedule.end).toBe("2026-05-25");
   });
 });
 

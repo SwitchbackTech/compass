@@ -5,12 +5,14 @@ import {
   DateOnlySchema,
   DateTimeSchema,
   type EventId,
+  EventIdSchema,
 } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { composeOccurrenceId } from "@core/util/occurrence-id";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
@@ -43,6 +45,7 @@ import {
   recurrenceScopeOpportunityActions,
   useRecurrenceScopeOpportunityStore,
 } from "@web/events/recurrence/recurrence-scope-opportunity.store";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   runHistoryRestore,
@@ -51,11 +54,14 @@ import {
 import { useEventMutations } from "./useEventMutations";
 import { useHasPendingEventMutations } from "./useEventPending";
 
-const calendarKey = eventQueryKeys.week({
-  source: "local",
-  start: "2026-07-01T00:00:00.000Z",
-  end: "2026-07-08T00:00:00.000Z",
-});
+const calendarKeyFor = (source: EventRepositorySource) =>
+  eventQueryKeys.week({
+    source,
+    start: "2026-07-01T00:00:00.000Z",
+    end: "2026-07-08T00:00:00.000Z",
+  });
+
+const calendarKey = calendarKeyFor("local");
 
 const dayKey = eventQueryKeys.day({
   source: "local",
@@ -70,6 +76,12 @@ const timedSchedule = (start: string, end: string) => ({
   timeZone: "UTC" as never,
 });
 
+const allDaySchedule = (start: string, end: string) => ({
+  kind: "allDay" as const,
+  start: DateOnlySchema.parse(start),
+  end: DateOnlySchema.parse(end),
+});
+
 const event = (overrides: Partial<Event> = {}): Event =>
   createMockEvent({
     content: { kind: "details", title: "Original", description: "" },
@@ -82,6 +94,28 @@ const event = (overrides: Partial<Event> = {}): Event =>
 
 const occurrence = (seriesId: EventId, overrides: Partial<Event> = {}): Event =>
   event({ recurrence: { kind: "occurrence", seriesId }, ...overrides });
+
+const composedOccurrence = (
+  seriesId: EventId,
+  recurrenceId: string,
+  overrides: Partial<Event> = {},
+): Event =>
+  occurrence(seriesId, {
+    id: EventIdSchema.parse(
+      composeOccurrenceId({ eventId: seriesId, recurrenceId }),
+    ),
+    ...overrides,
+  });
+
+const seriesMaster = (
+  seriesId: EventId,
+  overrides: Partial<Event> = {},
+): Event =>
+  event({
+    id: seriesId,
+    recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    ...overrides,
+  });
 
 const normalized = (...events: Event[]): NormalizedEventQueryData => ({
   ids: events.map(({ id }) => id),
@@ -122,7 +156,7 @@ const pendingControl = () => {
   };
 };
 
-const setup = () => {
+const setup = (source: EventRepositorySource = "local") => {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
@@ -153,7 +187,7 @@ const setup = () => {
   const hook = renderHook(
     () => ({
       mutations: useEventMutations({
-        source: "local",
+        source,
         repository,
         markWrite: async () => markedWrites.push("marked"),
         reportError: (error) => errors.push(error),
@@ -162,7 +196,7 @@ const setup = () => {
     }),
     { wrapper },
   );
-  return { calls, errors, hook, markedWrites, pending, queryClient };
+  return { calls, errors, hook, markedWrites, pending, queryClient, source };
 };
 
 const replacePayload = (
@@ -186,6 +220,44 @@ const replacePayload = (
     ...overrides,
   },
 });
+
+type MutationTestContext = ReturnType<typeof setup>;
+
+const replaceAndGetOpportunity = (
+  context: MutationTestContext,
+  id: EventId,
+  overrides: Partial<ReplaceEventInput> = {},
+) => {
+  act(() =>
+    context.hook.result.current.mutations.replace(
+      replacePayload(id, overrides),
+    ),
+  );
+  const opportunity = useRecurrenceScopeOpportunityStore.getState().opportunity;
+  if (!opportunity || opportunity.kind !== "replace") {
+    throw new Error("Expected a recurrence edit opportunity");
+  }
+  return opportunity;
+};
+
+const expectPromotedReplaceCall = async (
+  context: MutationTestContext,
+  id: EventId,
+  expected: Partial<ReplaceEventInput>,
+) => {
+  await waitFor(() => expect(context.calls).toHaveLength(1));
+  act(() => context.pending.resolveNext());
+  await waitFor(() => {
+    expect(context.calls).toContainEqual({
+      method: "replace",
+      value: {
+        id,
+        input: expect.objectContaining(expected),
+      },
+    });
+  });
+  context.pending.resolve();
+};
 
 describe("useEventMutations", () => {
   afterEach(() => {
@@ -266,23 +338,14 @@ describe("useEventMutations", () => {
     });
     context.queryClient.setQueryData(calendarKey, normalized(first, second));
 
-    act(() =>
-      context.hook.result.current.mutations.replace(
-        replacePayload(first.id, {
-          content: {
-            kind: "details",
-            title: "First narrow edit",
-            description: "",
-            location: "",
-          },
-        }),
-      ),
-    );
-    const opportunity =
-      useRecurrenceScopeOpportunityStore.getState().opportunity;
-    if (!opportunity || opportunity.kind !== "replace") {
-      throw new Error("Expected a recurrence edit opportunity");
-    }
+    const opportunity = replaceAndGetOpportunity(context, first.id, {
+      content: {
+        kind: "details",
+        title: "First narrow edit",
+        description: "",
+        location: "",
+      },
+    });
 
     act(() =>
       context.hook.result.current.mutations.promoteRecurring(
@@ -310,9 +373,213 @@ describe("useEventMutations", () => {
         method: "replace",
         value: expect.objectContaining({
           id: first.id,
-          input: expect.objectContaining({ scope: "all" }),
+          input: expect.objectContaining({
+            scope: "all",
+            // Local source must keep the occurrence-absolute schedule so
+            // LocalEventRepository.replaceSeries can apply the delta once.
+            schedule: timedSchedule(
+              "2026-07-02T16:00:00.000Z",
+              "2026-07-02T17:00:00.000Z",
+            ),
+          }),
         }),
       });
+    });
+    context.pending.resolve();
+  });
+
+  test("remote promote all rebases a middle timed occurrence onto the series master", async () => {
+    const context = setup("remote");
+    const seriesId = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
+    );
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "Nudged",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "all",
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00+00:00",
+        "2026-07-02T17:00:00+00:00",
+      ),
+    });
+  });
+
+  test("remote promote all rebases a middle all-day occurrence onto the series master", async () => {
+    const context = setup("remote");
+    const seriesId = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
+    const master = seriesMaster(seriesId, {
+      schedule: allDaySchedule("2026-07-01", "2026-07-02"),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T00:00:00.000Z", {
+      schedule: allDaySchedule("2026-07-03", "2026-07-04"),
+    });
+    const moved = allDaySchedule("2026-07-04", "2026-07-05");
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
+    );
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "All-day nudged",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "all",
+      schedule: allDaySchedule("2026-07-02", "2026-07-03"),
+    });
+  });
+
+  test("remote promote thisAndFollowing keeps the occurrence absolute schedule", async () => {
+    const context = setup("remote");
+    const seriesId = EventIdSchema.parse("cccccccccccccccccccccccc");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
+    );
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "Split nudge",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "thisAndFollowing",
+      ),
+    );
+
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "thisAndFollowing",
+      schedule: moved,
+    });
+  });
+
+  test("remote scope-all rules edit rebases from the pre-optimistic master snapshot", async () => {
+    const context = setup("remote");
+    const seriesId = EventIdSchema.parse("dddddddddddddddddddddddd");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
+    );
+
+    // Direct scope-all with new rules: optimistic projection rewrites the
+    // cached master with the occurrence absolute schedule before mutationFn.
+    // Rebase must still use the snapshotted pre-optimistic master.
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(middle.id, {
+          content: {
+            kind: "details",
+            title: "Rules + nudge",
+            description: "",
+            location: "",
+          },
+          schedule: moved,
+          recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=3"] },
+          scope: "all",
+        }),
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    expect(context.calls[0]).toEqual({
+      method: "replace",
+      value: {
+        id: middle.id,
+        input: expect.objectContaining({
+          scope: "all",
+          schedule: timedSchedule(
+            "2026-07-02T16:00:00+00:00",
+            "2026-07-02T17:00:00+00:00",
+          ),
+        }),
+      },
     });
     context.pending.resolve();
   });
@@ -1308,6 +1575,87 @@ describe("useEventMutations", () => {
           ?.ids,
       ).toEqual([]);
     });
+    context.pending.resolve();
+  });
+
+  test("runs replace onOptimisticApplied after the optimistic cache write", async () => {
+    const context = setup();
+    const original = event({
+      content: {
+        kind: "details",
+        title: "Original",
+        description: "",
+        color: "blue",
+      },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    let colorAtCallback: unknown;
+    const onOptimisticApplied = mock(() => {
+      colorAtCallback = (
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content as { color?: string }
+      ).color;
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: {
+            kind: "details",
+            title: "Original",
+            description: "",
+            location: "",
+            color: "coral",
+          },
+        }),
+        { onOptimisticApplied },
+      ),
+    );
+
+    await waitFor(() => {
+      expect(onOptimisticApplied).toHaveBeenCalledTimes(1);
+    });
+    expect(colorAtCallback).toBe("coral");
+
+    context.pending.resolve();
+  });
+
+  test("clears colorHex on optimistic replace when a slot color is written", async () => {
+    const context = setup();
+    const original = event({
+      content: {
+        kind: "details",
+        title: "Original",
+        description: "",
+        color: "blue",
+        colorHex: "#009688",
+      },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: {
+            kind: "details",
+            title: "Original",
+            description: "",
+            location: "",
+            color: "coral",
+          },
+        }),
+      ),
+    );
+
+    await waitFor(() => {
+      const content =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content;
+      expect(content).toMatchObject({ kind: "details", color: "coral" });
+      expect(content).not.toHaveProperty("colorHex");
+    });
+
     context.pending.resolve();
   });
 });

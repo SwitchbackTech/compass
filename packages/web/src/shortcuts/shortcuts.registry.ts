@@ -1,9 +1,14 @@
+import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 
 /**
- * Shortcut registry: single source of truth for all keyboard shortcuts.
- * Each shortcut has an id, section, label, and optional context predicate.
- * The context predicate determines visibility based on app state.
+ * Shortcut registry: the display source for the `?` legend overlay. Each
+ * shortcut has an id, section, label, and optional context predicate; the
+ * predicate determines visibility based on app state.
+ *
+ * Runtime bindings live at the handler sites; the subset taught by the
+ * Shortcut Showcase binds through `keymap.ts`, and `keymap.test.ts` keeps
+ * those rows and this registry from drifting apart.
  */
 export const SHORTCUTS_REGISTRY: Shortcut[] = [
   // Navigate - Up Next
@@ -108,6 +113,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Create all-day event",
     section: "create",
   },
+  {
+    id: "create-place-timed",
+    keys: ["Shift", "Arrow keys"],
+    label: "Place timed draft on grid",
+    section: "create",
+  },
 
   // Focus
   {
@@ -124,7 +135,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "focus-shift-hold",
-    keys: ["Shift"],
+    keys: ["s"],
     label: "Toggle event jump keys",
     section: "focus",
   },
@@ -136,48 +147,17 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Open focused event",
     section: "edit",
   },
-  {
-    id: "edit-focus-title",
-    keys: ["e", "t"],
-    label: "Edit title",
+  // Generated from the behavioral source of truth, so the legend cannot drift
+  // from what the keys actually do. Listed unconditionally: the legend is a
+  // reference, and gating these on live DOM focus made them vanish the moment
+  // the legend took focus to open. In-the-moment discovery is the which-key
+  // menu's job instead.
+  ...EDIT_SEQUENCE_FIELDS.map(({ field, key, label }) => ({
+    id: `edit-focus-${field}`,
+    keys: ["e", key],
+    label: `Edit ${label.toLowerCase()}`,
     section: "edit",
-    when: { eventFocused: true },
-  },
-  {
-    id: "edit-focus-description",
-    keys: ["e", "d"],
-    label: "Edit description",
-    section: "edit",
-    when: { eventFocused: true },
-  },
-  {
-    id: "edit-focus-start",
-    keys: ["e", "s"],
-    label: "Edit start time",
-    section: "edit",
-    when: { eventFocused: true },
-  },
-  {
-    id: "edit-focus-end",
-    keys: ["e", "e"],
-    label: "Edit end time",
-    section: "edit",
-    when: { eventFocused: true },
-  },
-  {
-    id: "edit-focus-recurrence",
-    keys: ["e", "r"],
-    label: "Edit recurrence",
-    section: "edit",
-    when: { eventFocused: true },
-  },
-  {
-    id: "edit-focus-calendar",
-    keys: ["e", "c"],
-    label: "Edit calendar",
-    section: "edit",
-    when: { eventFocused: true },
-  },
+  })),
   {
     id: "edit-delete",
     keys: ["Delete"],
@@ -194,6 +174,15 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     id: "edit-save",
     keys: ["Mod", "Enter"],
     label: "Save event form",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
+  // One row instead of seven duplicates of the rows above: `Mod+E` is the same
+  // leader, for when the caret is already in a field and a bare `e` would type.
+  {
+    id: "edit-field-leader-in-form",
+    keys: ["Mod+E"],
+    label: "Same field jumps while typing",
     section: "edit",
     when: { isFormOpen: true },
   },
@@ -251,6 +240,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Move event 15 min later",
     section: "edit",
   },
+  {
+    id: "edit-cycle-edge",
+    keys: ["Tab"],
+    label: "Cycle start/end edge focus",
+    section: "edit",
+  },
+  {
+    id: "edit-move-edge",
+    keys: ["Shift", "Arrow keys"],
+    label: "Move only the focused edge",
+    section: "edit",
+  },
 
   // Other
   {
@@ -291,8 +292,8 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "other-keyboard-only",
-    keys: ["Shift", "Shift"],
-    label: "Toggle keyboard-only mode",
+    keys: ["h"],
+    label: "Toggle Hardcore Mode",
     section: "other",
   },
 ];
@@ -300,7 +301,6 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
 interface FilterOptions {
   view: "day" | "week" | "life";
   isViewingCurrentPeriod: boolean;
-  eventFocused?: boolean;
   isFormOpen?: boolean;
 }
 
@@ -311,7 +311,7 @@ interface FilterOptions {
 export const filterShortcutsByContext = (
   options: FilterOptions,
 ): Shortcut[] => {
-  const { view, isViewingCurrentPeriod, eventFocused, isFormOpen } = options;
+  const { view, isViewingCurrentPeriod, isFormOpen } = options;
 
   return SHORTCUTS_REGISTRY.map((shortcut) => {
     // Adjust labels based on view context
@@ -338,14 +338,9 @@ export const filterShortcutsByContext = (
       label = view === "week" ? "Focus next event on day" : "Focus next event";
     } else if (shortcut.id === "edit-focus-left") {
       label =
-        view === "day"
-          ? "Previous day and focus first event"
-          : "Focus event on previous day";
+        view === "day" ? "Focus previous event" : "Focus event on previous day";
     } else if (shortcut.id === "edit-focus-right") {
-      label =
-        view === "day"
-          ? "Next day and focus first event"
-          : "Focus event on next day";
+      label = view === "day" ? "Focus next event" : "Focus event on next day";
     }
 
     return { ...shortcut, label };
@@ -390,9 +385,6 @@ export const filterShortcutsByContext = (
     }
 
     // Filter by context predicates
-    if (shortcut.when?.eventFocused && !eventFocused) {
-      return false;
-    }
     if (shortcut.when?.isFormOpen && !isFormOpen) {
       return false;
     }

@@ -437,4 +437,262 @@ describe("EventRepository", () => {
     );
     expect(exceptions).toHaveLength(1);
   });
+
+  // Regression for PostHog E11000 on provider_event_identity: import stores a
+  // Google instance via upsertByProviderIdentity with an offset-form
+  // recurrenceId, then a scope-"this" command upserts with the canonical UTC
+  // form of the same instant. Without converging on the provider-identity
+  // document, the series-keyed insert collides the unique index.
+  it("converges upsertException onto an imported provider-identity exception", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId();
+    const connectionId = objectId();
+    const offsetRecurrenceId = "2026-08-10T13:00:00-06:00" as never;
+    const utcRecurrenceId = "2026-08-10T19:00:00.000Z" as never;
+    const providerEventId = "g-series_20260810T190000Z";
+
+    const master = await repo.put(
+      compassRecord({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId: "g-series",
+        providerVersion: "etag-master",
+        origin: "provider",
+        recurrence: {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY"],
+        } as EventRecord["recurrence"],
+      }),
+    );
+
+    const imported = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId,
+        providerVersion: "etag-inst",
+        content: { ...baseContent, title: "Imported override" },
+        schedule: timed(
+          "2026-08-10T14:00:00-06:00",
+          "2026-08-10T15:00:00-06:00",
+        ),
+        recurrence: {
+          kind: "exception",
+          seriesId: master._id,
+          recurrenceId: offsetRecurrenceId,
+          cancelled: false,
+        } as EventRecord["recurrence"],
+      }),
+    );
+
+    const updated = await repo.upsertException(
+      master,
+      utcRecurrenceId,
+      {
+        content: { ...baseContent, title: "Command override" },
+        schedule: timed(
+          "2026-08-10T14:00:00-06:00",
+          "2026-08-10T15:00:00-06:00",
+        ),
+        cancelled: false,
+        providerIdentity: {
+          providerEventId: providerEventId as never,
+          providerVersion: "etag-inst-2" as never,
+        },
+      },
+      new Date(),
+    );
+
+    expect(updated._id).toBe(imported._id);
+    expect(updated.content.title).toBe("Command override");
+    expect(updated.providerEventId).toBe(providerEventId);
+    expect(updated.providerVersion).toBe("etag-inst-2");
+    if (updated.recurrence.kind === "exception") {
+      expect(updated.recurrence.seriesId).toBe(master._id);
+      expect(updated.recurrence.recurrenceId).toBe(utcRecurrenceId);
+    }
+    const exceptions = await repo.findSeriesExceptions(
+      tenantId,
+      principalId,
+      master._id,
+    );
+    expect(exceptions).toHaveLength(1);
+  });
+
+  it("drops a series-keyed duplicate when converging on provider identity", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId();
+    const connectionId = objectId();
+    const offsetRecurrenceId = "2026-08-15T14:00:00-06:00" as never;
+    const utcRecurrenceId = "2026-08-15T20:00:00.000Z" as never;
+    const providerEventId = "g-series_20260815T200000Z";
+
+    const master = await repo.put(
+      compassRecord({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId: "g-series",
+        providerVersion: "etag-master",
+        origin: "provider",
+        recurrence: {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY"],
+        } as EventRecord["recurrence"],
+      }),
+    );
+
+    // Series-keyed tombstone from a prior command that used the UTC form
+    // (instance already gone → null provider identity).
+    const tombstone = await repo.upsertException(
+      master,
+      utcRecurrenceId,
+      {
+        content: baseContent,
+        schedule: timed(
+          "2026-08-15T14:00:00-06:00",
+          "2026-08-15T15:00:00-06:00",
+        ),
+        cancelled: true,
+        providerIdentity: null,
+      },
+      new Date(),
+    );
+
+    // Import still carries the live provider instance under the offset form.
+    const imported = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId,
+        providerVersion: "etag-inst",
+        content: { ...baseContent, title: "Still at provider" },
+        schedule: timed(
+          "2026-08-15T14:00:00-06:00",
+          "2026-08-15T15:00:00-06:00",
+        ),
+        recurrence: {
+          kind: "exception",
+          seriesId: master._id,
+          recurrenceId: offsetRecurrenceId,
+          cancelled: false,
+        } as EventRecord["recurrence"],
+      }),
+    );
+    expect(imported._id).not.toBe(tombstone._id);
+
+    const converged = await repo.upsertException(
+      master,
+      utcRecurrenceId,
+      {
+        content: { ...baseContent, title: "Retried delete" },
+        schedule: timed(
+          "2026-08-15T14:00:00-06:00",
+          "2026-08-15T15:00:00-06:00",
+        ),
+        cancelled: true,
+        providerIdentity: {
+          providerEventId: providerEventId as never,
+          providerVersion: "etag-inst" as never,
+        },
+      },
+      new Date(),
+    );
+
+    expect(converged._id).toBe(imported._id);
+    expect(converged.content.title).toBe("Retried delete");
+    if (converged.recurrence.kind === "exception") {
+      expect(converged.recurrence.cancelled).toBe(true);
+      expect(converged.recurrence.recurrenceId).toBe(utcRecurrenceId);
+    }
+    expect(
+      await repo.findById(tenantId, principalId, tombstone._id),
+    ).toBeNull();
+    expect(
+      await repo.findSeriesExceptions(tenantId, principalId, master._id),
+    ).toHaveLength(1);
+  });
+
+  // After recurrenceId canonicalization, import and command share the UTC
+  // series_exception_identity key. A null-provider tombstone left by a
+  // scope-"this" delete must be adopted by the provider-identity upsert,
+  // not collide it.
+  it("adopts a series-keyed tombstone when importing a provider exception", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId();
+    const connectionId = objectId();
+    const utcRecurrenceId = "2026-08-10T19:00:00.000Z" as never;
+    const providerEventId = "g-series_20260810T190000Z";
+
+    const master = await repo.put(
+      compassRecord({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId: "g-series",
+        providerVersion: "etag-master",
+        origin: "provider",
+        recurrence: {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY"],
+        } as EventRecord["recurrence"],
+      }),
+    );
+
+    const tombstone = await repo.upsertException(
+      master,
+      utcRecurrenceId,
+      {
+        content: baseContent,
+        schedule: timed(
+          "2026-08-10T13:00:00-06:00",
+          "2026-08-10T14:00:00-06:00",
+        ),
+        cancelled: true,
+        providerIdentity: null,
+      },
+      new Date(),
+    );
+    expect(tombstone.providerEventId).toBeNull();
+
+    const imported = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        tenantId,
+        principalId,
+        calendarId,
+        connectionId,
+        providerEventId,
+        providerVersion: "etag-inst",
+        content: { ...baseContent, title: "Cancelled at provider" },
+        schedule: timed(
+          "2026-08-10T13:00:00-06:00",
+          "2026-08-10T14:00:00-06:00",
+        ),
+        recurrence: {
+          kind: "exception",
+          seriesId: master._id,
+          recurrenceId: utcRecurrenceId,
+          cancelled: true,
+        } as EventRecord["recurrence"],
+      }),
+    );
+
+    expect(imported._id).toBe(tombstone._id);
+    expect(imported.providerEventId).toBe(providerEventId);
+    expect(imported.content.title).toBe("Cancelled at provider");
+    expect(
+      await repo.findSeriesExceptions(tenantId, principalId, master._id),
+    ).toHaveLength(1);
+  });
 });

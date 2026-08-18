@@ -10,6 +10,7 @@ import {
   createGridEventDraft,
   editGridEventDraft,
   resolveDraftRecurrenceRules,
+  suppressedSeriesIdForDraft,
 } from "@web/events/grid-event-draft.adapter";
 import { useRecurrence } from "./useRecurrence";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
@@ -28,6 +29,50 @@ const baseDraft = () =>
     end: new Date("2026-05-31T11:00:00.000Z"),
     timeZone: "UTC",
   });
+
+const mountPreserveOccurrence = (
+  seriesRules: string[],
+  seriesId = EventIdSchema.parse("0123456789abcdefaaaaaaaa"),
+) => {
+  const source = createMockEvent({
+    schedule: SCHEDULE,
+    recurrence: {
+      kind: "occurrence",
+      seriesId,
+    },
+  });
+  const editedDraft = editGridEventDraft(source);
+  if (!editedDraft) throw new Error("expected edit draft");
+
+  expect(editedDraft.values.recurrence).toEqual({ kind: "preserve" });
+  expect(suppressedSeriesIdForDraft(editedDraft)).toBeNull();
+
+  let draft: GridEventDraft = editedDraft;
+  let setDraftCalls = 0;
+  const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> = (
+    updater,
+  ) => {
+    setDraftCalls++;
+    const next = typeof updater === "function" ? updater(draft) : updater;
+    if (next) draft = next;
+  };
+
+  const hook = renderHook(() =>
+    useRecurrence(draft, { setDraft }, seriesRules),
+  );
+
+  return {
+    draft: () => draft,
+    setDraftCalls: () => setDraftCalls,
+    result: hook.result,
+    rerender: hook.rerender,
+    assertUntouched: () => {
+      expect(setDraftCalls).toBe(0);
+      expect(draft.values.recurrence).toEqual({ kind: "preserve" });
+      expect(suppressedSeriesIdForDraft(draft)).toBeNull();
+    },
+  };
+};
 
 describe("useRecurrence hook", () => {
   it("initializes with no recurrence", () => {
@@ -212,6 +257,93 @@ describe("useRecurrence hook", () => {
     rerender({ setDraftProp: nextSetDraft });
 
     expect(nextSetDraft).not.toHaveBeenCalled();
+  });
+
+  // Regression: opening a later weekday occurrence of a Google-style series
+  // (BYDAY without INTERVAL=1) used to rewrite the rule on mount, flip
+  // preserve→series, suppress earlier siblings, and leave only the clicked
+  // day + forward previews visible.
+  it("does not rewrite a preserve occurrence draft whose series omits INTERVAL=1", () => {
+    const { result, rerender, assertUntouched } = mountPreserveOccurrence([
+      "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    ]);
+
+    expect(result.current.hasRecurrence).toBe(true);
+    expect(result.current.freq).toBe(Frequency.WEEKLY);
+    expect(result.current.weekDays).toEqual([
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+    ]);
+    assertUntouched();
+
+    rerender();
+    assertUntouched();
+  });
+
+  it("does not rewrite when series RRULE params are reordered", () => {
+    const { assertUntouched, rerender } = mountPreserveOccurrence([
+      "RRULE:INTERVAL=1;FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    ]);
+
+    assertUntouched();
+    rerender();
+    assertUntouched();
+  });
+
+  it("does not rewrite when series BYDAY order differs from the rebuilt rule", () => {
+    const { assertUntouched, rerender, result } = mountPreserveOccurrence([
+      "RRULE:FREQ=WEEKLY;BYDAY=FR,MO,TU,WE,TH",
+    ]);
+
+    expect(result.current.weekDays).toEqual([
+      "friday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+    ]);
+    assertUntouched();
+    rerender();
+    assertUntouched();
+  });
+
+  it("does not rewrite when series includes a default WKST", () => {
+    const { assertUntouched, rerender } = mountPreserveOccurrence([
+      "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;WKST=MO",
+    ]);
+
+    assertUntouched();
+    rerender();
+    assertUntouched();
+  });
+
+  it("writes a real weekday edit and flips preserve to series", () => {
+    const seriesId = EventIdSchema.parse("0123456789abcdefaaaaaaaa");
+    const { draft, setDraftCalls, result, rerender } = mountPreserveOccurrence(
+      ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"],
+      seriesId,
+    );
+
+    expect(setDraftCalls()).toBe(0);
+    expect(draft().values.recurrence).toEqual({ kind: "preserve" });
+    expect(suppressedSeriesIdForDraft(draft())).toBeNull();
+
+    act(() => {
+      result.current.setWeekDays([
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+      ]);
+    });
+    rerender();
+
+    expect(setDraftCalls()).toBeGreaterThan(0);
+    expect(draft().values.recurrence).toMatchObject({ kind: "series" });
+    expect(suppressedSeriesIdForDraft(draft())).toBe(seriesId);
   });
 
   // Regression for React error #185 (max update depth exceeded): a timed

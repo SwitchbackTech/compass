@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
@@ -66,16 +66,20 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Compass Calendar helps you manage your time, simply.",
+        name: "The keyboard-first calendar",
       }),
     ).toBeTruthy();
-    expect(
-      screen.getByText(
-        /A small, but mighty calendar app\. Built for busy minimalists/,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(/Rediscover the joy of shortcuts/)).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
+    expect(
+      screen.getByRole("link", {
+        name: "Compass Calendar - The keyboard-first calendar. Get organized quickly. | Product Hunt",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "https://www.producthunt.com/products/compass-calendar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-compass-calendar-2",
+    );
   });
 
   it("opens the auth modal from the Log in pill", async () => {
@@ -170,7 +174,7 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("aria-hidden", "false");
     expect(answer).toHaveAttribute("data-state", "open");
     expect(
-      screen.getByText(/Compass is for busy minimalists who value focus/),
+      screen.getByText(/Compass is for busy professionals who live at/),
     ).toBeTruthy();
 
     await user.click(questionButton);
@@ -178,6 +182,58 @@ describe("WelcomeModal", () => {
     expect(questionButton).toHaveAttribute("aria-expanded", "false");
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
+  });
+
+  it("shows shortcut keycaps on auth and start actions without hover", () => {
+    render(<WelcomeModal />);
+
+    for (const [name, key] of [
+      ["Sign up", "U"],
+      ["Log in", "I"],
+      ["Start Now", "S"],
+    ] as const) {
+      const hint = within(screen.getByRole("button", { name })).getByText(key);
+      expect(hint.className).not.toMatch(/opacity-0/);
+    }
+  });
+
+  it("opens sign up with the U shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("u");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("opens log in with the I shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("i");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("dismisses with the S shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("s");
+
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("ignores the shortcut keys when a modifier is held", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("{Meta>}u{/Meta}");
+
+    expect(mockOpenModal).not.toHaveBeenCalled();
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
   });
 
   it("focuses the first control and keeps Tab inside the dialog", async () => {

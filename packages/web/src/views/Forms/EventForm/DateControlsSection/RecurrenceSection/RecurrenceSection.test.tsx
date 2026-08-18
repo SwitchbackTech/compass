@@ -70,8 +70,13 @@ const recurringDraft = () => {
 
 function renderRecurrenceSection({
   initialDraft = baseDraft(),
+  withFormLikeStopPropagation = false,
 }: {
   initialDraft?: GridEventDraft;
+  // EventForm stops mousedown bubbling so week-grid handlers underneath do
+  // not fire. That also breaks react-datepicker's bubble-phase outside-click
+  // listener; opt in to reproduce that shell when testing popover close.
+  withFormLikeStopPropagation?: boolean;
 } = {}) {
   const setDraftSpy = mock();
 
@@ -89,7 +94,23 @@ function renderRecurrenceSection({
       });
     }, []);
 
-    return <RecurrenceSection draft={draft} setDraft={handleSetDraft} />;
+    const section = (
+      <RecurrenceSection draft={draft} setDraft={handleSetDraft} />
+    );
+
+    if (!withFormLikeStopPropagation) return section;
+
+    return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: test harness mirrors EventFormShell's mousedown stopPropagation.
+      <div
+        onMouseDown={(event) => {
+          event.stopPropagation();
+        }}
+      >
+        {section}
+        <button type="button">Outside</button>
+      </div>
+    );
   }
 
   const view = render(<Harness />);
@@ -156,6 +177,38 @@ describe("RecurrenceSection", () => {
     expect(ownDate.getAttribute("aria-label")).toMatch(/^Choose /);
     expect(ownDate).not.toHaveClass("react-datepicker__day--disabled");
     expect(ownDate.getAttribute("aria-disabled")).not.toBe("true");
+  });
+
+  // Regression: EventFormShell stops mousedown bubbling, which used to leave
+  // the Ends on calendar open after an outside click (focus left, popover stayed).
+  it("closes the Ends on picker on outside click when mousedown propagation is stopped", async () => {
+    const user = userEvent.setup();
+    renderRecurrenceSection({
+      initialDraft: recurringDraft(),
+      withFormLikeStopPropagation: true,
+    });
+
+    await user.click(await screen.findByRole("textbox"));
+    expect(
+      (await screen.findAllByLabelText(/Choose .*2026/i)).length,
+    ).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: "Outside" }));
+
+    expect(screen.queryAllByLabelText(/Choose .*2026/i)).toHaveLength(0);
+  });
+
+  // Regression: opening via TooltipTrigger onClick re-opened the popover when a
+  // day click bubbled from the local portal; open only via the input path.
+  it("closes the Ends on picker after selecting a day", async () => {
+    const user = userEvent.setup();
+    renderRecurrenceSection({ initialDraft: recurringDraft() });
+
+    await user.click(await screen.findByRole("textbox"));
+    const [day] = await screen.findAllByLabelText(/^Choose /);
+    await user.click(day);
+
+    expect(screen.queryAllByLabelText(/^Choose /)).toHaveLength(0);
   });
 
   it("turning off Repeat on an existing recurring event clears the controls", async () => {

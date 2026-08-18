@@ -1,17 +1,19 @@
 import { useEffect } from "react";
+import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import {
-  resetSharedShiftTapGesture,
-  subscribeToShiftTapGesture,
-} from "@web/shortcuts/shift-tap-gesture";
+import { KEYMAP } from "@web/shortcuts/keymap";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 /**
- * SHIFT-SHIFT (two quick taps) toggles keyboard-only mode. Clicks are inert;
- * ESC, SHIFT-SHIFT again, or refresh exits. Mode is not persisted.
+ * Bare `h` toggles keyboard-only (Hardcore) mode. Clicks are inert; ESC, `h`
+ * again, or refresh exits. Mode is not persisted.
  *
  * ESC stands down while app lock, floating layers, or the event form own Escape
  * so those dismiss first; a later ESC exits this mode.
@@ -20,14 +22,39 @@ export function useKeyboardOnlyMode() {
   const isActive = useKeyboardOnlyStore((state) => state.isActive);
 
   useEffect(() => {
-    return subscribeToShiftTapGesture((event) => {
-      if (event.type !== "doubleTap") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+
+      if (event.key === "Escape") {
+        if (!useKeyboardOnlyStore.getState().isActive) return;
+        if (isHigherEscapeOwner()) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        keyboardOnlyActions.exit();
+        return;
+      }
+
+      if (!isBareLetterKey(event, KEYMAP.hardcore.bareLetter)) return;
+      if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+      // Yield to an armed `e`… edit sequence (same as event-jump `s`).
+      if (isEditSequenceArmed()) return;
+
+      event.preventDefault();
+      event.stopPropagation();
       if (useKeyboardOnlyStore.getState().isActive) {
         keyboardOnlyActions.exit();
       } else {
+        // Clear jump chips so Hardcore does not leave a second Esc owner.
+        eventJumpActions.reset();
         keyboardOnlyActions.enter();
       }
-    });
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
   }, []);
 
   // Click suppression while active. Window capture runs before React's
@@ -37,6 +64,10 @@ export function useKeyboardOnlyMode() {
     if (!isActive) return;
 
     const blockPointer = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-onboarding-ui]")) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       // Pulse once per gesture (pointerdown), not again on click/mousedown.
@@ -55,27 +86,6 @@ export function useKeyboardOnlyMode() {
       window.removeEventListener("mousedown", blockPointer, true);
       window.removeEventListener("click", blockPointer, true);
       window.removeEventListener("auxclick", blockPointer, true);
-    };
-  }, [isActive]);
-
-  // ESC exits when nothing higher owns Escape.
-  useEffect(() => {
-    if (!isActive) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (event.defaultPrevented) return;
-      if (isHigherEscapeOwner()) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      keyboardOnlyActions.exit();
-      resetSharedShiftTapGesture();
-    };
-
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
     };
   }, [isActive]);
 }

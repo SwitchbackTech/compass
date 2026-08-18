@@ -17,8 +17,15 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   calendarAccentAccessibleSuffix,
   calendarAccentStyle,
+  eventEdgeFocusShadow,
+  eventFocusColor,
+  eventFocusOutlineClass,
 } from "@web/grid/components/calendar-accent.util";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
+import {
+  selectEdgeForEvent,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";
 
@@ -28,6 +35,8 @@ export interface AllDayEventCardProps {
   /** Resolved by a list-level useCalendarLookup call, not fetched here. */
   calendarIdentity?: CalendarCardIdentity | null;
   event: GridEvent;
+  /** Calendar backgroundColor for focus chrome; null falls back to --text. */
+  focusColor?: string | null;
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
   onEventKeyDown?: (event: GridEvent) => void;
@@ -46,6 +55,7 @@ const AllDayEventCardBase = (
   {
     calendarIdentity = null,
     event,
+    focusColor = null,
     interactionAttributes,
     isPlaceholder,
     onEventKeyDown,
@@ -83,15 +93,23 @@ const AllDayEventCardBase = (
   // drop the title below 4.5:1.
   const titleColor = theme.getContrastText(bgColor);
 
+  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
+  const focusColorCss = eventFocusColor(focusColor);
+  const edgeFocusShadow = focusedEdge
+    ? eventEdgeFocusShadow(focusedEdge, "horizontal", focusColorCss)
+    : undefined;
+
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
+    "--event-focus-color": focusColorCss,
     height: position.height,
     left: position.left,
     opacity: isPlaceholder ? 0.5 : undefined,
     top: position.top,
     width: position.width,
     zIndex: position.zIndex ?? ZIndex.LAYER_1,
+    boxShadow: edgeFocusShadow,
   } as CSSProperties;
 
   const showResizeCursor = !isPlaceholder;
@@ -111,25 +129,34 @@ const AllDayEventCardBase = (
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
-  const accessibleLabel = calendarIdentity
-    ? `${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
-    : baseAccessibleLabel;
+  const edgeFocusSuffix =
+    focusedEdge === "startDate"
+      ? ", editing start date"
+      : focusedEdge === "endDate"
+        ? ", editing end date"
+        : "";
+  const accessibleLabel =
+    (calendarIdentity
+      ? `${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
+      : baseAccessibleLabel) + edgeFocusSuffix;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...interactionAttributes}
       aria-label={accessibleLabel}
+      data-edge-focus={focusedEdge ?? undefined}
       ref={ref}
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg)",
         {
           "hover:cursor-pointer": !isPlaceholder,
           "outline outline-dashed outline-1 outline-text-muted/50":
             event.isDemo,
         },
+        eventFocusOutlineClass(focusedEdge),
       )}
       style={eventStyle}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {

@@ -119,8 +119,9 @@ export interface AccountGroup {
 /**
  * Bucket calendars by the account they belong to, in connection order, with
  * anything lacking an account email (the local calendar) left ungrouped.
- * Callers render `ungrouped` after the groups, matching {@link
- * compareCalendars}, which sorts accountless calendars last.
+ * Empty groups are kept so a connected-but-still-importing account still
+ * renders its section header. Callers that cannot show an empty optgroup
+ * (the Settings default-calendar select) skip those groups inline.
  */
 export function groupCalendarsByAccount(
   calendars: Calendar[],
@@ -157,9 +158,7 @@ export function groupCalendarsByAccount(
     group.calendars.push(calendar);
   }
 
-  // An account can be connected before its calendars have imported; an empty
-  // section would render a heading with nothing under it.
-  return { groups: groups.filter((g) => g.calendars.length > 0), ungrouped };
+  return { groups, ungrouped };
 }
 
 export interface DefaultTargetCalendarOptions {

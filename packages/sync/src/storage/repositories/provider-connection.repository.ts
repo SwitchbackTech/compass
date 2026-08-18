@@ -53,8 +53,6 @@ export class ProviderConnectionRepository {
           capabilities: fields.capabilities,
           state: fields.state,
           stateReason: fields.stateReason,
-          lastSyncedAt: fields.lastSyncedAt,
-          lastHealthyAt: fields.lastHealthyAt,
           // A successful upsert-by-account-identity means the account is live —
           // a create or a reconnect — so clear any prior disconnect evidence.
           // This keeps disconnectedAt and state consistent: an upsert never
@@ -68,6 +66,11 @@ export class ProviderConnectionRepository {
           tenantId: fields.tenantId,
           principalId: fields.principalId,
           provider: fields.provider,
+          // Health timestamps are derived evidence, not link-time facts.
+          // Putting them on $set would clobber lastHealthyAt on reconnect and
+          // make an established account look like a first import.
+          lastSyncedAt: null,
+          lastHealthyAt: null,
           createdAt: now,
         },
       },

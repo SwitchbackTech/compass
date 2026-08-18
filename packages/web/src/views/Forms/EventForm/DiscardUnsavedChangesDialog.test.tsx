@@ -40,6 +40,16 @@ describe("DiscardUnsavedChangesDialog", () => {
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
 
+  it("focuses Cancel on open and Tabs to Discard", async () => {
+    const user = userEvent.setup();
+    renderDialog(true);
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Discard" })).toHaveFocus();
+  });
+
   it("discards and cancels via the action buttons", async () => {
     const user = userEvent.setup();
     renderDialog(true);
@@ -58,5 +68,23 @@ describe("DiscardUnsavedChangesDialog", () => {
     await user.click(screen.getByRole("button", { name: "Close" }));
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onDiscard).not.toHaveBeenCalled();
+  });
+
+  it("cancels on Escape", async () => {
+    const user = userEvent.setup();
+    renderDialog(true);
+
+    await user.keyboard("{Escape}");
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onDiscard).not.toHaveBeenCalled();
+  });
+
+  it("discards on Shift+Escape", async () => {
+    const user = userEvent.setup();
+    renderDialog(true);
+
+    await user.keyboard("{Shift>}{Escape}{/Shift}");
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
   });
 });

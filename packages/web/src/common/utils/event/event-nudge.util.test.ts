@@ -1,10 +1,12 @@
 import dayjs from "@core/util/date/dayjs";
 import {
+  convertAllDayToTimedDates,
   getArrowKeyMovement,
   isTimedEventFullCalendarDay,
   isTimedEventInsideOneDay,
   isTimedEventMultiDay,
   nudgeEventDates,
+  nudgeEventEdgeDates,
   shouldRenderTimedInAllDayRow,
   timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
@@ -38,6 +40,28 @@ describe("getArrowKeyMovement", () => {
     expect(getArrowKeyMovement("ArrowUp", true)).toBeNull();
     expect(getArrowKeyMovement("ArrowDown", true)).toBeNull();
     expect(getArrowKeyMovement("Enter", false)).toBeNull();
+  });
+});
+
+describe("convertAllDayToTimedDates", () => {
+  it("places the event at the given start minute on its start day with a 60-minute duration", () => {
+    const result = convertAllDayToTimedDates(
+      { startDate: "2026-05-20" },
+      9 * 60,
+    );
+
+    expect(result.startDate).toStartWith("2026-05-20T09:00:00");
+    expect(result.endDate).toStartWith("2026-05-20T10:00:00");
+  });
+
+  it("only reads the event's start day, so a multi-day span collapses onto it", () => {
+    const result = convertAllDayToTimedDates(
+      { startDate: "2026-05-20" },
+      13 * 60 + 30,
+    );
+
+    expect(result.startDate).toStartWith("2026-05-20T13:30:00");
+    expect(result.endDate).toStartWith("2026-05-20T14:30:00");
   });
 });
 
@@ -110,6 +134,201 @@ describe("nudgeEventDates", () => {
   it("returns null for minute moves on all-day events", () => {
     const result = nudgeEventDates(
       { startDate: "2026-05-20", endDate: "2026-05-21", isAllDay: true },
+      { days: 0, minutes: 15 },
+    );
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("nudgeEventEdgeDates", () => {
+  const timedEvent = {
+    startDate: "2026-05-20T10:00:00",
+    endDate: "2026-05-20T10:30:00",
+    isAllDay: false,
+  };
+
+  it("moves the start edge later without touching the end", () => {
+    const result = nudgeEventEdgeDates(timedEvent, "startDate", {
+      days: 0,
+      minutes: 15,
+    });
+
+    expect(result?.startDate).toStartWith("2026-05-20T10:15:00");
+    expect(result?.endDate).toStartWith("2026-05-20T10:30:00");
+    expect(result?.edge).toBe("startDate");
+  });
+
+  it("moves the end edge earlier without touching the start", () => {
+    const result = nudgeEventEdgeDates(timedEvent, "endDate", {
+      days: 0,
+      minutes: -15,
+    });
+
+    expect(result?.startDate).toStartWith("2026-05-20T10:00:00");
+    expect(result?.endDate).toStartWith("2026-05-20T10:15:00");
+    expect(result?.edge).toBe("endDate");
+  });
+
+  it("does not flip when the move lands exactly at the 15-minute minimum", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T10:00:00",
+        endDate: "2026-05-20T10:30:00",
+        isAllDay: false,
+      },
+      "startDate",
+      { days: 0, minutes: 15 },
+    );
+
+    expect(result?.startDate).toStartWith("2026-05-20T10:15:00");
+    expect(result?.endDate).toStartWith("2026-05-20T10:30:00");
+    expect(result?.edge).toBe("startDate");
+  });
+
+  it("flips the start edge to the end edge past the minimum duration", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T10:15:00",
+        endDate: "2026-05-20T10:30:00",
+        isAllDay: false,
+      },
+      "startDate",
+      { days: 0, minutes: 15 },
+    );
+
+    expect(result?.startDate).toStartWith("2026-05-20T10:30:00");
+    expect(result?.endDate).toStartWith("2026-05-20T10:45:00");
+    expect(result?.edge).toBe("endDate");
+  });
+
+  it("flips the end edge to the start edge past the minimum duration", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T10:00:00",
+        endDate: "2026-05-20T10:15:00",
+        isAllDay: false,
+      },
+      "endDate",
+      { days: 0, minutes: -15 },
+    );
+
+    expect(result?.startDate).toStartWith("2026-05-20T09:45:00");
+    expect(result?.endDate).toStartWith("2026-05-20T10:00:00");
+    expect(result?.edge).toBe("startDate");
+  });
+
+  it("rejects a start-edge move that would cross into the previous day", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T00:00:00",
+        endDate: "2026-05-20T01:00:00",
+        isAllDay: false,
+      },
+      "startDate",
+      { days: 0, minutes: -15 },
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("allows the end edge to land exactly on next midnight", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T23:00:00",
+        endDate: "2026-05-20T23:45:00",
+        isAllDay: false,
+      },
+      "endDate",
+      { days: 0, minutes: 15 },
+    );
+
+    expect(result?.endDate).toStartWith("2026-05-21T00:00:00");
+  });
+
+  it("rejects a flip that would cross midnight", () => {
+    const result = nudgeEventEdgeDates(
+      {
+        startDate: "2026-05-20T23:38:00",
+        endDate: "2026-05-20T23:50:00",
+        isAllDay: false,
+      },
+      "startDate",
+      { days: 0, minutes: 15 },
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("rejects day movement on a timed edge", () => {
+    const result = nudgeEventEdgeDates(timedEvent, "startDate", {
+      days: 1,
+      minutes: 0,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("moves an all-day start edge earlier without touching the end", () => {
+    const result = nudgeEventEdgeDates(
+      { startDate: "2026-05-20", endDate: "2026-05-22", isAllDay: true },
+      "startDate",
+      { days: -1, minutes: 0 },
+    );
+
+    expect(result).toEqual({
+      startDate: "2026-05-19",
+      endDate: "2026-05-22",
+      edge: "startDate",
+    });
+  });
+
+  it("moves an all-day end edge later without touching the start", () => {
+    const result = nudgeEventEdgeDates(
+      { startDate: "2026-05-20", endDate: "2026-05-22", isAllDay: true },
+      "endDate",
+      { days: 1, minutes: 0 },
+    );
+
+    expect(result).toEqual({
+      startDate: "2026-05-20",
+      endDate: "2026-05-23",
+      edge: "endDate",
+    });
+  });
+
+  it("flips a one-day all-day event's start edge to the end edge", () => {
+    const result = nudgeEventEdgeDates(
+      { startDate: "2026-05-20", endDate: "2026-05-21", isAllDay: true },
+      "startDate",
+      { days: 1, minutes: 0 },
+    );
+
+    expect(result).toEqual({
+      startDate: "2026-05-20",
+      endDate: "2026-05-22",
+      edge: "endDate",
+    });
+  });
+
+  it("flips a one-day all-day event's end edge to the start edge", () => {
+    const result = nudgeEventEdgeDates(
+      { startDate: "2026-05-20", endDate: "2026-05-21", isAllDay: true },
+      "endDate",
+      { days: -1, minutes: 0 },
+    );
+
+    expect(result).toEqual({
+      startDate: "2026-05-19",
+      endDate: "2026-05-21",
+      edge: "startDate",
+    });
+  });
+
+  it("rejects minute movement on an all-day edge", () => {
+    const result = nudgeEventEdgeDates(
+      { startDate: "2026-05-20", endDate: "2026-05-21", isAllDay: true },
+      "startDate",
       { days: 0, minutes: 15 },
     );
 

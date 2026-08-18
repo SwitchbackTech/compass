@@ -35,6 +35,11 @@ export function slotToGoogleColorId(slot: EventColorSlot): string {
 
 // Fields for a Google create/patch body: a slot sets colorId, null clears it,
 // undefined leaves Google's existing color untouched (omit the key).
+//
+// Clearing a prior custom eventLabelId is not done here: eventLabelVersion=1
+// is required to write eventLabelId, and that version ignores colorId. The
+// writer clears labels in a separate preconditioned patch before the colorId
+// write (see GoogleEventWriter.patchEvent).
 export function googleColorIdFields(
   color: EventColorSlot | null | undefined,
 ): { colorId: string | null } | Record<string, never> {

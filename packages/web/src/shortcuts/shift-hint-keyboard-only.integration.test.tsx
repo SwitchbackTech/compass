@@ -1,8 +1,6 @@
 /**
- * Shift-hint and keyboard-only mode share one Shift-tap gesture listener
- * (see shift-tap-gesture.ts). This covers the interaction between the two
- * real hooks mounted together - the scenario the old per-hook detectors
- * coordinated only by timing, and could race.
+ * Event-jump (`s`) and Hardcore (`h`) are independent letter shortcuts.
+ * Mounted together they must not steal each other's keys.
  */
 
 import { act, renderHook } from "@testing-library/react";
@@ -19,7 +17,6 @@ import {
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
-import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const dispatch = (
@@ -38,9 +35,9 @@ const dispatch = (
   );
 };
 
-const tapShift = () => {
-  dispatch("keydown", "Shift");
-  dispatch("keyup", "Shift");
+const press = (key: string) => {
+  dispatch("keydown", key);
+  dispatch("keyup", key);
 };
 
 const EVENT_ID = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
@@ -61,52 +58,88 @@ const mountBoth = () => {
     timedFixture(EVENT_ID, "2026-08-05T09:00:00.000Z"),
   ];
 
-  renderHook(() => useKeyboardOnlyMode());
-  return renderHook(() =>
+  // Match production effect order: view (child) listeners register before
+  // RootShell Hardcore, so jump is first on the capture path.
+  const jump = renderHook(() =>
     useShiftHoldEventHints({
       focus: () => {},
       listVisible: () => [{ eventId: EVENT_ID, eventType: "timed", element }],
       timedEvents,
     }),
   );
+  renderHook(() => useKeyboardOnlyMode());
+  return jump;
 };
 
-describe("shift-hint + keyboard-only integration", () => {
+describe("event-jump + keyboard-only integration", () => {
   beforeEach(() => {
     clearAppLockReasons();
     eventJumpActions.reset();
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
-    resetSharedShiftTapGesture();
   });
 
   afterEach(() => {
     clearAppLockReasons();
     eventJumpActions.reset();
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
-    resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
 
-  it("a single tap activates shift-hint only", () => {
+  it("s activates event jump only", () => {
     mountBoth();
 
     act(() => {
-      tapShift();
+      press("s");
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
   });
 
-  it("Shift-Shift cancels the hints it just activated and enters keyboard-only instead", () => {
+  it("h activates hardcore only", () => {
     mountBoth();
 
     act(() => {
-      tapShift();
-      tapShift();
+      press("h");
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+  });
+
+  it("s still activates jump while hardcore is already on", () => {
+    const { result } = mountBoth();
+
+    act(() => {
+      press("h");
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+
+    act(() => {
+      press("s");
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints.length).toBeGreaterThan(0);
+  });
+
+  it("h clears active jump chips when entering hardcore", () => {
+    const { result } = mountBoth();
+
+    act(() => {
+      press("s");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints.length).toBeGreaterThan(0);
+
+    act(() => {
+      press("h");
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
   });
 });

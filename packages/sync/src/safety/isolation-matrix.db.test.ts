@@ -112,8 +112,6 @@ describe("R-SEC-03 isolation matrix", () => {
       capabilities: ["readEvents"],
       state: "healthy",
       stateReason: null,
-      lastSyncedAt: new Date(),
-      lastHealthyAt: new Date(),
     });
     return connection._id;
   };

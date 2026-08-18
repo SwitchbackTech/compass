@@ -110,6 +110,35 @@ describe("POST /sync/notifications/google", () => {
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(1);
   });
 
+  it("stamps the change marker so a pull already in flight cannot miss the change", async () => {
+    // The enqueue above no-ops whenever a job holds the coalescing key —
+    // including the claimed row of a running pull that has already read the
+    // provider. The marker is the only thing that survives that, and the pull's
+    // compare-and-clear is what turns it back into a second pass.
+    const resourceId = await seedSubscription();
+    await startService();
+
+    const res = await post(googHeaders());
+
+    expect(res.status).toBe(200);
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resourceId });
+    expect(stored?.["changeNotifiedAt"]).toBeInstanceOf(Date);
+  });
+
+  it("does not stamp the change marker on a rejected notification", async () => {
+    const resourceId = await seedSubscription();
+    await startService();
+
+    await post(googHeaders({ "x-goog-channel-token": "wrong" }));
+
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resourceId });
+    expect(stored?.["changeNotifiedAt"]).toBeNull();
+  });
+
   it("does not enqueue on the initial sync handshake", async () => {
     const resourceId = await seedSubscription();
     await startService();

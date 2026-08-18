@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import fastDeepEqual from "fast-deep-equal/react";
 import {
   type Dispatch,
   type SetStateAction,
@@ -14,7 +13,10 @@ import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   patchGridDraftRecurrence,
+  recurrenceRulesSemanticallyEqual,
   resolveDraftRecurrenceRules,
+  scheduleDatesFromDraft,
+  sortedByweekday,
 } from "@web/events/grid-event-draft.adapter";
 import {
   type FrequencyValues,
@@ -56,9 +58,6 @@ const WEEKDAY_MAP: Record<
   {} as Record<number | string | keyof typeof WEEKDAY_RRULE_MAP, Weekday>,
 );
 
-const normalizeRecurrenceRule = (rule: string[] | null | undefined): string[] =>
-  (rule ?? []).map((entry) => entry.replace(/;WKST=[A-Z]{2}/, ""));
-
 const weekdayKeyFromByweekday = (
   day: number | Weekday,
 ): keyof typeof WEEKDAY_RRULE_MAP => {
@@ -66,23 +65,19 @@ const weekdayKeyFromByweekday = (
   return REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[weekday].toString()];
 };
 
-const scheduleDatesFromDraft = (draft: GridEventDraft) => {
-  const { schedule } = draft.values;
-
-  if (schedule.kind === "allDay") {
-    return {
-      startDate: dayjs(schedule.start).toYearMonthDayString(),
-      endDate: dayjs(schedule.end).toYearMonthDayString(),
-    };
-  }
-
-  return {
-    startDate:
-      dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
-    endDate:
-      dayjs(schedule.end).format() ||
-      dayjs().add(1, "hour").toRFC3339OffsetString(),
-  };
+const recurrencePatternSeedKey = (
+  hasRecurrence: boolean,
+  options: {
+    freq: Frequency;
+    interval: number;
+    byweekday: Array<number | Weekday> | null | undefined;
+    count: number | null;
+  },
+  until: Date | null,
+) => {
+  const byweekday = sortedByweekday(options.byweekday).join(",");
+  const untilKey = until ? dayjs(until).valueOf() : "";
+  return `${hasRecurrence}:${options.freq}:${options.interval ?? 1}:${byweekday}:${options.count ?? ""}:${untilKey}`;
 };
 
 export const useRecurrence = (
@@ -142,8 +137,8 @@ export const useRecurrence = (
   // back into a new CompassEventRRule's `options.until` below without
   // drifting it on every render (the bug this guards against: seeding from
   // the still-floating `options.until` would double-float on round-trip and
-  // never converge, since the deep-equal guard in the effect below would
-  // never pass).
+  // never converge, since the semantic-equality guard in the effect below
+  // would never pass).
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
   const [until, setUntilState] = useState<Date | null>(() => parsed.until);
@@ -151,7 +146,11 @@ export const useRecurrence = (
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
 
-  const ruleSeedKey = `${hasRecurrence}:${JSON.stringify(normalizeRecurrenceRule(currentRules))}`;
+  const ruleSeedKey = recurrencePatternSeedKey(
+    hasRecurrence,
+    options,
+    parsed.until,
+  );
   const [syncedRuleSeedKey, setSyncedRuleSeedKey] = useState(ruleSeedKey);
 
   if (ruleSeedKey !== syncedRuleSeedKey) {
@@ -232,13 +231,9 @@ export const useRecurrence = (
   useEffect(() => {
     if (!hasRecurrence) return;
 
-    const nextRule = JSON.parse(rule);
-    if (
-      fastDeepEqual(
-        normalizeRecurrenceRule(currentRules),
-        normalizeRecurrenceRule(nextRule),
-      )
-    ) {
+    const nextRule = JSON.parse(rule) as string[];
+    const dates = { startDate, endDate };
+    if (recurrenceRulesSemanticallyEqual(currentRules, nextRule, dates)) {
       return;
     }
 
@@ -249,13 +244,21 @@ export const useRecurrence = (
         currentDraft,
         seriesRules,
       );
-      if (fastDeepEqual(projectedRules, nextRule)) {
+      if (recurrenceRulesSemanticallyEqual(projectedRules, nextRule, dates)) {
         return currentDraft;
       }
 
       return patchGridDraftRecurrence(currentDraft, nextRule, seriesRules);
     });
-  }, [currentRules, hasRecurrence, rule, seriesRules, setDraft]);
+  }, [
+    currentRules,
+    endDate,
+    hasRecurrence,
+    rule,
+    seriesRules,
+    setDraft,
+    startDate,
+  ]);
 
   return {
     hasRecurrence,

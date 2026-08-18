@@ -9,6 +9,7 @@ import {
   type Conference,
   type Organizer,
 } from "@core/types/event-attendance.contracts";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -36,8 +37,12 @@ function createEventRecord(overrides: {
   organizer?: Organizer;
   attendees?: Attendee[];
   conference?: Conference;
+  /** Stable id override for events onboarding references by id. */
+  id?: string;
+  /** Color tag, so the seed doubles as a tour of the color system. */
+  color?: EventColorSlot;
 }): LocalEventRecord {
-  const id = EventIdSchema.parse(createObjectIdString());
+  const id = EventIdSchema.parse(overrides.id ?? createObjectIdString());
   const content: EventContent = {
     kind: "details",
     title: overrides.title,
@@ -46,6 +51,7 @@ function createEventRecord(overrides: {
     organizer: overrides.organizer,
     attendees: overrides.attendees,
     conference: overrides.conference,
+    color: overrides.color,
   };
   const now = DateTimeSchema.parse(new Date().toISOString());
 
@@ -63,6 +69,20 @@ function createEventRecord(overrides: {
 }
 
 /**
+ * Stable ids for landmark demo events, kept fixed so tests (and any future
+ * onboarding surface) can reference them instead of whatever random id a
+ * fresh seed happens to generate.
+ */
+export const DEMO_EVENT_IDS = {
+  /** Today, 9:00-9:30. */
+  morningStandup: "demo-morning-standup",
+  /** Tomorrow, 14:30-15:30 - overlaps Team sync, an obvious conflict. */
+  dentist: "demo-dentist",
+  /** Tomorrow, 14:00-15:00 - overlaps Dentist. */
+  teamSync: "demo-team-sync",
+} as const;
+
+/**
  * Generate demo data relative to the current date.
  */
 function generateDemoData() {
@@ -70,14 +90,45 @@ function generateDemoData() {
   const today = now.toYearMonthDayString();
   const timeZone = getBrowserTimeZone();
 
-  // Helper for creating timed events today (clone to avoid mutating now).
-  // 15-minute-aligned, consistent with event creation in the app.
-  const todayAt = (h: number, m = 0) =>
-    now.clone().hour(h).minute(m).second(0).millisecond(0).format();
+  // Helper for creating timed events on today +/- offsetDays (clone to avoid
+  // mutating now). 15-minute-aligned, consistent with event creation in the app.
+  const dayAt = (offsetDays: number, h: number, m = 0) =>
+    now
+      .clone()
+      .add(offsetDays, "day")
+      .hour(h)
+      .minute(m)
+      .second(0)
+      .millisecond(0)
+      .format();
+
+  const todayAt = (h: number, m = 0) => dayAt(0, h, m);
+
+  const timedOn = (
+    offsetDays: number,
+    title: string,
+    startHour: number,
+    startMinute: number,
+    endHour: number,
+    endMinute: number,
+    options?: { id?: string; color?: EventColorSlot },
+  ) =>
+    createEventRecord({
+      id: options?.id,
+      color: options?.color,
+      title,
+      schedule: {
+        kind: "timed",
+        start: dayAt(offsetDays, startHour, startMinute),
+        end: dayAt(offsetDays, endHour, endMinute),
+        timeZone,
+      },
+    });
 
   // ─── Regular Events (Today) ─────────────────────────────────────────────────
   const todayEvents: LocalEventRecord[] = [
     createEventRecord({
+      id: DEMO_EVENT_IDS.morningStandup,
       title: "Morning standup",
       description:
         "Let's be honest. No one here has actually done anything. You are just making things up as you go. And yet, all of you sit here, pretending as if we are making progress. It seems, my dear team, that the only thing we do efficiently is exceed the stand up time.",
@@ -132,6 +183,7 @@ function generateDemoData() {
     createEventRecord({
       title: "Exercise",
       description: "I'm sorry for what I said during burpees.",
+      color: "green",
       // Showcases the location → Google Maps link.
       location: "Fitness First Gym, 123 Main St",
       schedule: {
@@ -186,8 +238,35 @@ function generateDemoData() {
     }),
   ];
 
+  // ─── Nearby days (±1, ±2) ────────────────────────────────────────────────
+  // Gives arrow-focus and week navigation real targets on every nearby day.
+  // Tomorrow's Team sync / Dentist overlap is the guided tour's capstone
+  // mission target - titles make the conflict obvious at a glance.
+  // Work stays blue, health/movement green, focus time slate; the rest keeps
+  // the calendar default so the palette reads as a feature, not noise.
+  const nearbyEvents: LocalEventRecord[] = [
+    // Today - 2
+    timedOn(-2, "Design review", 10, 0, 11, 0, { color: "blue" }),
+    timedOn(-2, "1:1 with Avery", 15, 0, 15, 30, { color: "blue" }),
+    // Today - 1
+    timedOn(-1, "Gym", 7, 0, 7, 45, { color: "green" }),
+    timedOn(-1, "Lunch with Sam", 12, 0, 13, 0),
+    timedOn(-1, "Focus block", 14, 0, 16, 0, { color: "slate" }),
+    // Today + 1 (tomorrow) - deliberate overlap
+    timedOn(1, "Design review", 10, 0, 11, 0, { color: "blue" }),
+    timedOn(1, "Team sync", 14, 0, 15, 0, {
+      id: DEMO_EVENT_IDS.teamSync,
+      color: "blue",
+    }),
+    timedOn(1, "Dentist", 14, 30, 15, 30, { id: DEMO_EVENT_IDS.dentist }),
+    // Today + 2
+    timedOn(2, "1:1 with Avery", 11, 0, 11, 30, { color: "blue" }),
+    timedOn(2, "Focus block", 13, 0, 15, 0, { color: "slate" }),
+    timedOn(2, "Gym", 17, 0, 17, 45, { color: "green" }),
+  ];
+
   return {
-    events: [...todayEvents],
+    events: [...todayEvents, ...nearbyEvents],
   };
 }
 
@@ -199,7 +278,7 @@ function generateDemoData() {
  * sample events so they can immediately explore functionality.
  */
 
-const DEMO_DATA_SEED_MIGRATION_ID = "demo-data-seed-v1";
+const DEMO_DATA_SEED_MIGRATION_ID = "demo-data-seed-v2";
 
 /** localStorage flag key used to track demo data seed completion. */
 export const DEMO_DATA_SEED_FLAG_KEY = `compass.migration.${DEMO_DATA_SEED_MIGRATION_ID}`;

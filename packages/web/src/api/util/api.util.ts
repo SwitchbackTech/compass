@@ -5,6 +5,7 @@ import {
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { session } from "@web/auth/compass/session/Session";
+import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
@@ -50,6 +51,38 @@ export const isApiError = (error: unknown): error is ApiError => {
 };
 
 /**
+ * Prefer the structured status on ApiError; fall back to the trailing status
+ * digits in the message for errors that only carry text (same convention as
+ * {@link createApiError}).
+ */
+export const getErrorStatus = (error: unknown): number | undefined => {
+  if (isApiError(error) && typeof error.response?.status === "number") {
+    return error.response.status;
+  }
+  if (error instanceof Error) {
+    const parsed = parseInt(error.message.slice(-3), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+};
+
+/**
+ * GONE/UNAUTHORIZED are session-level failures — the API interceptor signs the
+ * user out and shows SessionExpiredToast, so callers must not add a second
+ * recovery UI (load-error overlays, mutation toasts, etc.).
+ */
+export const isSessionLevelError = (error: unknown): boolean => {
+  const status = getErrorStatus(error);
+  return status === Status.UNAUTHORIZED || status === Status.GONE;
+};
+
+/** True when a fetch failed for a reason that still needs a local Retry UI. */
+export const shouldShowContextualLoadError = (
+  isError: boolean,
+  error: unknown,
+): boolean => isError && !isSessionLevelError(error);
+
+/**
  * Extracts the error code from an API error's response data.
  * Returns undefined when the response has no object body with a string `code` property.
  */
@@ -58,6 +91,15 @@ export const getApiErrorCode = (error: ApiError): string | undefined => {
   if (!data || typeof data !== "object" || !("code" in data)) return undefined;
   const code = (data as { code?: unknown }).code;
   return typeof code === "string" ? code : undefined;
+};
+
+/** Safe `error` string from a JSON `{ error: string }` API body, if present. */
+export const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (!isApiError(error)) return undefined;
+  const data = getApiErrorData(error);
+  if (!data || typeof data !== "object" || !("error" in data)) return undefined;
+  const message = (data as { error?: unknown }).error;
+  return typeof message === "string" && message.trim() ? message : undefined;
 };
 
 export const parseApiError = <T>(
@@ -173,17 +215,26 @@ export const handleErrorResponse = async (
     throw error;
   }
 
-  const isAuthEndpoint = requestUrl?.includes("/signinup");
+  const isAuthEndpoint =
+    requestUrl?.includes("/signinup") ||
+    requestUrl?.includes("/session/refresh") ||
+    requestUrl?.includes("/signout");
 
   // A 404 on a data endpoint means a resource is missing (e.g. syncing a
   // just-created event onto a calendar the server hasn't provisioned yet),
   // not that the session is invalid - so it must never force a sign-out.
-  // Only genuine session-level failures (GONE/UNAUTHORIZED) do.
+  // Only genuine session-level failures (GONE/UNAUTHORIZED) do, and only
+  // for browsers that have actually signed in before. A first-time visitor
+  // can still receive 401s (SuperTokens refresh on the first API call,
+  // a protected route hit without a session) — that is "not signed in",
+  // not "you have been signed out".
   if (
     !isAuthEndpoint &&
     (status === Status.GONE || status === Status.UNAUTHORIZED)
   ) {
-    await signOut(status);
+    if (hasUserEverAuthenticated()) {
+      await signOut(status);
+    }
   } else if (!isAuthEndpoint) {
     console.error(error);
   }

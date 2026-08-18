@@ -6,7 +6,7 @@ import { completeGoogleAuthorization } from "@web/auth/google/authorization/comp
 import { track } from "@web/auth/posthog/track";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
@@ -31,7 +31,7 @@ export async function completeGoogleAuthCallback({
     showErrorToast(result.message);
   } else if (result.isNewUser) {
     track("signup_completed", { method: "google" });
-    releaseNotesPromptActions.scheduleOpen();
+    shortcutShowcaseActions.offerAfterSignupIfPending();
   } else {
     track("login_completed", { method: "google" });
   }

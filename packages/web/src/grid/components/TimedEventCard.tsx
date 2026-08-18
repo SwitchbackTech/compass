@@ -20,6 +20,9 @@ import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import {
   calendarAccentAccessibleSuffix,
   calendarAccentStyle,
+  eventEdgeFocusShadow,
+  eventFocusColor,
+  eventFocusOutlineClass,
 } from "@web/grid/components/calendar-accent.util";
 import {
   COMPACT_EVENT_MAX_HEIGHT,
@@ -38,6 +41,10 @@ import {
   EVENT_RESIZE_HANDLE_ATTRIBUTE,
   EVENT_TIME_LABEL_ATTRIBUTE,
 } from "@web/grid/interaction/dom";
+import {
+  selectEdgeForEvent,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";
 
@@ -56,6 +63,8 @@ interface TimedEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   displayMode: "draft" | "placeholder" | "saved";
   event: GridEvent;
+  /** Calendar backgroundColor for focus chrome; null falls back to --text. */
+  focusColor?: string | null;
   interactionAttributes?: Record<string, string | undefined>;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
@@ -79,6 +88,7 @@ const TimedEventCardBase = (
     calendarIdentity = null,
     displayMode,
     event,
+    focusColor = null,
     interactionAttributes,
     isSelected = false,
     motionMode,
@@ -145,9 +155,17 @@ const TimedEventCardBase = (
     ? brighten(baseColor, 14)
     : darken(baseColor, 5);
   // Ring color follows --text so it contrasts with the page in both themes;
-  // a fixed white ring vanished on the light theme's paper background.
+  // a fixed white ring vanished on the light theme's paper background. Pair
+  // with a background halo so the ring stays visible on dark default fills.
   const selectedBoxShadow =
-    "0 0 0 1px color-mix(in srgb, var(--text) 55%, transparent)";
+    "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)";
+  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
+  const focusColorCss = eventFocusColor(focusColor);
+  // Edge focus paints outside the card (box-shadow) so short titles stay
+  // readable — an inset accent bar used to cover the top of compact events.
+  const edgeFocusShadow = focusedEdge
+    ? eventEdgeFocusShadow(focusedEdge, "vertical", focusColorCss)
+    : undefined;
 
   const bgColor = (() => {
     if (isDraft) return baseColor;
@@ -155,11 +173,10 @@ const TimedEventCardBase = (
     if (isInPast) return pastColor;
     return baseColor;
   })();
-  const eventBoxShadow = isSelected
-    ? boxShadow
-      ? `${selectedBoxShadow}, ${boxShadow}`
-      : selectedBoxShadow
-    : boxShadow;
+  const eventBoxShadow =
+    [isSelected ? selectedBoxShadow : null, boxShadow, edgeFocusShadow]
+      .filter(Boolean)
+      .join(", ") || undefined;
 
   // isInPast is excluded here (falls through to bgColor, i.e. pastColor) so
   // a past event stays dimmed on hover instead of snapping to full brightness.
@@ -175,6 +192,7 @@ const TimedEventCardBase = (
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
+    "--event-focus-color": focusColorCss,
     height: position.height || 0,
     left: position.left,
     opacity: isPlaceholder ? 0.5 : undefined,
@@ -238,22 +256,31 @@ const TimedEventCardBase = (
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
-  const accessibleLabel = calendarIdentity
-    ? `${samplePrefix}${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
-    : `${samplePrefix}${baseAccessibleLabel}`;
+  const edgeFocusSuffix =
+    focusedEdge === "startDate"
+      ? ", editing start time"
+      : focusedEdge === "endDate"
+        ? ", editing end time"
+        : "";
+  const accessibleLabel =
+    (calendarIdentity
+      ? `${samplePrefix}${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
+      : `${samplePrefix}${baseAccessibleLabel}`) + edgeFocusSuffix;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...interactionAttributes}
       aria-label={accessibleLabel}
+      data-edge-focus={focusedEdge ?? undefined}
       ref={ref}
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
+        eventFocusOutlineClass(focusedEdge),
         event.isDemo &&
           "outline outline-dashed outline-1 outline-text-muted/50",
       )}

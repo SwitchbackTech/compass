@@ -1,27 +1,47 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   isGridEventInteractionReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { getArrowKeyMovement } from "@web/common/utils/event/event-nudge.util";
-import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
+import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
+import { refocusEventElement } from "@web/common/utils/event/event.util";
+import {
+  convertAllDayToTimedDates,
+  type EventEdge,
+  getArrowKeyMovement,
+} from "@web/common/utils/event/event-nudge.util";
+import {
+  nudgeEventEdgeFromKeyboard,
+  nudgeEventFromKeyboard,
+} from "@web/common/utils/event/event-nudge-shortcut.util";
 import {
   isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
 } from "@web/common/utils/form/form.util";
 import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { commitDuplicateEvent } from "@web/events/mutations/duplicate-event";
 import {
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
-import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  isEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
+  edgeFocusActions,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import {
   type FocusableGridEventTarget,
   findCalendarEventForTarget,
@@ -29,8 +49,12 @@ import {
   getChronologicallyAdjacentTarget,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
+
+// Fallback when the grid can't be measured, matching EventForm's all-day->timed toggle.
+const DEFAULT_TIMED_START_MINUTE = 9 * 60;
 
 const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   ignoreInputs: false,
@@ -51,11 +75,6 @@ export type GridEventEditDayBoundary =
       kind: "follow";
       /** Day view: navigate so a day-crossing nudge stays on screen. */
       onCrossed: (date: Dayjs) => void;
-      /**
-       * Day view: ArrowLeft/Right page the visible day and focus that day's
-       * first event after the route settles (when provided).
-       */
-      onFocusPageDay?: (direction: "previous" | "next") => void;
     }
   | {
       kind: "clamp";
@@ -76,6 +95,7 @@ export function useGridEventEditShortcuts({
   allDayEvents = [],
   dayBoundary,
   dependencies = {},
+  placeTimedDraft,
   repositionDraftByKey,
   targeting,
   timedEvents,
@@ -83,6 +103,11 @@ export function useGridEventEditShortcuts({
   allDayEvents?: GridEvent[];
   dayBoundary: GridEventEditDayBoundary;
   dependencies?: EventMutationDependencies;
+  /**
+   * Shift+Arrow place-create when nothing is focused and no draft can move.
+   * Seeds a timed draft at the same default as `c`, form closed.
+   */
+  placeTimedDraft?: () => void;
   /**
    * View-owned draft move. Return true when the draft moved so the shared
    * hook can preventDefault. Day may also navigate here on day-cross.
@@ -97,8 +122,10 @@ export function useGridEventEditShortcuts({
 }) {
   const calendarLookup = useCalendarLookup();
   const { data: calendars } = useCalendarsQuery();
+  const defaultCalendar = useDefaultTargetCalendar(calendars ?? []);
   const queryClient = useQueryClient();
-  const { delete: deleteEvent } = useEventMutations(dependencies);
+  const { create: createEvent, delete: deleteEvent } =
+    useEventMutations(dependencies);
   const updateEvent = useUpdateEvent(dependencies);
 
   // Focused only (no hover/first-visible fallback): edit actions must
@@ -154,20 +181,43 @@ export function useGridEventEditShortcuts({
     const sourceEvent = findEventInCache(queryClient, gridEvent._id);
     if (!sourceEvent) return;
 
-    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
-    if (!duplicate) return;
+    const committed = commitDuplicateEvent({
+      source: sourceEvent,
+      calendars: calendars ?? [],
+      defaultCalendarId: defaultCalendar?.id,
+      create: createEvent,
+    });
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
+
+    if (committed) return;
+
+    // No writable calendar could be resolved for the copy - fall back to
+    // the create-draft form so the user can pick one.
+    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
+    if (!duplicate) return;
+
     draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
     draftActions.setFormOpen(true);
   };
 
-  const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
-    if (isEventFormOpen()) return;
+  const describeEdgeDate = (event: GridEvent, edge: EventEdge) => {
+    const date = edge === "startDate" ? event.startDate : event.endDate;
+    if (!date) return "";
+    const label = event.isAllDay
+      ? dayjs(date).format("MMM D")
+      : dayjs(date).format("h:mm A");
+    const edgeName = edge === "startDate" ? "Start" : "End";
+    return `${edgeName} ${label}`;
+  };
 
-    const event = getFocusedMutableCalendarEvent();
-    if (!event?._id) return;
+  const moveFocusedEventEdge = (
+    keyboardEvent: KeyboardEvent,
+    event: GridEvent,
+    edge: EventEdge,
+  ) => {
+    if (!event._id) return;
 
     const movement = getArrowKeyMovement(
       keyboardEvent.key,
@@ -175,37 +225,206 @@ export function useGridEventEditShortcuts({
     );
     if (!movement) return;
 
-    if (dayBoundary.kind === "clamp") {
-      const start = dayjs(event.startDate);
+    if (dayBoundary.kind === "clamp" && event.isAllDay) {
       const { weekDays } = dayBoundary;
-      if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
+      // All-day endDate is stored exclusive (the day after the last occupied
+      // day), so it's shifted back a day to compare against the inclusive
+      // weekDays window — matching nudgeAllDayEdgeDates's own inclusiveEnd.
+      const edgeDate =
+        edge === "startDate"
+          ? dayjs(event.startDate)
+          : dayjs(event.endDate).subtract(1, "day");
+      if (movement.days === -1 && !edgeDate.isAfter(weekDays[0], "day")) {
         return;
       }
       if (
         movement.days === 1 &&
-        !start.isBefore(weekDays[weekDays.length - 1], "day")
+        !edgeDate.isBefore(weekDays[weekDays.length - 1], "day")
       ) {
         return;
       }
     }
 
-    const previousStart = dayjs(event.startDate).startOf("day");
-
-    nudgeEventFromKeyboard({
+    nudgeEventEdgeFromKeyboard({
+      edge,
       event,
       keyboardEvent,
-      onNudge: (nudgedEvent) => {
-        updateEvent({ event: nudgedEvent }, true);
-        if (dayBoundary.kind === "follow") {
-          const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
-          if (!nextStart.isSame(previousStart, "day")) {
-            dayBoundary.onCrossed(nextStart);
-          }
-        }
+      onNudge: (nudgedEvent, nextEdge) => {
+        updateEvent({ event: nudgedEvent }, true, {
+          onOptimisticApplied: () => draftActions.discard(),
+        });
+        edgeFocusActions.setEdge(
+          event._id!,
+          nextEdge,
+          describeEdgeDate(nudgedEvent, nextEdge),
+        );
       },
-      afterNudge: () => draftActions.discard(),
     });
   };
+
+  const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
+    if (isEventFormOpen()) return;
+
+    const event = getFocusedMutableCalendarEvent();
+    if (event?._id) {
+      const edgeFocus = useEdgeFocusStore.getState();
+      if (edgeFocus.eventId === event._id && edgeFocus.edge) {
+        moveFocusedEventEdge(keyboardEvent, event, edgeFocus.edge);
+        return;
+      }
+
+      if (event.isAllDay && keyboardEvent.key === "ArrowDown") {
+        if (!event._id) return;
+        keyboardEvent.preventDefault();
+        const startMinute =
+          getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_MINUTE;
+        const dates = convertAllDayToTimedDates(event, startMinute);
+        updateEvent({ event: { ...event, ...dates, isAllDay: false } }, true, {
+          onOptimisticApplied: () => draftActions.discard(),
+        });
+        refocusEventElement(event._id);
+        return;
+      }
+
+      const movement = getArrowKeyMovement(
+        keyboardEvent.key,
+        Boolean(event.isAllDay),
+      );
+      if (!movement) return;
+
+      if (dayBoundary.kind === "clamp") {
+        const start = dayjs(event.startDate);
+        const { weekDays } = dayBoundary;
+        if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
+          return;
+        }
+        if (
+          movement.days === 1 &&
+          !start.isBefore(weekDays[weekDays.length - 1], "day")
+        ) {
+          return;
+        }
+      }
+
+      const previousStart = dayjs(event.startDate).startOf("day");
+
+      nudgeEventFromKeyboard({
+        event,
+        keyboardEvent,
+        onNudge: (nudgedEvent) => {
+          updateEvent({ event: nudgedEvent }, true, {
+            onOptimisticApplied: () => draftActions.discard(),
+          });
+          if (dayBoundary.kind === "follow") {
+            const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
+            if (!nextStart.isSame(previousStart, "day")) {
+              dayBoundary.onCrossed(nextStart);
+            }
+          }
+        },
+      });
+      return;
+    }
+
+    // No focused mutable saved event: reposition a form-closed draft, or
+    // place one when the grid is idle. Do not place over an existing draft
+    // (failed clamp/midnight move) or while a read-only/draft card is focused.
+    const didMoveDraft = repositionDraftByKey(keyboardEvent.key);
+    if (didMoveDraft) {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      return;
+    }
+
+    if (targeting.getFocused() || useDraftStore.getState().gridDraft) {
+      return;
+    }
+
+    placeTimedDraft?.();
+  };
+
+  const cycleEdgeFocus = (keyboardEvent: KeyboardEvent) => {
+    if (isEventFormOpen() || isEditableKeyboardTarget(keyboardEvent)) return;
+    if (isFocusInSidebar()) return;
+
+    const event = getFocusedMutableCalendarEvent();
+    if (!event?._id) return;
+
+    const forward = !keyboardEvent.shiftKey;
+    const { eventId, edge } = useEdgeFocusStore.getState();
+    const currentEdge = eventId === event._id ? edge : null;
+    // Forward enters at the start edge and exits (natively, past the end
+    // edge) rather than wrapping — an unconditional wrap would trap keyboard
+    // focus on the card forever, since Tab is the only way in or out.
+    const exiting = forward
+      ? currentEdge === "endDate"
+      : currentEdge === "startDate";
+    if (exiting) {
+      edgeFocusActions.reset();
+      return;
+    }
+
+    keyboardEvent.preventDefault();
+    keyboardEvent.stopPropagation();
+    edgeFocusActions.cycle(event._id, forward ? "forward" : "backward");
+  };
+
+  const clearEdgeFocus = () => {
+    if (!useEdgeFocusStore.getState().eventId) return;
+    edgeFocusActions.reset();
+  };
+
+  // `targeting` is a fresh object every render for some callers (Day/Week
+  // build it inline), so the settle effect below reads it through a ref
+  // instead of depending on it directly — otherwise it would tear down and
+  // rebuild its listeners on every unrelated re-render, which can cancel a
+  // check that was already in flight.
+  const targetingRef = useRef(targeting);
+  targetingRef.current = targeting;
+
+  // Edge focus tracks a specific event's DOM element, which React replaces
+  // after every committed nudge (refocusEventElement restores focus to the
+  // new element within a few frames). A focusin landing on a *different*
+  // event is unambiguous and resets immediately. A focusin/focusout landing
+  // on nothing (the brief focus-to-body gap mid-remount) is ambiguous, so
+  // that case alone waits a tick for refocusEventElement to restore focus
+  // before treating it as "focus left the event".
+  useEffect(() => {
+    let timer = 0;
+    const checkAfterDelay = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const { eventId } = useEdgeFocusStore.getState();
+        if (!eventId) return;
+        if (targetingRef.current.getFocused()?.eventId !== eventId) {
+          edgeFocusActions.reset();
+        }
+      }, 0);
+    };
+    const sync = () => {
+      const { eventId } = useEdgeFocusStore.getState();
+      if (!eventId) return;
+
+      const focused = targetingRef.current.getFocused();
+      if (!focused) {
+        checkAfterDelay();
+        return;
+      }
+      if (focused.eventId !== eventId) {
+        window.clearTimeout(timer);
+        edgeFocusActions.reset();
+      }
+    };
+
+    document.addEventListener("focusin", sync);
+    document.addEventListener("focusout", sync);
+
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("focusin", sync);
+      document.removeEventListener("focusout", sync);
+    };
+  }, []);
 
   const moveDraftOrFocusAdjacent = (keyboardEvent: KeyboardEvent) => {
     if (isEditableKeyboardTarget(keyboardEvent)) return;
@@ -220,36 +439,15 @@ export function useGridEventEditShortcuts({
     if (isEventFormOpen()) return;
     if (!isArrowKey(keyboardEvent.key)) return;
 
-    // Day view: Left/Right page the calendar day, then focus its first event.
-    // Require a focused grid event (same as Up/Down) so sidebar focus and
-    // idle grid don't steal the day under the user.
-    if (
-      dayBoundary.kind === "follow" &&
-      (keyboardEvent.key === "ArrowLeft" ||
-        keyboardEvent.key === "ArrowRight") &&
-      dayBoundary.onFocusPageDay
-    ) {
-      if (isFocusInSidebar() || !targeting.getFocused()) return;
-
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
-      dayBoundary.onFocusPageDay(
-        keyboardEvent.key === "ArrowLeft" ? "previous" : "next",
-      );
-      return;
-    }
-
+    // Day view: all four arrows move chronological focus. Period changes stay
+    // on j/k (same split as week view: arrows focus, j/k navigate).
     if (dayBoundary.kind === "follow") {
-      if (
-        keyboardEvent.key !== "ArrowUp" &&
-        keyboardEvent.key !== "ArrowDown"
-      ) {
-        return;
-      }
-
       const adjacent = getChronologicallyAdjacentTarget({
         allDayEvents,
-        direction: keyboardEvent.key === "ArrowUp" ? "previous" : "next",
+        direction:
+          keyboardEvent.key === "ArrowUp" || keyboardEvent.key === "ArrowLeft"
+            ? "previous"
+            : "next",
         focused: targeting.getFocused(),
         timedEvents,
         visible: targeting.listVisible(),
@@ -295,27 +493,34 @@ export function useGridEventEditShortcuts({
     ignoreInputs: false,
   });
   useAppShortcut(
-    "ArrowUp",
+    KEYMAP.moveFocus.hotkeys.up,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowDown",
+    KEYMAP.moveFocus.hotkeys.down,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowLeft",
+    KEYMAP.moveFocus.hotkeys.left,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowRight",
+    KEYMAP.moveFocus.hotkeys.right,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppShortcut("Shift+ArrowUp", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowDown", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowLeft", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowRight", moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.up, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.down, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.left, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.right, moveFocusedCalendarEvent);
+  useAppShortcut(
+    KEYMAP.edgeFocus.hotkey,
+    cycleEdgeFocus,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
+  useAppShortcut("Shift+Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
+  useAppShortcut("Escape", clearEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
 }

@@ -3,7 +3,10 @@ import { Status } from "@core/errors/status.codes";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError, type ApiResponse } from "@web/api/api.types";
-import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  EVENT_SAVE_UNAVAILABLE_TOAST_ID,
+  GENERIC_ERROR_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
@@ -62,14 +65,25 @@ describe("handleError", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("does not log backend-unavailable errors", () => {
+  it("shows a distinct toast on a backend-unavailable error instead of silently reverting", () => {
+    // No `response` at all: the browser never got an HTTP response back
+    // (offline, DNS, dropped connection) - previously this returned early
+    // with zero feedback and the optimistic edit just snapped back.
     const error = new Error("Request failed");
     error.name = "ApiError";
 
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
-    expect(mocks.error).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
+      toastId: EVENT_SAVE_UNAVAILABLE_TOAST_ID,
+    });
+    // Distinct from the generic catchall - a save failure and a generic
+    // backend error are different situations and must not dedupe on the
+    // same toastId.
+    expect(EVENT_SAVE_UNAVAILABLE_TOAST_ID).not.toBe(GENERIC_ERROR_TOAST_ID);
   });
 
   it("logs once and does not reload on a server error", () => {

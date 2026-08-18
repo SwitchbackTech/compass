@@ -25,6 +25,7 @@ interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   columnIndex: number;
   event: GridEvent;
+  focusColor?: string | null;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
   isReadOnly: boolean;
@@ -41,6 +42,7 @@ export const DayAllDayCalendarEvent = ({
   calendarIdentity = null,
   columnIndex,
   event,
+  focusColor = null,
   isActiveDraft,
   isPlaceholder,
   isReadOnly,
@@ -71,14 +73,14 @@ export const DayAllDayCalendarEvent = ({
     [event._id, hasEventIdentity],
   );
   // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only card would otherwise stop
-  // being clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to the same "open" action the
-  // keyboard path uses bypasses the engine entirely for this card.
-  const onEventMouseDown = isReadOnly
-    ? (_mouseEvent: MouseEvent, clickedEvent: GridEvent) =>
-        onOpenEvent(clickedEvent)
-    : undefined;
+  // click resolution never fires, so a read-only or draft-only card would
+  // otherwise stop being clickable. Wire the click to the same "open" action
+  // the keyboard path uses.
+  const onEventMouseDown =
+    isReadOnly || isPlaceholder
+      ? (_mouseEvent: MouseEvent, clickedEvent: GridEvent) =>
+          onOpenEvent(clickedEvent)
+      : undefined;
 
   const position = getAllDayEventPosition(event, {
     columnIndex,
@@ -91,6 +93,7 @@ export const DayAllDayCalendarEvent = ({
     <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
@@ -111,6 +114,7 @@ export const DayTimedCalendarEvent = ({
   columnIndex,
   deckLayout,
   event,
+  focusColor = null,
   isActiveDraft,
   isPlaceholder,
   isReadOnly,
@@ -143,13 +147,13 @@ export const DayTimedCalendarEvent = ({
     [event._id, hasEventIdentity],
   );
   // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only card would otherwise stop
-  // being clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to the same "open" action the
-  // keyboard path uses bypasses the engine entirely for this card.
-  const onEventMouseDown = isReadOnly
-    ? (clickedEvent: GridEvent) => onOpenEvent(clickedEvent)
-    : undefined;
+  // click resolution never fires, so a read-only or draft-only card would
+  // otherwise stop being clickable. Wire the click to the same "open" action
+  // the keyboard path uses.
+  const onEventMouseDown =
+    isReadOnly || isPlaceholder
+      ? (clickedEvent: GridEvent) => onOpenEvent(clickedEvent)
+      : undefined;
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
     const ring = `0 0 0 0.75px var(--background)`;
@@ -178,6 +182,7 @@ export const DayTimedCalendarEvent = ({
       calendarIdentity={calendarIdentity}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isSelected={isActiveDraft}
       motionMode="idle"

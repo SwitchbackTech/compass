@@ -23,8 +23,9 @@ export interface DiscoveredCalendar {
   }[];
   // The provider designates this as the account's default calendar.
   readonly primary: boolean;
-  // The calendar is present and visible in the account's list. A deleted or
-  // hidden calendar is reported inactive so preferences survive its return.
+  // The calendar is present for the account. Deleted calendars are inactive.
+  // Hidden-from-list calendars stay active when the provider is still showing
+  // their events (Google's selected flag).
   readonly active: boolean;
   readonly accessRole: CalendarAccessRole;
   readonly capabilities: SyncCalendarCapabilities;

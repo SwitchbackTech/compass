@@ -4,14 +4,20 @@ const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
 export type EventFormFocusField =
   | "title"
+  | "location"
   | "description"
   | "start"
   | "end"
   | "recurrence"
-  | "calendar";
+  | "calendar"
+  | "color";
 
 const queryEventFormElement = <T extends Element>(selector: string): T | null =>
   document.querySelector<T>(selector);
+
+/** The docked event form itself, used as a positioning anchor. */
+export const getEventFormElement = (): HTMLElement | null =>
+  queryEventFormElement<HTMLElement>(EVENT_FORM_SELECTOR);
 
 const focusFirstMatch = (selectors: string[]) => {
   for (const selector of selectors) {
@@ -34,6 +40,11 @@ export const focusEventFormField = (field: EventFormFocusField): boolean => {
       return focusFirstMatch([
         `${EVENT_FORM_SELECTOR} input[name="Event Title"]`,
       ]);
+    case "location":
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} #event-form-location`,
+        `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
+      ]);
     case "description":
       return focusFirstMatch([`#event-form-description`]);
     case "start":
@@ -54,6 +65,12 @@ export const focusEventFormField = (field: EventFormFocusField): boolean => {
       ]);
     case "calendar":
       return focusFirstMatch([`#event-form-calendar`]);
+    case "color":
+      // Prefer the selected swatch so arrow keys move from the current color.
+      return focusFirstMatch([
+        `#event-form-color input[type="radio"]:checked`,
+        `#event-form-color input[type="radio"]`,
+      ]);
   }
 };
 

@@ -5,11 +5,20 @@ Compass uses typed operational errors plus a centralized Express error handler.
 ## Principles
 
 - Minimize the number of `try/catch` blocks in the code.
+- Never return non-HTTP statuses such as `Status.UNSURE` (600) on live paths.
+- Event mutation routes use the `EventMutationError` envelope
+  (`code` / `message` / `retryable`). Unknown/programmer errors are
+  **non-retryable 500** — only true Sync/provider failures stay retryable
+  `PROVIDER_FAILURE`.
+- Sync proxy failures on calendar/auth reads use `throwSyncProxyFailure` /
+  `unwrapSyncResult` (503/502), never `GenericError.NotSure`.
 
 ## Source Files
 
 - `packages/backend/src/common/errors/handlers/error.handler.ts`
 - `packages/backend/src/common/errors/handlers/error.express.handler.ts`
+- `packages/backend/src/common/services/sync-service/sync-proxy-error.ts`
+- `packages/backend/src/event/event.error.ts`
 - feature error metadata files under `packages/backend/src/common/errors/**`
 - `packages/core/src/errors/errors.base.ts`
 
@@ -20,7 +29,12 @@ Preferred backend pattern:
 1. define reusable error metadata in the relevant feature file
 2. create a `BaseError` through `error(...)`
 3. let controller/service code throw that error
-4. let centralized Express handling turn it into the client payload
+4. let centralized Express handling (`res.promise` → `handleExpressError`) turn it into the client payload
+
+Event mutation controllers may catch locally and call `toEventMutationError`
+so the strict `{ code, message, retryable }` envelope is preserved. User
+controllers return JSON via `toClientErrorPayload` (or `{ code, message }` for
+unexpected errors) rather than empty bodies.
 
 Example:
 
@@ -28,7 +42,7 @@ Example:
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
-throw error(AuthError.MissingRefreshToken, "Google connection required");
+throw error(AuthError.SyncConnectionUnavailable, "Could not reach sync");
 ```
 
 ## Client Payload Rules
@@ -39,13 +53,15 @@ For `BaseError`, backend responses are intentionally small:
 - `message`: safe user-facing description
 - `code`: optional stable machine-readable identifier for frontend branching
 
+Event mutations use `{ code, message, retryable }` instead.
+
 Internal details such as stack traces and operational flags stay server-side.
 
 ## Unexpected Error Rules
 
-- non-`BaseError` values are routed through `handleExpressError(...)`
-- Google API errors get special handling for revoked tokens, invalid values, and full-sync recovery
-- programmer errors can terminate the process after logging
+- non-`BaseError` values are routed through `handleExpressError(...)` when using `res.promise`
+- Sync client failures map to 502/503 (or typed mutation codes) — never HTTP 600
+- programmer errors can terminate the process after logging when `isOperational` is false
 
 ## Guidance
 

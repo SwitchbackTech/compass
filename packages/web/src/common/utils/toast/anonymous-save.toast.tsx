@@ -6,6 +6,10 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
 import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
+import {
+  selectShowcaseActive,
+  useShortcutShowcaseStore,
+} from "@web/components/ShortcutShowcase/showcase.store";
 
 const ANONYMOUS_SAVE_TOAST_ID: Id = "anonymous-save-toast";
 
@@ -14,6 +18,16 @@ function isAuthModalOpen(): boolean {
 
   const auth = new URLSearchParams(window.location.search).get("auth");
   return Object.values(VIEW_TO_PARAM).includes(auth?.toLowerCase() ?? "");
+}
+
+/**
+ * True while the Shortcut Showcase takeover is up. The toast is a distraction
+ * there, not a removal: it's re-checked on every anonymous write, so a user
+ * who skips onboarding entirely still sees it. The non-blocking checklist
+ * coexists with the toast on purpose.
+ */
+function isOnboardingFlowActive(): boolean {
+  return selectShowcaseActive(useShortcutShowcaseStore.getState());
 }
 
 function hasSeenAnonymousSaveToast(): boolean {
@@ -71,6 +85,10 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
 
 export function maybeShowAnonymousSaveToast(): void {
   if (isAuthModalOpen() || hasSeenAnonymousSaveToast()) return;
+  // Don't mark seen here: onboarding suppresses this toast, not removes it,
+  // so it still appears the first time a user writes an event after
+  // skipping or finishing onboarding entirely.
+  if (isOnboardingFlowActive()) return;
 
   markAnonymousSaveToastSeen();
   showStatusToast(

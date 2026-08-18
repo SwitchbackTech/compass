@@ -1,10 +1,5 @@
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import {
-  type BusyPeriod,
-  type Event,
-  type EventContent,
-  type EventRecurrence,
-} from "@core/types/event.contracts";
+import { type BusyPeriod, type Event } from "@core/types/event.contracts";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 
 export type EventEntityMap = Record<EventId, Event>;

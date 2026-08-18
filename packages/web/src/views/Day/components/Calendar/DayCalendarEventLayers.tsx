@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
+  resolveCalendarFocusColor,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import {
@@ -73,6 +74,7 @@ export const DayCalendarAllDayEventsLayer = ({
           calendarIdentity={resolveCalendarCardIdentity(calendarLookup, event)}
           columnIndex={getCalendarColumnIndex(event)}
           event={event}
+          focusColor={resolveCalendarFocusColor(calendarLookup, event)}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}
@@ -130,6 +132,7 @@ export const DayCalendarTimedEventsLayer = ({
           columnIndex={getCalendarColumnIndex(event)}
           deckLayout={deckLayout}
           event={event}
+          focusColor={resolveCalendarFocusColor(calendarLookup, event)}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}

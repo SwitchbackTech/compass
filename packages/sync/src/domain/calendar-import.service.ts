@@ -1,7 +1,8 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { syncHorizon } from "@sync/domain/horizon";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type EventWindow,
   type ProviderEventReader,
@@ -105,19 +106,18 @@ export async function importCalendarEvents(
     calendar.connectionId,
   );
 
-  const run = new ImportRun(deps, calendar, resource, now);
+  const run = new ImportRun(deps, calendar, resource, now, accessToken);
 
   // The windowed fast pass only runs on a fresh start — a resume mid-full-pass
   // already imported the window, and redoing it would only repeat work.
   if (resource.pageCursor === null) {
-    await run.readPass({ accessToken, window: horizonWindow(now()) });
+    await run.readPass({ window: horizonWindow(now()) });
     if (options?.onWindowedPassComplete) {
       await options.onWindowedPassComplete();
     }
   }
 
   const syncCursor = await run.readPass({
-    accessToken,
     checkpointed: true,
     resumeFrom: resource.pageCursor,
   });
@@ -163,12 +163,16 @@ class ImportRun {
   #readerSkipped = 0;
   #orphans = 0;
 
+  #accessToken: string;
+
   constructor(
     private readonly deps: CalendarImportDeps,
     private readonly calendar: ProviderCalendarRecord,
     private readonly resource: SyncResourceRecord,
     now: () => Date,
+    accessToken: string,
   ) {
+    this.#accessToken = accessToken;
     // Import writes the active (live) generation — the one reads serve. Only a
     // repair stages a separate importGeneration; the first import runs with
     // active and import both at 0, so it populates the generation reads serve.
@@ -191,7 +195,6 @@ class ImportRun {
   // Drive the reader through one pass. Returns the provider's sync cursor when
   // the pass produced one (only an unwindowed pass can).
   async readPass(options: {
-    accessToken: string;
     window?: EventWindow;
     checkpointed?: boolean;
     resumeFrom?: string | null;
@@ -200,13 +203,19 @@ class ImportRun {
     let syncCursor: string | null = null;
 
     do {
-      const page = await this.deps.reader.listEventPage({
-        accessToken: options.accessToken,
-        calendarId: this.calendar.providerCalendarId,
-        window: options.window ?? null,
-        pageToken,
-        colorLabels: toColorLabelMap(this.calendar.eventLabels),
-      });
+      const read = await listEventPageWithAuthRetry(
+        this.deps,
+        this.calendar.connectionId,
+        {
+          accessToken: this.#accessToken,
+          calendarId: this.calendar.providerCalendarId,
+          window: options.window ?? null,
+          pageToken,
+          colorLabels: toColorLabelMap(this.calendar.eventLabels),
+        },
+      );
+      this.#accessToken = read.accessToken;
+      const page = read.page;
       if (options.checkpointed) this.#readerSkipped += page.skipped;
       // A first import has no local events to delete, so standalone
       // cancellations the applier returns are discarded.

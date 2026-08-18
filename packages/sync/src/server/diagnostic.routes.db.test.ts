@@ -85,8 +85,6 @@ describe("GET /internal/diagnostics/connections/:diagnosticKey", () => {
       capabilities: ["readEvents"],
       state: "delayed",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
     await calendars.upsertByProviderCalendar({
       tenantId: tenantId as TenantId,

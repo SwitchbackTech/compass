@@ -52,35 +52,42 @@ Important behavior:
 
 This is the shell for the main desktop app experience.
 
-## Welcome And Onboarding Tour
+## Welcome, Showcase, And Checklist
 
 Files:
 
 - `packages/web/src/components/RootShell/RootShell.tsx`
 - `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
-- `packages/web/src/components/OnboardingTour/`
+- `packages/web/src/components/ShortcutShowcase/`
+- `packages/web/src/components/OnboardingChecklist/`
 
-`RootShell` mounts the welcome modal, onboarding tour, global navigation /
-calendar-shell shortcuts, and keyboard-only mode.
+`RootShell` mounts the welcome modal, Shortcut Showcase, onboarding
+checklist, global navigation / calendar-shell shortcuts, and Hardcore Mode.
+Those calendar-onboarding overlays are skipped on `/life`.
 
-Welcome → tour contract:
+Welcome → showcase → checklist contract:
 
-- **Start Now** starts the interactive tour when
-  `compass.onboarding.has-seen-onboarding-tour` is not yet set
-- backdrop dismiss / Escape / Log In / Sign Up mark the tour skipped without
-  starting it (same seen flag) so the coachmarks do not appear later by surprise
-- the tour is **not** an app-lock modal: shortcuts underneath stay live so each
-  step advances when the user performs the hinted action (`C`, save, Cmd+K /
-  Escape, `?`)
-- step order and copy live in `onboarding.tour.steps.ts` (single source of truth)
-- users can reopen it anytime from the command palette (“Restart onboarding tour”)
+- unauthenticated users who have not seen welcome get `WelcomeModal`
+- **Start Now** and backdrop / Escape both start the Shortcut Showcase (neither
+  path dumps the user onto a blank calendar)
+- Log In / Sign Up hand off to auth; a pending showcase offer can still run
+  after signup (`showcase.storage.ts`)
+- showcase step order lives in `showcase.steps.ts`; taught keycaps come from
+  `packages/web/src/shortcuts/keymap.ts`
+- after the showcase, `OnboardingChecklist` is practice missions on the real
+  calendar (not an app-lock modal)
+- command palette can reopen practice (“Practice shortcuts”) or the welcome
+  guide (“Show welcome guide”)
+- users who already finished or skipped the retired guided tour are treated as
+  having seen the showcase so it does not ambush them
 
-Keyboard-only mode (`Shift` `Shift`, also mounted from `RootShell`):
+Hardcore Mode (`H`, also mounted from `RootShell`):
 
 - blocks pointer clicks while active; scroll and hover remain
-- exits via Escape when nothing higher owns Escape, another Shift-Shift, or refresh
-- shares the Shift-tap gesture bus with event-jump chips so a second quick Shift
-  cancels jump mode and enters keyboard-only instead
+- clicks inside `[data-onboarding-ui]` still work so the showcase/checklist
+  stay usable
+- exits via Escape when nothing higher owns Escape, another `H`, or refresh
+- entering Hardcore clears event-jump chips so there is not a second Esc owner
 
 See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
 [Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for

@@ -16,6 +16,17 @@ const CEFSHARP_SCANNER_MESSAGE =
  */
 const SCRIPT_ERROR_MESSAGE = "Script error.";
 
+/**
+ * Benign browser warning fired via `window.onerror` when a ResizeObserver
+ * callback can't finish notifying within one frame (e.g. it triggers layout
+ * that would require another cycle). Chrome/Firefox surface it as a script
+ * error even though nothing threw; it's not actionable on its own.
+ */
+const RESIZE_OBSERVER_LOOP_MESSAGES = new Set([
+  "ResizeObserver loop completed with undelivered notifications.",
+  "ResizeObserver loop limit exceeded",
+]);
+
 type ExceptionEntry = {
   type?: unknown;
   value?: unknown;
@@ -60,6 +71,8 @@ const isDroppableException = (entry: ExceptionEntry): boolean => {
   if (typeof entry.value !== "string") return false;
 
   if (entry.value === CEFSHARP_SCANNER_MESSAGE) return true;
+
+  if (RESIZE_OBSERVER_LOOP_MESSAGES.has(entry.value)) return true;
 
   // Opaque cross-origin errors. Keep the rare case where frames somehow
   // survived sanitization so a real stack is never discarded.

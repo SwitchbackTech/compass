@@ -52,6 +52,36 @@ export class EventRepository {
     options?: UpsertByProviderIdentityOptions,
   ): Promise<EventRecord> {
     const now = new Date();
+    // A prior scope-"this" command may have left a series-keyed exception
+    // (often a null-provider tombstone) at this canonical recurrenceId.
+    // Adopt or drop it before the provider-identity upsert, or the insert
+    // collides series_exception_identity — the dual of the E11000 that
+    // upsertException converges the other direction.
+    if (input.recurrence.kind === "exception") {
+      await this.#reconcileSeriesExceptionBeforeProviderUpsert(input);
+    }
+
+    try {
+      return await this.#upsertByProviderIdentityOnce(input, options, now);
+    } catch (error) {
+      if (
+        !isDuplicateKeyError(error) ||
+        input.recurrence.kind !== "exception"
+      ) {
+        throw error;
+      }
+      // Concurrent command upsert won the series key between reconcile and
+      // insert. Reconcile again and retry once.
+      await this.#reconcileSeriesExceptionBeforeProviderUpsert(input);
+      return this.#upsertByProviderIdentityOnce(input, options, now);
+    }
+  }
+
+  async #upsertByProviderIdentityOnce(
+    input: ProviderEventUpsert,
+    options: UpsertByProviderIdentityOptions | undefined,
+    now: Date,
+  ): Promise<EventRecord> {
     const filter = {
       connectionId: input.connectionId,
       calendarId: input.calendarId,
@@ -169,6 +199,59 @@ export class EventRepository {
     );
     if (!result) throw new Error("Upsert did not return an event record");
     return EventRecordSchema.parse(result);
+  }
+
+  // Stamp provider identity onto a series-keyed exception that lacks it (or
+  // drop a divergent series-keyed duplicate) so the provider-identity upsert
+  // that follows updates one document instead of colliding
+  // series_exception_identity.
+  async #reconcileSeriesExceptionBeforeProviderUpsert(
+    input: ProviderEventUpsert,
+  ): Promise<void> {
+    if (input.recurrence.kind !== "exception") return;
+
+    const bySeries = await this.collection.findOne({
+      tenantId: input.tenantId,
+      principalId: input.principalId,
+      "recurrence.kind": "exception",
+      "recurrence.seriesId": input.recurrence.seriesId,
+      "recurrence.recurrenceId": input.recurrence.recurrenceId,
+    });
+    if (!bySeries) return;
+
+    const byProvider = await this.collection.findOne({
+      connectionId: input.connectionId,
+      calendarId: input.calendarId,
+      providerEventId: {
+        $eq: input.providerEventId,
+        $type: "string" as const,
+      },
+    });
+
+    if (!byProvider) {
+      await this.collection.updateOne(
+        {
+          _id: bySeries._id,
+          tenantId: input.tenantId,
+          principalId: input.principalId,
+        },
+        {
+          $set: {
+            connectionId: input.connectionId,
+            providerEventId: input.providerEventId,
+          },
+        },
+      );
+      return;
+    }
+
+    if (bySeries._id !== byProvider._id) {
+      await this.collection.deleteOne({
+        _id: bySeries._id,
+        tenantId: input.tenantId,
+        principalId: input.principalId,
+      });
+    }
   }
 
   // Full write of a Compass (or already-identified) event by its _id. Used for
@@ -289,6 +372,14 @@ export class EventRepository {
   // Generation is a watermark here too (see upsertByProviderIdentity): a repair
   // re-seeing an exception bumps it into the new generation in place, so the
   // filter excludes generation and the index stays generation-free by design.
+  //
+  // Provider-linked exceptions have a second identity: provider_event_identity.
+  // Import writes them via upsertByProviderIdentity; commands write via this
+  // method. When a prior import already stored the instance under its provider
+  // id (possibly with a differently-formatted recurrenceId string for the same
+  // instant), we must converge on that document — inserting a second row with
+  // the same providerEventId throws E11000 on provider_event_identity and left
+  // staleCommandRetry looping on the failed command.
   async upsertException(
     master: EventRecord,
     recurrenceId: DateTime,
@@ -321,48 +412,141 @@ export class EventRepository {
     const providerVersion = hasExplicitProviderIdentity
       ? (override.providerIdentity?.providerVersion ?? null)
       : master.providerVersion;
-    const result = await this.collection.findOneAndUpdate(
+
+    const fields = {
+      origin: master.origin,
+      calendarId: master.calendarId,
+      clientEventId: null,
+      connectionId: master.connectionId,
+      providerEventId,
+      providerVersion,
+      providerUpdatedAt: master.providerUpdatedAt,
+      deliveryState: master.connectionId ? "confirmed" : master.deliveryState,
+      providerMetadata: master.providerMetadata,
+      content: override.content,
+      schedule: override.schedule,
+      "recurrence.cancelled": override.cancelled,
+      lifecycleState: "active" as const,
+      generation: master.generation,
+      updatedAt: now,
+    };
+
+    // Prefer the provider-identity document when one already exists (import
+    // path). Drop a series-keyed duplicate that lost the string-form match so
+    // updating recurrenceId onto the provider row cannot hit
+    // series_exception_identity.
+    if (providerEventId !== null && master.connectionId) {
+      const converged = await this.#convergeExceptionOntoProviderIdentity(
+        master,
+        recurrenceId,
+        providerEventId,
+        fields,
+      );
+      if (converged) return converged;
+    }
+
+    try {
+      const result = await this.collection.findOneAndUpdate(
+        {
+          tenantId: master.tenantId,
+          principalId: master.principalId,
+          "recurrence.kind": "exception",
+          "recurrence.seriesId": master._id,
+          "recurrence.recurrenceId": recurrenceId,
+        },
+        {
+          // Mirror the master's ownership/calendar identity; set the
+          // instance's own content, schedule, provider identity, and cancelled
+          // flag. recurrence.kind/seriesId/recurrenceId are seeded from the
+          // filter on insert, so only cancelled is set here (setting the whole
+          // recurrence would conflict).
+          $set: fields,
+          $setOnInsert: {
+            _id: new ObjectId().toHexString() as EventId,
+            createdAt: now,
+            confirmedAt: now,
+          },
+        },
+        { upsert: true, returnDocument: "after" },
+      );
+      if (!result) throw new Error("Exception upsert did not return a record");
+      return EventRecordSchema.parse(result);
+    } catch (error) {
+      // Concurrent import won the provider_event_identity insert between our
+      // lookup and this upsert. Converge on that row instead of failing the
+      // command (which staleCommandRetry would then loop on forever).
+      if (
+        isDuplicateKeyError(error) &&
+        providerEventId !== null &&
+        master.connectionId
+      ) {
+        const converged = await this.#convergeExceptionOntoProviderIdentity(
+          master,
+          recurrenceId,
+          providerEventId,
+          fields,
+        );
+        if (converged) return converged;
+      }
+      throw error;
+    }
+  }
+
+  // Update the existing provider-identity row into the series exception shape
+  // the command wants. Removes a series-keyed duplicate first when the two
+  // identities diverged (offset vs UTC recurrenceId strings for one instant).
+  async #convergeExceptionOntoProviderIdentity(
+    master: EventRecord,
+    recurrenceId: DateTime,
+    providerEventId: NonNullable<EventRecord["providerEventId"]>,
+    fields: Record<string, unknown>,
+  ): Promise<EventRecord | null> {
+    if (!master.connectionId) return null;
+    const byProvider = await this.findByProviderIdentity(
+      master.tenantId,
+      master.principalId,
       {
+        connectionId: master.connectionId,
+        calendarId: master.calendarId,
+        providerEventId,
+      },
+    );
+    if (!byProvider) return null;
+
+    const bySeries = await this.collection.findOne({
+      tenantId: master.tenantId,
+      principalId: master.principalId,
+      "recurrence.kind": "exception",
+      "recurrence.seriesId": master._id,
+      "recurrence.recurrenceId": recurrenceId,
+    });
+    if (bySeries && bySeries._id !== byProvider._id) {
+      await this.collection.deleteOne({
+        _id: bySeries._id,
         tenantId: master.tenantId,
         principalId: master.principalId,
-        "recurrence.kind": "exception",
-        "recurrence.seriesId": master._id,
-        "recurrence.recurrenceId": recurrenceId,
+      });
+    }
+
+    const result = await this.collection.findOneAndUpdate(
+      {
+        _id: byProvider._id,
+        tenantId: master.tenantId,
+        principalId: master.principalId,
       },
       {
-        // Mirror the master's ownership/calendar identity; set the
-        // instance's own content, schedule, provider identity, and cancelled
-        // flag. recurrence.kind/seriesId/recurrenceId are seeded from the
-        // filter on insert, so only cancelled is set here (setting the whole
-        // recurrence would conflict).
         $set: {
-          origin: master.origin,
-          calendarId: master.calendarId,
-          clientEventId: null,
-          connectionId: master.connectionId,
-          providerEventId,
-          providerVersion,
-          providerUpdatedAt: master.providerUpdatedAt,
-          deliveryState: master.connectionId
-            ? "confirmed"
-            : master.deliveryState,
-          providerMetadata: master.providerMetadata,
-          content: override.content,
-          schedule: override.schedule,
-          "recurrence.cancelled": override.cancelled,
-          lifecycleState: "active",
-          generation: master.generation,
-          updatedAt: now,
-        },
-        $setOnInsert: {
-          _id: new ObjectId().toHexString() as EventId,
-          createdAt: now,
-          confirmedAt: now,
+          ...fields,
+          "recurrence.kind": "exception",
+          "recurrence.seriesId": master._id,
+          "recurrence.recurrenceId": recurrenceId,
         },
       },
-      { upsert: true, returnDocument: "after" },
+      { returnDocument: "after" },
     );
-    if (!result) throw new Error("Exception upsert did not return a record");
+    if (!result) {
+      throw new Error("Exception provider-identity update returned no record");
+    }
     return EventRecordSchema.parse(result);
   }
 
@@ -428,4 +612,13 @@ export class EventRepository {
     const result = await this.collection.deleteMany({ tenantId, principalId });
     return result.deletedCount;
   }
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: unknown }).code === 11000
+  );
 }

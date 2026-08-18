@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
 import { type UseLoadProfileResult } from "@web/auth/compass/user/hooks/useLoadProfile";
+import * as errorToast from "@web/common/utils/toast/error-toast.util";
 import {
   afterAll,
   afterEach,
@@ -14,6 +16,7 @@ import {
 
 const getLastKnownEmail = mock(() => "person@example.com");
 const markUserAsAuthenticated = mock();
+const hasUserEverAuthenticated = mock(() => false);
 const getProfile = mock();
 
 const mockProfile: UserProfile = {
@@ -30,6 +33,7 @@ const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   getLastKnownEmail,
+  hasUserEverAuthenticated,
   markUserAsAuthenticated,
 }));
 
@@ -37,8 +41,7 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
 // UserApi is captured up front and a flag (flipped off in afterAll) decides
 // which implementation runs on each call. Without this, this file's partial
 // UserApi shape (getProfile only) would permanently shadow the real module
-// for other files' UserApi methods (e.g. useSubscribeCmdItems.test.ts's
-// updateMetadata).
+// for other files' UserApi methods (e.g. another suite's updateMetadata).
 const actualUserApi = (await import("@web/api/user.api")).UserApi;
 let isUserApiMocked = true;
 
@@ -79,12 +82,14 @@ describe("useLoadProfile", () => {
   beforeEach(() => {
     getLastKnownEmail.mockClear().mockReturnValue("person@example.com");
     markUserAsAuthenticated.mockClear();
+    hasUserEverAuthenticated.mockClear().mockReturnValue(false);
     getProfile.mockClear();
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    hasUserEverAuthenticated.mockReturnValue(false);
   });
 
   it("does not log backend-unavailable profile failures in frontend-only mode", async () => {
@@ -143,5 +148,46 @@ describe("useLoadProfile", () => {
     expect(result.current.email).toBeNull();
     expect(result.current.profile).toBeNull();
     expect(markUserAsAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("does not show a signed-out toast when a first-time visitor's profile request is unauthorized", async () => {
+    hasUserEverAuthenticated.mockReturnValue(false);
+    const error = Object.assign(new Error("Request failed with status 401"), {
+      response: { status: Status.UNAUTHORIZED },
+    });
+    getProfile.mockRejectedValue(error);
+    const showSessionExpiredToast = spyOn(
+      errorToast,
+      "showSessionExpiredToast",
+    ).mockReturnValue("toast-id");
+    const { useLoadProfile } = await importHook();
+
+    renderHook(() => useLoadProfile(true));
+
+    await waitFor(() => {
+      expect(getProfile).toHaveBeenCalledTimes(1);
+    });
+    expect(showSessionExpiredToast).not.toHaveBeenCalled();
+    showSessionExpiredToast.mockRestore();
+  });
+
+  it("shows a signed-out toast when a returning visitor's profile request is unauthorized", async () => {
+    hasUserEverAuthenticated.mockReturnValue(true);
+    const error = Object.assign(new Error("Request failed with status 401"), {
+      response: { status: Status.UNAUTHORIZED },
+    });
+    getProfile.mockRejectedValue(error);
+    const showSessionExpiredToast = spyOn(
+      errorToast,
+      "showSessionExpiredToast",
+    ).mockReturnValue("toast-id");
+    const { useLoadProfile } = await importHook();
+
+    renderHook(() => useLoadProfile(true));
+
+    await waitFor(() => {
+      expect(showSessionExpiredToast).toHaveBeenCalledTimes(1);
+    });
+    showSessionExpiredToast.mockRestore();
   });
 });

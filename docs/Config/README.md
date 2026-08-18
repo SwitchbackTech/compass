@@ -84,7 +84,7 @@ database and must not share the backend's database user/data.
 | `sync.mongoUri` | Yes | Isolated Sync Mongo URI. Never point this at the API database. |
 | `sync.internalAuthToken` | Yes | Shared secret for Sync internal routes. Must match what the API uses. |
 | `sync.callbackBaseUrl` | Yes | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
-| `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect; defaults to `callbackBaseUrl`. |
+| `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect. **Set this to `web.url`** — an unset value falls back to `callbackBaseUrl` (Sync's own API host), which strands the user there instead of back on the calendar. |
 | `sync.serviceUrl` | Yes | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). The backend refuses to start without this and `internalAuthToken` set. |
 | `sync.cloudMutationMode` | No | `enabled` (default) or `maintenance`. Maintenance rejects cloud edits/connect with typed `MAINTENANCE` (`503`). |
 | `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. |
@@ -96,6 +96,8 @@ database and must not share the backend's database user/data.
 
 | key | Required | Description |
 |---|---|---|
-| `email.kitApiSecret` | No | Kit.com API secret key. |
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
+| `stripe.secretKey` | No | Stripe secret (`sk_test_...` is fine on staging). All three Stripe keys are required together; omit the whole `stripe:` block on self-host. |
+| `stripe.webhookSecret` | No | Stripe webhook signing secret. |
+| `stripe.priceId` | No | Stripe Price id for the $7.99/month plan. |

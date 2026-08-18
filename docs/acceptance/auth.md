@@ -260,8 +260,9 @@ When a previously authenticated session becomes invalid, the app should guide th
 
 ### Expected Results
 
-- The toast says `Session expired. Please sign in again.`
+- The toast says `You've been signed out. Please sign in again.`
 - Clicking `Sign in` opens the login modal.
+- The calendar does **not** also show a local “Couldn't load events” / “Couldn't load calendars” Retry UI for the same session failure — session recovery owns that story.
 - Re-authenticating restores normal app usage.
 
 ## Scenario 11: Logout And Persisted Gate State

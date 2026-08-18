@@ -80,6 +80,7 @@ const page = (
 const tokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 describe("repairCalendar", () => {
@@ -353,6 +354,7 @@ describe("repairCalendar", () => {
         throw new Error("token fetch failed");
       },
       discardRevoked: async () => {},
+      invalidateAccessToken: async () => {},
     };
 
     await expect(

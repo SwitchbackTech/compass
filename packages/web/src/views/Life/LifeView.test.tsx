@@ -169,6 +169,9 @@ describe("LifeView", () => {
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/ctrl\+scroll|pinch/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Shuffle life quote" }),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the birth date picker when Enter is pressed on the focused field", async () => {
@@ -212,6 +215,23 @@ describe("LifeView", () => {
       screen
         .getByRole("region", { name: /life visualization/i })
         .querySelector(".ring-1"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows calendar age before the birthday rather than weeks divided by 52", async () => {
+    renderWithStore(<LifeView today={new Date(2026, 7, 12)} />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("complementary", { name: "Sidebar" }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
+      target: { value: "1993-09-14" },
+    });
+
+    expect(
+      screen.getByText("1,717 weeks lived - 32 years - 43%"),
     ).toBeInTheDocument();
   });
 

@@ -21,6 +21,7 @@ import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -89,6 +90,7 @@ class FakeReader implements ProviderEventReader {
 const tokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 describe("SyncJobWorker", () => {
@@ -127,6 +129,7 @@ describe("SyncJobWorker", () => {
     resources,
     calendars,
     connections,
+    credentials: new CredentialRepository(storage.db()),
     discovery: discoveryOverride,
     commands,
     jobs,
@@ -232,6 +235,26 @@ describe("SyncJobWorker", () => {
   it("is idle when no job is due", async () => {
     const outcome = await worker(new FakeReader([])).runOnce();
     expect(outcome).toBe("idle");
+  });
+
+  it("passes excludeKinds through to claimDueJob, leaving an excluded due job untouched", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const job = await enqueue(resource, "initialImport");
+    const reservedWorker = new SyncJobWorker(deps(new FakeReader([])), OWNER, {
+      now,
+      excludeKinds: ["initialImport"],
+    });
+
+    const outcome = await reservedWorker.runOnce();
+
+    expect(outcome).toBe("idle");
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    expect(after?.state).toBe("pending");
   });
 
   it("completes an applied incremental pull, removing the job", async () => {
@@ -342,6 +365,44 @@ describe("SyncJobWorker", () => {
     expect(after?.state).toBe("failed");
     expect(after?.failureClass).toBe("retryableTransient");
     expect(after?.leaseOwner).toBeNull();
+  });
+
+  it("does not call onFail while a transient failure still has retries left", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+    const failed: JobRecord[] = [];
+    const worker = new SyncJobWorker(
+      deps(
+        new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      ),
+      OWNER,
+      { now, maxAttempts: 5, onFail: (j) => failed.push(j) },
+    );
+
+    await worker.runOnce();
+
+    expect(failed).toHaveLength(0);
+  });
+
+  it("calls onFail exactly once, with the job, on the exhausting attempt", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+    const failed: JobRecord[] = [];
+    // maxAttempts: 1 means the first (attempt 1) transient failure is terminal.
+    const worker = new SyncJobWorker(
+      deps(
+        new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      ),
+      OWNER,
+      { now, maxAttempts: 1, onFail: (j) => failed.push(j) },
+    );
+
+    await worker.runOnce();
+
+    expect(failed).toHaveLength(1);
+    expect(failed[0]?._id).toEqual(job._id);
   });
 
   it("keeps a failed job's coalescing key so enqueue does not replace it", async () => {
@@ -541,8 +602,6 @@ describe("SyncJobWorker", () => {
       capabilities: ["readEvents", "readBusy", "writeEvents"],
       state: "importing",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
     const job = await jobs.enqueue({
       tenantId: connection.tenantId,
@@ -604,6 +663,44 @@ describe("SyncJobWorker", () => {
       coalescingKey: `calendarListSync:${connection._id}`,
     });
     expect(requeued.state).toBe("pending");
+  });
+
+  it("drops a persistent events.list 401 instead of burning the retry ladder", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+    const drops: string[] = [];
+    const errors: Error[] = [];
+    const w = new SyncJobWorker(
+      deps(
+        new FakeReader(
+          [],
+          new ProviderEventReadError(
+            "authExpired",
+            "Google rejected the token",
+          ),
+        ),
+      ),
+      OWNER,
+      {
+        now,
+        onDrop: (_job, reason) => drops.push(reason),
+        onError: (error) => {
+          if (error instanceof Error) errors.push(error);
+        },
+      },
+    );
+
+    await w.runOnce();
+
+    expect(
+      await jobs.findById(resource.tenantId, resource.principalId, job._id),
+    ).toBeNull();
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toContain("authorizationRevoked");
+    // Must not log "Sync job engine failed" — that fingerprint reopened the
+    // PostHog incident when 401s were retried as transient.
+    expect(errors).toEqual([]);
   });
 
   it("settles a durably-rejected read instead of burning the retry ladder", async () => {

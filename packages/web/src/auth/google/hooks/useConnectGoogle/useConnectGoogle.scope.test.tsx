@@ -114,4 +114,23 @@ describe("useConnectGoogle account scoping", () => {
 
     beginSpy.mockRestore();
   });
+
+  it("never sends connectionId for a new-account connect, even under RECONNECT_REQUIRED", async () => {
+    const beginSpy = spyOn(AuthApi, "beginGoogleConnection").mockResolvedValue({
+      authorizationUrl: "#consent",
+    });
+
+    const { wrapper } = createStoreWrapper();
+    const { result } = renderHook(
+      () => useConnectGoogle({ newAccount: true }),
+      { wrapper },
+    );
+    act(() => result.current.connect());
+
+    await waitFor(() => {
+      expect(beginSpy).toHaveBeenCalledWith({});
+    });
+
+    beginSpy.mockRestore();
+  });
 });

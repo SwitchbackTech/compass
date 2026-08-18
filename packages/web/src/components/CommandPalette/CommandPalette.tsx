@@ -20,7 +20,6 @@ import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmd
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
-import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
 import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
 import {
@@ -31,7 +30,7 @@ import {
   recordRecentCommand,
   useRecentCommandIds,
 } from "@web/components/CommandPalette/recent-commands.store";
-import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
@@ -291,7 +290,6 @@ export const CommandPalette = ({
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
-  const subscribeCmdItems = useSubscribeCmdItems(open);
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const showAccountsCmdItems = useShowAccountsCmdItems();
@@ -310,7 +308,7 @@ export const CommandPalette = ({
         onNavigateToView: (viewName) =>
           navigate({ to: getNavigationViewRoute(viewName) }),
         onShowShortcuts,
-        onShowOnboardingTour: () => onboardingTourActions.restart(),
+        onPracticeShortcuts: () => shortcutShowcaseActions.replay(),
         onShowWelcomeGuide,
       }),
     },
@@ -350,12 +348,7 @@ export const CommandPalette = ({
     {
       id: "settings",
       heading: "Settings",
-      items: [
-        ...subscribeCmdItems,
-        ...authCmdItems,
-        ...showAccountsCmdItems,
-        ...logoutCmdItems,
-      ],
+      items: [...authCmdItems, ...showAccountsCmdItems, ...logoutCmdItems],
     },
     ...getMoreCommandPaletteSections(currentView),
   ];

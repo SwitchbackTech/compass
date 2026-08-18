@@ -1,12 +1,13 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
+import { BillingGateModal } from "@web/billing/BillingGateModal";
+import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
+import { useCheckoutReturn } from "@web/billing/billing.query";
+import { TrialGateModal } from "@web/billing/TrialGateModal";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
-import { OnboardingTour } from "@web/components/OnboardingTour/OnboardingTour";
-import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
-import {
-  selectReleaseNotesPromptOpen,
-  useReleaseNotesPromptStore,
-} from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
+import { OnboardingChecklist } from "@web/components/OnboardingChecklist/OnboardingChecklist";
+import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import {
@@ -18,6 +19,7 @@ import {
   useCalendarShellShortcuts,
   useNavigationShortcuts,
 } from "@web/shortcuts/useGlobalShortcuts";
+import { isLifePathname } from "./isLifePathname";
 
 /**
  * The auth modal is driven by the router's `?auth=` search param, so its
@@ -26,22 +28,52 @@ import {
  * available on every matched route, including 404s.
  */
 export function RootShell() {
-  const isReleaseNotesPromptOpen = useReleaseNotesPromptStore(
-    selectReleaseNotesPromptOpen,
-  );
+  const { pathname } = useLocation();
+  const deferCalendarOnboarding = isLifePathname(pathname);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
+  const access = useAppAccess();
+  useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
   useKeyboardOnlyMode();
 
+  const showTrialGate = access.kind === "anonymous-trial" && access.isExpired;
+  const showBillingGate = access.kind === "server" && access.isReadOnly;
+  const showPastDue = access.kind === "server" && access.status === "past_due";
+
+  // An expired trial owns the whole screen. The onboarding cards sit at
+  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
+  // a gated user click straight through the gate and keep touring. AuthModal
+  // stays because the gate's only ways forward are sign up and log in.
+  if (showTrialGate) {
+    return (
+      <AuthModalProvider>
+        <Outlet />
+        <TrialGateModal />
+        <AuthModal />
+      </AuthModalProvider>
+    );
+  }
+
+  if (showBillingGate) {
+    return (
+      <AuthModalProvider>
+        <Outlet />
+        <BillingGateModal status={access.status} />
+        <AuthModal />
+      </AuthModalProvider>
+    );
+  }
+
   return (
     <AuthModalProvider>
+      {showPastDue && <BillingPastDueBanner />}
       <Outlet />
       <AuthModal />
-      <WelcomeModal />
-      <OnboardingTour />
+      {!deferCalendarOnboarding && <WelcomeModal />}
+      {!deferCalendarOnboarding && <ShortcutShowcase />}
+      {!deferCalendarOnboarding && <OnboardingChecklist />}
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
-      {isReleaseNotesPromptOpen && <ReleaseNotesPrompt />}
     </AuthModalProvider>
   );
 }

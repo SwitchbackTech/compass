@@ -16,6 +16,7 @@ export interface EventColorPickerProps {
   /** Radio group name; defaults to `event-color`. Pass a distinct value when
    * more than one picker can mount at once (e.g. form + context menu). */
   name?: string;
+  id?: string;
 }
 
 const swatchClassName =
@@ -40,8 +41,9 @@ export const EventColorPicker = ({
   value,
   onChange,
   name = "event-color",
+  id,
 }: EventColorPickerProps) => (
-  <fieldset className="m-0 min-w-0 border-0 p-0">
+  <fieldset id={id} className="m-0 min-w-0 border-0 p-0">
     <legend className="sr-only">Event color</legend>
     <div className="flex flex-wrap items-center gap-1.5">
       <ColorSwatch label={eventColorLabel(null)}>

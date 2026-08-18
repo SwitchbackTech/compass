@@ -23,7 +23,7 @@ import { SessionContext } from "./session.context";
 SuperTokens.init({
   appInfo: {
     appName: APP_NAME,
-    apiDomain: ENV_WEB.API_BASEURL,
+    apiDomain: ENV_WEB.BACKEND_BASEURL,
     apiBasePath: ROOT_ROUTES.API,
   },
   recipeList: [
@@ -31,9 +31,9 @@ SuperTokens.init({
     EmailPassword.init(),
     EmailVerification.init(),
     Session.init({
-      postAPIHook: async (context) => {
-        session.emit(context);
-      },
+      // Session lifecycle only. postAPIHook shares action names
+      // (REFRESH_SESSION) with onHandleEvent but is an HTTP-hook payload,
+      // not a successful session refresh.
       onHandleEvent: (event) => {
         session.emit(event);
       },

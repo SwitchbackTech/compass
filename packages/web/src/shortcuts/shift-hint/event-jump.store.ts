@@ -36,13 +36,6 @@ export const eventJumpActions = {
       false,
       { type: "setActive" },
     ),
-  /** Exit without announcing (e.g. Shift-Shift handing off to keyboard-only). */
-  silenceOff: () =>
-    useEventJumpStore.setState(
-      { isActive: false, activeDayKeys: [], announcement: "" },
-      false,
-      { type: "silenceOff" },
-    ),
   /** Clear a lingering exit announcement after the live region has spoken. */
   clearAnnouncement: () =>
     useEventJumpStore.setState({ announcement: "" }, false, {
@@ -62,6 +55,10 @@ export const eventJumpActions = {
 };
 
 export const selectEventJumpActive = (state: EventJumpState) => state.isActive;
+
+/** Imperative read for plain event handlers outside React, mirroring
+ * `isEditSequenceArmed` so the two keyboard modes can yield to each other. */
+export const isEventJumpActive = () => useEventJumpStore.getState().isActive;
 
 export const selectEventJumpActiveDayKeys = (state: EventJumpState) =>
   state.activeDayKeys;

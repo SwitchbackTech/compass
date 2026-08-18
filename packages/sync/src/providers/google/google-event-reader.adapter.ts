@@ -1,5 +1,6 @@
 import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
+import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
@@ -39,6 +40,8 @@ export interface GoogleEventListApi {
 export type GoogleEventListApiFactory = (
   accessToken: string,
 ) => GoogleEventListApi;
+
+const logger = Logger("sync:google-event-reader");
 
 const defaultApiFactory: GoogleEventListApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
@@ -84,8 +87,14 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
 
   #makeApi: GoogleEventListApiFactory;
 
-  constructor(makeApi: GoogleEventListApiFactory = defaultApiFactory) {
+  #log: { warn: (message: string) => void };
+
+  constructor(
+    makeApi: GoogleEventListApiFactory = defaultApiFactory,
+    log?: { warn: (message: string) => void },
+  ) {
     this.#makeApi = makeApi;
+    this.#log = log ?? logger;
   }
 
   async listEventPage(
@@ -109,6 +118,9 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
         // dropped so one bad row never fails the whole page or the import.
         if (error instanceof ProviderEventError) {
           skipped++;
+          this.#log.warn(
+            `Skipped unusable Google event ${item.id ?? "(no id)"} (${error.reason})`,
+          );
           continue;
         }
         throw error;
@@ -144,16 +156,42 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
   }
 }
 
+// Reasons Google's 403 can carry for a quota/rate problem rather than a
+// genuine permission refusal - status alone cannot tell them apart. Same set
+// as the discovery (google-calendar.adapter.ts) and watch/writer
+// (google-notifications.adapter.ts, google-event-writer.adapter.ts) paths.
+const TRANSIENT_REASONS = [
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "quotaExceeded",
+  "dailyLimitExceeded",
+  "backendError",
+  "internalError",
+];
+
 // Map a Google events.list failure to a read-error reason. An expired syncToken
-// (410 Gone) forces a full re-import; a rate limit or server/network error is
-// retryable; anything else is an unrecoverable read failure.
+// (410 Gone) forces a full re-import. A 401 means the access token was rejected
+// - it may have expired mid-job on a long-running import or repair, or the
+// cached token may simply be stale - so the caller must invalidate the cached
+// token and retry the same page with a fresh one in-process; otherwise every
+// job retry replays the same rejected token, burns the retry ladder, and
+// dead-letters the job (and logs a PostHog "Sync job engine failed" on each
+// attempt). Also retryable: a rate limit or server/network error, or a
+// quota-shaped 403. Anything else is an unrecoverable read failure.
 function classifyReadError(
   error: unknown,
-): "cursorExpired" | "transient" | "readFailed" {
+): "cursorExpired" | "authExpired" | "transient" | "readFailed" {
   const status = httpStatus(error);
   if (status === 410) return "cursorExpired";
+  if (status === 401) return "authExpired";
   if (status === 429 || status === undefined || status >= 500) {
     return "transient";
+  }
+  if (status === 403) {
+    const reason = googleErrorReason(error);
+    if (reason !== undefined && TRANSIENT_REASONS.includes(reason)) {
+      return "transient";
+    }
   }
   return "readFailed";
 }

@@ -62,7 +62,7 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
-    it("lists Shift event jump toggle in day and week focus sections", () => {
+    it("lists s event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
           view,
@@ -80,7 +80,7 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
-    it("lists SHIFT-SHIFT keyboard-only mode in every view's other section", () => {
+    it("lists h keyboard-only mode in every view's other section", () => {
       for (const view of ["day", "week", "life"] as const) {
         const ids = filterShortcutsByContext({
           view,
@@ -90,28 +90,38 @@ describe("shortcuts.registry", () => {
       }
     });
 
-    it("hides event-focused edit sequences until an event is focused", () => {
-      const idle = filterShortcutsByContext({
+    it("lists the edit sequences with nothing focused, so the legend can show them", () => {
+      // Regression: these were gated on live DOM focus, which the legend itself
+      // stole when it focused its search input, making them unreachable.
+      const ids = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
-        eventFocused: false,
       }).map((shortcut) => shortcut.id);
 
-      expect(idle).not.toContain("edit-focus-title");
-      expect(idle).not.toContain("edit-focus-description");
+      expect(ids).toContain("edit-focus-title");
+      expect(ids).toContain("edit-focus-location");
+      expect(ids).toContain("edit-focus-description");
+      expect(ids).toContain("edit-focus-start");
+      expect(ids).toContain("edit-focus-end");
+      expect(ids).toContain("edit-focus-recurrence");
+      expect(ids).toContain("edit-focus-calendar");
+      expect(ids).toContain("edit-focus-color");
+    });
 
-      const focused = filterShortcutsByContext({
+    it("excludes the in-form leader row when the form is closed and includes it when open", () => {
+      const closed = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
-        eventFocused: true,
+        isFormOpen: false,
       }).map((shortcut) => shortcut.id);
+      expect(closed).not.toContain("edit-field-leader-in-form");
 
-      expect(focused).toContain("edit-focus-title");
-      expect(focused).toContain("edit-focus-description");
-      expect(focused).toContain("edit-focus-start");
-      expect(focused).toContain("edit-focus-end");
-      expect(focused).toContain("edit-focus-recurrence");
-      expect(focused).toContain("edit-focus-calendar");
+      const open = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        isFormOpen: true,
+      }).map((shortcut) => shortcut.id);
+      expect(open).toContain("edit-field-leader-in-form");
     });
   });
 

@@ -1,6 +1,7 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { type ProviderEventCancellation } from "@sync/providers/provider-event.port";
 import {
   ProviderEventReadError,
@@ -30,6 +31,15 @@ export type CalendarPullResult =
       resource: SyncResourceRecord;
       changed: number;
       deleted: number;
+      // A push notification for this calendar landed AFTER this pull had
+      // already read the provider, so the change it announced is in neither
+      // this pull nor any queued job (the enqueue coalesced onto this pull's
+      // own claimed row). The caller must pull again rather than leave it to
+      // the 15-minute reconcile sweep.
+      changedDuringPull: boolean;
+      // End-to-end push latency: provider notification to applied, in ms. Null
+      // when this pull served no notification (a sweep or bootstrap pull).
+      pushLatencyMs: number | null;
     }
   | {
       // The stored cursor is too old (410 Gone). The caller starts a full
@@ -88,7 +98,13 @@ export async function pullCalendarChanges(
     return { status: "notImported", resource };
   }
 
-  const accessToken = await deps.custody.getValidAccessToken(
+  // Read the change marker BEFORE the first provider read. Everything this pull
+  // observes is a snapshot at or after this instant, so a marker still holding
+  // this value at the end means no change arrived that this pull could have
+  // missed. Any other value did arrive too late to be in the pages below.
+  const notifiedAtStart = resource.changeNotifiedAt;
+
+  let accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
   );
 
@@ -114,15 +130,21 @@ export async function pullCalendarChanges(
   do {
     let page: Awaited<ReturnType<ProviderEventReader["listEventPage"]>>;
     try {
-      page = await deps.reader.listEventPage({
-        accessToken,
-        calendarId: calendar.providerCalendarId,
-        // The cursor applies only to the first request of a batch; paging then
-        // continues by pageToken alone.
-        cursor: pageToken === null ? cursor : null,
-        pageToken,
-        colorLabels,
-      });
+      const read = await listEventPageWithAuthRetry(
+        deps,
+        calendar.connectionId,
+        {
+          accessToken,
+          calendarId: calendar.providerCalendarId,
+          // The cursor applies only to the first request of a batch; paging then
+          // continues by pageToken alone.
+          cursor: pageToken === null ? cursor : null,
+          pageToken,
+          colorLabels,
+        },
+      );
+      page = read.page;
+      accessToken = read.accessToken;
     } catch (error) {
       // An expired cursor cannot be resumed; hand off to repair without
       // touching the stored cursor.
@@ -161,6 +183,18 @@ export async function pullCalendarChanges(
     now(),
   );
 
+  // Retire the change this pull served — but only if nothing moved the marker
+  // while the pages above were being read. A failed match is the signal that a
+  // notification landed mid-pull; leave that newer marker in place so the next
+  // pass owns it.
+  const appliedAt = now();
+  const served = await deps.resources.clearChangeNotifiedIfUnchanged(
+    resource.tenantId,
+    resource.principalId,
+    resource._id,
+    notifiedAtStart,
+  );
+
   const updated = await deps.resources.findById(
     resource.tenantId,
     resource.principalId,
@@ -171,6 +205,10 @@ export async function pullCalendarChanges(
     resource: updated ?? resource,
     changed: applier.importedCount,
     deleted,
+    changedDuringPull: !served,
+    pushLatencyMs: notifiedAtStart
+      ? appliedAt.getTime() - notifiedAtStart.getTime()
+      : null,
   };
 }
 

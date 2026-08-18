@@ -76,6 +76,7 @@ class FakeNotifications implements ProviderNotificationAdapter {
 const custody = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 describe("maintainSubscription", () => {
@@ -304,6 +305,7 @@ describe("maintainSubscription", () => {
       discardRevoked: async (id: ConnectionId) => {
         await credentials.deleteByConnection(id);
       },
+      invalidateAccessToken: async () => {},
     };
     const notifications = new FakeNotifications({
       watchError: new ProviderNotificationError("authorizationRevoked", "gone"),

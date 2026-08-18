@@ -4,6 +4,8 @@ import {
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { session } from "@web/auth/compass/session/Session";
+import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   type ApiError,
   type ApiRequestConfig,
@@ -12,9 +14,13 @@ import {
 import {
   createApiError as buildApiError,
   getApiErrorCode,
+  getApiErrorMessage,
+  getErrorStatus,
   handleErrorResponse,
+  isSessionLevelError,
   parseApiError,
   parseGoogleConnectError,
+  shouldShowContextualLoadError,
 } from "./api.util";
 import { describe, expect, it, mock, spyOn } from "bun:test";
 
@@ -63,6 +69,95 @@ describe("createApiError", () => {
 
     expect(error.message).toBe("Request failed for DELETE /event/abc");
     expect(error.response).toBeUndefined();
+  });
+});
+
+describe("getErrorStatus", () => {
+  it("reads the structured ApiError response status", () => {
+    const error = createApiError({ status: Status.UNAUTHORIZED });
+    expect(getErrorStatus(error)).toBe(Status.UNAUTHORIZED);
+  });
+
+  it("falls back to trailing message digits when there is no response", () => {
+    const error = new Error("Request failed with status 500");
+    expect(getErrorStatus(error)).toBe(500);
+  });
+
+  it("returns undefined for unrelated values", () => {
+    expect(getErrorStatus(undefined)).toBeUndefined();
+    expect(getErrorStatus("nope")).toBeUndefined();
+    expect(getErrorStatus(new Error("no status here"))).toBeUndefined();
+  });
+});
+
+describe("isSessionLevelError", () => {
+  it.each([
+    Status.UNAUTHORIZED,
+    Status.GONE,
+  ])("is true for session status %s", (status) => {
+    expect(isSessionLevelError(createApiError({ status }))).toBe(true);
+  });
+
+  it("is false for other HTTP failures", () => {
+    expect(
+      isSessionLevelError(createApiError({ status: Status.INTERNAL_SERVER })),
+    ).toBe(false);
+    expect(
+      isSessionLevelError(createApiError({ status: Status.NOT_FOUND })),
+    ).toBe(false);
+  });
+});
+
+describe("shouldShowContextualLoadError", () => {
+  it("shows local Retry UI for ordinary load failures", () => {
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.INTERNAL_SERVER }),
+      ),
+    ).toBe(true);
+  });
+
+  it("hides local Retry UI when session recovery already owns the toast", () => {
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.UNAUTHORIZED }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.GONE }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false when the query is not in error", () => {
+    expect(
+      shouldShowContextualLoadError(
+        false,
+        createApiError({ status: Status.UNAUTHORIZED }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("getApiErrorMessage", () => {
+  it("returns the error string from a JSON body", () => {
+    const error = createApiError({
+      data: { error: "Couldn't start billing. Please try again in a moment." },
+    });
+    expect(getApiErrorMessage(error)).toBe(
+      "Couldn't start billing. Please try again in a moment.",
+    );
+  });
+
+  it("returns undefined when the body has no error string", () => {
+    expect(
+      getApiErrorMessage(createApiError({ data: { code: "X" } })),
+    ).toBeUndefined();
+    expect(getApiErrorMessage(new Error("nope"))).toBeUndefined();
   });
 });
 
@@ -254,10 +349,28 @@ describe("handleErrorResponse", () => {
     signOutSpy.mockRestore();
   });
 
+  it("does not treat a 401 as sign-out for a first-time visitor", async () => {
+    window.history.pushState({}, "", "/week");
+    window.localStorage.removeItem(STORAGE_KEYS.AUTH);
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    const error = createApiError(
+      { status: Status.UNAUTHORIZED },
+      { url: "/event" },
+    );
+
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
+
+    expect(signOutSpy).not.toHaveBeenCalled();
+    signOutSpy.mockRestore();
+  });
+
   it("still signs the user out on an unauthorized data-endpoint response", async () => {
     // Already on the calendar route, so signOut skips the (jsdom-unsupported)
     // navigation and we can assert purely on the sign-out call.
     window.history.pushState({}, "", "/week");
+    markUserAsAuthenticated("person@example.com");
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
     const error = createApiError(
       { status: Status.UNAUTHORIZED },
@@ -277,6 +390,7 @@ describe("handleErrorResponse", () => {
     // every route that actually needed it the "you've been signed out" message
     // was destroyed before it could be read. Routing in-app keeps it alive.
     window.history.pushState({}, "", "/day/2026-07-31");
+    markUserAsAuthenticated("person@example.com");
     const navigate = mock((_options: { to: string }) => Promise.resolve());
     mock.module("@web/routers", () => ({ router: { navigate } }));
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);

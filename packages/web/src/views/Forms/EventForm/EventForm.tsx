@@ -47,6 +47,7 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -71,8 +72,10 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
 } as const;
 
 const EVENT_FORM_TITLE_ID = "event-form-title";
+const EVENT_FORM_LOCATION_ID = "event-form-location";
 const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
 const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
+const EVENT_FORM_COLOR_ID = "event-form-color";
 const EVENT_FORM_SCHEDULE_ID = "event-form-schedule";
 const EVENT_FORM_RECURRENCE_ID = "event-form-recurrence";
 
@@ -615,7 +618,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     // TanStack applies those before the callback, so an early return for
     // TipTap/buttons would otherwise swallow native Enter (newline / click).
     useAppShortcut(
-      "Enter",
+      KEYMAP.saveDraft.hotkey,
       (keyboardEvent) => {
         if (isDraft) {
           return;
@@ -815,6 +818,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   </p>
                 )}
                 <EventColorPicker
+                  id={EVENT_FORM_COLOR_ID}
                   value={color}
                   onChange={(next) => patchDraftFields({ color: next })}
                 />
@@ -839,6 +843,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     />
                   )}
                   <Focusable
+                    id={EVENT_FORM_LOCATION_ID}
                     Component="input"
                     className={classNames(
                       INPUT_RESET_CLASSNAME,

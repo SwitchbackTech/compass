@@ -53,6 +53,7 @@ export const useWeekShortcutOwner = ({
   util,
   scrollUtil,
 }: ShortcutProps): {
+  getEditSequenceAnchor: () => HTMLElement | null;
   shiftHints: ActiveShiftHint[];
 } => {
   const { data: calendars = [], isPending: isCalendarsPending } =
@@ -128,6 +129,21 @@ export const useWeekShortcutOwner = ({
     );
   }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
+  // Idle Shift+Arrow place-create. Existing-draft / focused-target guards live
+  // in useGridEventEditShortcuts so a failed clamp/midnight move never reseeds.
+  const placeTimedDraftEvent = useCallback(() => {
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createTimedDraft(
+      isCurrentWeek,
+      startOfView,
+      "keyboardPlace",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
+
   // The command palette's create-event rows (event.cmd.constants.ts) can only
   // reach this view through the bus; the "C"/"A" keys below call the create
   // functions directly. Resubscribes when the create handlers change (week in
@@ -168,14 +184,16 @@ export const useWeekShortcutOwner = ({
     timedEvents,
     dayBoundary: { kind: "clamp", weekDays },
     targeting,
+    placeTimedDraft: placeTimedDraftEvent,
     repositionDraftByKey: repositionDraftByKeyboard,
   });
 
-  useGridEventFormFieldSequences({
-    allDayEvents,
-    targeting,
-    timedEvents,
-  });
+  const { getMenuAnchor: getEditSequenceAnchor } =
+    useGridEventFormFieldSequences({
+      allDayEvents,
+      targeting,
+      timedEvents,
+    });
 
   useWeekViewShortcuts({
     onPreviousWeek: goToPreviousWeek,
@@ -196,5 +214,5 @@ export const useWeekShortcutOwner = ({
     timedEvents,
   });
 
-  return { shiftHints };
+  return { getEditSequenceAnchor, shiftHints };
 };

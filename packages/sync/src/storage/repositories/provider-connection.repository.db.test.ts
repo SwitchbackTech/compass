@@ -22,8 +22,6 @@ const baseUpsert = (
     capabilities: ["readEvents"],
     state: "importing",
     stateReason: null,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
     ...overrides,
   }) as ProviderConnectionUpsert;
 
@@ -140,6 +138,36 @@ describe("ProviderConnectionRepository", () => {
       "writeEvents",
       "changeNotifications",
     ]);
+  });
+
+  it("keeps prior lastHealthyAt when the same account reconnects", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const created = await repo.upsertByProviderAccount(
+      baseUpsert({ tenantId, principalId }),
+    );
+    const healthyAt = new Date("2026-07-01T00:00:00.000Z");
+    await repo.updateDerivedState(
+      created.tenantId,
+      created.principalId,
+      created._id,
+      {
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: healthyAt,
+        lastHealthyAt: healthyAt,
+      },
+      healthyAt,
+    );
+
+    const reconnected = await repo.upsertByProviderAccount(
+      baseUpsert({ tenantId, principalId, state: "importing" }),
+    );
+
+    expect(reconnected._id).toBe(created._id);
+    expect(reconnected.state).toBe("importing");
+    expect(reconnected.lastHealthyAt).toEqual(healthyAt);
+    expect(reconnected.lastSyncedAt).toEqual(healthyAt);
   });
 
   it("does not leak one principal's connections to another", async () => {

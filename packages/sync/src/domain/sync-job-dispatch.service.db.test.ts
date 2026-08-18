@@ -27,11 +27,13 @@ import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-ca
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -76,18 +78,25 @@ class FakeReader implements ProviderEventReader {
   readonly provider = "google" as const;
   #pages: ProviderEventPage[];
   #error: ProviderEventReadError | null;
+  #errorOnce: boolean;
 
   constructor(
     pages: ProviderEventPage[],
     error: ProviderEventReadError | null = null,
+    errorOnce = false,
   ) {
     this.#pages = [...pages];
     this.#error = error;
+    this.#errorOnce = errorOnce;
   }
   async listEventPage(
     _input: ProviderEventReadInput,
   ): Promise<ProviderEventPage> {
-    if (this.#error) throw this.#error;
+    if (this.#error) {
+      const error = this.#error;
+      if (this.#errorOnce) this.#error = null;
+      throw error;
+    }
     const next = this.#pages.shift();
     if (!next) throw new Error("FakeReader: no page scripted");
     return next;
@@ -97,6 +106,7 @@ class FakeReader implements ProviderEventReader {
 const tokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 // A notification adapter that records watch calls and returns a fixed channel,
@@ -150,6 +160,7 @@ describe("dispatchSyncJob", () => {
   let commands: CommandRepository;
   let jobs: JobRepository;
   let invalidations: InvalidationRepository;
+  let credentials: CredentialRepository;
   // Dispatch resolves the connection for a calendarListSync job; a test sets what
   // findById returns without seeding a full connection record.
   let stubbedConnection: ProviderConnectionRecord | null;
@@ -162,11 +173,27 @@ describe("dispatchSyncJob", () => {
     commands = new CommandRepository(storage.db());
     jobs = new JobRepository(storage.db());
     invalidations = new InvalidationRepository(storage.db());
+    credentials = new CredentialRepository(storage.db());
     stubbedConnection = null;
   });
 
   const connections = {
     findById: async () => stubbedConnection,
+    updateDerivedState: async (
+      tenantId: ProviderConnectionRecord["tenantId"],
+      principalId: ProviderConnectionRecord["principalId"],
+      id: ProviderConnectionRecord["_id"],
+      fields: {
+        state: ProviderConnectionRecord["state"];
+        stateReason: ProviderConnectionRecord["stateReason"];
+        lastSyncedAt: Date | null;
+        lastHealthyAt: Date | null;
+      },
+      at?: Date,
+    ) => {
+      const real = new ProviderConnectionRepository(storage.db());
+      return real.updateDerivedState(tenantId, principalId, id, fields, at);
+    },
   } as unknown as SyncJobDispatchDeps["connections"];
 
   const deps = (
@@ -180,6 +207,7 @@ describe("dispatchSyncJob", () => {
     resources,
     calendars,
     connections,
+    credentials,
     discovery: discoveryOverride,
     jobs,
     commands,
@@ -284,6 +312,98 @@ describe("dispatchSyncJob", () => {
       connectionId: calendar.connectionId,
       calendarId: calendar._id,
     });
+  });
+
+  it("re-pulls when a notification lands after the pull already read the provider", async () => {
+    // The notification's own enqueue coalesces onto this job's CLAIMED row and
+    // does nothing, and the row is deleted the moment the job settles — so
+    // without this second pass the change waits for the reconcile sweep's
+    // 15-minute staleness threshold instead of the ~30s the push path promises.
+    // A followup job cannot do it: the worker enqueues followups BEFORE
+    // completing, so one sharing `incrementalPull:<resourceId>` would coalesce
+    // onto the very row it replaces.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reads: string[] = [];
+
+    const reader: ProviderEventReader = {
+      provider: "google",
+      listEventPage: async () => {
+        reads.push("read");
+        if (reads.length === 1) {
+          // The notification arrives now — after this pass has read Google.
+          await resources.markChangeNotified(
+            calendar.tenantId,
+            calendar.principalId,
+            resource._id,
+            new Date("2026-07-10T00:00:03.000Z"),
+          );
+          return page([single("first")], "cursor-1");
+        }
+        return page([single("second")], "cursor-2");
+      },
+    };
+
+    await dispatchSyncJob(
+      { ...deps(new FakeReader([])), reader },
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(reads).toHaveLength(2);
+    // The second pass served the marker, so nothing is left pending.
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.changeNotifiedAt).toBeNull();
+    expect(stored?.syncCursor).toBe("cursor-2");
+  });
+
+  it("stops re-pulling after the pass bound and leaves the rest to the sweep", async () => {
+    // A calendar changing on every pass must not hold a worker lane forever.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reads: string[] = [];
+    const warnings: string[] = [];
+
+    const reader: ProviderEventReader = {
+      provider: "google",
+      listEventPage: async () => {
+        reads.push("read");
+        // Every pass is overtaken by a newer notification.
+        await resources.markChangeNotified(
+          calendar.tenantId,
+          calendar.principalId,
+          resource._id,
+          new Date(`2026-07-10T00:00:0${reads.length}.000Z`),
+        );
+        return page([single(`e-${reads.length}`)], `cursor-${reads.length}`);
+      },
+    };
+
+    await dispatchSyncJob(
+      {
+        ...deps(new FakeReader([])),
+        reader,
+        log: { warn: (message) => warnings.push(message) },
+      },
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(reads).toHaveLength(3);
+    expect(
+      warnings.some((message) => message.includes("after 3 pull passes")),
+    ).toBe(true);
+    // Marker deliberately left set so the reconcile sweep picks up the rest.
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.changeNotifiedAt).not.toBeNull();
   });
 
   it("bootstraps a push channel when an applied pull finds the calendar has none", async () => {
@@ -442,6 +562,7 @@ describe("dispatchSyncJob", () => {
       discardRevoked: async (connectionId) => {
         discarded.push(connectionId);
       },
+      invalidateAccessToken: async () => {},
     };
 
     const outcome = await dispatchSyncJob(
@@ -472,6 +593,7 @@ describe("dispatchSyncJob", () => {
       discardRevoked: async (connectionId) => {
         discarded.push(connectionId);
       },
+      invalidateAccessToken: async () => {},
     };
 
     await expect(
@@ -482,6 +604,71 @@ describe("dispatchSyncJob", () => {
       ),
     ).rejects.toThrow(ProviderAuthError);
     expect(discarded).toEqual([]);
+  });
+
+  it("remints the access token in-process and completes a pull after a one-off 401", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader(
+      [page([], "cursor-1")],
+      new ProviderEventReadError("authExpired", "Google rejected the token"),
+      true,
+    );
+    const invalidated: string[] = [];
+    let minted = 0;
+    const authExpiredCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        minted += 1;
+        return minted === 1 ? "stale-token" : "fresh-token";
+      },
+      discardRevoked: async () => {},
+      invalidateAccessToken: async (connectionId) => {
+        invalidated.push(connectionId);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, authExpiredCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("done");
+    expect(invalidated).toEqual([calendar.connectionId]);
+    expect(minted).toBe(2);
+  });
+
+  it("drops a pull when a freshly minted token is still rejected with 401", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader(
+      [],
+      new ProviderEventReadError("authExpired", "Google rejected the token"),
+    );
+    const discarded: string[] = [];
+    const invalidated: string[] = [];
+    const authExpiredCustody: SyncJobDispatchDeps["custody"] = {
+      ...tokenSource,
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
+      invalidateAccessToken: async (connectionId) => {
+        invalidated.push(connectionId);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, authExpiredCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("authorizationRevoked");
+    }
+    expect(invalidated).toEqual([calendar.connectionId]);
+    expect(discarded).toEqual([calendar.connectionId]);
   });
 
   it("drops a job whose resource no longer exists", async () => {
@@ -701,6 +888,135 @@ describe("dispatchSyncJob", () => {
     );
     expect(saved?.bootstrapState).toBe("ready");
     expect(saved?.subscriptionId).toBeNull();
+  });
+
+  async function seedConnectedCalendar() {
+    const realConnections = new ProviderConnectionRepository(storage.db());
+    const connection = await realConnections.upsertByProviderAccount({
+      tenantId: objectId(),
+      principalId: objectId(),
+      provider: "google",
+      account: {
+        providerAccountId: "acct-1",
+        email: "user@example.com",
+        displayName: "User",
+      },
+      capabilities: ["readEvents", "readBusy", "writeEvents"],
+      state: "importing",
+      stateReason: null,
+    });
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const calendar = await seedProviderCalendar(calendars, {
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      now(),
+    );
+    stubbedConnection = connection;
+    return { connection, calendar };
+  }
+
+  async function connectionInvalidations(principalId: string) {
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId })
+      .toArray();
+    return feed.filter(
+      (row) =>
+        (row.invalidation as { kind?: string } | undefined)?.kind ===
+        "connection",
+    );
+  }
+
+  it("appends a connection invalidation when bootstrapCatchup completes", async () => {
+    const { connection, calendar } = await seedConnectedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([page([], "cursor-2")])),
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(await connectionInvalidations(connection.principalId)).toHaveLength(
+      1,
+    );
+  });
+
+  it("appends a connection invalidation when subscriptionMaintain completes unsupported", async () => {
+    const { connection, calendar } = await seedConnectedCalendar();
+    const resource = await ensureEventsResource(resources, calendar, {
+      cursor: "cursor-1",
+      bootstrapState: "watching",
+      now,
+    });
+    const refusing = {
+      ...notifications,
+      watchEvents: async () => {
+        throw new ProviderNotificationError(
+          "watchUnsupported",
+          "push not supported for this calendar",
+        );
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, refusing),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(await connectionInvalidations(connection.principalId)).toHaveLength(
+      1,
+    );
+  });
+
+  it("does not fail the job when connection-state refresh throws", async () => {
+    const { calendar } = await seedConnectedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    const warnings: string[] = [];
+    const failingDeps: SyncJobDispatchDeps = {
+      ...deps(new FakeReader([page([], "cursor-2")])),
+      connections: {
+        findById: async () => stubbedConnection,
+        updateDerivedState: async () => {
+          throw new Error("derived-state write failed");
+        },
+      } as unknown as SyncJobDispatchDeps["connections"],
+      log: { warn: (message) => warnings.push(message) },
+    };
+
+    const outcome = await dispatchSyncJob(
+      failingDeps,
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(warnings.some((message) => message.includes("derived-state"))).toBe(
+      true,
+    );
   });
 
   const calendarListJob = (

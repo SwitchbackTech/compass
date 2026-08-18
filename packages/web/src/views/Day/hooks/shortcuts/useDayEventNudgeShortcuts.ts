@@ -9,7 +9,6 @@ import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
-import { requestFocusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import {
   focusDayGridEventTarget,
   getFocusedDayGridEventTarget,
@@ -18,28 +17,29 @@ import {
 
 /**
  * Day-view edit shortcuts: Delete, Mod+D, Shift+arrows (nudge / day-move),
- * Arrow keys to reposition an open draft or focus the neighboring event,
- * ArrowLeft/Right to page the day and focus its first event, and `e`+field
- * sequences to open/focus form fields.
+ * Arrow keys to reposition an open draft or focus the neighboring event, and
+ * `e`+field sequences to open/focus form fields.
  * Shift+ArrowLeft/Right move a focused event by one day and follow that day
- * in the Day view.
+ * in the Day view. Period navigation (changing the visible day) stays on j/k.
  */
 export function useDayEventNudgeShortcuts({
   allDayEvents = [],
   dependencies = {},
   navigateToDate,
-  navigateToNextDay,
-  navigateToPreviousDay,
+  placeTimedDraft,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
   dependencies?: EventMutationDependencies;
   /** Follow draft Left/Right moves so the draft stays on screen. */
   navigateToDate?: (date: Dayjs) => void;
-  navigateToNextDay?: () => void;
-  navigateToPreviousDay?: () => void;
+  /** Shift+Arrow place-create when nothing is focused and no draft can move. */
+  placeTimedDraft?: () => void;
   timedEvents: GridEvent[];
-}): { shiftHints: ActiveShiftHint[] } {
+}): {
+  getEditSequenceAnchor: () => HTMLElement | null;
+  shiftHints: ActiveShiftHint[];
+} {
   const targeting = {
     focus: focusDayGridEventTarget,
     getFocused: getFocusedDayGridEventTarget,
@@ -53,15 +53,8 @@ export function useDayEventNudgeShortcuts({
     dayBoundary: {
       kind: "follow",
       onCrossed: (date) => navigateToDate?.(date),
-      onFocusPageDay: (direction) => {
-        if (direction === "previous") {
-          navigateToPreviousDay?.();
-        } else {
-          navigateToNextDay?.();
-        }
-        requestFocusFirstDayCalendarEvent();
-      },
     },
+    placeTimedDraft,
     targeting,
     repositionDraftByKey: (key) => {
       const { gridDraft, status } = useDraftStore.getState();
@@ -86,11 +79,12 @@ export function useDayEventNudgeShortcuts({
     },
   });
 
-  useGridEventFormFieldSequences({
-    allDayEvents,
-    targeting,
-    timedEvents,
-  });
+  const { getMenuAnchor: getEditSequenceAnchor } =
+    useGridEventFormFieldSequences({
+      allDayEvents,
+      targeting,
+      timedEvents,
+    });
 
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
@@ -100,5 +94,5 @@ export function useDayEventNudgeShortcuts({
     timedEvents,
   });
 
-  return { shiftHints };
+  return { getEditSequenceAnchor, shiftHints };
 }

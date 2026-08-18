@@ -15,6 +15,30 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 ---
 
+## Test Workflow
+
+Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.yml)
+
+`lint`, `knip`, and `type-check` each carry a 5-minute job timeout; `unit`
+carries 10 minutes (its own test-run steps are separately capped at 5
+minutes each, leaving headroom for checkout/setup/cache/install). These
+bound a hung job to a fixed, small window instead of GitHub's 360-minute
+default — GitHub Actions has no native way to give several built-in action
+steps (`checkout`, `setup-node`, `setup-bun`, `cache`) one shared budget
+without reimplementing them by hand, so the job-level timeout is the
+practical equivalent.
+
+**Known flakiness**: a job can occasionally hang for several minutes on
+runner/network flakiness unrelated to the diff, while the identical job on
+the identical commit in a parallel run passes quickly. If a check looks
+stuck well past its normal duration, cancel and rerun just that job rather
+than investigating the diff first:
+
+```bash
+gh run cancel <run-id>
+gh run rerun <run-id> --failed
+```
+
 ## Release Flow
 
 Every PR merge to `main` triggers a fully automated chain:

@@ -25,7 +25,7 @@ interface GetNavigationCommandItemsArgs {
   onGoToToday?: () => void;
   onNavigateToView: (viewName: CommandPaletteViewName) => void;
   onShowShortcuts?: () => void;
-  onShowOnboardingTour?: () => void;
+  onPracticeShortcuts?: () => void;
   onShowWelcomeGuide?: () => void;
 }
 
@@ -72,7 +72,7 @@ export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
-  onShowOnboardingTour,
+  onPracticeShortcuts,
   onShowWelcomeGuide,
 }: GetNavigationCommandItemsArgs): CommandItem[] => {
   const calendarItems: CommandItem[] = [];
@@ -124,10 +124,17 @@ export const getNavigationCommandItems = ({
 
   calendarItems.push({
     id: "enter-keyboard-only",
-    label: "Toggle keyboard-only mode",
+    label: "Toggle Hardcore Mode",
     icon: KeyboardIcon,
-    shortcut: ["Shift", "Shift"],
-    keywords: ["keyboard", "clicks", "pointer", "mouseless", "hotkeys"],
+    shortcut: ["h"],
+    keywords: [
+      "keyboard",
+      "hardcore",
+      "clicks",
+      "pointer",
+      "mouseless",
+      "hotkeys",
+    ],
     // Defer so the palette closes before click-blocking installs.
     onClick: () =>
       queueMicrotask(() => {
@@ -139,13 +146,23 @@ export const getNavigationCommandItems = ({
       }),
   });
 
-  if (onShowOnboardingTour) {
+  if (onPracticeShortcuts) {
     calendarItems.push({
-      id: "show-onboarding-tour",
-      label: "Restart onboarding tour",
+      id: "practice-shortcuts",
+      label: "Practice shortcuts",
       icon: CompassIcon,
-      keywords: ["onboarding", "tour", "intro", "help", "tutorial", "coach"],
-      onClick: onShowOnboardingTour,
+      keywords: [
+        "onboarding",
+        "tour",
+        "intro",
+        "help",
+        "tutorial",
+        "coach",
+        "sandbox",
+        "practice",
+        "shortcuts",
+      ],
+      onClick: onPracticeShortcuts,
     });
   }
 

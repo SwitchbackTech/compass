@@ -107,6 +107,22 @@ export function resolveCalendarCardIdentity(
 }
 
 /**
+ * Calendar color for event focus chrome (whole-card outline + start/end edge
+ * indicators). Unlike {@link resolveCalendarCardIdentity}, this is not gated
+ * on multi-calendar — a single-calendar account still needs a calendar-colored
+ * focus line so cards never introduce a third theme-accent color.
+ */
+export function resolveCalendarFocusColor(
+  lookup: ReadonlyMap<CalendarId, Calendar>,
+  event: { calendarId?: CalendarId | null },
+): string | null {
+  const { calendarId } = event;
+  if (!calendarId) return null;
+
+  return lookup.get(calendarId)?.backgroundColor ?? null;
+}
+
+/**
  * Grid-only content flags that force read-only treatment regardless of
  * calendar write capability (passed as the `isBusy` argument to
  * {@link isEventReadOnly}).

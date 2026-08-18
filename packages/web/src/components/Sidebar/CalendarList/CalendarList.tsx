@@ -1,5 +1,6 @@
 import { type FC, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
@@ -26,36 +27,27 @@ export const CalendarList: FC = () => {
   const { authenticated } = useSession();
   const { email } = useUser();
   const { isAvailable, state } = useConnectGoogle();
-  const { data, isPending, isError, refetch } = useCalendarsQuery();
+  const { data, error, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
   const collapsedKeys = useCollapsedAccountKeys();
 
-  const hasConnectedAccount = accountEmailOrder.length > 0;
   const isAnonymous = !email;
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load calendars" / Retry (or a false empty-list story) for it.
+  const showCalendarsLoadError = shouldShowContextualLoadError(isError, error);
+  const hideCalendarsBody = isPending || (isError && !showCalendarsLoadError);
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
   const calendars = useMemo(
     () =>
       (data ?? [])
-        .filter(
-          (calendar) =>
-            calendar.isActive &&
-            // Once any account is connected, the local calendar can no
-            // longer gain new events (LCV1/LCV2 close off both the ways it
-            // could) and no longer explains itself to the user the way an
-            // account-owned calendar does - drop its orphan row rather than
-            // show it. Gated on connection state, not on the calendar being
-            // empty: nothing can write to it anymore, and prod carries zero
-            // connected users with events already on it (see
-            // local-calendar-visibility LCV3).
-            (!hasConnectedAccount || calendar.provider !== "local"),
-        )
+        .filter((calendar) => calendar.isActive)
         .sort(compareCalendars(accountEmailOrder)),
-    [data, accountEmailOrder, hasConnectedAccount],
+    [data, accountEmailOrder],
   );
   const { groups, ungrouped } = useMemo(
     () => groupCalendarsByAccount(calendars, connections),
@@ -91,7 +83,7 @@ export const CalendarList: FC = () => {
           heading with no way to tell them apart. */}
       {groups.length === 0 && !isAnonymous && <CalendarListHeader />}
 
-      {isPending ? null : isError ? (
+      {hideCalendarsBody ? null : showCalendarsLoadError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
           <p className="text-error">Couldn't load calendars.</p>
           <button
@@ -102,7 +94,7 @@ export const CalendarList: FC = () => {
             Retry
           </button>
         </div>
-      ) : calendars.length === 0 ? (
+      ) : calendars.length === 0 && groups.length === 0 ? (
         <p className="text-text-muted text-xs">
           {authenticated && state === "NOT_CONNECTED" && isAvailable
             ? "Connect Google to see your calendars."
@@ -123,22 +115,43 @@ export const CalendarList: FC = () => {
             </section>
           ))}
           {ungrouped.length > 0 ? (
-            <ul className="flex flex-col gap-1.5">
-              {ungrouped.map((calendar) =>
-                isAnonymous ? (
-                  <AnonymousCalendarRow calendar={calendar} key={calendar.id} />
-                ) : (
-                  <CalendarRow
-                    calendar={calendar}
-                    key={calendar.id}
-                    label={
-                      calendar.provider === "local" ? calendar.name : undefined
-                    }
-                    onToggle={toggleCalendarVisibility}
-                  />
-                ),
-              )}
-            </ul>
+            groups.length > 0 && email ? (
+              <section aria-label={`Calendars for ${email}`}>
+                <div className="mb-1.5">
+                  <h2 className="mb-0.5 font-semibold text-sm leading-none">
+                    <span
+                      className="min-w-0 truncate text-text-muted"
+                      translate="no"
+                    >
+                      {email}
+                    </span>
+                  </h2>
+                </div>
+                {renderRows(ungrouped)}
+              </section>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {ungrouped.map((calendar) =>
+                  isAnonymous ? (
+                    <AnonymousCalendarRow
+                      calendar={calendar}
+                      key={calendar.id}
+                    />
+                  ) : (
+                    <CalendarRow
+                      calendar={calendar}
+                      key={calendar.id}
+                      label={
+                        calendar.provider === "local"
+                          ? calendar.name
+                          : undefined
+                      }
+                      onToggle={toggleCalendarVisibility}
+                    />
+                  ),
+                )}
+              </ul>
+            )
           ) : null}
         </div>
       )}

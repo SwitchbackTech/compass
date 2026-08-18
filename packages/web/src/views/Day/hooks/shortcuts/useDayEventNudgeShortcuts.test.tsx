@@ -10,12 +10,15 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   createGridEventDraft,
@@ -24,11 +27,24 @@ import {
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const LATER_TIMED_EVENT_ID = "cccccccccccccccccccccccc";
 const ALL_DAY_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
 
 const timedEvent: GridEvent = {
@@ -40,6 +56,14 @@ const timedEvent: GridEvent = {
   startDate: "2026-05-20T09:00:00.000",
   title: "Timed event",
   user: "user-1",
+};
+
+const laterTimedEvent: GridEvent = {
+  ...timedEvent,
+  _id: LATER_TIMED_EVENT_ID,
+  startDate: "2026-05-20T11:00:00.000",
+  endDate: "2026-05-20T12:00:00.000",
+  title: "Later event",
 };
 
 const allDayEvent: GridEvent = {
@@ -101,14 +125,12 @@ const focusCalendarTarget = (
 const renderEditShortcuts = ({
   allDayEvents = [],
   navigateToDate,
-  navigateToNextDay,
-  navigateToPreviousDay,
+  placeTimedDraft,
   timedEvents = [timedEvent],
 }: {
   allDayEvents?: GridEvent[];
   navigateToDate?: (date: Dayjs) => void;
-  navigateToNextDay?: () => void;
-  navigateToPreviousDay?: () => void;
+  placeTimedDraft?: () => void;
   timedEvents?: GridEvent[];
 } = {}) => {
   const queryClient = createCompassQueryClient();
@@ -124,6 +146,9 @@ const renderEditShortcuts = ({
     }),
     toNormalizedEventQueryData(contracts),
   );
+  queryClient.setQueryData(calendarQueryKeys.all, [
+    createMockCalendar({ id: timedEventContract.calendarId }),
+  ]);
   const repository: EventRepository = {
     list: async () => [],
     create: async () => timedEventContract,
@@ -147,8 +172,7 @@ const renderEditShortcuts = ({
         allDayEvents,
         dependencies,
         navigateToDate,
-        navigateToNextDay,
-        navigateToPreviousDay,
+        placeTimedDraft,
         timedEvents,
       }),
     {
@@ -178,16 +202,30 @@ const getDeleteMutation = (
     .getAll()
     .find((mutation) => mutation.options.mutationKey?.[2] === "delete");
 
+const getCreateMutation = (
+  queryClient: ReturnType<typeof createCompassQueryClient>,
+) =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+
 beforeEach(() => {
+  // Pin midday so keyboardPlace drafts (seeded from dayjs().hour()) do not
+  // land near midnight and reject the next 15-minute Shift+Arrow move.
+  setSystemTime(new Date("2026-05-20T12:00:00.000Z"));
   HotkeyManager.resetInstance();
   draftActions.discard();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
 });
 
 afterEach(() => {
   cleanup();
   dayEventRegistry.clear();
   draftActions.discard();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
   document.body.innerHTML = "";
+  setSystemTime();
 });
 
 describe("useDayEventNudgeShortcuts", () => {
@@ -266,6 +304,43 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(input.schedule.end).toBe("2026-05-20");
   });
 
+  it("converts a focused all-day event to timed with Shift+ArrowDown", async () => {
+    focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
+    const { queryClient } = renderEditShortcuts({
+      allDayEvents: [allDayEvent],
+      timedEvents: [],
+    });
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000")),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs("2026-05-20T10:00:00.000")),
+    );
+  });
+
+  it("does not convert an edge-focused all-day event with Shift+ArrowDown", async () => {
+    focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
+    const { queryClient } = renderEditShortcuts({
+      allDayEvents: [allDayEvent],
+      timedEvents: [],
+    });
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
   it("does not move all-day events with Shift+ArrowUp", async () => {
     focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
     const { queryClient } = renderEditShortcuts({
@@ -286,6 +361,65 @@ describe("useDayEventNudgeShortcuts", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(true, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(placeTimedDraft).toHaveBeenCalled();
+    const { status } = useDraftStore.getState();
+    expect(status?.activity).toBe("keyboardPlace");
+    expect(status?.isFormOpen).toBe(false);
+  });
+
+  it("repositions a keyboardPlace draft with a later Shift+Arrow", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(
+        false,
+        dayjs("2026-05-20T00:00:00.000"),
+        "keyboardPlace",
+      );
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    const placedStart =
+      useDraftStore.getState().gridDraft?.values.schedule.start;
+    expect(placedStart).toBeDefined();
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(
+      dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
+    ).toBe(dayjs(placedStart).add(15, "minutes").format());
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+    expect(placeTimedDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not place a draft when Shift+Arrow is pressed while the form is open", () => {
+    const placeTimedDraft = mock(() => {});
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+    draftActions.setFormOpen(true);
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(placeTimedDraft).not.toHaveBeenCalled();
+    expect(
+      dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
+    ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
 
   it("deletes the focused timed calendar event with Delete", () => {
@@ -311,64 +445,80 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("duplicates the focused calendar event with Mod+D", () => {
     focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    renderEditShortcuts();
+    const { queryClient } = renderEditShortcuts();
 
     pressKey("d", {
       keyDownInit: { ctrlKey: true },
       keyUpInit: { ctrlKey: true },
     });
 
+    const { input } = getCreateMutation(queryClient)?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.calendarId).toBe(timedEventContract.calendarId);
+    expect(input.content.title).toBe("Timed event");
+
     const state = useDraftStore.getState();
-    expect(state.status?.isFormOpen).toBe(true);
-    expect(state.gridDraft?.kind).toBe("create");
-    expect(state.gridDraft?.values.title).toBe("Timed event");
+    expect(state.status?.isFormOpen).toBe(false);
+    expect(state.gridDraft).toBeNull();
   });
 
   it("focuses the chronologically next event with ArrowDown", () => {
     const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const laterEvent: GridEvent = {
-      ...timedEvent,
-      _id: "cccccccccccccccccccccccc",
-      startDate: "2026-05-20T11:00:00.000",
-      endDate: "2026-05-20T12:00:00.000",
-      title: "Later event",
-    };
-    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
     earlier.focus();
-    renderEditShortcuts({ timedEvents: [timedEvent, laterEvent] });
+    renderEditShortcuts({ timedEvents: [timedEvent, laterTimedEvent] });
 
     pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(later);
   });
 
-  it("pages to the next day with ArrowRight when a grid event is focused", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const navigateToNextDay = mock(() => {});
-    renderEditShortcuts({ navigateToNextDay });
+  it("focuses the chronologically next event with ArrowRight", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
+    earlier.focus();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterTimedEvent],
+    });
 
     pressKey("ArrowRight");
 
-    expect(navigateToNextDay).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(later);
+    expect(navigateToDate).not.toHaveBeenCalled();
   });
 
-  it("pages to the previous day with ArrowLeft when a grid event is focused", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const navigateToPreviousDay = mock(() => {});
-    renderEditShortcuts({ navigateToPreviousDay });
+  it("focuses the chronologically previous event with ArrowLeft", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
+    later.focus();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterTimedEvent],
+    });
 
     pressKey("ArrowLeft");
 
-    expect(navigateToPreviousDay).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(earlier);
+    expect(navigateToDate).not.toHaveBeenCalled();
   });
 
-  it("does not page the day with ArrowRight when nothing is focused", () => {
-    const navigateToNextDay = mock(() => {});
-    renderEditShortcuts({ navigateToNextDay });
+  it("does not change focus with ArrowRight when nothing is focused", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
+    focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed").blur();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterTimedEvent],
+    });
 
     pressKey("ArrowRight");
 
-    expect(navigateToNextDay).not.toHaveBeenCalled();
+    expect(navigateToDate).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBeInstanceOf(HTMLButtonElement);
   });
 
   it("does not delete a grid event when Delete is pressed inside an open event form", () => {
@@ -488,5 +638,153 @@ describe("useDayEventNudgeShortcuts", () => {
 
     expect(useDraftStore.getState().status?.isFormOpen).toBeFalsy();
     expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
+
+  it("cycles edge focus with Tab: whole event -> start -> end -> whole event", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState()).toMatchObject({
+      eventId: TIMED_EVENT_ID,
+      edge: "startDate",
+    });
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("lets Tab leave the card natively past the end edge instead of trapping focus", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    const thirdTab = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "Tab",
+    });
+    document.dispatchEvent(thirdTab);
+
+    expect(thirdTab.defaultPrevented).toBe(false);
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("cycles edge focus backward with Shift+Tab", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab", shiftKey);
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    pressKey("Tab", shiftKey);
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+  });
+
+  it("does not cycle edge focus with Tab when no event is focused", () => {
+    renderEditShortcuts();
+
+    pressKey("Tab");
+
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
+  });
+
+  it("moves only the start edge with Shift+ArrowUp when the start edge is focused", async () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const { queryClient } = renderEditShortcuts();
+    pressKey("Tab");
+
+    pressKey("ArrowUp", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs(timedEvent.startDate).subtract(15, "minutes")),
+    );
+    expect(input.schedule.end).toBe(offsetString(dayjs(timedEvent.endDate)));
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+  });
+
+  it("moves only the end edge with Shift+ArrowDown when the end edge is focused", async () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const { queryClient } = renderEditShortcuts();
+    pressKey("Tab");
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs(timedEvent.startDate)),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs(timedEvent.endDate).add(15, "minutes")),
+    );
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+  });
+
+  it("flips the focused edge from start to end past the minimum duration", async () => {
+    const shortEvent: GridEvent = {
+      ...timedEvent,
+      endDate: "2026-05-20T09:15:00.000",
+    };
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts({ timedEvents: [shortEvent] });
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+    });
+    expect(useEdgeFocusStore.getState().eventId).toBe(TIMED_EVENT_ID);
+  });
+
+  it("resets edge focus with Escape", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+
+    pressKey("Escape");
+
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("resets edge focus when a different event is focused", () => {
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    earlier.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterEvent] });
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().eventId).toBe(TIMED_EVENT_ID);
+
+    act(() => {
+      later.focus();
+    });
+
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
   });
 });

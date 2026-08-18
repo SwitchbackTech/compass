@@ -8,9 +8,15 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
+import { getWritableCalendars } from "@web/calendars/calendar.util";
+import {
+  useConnectedAccountEmails,
+  useDefaultTargetCalendar,
+} from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -19,7 +25,10 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  createGridEventDraftFromGridEvent,
+  getGridDraftId,
+} from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
@@ -31,13 +40,13 @@ import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
+import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
-import { consumePendingFocusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { DayCalendarColumnHeaders } from "./DayCalendarColumnHeaders";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
@@ -57,8 +66,13 @@ import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 export const canCreateDraftOnCalendar = (
   calendar: Calendar | null,
   showError: (message: string) => unknown = showErrorToast,
+  writableCalendarIds?: ReadonlySet<string>,
 ): boolean => {
-  if (!calendar || calendar.capabilities.canWrite) return true;
+  if (!calendar) return true;
+  const canWrite = writableCalendarIds
+    ? writableCalendarIds.has(calendar.id)
+    : calendar.capabilities.canWrite;
+  if (canWrite) return true;
 
   showError(`You can't edit the ${calendar.name} calendar.`);
   return false;
@@ -68,16 +82,23 @@ const isDayInteractionMotionActive = () => false;
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
-  const { navigateToDate, navigateToNextDay, navigateToPreviousDay } =
-    useDateNavigation();
+  const { navigateToDate } = useDateNavigation();
   const today = useMemo(() => dayjs(), []);
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
   // Seed shortcuts with the form's default create target, not day-column order.
   const defaultTargetCalendarId =
     useDefaultTargetCalendar(calendars)?.id ?? null;
+  const accountEmailOrder = useConnectedAccountEmails();
+  const writableCalendarIds = useMemo(() => {
+    const writable = getWritableCalendars(calendars, {
+      hasConnectedAccount: accountEmailOrder.length > 0,
+    });
+    return new Set(writable.map((calendar) => calendar.id));
+  }, [accountEmailOrder.length, calendars]);
   const {
     allDayEvents,
+    error: eventsError,
     events: dayEvents,
     isError: isErrorEvents,
     isFetching,
@@ -85,17 +106,26 @@ export function DayCalendarGrid() {
     refetch,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load events" / Retry for the same failure.
+  const showEventsLoadError = shouldShowContextualLoadError(
+    isErrorEvents,
+    eventsError,
+  );
   const isLoadingEvents = isEventGridLoading(
     isPending,
-    isErrorEvents,
+    showEventsLoadError,
     isFetching,
   );
-  const googleState = useGoogleUiState();
+  const { connection, state: googleState } = useConnectGoogle();
+  // See Grid.tsx's Week-view equivalent: googleState alone can't tell a
+  // first-ever import apart from routine catch-up on an established account.
   const isImportingEmpty =
     !isPending &&
-    !isErrorEvents &&
+    !showEventsLoadError &&
     dayEvents.length === 0 &&
-    googleState === "IMPORTING";
+    googleState === "IMPORTING" &&
+    isFirstImportInProgress(connection);
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,
@@ -114,26 +144,6 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
-  const { shiftHints } = useDayEventNudgeShortcuts({
-    allDayEvents: displayedAllDayEvents,
-    navigateToDate,
-    navigateToNextDay,
-    navigateToPreviousDay,
-    timedEvents: displayedTimedEvents,
-  });
-  // ArrowLeft/Right page the day asynchronously; focus the first event once
-  // the destination day's targets are registered.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run after day navigation and event paint so pending focus can find new targets.
-  useEffect(() => {
-    consumePendingFocusFirstDayCalendarEvent({
-      allowEmpty: !isLoadingEvents,
-    });
-  }, [
-    dateInView,
-    displayedAllDayEvents,
-    displayedTimedEvents,
-    isLoadingEvents,
-  ]);
   const gridDraft = useDraftStore(selectGridDraft);
   // Strip height must include the all-day draft: layer rendering used to
   // re-stack with the draft while EventGrid still sized from saved events only.
@@ -189,6 +199,14 @@ export function DayCalendarGrid() {
         return;
       }
 
+      const currentDraft = useDraftStore.getState().gridDraft;
+      if (currentDraft && getGridDraftId(currentDraft) === event._id) {
+        // Form-closed place-create (and other live drafts): open details
+        // without reseeding the draft from the card.
+        draftActions.setFormOpen(true);
+        return;
+      }
+
       const sourceEvent = dayEvents.find(
         (candidate) => candidate.id === event._id,
       );
@@ -232,7 +250,7 @@ export function DayCalendarGrid() {
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
 
   const openShortcutDraft = useCallback(
-    (createDraft: () => void) => {
+    (createDraft: () => void, openForm = true) => {
       if (gridDraft) {
         return;
       }
@@ -243,7 +261,9 @@ export function DayCalendarGrid() {
       }
 
       createDraft();
-      draftActions.setFormOpen(true);
+      if (openForm) {
+        draftActions.setFormOpen(true);
+      }
     },
     [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
@@ -273,6 +293,29 @@ export function DayCalendarGrid() {
       ),
     [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
+
+  // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
+  // Existing-draft / focus guards also live in useGridEventEditShortcuts.
+  const placeTimedDraftFromShortcut = useCallback(
+    () =>
+      openShortcutDraft(
+        () =>
+          createTimedDraft(
+            dateInView.isSame(dayjs(), "day"),
+            dateInView,
+            "keyboardPlace",
+            defaultTargetCalendarId,
+          ),
+        false,
+      ),
+    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+  );
+  const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
+    allDayEvents: displayedAllDayEvents,
+    navigateToDate,
+    placeTimedDraft: placeTimedDraftFromShortcut,
+    timedEvents: displayedTimedEvents,
+  });
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity
@@ -309,7 +352,9 @@ export function DayCalendarGrid() {
     ) => {
       const calendar = getCalendarAtX(event.clientX);
 
-      if (!canCreateDraftOnCalendar(calendar)) {
+      if (
+        !canCreateDraftOnCalendar(calendar, showErrorToast, writableCalendarIds)
+      ) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -317,7 +362,7 @@ export function DayCalendarGrid() {
 
       createDraft(event, calendar?.id ?? null);
     },
-    [getCalendarAtX],
+    [getCalendarAtX, writableCalendarIds],
   );
   const handleAllDayMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLElement>) => {
@@ -407,7 +452,7 @@ export function DayCalendarGrid() {
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
-          isErrorEvents={isErrorEvents}
+          isErrorEvents={showEventsLoadError}
           isImportingEmpty={isImportingEmpty}
           isLoadingEvents={isLoadingEvents}
           onAllDayMouseDown={handleAllDayMouseDown}
@@ -420,6 +465,7 @@ export function DayCalendarGrid() {
       </DayInteractionCoordinator>
       {contextMenu}
       <ShiftHintOverlay hints={shiftHints} />
+      <EditSequenceMenu getAnchor={getEditSequenceAnchor} />
     </section>
   );
 }

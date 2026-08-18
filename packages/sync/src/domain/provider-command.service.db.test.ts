@@ -12,7 +12,6 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { truncateRulesBefore } from "@sync/domain/occurrence-projection";
 import {
-  type AccessTokenSource,
   executeProviderCreate,
   executeProviderDelete,
   executeProviderOccurrenceDelete,
@@ -22,6 +21,7 @@ import {
   executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
   type ProviderAuthAdapter,
@@ -83,12 +83,14 @@ class FakeWriter implements ProviderEventWriter {
 const tokenSource = (token = "access-token"): AccessTokenSource => ({
   getValidAccessToken: async () => token,
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 });
 const failingTokenSource = (error: unknown): AccessTokenSource => ({
   getValidAccessToken: async () => {
     throw error;
   },
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 });
 
 // Minimal auth adapter for CredentialCustody in the revoked-grant cases.
@@ -2584,6 +2586,58 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       );
 
       expect(result.outcome.state).toBe("pending");
+    });
+
+    it("still deletes when the resolved instance is identity-only (unreadable content)", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = {
+        ...providerInstance("g-inst-unreadable", "", "etag-1"),
+        content: content(""),
+      };
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls[0]?.providerEventId).toBe("g-inst-unreadable");
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions[0]?.providerEventId).toBe("g-inst-unreadable");
+    });
+
+    it("does not delete the series master when lookup returns the master's id", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerSeries("Old", "etag-1", weekly3);
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls).toHaveLength(0);
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(1);
+      expect(exceptions[0]?.providerEventId).toBeNull();
     });
   });
 

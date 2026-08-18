@@ -19,6 +19,10 @@ The compose stack binds the web and backend containers to `127.0.0.1`; the serve
 - Google setup or no-Google mode: [Google Calendar](../docs/self-hosting/google-calendar.md)
 - Config key reference: [Configuration](../docs/Config/README.md)
 
+Self-host does not use Stripe. Leave the `stripe:` block out of `compass.yaml`
+so the app stays fully writable with no paid gate. See
+[Billing And Trial](../docs/features/billing.md).
+
 ## Files in this folder
 
 - `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/compass.yaml`, and copies the helper scripts.

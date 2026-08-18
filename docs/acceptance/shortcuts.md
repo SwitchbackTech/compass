@@ -4,7 +4,10 @@ This runbook covers keyboard shortcut parity in Compass. The principle: anything
 
 ## Source of Truth
 
-All shortcuts are defined in a single registry: `packages/web/src/shortcuts/shortcuts.registry.ts`. This registry is the authoritative source for all keyboard shortcuts in the app. When adding a new shortcut, update the registry and it will automatically appear in the legend overlay (opened with `?`). The legend is searchable and context-aware, showing only relevant shortcuts based on the current view and app state.
+Two files matter, at different depths:
+
+- `packages/web/src/shortcuts/shortcuts.registry.ts` is the display registry: every shortcut's legend entry (label, keys, section, context). When adding a shortcut, update the registry and it appears in the legend overlay (opened with `?`), which is searchable and context-aware.
+- `packages/web/src/shortcuts/keymap.ts` is the runtime binding source for the shortcuts the onboarding Shortcut Showcase teaches (create, save, arrow focus, edit sequence, event jump, move, edge cycle, undo/redo, hardcore). The real handlers, the showcase, and its hint keycaps all import these bindings, and `keymap.test.ts` pins the registry rows against them. Remapping a taught shortcut means editing `keymap.ts` plus the registry row; the test fails if they disagree. Shortcuts outside the keymap still bind via literals at their handler sites.
 
 ## Scope
 
@@ -16,8 +19,8 @@ Use this guide to validate:
 - opening and using the command palette (Cmd+K), including undo/redo rows
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
-- spatially focusing events with arrow keys
-- toggling event-jump chips (Shift tap) and keyboard-only mode (Shift-Shift)
+- focusing events with arrow keys (chronological in Day, spatial in Week)
+- toggling event-jump chips (`S`) and Hardcore Mode (`H`)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
 - confirming that shortcuts do not fire while typing in inputs
@@ -52,18 +55,17 @@ Helpful notes:
 | `?`                         | Global    | Toggle shortcuts legend           |
 | `Cmd+Z` / `Ctrl+Z`          | Global    | Undo last event action            |
 | `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Global | Redo last undone event action     |
-| `Shift` `Shift`             | Global    | Toggle keyboard-only mode         |
+| `H`                         | Global    | Toggle Hardcore Mode              |
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
 | `I`                         | Day view  | Focus sidebar                     |
 | `U`                         | Day view  | Focus first calendar event        |
-| `Shift`                     | Day view  | Toggle event jump keys            |
+| `S`                         | Day view  | Toggle event jump keys            |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
 | `Delete`                    | Day view  | Delete focused event              |
-| `ArrowUp` / `ArrowDown`     | Day view  | Focus previous/next event spatially                     |
-| `ArrowLeft` / `ArrowRight`  | Day / Week | Focus nearest event on previous/next column/day (skip empty) |
+| `ArrowUp` / `ArrowDown` / `ArrowLeft` / `ArrowRight` | Day view | Focus previous/next event chronologically |
 | `Arrow keys`                | Day view  | Move open draft event             |
 | `Enter`                     | Day view  | Open focused event                |
 | `E` then `T`                | Day view  | Edit focused event title          |
@@ -71,7 +73,8 @@ Helpful notes:
 | `E` then `S`                | Day view  | Edit focused event start time     |
 | `E` then `E`                | Day view  | Edit focused event end time       |
 | `E` then `R`                | Day view  | Edit focused event recurrence     |
-| `E` then `C`                | Day view  | Edit focused event calendar       |
+| `E` then `A`                | Day view  | Edit focused event account        |
+| `E` then `C`                | Day view  | Edit focused event color          |
 | `Cmd+D` / `Ctrl+D`          | Day view  | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
 | `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
@@ -83,9 +86,10 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
-| `Shift`                     | Week view | Toggle event jump keys            |
+| `S`                         | Week view | Toggle event jump keys            |
 | `Delete`                    | Week view | Delete focused event              |
 | `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event on the same day |
+| `ArrowLeft` / `ArrowRight`  | Week view | Focus time-nearest event on previous/next non-empty day |
 | `Arrow keys`                | Week view | Move open draft event             |
 | `Enter`                     | Week view | Open focused event                |
 | `E` then `T`                | Week view | Edit focused event title          |
@@ -93,7 +97,8 @@ Helpful notes:
 | `E` then `S`                | Week view | Edit focused event start time     |
 | `E` then `E`                | Week view | Edit focused event end time       |
 | `E` then `R`                | Week view | Edit focused event recurrence     |
-| `E` then `C`                | Week view | Edit focused event calendar       |
+| `E` then `A`                | Week view | Edit focused event account        |
+| `E` then `C`                | Week view | Edit focused event color          |
 | `Cmd+D` / `Ctrl+D`          | Week view | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
@@ -184,7 +189,7 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 ### Expected Results
 
 - The command palette opens immediately.
-- Items include: Create event, Create all-day event, Go to Today, Undo last change, Redo last change, Restart onboarding tour, Log Out.
+- Items include: Create event, Create all-day event, Go to Today, Toggle Hardcore Mode, Practice shortcuts, Show welcome guide, Undo last change, Redo last change, Log Out.
 - Undo / Redo rows show their keycaps and stay disabled when there is no history.
 - Google Calendar connection status and actions appear in the sidebar, not the command palette.
 - Typing filters the list.
@@ -295,7 +300,7 @@ Pressing Delete while an event is focused in the Day or Week grid deletes it —
 
 ### UX
 
-With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), and calendar (`C`).
+With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), account (`A`), and color (`C`).
 
 ### Steps
 
@@ -333,52 +338,55 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ---
 
-## Scenario 12: Tap Shift To Jump Focus To An Event By Day Prefix
+## Scenario 12: Tap S To Jump Focus To An Event By Day Prefix
 
 ### UX
 
-Tapping `Shift` toggles event-jump mode (activation waits briefly so Shift-Shift can still enter keyboard-only without a jump flash). Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Quick chords such as Shift+J or Shift+Arrow do not toggle the mode.
+Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` exits (in day view a second `S` also toggles off). Bare Shift and Shift+Tab do not show jump chips. Press `H` to toggle Hardcore Mode independently.
 
 ### Steps
 
 1. Navigate to `/week` with timed events on at least two different days.
-2. Tap `Shift` once (do not hold for a chord).
+2. Press `S` once; chips should appear.
 3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
-4. Press `Esc` (or tap `Shift` again) to exit.
-5. Repeat with a fast Shift+J chord and confirm jump mode does not activate.
+4. Press `Esc` to exit.
+5. Press Shift alone or Shift+Tab and confirm jump mode does not activate.
+6. Press `H` and confirm Hardcore Mode enters.
 
 ### Expected Results
 
-- Chips appear on events after a Shift tap and stay until Esc / another Shift tap.
+- Chips appear on events when `S` is pressed and stay until Esc.
 - A day letter highlights that column and focuses the first event; digits refine to `Wn`.
 - Arrow keys keep jump mode on so letter-then-arrows works.
-- Fast Shift+J / Shift+Arrow do not toggle jump mode.
-- While a modal holds the app lock, or focus is in an editable field, Shift does not toggle jump mode.
+- Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
+- While a modal holds the app lock, or focus is in an editable field, `S` does not toggle jump mode.
+- `H` toggles Hardcore Mode; Esc exits it.
 
 ---
 
-## Scenario 13: Shift-Shift Enters Keyboard-Only Mode
+## Scenario 13: H Enters Hardcore Mode
 
 ### UX
 
-Two quick `Shift` taps toggle keyboard-only mode. While active, pointer clicks are blocked (scroll and hover still work) so the user practices keyboard navigation. A persistent indicator shows how to exit. Mode is not persisted across refresh.
+Bare `H` toggles Hardcore Mode (keyboard-only). While active, pointer clicks are blocked (scroll and hover still work) so the user practices keyboard navigation. A persistent “Hardcore Mode · Esc” indicator shows how to exit. Mode is not persisted across refresh. Shift alone does not enter this mode.
 
 ### Steps
 
 1. Navigate to `/week` with at least one event visible.
-2. Tap `Shift` twice quickly (not a held chord).
+2. Press `H` (not a chord).
 3. Try clicking an event with the mouse.
 4. Use `U` / arrows / `Enter` to open an event with the keyboard.
-5. Press `Esc` (with no modal/form open) or tap `Shift` `Shift` again.
+5. Press `Esc` (with no modal/form open) or press `H` again.
 
 ### Expected Results
 
-- A “Keyboard only” indicator appears after the double tap.
+- A “Hardcore Mode · Esc” indicator appears.
 - Clicks do not open events or focus controls; the indicator may pulse on a blocked click.
+- Clicks inside onboarding UI (`[data-onboarding-ui]`) still work.
 - Keyboard shortcuts continue to work.
-- If a modal, floating layer, or event form is open, `Esc` dismisses that owner first; a later `Esc` exits keyboard-only mode.
+- If a modal, floating layer, or event form is open, `Esc` dismisses that owner first; a later `Esc` exits Hardcore Mode.
 - Exiting clears the indicator. Reloading the page also clears the mode.
-- A single Shift tap still toggles event-jump chips; a following quick second Shift cancels jump mode and enters keyboard-only instead.
+- Event-jump chips (`S`) clear when Hardcore enters. Shift alone / Shift-Shift do not toggle Hardcore Mode.
 
 ---
 
@@ -419,8 +427,8 @@ If time is limited, run these checks before shipping shortcut-related changes:
 9. No shortcuts fire inside a focused text input except Cmd+K.
 10. Shift+ArrowLeft/Right move a focused event by one day in both Day and Week view.
 11. Arrow keys reposition an open draft in both Day and Week view.
-12. With a focused event and no draft open, ArrowUp/ArrowDown stay on the same day; ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day.
+12. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
-14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
-15. Tapping Shift toggles event jump chips; a day letter + digit focuses that event; fast Shift+J does not toggle the mode.
-16. Shift-Shift enters keyboard-only mode (clicks blocked, indicator visible); Esc or another Shift-Shift exits.
+14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
+15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips.
+16. `H` enters Hardcore Mode (clicks blocked, indicator visible); Esc or another `H` exits. Shift-Shift does not.

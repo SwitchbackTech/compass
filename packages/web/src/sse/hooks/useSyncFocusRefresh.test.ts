@@ -1,10 +1,25 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { useSyncFocusRefresh } from "@web/sse/hooks/useSyncFocusRefresh";
-import { afterEach, describe, expect, it, mock, setSystemTime } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
+const mockRefreshUserMetadata = mock().mockResolvedValue(undefined);
+
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata: mockRefreshUserMetadata,
+}));
+
+const { useSyncFocusRefresh } =
+  require("./useSyncFocusRefresh") as typeof import("./useSyncFocusRefresh");
 
 const fakeConnectGoogle = (
   overrides: Partial<UseConnectGoogleResult> = {},
@@ -32,6 +47,10 @@ describe("useSyncFocusRefresh", () => {
     document.dispatchEvent(new Event("visibilitychange"));
   };
 
+  beforeEach(() => {
+    mockRefreshUserMetadata.mockClear();
+  });
+
   afterEach(() => {
     visibilityState = "visible";
     setSystemTime();
@@ -43,6 +62,7 @@ describe("useSyncFocusRefresh", () => {
 
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(refresh).toHaveBeenCalledWith({ silent: true });
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 
   it("refreshes on mount for an ATTENTION connection", () => {
@@ -54,22 +74,24 @@ describe("useSyncFocusRefresh", () => {
     );
 
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 
   it.each([
     "NOT_CONNECTED",
     "RECONNECT_REQUIRED",
     "IMPORTING",
-  ] as const)("does not refresh on mount for %s", (state) => {
+  ] as const)("does not provider-refresh on mount for %s", (state) => {
     const refresh = mock();
     renderHook(() =>
       useSyncFocusRefresh(() => fakeConnectGoogle({ refresh, state })),
     );
 
     expect(refresh).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 
-  it("does not refresh when Google is unavailable", () => {
+  it("does not provider-refresh when Google is unavailable", () => {
     const refresh = mock();
     renderHook(() =>
       useSyncFocusRefresh(() =>
@@ -78,6 +100,7 @@ describe("useSyncFocusRefresh", () => {
     );
 
     expect(refresh).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 
   it("does not retrigger when shared refresh status changes", () => {
@@ -115,6 +138,7 @@ describe("useSyncFocusRefresh", () => {
     const refresh = mock();
     renderHook(() => useSyncFocusRefresh(() => fakeConnectGoogle({ refresh })));
     refresh.mockClear();
+    mockRefreshUserMetadata.mockClear();
 
     act(() => {
       setVisibility("hidden");
@@ -124,6 +148,28 @@ describe("useSyncFocusRefresh", () => {
 
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(refresh).toHaveBeenCalledWith({ silent: true });
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
+  });
+
+  it("refreshes metadata but not provider refresh on focus during IMPORTING", () => {
+    setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
+    const refresh = mock();
+    renderHook(() =>
+      useSyncFocusRefresh(() =>
+        fakeConnectGoogle({ refresh, state: "IMPORTING" }),
+      ),
+    );
+    refresh.mockClear();
+    mockRefreshUserMetadata.mockClear();
+
+    act(() => {
+      setVisibility("hidden");
+      setSystemTime(new Date(Date.now() + MIN_HIDDEN_DURATION_MS + 1_000));
+      setVisibility("visible");
+    });
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
   });
 
   it("does not refresh on a short hide", () => {
@@ -131,6 +177,7 @@ describe("useSyncFocusRefresh", () => {
     const refresh = mock();
     renderHook(() => useSyncFocusRefresh(() => fakeConnectGoogle({ refresh })));
     refresh.mockClear();
+    mockRefreshUserMetadata.mockClear();
 
     act(() => {
       setVisibility("hidden");
@@ -139,5 +186,6 @@ describe("useSyncFocusRefresh", () => {
     });
 
     expect(refresh).not.toHaveBeenCalled();
+    expect(mockRefreshUserMetadata).not.toHaveBeenCalled();
   });
 });

@@ -509,6 +509,23 @@ describe("staging deploy workflow", () => {
     );
   });
 
+  it("binds Stripe secrets directly and only writes the stripe block on hosted cloud", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain(
+      "STRIPE_SECRET_KEY: $".concat("{{ secrets.STRIPE_SECRET_KEY }}"),
+    );
+    expect(workflow).toContain(
+      "STRIPE_WEBHOOK_SECRET: $".concat("{{ secrets.STRIPE_WEBHOOK_SECRET }}"),
+    );
+    expect(workflow).toContain(
+      "STRIPE_PRICE_ID: $".concat("{{ secrets.STRIPE_PRICE_ID }}"),
+    );
+    expect(workflow).not.toContain("&& secrets.STRIPE_SECRET_KEY ||");
+    expect(workflow).toContain("'stripe:'");
+    expect(workflow).toContain("staging-selfhosted must omit this block");
+  });
+
   it("builds cloud deploy web images from a GitHub-only Dockerfile with PostHog config", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
     const dockerfile = readRepoFile(".github/docker/Dockerfile.web");
@@ -565,24 +582,6 @@ describe("staging deploy workflow", () => {
         '{COMPOSE_PROFILES},}sync"',
       ),
     );
-  });
-
-  it("writes Kit email config whenever the deployment has a secret", () => {
-    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
-
-    expect(workflow).toContain(
-      "KIT_API_SECRET: $".concat("{{ secrets.KIT_API_SECRET }}"),
-    );
-    expect(workflow).toContain(
-      'if [ "$'.concat('{{ inputs.environment }}" = "production" ]; then'),
-    );
-    expect(workflow).toContain("Production deploy requires KIT_API_SECRET");
-    expect(workflow).toContain('if [ -n "$KIT_API_SECRET" ]; then');
-    expect(workflow).toContain("'email:'");
-    expect(workflow).toContain(
-      'kitApiSecret: \\"$'.concat('{KIT_API_SECRET}\\"'),
-    );
-    expect(workflow).not.toContain("kitUserTagId");
   });
 
   it("runs deploy health checks after each staging deploy", () => {

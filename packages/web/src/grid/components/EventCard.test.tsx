@@ -2,11 +2,16 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { getEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
+  COMPACT_EVENT_MAX_HEIGHT,
   GRID_EVENT_TITLE_COMPACT_FONT_SIZE,
   GRID_EVENT_TITLE_COMPACT_LINE_HEIGHT,
   GRID_EVENT_TITLE_FONT_SIZE,
 } from "@web/grid/grid.constants";
-import { describe, expect, it, mock } from "bun:test";
+import {
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 import { AllDayEventCard } from "./AllDayEventCard";
@@ -40,6 +45,10 @@ const position = {
 };
 
 describe("EventCard", () => {
+  afterEach(() => {
+    useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  });
+
   it("renders timed event details, interaction attributes, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
@@ -162,7 +171,7 @@ describe("EventCard", () => {
       getEventPalette().base,
     );
     expect(card.style.boxShadow).toContain(
-      "color-mix(in srgb, var(--text) 55%, transparent)",
+      "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)",
     );
   });
 
@@ -448,5 +457,119 @@ describe("EventCard", () => {
         name: "Recurring All-day event: Planning block",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("uses calendar-colored focus chrome instead of the theme accent ring", () => {
+    render(
+      <TimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T10:00:00.000Z",
+        })}
+        focusColor="#616161"
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    const card = screen.getByRole("button", {
+      name: "Timed event: Planning block, 9 - 10 AM",
+    });
+    expect(card.style.getPropertyValue("--event-focus-color")).toBe("#616161");
+    expect(card.className).not.toContain("ring-accent");
+    expect(card.className).toContain(
+      "focus-visible:outline-(--event-focus-color)",
+    );
+    expect(card.className).toContain("focus-visible:outline-2");
+  });
+
+  it("paints start/end edge focus outside the card with the calendar color", () => {
+    const event = createEvent({
+      startDate: "2099-01-15T09:00:00.000Z",
+      endDate: "2099-01-15T10:00:00.000Z",
+    });
+    useEdgeFocusStore.setState({
+      eventId: event._id!,
+      edge: "startDate",
+      announcement: "Editing start time",
+    });
+
+    render(
+      <TimedEventCard
+        displayMode="saved"
+        event={event}
+        focusColor="#616161"
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    const card = screen.getByRole("button", {
+      name: /editing start time/,
+    });
+    expect(card).toHaveAttribute("data-edge-focus", "startDate");
+    expect(card.style.boxShadow).toContain("0 -3px 0 0 #616161");
+    expect(card.className).toContain("focus-visible:outline-none");
+    expect(card.className).not.toContain("ring-accent");
+    expect(card.className).not.toContain("bg-accent");
+  });
+
+  it("keeps a short timed title readable while an edge is focused", () => {
+    const event = createEvent({
+      startDate: "2099-01-15T09:00:00.000Z",
+      endDate: "2099-01-15T09:15:00.000Z",
+      title: "Do drops",
+    });
+    useEdgeFocusStore.setState({
+      eventId: event._id!,
+      edge: "startDate",
+      announcement: "Editing start time",
+    });
+
+    render(
+      <TimedEventCard
+        displayMode="saved"
+        event={event}
+        focusColor="#616161"
+        motionMode="idle"
+        position={{ ...position, height: COMPACT_EVENT_MAX_HEIGHT }}
+      />,
+    );
+
+    expect(screen.getByText("Do drops")).toBeInTheDocument();
+    const card = screen.getByRole("button", { name: /Do drops/ });
+    expect(card).toHaveAttribute("data-edge-focus", "startDate");
+    // Outside shadow, not an inset accent bar covering the title.
+    expect(card.style.boxShadow).toContain("0 -3px 0 0 #616161");
+    expect(card.querySelector("[data-edge-focus]")).toBeNull();
+  });
+
+  it("paints all-day edge focus with the calendar color on the left/right", () => {
+    const event = createEvent({
+      isAllDay: true,
+      title: "Conference",
+    });
+    useEdgeFocusStore.setState({
+      eventId: event._id!,
+      edge: "endDate",
+      announcement: "Editing end time",
+    });
+
+    render(
+      <AllDayEventCard
+        event={event}
+        focusColor="#3b82f6"
+        isPlaceholder={false}
+        position={position}
+      />,
+    );
+
+    const card = screen.getByRole("button", {
+      name: /editing end date/,
+    });
+    expect(card).toHaveAttribute("data-edge-focus", "endDate");
+    expect(card.style.boxShadow).toContain("3px 0 0 0 #3b82f6");
+    expect(card.className).not.toContain("ring-accent");
   });
 });

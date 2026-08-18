@@ -94,6 +94,7 @@ export class SyncResourceRepository {
           subscriptionResourceId: null,
           subscriptionToken: null,
           subscriptionExpiresAt: null,
+          changeNotifiedAt: null,
           createdAt: now,
           updatedAt: now,
         },
@@ -180,6 +181,42 @@ export class SyncResourceRepository {
         },
       },
     ]);
+  }
+
+  // Record that the provider reported a change for this resource. Always
+  // overwrites: the newest notification is the one a pull must observe, and the
+  // pull's compare-and-clear below keys off exactly this value.
+  async markChangeNotified(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { changeNotifiedAt: at, updatedAt: new Date() } },
+    );
+  }
+
+  // Clear the change marker a pull has now served, but only if it still holds
+  // `expected` — the value read when that pull started. Returns false when the
+  // marker moved mid-pull, meaning a notification arrived after the pull had
+  // already read the provider and the caller must pull again.
+  //
+  // `expected` may be null (no pending change at pull start); a notification
+  // landing during that pull still moves it off null and fails the match.
+  // Matched-not-modified is the null -> null case, which is unchanged.
+  async clearChangeNotifiedIfUnchanged(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    expected: Date | null,
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, tenantId, principalId, changeNotifiedAt: expected },
+      { $set: { changeNotifiedAt: null, updatedAt: new Date() } },
+    );
+    return result.matchedCount === 1;
   }
 
   // Advance first-connection readiness only after the caller has completed a

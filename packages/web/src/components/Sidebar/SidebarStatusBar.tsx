@@ -1,9 +1,21 @@
-import { type FC } from "react";
+import { type FC, useContext } from "react";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  getSidebarSyncStatus,
+  SSE_DEGRADED_STATUS,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
+import { TrialCountdownChip } from "@web/billing/TrialCountdownChip";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
+import { EdgeFocusIndicator } from "@web/grid/shortcuts/EdgeFocusIndicator";
+import {
+  selectEdgeFocusActive,
+  selectEdgeFocusAnnouncement,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { settingsActions } from "@web/settings/settings.store";
 import { KeyboardOnlyIndicator } from "@web/shortcuts/keyboard-only/KeyboardOnlyIndicator";
 import {
@@ -16,6 +28,13 @@ import {
   selectEventJumpAnnouncement,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { ShortcutTipIndicator } from "@web/shortcuts/tips/ShortcutTipIndicator";
+import {
+  selectActiveShortcutTipId,
+  useShortcutTipsStore,
+} from "@web/shortcuts/tips/shortcut-tips.store";
+import { useShortcutTipTrigger } from "@web/shortcuts/tips/useShortcutTipTrigger";
+import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
@@ -29,10 +48,17 @@ import {
  * the meaning; `title` is the safety net if anything still overflows.
  */
 export const SidebarStatusBar: FC = () => {
+  const { authenticated } = useContext(SessionContext);
+  const access = useAppAccess();
+  useShortcutTipTrigger();
+  const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
   const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
+  const isEdgeFocus = useEdgeFocusStore(selectEdgeFocusActive);
+  const edgeFocusAnnouncement = useEdgeFocusStore(selectEdgeFocusAnnouncement);
+  const showEdgeFocus = isEdgeFocus || Boolean(edgeFocusAnnouncement);
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -42,15 +68,20 @@ export const SidebarStatusBar: FC = () => {
   // established and should stay quiet.
   const { connection, isConnecting, state } = useConnectGoogle();
   const refreshSnapshot = useGoogleSyncRefreshSnapshot();
+  const sseDegraded = useSseDegraded();
+  const syncStatus = getSidebarSyncStatus({
+    connection,
+    isConnecting,
+    state,
+    refreshGaveUp: refreshSnapshot.gaveUp,
+    refreshInFlight: refreshSnapshot.isRefreshing,
+  });
+  // sseDegraded only fills in when sync itself has nothing to say (a silent
+  // "healthy" null) - a real reconnect/attention/importing status is always
+  // more useful and must not be preempted by the live-updates warning.
   const status = isSaving
     ? { variant: "syncing" as const, text: "Saving changes…" }
-    : getSidebarSyncStatus({
-        connection,
-        isConnecting,
-        state,
-        refreshGaveUp: refreshSnapshot.gaveUp,
-        refreshInFlight: refreshSnapshot.isRefreshing,
-      });
+    : (syncStatus ?? (sseDegraded ? SSE_DEGRADED_STATUS : null));
 
   const text = status?.text ?? "";
 
@@ -63,6 +94,20 @@ export const SidebarStatusBar: FC = () => {
       ) : showEventJump ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <EventJumpIndicator />
+        </div>
+      ) : showEdgeFocus ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <EdgeFocusIndicator />
+        </div>
+      ) : !status && activeTipId ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <ShortcutTipIndicator />
+        </div>
+      ) : !status &&
+        (!authenticated ||
+          (access.kind === "server" && access.status === "trialing")) ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <TrialCountdownChip />
         </div>
       ) : (
         <button

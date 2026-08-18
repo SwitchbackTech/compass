@@ -18,6 +18,7 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
+import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
@@ -29,8 +30,26 @@ import { useAuthModal, validateAuthSearch } from "./hooks/useAuthModal";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockGoogleLogin = mock();
+const mockUseStartGoogleAuthorization = mock(() => ({
+  loading: false,
+  startGoogleAuthorization: mockGoogleLogin,
+}));
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
 let mockEmailPassword = createTestEmailPasswordPort();
+
+// mock.module is process-wide. Capture the real hook and flip the flag off in
+// afterAll so later files do not inherit this file's unauthenticated default.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+const mockUseSession = mock(() => ({
+  authenticated: false,
+  userId: undefined as string | undefined,
+}));
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
+}));
 
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
@@ -118,22 +137,25 @@ const renderWithDayRedirectRoute = async (initialRoute: string) => {
 
 function installAuthModalTestSeams() {
   mockGoogleLogin.mockClear();
+  mockUseStartGoogleAuthorization.mockClear();
   mockCompleteAuthentication.mockClear();
   mockCompleteAuthentication.mockResolvedValue(undefined);
   mockEmailPassword = createTestEmailPasswordPort();
 
-  registerUseStartGoogleAuthorizationForTests(() => ({
-    loading: false,
-    startGoogleAuthorization: mockGoogleLogin,
-  }));
+  registerUseStartGoogleAuthorizationForTests(mockUseStartGoogleAuthorization);
   registerUseCompleteAuthenticationForTests(() => mockCompleteAuthentication);
   registerEmailPasswordPort(mockEmailPassword);
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("available");
+  mockUseSession.mockReset().mockReturnValue({
+    authenticated: false,
+    userId: undefined,
+  });
 }
 
 describe("AuthModal", () => {
   beforeEach(() => {
+    sessionStorage.clear();
     installAuthModalTestSeams();
   });
 
@@ -234,6 +256,26 @@ describe("AuthModal", () => {
       await waitFor(() => {
         expect(router.state.location.searchStr).toBe("");
       });
+    });
+  });
+
+  describe("Google retry after a withheld refresh token", () => {
+    it("does not force prompt=consent on a normal mount", async () => {
+      await renderWithProviders(<ModalTrigger />);
+
+      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+        expect.objectContaining({ prompt: undefined }),
+      );
+    });
+
+    it("forces prompt=consent once, after Google withheld a refresh token on the prior attempt", async () => {
+      markGoogleAuthNeedsConsentRetry();
+
+      await renderWithProviders(<ModalTrigger />);
+
+      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+        expect.objectContaining({ prompt: "consent" }),
+      );
     });
   });
 
@@ -835,6 +877,23 @@ describe("URL Parameter Support", () => {
     });
   });
 
+  it("ignores ?auth= while a session already exists", async () => {
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      userId: "user-1",
+    });
+    const { router } = await renderWithProviders(<div />, "/?auth=login");
+
+    expect(
+      screen.queryByRole("heading", { name: /hey, welcome back/i }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.search).not.toEqual(
+        expect.objectContaining({ auth: "login" }),
+      );
+    });
+  });
+
   it("opens sign up modal when ?auth=signup is present", async () => {
     await renderWithProviders(<div />, "/?auth=signup");
 
@@ -1022,4 +1081,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  isSessionMocked = false;
 });

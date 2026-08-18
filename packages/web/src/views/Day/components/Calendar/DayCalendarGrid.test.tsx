@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event";
+import { rest } from "msw";
 import { act } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
@@ -13,19 +14,25 @@ import {
   waitFor,
   within,
 } from "@web/__tests__/__mocks__/mock.render";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   createGridEventDraft,
+  getGridDraftId,
   gridEventDraftToSchemaEvent,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
@@ -127,6 +134,16 @@ const renderDayCalendarGrid = (calendars?: Calendar[]) => {
   const queryClient = createCompassQueryClient();
   if (calendars) {
     queryClient.setQueryData(calendarQueryKeys.all, calendars);
+    // Seeded fixtures must survive the calendars query mount-fetch. Without
+    // an MSW handler the failed GET clears the cache and
+    // filterEventsByVisibleCalendars drops events mid-assertion (common in
+    // CI). Keep the handler local — a global default breaks suites that
+    // expect the legacy undefined calendarIds read.
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/calendars`, (_req, res, ctx) =>
+        res(ctx.json(calendars)),
+      ),
+    );
   }
 
   return {
@@ -298,6 +315,9 @@ const setDraftEvent = (event: CompassEvent) => {
 
 beforeEach(() => {
   seededEvents = [];
+  // Pin midday so keyboardPlace drafts seeded from the current hour stay
+  // inside a single calendar day (overnight drafts hit save/map edge cases).
+  setSystemTime(new Date("2026-05-20T12:00:00.000Z"));
 });
 
 afterEach(() => {
@@ -377,10 +397,10 @@ describe("DayCalendarGrid", () => {
       name: /project event/i,
     });
     expect(screen.queryByRole("button", { name: /hidden event/i })).toBeNull();
+    expect(within(getTimedGrid()).getAllByRole("columnheader")).toHaveLength(2);
     expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
       parseFloat(primaryEvent.style.left),
     );
-    expect(primaryEvent.style.width).toBe(projectEvent.style.width);
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {
@@ -552,6 +572,35 @@ describe("DayCalendarGrid", () => {
       expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
     expect(getIsFormOpen()).toBe(true);
+  });
+
+  it("opens the form when Enter is pressed on a form-closed keyboardPlace draft", async () => {
+    createTimedDraft(false, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    const draft = getGridDraft();
+    expect(draft).not.toBeNull();
+    if (!draft) return;
+    draft.values.title = "Placed draft";
+    draftActions.setGridDraft(draft);
+    expect(getIsFormOpen()).toBe(false);
+
+    const { user } = renderDayCalendarGrid();
+    const card = screen.getByRole("button", {
+      name: /timed event: placed draft/i,
+    });
+    const draftId = getGridDraftId(getGridDraft()!);
+    expect(draftId).toBeDefined();
+    expect(card.getAttribute("data-day-interaction-event-id")).toBe(
+      draftId ?? null,
+    );
+
+    card.focus();
+    expect(document.activeElement).toBe(card);
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(getIsFormOpen()).toBe(true);
+    });
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
   });
 
   it("opens the event form from a Day card pointer interaction", async () => {
@@ -901,6 +950,45 @@ describe("DayCalendarGrid", () => {
     expect(canCreateDraftOnCalendar(holidays, showError)).toBeFalse();
     expect(showError).toHaveBeenCalledWith(
       "You can't edit the Holidays calendar.",
+    );
+  });
+
+  it("does not create on the local column once a Google account is connected", async () => {
+    const local = makeCalendar("Compass", {
+      id: getLocalCalendarSentinelId(),
+      provider: "local",
+    });
+    const google = makeCalendar("Primary", { isPrimary: true });
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY",
+        connections: [createMockConnection("ahab@pequod.com")],
+      },
+    });
+    const { user } = renderDayCalendarGrid([local, google]);
+
+    await user.pointer([
+      {
+        coords: { clientX: 90, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: getTimedSlot(3),
+      },
+      {
+        coords: { clientX: 90, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: getTimedSlot(3),
+      },
+    ]);
+
+    expect(getDraft()).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
+
+    const showError = mock();
+    expect(
+      canCreateDraftOnCalendar(local, showError, new Set([google.id])),
+    ).toBeFalse();
+    expect(showError).toHaveBeenCalledWith(
+      "You can't edit the Compass calendar.",
     );
   });
 

@@ -46,18 +46,35 @@ const CompassConfigSchema = z
         clientSecret: optionalString,
       })
       .nullish(),
-    email: z
-      .object({
-        kitApiSecret: optionalString,
-        // Retained solely so existing config files remain valid after tags
-        // stopped being part of Compass's email subscription flow.
-        kitUserTagId: z.union([z.string(), z.number()]).optional(),
-      })
-      .nullish(),
+    // Accepted but ignored. Compass no longer sends email; the list is
+    // managed outside the app. Retained so existing config files stay valid
+    // on upgrade.
+    email: z.unknown().optional(),
     posthog: z
       .object({
         key: optionalString,
         host: optionalString,
+      })
+      .nullish(),
+    // Hosted Stripe billing. All-three-or-none is enforced when this is
+    // mapped into backend CONFIG (see config.constants superRefine). Omit
+    // the whole block for self-host — billing enforcement then stays off.
+    stripe: z
+      .object({
+        secretKey: optionalString,
+        webhookSecret: optionalString,
+        priceId: optionalString,
+      })
+      .nullish(),
+    // Operator pause switch for trial/billing gates, independent of whether
+    // Stripe is configured. Omit or set false to keep the app free for
+    // everyone while `stripe:` stays populated for in-progress work.
+    // Accepts a yaml boolean or a "true"/"false" string (env-sourced deploy
+    // values arrive as strings) — normalized downstream in backend
+    // config.constants.ts, mirroring sync.enforceLeastPrivilege below.
+    billing: z
+      .object({
+        enforcement: z.union([z.boolean(), z.string()]).optional(),
       })
       .nullish(),
     // Compass Sync service configuration. Every deployment runs Sync (self-host
@@ -90,6 +107,10 @@ const CompassConfigSchema = z
         postConnectRedirectUrl: z.string().optional(),
         execution: z.enum(["passive", "active"]).optional(),
         maxConcurrency: z.union([z.string(), z.number()]).optional(),
+        // How many of maxConcurrency's drains are reserved away from
+        // initialImport/repair, so a wave of long-running imports can never
+        // head-of-line block webhook/reconcile pulls behind them.
+        reservedPullLanes: z.union([z.string(), z.number()]).optional(),
         enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),
         // The Compass API's database name, used by the least-privilege check.
         compassApiDatabase: z.string().optional(),

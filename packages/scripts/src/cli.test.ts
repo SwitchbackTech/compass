@@ -17,6 +17,13 @@ mock.module("@scripts/commands/purge-user", () => ({
   runPurgeUser: mock(() => mockRunPurgeUser()),
 }));
 
+const mockRunBackfillBilling = mock((): Promise<void> => Promise.resolve());
+
+mock.module("@scripts/commands/backfill-billing", () => ({
+  __esModule: true,
+  runBackfillBilling: mock(() => mockRunBackfillBilling()),
+}));
+
 const { default: CompassCLI } = requireActual(
   "@scripts/cli",
 ) as typeof import("@scripts/cli");
@@ -32,6 +39,14 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunPurgeUser).toHaveBeenCalled();
+  });
+
+  it("runs backfill-billing command", async () => {
+    const cli = new CompassCLI(["node", "cli", "backfill-billing"]);
+
+    await cli.run();
+
+    expect(mockRunBackfillBilling).toHaveBeenCalled();
   });
 
   it("calls exitHelpfully for unsupported command", async () => {

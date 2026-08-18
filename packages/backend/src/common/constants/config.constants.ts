@@ -15,13 +15,18 @@ const logger = Logger("app:constants");
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 
+// Accept a yaml boolean or the strings "true"/"false" (env vars are strings).
+// Mirrors packages/sync/src/config/sync.config.ts's BooleanFromInput.
+const BooleanFromInput = z
+  .union([z.boolean(), z.enum(["true", "false"])])
+  .transform((value) => value === true || value === "true");
+
 const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
     GOOGLE_CLIENT_ID: z.string().nonempty().optional(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty().optional(),
     DB: z.string().nonempty(),
-    EMAILER_SECRET: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
@@ -47,6 +52,12 @@ const ConfigSchema = z
     SYNC_EXECUTION: z.enum(["passive", "active"]).default("passive"),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
+    STRIPE_SECRET_KEY: z.string().nonempty().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
+    STRIPE_PRICE_ID: z.string().nonempty().optional(),
+    // Operator pause switch: when false, trial/billing gates stay off for
+    // everyone regardless of Stripe configuration.
+    BILLING_ENFORCEMENT: BooleanFromInput.default(false),
   })
   .strict()
   .superRefine((env, context) => {
@@ -65,6 +76,22 @@ const ConfigSchema = z
           : ["GOOGLE_CLIENT_ID"],
       });
     }
+
+    const stripeKeys = [
+      env.STRIPE_SECRET_KEY,
+      env.STRIPE_WEBHOOK_SECRET,
+      env.STRIPE_PRICE_ID,
+    ];
+    const present = stripeKeys.filter(Boolean).length;
+    if (present > 0 && present < 3) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "Stripe configuration requires secretKey, webhookSecret, and priceId together",
+        path: ["STRIPE_SECRET_KEY"],
+      });
+    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -73,8 +100,10 @@ const toStr = (
   value: string | number | null | undefined,
 ): string | undefined => (value != null ? String(value) : undefined);
 
-const nonEmpty = (value: string | null | undefined): string | undefined =>
-  value?.trim() ? value : undefined;
+const nonEmpty = (value: string | null | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+};
 
 export function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
@@ -84,7 +113,6 @@ export function parseRawConfig(config: CompassConfig): Config {
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
-    EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
     FRONTEND_URL: config.web.url,
     MONGO_URI: config.mongo.uri,
     NODE_ENV: nodeEnv,
@@ -100,6 +128,10 @@ export function parseRawConfig(config: CompassConfig): Config {
     SYNC_EXECUTION: config.sync?.execution,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
+    STRIPE_SECRET_KEY: nonEmpty(config.stripe?.secretKey),
+    STRIPE_WEBHOOK_SECRET: nonEmpty(config.stripe?.webhookSecret),
+    STRIPE_PRICE_ID: nonEmpty(config.stripe?.priceId),
+    BILLING_ENFORCEMENT: config.billing?.enforcement,
   });
 }
 
@@ -113,7 +145,6 @@ export function parseConfigFromEnv(
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
     GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"],
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
-    EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
@@ -132,6 +163,10 @@ export function parseConfigFromEnv(
     SYNC_EXECUTION: nonEmpty(rawEnv["SYNC_EXECUTION"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
+    STRIPE_SECRET_KEY: nonEmpty(rawEnv["STRIPE_SECRET_KEY"]),
+    STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
+    STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
+    BILLING_ENFORCEMENT: nonEmpty(rawEnv["BILLING_ENFORCEMENT"]),
   });
 }
 

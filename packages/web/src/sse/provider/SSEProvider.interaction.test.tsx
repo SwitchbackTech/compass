@@ -157,7 +157,7 @@ describe("useGcalSSE", () => {
       // importCompleted alone never clears the override; only metadata that
       // leaves IMPORTING (or an attention/healthy syncStatusChanged) does.
       expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
-      expect(refreshUserMetadata).toHaveBeenCalled();
+      expect(refreshUserMetadata).toHaveBeenCalledWith({ force: true });
       expect(mockInvalidateEventQueries).toHaveBeenCalled();
     });
   });
@@ -170,7 +170,7 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      expect(refreshUserMetadata).toHaveBeenCalled();
+      expect(refreshUserMetadata).toHaveBeenCalledWith({ force: true });
     });
   });
 
@@ -184,7 +184,7 @@ describe("useGcalSSE", () => {
 
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
-      expect(refreshUserMetadata).toHaveBeenCalled();
+      expect(refreshUserMetadata).toHaveBeenCalledWith({ force: true });
     });
   });
 

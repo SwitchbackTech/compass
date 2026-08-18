@@ -3,7 +3,10 @@ import {
   parseConfigFromEnv,
   parseRawConfig,
 } from "@backend/common/constants/config.constants";
-import { isGoogleConfigured } from "@backend/common/constants/config.util";
+import {
+  isGoogleConfigured,
+  isStripeConfigured,
+} from "@backend/common/constants/config.util";
 import { describe, expect, it } from "bun:test";
 
 // A minimal valid compass config file, mirroring the required fields
@@ -48,6 +51,57 @@ describe("config.constants", () => {
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
     expect(isGoogleConfigured(env)).toBe(false);
+  });
+
+  it("parses backend env without Stripe configuration", () => {
+    const env = parseConfigFromEnv(validEnv);
+
+    expect(env.STRIPE_SECRET_KEY).toBeUndefined();
+    expect(isStripeConfigured(env)).toBe(false);
+  });
+
+  it("rejects a partial Stripe configuration", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        STRIPE_SECRET_KEY: "rk_test_123",
+      }),
+    ).toThrow(
+      "Stripe configuration requires secretKey, webhookSecret, and priceId together",
+    );
+  });
+
+  it("reports Stripe as configured only when all three values are present", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      STRIPE_SECRET_KEY: "rk_test_123",
+      STRIPE_WEBHOOK_SECRET: "whsec_test",
+      STRIPE_PRICE_ID: "price_test",
+    });
+
+    expect(isStripeConfigured(env)).toBe(true);
+  });
+
+  it("trims Stripe values from env and compass.yaml", () => {
+    const fromEnv = parseConfigFromEnv({
+      ...validEnv,
+      STRIPE_SECRET_KEY: " rk_test_123\n",
+      STRIPE_WEBHOOK_SECRET: " whsec_test ",
+      STRIPE_PRICE_ID: "price_test\n",
+    });
+    expect(fromEnv.STRIPE_PRICE_ID).toBe("price_test");
+    expect(fromEnv.STRIPE_SECRET_KEY).toBe("rk_test_123");
+
+    const fromFile = parseRawConfig({
+      ...baseRawConfig,
+      stripe: {
+        secretKey: " sk_test_abc ",
+        webhookSecret: "whsec_file",
+        priceId: " price_file\n",
+      },
+    });
+    expect(fromFile.STRIPE_PRICE_ID).toBe("price_file");
+    expect(fromFile.STRIPE_SECRET_KEY).toBe("sk_test_abc");
   });
 
   it("rejects partially configured Google credentials", () => {

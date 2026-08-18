@@ -44,4 +44,13 @@ describe("ShortcutKeys", () => {
     );
     expect(keycaps(whitespace)).toHaveLength(0);
   });
+
+  it("renders duplicate tokens as separate keycaps", () => {
+    const { container } = render(<ShortcutKeys keys={["Shift", "Shift"]} />);
+
+    const chips = keycaps(container);
+    expect(chips).toHaveLength(2);
+    expect(chips[0]?.textContent).toBe("Shift");
+    expect(chips[1]?.textContent).toBe("Shift");
+  });
 });

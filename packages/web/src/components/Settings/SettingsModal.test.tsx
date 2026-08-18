@@ -81,14 +81,25 @@ mock.module("@web/auth/compass/session/useSession", () => ({
       : actualUseSession(...args),
 }));
 
+let isSseDegraded = false;
+let isSseDegradedMocked = true;
+const actualUseSseDegraded = (await import("@web/sse/hooks/useSseDegraded"))
+  .useSseDegraded;
+mock.module("@web/sse/hooks/useSseDegraded", () => ({
+  useSseDegraded: () =>
+    isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
+}));
+
 afterAll(() => {
   isLogoutConfirmationMocked = false;
   isSessionMocked = false;
+  isSseDegradedMocked = false;
 });
 
 afterEach(() => {
   mockOpenLogoutConfirmation.mockClear();
   resetGoogleReconnectRequiredForTests();
+  isSseDegraded = false;
 });
 
 const settingsModalUrl = new URL(
@@ -178,6 +189,32 @@ describe("SettingsModal", () => {
     });
 
     expect(screen.getByText("Calendar needs reconnecting")).toBeInTheDocument();
+  });
+
+  it("replaces 'Calendar connected' with a live-updates warning when SSE is degraded", () => {
+    isSseDegraded = true;
+    renderSettings({ connections: [connection()] });
+
+    expect(screen.queryByText("Calendar connected")).not.toBeInTheDocument();
+    expect(screen.getByText("Reconnecting live updates…")).toBeInTheDocument();
+  });
+
+  it("does not let the live-updates warning preempt a real reconnect problem", () => {
+    isSseDegraded = true;
+    renderSettings({
+      connections: [
+        connection({
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
+          connectionState: "RECONNECT_REQUIRED",
+        }),
+      ],
+    });
+
+    expect(screen.getByText("Calendar needs reconnecting")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Reconnecting live updates…"),
+    ).not.toBeInTheDocument();
   });
 
   it("asks for confirmation before disconnecting", async () => {

@@ -46,8 +46,18 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
 // later/parallel suites (LifeView hung under CI). The real coordinator
 // starts idle, which is what these cases need.
 
+let isSseDegraded = false;
+let isSseDegradedMocked = true;
+const actualUseSseDegraded = (await import("@web/sse/hooks/useSseDegraded"))
+  .useSseDegraded;
+mock.module("@web/sse/hooks/useSseDegraded", () => ({
+  useSseDegraded: () =>
+    isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
+}));
+
 afterAll(() => {
   isConnectGoogleMocked = false;
+  isSseDegradedMocked = false;
 });
 
 const statusBarModuleUrl = new URL(
@@ -63,6 +73,7 @@ describe("SidebarStatusBar", () => {
     googleState = "HEALTHY";
     isConnecting = false;
     connection = null;
+    isSseDegraded = false;
   });
 
   it("shows 'Saving changes…' when a mutation is pending", () => {
@@ -74,14 +85,19 @@ describe("SidebarStatusBar", () => {
     expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
-  it("reserves space for the status line when idle", () => {
+  it("reserves space for the status line when idle, showing the anonymous trial chip", async () => {
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    const status = screen.getByRole("status");
-    expect(status).toBeInTheDocument();
-    expect(status.textContent).toBe("");
+    // No SessionContext.Provider means these tests render as anonymous, so
+    // an idle bar falls back to the trial countdown chip rather than blank
+    // space — there is no truly empty state for an anonymous user anymore.
+    // The chip depends on the (async, MSW-stubbed) /config enforcement
+    // check, so this settles a beat after the initial render.
+    expect(
+      await screen.findByRole("button", { name: /Trial: \d+ days? left/ }),
+    ).toBeInTheDocument();
   });
 
   it("renders exactly one save status region, regardless of account count", () => {
@@ -123,8 +139,8 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status").textContent).toBe("");
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("shows Syncing in the background when catch-up is more than two minutes behind", () => {
@@ -210,6 +226,46 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status").textContent).toBe("");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("shows a live-updates warning when SSE is degraded and sync is otherwise silent", () => {
+    googleState = "HEALTHY";
+    isSseDegraded = true;
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Reconnecting live updates…",
+    );
+  });
+
+  it("does not let the live-updates warning preempt a real sync problem", () => {
+    googleState = "ATTENTION";
+    isSseDegraded = true;
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "delayed",
+      stateReason: "workOverdue",
+      connectionState: "ATTENTION",
+    });
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar updates are delayed",
+    );
+    expect(screen.queryByText("Reconnecting live updates…")).toBeNull();
+  });
+
+  it("prefers 'Saving changes…' over the live-updates warning when both are true", () => {
+    isSseDegraded = true;
+    const { queryClient, wrapper } = createStoreWrapper();
+    seedPendingEventMutations(queryClient, ["event-1"]);
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
   });
 });

@@ -26,6 +26,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
   MOVE_UNSUPPORTED: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
+  BILLING_REQUIRED: Status.FORBIDDEN,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -41,6 +42,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   MAINTENANCE: true,
   MOVE_UNSUPPORTED: false,
   INVALID_INPUT: false,
+  BILLING_REQUIRED: false,
 };
 
 export class EventMutationException extends BaseError {
@@ -114,9 +116,11 @@ export const toEventMutationError = (
     };
   }
 
+  // Programmer bugs and unexpected throws are not provider outages — never
+  // advertise them as retryable or clients will hammer the same broken path.
   const message = e instanceof Error ? e.message : "Unexpected error";
   return {
     status: Status.INTERNAL_SERVER,
-    body: { code: "PROVIDER_FAILURE", message, retryable: true },
+    body: { code: "PROVIDER_FAILURE", message, retryable: false },
   };
 };

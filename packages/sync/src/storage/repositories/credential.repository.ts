@@ -81,6 +81,22 @@ export class CredentialRepository {
     return result ? CredentialRecordSchema.parse(result) : null;
   }
 
+  // Clear a cached access token without touching the refresh token, so the
+  // next getValidAccessToken call is forced to mint a fresh one. Used when a
+  // provider rejects the cached token with a 401 mid-job.
+  async clearCachedAccessToken(connectionId: ConnectionId): Promise<void> {
+    await this.collection.updateOne(
+      { _id: connectionId },
+      {
+        $set: {
+          accessToken: null,
+          accessTokenExpiresAt: null,
+          updatedAt: new Date(),
+        },
+      },
+    );
+  }
+
   // Remove a connection's credential (disconnect / account deletion). Returns
   // whether a credential existed to delete.
   async deleteByConnection(connectionId: ConnectionId): Promise<boolean> {

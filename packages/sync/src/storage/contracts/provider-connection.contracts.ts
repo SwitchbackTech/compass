@@ -76,8 +76,6 @@ export const ProviderConnectionUpsertSchema = z
     capabilities: ProviderCapabilitySetSchema,
     state: ConnectionStateSchema,
     stateReason: ConnectionStateReasonSchema.nullable(),
-    lastSyncedAt: z.date().nullable(),
-    lastHealthyAt: z.date().nullable(),
   })
   .refine(hasReasonWhenActionRequired, actionRequiredReasonIssue);
 export type ProviderConnectionUpsert = z.infer<

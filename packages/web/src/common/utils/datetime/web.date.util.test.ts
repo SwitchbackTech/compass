@@ -7,11 +7,14 @@ import {
   getCalendarHeadingLabel,
   getColorsByHour,
   getHourLabels,
+  getTimeOptionByValue,
   getTimesLabel,
   getWeekRangeLabel,
+  mapToBackend,
   parseUserTime,
   toUTCOffset,
 } from "@web/common/utils/datetime/web.date.util";
+import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import {
   afterAll,
   beforeAll,
@@ -512,5 +515,71 @@ describe("parseUserTime", () => {
   it("correctly normalizes 10:00 to label '10 AM' (strips :00)", () => {
     const result = parseUserTime("10:00");
     expect(result?.label).toBe("10 AM");
+  });
+});
+
+describe("mapToBackend timed overnight", () => {
+  it("keeps an overnight end on the next calendar day", () => {
+    const start = dayjs("2026-08-11T23:30:00");
+    const end = start.add(1, "hour");
+    const form = getFormDates(start.format(), end.format());
+
+    const schedule = mapToBackend({
+      startDate: form.startDate,
+      endDate: form.endDate,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      isAllDay: false,
+    });
+
+    expect(schedule.kind).toBe("timed");
+    if (schedule.kind !== "timed") return;
+
+    expect(dayjs(schedule.end).isAfter(dayjs(schedule.start))).toBe(true);
+    expect(dayjs(schedule.start).format("YYYY-MM-DD HH:mm")).toBe(
+      "2026-08-11 23:30",
+    );
+    expect(dayjs(schedule.end).format("YYYY-MM-DD HH:mm")).toBe(
+      "2026-08-12 00:30",
+    );
+  });
+
+  it("still stamps same-day timed ends onto the start calendar day", () => {
+    const start = dayjs("2026-08-11T14:00:00");
+    const end = start.add(1, "hour");
+    const form = getFormDates(start.format(), end.format());
+
+    const schedule = mapToBackend({
+      startDate: form.startDate,
+      endDate: form.endDate,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      isAllDay: false,
+    });
+
+    expect(schedule.kind).toBe("timed");
+    if (schedule.kind !== "timed") return;
+
+    expect(dayjs(schedule.start).format("YYYY-MM-DD HH:mm")).toBe(
+      "2026-08-11 14:00",
+    );
+    expect(dayjs(schedule.end).format("YYYY-MM-DD HH:mm")).toBe(
+      "2026-08-11 15:00",
+    );
+  });
+
+  it("accepts explicit same-day start/end dates with same-day clock times", () => {
+    const day = dayjs("2026-08-11T00:00:00");
+    const schedule = mapToBackend({
+      startDate: day.toDate(),
+      endDate: day.toDate(),
+      startTime: getTimeOptionByValue(day.hour(9).minute(0)),
+      endTime: getTimeOptionByValue(day.hour(10).minute(0)),
+      isAllDay: false,
+    });
+
+    expect(schedule.kind).toBe("timed");
+    if (schedule.kind !== "timed") return;
+    expect(dayjs(schedule.end).isAfter(dayjs(schedule.start))).toBe(true);
   });
 });

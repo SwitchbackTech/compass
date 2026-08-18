@@ -49,7 +49,18 @@ const defaultApiFactory: GoogleChannelsApiFactory = (accessToken) => {
 
 // A default channel lifetime when the caller requests none. Google caps event
 // channels near a week; it may return a shorter expiry, which is authoritative.
-const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+//
+// Deliberately 48h rather than the week Google allows. A channel can stop
+// delivering without expiring — Google drops one whose callbacks keep failing,
+// and nothing about that reaches us — and the renewal sweep only ever selects
+// on subscriptionExpiresAt, so a dead-but-unexpired channel is invisible to
+// every liveness path we have. Pairing a 48h lifetime with the 24h renew-before
+// guard means the sweep replaces every channel about once a day, which bounds
+// that blind window to a day instead of a week. The cost is one extra
+// events.watch per calendar per day, well inside Google's quota, and
+// maintainSubscription persists the replacement BEFORE stopping the old channel
+// so a renewal never opens a delivery gap.
+const DEFAULT_TTL_MS = 48 * 60 * 60 * 1000;
 
 // Google callback headers, lower-cased (Node lower-cases request headers).
 const HEADER_CHANNEL_ID = "x-goog-channel-id";
