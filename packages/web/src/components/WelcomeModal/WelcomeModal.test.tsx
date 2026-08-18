@@ -1,6 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
+import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -224,6 +225,20 @@ describe("WelcomeModal", () => {
     await user.keyboard("s");
 
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    render(<WelcomeModal />);
+    const signUp = screen.getByRole("button", { name: "Sign up" });
+
+    expect(() => {
+      act(() => {
+        dispatchMissingKey("keydown", signUp);
+      });
+    }).not.toThrow();
+
+    expect(mockOpenModal).not.toHaveBeenCalled();
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
   });
 
   it("ignores the shortcut keys when a modifier is held", async () => {

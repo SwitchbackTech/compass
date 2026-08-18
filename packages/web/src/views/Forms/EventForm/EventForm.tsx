@@ -47,6 +47,7 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
@@ -431,11 +432,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         e.stopPropagation();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
+      if ((e.metaKey || e.ctrlKey) && keyboardKey(e).toLowerCase() === "<") {
         e.preventDefault();
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
+      if ((e.metaKey || e.ctrlKey) && keyboardKey(e).toLowerCase() === "d") {
         e.preventDefault();
       }
 

@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { type ReactNode } from "react";
+import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -103,5 +104,19 @@ describe("useChecklistDetection", () => {
     act(() => eventJumpActions.setActive(true));
     pressKey("z", { metaKey: true });
     expect(completed()).toEqual({});
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    renderHook(() => useChecklistDetection(true), {
+      wrapper: wrapperFor(false),
+    });
+
+    expect(() => {
+      act(() => {
+        dispatchMissingKey("keydown");
+      });
+    }).not.toThrow();
+
+    expect(completed().undo).toBeUndefined();
   });
 });

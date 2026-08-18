@@ -13,7 +13,11 @@ import {
   editSequenceActions,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
-import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import {
+  isBareLetterKey,
+  keyboardKey,
+  normalizedKeyboardKey,
+} from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
 
@@ -39,9 +43,6 @@ export const resetEditSequenceArm = () => {
 /** Any modifier at all, used to reject chords as the *second* key. */
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
-
-const normalizeKey = (event: KeyboardEvent) =>
-  event.key.length === 1 ? event.key.toLowerCase() : event.key;
 
 /**
  * The single owner of both edit leaders.
@@ -100,7 +101,7 @@ export function useEditSequenceShortcut({
     };
 
     const isModLeader = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== LEADER_KEY) return false;
+      if (keyboardKey(event).toLowerCase() !== LEADER_KEY) return false;
       if (event.shiftKey || event.altKey) return false;
       return isMac
         ? event.metaKey && !event.ctrlKey
@@ -128,7 +129,7 @@ export function useEditSequenceShortcut({
           return;
         }
 
-        const key = normalizeKey(event);
+        const key = normalizedKeyboardKey(event);
         const field =
           key in EDIT_SEQUENCE_FIELD_BY_KEY
             ? EDIT_SEQUENCE_FIELD_BY_KEY[key as EditSequenceSecondKey]
@@ -171,7 +172,7 @@ export function useEditSequenceShortcut({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = normalizeKey(event);
+      const key = normalizedKeyboardKey(event);
       if (!suppressKeyUp.has(key)) return;
 
       suppressKeyUp.delete(key);

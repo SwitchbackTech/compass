@@ -5,7 +5,11 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
-import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import {
+  isBareLetterKey,
+  keyboardKey,
+  normalizedKeyboardKey,
+} from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   assignDayJumpKeys,
@@ -280,7 +284,7 @@ export function useShiftHoldEventHints({
       }
 
       // Arrows keep mode on so letter-then-arrows can move focus.
-      if (event.key.startsWith("Arrow")) {
+      if (keyboardKey(event).startsWith("Arrow")) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
         return;
@@ -290,7 +294,7 @@ export function useShiftHoldEventHints({
         return;
       }
 
-      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const key = normalizedKeyboardKey(event);
       if (key.length !== 1) return;
 
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
@@ -359,7 +363,7 @@ export function useShiftHoldEventHints({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const key = normalizedKeyboardKey(event);
       if (!suppressKeyUpRef.current.has(key)) return;
       suppressKeyUpRef.current.delete(key);
       event.preventDefault();

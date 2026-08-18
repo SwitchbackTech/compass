@@ -5,6 +5,7 @@ import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { checklistActions } from "@web/components/OnboardingChecklist/checklist.store";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { useEdgeFocusStore } from "@web/grid/shortcuts/edge-focus.store";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { useEventJumpStore } from "@web/shortcuts/shift-hint/event-jump.store";
 
 const ARROW_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
@@ -42,7 +43,7 @@ export function useChecklistDetection(enabled: boolean) {
       if (
         (event.metaKey || event.ctrlKey) &&
         !event.shiftKey &&
-        event.key.toLowerCase() === "z"
+        keyboardKey(event).toLowerCase() === "z"
       ) {
         checklistActions.completeItem("undo");
         return;

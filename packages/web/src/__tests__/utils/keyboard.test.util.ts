@@ -26,3 +26,18 @@ export function pressKey(
     }),
   );
 }
+
+/** Some browsers fire KeyboardEvents with `key` unset. */
+export function dispatchMissingKey(
+  type: "keydown" | "keyup",
+  target: Element | Node | Window | Document = document,
+) {
+  const event = new KeyboardEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+  });
+  Object.defineProperty(event, "key", { get: () => undefined });
+  target.dispatchEvent(event);
+  return event;
+}

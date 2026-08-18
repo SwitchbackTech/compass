@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   initialKeyboardOnlyState,
@@ -197,5 +198,16 @@ describe("useKeyboardOnlyMode", () => {
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
     expect(useEventJumpStore.getState().isActive).toBe(false);
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    renderHook(() => useKeyboardOnlyMode());
+
+    expect(() => {
+      dispatchMissingKey("keydown");
+      dispatchMissingKey("keyup");
+    }).not.toThrow();
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
   });
 });
