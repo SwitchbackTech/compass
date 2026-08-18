@@ -26,6 +26,15 @@ function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
   return cleanMetadata as T;
 }
 
+/** Untrusted request-body JSON: drop prototype-polluting keys at every depth. */
+function stripUnsafeKeys<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data), (key, value) =>
+    key === "__proto__" || key === "constructor" || key === "prototype"
+      ? undefined
+      : value,
+  ) as T;
+}
+
 class UserMetadataService {
   private getStoredUserMetadata = async (
     userId: string,
@@ -67,9 +76,13 @@ class UserMetadataService {
     const value = hasLegacyEmailUpdatesMetadata(storedMetadata)
       ? removeLegacyEmailUpdatesMetadata(storedMetadata)
       : storedMetadata;
-    const cleanData = hasLegacyEmailUpdatesMetadata(data)
-      ? removeLegacyEmailUpdatesMetadata(data)
-      : data;
+    // `data` comes straight off the request body, so strip prototype-polluting
+    // keys before it reaches the recursive merge below.
+    const cleanData = stripUnsafeKeys(
+      hasLegacyEmailUpdatesMetadata(data)
+        ? removeLegacyEmailUpdatesMetadata(data)
+        : data,
+    );
 
     const update = mergeWith(value, cleanData) as UserMetadata;
 
