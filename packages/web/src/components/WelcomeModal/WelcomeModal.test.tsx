@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
@@ -329,6 +329,11 @@ describe("WelcomeModal", () => {
     });
 
     afterEach(() => {
+      // Unmount before restoring the seams. resetGoogleAvailabilityForTests
+      // emits synchronously, so a still-mounted modal would re-render against
+      // the real hook after the mock had already rendered without one, and
+      // React would throw "Should have a queue" on the hook-count change.
+      cleanup();
       resetUseStartGoogleAuthorizationForTests();
       resetGoogleAvailabilityForTests();
     });
