@@ -219,6 +219,33 @@ async function runSyncJob(
       return { result: "drop", reason: "connection no longer exists" };
     }
     await syncCalendarList(deps, connection, now);
+    // Discovery upserts display names, colors, and membership. Without a
+    // connection invalidation the open SPA keeps the stale calendar list
+    // (S40 gap: event pulls already invalidate, calendar-list sync did not).
+    await deps.invalidations.append({
+      tenantId: job.tenantId,
+      principalId: job.principalId,
+      invalidation: {
+        kind: "connection",
+        connectionId: job.connectionId,
+      },
+      emittedAt: now(),
+    });
+    const calendarList = (
+      await deps.resources.listByConnection(
+        job.tenantId,
+        job.principalId,
+        job.connectionId,
+      )
+    ).find((resource) => resource.resourceKind === "calendarList");
+    // Open a calendar-list push channel once. Renewals are the expiry sweep;
+    // a rediscovery that already has a live channel must not churn it.
+    if (calendarList && calendarList.subscriptionId === null) {
+      return {
+        result: "done",
+        followup: subscriptionFollowup(calendarList, now),
+      };
+    }
     return { result: "done" };
   }
 
@@ -232,6 +259,16 @@ async function runSyncJob(
   );
   if (!resource) {
     return { result: "drop", reason: "resource no longer exists" };
+  }
+  if (resource.resourceKind === "calendarList") {
+    if (job.kind !== "subscriptionMaintain") {
+      return {
+        result: "drop",
+        reason: "calendar-list resource only accepts subscriptionMaintain",
+      };
+    }
+    await maintainSubscription(deps, null, resource, now);
+    return { result: "done" };
   }
   if (!resource.calendarId) {
     return { result: "drop", reason: "resource has no calendar" };

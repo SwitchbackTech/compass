@@ -18,10 +18,17 @@ type Behavior = calendar_v3.Schema$Channel | Error | undefined;
 
 class FakeChannelsApi implements GoogleChannelsApi {
   watchCalls: Parameters<GoogleChannelsApi["watchEvents"]>[0][] = [];
+  calendarListWatchCalls: Parameters<
+    GoogleChannelsApi["watchCalendarList"]
+  >[0][] = [];
   stopCalls: Parameters<GoogleChannelsApi["stopChannel"]>[0][] = [];
 
   constructor(
-    private readonly behavior: { watch?: Behavior; stop?: Error } = {},
+    private readonly behavior: {
+      watch?: Behavior;
+      calendarListWatch?: Behavior;
+      stop?: Error;
+    } = {},
   ) {}
 
   async watchEvents(
@@ -32,6 +39,22 @@ class FakeChannelsApi implements GoogleChannelsApi {
     return (
       this.behavior.watch ?? {
         resourceId: "res-1",
+        expiration: "1767312000000",
+      }
+    );
+  }
+
+  async watchCalendarList(
+    params: Parameters<GoogleChannelsApi["watchCalendarList"]>[0],
+  ): Promise<calendar_v3.Schema$Channel> {
+    this.calendarListWatchCalls.push(params);
+    if (this.behavior.calendarListWatch instanceof Error) {
+      throw this.behavior.calendarListWatch;
+    }
+    return (
+      this.behavior.calendarListWatch ??
+      this.behavior.watch ?? {
+        resourceId: "res-list-1",
         expiration: "1767312000000",
       }
     );
@@ -93,6 +116,37 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     expect(channel).toEqual({
       channelId: "chan-1",
       resourceId: "res-1",
+      expiresAt: new Date("2026-01-02T00:00:00Z"),
+    });
+  });
+
+  it("opens a calendar-list web_hook channel without a calendar id", async () => {
+    const api = new FakeChannelsApi({
+      calendarListWatch: {
+        resourceId: "res-list-1",
+        expiration: "1767312000000",
+      },
+    });
+    const { adapter } = adapterWith(api);
+
+    const channel = await adapter.watchCalendarList({
+      accessToken: "at",
+      channelId: "chan-list",
+      token: "chan-token",
+      callbackUrl: "https://sync.example.com/callbacks/google",
+    });
+
+    expect(api.watchCalls).toHaveLength(0);
+    expect(api.calendarListWatchCalls[0]?.requestBody).toEqual({
+      id: "chan-list",
+      type: "web_hook",
+      address: "https://sync.example.com/callbacks/google",
+      token: "chan-token",
+      expiration: String(new Date("2026-01-03T00:00:00Z").getTime()),
+    });
+    expect(channel).toEqual({
+      channelId: "chan-list",
+      resourceId: "res-list-1",
       expiresAt: new Date("2026-01-02T00:00:00Z"),
     });
   });

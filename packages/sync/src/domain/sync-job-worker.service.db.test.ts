@@ -140,6 +140,9 @@ describe("SyncJobWorker", () => {
       watchEvents: async () => {
         throw new Error("watch not used in worker tests");
       },
+      watchCalendarList: async () => {
+        throw new Error("watch not used in worker tests");
+      },
       stopChannel: async () => {},
       parseCallback: () => null,
     },

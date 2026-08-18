@@ -20,7 +20,12 @@ const now = () => new Date("2026-07-10T00:00:00.000Z");
 // error, so a test drives the adapter without a network round-trip.
 class FakeNotifications implements ProviderNotificationAdapter {
   readonly provider = "google" as const;
-  watched: Array<{ channelId: string; token: string; calendarId: string }> = [];
+  watched: Array<{
+    channelId: string;
+    token: string;
+    calendarId?: string;
+    kind: "events" | "calendarList";
+  }> = [];
   stopped: Array<{ channelId: string; resourceId: string }> = [];
   #channel: NotificationChannel | null;
   #watchError: ProviderNotificationError | null;
@@ -47,9 +52,28 @@ class FakeNotifications implements ProviderNotificationAdapter {
       channelId: input.channelId,
       token: input.token,
       calendarId: input.calendarId,
+      kind: "events",
     });
     if (this.#watchError) throw this.#watchError;
     // Echo the caller's channel id, as the real adapter does.
+    return {
+      ...(this.#channel as NotificationChannel),
+      channelId: input.channelId,
+    };
+  };
+
+  watchCalendarList = async (input: {
+    accessToken: string;
+    channelId: string;
+    token: string;
+    callbackUrl: string;
+  }): Promise<NotificationChannel> => {
+    this.watched.push({
+      channelId: input.channelId,
+      token: input.token,
+      kind: "calendarList",
+    });
+    if (this.#watchError) throw this.#watchError;
     return {
       ...(this.#channel as NotificationChannel),
       channelId: input.channelId,
@@ -396,5 +420,36 @@ describe("maintainSubscription", () => {
     expect(outcome).toEqual({ status: "renewed" });
     const saved = await reload(resource);
     expect(saved?.subscriptionResourceId).toBe("res-3");
+  });
+
+  it("opens a calendar-list channel without watching a calendar's events", async () => {
+    const tenantId = objectId() as ProviderCalendarRecord["tenantId"];
+    const principalId = objectId() as ProviderCalendarRecord["principalId"];
+    const connectionId = objectId() as ConnectionId;
+    const resource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    const expiresAt = new Date("2026-07-17T00:00:00.000Z");
+    const notifications = new FakeNotifications({
+      channel: { channelId: "", resourceId: "res-list", expiresAt },
+    });
+
+    const outcome = await maintainSubscription(
+      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      null,
+      resource,
+      now,
+    );
+
+    expect(outcome).toEqual({ status: "watched" });
+    expect(notifications.watched).toEqual([
+      expect.objectContaining({ kind: "calendarList" }),
+    ]);
+    const saved = await resources.findById(tenantId, principalId, resource._id);
+    expect(saved?.subscriptionResourceId).toBe("res-list");
   });
 });

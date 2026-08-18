@@ -119,6 +119,35 @@ describe("subscription-maintenance sweep (enqueueForResources + listExpiringSubs
     expect(await jobCount()).toBe(0);
   });
 
+  it("enqueues a maintain job for an expiring calendar-list channel", async () => {
+    const tenantId = objectId() as SyncResourceRecord["tenantId"];
+    const principalId = objectId() as SyncResourceRecord["principalId"];
+    const resource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId: objectId() as SyncResourceRecord["connectionId"],
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.updateSubscription(tenantId, principalId, resource._id, {
+      subscriptionId: `channel-${resource._id}`,
+      subscriptionResourceId: `res-${resource._id}`,
+      subscriptionToken: "token",
+      subscriptionExpiresAt: new Date("2026-07-10T01:00:00.000Z"),
+    });
+
+    const enqueued = await maintainExpiringSubscriptions(
+      deps(),
+      renewBefore,
+      now,
+    );
+
+    expect(enqueued).toBe(1);
+    const job = await jobByKey(`subscriptionMaintain:${resource._id}`);
+    expect(job?.kind).toBe("subscriptionMaintain");
+    expect(job?.resourceId).toBe(resource._id);
+  });
+
   it("coalesces repeated sweeps into one job per resource", async () => {
     const expiring = await seedResource(new Date("2026-07-10T01:00:00.000Z"));
 

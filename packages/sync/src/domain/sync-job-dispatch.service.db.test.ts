@@ -114,11 +114,20 @@ const tokenSource = {
 const notifications = {
   provider: "google" as const,
   watched: [] as string[],
+  calendarListWatched: [] as string[],
   watchEvents: async (input: { channelId: string }) => {
     notifications.watched.push(input.channelId);
     return {
       channelId: input.channelId,
       resourceId: "provider-resource",
+      expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+    };
+  },
+  watchCalendarList: async (input: { channelId: string }) => {
+    notifications.calendarListWatched.push(input.channelId);
+    return {
+      channelId: input.channelId,
+      resourceId: "provider-calendar-list",
       expiresAt: new Date("2026-07-17T00:00:00.000Z"),
     };
   },
@@ -1060,7 +1069,10 @@ describe("dispatchSyncJob", () => {
       now,
     );
 
-    expect(outcome).toEqual({ result: "done" });
+    expect(outcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
     // Discovery persisted the calendar and enqueued its initial import.
     const persisted = await calendars.listByConnection(
       tenantId as ProviderCalendarRecord["tenantId"],
@@ -1073,6 +1085,14 @@ describe("dispatchSyncJob", () => {
       .collection(SYNC_COLLECTIONS.jobs)
       .countDocuments({ kind: "initialImport" });
     expect(importCount).toBe(1);
+    const invalidationCount = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .countDocuments({
+        "invalidation.kind": "connection",
+        "invalidation.connectionId": connectionId,
+      });
+    expect(invalidationCount).toBe(1);
   });
 
   it("drops a calendarListSync whose connection no longer exists", async () => {

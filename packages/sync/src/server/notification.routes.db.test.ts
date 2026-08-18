@@ -61,6 +61,7 @@ describe("POST /sync/notifications/google", () => {
   const seedSubscription = async (
     expiresAt = new Date(Date.now() + 60 * 60 * 1000),
     token = TOKEN,
+    kind: "events" | "calendarList" = "events",
   ) => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
@@ -68,8 +69,8 @@ describe("POST /sync/notifications/google", () => {
       tenantId,
       principalId,
       connectionId: objectId() as ConnectionId,
-      resourceKind: "calendarList",
-      calendarId: null,
+      resourceKind: kind,
+      calendarId: kind === "events" ? objectId() : null,
     });
     await resources.updateSubscription(tenantId, principalId, resource._id, {
       subscriptionId: CHANNEL,
@@ -77,7 +78,7 @@ describe("POST /sync/notifications/google", () => {
       subscriptionToken: token,
       subscriptionExpiresAt: expiresAt,
     });
-    return resource._id;
+    return resource;
   };
 
   const post = (headers: Record<string, string>) =>
@@ -98,7 +99,7 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("enqueues one pull for an authentic change, coalescing duplicates", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     const first = await post(googHeaders());
@@ -115,7 +116,7 @@ describe("POST /sync/notifications/google", () => {
     // including the claimed row of a running pull that has already read the
     // provider. The marker is the only thing that survives that, and the pull's
     // compare-and-clear is what turns it back into a second pass.
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     const res = await post(googHeaders());
@@ -128,7 +129,7 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("does not stamp the change marker on a rejected notification", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     await post(googHeaders({ "x-goog-channel-token": "wrong" }));
@@ -140,7 +141,7 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("does not enqueue on the initial sync handshake", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     const res = await post(googHeaders({ "x-goog-resource-state": "sync" }));
@@ -150,7 +151,7 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("rejects a spoofed token: accepts the request but enqueues nothing", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     const res = await post(googHeaders({ "x-goog-channel-token": "wrong" }));
@@ -172,7 +173,7 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("enqueues nothing for a resource-id that does not match the subscription", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService();
 
     const res = await post(googHeaders({ "x-goog-resource-id": "other-res" }));
@@ -182,7 +183,9 @@ describe("POST /sync/notifications/google", () => {
   });
 
   it("enqueues nothing once the subscription has expired", async () => {
-    const resourceId = await seedSubscription(new Date(Date.now() - 1000));
+    const { _id: resourceId } = await seedSubscription(
+      new Date(Date.now() - 1000),
+    );
     await startService();
 
     const res = await post(googHeaders());
@@ -199,8 +202,23 @@ describe("POST /sync/notifications/google", () => {
     expect(res.status).toBe(400);
   });
 
+  it("enqueues calendarListSync for a calendar-list channel change, not a pull", async () => {
+    const resource = await seedSubscription(
+      new Date(Date.now() + 60 * 60 * 1000),
+      TOKEN,
+      "calendarList",
+    );
+    await startService();
+
+    const res = await post(googHeaders());
+
+    expect(res.status).toBe(200);
+    expect(await jobCount(`calendarListSync:${resource.connectionId}`)).toBe(1);
+    expect(await jobCount(`incrementalPull:${resource._id}`)).toBe(0);
+  });
+
   it("accepts and drops notifications in passive mode", async () => {
-    const resourceId = await seedSubscription();
+    const { _id: resourceId } = await seedSubscription();
     await startService(testConfig({ EXECUTION: "passive" }));
 
     const res = await post(googHeaders());
