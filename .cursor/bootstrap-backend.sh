@@ -19,6 +19,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 MONGO_URI="${MONGO_URI:-mongodb://localhost:27017/dev_calendar?replicaSet=rs0}"
+# Sync uses an isolated database on the same local replica set.
+SYNC_MONGO_URI="${SYNC_MONGO_URI:-mongodb://localhost:27017/compass_sync?replicaSet=rs0}"
 
 # 1. compass.yaml -----------------------------------------------------------
 if [ ! -f compass.yaml ]; then
@@ -28,9 +30,13 @@ if [ ! -f compass.yaml ]; then
     -e "s#REPLACE_WITH_COMPASS_TOKEN#${COMPASS_TOKEN:-local-dev-compass-token}#" \
     -e "s#REPLACE_WITH_SUPERTOKENS_URI#${SUPERTOKENS_URI:-http://localhost:3567}#" \
     -e "s#REPLACE_WITH_SUPERTOKENS_KEY#${SUPERTOKENS_KEY:-local-dev-supertokens-key}#" \
+    -e "s#REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN#${SYNC_INTERNAL_AUTH_TOKEN:-local-dev-sync-internal-auth-token}#" \
     compass.yaml
   # Replace the whole mongo.uri line (the example ships an Atlas placeholder).
   sed -i "s#^  uri: mongodb.*#  uri: ${MONGO_URI//#/\\#}#" compass.yaml
+  # The sync service needs an isolated database on the same local replica set.
+  # Replace the sync.mongoUri line (the example ships an Atlas placeholder).
+  sed -i "s#^  mongoUri: mongodb.*#  mongoUri: ${SYNC_MONGO_URI//#/\\#}#" compass.yaml
 
   if [ -n "${GOOGLE_CLIENT_ID:-}" ] && [ -n "${GOOGLE_CLIENT_SECRET:-}" ]; then
     echo "[bootstrap] enabling Google integration from environment"
