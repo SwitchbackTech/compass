@@ -11,18 +11,15 @@ import {
 export type ShortcutShowcaseState = {
   isActive: boolean;
   stepIndex: number;
-  /** True while the "skip the shortcuts?" inline confirm is showing. */
-  isConfirmingSkip: boolean;
-  /** Once per entry: after the first confirm, Escape skips directly. */
-  hasShownSkipConfirm: boolean;
 };
 
 export const initialShortcutShowcaseState: ShortcutShowcaseState = {
   isActive: false,
   stepIndex: 0,
-  isConfirmingSkip: false,
-  hasShownSkipConfirm: false,
 };
+
+/** Where a user who left early went next, so the funnel can tell them apart. */
+export type ShowcaseExit = "calendar" | "signup";
 
 export const useShortcutShowcaseStore = create<ShortcutShowcaseState>()(() => ({
   ...initialShortcutShowcaseState,
@@ -58,9 +55,8 @@ export const shortcutShowcaseActions = {
     activate("palette");
   },
   advance: () => {
-    const { isActive, stepIndex, isConfirmingSkip } =
-      useShortcutShowcaseStore.getState();
-    if (!isActive || isConfirmingSkip) return;
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+    if (!isActive) return;
     track("shortcut_showcase_step_completed", { step: stepIdAt(stepIndex) });
     if (stepIndex >= SHOWCASE_STEP_IDS.length - 1) {
       shortcutShowcaseActions.finish();
@@ -70,9 +66,8 @@ export const shortcutShowcaseActions = {
   },
   /** Step back to redo the previous lesson; no-op on the first step. */
   back: () => {
-    const { isActive, stepIndex, isConfirmingSkip } =
-      useShortcutShowcaseStore.getState();
-    if (!isActive || isConfirmingSkip || stepIndex === 0) return;
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+    if (!isActive || stepIndex === 0) return;
     track("shortcut_showcase_step_redone", { step: stepIdAt(stepIndex - 1) });
     useShortcutShowcaseStore.setState({ stepIndex: stepIndex - 1 });
   },
@@ -80,30 +75,16 @@ export const shortcutShowcaseActions = {
     track("shortcut_showcase_finished");
     endShowcase();
   },
-  skip: () => {
-    const { stepIndex } = useShortcutShowcaseStore.getState();
-    track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex) });
-    endShowcase();
-  },
   /**
-   * Escape or the Skip button. First time this entry: show the
-   * keyboard-first confirm. Once the user has seen it, skip directly.
+   * Leaving before graduation. There is no "are you sure?" in the way: the
+   * showcase is an offer, and the flow it guards (sign up, connect a calendar)
+   * matters more than the two lessons.
    */
-  requestSkipConfirm: () => {
-    const { isActive, hasShownSkipConfirm } =
-      useShortcutShowcaseStore.getState();
+  skip: (exit: ShowcaseExit = "calendar") => {
+    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
     if (!isActive) return;
-    if (hasShownSkipConfirm) {
-      shortcutShowcaseActions.skip();
-      return;
-    }
-    useShortcutShowcaseStore.setState({
-      isConfirmingSkip: true,
-      hasShownSkipConfirm: true,
-    });
-  },
-  cancelSkipConfirm: () => {
-    useShortcutShowcaseStore.setState({ isConfirmingSkip: false });
+    track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex), exit });
+    endShowcase();
   },
   /**
    * Welcome-modal auth handoff: signing up defers the offer to right after
@@ -129,6 +110,3 @@ export const selectShowcaseActive = (state: ShortcutShowcaseState) =>
 
 export const selectShowcaseStepIndex = (state: ShortcutShowcaseState) =>
   state.stepIndex;
-
-export const selectShowcaseConfirmingSkip = (state: ShortcutShowcaseState) =>
-  state.isConfirmingSkip;

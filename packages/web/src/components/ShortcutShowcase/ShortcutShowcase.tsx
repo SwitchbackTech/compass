@@ -10,9 +10,9 @@ import { track } from "@web/auth/posthog/track";
 import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
 import {
-  clearFocus,
   commitTitle,
   createDraft,
   cycleEdge,
@@ -27,7 +27,6 @@ import {
   placeDraft,
   redo,
   resizeFocusedEdge,
-  setEdge,
   toggleHardcore,
   toggleJumpChips,
   undo,
@@ -35,12 +34,10 @@ import {
 import {
   getShowcaseStep,
   SHOWCASE_STEP_IDS,
-  STRETCH_KEYCAPS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import { markShortcutShowcaseSeen } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   selectShowcaseActive,
-  selectShowcaseConfirmingSkip,
   selectShowcaseStepIndex,
   shortcutShowcaseActions,
   stepIdAt,
@@ -60,6 +57,8 @@ const TEXT_BUTTON_CLASS =
   "c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
 const PRIMARY_BUTTON_CLASS =
   "c-button c-button-primary rounded-full px-4 py-1.5 text-xs";
+const SECONDARY_BUTTON_CLASS =
+  "c-button c-button-secondary rounded-full px-4 py-1.5 text-xs";
 
 const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
   ArrowUp: "up",
@@ -73,17 +72,18 @@ const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
  * calendar. Bindings come from KEYMAP (shared with the real handlers);
  * behavior is a deliberately simplified reimplementation against ephemeral
  * practice state, so nothing here touches storage or the real grid stores.
+ *
+ * Two lessons gate the exit (see showcase.steps.ts), but every shortcut the
+ * arena ever answered still works here for anyone who wants to poke around.
  */
 const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
-  const isConfirmingSkip = useShortcutShowcaseStore(
-    selectShowcaseConfirmingSkip,
-  );
   const stepId = stepIdAt(stepIndex);
   const step = getShowcaseStep(stepId);
   const { closing, beginDismiss } = useDismissTransition(SHOWCASE_REVEAL_MS);
   const closingRef = useRef(false);
   closingRef.current = closing;
+  const { openModal } = useAuthModal();
 
   // The takeover owns the keyboard: silence every real app handler
   // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
@@ -97,6 +97,14 @@ const ShowcaseTakeover: FC = () => {
   };
   const graduateRef = useRef(graduate);
   graduateRef.current = graduate;
+
+  // The showcase is the last thing between a curious visitor and the flow that
+  // actually matters, so it always offers the door rather than guarding it.
+  const skipToSignup = () => {
+    shortcutShowcaseActions.skip("signup");
+    track("signup_started", { source: "shortcut_showcase" });
+    openModal("signUp");
+  };
 
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
@@ -113,7 +121,6 @@ const ShowcaseTakeover: FC = () => {
   // Practice state at each step's entry, so Back can restore and redo.
   const entrySnapshotsRef = useRef<Record<number, PracticeState>>({});
   const editSequenceArmedUntilRef = useRef(0);
-  const undoDoneRef = useRef(false);
   // Typed-so-far jump key while the S chips are showing ("t" awaiting "t1").
   const jumpBufferRef = useRef("");
 
@@ -129,32 +136,22 @@ const ShowcaseTakeover: FC = () => {
     [apply],
   );
 
-  // Step-entry effects: snapshot for Back, then stage the board so the
-  // taught keystroke lands (mirrors the tour's enterDentistMission trick).
-  // Layout, not passive: a step advances from inside a keydown handler, so a
-  // passive effect would run after the browser is free to deliver the next
-  // keystroke. The lesson key would then land in a title editor this effect
-  // has not closed yet (silently appending to the title instead of teaching).
+  // Step-entry effects: snapshot for Back, then close any editor left open by
+  // the previous step. Layout, not passive: a step advances from inside a
+  // keydown handler, so a passive effect would run after the browser is free
+  // to deliver the next keystroke. The lesson key would then land in a title
+  // editor this effect has not closed yet (silently appending to the title
+  // instead of teaching).
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per step change by design
   useLayoutEffect(() => {
     entrySnapshotsRef.current[stepIndex] ??= practiceRef.current;
-    undoDoneRef.current = false;
 
-    // A still-open editor from a previous step would swallow lesson keys.
     // The editor input is uncontrolled, so read the typed text off the DOM.
     if (practiceRef.current.editor && stepId !== "save") {
       const input = document.querySelector<HTMLInputElement>(
         "[data-practice-title-input]",
       );
       apply((state) => commitTitle(state, input?.value ?? ""));
-    }
-
-    if (stepId === "moveFocus" || stepId === "editTitle") {
-      apply(focusFallback);
-    } else if (stepId === "resizeEdge") {
-      apply((state) => setEdge(focusFallback(state), "start"));
-    } else if (stepId === "placeDraft") {
-      apply(clearFocus);
     }
   }, [stepIndex]);
 
@@ -181,17 +178,6 @@ const ShowcaseTakeover: FC = () => {
       }
       const currentStepId = stepIdAt(store.stepIndex);
 
-      if (store.isConfirmingSkip) {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          event.stopPropagation();
-          shortcutShowcaseActions.skip();
-          return;
-        }
-        // Any other key keeps practicing and still counts as the lesson key.
-        shortcutShowcaseActions.cancelSkipConfirm();
-      }
-
       // Let the title editor own typing; only Escape passes through it.
       const target = event.target;
       if (
@@ -206,9 +192,8 @@ const ShowcaseTakeover: FC = () => {
         event.preventDefault();
         event.stopPropagation();
         // Escape inside the title editor closes the editor, never the
-        // showcase; a reflexive Escape after the confirm was seen would
-        // otherwise end the whole practice with no prompt. The editor input
-        // is uncontrolled, so the typed text lives in the DOM, not in state.
+        // showcase. The editor input is uncontrolled, so the typed text lives
+        // in the DOM, not in state.
         if (practiceRef.current.editor) {
           const input = document.querySelector<HTMLInputElement>(
             "[data-practice-title-input]",
@@ -216,7 +201,7 @@ const ShowcaseTakeover: FC = () => {
           apply((state) => commitTitle(state, input?.value ?? ""));
           return;
         }
-        shortcutShowcaseActions.requestSkipConfirm();
+        shortcutShowcaseActions.skip();
         return;
       }
 
@@ -229,7 +214,6 @@ const ShowcaseTakeover: FC = () => {
       // e -> t sequence (arm, then fire within the window).
       if (
         isBareLetterKey(event, KEYMAP.editTitle.sequence.leader) &&
-        practiceRef.current.focusedId &&
         !practiceRef.current.editor
       ) {
         editSequenceArmedUntilRef.current = Date.now() + ARM_WINDOW_MS;
@@ -242,8 +226,9 @@ const ShowcaseTakeover: FC = () => {
       ) {
         editSequenceArmedUntilRef.current = 0;
         event.preventDefault();
-        const next = apply(openTitleEditor);
-        if (next.editor && currentStepId === "editTitle") advance();
+        // No lesson seats focus any more, so the chord picks a block itself
+        // rather than silently doing nothing on a cold board.
+        apply((state) => openTitleEditor(focusFallback(state)));
         return;
       }
 
@@ -279,7 +264,6 @@ const ShowcaseTakeover: FC = () => {
         if (hints.includes(typed)) {
           jumpBufferRef.current = "";
           apply((state) => jumpToChipHint(state, typed));
-          if (currentStepId === "eventJump") advance();
         } else if (hints.some((hint) => hint.startsWith(typed))) {
           jumpBufferRef.current = typed;
         } else {
@@ -297,8 +281,7 @@ const ShowcaseTakeover: FC = () => {
 
       if (isBareLetterKey(event, KEYMAP.hardcore.bareLetter)) {
         event.preventDefault();
-        const next = apply(toggleHardcore);
-        if (currentStepId === "hardcore" && next.hardcoreOn) advance();
+        apply(toggleHardcore);
         return;
       }
 
@@ -314,20 +297,7 @@ const ShowcaseTakeover: FC = () => {
         keyboardKey(event).toLowerCase() === "z"
       ) {
         event.preventDefault();
-        const before = practiceRef.current;
-        if (event.shiftKey) {
-          const next = apply(redo);
-          if (
-            currentStepId === "undoRedo" &&
-            undoDoneRef.current &&
-            next !== before
-          ) {
-            advance();
-          }
-        } else {
-          const next = apply(undo);
-          if (next !== before) undoDoneRef.current = true;
-        }
+        apply(event.shiftKey ? redo : undo);
         return;
       }
 
@@ -343,30 +313,14 @@ const ShowcaseTakeover: FC = () => {
       const before = practiceRef.current;
       if (event.shiftKey) {
         if (before.edge && before.focusedId) {
-          const next = apply((state) => resizeFocusedEdge(state, direction));
-          if (
-            currentStepId === "resizeEdge" &&
-            before.edge === "end" &&
-            next !== before
-          ) {
-            advance();
-          }
+          apply((state) => resizeFocusedEdge(state, direction));
         } else if (before.focusedId) {
-          const next = apply((state) => moveFocusedEvent(state, direction));
-          if (currentStepId === "moveEvent" && next !== before) advance();
+          apply((state) => moveFocusedEvent(state, direction));
         } else {
           apply(placeDraft);
-          if (currentStepId === "placeDraft") advance();
         }
       } else {
-        const next = apply((state) => moveFocus(state, direction));
-        if (
-          currentStepId === "moveFocus" &&
-          before.focusedId &&
-          next.focusedId !== before.focusedId
-        ) {
-          advance();
-        }
+        apply((state) => moveFocus(state, direction));
       }
     };
 
@@ -384,51 +338,11 @@ const ShowcaseTakeover: FC = () => {
       case "save":
         apply((state) => commitTitle(state, "Coffee with Alex"));
         break;
-      case "moveFocus":
-        apply((state) => {
-          const next = moveFocus(state, "right");
-          return next !== state ? next : moveFocus(state, "left");
-        });
-        break;
-      case "editTitle":
-        apply((state) => openTitleEditor(focusFallback(state)));
-        break;
-      case "eventJump":
-        apply((state) => {
-          const withChips = state.jumpChips ? state : toggleJumpChips(state);
-          const entries = Object.entries(withChips.jumpChips ?? {});
-          const target =
-            entries.find(([id]) => id !== withChips.focusedId) ?? entries[0];
-          return target ? jumpToChipHint(withChips, target[1]) : withChips;
-        });
-        break;
-      case "moveEvent":
-        apply((state) => moveFocusedEvent(focusFallback(state), "down"));
-        break;
-      case "resizeEdge":
-        apply((state) =>
-          resizeFocusedEdge(setEdge(focusFallback(state), "end"), "down"),
-        );
-        break;
-      case "placeDraft":
-        apply(placeDraft);
-        break;
-      case "undoRedo":
-        apply(undo);
-        apply(redo);
-        break;
-      case "hardcore":
-        apply((state) => (state.hardcoreOn ? state : toggleHardcore(state)));
-        break;
     }
     advance();
   };
 
   const progressPercent = ((stepIndex + 1) / SHOWCASE_STEP_IDS.length) * 100;
-  // The stretch lesson teaches Tab first, then the chord, so it hints one
-  // press at a time rather than showing all three keys at once.
-  const isStretchPhase = stepId === "resizeEdge" && practice.edge === "end";
-  const keycaps = isStretchPhase ? STRETCH_KEYCAPS : step.keycaps;
 
   return (
     <section
@@ -442,94 +356,73 @@ const ShowcaseTakeover: FC = () => {
         className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
       >
         <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
-          {isConfirmingSkip ? (
-            <>
-              <h2 className="font-semibold text-lg text-text">
-                Skip the shortcuts?
-              </h2>
-              <p className="text-sm text-text-muted">
-                Compass is built around these shortcuts. Without them, it's just
-                another calendar app.
-              </p>
-              <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-text-muted text-xs">
+              Step {stepIndex + 1} of {SHOWCASE_STEP_IDS.length}
+            </span>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-surface-overlay">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+          <h2 className="font-semibold text-lg text-text">{step.title}</h2>
+          <p className="text-sm text-text-muted">
+            {typeof step.body === "string" ? (
+              step.body
+            ) : (
+              <ShortcutTipParts parts={step.body} />
+            )}
+          </p>
+          {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            {stepId === "graduation" ? (
+              <button
+                type="button"
+                className={PRIMARY_BUTTON_CLASS}
+                disabled={closing}
+                onClick={graduate}
+              >
+                Enter Compass
+              </button>
+            ) : (
+              <>
                 <button
                   type="button"
                   className={PRIMARY_BUTTON_CLASS}
-                  onClick={shortcutShowcaseActions.cancelSkipConfirm}
+                  onClick={doItForMe}
                 >
-                  Keep practicing
+                  Do it for me
                 </button>
                 <button
                   type="button"
-                  className={TEXT_BUTTON_CLASS}
-                  onClick={shortcutShowcaseActions.skip}
+                  className={SECONDARY_BUTTON_CLASS}
+                  onClick={skipToSignup}
                 >
-                  Skip anyway
+                  Skip to sign up
                 </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col gap-1">
-                <span className="text-text-muted text-xs">
-                  Step {stepIndex + 1} of {SHOWCASE_STEP_IDS.length}
-                </span>
-                <div className="h-1 w-full overflow-hidden rounded-full bg-surface-overlay">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all duration-300"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
-              <h2 className="font-semibold text-lg text-text">{step.title}</h2>
-              <p className="text-sm text-text-muted">
-                {typeof step.body === "string" ? (
-                  step.body
-                ) : (
-                  <ShortcutTipParts parts={step.body} />
-                )}
-              </p>
-              {keycaps && <ShortcutKeys keys={[...keycaps]} />}
-              <div className="flex items-center gap-2 pt-2">
-                {stepId === "graduation" ? (
-                  <button
-                    type="button"
-                    className={PRIMARY_BUTTON_CLASS}
-                    disabled={closing}
-                    onClick={graduate}
-                  >
-                    Enter Compass
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={PRIMARY_BUTTON_CLASS}
-                    onClick={doItForMe}
-                  >
-                    Do it for me
-                  </button>
-                )}
-                {stepIndex > 0 && stepId !== "graduation" && (
-                  <button
-                    type="button"
-                    className={TEXT_BUTTON_CLASS}
-                    onClick={goBack}
-                  >
-                    Previous
-                  </button>
-                )}
-                {stepId !== "graduation" && (
-                  <button
-                    type="button"
-                    className={TEXT_BUTTON_CLASS}
-                    onClick={shortcutShowcaseActions.requestSkipConfirm}
-                  >
-                    Skip
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+              </>
+            )}
+            {stepIndex > 0 && stepId !== "graduation" && (
+              <button
+                type="button"
+                className={TEXT_BUTTON_CLASS}
+                onClick={goBack}
+              >
+                Previous
+              </button>
+            )}
+            {stepId !== "graduation" && (
+              <button
+                type="button"
+                className={TEXT_BUTTON_CLASS}
+                onClick={() => shortcutShowcaseActions.skip()}
+              >
+                Skip to calendar
+              </button>
+            )}
+          </div>
         </aside>
         <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface p-4 shadow-xl">
           <PracticeCalendar

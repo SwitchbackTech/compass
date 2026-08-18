@@ -27,9 +27,7 @@ test("welcomes a first-time user and seeds sample events", async ({ page }) => {
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Create with the keyboard");
-  await page.keyboard.press("Escape");
-  await expect(showcase).toContainText("Skip the shortcuts?");
-  await showcase.getByRole("button", { name: "Skip anyway" }).click();
+  await showcase.getByRole("button", { name: "Skip to calendar" }).click();
   await expect(showcase).toHaveCount(0);
 
   await expect(

@@ -78,10 +78,11 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("advances through every lesson by doing, and graduates on Enter", async () => {
+  it("teaches create then save, and graduates on Enter", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
+    expect(currentStepId()).toBe("create");
 
     // create: C opens a draft with its title editor.
     pressKey("c");
@@ -92,48 +93,8 @@ describe("ShortcutShowcase", () => {
       screen.getByLabelText("Event title"),
       "Coffee with Alex{Enter}",
     );
-    expect(currentStepId()).toBe("moveFocus");
-    expect(screen.getByText("Coffee with Alex")).toBeTruthy();
-
-    // moveFocus: an arrow that lands on a different block advances.
-    pressKey("ArrowLeft");
-    expect(currentStepId()).toBe("editTitle");
-
-    // editTitle: e then t opens the focused block's title editor.
-    pressKey("e");
-    pressKey("t");
-    expect(currentStepId()).toBe("eventJump");
-
-    // eventJump: S flashes the real day-prefix chips; typing one jumps.
-    pressKey("s");
-    pressKey("t");
-    pressKey("1");
-    expect(currentStepId()).toBe("moveEvent");
-
-    // moveEvent: Shift+Arrow slides the focused block.
-    pressKey("ArrowDown", { shiftKey: true });
-    expect(currentStepId()).toBe("resizeEdge");
-
-    // resizeEdge: entry seeds the start edge, Tab lands on end, resize.
-    pressKey("Tab");
-    pressKey("ArrowDown", { shiftKey: true });
-    expect(currentStepId()).toBe("placeDraft");
-
-    // placeDraft: nothing focused, Shift+Arrow drops a block.
-    pressKey("ArrowRight", { shiftKey: true });
-    expect(currentStepId()).toBe("undoRedo");
-    expect(screen.getByText("Focus time")).toBeTruthy();
-
-    // undoRedo: Mod+Z takes the block away, Mod+Shift+Z brings it back.
-    pressKey("z", { metaKey: true });
-    expect(screen.queryByText("Focus time")).toBeNull();
-    pressKey("z", { metaKey: true, shiftKey: true });
-    expect(currentStepId()).toBe("hardcore");
-    expect(screen.getByText("Focus time")).toBeTruthy();
-
-    // hardcore: H flips the simulated badge.
-    pressKey("h");
     expect(currentStepId()).toBe("graduation");
+    expect(screen.getByText("Coffee with Alex")).toBeTruthy();
     expect(screen.getByText(/young cap'n/)).toBeTruthy();
 
     pressKey("Enter");
@@ -155,6 +116,24 @@ describe("ShortcutShowcase", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
+  });
+
+  it("keeps answering the shortcuts it no longer gates the exit on", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.start());
+
+    // S flashes the day-prefix chips, typing one jumps, and none of it
+    // advances a lesson any more.
+    pressKey("s");
+    pressKey("t");
+    pressKey("1");
+    expect(currentStepId()).toBe("create");
+
+    // e then t opens a title editor on a board no lesson seated focus on.
+    pressKey("e");
+    pressKey("t");
+    expect(screen.getByLabelText("Event title")).toBeTruthy();
+    expect(currentStepId()).toBe("create");
   });
 
   it("fades the takeover on Enter Compass, then unmounts", async () => {
@@ -224,62 +203,35 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByRole("button", { name: "Enter Compass" })).toBeTruthy();
   });
 
-  it("shows the stretch hint one phase at a time: Tab, then Shift+Arrow", async () => {
+  it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    showStep("resizeEdge");
+    act(() => shortcutShowcaseActions.start());
+    expect(currentStepId()).toBe("create");
 
-    // Phase one: only the key that moves focus onto the end time.
-    expect(screen.getByTestId("tab-icon")).toBeTruthy();
-    expect(screen.queryByTestId("shift-icon")).toBeNull();
-    expect(screen.queryByTestId("arrowdown-icon")).toBeNull();
-
-    pressKey("Tab");
-
-    // Phase two: the end edge has focus, so the chord replaces Tab.
-    expect(screen.queryByTestId("tab-icon")).toBeNull();
-    expect(screen.getByTestId("shift-icon")).toBeTruthy();
-    expect(screen.getByTestId("arrowdown-icon")).toBeTruthy();
-
-    // Leaving and returning re-seeds the start edge, so the lesson restarts
-    // at phase one rather than stranding the user on the chord.
-    pressKey("ArrowDown", { shiftKey: true });
-    expect(currentStepId()).toBe("placeDraft");
-    await user.click(screen.getByRole("button", { name: "Previous" }));
-    expect(currentStepId()).toBe("resizeEdge");
-    expect(screen.getByTestId("tab-icon")).toBeTruthy();
-    expect(screen.queryByTestId("shift-icon")).toBeNull();
+    // No confirm in the way, and no lesson to finish first.
+    await user.click(screen.getByRole("button", { name: "Skip to sign up" }));
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).toBe("true");
   });
 
-  it("puts undo and redo chips in the undoRedo sentence, not a duplicate row", () => {
-    render(<ShortcutShowcase />);
-    showStep("undoRedo");
-
-    expect(screen.getByText("to undo your last change, then")).toBeTruthy();
-    expect(screen.getByText("to bring it back.")).toBeTruthy();
-    expect(screen.getAllByTestId("z-icon")).toHaveLength(2);
-    expect(screen.getByTestId("shift-icon")).toBeTruthy();
-  });
-
-  it("Escape confirms once, lesson keys fall through, second Escape skips", () => {
+  it("Skip to calendar leaves straight away, without a confirm", async () => {
+    const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
 
-    pressKey("Escape");
-    expect(screen.getByText("Skip the shortcuts?")).toBeTruthy();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Skip to calendar" }));
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
+  });
 
-    // A lesson key cancels the confirm and still counts as the lesson.
-    pressKey("c");
-    expect(screen.queryByText("Skip the shortcuts?")).toBeNull();
-    expect(currentStepId()).toBe("save");
+  it("Escape skips the showcase outright", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.start());
 
-    // C opened the title editor, so this Escape only closes the editor.
-    pressKey("Escape");
-    expect(screen.queryByLabelText("Event title")).toBeNull();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-
-    // The confirm already ran once this entry: Escape now skips directly.
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
@@ -306,8 +258,6 @@ describe("ShortcutShowcase", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
 
-    // Burn the one skip confirm, then keep practicing.
-    pressKey("Escape");
     pressKey("c");
     expect(currentStepId()).toBe("save");
 
@@ -318,7 +268,7 @@ describe("ShortcutShowcase", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(screen.getByText("Standup prep")).toBeTruthy();
 
-    // With no editor open, Escape now skips directly (confirm already seen).
+    // With no editor open, Escape now leaves.
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
