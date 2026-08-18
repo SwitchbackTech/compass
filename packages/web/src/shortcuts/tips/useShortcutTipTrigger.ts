@@ -4,6 +4,7 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import {
   selectActiveShortcutTipId,
   shortcutTipsActions,
@@ -45,13 +46,13 @@ export function useShortcutTipTrigger() {
         activeTipId === "edit-sequence" &&
         !event.shiftKey &&
         !event.altKey &&
-        event.key.toLowerCase() === "e"
+        keyboardKey(event).toLowerCase() === "e"
       ) {
         shortcutTipsActions.actedOn("edit-sequence");
       } else if (
         activeTipId === "nudge" &&
         event.shiftKey &&
-        event.key.startsWith("Arrow")
+        keyboardKey(event).startsWith("Arrow")
       ) {
         shortcutTipsActions.actedOn("nudge");
       } else if (activeTipId === "target-event" && event.key === "Shift") {

@@ -1,6 +1,9 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import {
+  dispatchMissingKey,
+  pressKey,
+} from "@web/__tests__/utils/keyboard.test.util";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   selectEditSequenceMenuVisible,
@@ -274,5 +277,18 @@ describe("useEditSequenceShortcut", () => {
 
       document.removeEventListener("keydown", seen, true);
     });
+  });
+
+  it("ignores KeyboardEvents with no key instead of throwing", () => {
+    const onSequence = mock(() => {});
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+    expect(() => {
+      dispatchMissingKey("keydown");
+      dispatchMissingKey("keyup");
+    }).not.toThrow();
+
+    expect(isEditSequenceArmed()).toBe(false);
+    expect(onSequence).not.toHaveBeenCalled();
   });
 });
