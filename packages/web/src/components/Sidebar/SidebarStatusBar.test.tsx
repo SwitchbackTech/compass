@@ -15,6 +15,7 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
+import { KEYBOARD_PLACE_HINT_PARTS } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
 import {
   initialKeyboardOnlyState,
@@ -26,6 +27,7 @@ import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
   afterAll,
   afterEach,
@@ -88,6 +90,20 @@ const statusBarModuleUrl = new URL(
 const { SidebarStatusBar } = (await import(
   statusBarModuleUrl.href
 )) as typeof import("./SidebarStatusBar");
+
+const seedKeyboardPlaceDraft = () => {
+  draftActions.startGridDraft({
+    activity: "keyboardPlace",
+    draft: createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    ),
+  });
+};
+
+const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
 
 describe("SidebarStatusBar", () => {
   beforeEach(() => {
@@ -302,96 +318,48 @@ describe("SidebarStatusBar", () => {
   });
 
   it("shows Enter to open and Esc to discard while a form-closed keyboardPlace draft exists", () => {
-    draftActions.startGridDraft({
-      activity: "keyboardPlace",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000"),
-          new Date("2026-05-20T10:00:00.000"),
-        ),
-      ),
-    });
+    seedKeyboardPlaceDraft();
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Enter to open · Esc to discard",
-    );
+    expect(screen.getByRole("status")).toHaveTextContent(KEYBOARD_PLACE_HINT);
   });
 
   it("hides the keyboardPlace hint once the form is open", () => {
-    draftActions.startGridDraft({
-      activity: "keyboardPlace",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000"),
-          new Date("2026-05-20T10:00:00.000"),
-        ),
-      ),
-    });
+    seedKeyboardPlaceDraft();
     draftActions.setFormOpen(true);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(
-      screen.queryByText("Enter to open · Esc to discard"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 
   it("yields the keyboardPlace hint to Hardcore Mode", () => {
-    draftActions.startGridDraft({
-      activity: "keyboardPlace",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000"),
-          new Date("2026-05-20T10:00:00.000"),
-        ),
-      ),
-    });
+    seedKeyboardPlaceDraft();
     keyboardOnlyActions.enter();
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status")).toHaveTextContent("Hardcore Mode · Esc");
-    expect(
-      screen.queryByText("Enter to open · Esc to discard"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 
   it("yields the keyboardPlace hint to event jump", () => {
-    draftActions.startGridDraft({
-      activity: "keyboardPlace",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000"),
-          new Date("2026-05-20T10:00:00.000"),
-        ),
-      ),
-    });
+    seedKeyboardPlaceDraft();
     eventJumpActions.setActive(true);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
-    expect(
-      screen.queryByText("Enter to open · Esc to discard"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 
   it("yields the keyboardPlace hint to edge focus", () => {
-    draftActions.startGridDraft({
-      activity: "keyboardPlace",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000"),
-          new Date("2026-05-20T10:00:00.000"),
-        ),
-      ),
-    });
+    seedKeyboardPlaceDraft();
     edgeFocusActions.setEdge(
       "aaaaaaaaaaaaaaaaaaaaaaaa",
       "startDate",
@@ -402,8 +370,6 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
-    expect(
-      screen.queryByText("Enter to open · Esc to discard"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 });
