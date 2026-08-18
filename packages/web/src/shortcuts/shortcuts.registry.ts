@@ -119,6 +119,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Place timed draft on grid",
     section: "create",
   },
+  {
+    id: "create-place-discard",
+    keys: ["Escape"],
+    label: "Discard placed draft",
+    section: "create",
+  },
 
   // Focus
   {

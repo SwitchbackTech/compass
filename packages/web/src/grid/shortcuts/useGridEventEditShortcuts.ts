@@ -49,6 +49,7 @@ import {
   getChronologicallyAdjacentTarget,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
@@ -369,9 +370,21 @@ export function useGridEventEditShortcuts({
     edgeFocusActions.cycle(event._id, forward ? "forward" : "backward");
   };
 
-  const clearEdgeFocus = () => {
-    if (!useEdgeFocusStore.getState().eventId) return;
-    edgeFocusActions.reset();
+  const onEscape = () => {
+    if (isHigherEscapeOwner()) return;
+    if (useEdgeFocusStore.getState().eventId) {
+      edgeFocusActions.reset();
+      return;
+    }
+
+    const { gridDraft, status } = useDraftStore.getState();
+    if (
+      status?.activity === "keyboardPlace" &&
+      !status.isFormOpen &&
+      gridDraft
+    ) {
+      draftActions.discard();
+    }
   };
 
   // `targeting` is a fresh object every render for some callers (Day/Week
@@ -522,5 +535,5 @@ export function useGridEventEditShortcuts({
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut("Shift+Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
-  useAppShortcut("Escape", clearEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
+  useAppShortcut("Escape", onEscape, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
 }

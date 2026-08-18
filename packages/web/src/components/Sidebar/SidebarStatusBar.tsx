@@ -10,12 +10,18 @@ import { TrialCountdownChip } from "@web/billing/TrialCountdownChip";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
+import {
+  selectDraftActivity,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { EdgeFocusIndicator } from "@web/grid/shortcuts/EdgeFocusIndicator";
 import {
   selectEdgeFocusActive,
   selectEdgeFocusAnnouncement,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
+import { KeyboardPlaceIndicator } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
 import { KeyboardOnlyIndicator } from "@web/shortcuts/keyboard-only/KeyboardOnlyIndicator";
 import {
@@ -59,6 +65,9 @@ export const SidebarStatusBar: FC = () => {
   const isEdgeFocus = useEdgeFocusStore(selectEdgeFocusActive);
   const edgeFocusAnnouncement = useEdgeFocusStore(selectEdgeFocusAnnouncement);
   const showEdgeFocus = isEdgeFocus || Boolean(edgeFocusAnnouncement);
+  const draftActivity = useDraftStore(selectDraftActivity);
+  const isDraftFormOpen = useDraftStore(selectIsEventFormOpen);
+  const isKeyboardPlace = draftActivity === "keyboardPlace" && !isDraftFormOpen;
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -98,6 +107,10 @@ export const SidebarStatusBar: FC = () => {
       ) : showEdgeFocus ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <EdgeFocusIndicator />
+        </div>
+      ) : isKeyboardPlace ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <KeyboardPlaceIndicator />
         </div>
       ) : !status && activeTipId ? (
         <div className="flex h-full min-w-0 flex-1 items-center">

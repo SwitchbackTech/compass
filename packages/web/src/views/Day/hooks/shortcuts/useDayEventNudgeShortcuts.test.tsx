@@ -422,6 +422,58 @@ describe("useDayEventNudgeShortcuts", () => {
     ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
 
+  it("discards a form-closed keyboardPlace draft on Escape", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(true, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
+  });
+
+  it("discards a repositioned keyboardPlace draft on Escape", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(
+        false,
+        dayjs("2026-05-20T00:00:00.000"),
+        "keyboardPlace",
+      );
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+    pressKey("ArrowDown", shiftKey);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
+  });
+
+  it("does not discard a keyboardPlace draft on Escape while the form is open", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+    draftActions.setFormOpen(true);
+    renderEditShortcuts();
+
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    expect(useDraftStore.getState().gridDraft).not.toBeNull();
+  });
+
   it("deletes the focused timed calendar event with Delete", () => {
     focusCalendarTarget(TIMED_EVENT_ID, "timed");
     const { queryClient } = renderEditShortcuts();

@@ -5,9 +5,32 @@ import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { draftActions } from "@web/events/stores/draft.store";
+import {
+  edgeFocusActions,
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
+import { KEYBOARD_PLACE_HINT_PARTS } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
 import {
+  initialKeyboardOnlyState,
+  keyboardOnlyActions,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import {
+  eventJumpActions,
+  initialEventJumpState,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
+import {
   afterAll,
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -68,12 +91,37 @@ const { SidebarStatusBar } = (await import(
   statusBarModuleUrl.href
 )) as typeof import("./SidebarStatusBar");
 
+const seedKeyboardPlaceDraft = () => {
+  draftActions.startGridDraft({
+    activity: "keyboardPlace",
+    draft: createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    ),
+  });
+};
+
+const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
+
 describe("SidebarStatusBar", () => {
   beforeEach(() => {
     googleState = "HEALTHY";
     isConnecting = false;
     connection = null;
     isSseDegraded = false;
+    draftActions.discard();
+    useKeyboardOnlyStore.setState(initialKeyboardOnlyState, true);
+    useEventJumpStore.setState(initialEventJumpState, true);
+    useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  });
+
+  afterEach(() => {
+    draftActions.discard();
+    useKeyboardOnlyStore.setState(initialKeyboardOnlyState, true);
+    useEventJumpStore.setState(initialEventJumpState, true);
+    useEdgeFocusStore.setState(initialEdgeFocusState, true);
   });
 
   it("shows 'Saving changes…' when a mutation is pending", () => {
@@ -267,5 +315,61 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
+  });
+
+  it("shows Enter to open and Esc to discard while a form-closed keyboardPlace draft exists", () => {
+    seedKeyboardPlaceDraft();
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(KEYBOARD_PLACE_HINT);
+  });
+
+  it("hides the keyboardPlace hint once the form is open", () => {
+    seedKeyboardPlaceDraft();
+    draftActions.setFormOpen(true);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
+  });
+
+  it("yields the keyboardPlace hint to Hardcore Mode", () => {
+    seedKeyboardPlaceDraft();
+    keyboardOnlyActions.enter();
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Hardcore Mode · Esc");
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
+  });
+
+  it("yields the keyboardPlace hint to event jump", () => {
+    seedKeyboardPlaceDraft();
+    eventJumpActions.setActive(true);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
+  });
+
+  it("yields the keyboardPlace hint to edge focus", () => {
+    seedKeyboardPlaceDraft();
+    edgeFocusActions.setEdge(
+      "aaaaaaaaaaaaaaaaaaaaaaaa",
+      "startDate",
+      "Editing start time",
+    );
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
+    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 });

@@ -740,6 +740,59 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     expect(getGridDraftId(useDraftStore.getState().gridDraft!)).toBe(placedId);
     expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
   });
+
+  it("discards a form-closed keyboardPlace draft on Escape", async () => {
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
+  });
+
+  it("discards a repositioned keyboardPlace draft on Escape", async () => {
+    repositionDraftByKeyboard = mock(() =>
+      Boolean(useDraftStore.getState().gridDraft),
+    );
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+
+    pressKey("ArrowDown", shiftKey);
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
+  });
+
+  it("does not discard a keyboardPlace draft on Escape while the form is open", async () => {
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+
+    act(() => {
+      draftActions.setFormOpen(true);
+    });
+
+    pressKey("Escape");
+
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    expect(useDraftStore.getState().gridDraft).not.toBeNull();
+  });
 });
 
 describe("useWeekShortcutOwner edge focus", () => {
