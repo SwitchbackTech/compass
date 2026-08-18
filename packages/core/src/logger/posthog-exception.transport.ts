@@ -6,7 +6,7 @@ import {
   isUnsafeMetaKey,
   rootCauseMessage,
 } from "@core/logger/log-serialization";
-import { getPostHogClient } from "./otel-logs";
+import { getPostHogClient, getPostHogContext } from "./otel-logs";
 
 export type PostHogProperties = Record<string | number, unknown>;
 
@@ -73,14 +73,32 @@ export class PostHogExceptionTransport extends TransportStream {
     const message = String(info.message || "Error");
     const stack = info["stack"] ? String(info["stack"]) : undefined;
     const userId = info["userId"] ? String(info["userId"]) : undefined;
+    const errorType = info["errorType"] ? String(info["errorType"]) : undefined;
+    const result = info["result"] ? String(info["result"]) : undefined;
 
-    const err = new Error(message);
+    // Bare `new Error(message)` groups every call site sharing a generic
+    // ErrorMetadata description (e.g. "Not sure why error occurred. See
+    // logs") into one PostHog issue titled "Error". Naming the error after
+    // the specific BaseError code/result restores per-call-site grouping.
+    const err = new Error(result ? `${result}: ${message}` : message);
+    if (errorType) {
+      err.name = errorType;
+    }
     if (stack) {
       err.stack = stack;
     }
 
     const distinctId = userId || "unknown";
     const properties = buildPostHogProperties(info);
+
+    const context = getPostHogContext();
+    if (context) {
+      properties["environment"] = context.environment;
+      properties["service"] = context.service;
+      if (context.version) {
+        properties["version"] = context.version;
+      }
+    }
 
     posthog.captureException(err, distinctId, properties);
 

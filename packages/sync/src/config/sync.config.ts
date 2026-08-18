@@ -29,6 +29,7 @@ const BooleanFromInput = z
 export const SyncConfigSchema = z
   .strictObject({
     NODE_ENV: z.enum(NodeEnv),
+    VERSION: z.string().trim().min(1).optional(),
     PORT: PositiveIntFromInput.default(SYNC_PORT_DEFAULT),
     // Isolated `compass_sync` database URI — never the backend's mongo.uri.
     MONGO_URI: z.string().trim().min(1),
@@ -85,6 +86,9 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
 
   return SyncConfigSchema.parse({
     NODE_ENV: config.runtime.nodeEnv,
+    VERSION: config.runtime.version
+      ? String(config.runtime.version)
+      : undefined,
     PORT: config.sync.port,
     MONGO_URI: config.sync.mongoUri,
     INTERNAL_AUTH_TOKEN: config.sync.internalAuthToken,

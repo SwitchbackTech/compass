@@ -69,6 +69,8 @@ class ErrorHandler {
       status?: number;
       userId?: string;
       correlationId?: string;
+      result?: string;
+      errorType?: string;
     } = { stack: error.stack };
     if (context?.method !== undefined) meta.method = context.method;
     if (context?.path !== undefined) meta.path = context.path;
@@ -76,6 +78,10 @@ class ErrorHandler {
     if (context?.userId != null) meta.userId = context.userId;
     if (context?.correlationId !== undefined) {
       meta.correlationId = context.correlationId;
+    }
+    if (error instanceof BaseError) {
+      meta.result = error.result;
+      meta.errorType = error.code ?? error.constructor.name;
     }
     logger.error(error.message || String(error), meta);
   }

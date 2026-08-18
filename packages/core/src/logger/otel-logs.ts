@@ -13,10 +13,18 @@ export interface OtelLogsOptions {
   nodeEnv: NodeEnv;
   posthogKey?: string;
   posthogHost?: string;
+  version?: string;
+}
+
+export interface PostHogContext {
+  service: string;
+  environment: NodeEnv;
+  version?: string;
 }
 
 let loggerProvider: LoggerProvider | undefined;
 let posthogClient: PostHog | undefined;
+let postHogContext: PostHogContext | undefined;
 
 export function startOtelLogs(options: OtelLogsOptions): PostHog | null {
   const isRemoteLoggingEnvironment =
@@ -49,6 +57,12 @@ export function startOtelLogs(options: OtelLogsOptions): PostHog | null {
       flushInterval: 1000,
     });
 
+    postHogContext = {
+      service: options.serviceName,
+      environment: options.nodeEnv,
+      version: options.version,
+    };
+
     return posthogClient;
   }
 
@@ -62,4 +76,8 @@ export async function stopOtelLogs(): Promise<void> {
 
 export function getPostHogClient(): PostHog | null {
   return posthogClient ?? null;
+}
+
+export function getPostHogContext(): PostHogContext | null {
+  return postHogContext ?? null;
 }
