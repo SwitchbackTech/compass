@@ -1,6 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { draftActions } from "@web/events/stores/draft.store";
+import {
   CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES,
   calendarEventIdElementSelector,
 } from "@web/grid/interaction/view-event-registry";
@@ -31,10 +36,12 @@ const focusCalendarEvent = () => {
 describe("useShortcutTipTrigger", () => {
   beforeEach(() => {
     resetStore();
+    draftActions.discard();
   });
 
   afterEach(() => {
     resetStore();
+    draftActions.discard();
     document.body.innerHTML = "";
   });
 
@@ -69,5 +76,22 @@ describe("useShortcutTipTrigger", () => {
 
     // A missing key normalizes to "", not "e", so the tip stays active.
     expect(useShortcutTipsStore.getState().activeTipId).toBe("edit-sequence");
+  });
+
+  it("does not rotate a generic tip during a form-closed keyboardPlace draft", () => {
+    focusCalendarEvent();
+    draftActions.startGridDraft({
+      activity: "keyboardPlace",
+      draft: createGridEventDraft(
+        timedGridSchedule(
+          new Date("2026-05-20T09:00:00.000"),
+          new Date("2026-05-20T10:00:00.000"),
+        ),
+      ),
+    });
+
+    renderHook(() => useShortcutTipTrigger());
+
+    expect(useShortcutTipsStore.getState().activeTipId).toBeNull();
   });
 });

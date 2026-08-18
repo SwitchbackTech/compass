@@ -13,8 +13,9 @@ import {
 import { useIsAnyCalendarEventFocused } from "@web/shortcuts/tips/useIsAnyCalendarEventFocused";
 
 /**
- * Drives the quiet sidebar tip: eligible only when an event is focused and
- * the form is closed, and biased by recent mouse-vs-keyboard edit activity.
+ * Drives the quiet sidebar tip: eligible only when an event is focused, the
+ * form is closed, and the user is not in Shift+Arrow place-create. Biased by
+ * recent mouse-vs-keyboard edit activity.
  */
 export function useShortcutTipTrigger() {
   const eventFocused = useIsAnyCalendarEventFocused();
@@ -27,12 +28,12 @@ export function useShortcutTipTrigger() {
   }, [activity]);
 
   useEffect(() => {
-    if (eventFocused && !isFormOpen) {
+    if (eventFocused && !isFormOpen && activity !== "keyboardPlace") {
       shortcutTipsActions.maybeRotate();
     } else {
       shortcutTipsActions.hide();
     }
-  }, [eventFocused, isFormOpen]);
+  }, [activity, eventFocused, isFormOpen]);
 
   // Encouragement-based, like the shortcut showcase's advance detection: the
   // matching keypress counts as "acted on" without verifying the resulting

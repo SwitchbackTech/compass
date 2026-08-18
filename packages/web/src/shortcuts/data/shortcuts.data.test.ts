@@ -136,6 +136,16 @@ describe("shortcuts.data", () => {
           label: "Place timed draft on grid",
         },
       );
+      expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
+        keys: ["Escape"],
+        label: "Discard placed draft",
+      });
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
+        {
+          keys: ["Escape"],
+          label: "Discard placed draft",
+        },
+      );
     });
 
     it("lists u/i focus shortcuts per view", () => {
