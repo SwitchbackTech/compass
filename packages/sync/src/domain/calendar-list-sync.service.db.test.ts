@@ -438,6 +438,47 @@ describe("syncCalendarList", () => {
     expect(team?.active).toBe(true);
   });
 
+  it("updates the stored display name when rediscovery reports a rename", async () => {
+    const conn = connection();
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [
+              { ...discovered("mens-group"), displayName: "mens-group" },
+            ],
+            cursor: "cur-1",
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [
+              {
+                ...discovered("mens-group"),
+                displayName: "journey-mens-group",
+              },
+            ],
+            cursor: "cur-2",
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const renamed = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "mens-group",
+    );
+    expect(renamed?.displayName).toBe("journey-mens-group");
+  });
+
   it("re-lists in full when the incremental cursor has expired", async () => {
     const conn = connection();
     await syncCalendarList(
