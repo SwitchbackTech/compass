@@ -236,8 +236,8 @@ describe("EventGrid", () => {
     );
 
     const status = screen.getByRole("status");
-    expect(status).toHaveClass("sr-only");
-    expect(status).toHaveTextContent("Looking for events");
+    expect(status).toHaveTextContent("Adding your calendar…");
+    expect(status).not.toHaveClass("sr-only");
     expect(
       screen.getByRole("img", {
         hidden: true,
@@ -270,7 +270,8 @@ describe("EventGrid", () => {
     );
 
     expect(
-      screen.queryByRole("status", { name: "Looking for events" }),
+    expect(
+      screen.queryByRole("status", { name: "Adding your calendar…" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("status", { name: "Loading events" }),
@@ -295,10 +296,40 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(screen.queryByText("Looking for events")).not.toBeInTheDocument();
+    expect(screen.queryByText("Adding your calendar…")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't load events.",
     );
+  });
+
+  it("shows a couldn't-add overlay with retry when the first import failed", async () => {
+    const onRetryImport = mock();
+    const user = userEvent.setup();
+
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isImportFailed
+        onAllDayMouseDown={mock()}
+        onRetryImport={onRetryImport}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't add your calendar.",
+    );
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetryImport).toHaveBeenCalledTimes(1);
   });
 
   it("shows the loader for first load and for retry after error", () => {

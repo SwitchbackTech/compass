@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
+import { CalendarConnectionBannerGate } from "@web/components/CalendarConnectionBanner/CalendarConnectionBannerGate";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
@@ -162,6 +163,7 @@ export const WeekView = () => {
             className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
           >
             <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+            <CalendarConnectionBannerGate />
             <DemoEventsBannerGate range={demoEventsRange} />
 
             <WeekGridScrollArea>

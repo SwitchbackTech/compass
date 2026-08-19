@@ -3,7 +3,10 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  isFirstImportFailed,
+  isFirstImportInProgress,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
@@ -52,7 +55,7 @@ export const Grid: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { connection, state: googleState } = useConnectGoogle();
+  const { connection, refresh, state: googleState } = useConnectGoogle();
   // Session expiry already surfaces SessionExpiredToast — don't also show
   // "Couldn't load events" / Retry for the same failure.
   const showEventsLoadError = shouldShowContextualLoadError(
@@ -76,6 +79,8 @@ export const Grid: FC<Props> = ({
     !hasVisibleEvents &&
     googleState === "IMPORTING" &&
     isFirstImportInProgress(connection);
+  const isImportFailed =
+    isSuccess && !hasVisibleEvents && isFirstImportFailed(connection);
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
@@ -137,10 +142,12 @@ export const Grid: FC<Props> = ({
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
                 isErrorEvents={showEventsLoadError}
+                isImportFailed={isImportFailed}
                 isImportingEmpty={isImportingEmpty}
                 isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}
                 onRetryEvents={() => void refetch()}
+                onRetryImport={() => refresh()}
                 onTimedMouseDown={onTimedMouseDown}
                 timedEventsLayer={timedEventsLayer}
                 today={today}
