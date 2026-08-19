@@ -3,7 +3,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -21,8 +20,8 @@ import {
   type PracticeState,
 } from "@web/components/ShortcutShowcase/practice.state";
 import {
+  getCreateLessonPhase,
   getShowcaseStep,
-  SHOWCASE_STEP_IDS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   selectShowcaseActive,
@@ -50,13 +49,12 @@ const SECONDARY_BUTTON_CLASS =
  * behavior is a deliberately simplified reimplementation against ephemeral
  * practice state, so nothing here touches storage or the real grid stores.
  *
- * Only the two gating lessons (see showcase.steps.ts) are interactive; the
- * checklist re-teaches the rest on real events after graduation.
+ * One lesson, taught as one continuous motion (create.steps.ts explains why);
+ * graduation hands off to a prompt on the real calendar, not a checklist.
  */
 const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
   const stepId = stepIdAt(stepIndex);
-  const step = getShowcaseStep(stepId);
   const { closing, beginDismiss } = useDismissTransition(SHOWCASE_REVEAL_MS);
   const closingRef = useRef(false);
   closingRef.current = closing;
@@ -98,52 +96,19 @@ const ShowcaseTakeover: FC = () => {
     [],
   );
 
-  // Practice state at each step's entry, so Back can restore and redo.
-  const entrySnapshotsRef = useRef<Record<number, PracticeState>>({});
-
   const advance = shortcutShowcaseActions.advance;
 
   const handleTitleCommit = useCallback(
     (title: string) => {
       apply((state) => commitTitle(state, title));
-      if (stepIdAt(useShortcutShowcaseStore.getState().stepIndex) === "save") {
+      if (
+        stepIdAt(useShortcutShowcaseStore.getState().stepIndex) === "create"
+      ) {
         advance();
       }
     },
     [apply],
   );
-
-  // Step-entry effects: snapshot for Back, then close any editor left open by
-  // the previous step. Layout, not passive: a step advances from inside a
-  // keydown handler, so a passive effect would run after the browser is free
-  // to deliver the next keystroke. The lesson key would then land in a title
-  // editor this effect has not closed yet (silently appending to the title
-  // instead of teaching).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs per step change by design
-  useLayoutEffect(() => {
-    entrySnapshotsRef.current[stepIndex] ??= practiceRef.current;
-
-    // The editor input is uncontrolled, so read the typed text off the DOM.
-    if (practiceRef.current.editor && stepId !== "save") {
-      const input = document.querySelector<HTMLInputElement>(
-        "[data-practice-title-input]",
-      );
-      apply((state) => commitTitle(state, input?.value ?? ""));
-    }
-  }, [stepIndex]);
-
-  const goBack = () => {
-    const snapshot = entrySnapshotsRef.current[stepIndex - 1];
-    if (snapshot) {
-      practiceRef.current = snapshot;
-      setPractice(snapshot);
-    }
-    // Later entries are stale once the board rewinds.
-    for (const key of Object.keys(entrySnapshotsRef.current)) {
-      if (Number(key) >= stepIndex) delete entrySnapshotsRef.current[+key];
-    }
-    shortcutShowcaseActions.back();
-  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -190,8 +155,9 @@ const ShowcaseTakeover: FC = () => {
 
       if (isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())) {
         event.preventDefault();
-        const next = apply(createDraft);
-        if (next.editor?.isNew && currentStepId === "create") advance();
+        // Create never advances by itself: the lesson advances on title
+        // commit, so C -> type -> Enter reads as one motion, not two steps.
+        apply(createDraft);
         return;
       }
     };
@@ -203,18 +169,20 @@ const ShowcaseTakeover: FC = () => {
   // Performs the lesson's action on the practice board, then moves on.
   const doItForMe = () => {
     track("shortcut_showcase_assist_used", { step: stepId });
-    switch (stepId) {
-      case "create":
-        apply(createDraft);
-        break;
-      case "save":
-        apply((state) => commitTitle(state, "Coffee with Alex"));
-        break;
+    if (stepId === "create") {
+      apply(createDraft);
+      apply((state) => commitTitle(state, "Coffee with Alex"));
     }
     advance();
   };
 
-  const progressPercent = ((stepIndex + 1) / SHOWCASE_STEP_IDS.length) * 100;
+  const step =
+    stepId === "create"
+      ? {
+          ...getShowcaseStep("create"),
+          ...getCreateLessonPhase(Boolean(practice.editor)),
+        }
+      : getShowcaseStep("graduation");
 
   return (
     <section
@@ -228,17 +196,6 @@ const ShowcaseTakeover: FC = () => {
         className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
       >
         <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-text-muted text-xs">
-              Step {stepIndex + 1} of {SHOWCASE_STEP_IDS.length}
-            </span>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-surface-overlay">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
           <h2 className="font-semibold text-lg text-text">{step.title}</h2>
           <p className="text-sm text-text-muted">
             {typeof step.body === "string" ? (
@@ -277,15 +234,6 @@ const ShowcaseTakeover: FC = () => {
                   </button>
                 )}
               </>
-            )}
-            {stepIndex > 0 && stepId !== "graduation" && (
-              <button
-                type="button"
-                className={TEXT_BUTTON_CLASS}
-                onClick={goBack}
-              >
-                Previous
-              </button>
             )}
             {stepId !== "graduation" && (
               <button

@@ -105,7 +105,7 @@ describe("RootShell calendar onboarding on /life", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("complementary", {
-        name: "Shortcut practice checklist",
+        name: "Create your first event",
       }),
     ).not.toBeInTheDocument();
     expect(persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe(
@@ -114,7 +114,9 @@ describe("RootShell calendar onboarding on /life", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe(null);
-    expect(persistentBrowserStore.get(STORAGE_KEYS.CHECKLIST_DONE)).toBe(null);
+    expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
+      null,
+    );
   });
 
   it("still shows welcome on /week for a first-time anonymous visitor", async () => {
@@ -133,13 +135,15 @@ describe("RootShell calendar onboarding on /life", () => {
 
     expect(
       screen.queryByRole("complementary", {
-        name: "Shortcut practice checklist",
+        name: "Create your first event",
       }),
     ).not.toBeInTheDocument();
-    expect(persistentBrowserStore.get(STORAGE_KEYS.CHECKLIST_DONE)).toBe(null);
+    expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
+      null,
+    );
   });
 
-  it("shows the practice card on /week after the showcase has been seen", async () => {
+  it("shows the first-event prompt on /week after the showcase has been seen", async () => {
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
 
@@ -147,9 +151,9 @@ describe("RootShell calendar onboarding on /life", () => {
 
     expect(
       screen.getByRole("complementary", {
-        name: "Shortcut practice checklist",
+        name: "Create your first event",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Practice on sample events")).toBeInTheDocument();
+    expect(screen.getByText("You've got the skills")).toBeInTheDocument();
   });
 });

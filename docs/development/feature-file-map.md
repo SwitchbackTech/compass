@@ -68,12 +68,13 @@ labels outside the registry.
 - Mount point for global + Hardcore Mode hooks: `packages/web/src/components/RootShell/RootShell.tsx`
 - Acceptance runbook: [Shortcuts](../acceptance/shortcuts.md)
 
-## Welcome, Showcase, And Checklist
+## Welcome, Showcase, And First-Event Handoff
 
-Anonymous calendar onboarding (welcome modal, Shortcut Showcase, checklist)
-lives under `packages/web/src/components/{WelcomeModal,ShortcutShowcase,OnboardingChecklist}`.
+Anonymous calendar onboarding (welcome modal, Shortcut Showcase, first-event
+prompt) lives under
+`packages/web/src/components/{WelcomeModal,ShortcutShowcase,FirstEventPrompt}`.
 The flow, its entry points, and the storage contract are documented in
-[Frontend Runtime Flow](../frontend/frontend-runtime-flow.md#welcome-showcase-and-checklist).
+[Frontend Runtime Flow](../frontend/frontend-runtime-flow.md#welcome-showcase-and-first-event-handoff).
 
 ## Sidebar
 

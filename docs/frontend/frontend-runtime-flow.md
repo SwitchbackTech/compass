@@ -52,20 +52,20 @@ Important behavior:
 
 This is the shell for the main desktop app experience.
 
-## Welcome, Showcase, And Checklist
+## Welcome, Showcase, And First-Event Handoff
 
 Files:
 
 - `packages/web/src/components/RootShell/RootShell.tsx`
 - `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
 - `packages/web/src/components/ShortcutShowcase/`
-- `packages/web/src/components/OnboardingChecklist/`
+- `packages/web/src/components/FirstEventPrompt/`
 
-`RootShell` mounts the welcome modal, Shortcut Showcase, onboarding
-checklist, global navigation / calendar-shell shortcuts, and Hardcore Mode.
+`RootShell` mounts the welcome modal, Shortcut Showcase, the first-event
+prompt, global navigation / calendar-shell shortcuts, and Hardcore Mode.
 Those calendar-onboarding overlays are skipped on `/life`.
 
-Welcome → signup → checklist contract:
+Welcome → signup → first-event contract:
 
 - unauthenticated users who have not seen welcome get `WelcomeModal`
 - the welcome CTA order is **Continue with Google** (`G`, when Google is
@@ -79,16 +79,20 @@ Welcome → signup → checklist contract:
   `offerAfterSignupIfPending()` redeems it once, right after signup completes
 - the Shortcut Showcase therefore has exactly two entries: post-signup, and the
   command palette's "Practice shortcuts". `showcase.steps.ts` holds the order;
-  taught keycaps come from `packages/web/src/shortcuts/keymap.ts`. Two lessons
-  gate the exit (create, save) and are the only shortcuts the arena
-  implements; the checklist re-teaches the rest on real events
+  taught keycaps come from `packages/web/src/shortcuts/keymap.ts`. One lesson
+  gates the exit — create, then title-and-save, taught as a single continuous
+  motion rather than two steps — and is the only shortcut the arena implements
 - every showcase step offers **Skip to calendar**, and **Skip to sign up** for
   anyone not already signed in; Escape does the former. There is no confirm in
   the way
-- `OnboardingChecklist` is practice missions on the real calendar (not an
-  app-lock modal), shown once the showcase has been seen *or* skipped past —
-  including the explore-without-an-account path. It re-teaches the shortcuts
-  the showcase no longer walks through
+- graduating the showcase hands off directly to `FirstEventPrompt`, a
+  non-blocking card on the real calendar (not an app-lock modal) that asks the
+  user to press `C` on a real event. It is shown once the showcase has been
+  seen *or* skipped past — including the explore-without-an-account path —
+  and completes the moment a genuine create lands (`noteFirstRealEventCreated`
+  in `useEventMutations.ts`), then celebrates briefly and retires for good.
+  Users who finished or dismissed the retired onboarding checklist are read
+  as already done via a legacy storage key, so they never see it
 - command palette can reopen practice (“Practice shortcuts”) or the welcome
   guide (“Show welcome guide”)
 - users who already finished or skipped the retired guided tour are treated as
@@ -97,8 +101,8 @@ Welcome → signup → checklist contract:
 Hardcore Mode (`H`, also mounted from `RootShell`):
 
 - blocks pointer clicks while active; scroll and hover remain
-- clicks inside `[data-onboarding-ui]` still work so the showcase/checklist
-  stay usable
+- clicks inside `[data-onboarding-ui]` still work so the showcase and the
+  first-event prompt stay usable
 - exits via Escape when nothing higher owns Escape, another `H`, or refresh
 - entering Hardcore clears event-jump chips so there is not a second Esc owner
 

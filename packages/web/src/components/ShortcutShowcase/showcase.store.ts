@@ -74,13 +74,6 @@ export const shortcutShowcaseActions = {
     }
     useShortcutShowcaseStore.setState({ stepIndex: stepIndex + 1 });
   },
-  /** Step back to redo the previous lesson; no-op on the first step. */
-  back: () => {
-    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
-    if (!isActive || stepIndex === 0) return;
-    track("shortcut_showcase_step_redone", { step: stepIdAt(stepIndex - 1) });
-    useShortcutShowcaseStore.setState({ stepIndex: stepIndex - 1 });
-  },
   finish: () => {
     track("shortcut_showcase_finished");
     endShowcase();

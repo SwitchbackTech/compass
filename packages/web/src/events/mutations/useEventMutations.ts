@@ -43,6 +43,7 @@ import {
   dismissRecurrenceScopeToastFor,
   showRecurrenceScopeSuccessToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
+import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/first-event.store";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import {
   applyEventProjectionAcrossQueries,
@@ -756,6 +757,7 @@ export function useEventMutations(
             recurrence:
               finalInput.recurrence.kind === "series" ? "series" : "single",
           });
+          noteFirstRealEventCreated();
         }
         // callbacks rides along in two places: inside the variables so
         // onMutate can run onOptimisticApplied in the same task as the cache

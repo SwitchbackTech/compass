@@ -15,9 +15,9 @@ import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calend
 import { resetRecentCommandsStoreForTests } from "@web/components/CommandPalette/recent-commands.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
 import {
-  initialChecklistState,
-  useChecklistStore,
-} from "@web/components/OnboardingChecklist/checklist.store";
+  initialFirstEventPromptState,
+  useFirstEventPromptStore,
+} from "@web/components/FirstEventPrompt/first-event.store";
 import {
   initialShortcutShowcaseState,
   useShortcutShowcaseStore,
@@ -71,7 +71,7 @@ const storeResets: StoreReset[] = [
   () => setWeekInteractionMotionActive(false),
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
   () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
-  () => useChecklistStore.setState(initialChecklistState, true),
+  () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),

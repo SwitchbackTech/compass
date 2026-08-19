@@ -23,8 +23,9 @@ function isAuthModalOpen(): boolean {
 /**
  * True while the Shortcut Showcase takeover is up. The toast is a distraction
  * there, not a removal: it's re-checked on every anonymous write, so a user
- * who skips onboarding entirely still sees it. The non-blocking checklist
- * coexists with the toast on purpose.
+ * who skips onboarding entirely still sees it. The non-blocking first-event
+ * prompt coexists with the toast on purpose - the prompt drives the create,
+ * this toast catches the save-your-work moment right after.
  */
 function isOnboardingFlowActive(): boolean {
   return selectShowcaseActive(useShortcutShowcaseStore.getState());
