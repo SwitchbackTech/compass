@@ -75,7 +75,7 @@ describe("useCalendarViewShortcuts", () => {
     expect(onCreateAllDayEvent).not.toHaveBeenCalled();
   });
 
-  it("only registers Shift+J/K when the view provides window-shift handlers", () => {
+  it("routes Shift+J/K to the window-shift handlers when the view provides them", () => {
     const onShiftViewBackward = mock();
     const onShiftViewForward = mock();
 

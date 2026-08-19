@@ -31,10 +31,7 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
-import {
-  dayEventRegistry,
-  getDayInteractionTargetAttributes,
-} from "@web/views/Day/interaction/registry/day-event.registry";
+import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import {
   afterEach,
@@ -49,7 +46,6 @@ import {
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const LATER_TIMED_EVENT_ID = "cccccccccccccccccccccccc";
 const ALL_DAY_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
-const DRAFT_ID = "dddddddddddddddddddddddd";
 
 const timedEvent: GridEvent = {
   _id: TIMED_EVENT_ID,
@@ -126,33 +122,6 @@ const focusCalendarTarget = (
   return button;
 };
 
-const _seedFocusedKeyboardPlaceDraft = () => {
-  const draft = createGridEventDraft(
-    timedGridSchedule(
-      new Date("2026-05-20T09:00:00.000"),
-      new Date("2026-05-20T10:00:00.000"),
-    ),
-    EventIdSchema.parse(DRAFT_ID),
-  );
-  draftActions.startGridDraft({ activity: "keyboardPlace", draft });
-  const button = document.createElement("button");
-  Object.defineProperty(button, "offsetParent", {
-    configurable: true,
-    get: () => document.body,
-  });
-  const attributes = getDayInteractionTargetAttributes({
-    eventId: DRAFT_ID,
-    eventType: "timed",
-  });
-  for (const [key, value] of Object.entries(attributes)) {
-    if (value !== undefined) button.setAttribute(key, value);
-  }
-  button.setAttribute("data-grid-event-surface", "draft");
-  document.body.appendChild(button);
-  button.focus();
-  return button;
-};
-
 const renderEditShortcuts = ({
   allDayEvents = [],
   navigateToDate,
@@ -224,22 +193,6 @@ const getEditMutation = (
     .getMutationCache()
     .getAll()
     .find((mutation) => mutation.options.mutationKey?.[2] === "replace");
-
-const _getDeleteMutation = (
-  queryClient: ReturnType<typeof createCompassQueryClient>,
-) =>
-  queryClient
-    .getMutationCache()
-    .getAll()
-    .find((mutation) => mutation.options.mutationKey?.[2] === "delete");
-
-const _getCreateMutation = (
-  queryClient: ReturnType<typeof createCompassQueryClient>,
-) =>
-  queryClient
-    .getMutationCache()
-    .getAll()
-    .find((mutation) => mutation.options.mutationKey?.[2] === "create");
 
 beforeEach(() => {
   // Pin midday so keyboardPlace drafts (seeded from dayjs().hour()) do not

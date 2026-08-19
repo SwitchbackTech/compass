@@ -504,16 +504,16 @@ const MAX_PULL_PASSES = 3;
 async function repeatWhileChanged<T>(
   run: () => Promise<T>,
   changedDuring: (result: T) => boolean,
-  onRerun: (pass: number) => void,
-): Promise<{ last: T; gaveUp: boolean }> {
+  onRerun: (pass: number, previous: T) => void,
+): Promise<{ last: T; passes: number; gaveUp: boolean }> {
   let last = await run();
   let passes = 1;
   while (changedDuring(last) && passes < MAX_PULL_PASSES) {
-    onRerun(passes + 1);
+    onRerun(passes + 1, last);
     last = await run();
     passes += 1;
   }
-  return { last, gaveUp: changedDuring(last) };
+  return { last, passes, gaveUp: changedDuring(last) };
 }
 
 async function pullUntilQuiet(
@@ -521,12 +521,16 @@ async function pullUntilQuiet(
   calendar: ProviderCalendarRecord,
   now: () => Date,
 ): Promise<Awaited<ReturnType<typeof pullCalendarChanges>>> {
-  const { last: pull, gaveUp } = await repeatWhileChanged(
+  const {
+    last: pull,
+    passes,
+    gaveUp,
+  } = await repeatWhileChanged(
     () => pullCalendarChanges(deps, calendar, now),
     (result) => result.status === "applied" && result.changedDuringPull,
-    (pass) =>
+    (pass, previous) =>
       deps.log?.info?.(
-        `Sync calendar ${calendar._id}: notification landed mid-pull, re-pulling (pass ${pass}/${MAX_PULL_PASSES})`,
+        `Sync resource ${previous.status === "applied" ? previous.resource._id : "unknown"} (calendar ${calendar._id}): notification landed mid-pull, re-pulling (pass ${pass}/${MAX_PULL_PASSES})`,
       ),
   );
 
@@ -542,7 +546,7 @@ async function pullUntilQuiet(
       // this before, so "late" and "dropped" were indistinguishable after the
       // fact.
       deps.log?.info?.(
-        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms, ${pull.changed} changed, ${pull.deleted} deleted`,
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms over ${passes} pass(es), ${pull.changed} changed, ${pull.deleted} deleted`,
       );
     }
   }

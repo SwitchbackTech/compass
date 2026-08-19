@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import {
   pageOf as page,
   seedProviderCalendar,
@@ -27,7 +26,6 @@ import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occu
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
-const _objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
 // A reader serving scripted pages, one script for the windowed (fast) pass and
@@ -55,15 +53,6 @@ class FakeReader implements ProviderEventReader {
     return page;
   }
 }
-
-const _content = (title: string) => ({
-  title,
-  description: "",
-  location: null,
-  organizer: null,
-  attendees: [],
-  conference: null,
-});
 
 const master = (
   id: string,

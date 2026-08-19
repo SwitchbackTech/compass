@@ -3,9 +3,10 @@ import { OAuth2Client } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import {
+  GOOGLE_TRANSIENT_REASONS,
+  googleErrorReasons,
   googleFailureCause,
   googleStatus,
-  isGoogleTransient,
 } from "@sync/providers/google/google-error";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
@@ -176,7 +177,13 @@ function classifyReadError(
   if (status === 429 || status === undefined || status >= 500) {
     return "transient";
   }
-  if (status === 403 && isGoogleTransient(error, status)) {
+  // First reason only, as before the shared-triage refactor: a 403 whose
+  // primary reason is durable stays durable even if a later errors[] entry
+  // happens to be quota-shaped.
+  if (
+    status === 403 &&
+    GOOGLE_TRANSIENT_REASONS.includes(googleErrorReasons(error)[0] ?? "")
+  ) {
     return "transient";
   }
   return "readFailed";
