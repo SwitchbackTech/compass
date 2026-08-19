@@ -1,6 +1,12 @@
 import { calendar, type calendar_v3 } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { type gCalendar } from "@core/types/gcal";
+import {
+  googleErrorReasons,
+  googleFailureCause,
+  googleStatus,
+  isGoogleTransient,
+} from "@sync/providers/google/google-error";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
   type NotificationChannel,
@@ -9,7 +15,6 @@ import {
   type ProviderNotificationAdapter,
   ProviderNotificationError,
 } from "@sync/providers/provider-notifications.port";
-import { redactedCause } from "@sync/safety/redact-error";
 
 // The two Google channel calls the adapter makes. Depending on this narrow
 // interface (not the concrete googleapis client) lets tests script results and
@@ -237,9 +242,8 @@ function classifyWatchError(error: unknown): ProviderNotificationError {
   if (error instanceof ProviderNotificationError) return error;
   // Keep HTTP status + Google's machine-readable reason on the cause/message
   // so PostHog triage is not guesswork — redactedCause alone drops both, and
-  // shallow logger/exception serialization only keeps one Error.cause level
-  // (2026-08-07: 78 subscriptionMaintain exceptions with no status/reason).
-  const cause = watchFailureCause(error);
+  // shallow logger/exception serialization only keeps one Error.cause level.
+  const cause = googleFailureCause(error);
   const status = googleStatus(error);
   const detail = cause?.message;
 
@@ -257,10 +261,9 @@ function classifyWatchError(error: unknown): ProviderNotificationError {
       { cause },
     );
   }
-  // 429 / 5xx / no HTTP response, plus Google's 403-shaped rate-limit and
-  // quota reasons, are the only cases worth burning retries on. Everything
-  // else is a durable refusal (403/404/other 4xx): settle and poll.
-  if (isWatchTransient(error, status)) {
+  // Everything not transient is a durable refusal (403/404/other 4xx):
+  // settle and poll.
+  if (isGoogleTransient(error, status)) {
     return new ProviderNotificationError(
       "transient",
       detail
@@ -280,73 +283,11 @@ function classifyWatchError(error: unknown): ProviderNotificationError {
 
 // A 400 (or, per observed Google behavior, 403) whose reason is
 // pushNotSupportedForRequestedResource means the resource can never be
-// watched, so the caller should poll instead of retrying. googleapis may put
-// the errors array on the response body OR on the error object itself — check
-// both, same as the event-reader path.
+// watched, so the caller should poll instead of retrying.
 function isWatchUnsupported(error: unknown): boolean {
   const status = googleStatus(error);
   if (status !== 400 && status !== 403) return false;
   return googleErrorReasons(error).includes(
     "pushNotSupportedForRequestedResource",
   );
-}
-
-// Google's rate-limit and quota rejections arrive as 403, not 429, so status
-// alone cannot separate them from a durable 403 refusal. Without this, a
-// momentary quota blip would settle the job to polling and leave the channel
-// unopened until the next bootstrap.
-const TRANSIENT_REASONS = [
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-  "backendError",
-  "internalError",
-];
-
-function isWatchTransient(error: unknown, status: number | undefined): boolean {
-  if (status === undefined || status === 429 || status >= 500) return true;
-  return googleErrorReasons(error).some((reason) =>
-    TRANSIENT_REASONS.includes(reason),
-  );
-}
-
-// Like redactedCause: drop request-derived fields (bearer token on config), but
-// keep the two response facts triage needs — numeric HTTP status and Google's
-// machine-readable reason. Mirrors readFailureCause on the event-reader path.
-function watchFailureCause(error: unknown): Error | undefined {
-  const status = googleStatus(error);
-  const reason = googleErrorReasons(error)[0];
-  const facts = [
-    ...(status === undefined ? [] : [`HTTP ${status}`]),
-    ...(reason === undefined ? [] : [`reason ${reason}`]),
-  ];
-  if (facts.length === 0) return redactedCause(error);
-  const message = error instanceof Error ? error.message : null;
-  return new Error(
-    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
-  );
-}
-
-function googleErrorReasons(error: unknown): string[] {
-  const fromBody = (
-    error as {
-      response?: {
-        data?: { error?: { errors?: Array<{ reason?: unknown }> } };
-      };
-    }
-  )?.response?.data?.error?.errors;
-  const fromError = (error as { errors?: Array<{ reason?: unknown }> })?.errors;
-  const reasons: string[] = [];
-  for (const entry of [...(fromBody ?? []), ...(fromError ?? [])]) {
-    if (typeof entry?.reason === "string") reasons.push(entry.reason);
-  }
-  return reasons;
-}
-
-function googleStatus(error: unknown): number | undefined {
-  const status =
-    (error as { response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code;
-  return typeof status === "number" ? status : undefined;
 }

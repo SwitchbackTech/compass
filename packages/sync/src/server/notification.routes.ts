@@ -7,7 +7,10 @@ import { verifyNotification } from "@sync/notifications/notification-verificatio
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type NotificationSubscription } from "@sync/providers/provider-notifications.port";
 import { redactedCause } from "@sync/safety/redact-error";
-import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
+import {
+  calendarListSyncJob,
+  resourceJob,
+} from "@sync/storage/contracts/job.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -103,34 +106,13 @@ export function registerNotificationRoutes(
           resource._id,
           now,
         );
+        // Background priority on purpose: webhooks are provider-paced.
+        // Promoting them to user priority would make the entire steady state
+        // urgent and defeat the tier that protects Refresh / post-OAuth work.
         const job =
           resource.resourceKind === "calendarList"
-            ? {
-                tenantId: resource.tenantId,
-                principalId: resource.principalId,
-                connectionId: resource.connectionId,
-                resourceId: null,
-                commandId: null,
-                kind: "calendarListSync" as const,
-                priority: JOB_PRIORITY.background,
-                runAfter: now,
-                coalescingKey: `calendarListSync:${resource.connectionId}`,
-              }
-            : {
-                tenantId: resource.tenantId,
-                principalId: resource.principalId,
-                connectionId: resource.connectionId,
-                resourceId: resource._id,
-                commandId: null,
-                kind: "incrementalPull" as const,
-                // Background on purpose: webhooks are provider-paced. Promoting
-                // them to user priority would make the entire steady state
-                // urgent and defeat the tier that protects Refresh / post-OAuth
-                // work.
-                priority: JOB_PRIORITY.background,
-                runAfter: now,
-                coalescingKey: `incrementalPull:${resource._id}`,
-              };
+            ? calendarListSyncJob(resource, now)
+            : resourceJob(resource, "incrementalPull", now);
         await new JobRepository(deps.mongo.db).enqueue(job);
       }
       res.status(Status.OK).end();

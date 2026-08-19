@@ -3,8 +3,9 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import {
+  calendarListSyncJob,
   JOB_PRIORITY,
-  type JobEnqueue,
+  resourceJob,
 } from "@sync/storage/contracts/job.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -81,34 +82,21 @@ export async function refreshPrincipalCalendars(
   // and enqueues its import). Coalesced per connection at user priority.
   await Promise.all(
     connectionIds.map((connectionId) =>
-      deps.jobs.enqueueUrgent({
-        tenantId,
-        principalId,
-        connectionId,
-        resourceId: null,
-        commandId: null,
-        kind: "calendarListSync",
-        priority: JOB_PRIORITY.user,
-        runAfter,
-        coalescingKey: `calendarListSync:${connectionId}`,
-      }),
+      deps.jobs.enqueueUrgent(
+        calendarListSyncJob(
+          { tenantId, principalId, connectionId },
+          runAfter,
+          JOB_PRIORITY.user,
+        ),
+      ),
     ),
   );
 
   const outcomes = await Promise.all(
     resources.map(async (resource) => {
-      const enqueue: JobEnqueue = {
-        tenantId: resource.tenantId,
-        principalId: resource.principalId,
-        connectionId: resource.connectionId,
-        resourceId: resource._id,
-        commandId: null,
-        kind: "incrementalPull",
-        priority: JOB_PRIORITY.user,
-        runAfter,
-        coalescingKey: `incrementalPull:${resource._id}`,
-      };
-      const { outcome } = await deps.jobs.enqueueUrgent(enqueue);
+      const { outcome } = await deps.jobs.enqueueUrgent(
+        resourceJob(resource, "incrementalPull", runAfter, JOB_PRIORITY.user),
+      );
       return outcome;
     }),
   );

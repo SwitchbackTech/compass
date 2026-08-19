@@ -1,18 +1,13 @@
-import {
-  JOB_PRIORITY,
-  type JobEnqueue,
-  type JobKind,
-} from "@sync/storage/contracts/job.contracts";
+import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 
-// The shared shape behind every sweep app.ts wires up (reconcile, subscription
-// maintenance, bootstrap recovery): find due resources with `finder`, enqueue
-// one `kind` job per resource, and return how many were enqueued. The only
-// difference between sweeps is which finder they call and which job kind they
-// enqueue — everything else, including the coalescing key template, is
-// identical, so each sweep site calls this directly rather than through its
-// own wrapper.
+// The shared loop behind every sweep app.ts wires up (reconcile, subscription
+// maintenance, bootstrap recovery, calendar-list rediscovery): find due
+// resources with `finder`, enqueue the job `build` produces for each (usually
+// `resourceJob(resource, kind, now())`), and return how many were enqueued.
+// `build` runs inside the per-resource try/catch, so a per-resource side
+// effect (rediscovery's cursor clear) fails that resource alone.
 //
 // Each resource is enqueued independently: one that throws is reported and
 // skipped, never allowed to abandon the rest of the batch. The sweeps are the
@@ -28,41 +23,19 @@ export async function enqueueForResources(
     onEnqueueError?: (error: unknown, resourceId: string) => void;
   },
   finder: (before: Date, limit: number) => Promise<SyncResourceRecord[]>,
-  kind: JobKind,
-  before: Date,
-  now: () => Date,
-  limit = 100,
-  // Override the default resource-scoped enqueue shape. Only calendar-list
-  // rediscovery needs this: calendarListSync is connection-scoped
-  // (resourceId: null) and must reuse the connect path's own coalescing key
-  // (`calendarListSync:${connectionId}`) rather than this helper's default
-  // `${kind}:${resource._id}` template, and it has a side effect (clearing
-  // the stored discovery cursor) that must happen inside the same per-resource
-  // try/catch as the enqueue, not before the loop starts. Every other sweep
-  // omits this and gets the default shape below.
-  buildEnqueue?: (
+  build: (
     resource: SyncResourceRecord,
     now: () => Date,
   ) => JobEnqueue | Promise<JobEnqueue>,
+  before: Date,
+  now: () => Date,
+  limit = 100,
 ): Promise<number> {
   const due = await finder(before, limit);
   let enqueued = 0;
   for (const resource of due) {
     try {
-      const enqueue: JobEnqueue = buildEnqueue
-        ? await buildEnqueue(resource, now)
-        : {
-            tenantId: resource.tenantId,
-            principalId: resource.principalId,
-            connectionId: resource.connectionId,
-            resourceId: resource._id,
-            commandId: null,
-            kind,
-            priority: JOB_PRIORITY.background,
-            runAfter: now(),
-            coalescingKey: `${kind}:${resource._id}`,
-          };
-      await deps.jobs.enqueue(enqueue);
+      await deps.jobs.enqueue(await build(resource, now));
       enqueued += 1;
     } catch (error) {
       deps.onEnqueueError?.(error, resource._id);
