@@ -1,13 +1,15 @@
 import { type FC, useEffect } from "react";
+import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
+import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   firstEventPromptActions,
+  isShowcaseHandoffEligible,
   selectFirstEventCelebrating,
   selectFirstEventDone,
   useFirstEventPromptStore,
 } from "@web/components/FirstEventPrompt/first-event.store";
-import { hasSeenShortcutShowcase } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   selectHasSeenShowcase,
   selectShowcaseActive,
@@ -16,29 +18,33 @@ import {
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { KEYMAP } from "@web/shortcuts/keymap";
 
-const CELEBRATE_DISMISS_MS = 4_000;
+/** How long the celebration copy holds before it fades out for good. */
+const CELEBRATE_HOLD_MS = 4_000;
 
 const PromptCard: FC = () => {
   const isCelebrating = useFirstEventPromptStore(selectFirstEventCelebrating);
+  const { closing, beginDismiss } = useDismissTransition(BANNER_DISMISS_MS);
 
   useEffect(() => {
     firstEventPromptActions.trackShownOnce();
   }, []);
 
-  // Celebrate briefly, then disappear forever.
+  // Hold the celebration briefly, then fade out and disappear forever.
   useEffect(() => {
     if (!isCelebrating) return;
-    const timer = window.setTimeout(
-      firstEventPromptActions.finalizeCompleted,
-      CELEBRATE_DISMISS_MS,
-    );
+    const timer = window.setTimeout(() => {
+      beginDismiss(firstEventPromptActions.finalizeCompleted);
+    }, CELEBRATE_HOLD_MS);
     return () => window.clearTimeout(timer);
-  }, [isCelebrating]);
+  }, [isCelebrating, beginDismiss]);
+
+  const dismiss = () => beginDismiss(firstEventPromptActions.dismiss);
 
   return (
     <aside
       aria-label="Create your first event"
-      className="fixed right-6 bottom-6 starting:translate-y-2 starting:opacity-0 transition-all duration-300 motion-reduce:transition-none"
+      className="fixed right-6 bottom-6 starting:translate-y-2 starting:opacity-0 transition-all duration-300 data-closing:opacity-0 motion-reduce:transition-none"
+      data-closing={closing || undefined}
       data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
@@ -59,7 +65,7 @@ const PromptCard: FC = () => {
               <button
                 aria-label="Dismiss"
                 className="c-focus-ring shrink-0 rounded-xs px-1 text-text-muted text-xs hover:text-text"
-                onClick={firstEventPromptActions.dismiss}
+                onClick={dismiss}
                 type="button"
               >
                 &times;
@@ -98,9 +104,8 @@ export const FirstEventPrompt: FC = () => {
   // persist, so the card would haunt every reload; better to not show it.
   const isLive =
     !isDone &&
-    !isShowcaseActive &&
     persistentBrowserStore.isAvailable() &&
-    (seenThisSession || hasSeenShortcutShowcase());
+    isShowcaseHandoffEligible(isShowcaseActive, seenThisSession);
   if (!isLive) return null;
   return <PromptCard />;
 };

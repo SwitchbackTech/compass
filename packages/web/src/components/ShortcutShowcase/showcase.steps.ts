@@ -57,15 +57,10 @@ export function getShowcaseStep(id: ShowcaseStepId): ShowcaseStep {
  */
 export function getCreateLessonPhase(
   hasOpenEditor: boolean,
-): Pick<ShowcaseStep, "body" | "keycaps"> {
-  if (hasOpenEditor) {
-    return {
-      body: "Type a title, then press Enter to save.",
-      keycaps: KEYMAP.saveDraft.keycaps,
-    };
-  }
+): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+  if (!hasOpenEditor) return {};
   return {
-    body: STEP_CONTENT.create.body,
-    keycaps: STEP_CONTENT.create.keycaps,
+    body: "Type a title, then press Enter to save.",
+    keycaps: KEYMAP.saveDraft.keycaps,
   };
 }

@@ -31,11 +31,25 @@ export const useFirstEventPromptStore = create<FirstEventPromptState>()(() => ({
   isDone: getFirstEventDone() !== null,
 }));
 
-/** Same eligibility the card itself renders under - see FirstEventPrompt.tsx. */
-const isEligible = (): boolean => {
+/**
+ * Shared eligibility predicate, given the two showcase flags: not active, and
+ * seen (this session, an earlier one, or the legacy tour key). Takes plain
+ * booleans rather than reading the store itself so FirstEventPrompt.tsx can
+ * reuse it from its own reactive `useShortcutShowcaseStore` selectors instead
+ * of re-deriving the same two-part check.
+ */
+export const isShowcaseHandoffEligible = (
+  showcaseActive: boolean,
+  hasSeenShowcaseThisSession: boolean,
+): boolean =>
+  !showcaseActive && (hasSeenShowcaseThisSession || hasSeenShortcutShowcase());
+
+const isEligibleNow = (): boolean => {
   const showcase = useShortcutShowcaseStore.getState();
-  if (selectShowcaseActive(showcase)) return false;
-  return selectHasSeenShowcase(showcase) || hasSeenShortcutShowcase();
+  return isShowcaseHandoffEligible(
+    selectShowcaseActive(showcase),
+    selectHasSeenShowcase(showcase),
+  );
 };
 
 export const firstEventPromptActions = {
@@ -48,7 +62,7 @@ export const firstEventPromptActions = {
     const { isDone, isCelebrating } = useFirstEventPromptStore.getState();
     if (isDone || isCelebrating) return;
     if (!persistentBrowserStore.isAvailable()) return;
-    if (!isEligible()) return;
+    if (!isEligibleNow()) return;
     markFirstEventDone("completed");
     track("first_event_prompt_completed");
     useFirstEventPromptStore.setState({ isCelebrating: true });

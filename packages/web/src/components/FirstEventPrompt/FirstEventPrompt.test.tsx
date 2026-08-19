@@ -83,15 +83,25 @@ describe("FirstEventPrompt", () => {
     );
   });
 
-  it("dismiss hides the card and persists the choice", async () => {
+  it("dismiss fades the card out, then hides it and persists the choice", async () => {
     const user = userEvent.setup();
     markShowcaseSeen();
     render(<FirstEventPrompt />);
 
+    const prompt = screen.getByRole("complementary", {
+      name: "Create your first event",
+    });
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
-    expect(
-      screen.queryByRole("complementary", { name: "Create your first event" }),
-    ).toBeNull();
+    // Fades out (matching UpNextBanner) rather than vanishing instantly.
+    expect(prompt).toHaveAttribute("data-closing");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("complementary", {
+          name: "Create your first event",
+        }),
+      ).toBeNull();
+    });
     expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
       "dismissed",
     );
