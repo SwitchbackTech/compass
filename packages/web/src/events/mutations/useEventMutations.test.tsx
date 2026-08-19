@@ -240,6 +240,14 @@ const replaceAndGetOpportunity = (
   return opportunity;
 };
 
+const timedStartOf = (
+  cached: NormalizedEventQueryData | undefined,
+  id: EventId,
+) => {
+  const schedule = cached?.entities[id]?.schedule;
+  return schedule?.kind === "timed" ? schedule.start : undefined;
+};
+
 const expectPromotedReplaceCall = async (
   context: MutationTestContext,
   id: EventId,
@@ -523,6 +531,126 @@ describe("useEventMutations", () => {
     });
   });
 
+  test("promoted all-events schedule move keeps the edited occurrence at the new time", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const previous = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const current = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
+    });
+    const next = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    // Four days later: still in the Jul 1–8 week. A second shift would land
+    // on Jul 10 and applyEventProjectionAcrossQueries would drop the card.
+    const moved = timedSchedule(
+      "2026-07-06T16:00:00.000Z",
+      "2026-07-06T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(previous, current, next),
+    );
+
+    const opportunity = replaceAndGetOpportunity(context, current.id, {
+      schedule: moved,
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey);
+      expect(cached?.ids).toContain(current.id);
+      expect(timedStartOf(cached, current.id)).toBe(
+        DateTimeSchema.parse("2026-07-06T16:00:00.000Z"),
+      );
+      expect(timedStartOf(cached, previous.id)).toBe(
+        DateTimeSchema.parse("2026-07-05T16:00:00+00:00"),
+      );
+      expect(timedStartOf(cached, next.id)).toBe(
+        DateTimeSchema.parse("2026-07-07T16:00:00+00:00"),
+      );
+    });
+
+    context.pending.resolve();
+  });
+
+  test("promoted this-and-following schedule move keeps the edited occurrence at the new time", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const previous = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const current = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
+    });
+    const next = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-06T16:00:00.000Z",
+      "2026-07-06T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(previous, current, next),
+    );
+
+    const opportunity = replaceAndGetOpportunity(context, current.id, {
+      schedule: moved,
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "thisAndFollowing",
+      ),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey);
+      expect(cached?.ids).toContain(current.id);
+      expect(timedStartOf(cached, current.id)).toBe(
+        DateTimeSchema.parse("2026-07-06T16:00:00.000Z"),
+      );
+      expect(timedStartOf(cached, previous.id)).toBe(
+        DateTimeSchema.parse("2026-07-01T16:00:00.000Z"),
+      );
+      expect(timedStartOf(cached, next.id)).toBe(
+        DateTimeSchema.parse("2026-07-07T16:00:00+00:00"),
+      );
+    });
+
+    context.pending.resolve();
+  });
+
   test("remote scope-all rules edit rebases from the pre-optimistic master snapshot", async () => {
     const context = setup("remote");
     const seriesId = EventIdSchema.parse("dddddddddddddddddddddddd");
@@ -727,7 +855,7 @@ describe("useEventMutations", () => {
         DateTimeSchema.parse("2026-07-01T16:00:00.000Z"),
       );
       expect(scheduleOf(instances[1].id)).toBe(
-        DateTimeSchema.parse("2026-07-02T18:00:00+00:00"),
+        DateTimeSchema.parse("2026-07-02T18:00:00.000Z"),
       );
       expect(scheduleOf(instances[2].id)).toBe(
         DateTimeSchema.parse("2026-07-03T18:00:00+00:00"),
