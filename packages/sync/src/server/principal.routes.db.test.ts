@@ -45,7 +45,6 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
   }) as SyncConfig;
 
 class FakeAuthAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
   revoked: string[] = [];
   buildAuthorizationUrl(): string {
     throw new Error("unused");

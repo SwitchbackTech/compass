@@ -28,7 +28,6 @@ const now = () => new Date("2026-07-10T00:00:00.000Z");
 // A reader serving scripted pages, one script for the windowed (fast) pass and
 // one for the full (cursor-earning) pass. Records every call.
 class FakeReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   calls: ProviderEventReadInput[] = [];
   #window: ProviderEventPage[];
   #full: ProviderEventPage[];

@@ -16,7 +16,6 @@ const objectId = () => faker.database.mongodbObjectId();
 // A configurable ProviderAuthAdapter fake that counts refresh/revoke calls.
 // buildAuthorizationUrl/exchangeAuthorizationCode are unused by custody.
 class FakeAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
   refreshCalls = 0;
   revokedTokens: string[] = [];
 

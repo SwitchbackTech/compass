@@ -1,4 +1,3 @@
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 
 // A live provider push channel, as the provider reports it after a watch. The
@@ -26,40 +25,19 @@ export interface ProviderNotification {
   readonly state: NotificationState;
 }
 
-// The stored channel association a callback is verified against. The token is
-// per-channel (not a shared secret), so a leak of one callback cannot forge
-// callbacks for another channel.
-export interface NotificationSubscription {
-  readonly channelId: string;
-  readonly resourceId: string;
-  readonly token: string;
-  readonly expiresAt: Date;
-}
-
 // A provider-neutral notification port. Channel lifecycle (watch/stop) and the
 // provider-specific callback header shapes stay inside the adapter; the domain
 // works with the normalized ProviderNotification and the verification verdict.
 export interface ProviderNotificationAdapter {
-  readonly provider: ProviderKind;
-
-  // Open a push channel for a calendar's events. `channelId` and `token` are
-  // caller-supplied so the association is known before the first callback can
-  // arrive. `ttlMs` requests a lifetime; the provider may shorten it, so the
-  // returned expiry is authoritative.
-  watchEvents(input: {
+  // Open a push channel: for a calendar's events when `calendarId` is given,
+  // or for the account's calendar list (so a rename, add, hide, or unshare is
+  // delivered without waiting for the daily rediscovery sweep) when omitted.
+  // `channelId` and `token` are caller-supplied so the association is known
+  // before the first callback can arrive. `ttlMs` requests a lifetime; the
+  // provider may shorten it, so the returned expiry is authoritative.
+  watch(input: {
     readonly accessToken: string;
-    readonly calendarId: string;
-    readonly channelId: string;
-    readonly token: string;
-    readonly callbackUrl: string;
-    readonly ttlMs?: number;
-  }): Promise<NotificationChannel>;
-
-  // Open a push channel for the account's calendar list so a rename, add,
-  // hide, or unshare is delivered without waiting for the daily rediscovery
-  // sweep. Same channel association contract as watchEvents.
-  watchCalendarList(input: {
-    readonly accessToken: string;
+    readonly calendarId?: string;
     readonly channelId: string;
     readonly token: string;
     readonly callbackUrl: string;
@@ -72,12 +50,6 @@ export interface ProviderNotificationAdapter {
     readonly channelId: string;
     readonly resourceId: string;
   }): Promise<void>;
-
-  // Normalize provider callback headers into a ProviderNotification, or null if
-  // the headers are not a recognizable notification at all.
-  parseCallback(
-    headers: Record<string, string | undefined>,
-  ): ProviderNotification | null;
 }
 
 // Why a mutation of a channel could not complete.

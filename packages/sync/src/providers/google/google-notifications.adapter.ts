@@ -102,8 +102,6 @@ const HEADER_RESOURCE_STATE = "x-goog-resource-state";
 // channels and normalizes callback headers; the authenticity check against the
 // stored association is provider-neutral and lives in verifyNotification.
 export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleChannelsApiFactory;
   #now: () => Date;
 
@@ -115,9 +113,10 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
     this.#now = now;
   }
 
-  async watchEvents(input: {
+  // Events watch when `calendarId` is given, calendar-list watch when omitted.
+  async watch(input: {
     accessToken: string;
-    calendarId: string;
+    calendarId?: string;
     channelId: string;
     token: string;
     callbackUrl: string;
@@ -125,31 +124,12 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
   }): Promise<NotificationChannel> {
     const api = this.#makeApi(input.accessToken);
     const expirationMs = this.#expirationMs(input.ttlMs);
+    const requestBody = channelBody(input, expirationMs);
     return this.#openChannel(
       () =>
-        api.watchEvents({
-          calendarId: input.calendarId,
-          requestBody: channelBody(input, expirationMs),
-        }),
-      input.channelId,
-      expirationMs,
-    );
-  }
-
-  async watchCalendarList(input: {
-    accessToken: string;
-    channelId: string;
-    token: string;
-    callbackUrl: string;
-    ttlMs?: number;
-  }): Promise<NotificationChannel> {
-    const api = this.#makeApi(input.accessToken);
-    const expirationMs = this.#expirationMs(input.ttlMs);
-    return this.#openChannel(
-      () =>
-        api.watchCalendarList({
-          requestBody: channelBody(input, expirationMs),
-        }),
+        input.calendarId === undefined
+          ? api.watchCalendarList({ requestBody })
+          : api.watchEvents({ calendarId: input.calendarId, requestBody }),
       input.channelId,
       expirationMs,
     );
@@ -205,22 +185,25 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
       throw classifyWatchError(error);
     }
   }
+}
 
-  parseCallback(
-    headers: Record<string, string | undefined>,
-  ): ProviderNotification | null {
-    const channelId = headers[HEADER_CHANNEL_ID];
-    const resourceId = headers[HEADER_RESOURCE_ID];
-    // Without a channel and resource to match, there is nothing to verify.
-    if (!channelId || !resourceId) return null;
+// Normalize Google callback headers into a ProviderNotification, or null if
+// the headers are not a recognizable notification at all. Pure header parsing
+// — no network, no auth — so it lives outside the adapter class.
+export function parseGoogleNotification(
+  headers: Record<string, string | undefined>,
+): ProviderNotification | null {
+  const channelId = headers[HEADER_CHANNEL_ID];
+  const resourceId = headers[HEADER_RESOURCE_ID];
+  // Without a channel and resource to match, there is nothing to verify.
+  if (!channelId || !resourceId) return null;
 
-    return {
-      channelId,
-      resourceId,
-      token: headers[HEADER_CHANNEL_TOKEN] ?? null,
-      state: mapState(headers[HEADER_RESOURCE_STATE]),
-    };
-  }
+  return {
+    channelId,
+    resourceId,
+    token: headers[HEADER_CHANNEL_TOKEN] ?? null,
+    state: mapState(headers[HEADER_RESOURCE_STATE]),
+  };
 }
 
 // Google's initial post-watch delivery is "sync"; every other state ("exists",

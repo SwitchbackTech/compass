@@ -69,7 +69,6 @@ const pageOf = (
 
 // Replays scripted pages, or throws a scripted error on the next read.
 class FakeReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   #pages: ProviderEventPage[];
   #error: Error | null;
 
@@ -136,15 +135,10 @@ describe("SyncJobWorker", () => {
     reader,
     custody: tokenSource,
     notifications: {
-      provider: "google",
-      watchEvents: async () => {
-        throw new Error("watch not used in worker tests");
-      },
-      watchCalendarList: async () => {
+      watch: async () => {
         throw new Error("watch not used in worker tests");
       },
       stopChannel: async () => {},
-      parseCallback: () => null,
     },
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
@@ -494,7 +488,6 @@ describe("SyncJobWorker", () => {
       releaseRead = resolve;
     });
     const gatedReader = {
-      provider: "google" as const,
       async listEventPage() {
         await gate;
         return pageOf([single("x")], "cursor-1");
@@ -618,7 +611,6 @@ describe("SyncJobWorker", () => {
       coalescingKey: `calendarListSync:${connection._id}`,
     });
     const failingDiscovery: SyncJobWorkerDeps["discovery"] = {
-      provider: "google",
       discoverCalendars: async () => {
         throw new ProviderCalendarError(
           "discoveryFailed",

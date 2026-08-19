@@ -75,7 +75,6 @@ const page = (
 // A reader that replays scripted pages, or throws a scripted error (e.g. an
 // expired cursor) on the next read.
 class FakeReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   #pages: ProviderEventPage[];
   #error: ProviderEventReadError | null;
   #errorOnce: boolean;
@@ -112,10 +111,17 @@ const tokenSource = {
 // A notification adapter that records watch calls and returns a fixed channel,
 // so a subscriptionMaintain dispatch runs without a network round-trip.
 const notifications = {
-  provider: "google" as const,
   watched: [] as string[],
   calendarListWatched: [] as string[],
-  watchEvents: async (input: { channelId: string }) => {
+  watch: async (input: { channelId: string; calendarId?: string }) => {
+    if (input.calendarId === undefined) {
+      notifications.calendarListWatched.push(input.channelId);
+      return {
+        channelId: input.channelId,
+        resourceId: "provider-calendar-list",
+        expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+      };
+    }
     notifications.watched.push(input.channelId);
     return {
       channelId: input.channelId,
@@ -123,22 +129,12 @@ const notifications = {
       expiresAt: new Date("2026-07-17T00:00:00.000Z"),
     };
   },
-  watchCalendarList: async (input: { channelId: string }) => {
-    notifications.calendarListWatched.push(input.channelId);
-    return {
-      channelId: input.channelId,
-      resourceId: "provider-calendar-list",
-      expiresAt: new Date("2026-07-17T00:00:00.000Z"),
-    };
-  },
   stopChannel: async () => {},
-  parseCallback: () => null,
 };
 
 // A calendar-discovery adapter that returns one active calendar, so a
 // calendarListSync dispatch runs without a network round-trip.
 const discovery = {
-  provider: "google" as const,
   discoverCalendars: async () => ({
     calendars: [
       {
@@ -336,7 +332,6 @@ describe("dispatchSyncJob", () => {
     const reads: string[] = [];
 
     const reader: ProviderEventReader = {
-      provider: "google",
       listEventPage: async () => {
         reads.push("read");
         if (reads.length === 1) {
@@ -378,7 +373,6 @@ describe("dispatchSyncJob", () => {
     const warnings: string[] = [];
 
     const reader: ProviderEventReader = {
-      provider: "google",
       listEventPage: async () => {
         reads.push("read");
         // Every pass is overtaken by a newer notification.
@@ -803,7 +797,7 @@ describe("dispatchSyncJob", () => {
     const resource = await seedResource(calendar, null);
     const refusing = {
       ...notifications,
-      watchEvents: async () => {
+      watch: async () => {
         throw new ProviderNotificationError(
           "watchUnsupported",
           "push not supported for this calendar",
@@ -860,7 +854,7 @@ describe("dispatchSyncJob", () => {
     const resource = await seedResource(calendar, null);
     const refusing = {
       ...notifications,
-      watchEvents: async () => {
+      watch: async () => {
         throw new ProviderNotificationError(
           "watchFailed",
           "Google refused to open the channel (HTTP 403, reason forbidden)",
@@ -981,7 +975,7 @@ describe("dispatchSyncJob", () => {
     });
     const refusing = {
       ...notifications,
-      watchEvents: async () => {
+      watch: async () => {
         throw new ProviderNotificationError(
           "watchUnsupported",
           "push not supported for this calendar",
@@ -1109,7 +1103,6 @@ describe("dispatchSyncJob", () => {
     // moved marker must make dispatch go round again.
     let calls = 0;
     const restlessDiscovery: SyncJobDispatchDeps["discovery"] = {
-      provider: "google" as const,
       discoverCalendars: async () => {
         calls += 1;
         if (calls === 1) {
@@ -1246,7 +1239,6 @@ describe("dispatchSyncJob", () => {
       principalId,
     } as ProviderConnectionRecord;
     const failingDiscovery: SyncJobDispatchDeps["discovery"] = {
-      provider: "google",
       discoverCalendars: async () => {
         throw new ProviderCalendarError(
           "discoveryFailed",
@@ -1292,7 +1284,6 @@ describe("dispatchSyncJob", () => {
       principalId,
     } as ProviderConnectionRecord;
     const transientDiscovery: SyncJobDispatchDeps["discovery"] = {
-      provider: "google",
       discoverCalendars: async () => {
         throw new ProviderCalendarError(
           "transient",

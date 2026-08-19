@@ -26,7 +26,6 @@ const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
 class FakeReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   calls: ProviderEventReadInput[] = [];
   #pages: ProviderEventPage[];
 

@@ -1,7 +1,5 @@
-import {
-  type NotificationSubscription,
-  type ProviderNotification,
-} from "@sync/providers/provider-notifications.port";
+import { type ProviderNotification } from "@sync/providers/provider-notifications.port";
+import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { Buffer } from "node:buffer";
 import { timingSafeEqual } from "node:crypto";
 
@@ -19,28 +17,37 @@ export type NotificationRejectReason =
   | "resourceMismatch" // the callback names a different resource than stored
   | "expired"; // the subscription has lapsed; a fresh channel is required
 
-// Verify an inbound callback against the subscription the caller loaded for its
-// channel id (null if none was found). Every mismatch is a rejection, so a
-// spoofed or stale callback can never reach the sync path. The token is
-// compared in length-constant time so a mismatch reveals nothing by timing.
+// Verify an inbound callback against the resource the caller loaded for its
+// channel id (null if none was found). The subscription token is per-channel
+// (not a shared secret), so a leak of one callback cannot forge callbacks for
+// another channel. Every mismatch is a rejection, so a spoofed or stale
+// callback can never reach the sync path. The token is compared in
+// length-constant time so a mismatch reveals nothing by timing. A resource
+// whose subscription is not fully recorded rejects as unknownChannel.
 export function verifyNotification(
   notification: ProviderNotification,
-  subscription: NotificationSubscription | null,
+  resource: SyncResourceRecord | null,
   now: Date = new Date(),
 ): NotificationVerdict {
-  if (!subscription || subscription.channelId !== notification.channelId) {
+  if (
+    !resource?.subscriptionId ||
+    !resource.subscriptionResourceId ||
+    !resource.subscriptionToken ||
+    !resource.subscriptionExpiresAt ||
+    resource.subscriptionId !== notification.channelId
+  ) {
     return { status: "rejected", reason: "unknownChannel" };
   }
   if (
     notification.token === null ||
-    !constantTimeEquals(notification.token, subscription.token)
+    !constantTimeEquals(notification.token, resource.subscriptionToken)
   ) {
     return { status: "rejected", reason: "tokenMismatch" };
   }
-  if (notification.resourceId !== subscription.resourceId) {
+  if (notification.resourceId !== resource.subscriptionResourceId) {
     return { status: "rejected", reason: "resourceMismatch" };
   }
-  if (subscription.expiresAt.getTime() <= now.getTime()) {
+  if (resource.subscriptionExpiresAt.getTime() <= now.getTime()) {
     return { status: "rejected", reason: "expired" };
   }
 

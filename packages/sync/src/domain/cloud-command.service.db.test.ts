@@ -36,7 +36,6 @@ const storage = setupSyncStorage(import.meta.url);
 const objectId = () => faker.database.mongodbObjectId();
 
 class FakeWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   calls: ProviderCreateInput[] = [];
   patchCalls: ProviderPatchInput[] = [];
   // A stub current provider event for the update path's replay-detection fetch;

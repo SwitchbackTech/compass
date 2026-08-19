@@ -2,7 +2,6 @@ import {
   type CalendarAccessRole,
   type SyncCalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 
 // One calendar as the provider currently reports it, normalized to
@@ -44,8 +43,6 @@ export interface CalendarDiscovery {
 // calendars without knowing the provider; pagination, capability derivation,
 // and cursor handling stay inside the adapter.
 export interface ProviderCalendarAdapter {
-  readonly provider: ProviderKind;
-
   // List every calendar the authorized account can see, following the
   // provider's pagination. Pass `cursor` to resume incrementally from a prior
   // pass; omit it for a full list. Rejects with a ProviderCalendarError.

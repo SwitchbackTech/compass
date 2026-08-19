@@ -107,8 +107,6 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
 // list to provider-neutral facts and follows pagination, surfacing an expired
 // incremental cursor distinctly so the caller can re-list in full.
 export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleCalendarListApiFactory;
 
   constructor(makeApi: GoogleCalendarListApiFactory = defaultApiFactory) {

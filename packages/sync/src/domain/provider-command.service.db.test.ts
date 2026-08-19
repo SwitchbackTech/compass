@@ -57,7 +57,6 @@ const objectId = () => faker.database.mongodbObjectId();
 // A writer that records its calls and returns a fixed identity, or throws a
 // preset error. No network.
 class FakeWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   calls: ProviderCreateInput[] = [];
   result: ProviderWriteResult = {
     providerEventId: "g-evt-1",
@@ -95,7 +94,6 @@ const failingTokenSource = (error: unknown): AccessTokenSource => ({
 
 // Minimal auth adapter for CredentialCustody in the revoked-grant cases.
 class RevokedAuthAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
   constructor(
     private readonly behavior: {
       refreshError?: unknown;
@@ -498,7 +496,6 @@ describe("executeProviderCreate", () => {
 // A writer for the update path: configurable fetchEvent (replay detection) and
 // patchEvent (conditional write) results/errors, recording their inputs.
 class FakeUpdateWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   fetched: ProviderEvent | null = null;
   fetchError?: unknown;
   patchResult: ProviderWriteResult = {
@@ -915,7 +912,6 @@ describe("executeProviderUpdate", () => {
 // A writer for the delete path: a configurable deleteEvent (success or a preset
 // error), recording its inputs.
 class FakeDeleteWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   deleteCalls: ProviderDeleteInput[] = [];
   deleteError?: unknown;
   createEvent(): Promise<ProviderWriteResult> {
@@ -2091,7 +2087,6 @@ describe("executeProviderSeriesUpdate", () => {
 // independently scriptable so a test can isolate exactly which call it means
 // to exercise.
 class FakeRecurringWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   fetchEventResult: ProviderEvent | null = null;
   fetchEventError?: unknown;
   fetchInstanceResult: ProviderEvent | null = null;
