@@ -174,4 +174,31 @@ describe("TimePickers", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T16:00:00+00:00");
   });
+
+  it("clears the inline error when the current valid end time is chosen again", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await pick(user, "End time", "1 PM");
+    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
+
+    await pick(user, "End time", "3 PM");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
+  });
+
+  it("does not reject a later overnight end just because the clock is before start", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        start={new Date("2026-04-24T22:00:00.000Z")}
+        end={new Date("2026-04-25T06:00:00.000Z")}
+      />,
+    );
+
+    await pick(user, "End time", "5 AM");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

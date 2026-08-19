@@ -85,6 +85,15 @@ export const TimePickers: FC<Props> = ({
     return { option, dayOffset };
   };
 
+  const closeMenu = (changed: "start" | "end") => {
+    (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
+  };
+
+  const rejectTimeSelection = (changed: "start" | "end") => {
+    setTimeError(END_TIME_ORDER_ERROR);
+    closeMenu(changed);
+  };
+
   // One handler for both pickers: the picked side keeps its selected date and
   // the corrected compliment reduces to (picked time ± duration), so it is
   // anchored to the picked side's date and the midnight day-carry applies to
@@ -95,57 +104,68 @@ export const TimePickers: FC<Props> = ({
     option: SelectOption<string>,
   ) => {
     const prior = changed === "start" ? startTime : endTime;
+    if (!prior.value || prior.value === option.value) {
+      setTimeError(null);
+      closeMenu(changed);
+      return;
+    }
+
     const { option: corrected, dayOffset } = adjustComplimentTimeIfNeeded(
       changed,
       option.value,
     );
 
-    if (prior.value && prior.value !== option.value) {
-      const userStart = changed === "start" ? option.value : startTime.value;
-      const userEnd = changed === "end" ? option.value : endTime.value;
-      // Same-day invert: duration auto-correct would hide the mistake.
-      // Midnight wrap (dayOffset !== 0) still shifts the compliment date.
-      if (dayOffset === 0 && isEndBeforeStartOnDummyDay(userStart, userEnd)) {
-        setTimeError(END_TIME_ORDER_ERROR);
-        (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
-        return;
-      }
-
-      const anchorDate =
-        changed === "start" ? selectedStartDate : selectedEndDate;
-      const complimentDate = dayjs(anchorDate).add(dayOffset, "day").toDate();
-
-      const mapped = tryMapToBackend({
-        startDate: changed === "start" ? anchorDate : complimentDate,
-        endDate: changed === "start" ? complimentDate : anchorDate,
-        startTime: changed === "start" ? option : corrected,
-        endTime: changed === "start" ? corrected : option,
-        isAllDay: false,
-      });
-
-      if (!mapped.ok) {
-        setTimeError(END_TIME_ORDER_ERROR);
-        (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
-        return;
-      }
-
-      setTimeError(null);
-      (changed === "start" ? setStartTime : setEndTime)(option);
-      (changed === "start" ? setEndTime : setStartTime)(corrected);
-
-      // TS guard: isAllDay: false above always yields "timed".
-      if (mapped.schedule.kind === "timed") {
-        setDraft(
-          replaceGridDraftSchedule(draft, {
-            kind: "timed",
-            start: dayjs(mapped.schedule.start).toDate(),
-            end: dayjs(mapped.schedule.end).toDate(),
-            timeZone: mapped.schedule.timeZone,
-          }),
-        );
-      }
+    const userStart = changed === "start" ? option.value : startTime.value;
+    const userEnd = changed === "end" ? option.value : endTime.value;
+    const isSameCalendarDay = dayjs(selectedStartDate).isSame(
+      selectedEndDate,
+      "day",
+    );
+    // Same-day invert: duration auto-correct would hide the mistake.
+    // Overnight drafts already have end-before-start on the clock; midnight
+    // wrap (dayOffset !== 0) still shifts the compliment date.
+    if (
+      isSameCalendarDay &&
+      dayOffset === 0 &&
+      isEndBeforeStartOnDummyDay(userStart, userEnd)
+    ) {
+      rejectTimeSelection(changed);
+      return;
     }
-    (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
+
+    const anchorDate =
+      changed === "start" ? selectedStartDate : selectedEndDate;
+    const complimentDate = dayjs(anchorDate).add(dayOffset, "day").toDate();
+
+    const mapped = tryMapToBackend({
+      startDate: changed === "start" ? anchorDate : complimentDate,
+      endDate: changed === "start" ? complimentDate : anchorDate,
+      startTime: changed === "start" ? option : corrected,
+      endTime: changed === "start" ? corrected : option,
+      isAllDay: false,
+    });
+
+    if (!mapped.ok) {
+      rejectTimeSelection(changed);
+      return;
+    }
+
+    setTimeError(null);
+    (changed === "start" ? setStartTime : setEndTime)(option);
+    (changed === "start" ? setEndTime : setStartTime)(corrected);
+
+    // TS guard: isAllDay: false above always yields "timed".
+    if (mapped.schedule.kind === "timed") {
+      setDraft(
+        replaceGridDraftSchedule(draft, {
+          kind: "timed",
+          start: dayjs(mapped.schedule.start).toDate(),
+          end: dayjs(mapped.schedule.end).toDate(),
+          timeZone: mapped.schedule.timeZone,
+        }),
+      );
+    }
+    closeMenu(changed);
   };
 
   return (
