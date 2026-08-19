@@ -15,7 +15,7 @@ describe("CalendarConnectionBanner", () => {
 
     render(<CalendarConnectionBanner kind="reconnect" onAction={onAction} />);
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(screen.getByRole("alert")).toHaveTextContent(
       "Google Calendar needs reconnecting.",
     );
     await user.click(screen.getByRole("button", { name: "Reconnect" }));
@@ -30,7 +30,7 @@ describe("CalendarConnectionBanner", () => {
       <CalendarConnectionBanner kind="importFailed" onAction={onAction} />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't add your calendar.",
     );
     await user.click(screen.getByRole("button", { name: "Retry" }));

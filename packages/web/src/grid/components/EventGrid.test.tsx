@@ -270,7 +270,6 @@ describe("EventGrid", () => {
     );
 
     expect(
-    expect(
       screen.queryByRole("status", { name: "Adding your calendar…" }),
     ).not.toBeInTheDocument();
     expect(
