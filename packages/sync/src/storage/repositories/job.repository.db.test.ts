@@ -699,6 +699,59 @@ describe("JobRepository", () => {
       expect(oldest?.failureClass).toBe("retryableTransient");
     });
 
+    it("keeps a failed job overdue from runAfter even when lastErrorAt is newer", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const failed = await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(60 * 60_000),
+          coalescingKey: "pull:failed-fresh-error",
+        }),
+      );
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      await repo.fail(claimed!._id, "worker", "HTTP 500", NOW);
+
+      const oldest = await repo.findOldestOverdueByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+      expect(oldest?.runAfter).toEqual(failed.runAfter);
+      expect(oldest?.failureClass).toBe("retryableTransient");
+    });
+
+    it("alarms a failed job from lastErrorAt when the last retry was more recent", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(1000),
+          coalescingKey: "pull:failed-old-error",
+        }),
+      );
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      const firstErrorAt = past(3 * 60_000);
+      await repo.fail(claimed!._id, "worker", "HTTP 500", firstErrorAt);
+
+      const oldest = await repo.findOldestOverdueByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+      expect(oldest?.runAfter).toEqual(firstErrorAt);
+      expect(oldest?.failureClass).toBe("retryableTransient");
+    });
+
     it("treats a retrying job with lastErrorAt as overdue provider-error work", async () => {
       const connectionId = objectId() as JobEnqueue["connectionId"];
       const tenantId = objectId() as JobEnqueue["tenantId"];

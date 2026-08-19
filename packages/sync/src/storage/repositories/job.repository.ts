@@ -553,6 +553,11 @@ export class JobRepository {
   // or a retrying job that already recorded lastErrorAt (so first-import
   // retries surface as delayed after DELAYED_THRESHOLD_MS instead of sitting
   // on "importing" for the whole 20-attempt ladder).
+  //
+  // Failed jobs must not use a just-stamped lastErrorAt as their due time —
+  // that would hide a terminal fail behind DELAYED_THRESHOLD_MS. Use the
+  // older of runAfter and lastErrorAt so a dead-letter whose last retry was
+  // recent still alarms from the first error.
   async findOldestOverdueByConnection(
     tenantId: TenantId,
     principalId: PrincipalId,
@@ -562,16 +567,19 @@ export class JobRepository {
     runAfter: Date;
     failureClass: JobRecord["failureClass"];
   } | null> {
-    const errored = await this.collection.findOne(
+    const scope = { tenantId, principalId, connectionId };
+    const candidates: Array<{
+      runAfter: Date;
+      failureClass: JobRecord["failureClass"];
+    }> = [];
+
+    const retrying = await this.collection.findOne(
       {
-        tenantId,
-        principalId,
-        connectionId,
+        ...scope,
         lastErrorAt: { $lte: now },
         $or: [
           { state: "pending" },
           { state: "claimed", leaseExpiresAt: { $lt: now } },
-          { state: "failed" },
         ],
       },
       {
@@ -579,19 +587,17 @@ export class JobRepository {
         projection: { lastErrorAt: 1, failureClass: 1 },
       },
     );
-    if (errored && errored["lastErrorAt"] instanceof Date) {
-      return {
-        runAfter: errored["lastErrorAt"],
-        failureClass: (errored["failureClass"] ??
+    if (retrying?.["lastErrorAt"] instanceof Date) {
+      candidates.push({
+        runAfter: retrying["lastErrorAt"],
+        failureClass: (retrying["failureClass"] ??
           "retryableTransient") as JobRecord["failureClass"],
-      };
+      });
     }
 
     const result = await this.collection.findOne(
       {
-        tenantId,
-        principalId,
-        connectionId,
+        ...scope,
         $or: [
           { state: "pending", runAfter: { $lte: now } },
           { state: "claimed", leaseExpiresAt: { $lt: now } },
@@ -600,14 +606,28 @@ export class JobRepository {
       },
       {
         sort: { runAfter: 1 },
-        projection: { runAfter: 1, failureClass: 1 },
+        projection: { runAfter: 1, lastErrorAt: 1, failureClass: 1, state: 1 },
       },
     );
-    if (!result || !(result["runAfter"] instanceof Date)) return null;
-    return {
-      runAfter: result["runAfter"],
-      failureClass: result["failureClass"] ?? null,
-    };
+    if (result?.["runAfter"] instanceof Date) {
+      const lastErrorAt =
+        result["lastErrorAt"] instanceof Date ? result["lastErrorAt"] : null;
+      const runAfter =
+        result["state"] === "failed" &&
+        lastErrorAt &&
+        lastErrorAt.getTime() < result["runAfter"].getTime()
+          ? lastErrorAt
+          : result["runAfter"];
+      candidates.push({
+        runAfter,
+        failureClass: result["failureClass"] ?? null,
+      });
+    }
+
+    if (candidates.length === 0) return null;
+    return candidates.reduce((oldest, next) =>
+      next.runAfter.getTime() < oldest.runAfter.getTime() ? next : oldest,
+    );
   }
 
   // Outstanding work for one connection (support diagnostics / S45).
