@@ -30,6 +30,10 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      # Required by claude-code-action's OIDC exchange: with no github_token
+      # passed (see below), it authenticates via the runner's OIDC token to
+      # mint the Claude GitHub App installation token.
+      id-token: write
     outputs:
       proceed: ${{ steps.preflight.outputs.proceed }}
     steps:
