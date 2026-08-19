@@ -132,6 +132,7 @@ export type ProviderWriteErrorReason =
   | "readOnlyCalendar" // the target calendar cannot be written
   | "authorizationRevoked" // the credential is no longer valid
   | "transient" // network / 5xx / rate limit — safe to retry
+  | "unsupportedCapability" // the provider declines this operation for this event
   | "permanentProviderError"; // an unrecoverable provider rejection
 
 export class ProviderWriteError extends ProviderError<ProviderWriteErrorReason> {}

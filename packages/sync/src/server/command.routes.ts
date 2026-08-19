@@ -157,6 +157,16 @@ export function registerCommandRoutes(
           );
         }
 
+        // A failed outcome is a clean 200 to the caller, so without this line
+        // a deterministic provider refusal (e.g. Google declining a birthday
+        // occurrence delete) leaves zero server-side trace — diagnosing one
+        // required correlating client 502s against provider logs by hand.
+        if (command.outcome.state === "failed") {
+          logger.warn(
+            `Command ${command._id} (${command.input.kind} ${command.eventId}) failed: ${command.outcome.failureReason}`,
+          );
+        }
+
         const response: CommandSubmitResponse = {
           command: toSyncCommand(command),
         };

@@ -376,6 +376,28 @@ describe("GoogleEventWriter", () => {
     expect(missing.calls.delete).toHaveLength(1);
   });
 
+  it("maps a 400 on delete to unsupportedCapability, not a generic permanent failure", async () => {
+    // Google 400s a well-formed delete when the operation is unsupported for
+    // the event — e.g. cancelling one occurrence of a contact-linked birthday
+    // event. permanentProviderError here surfaced as a retryable 502 the
+    // client could never resolve.
+    const api = new FakeEventsApi({ delete: gError(400) });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .deleteEvent({
+        accessToken: "at",
+        calendarId: "cal",
+        providerEventId: "id00000",
+        expectedVersion: null,
+        invitation: "none",
+      })
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error).toBeInstanceOf(ProviderWriteError);
+    expect(error.reason).toBe("unsupportedCapability");
+  });
+
   it("still surfaces a precondition failure on delete", async () => {
     const api = new FakeEventsApi({ delete: gError(412) });
     const { writer } = writerWith(api);
