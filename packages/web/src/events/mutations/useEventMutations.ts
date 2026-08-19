@@ -563,6 +563,12 @@ export function useEventMutations(
               content: editableContent(variables.input.content),
             }),
         );
+        // Only past this point did the write actually land - a throw above
+        // (network/validation failure) skips this, so a failed create never
+        // retires the first-event prompt the way a genuine one does.
+        if (!variables.input.restore) {
+          noteFirstRealEventCreated();
+        }
       },
       ({ input }) => {
         const event = optimisticEventFromCreate(input);
@@ -757,7 +763,6 @@ export function useEventMutations(
             recurrence:
               finalInput.recurrence.kind === "series" ? "series" : "single",
           });
-          noteFirstRealEventCreated();
         }
         // callbacks rides along in two places: inside the variables so
         // onMutate can run onOptimisticApplied in the same task as the cache
