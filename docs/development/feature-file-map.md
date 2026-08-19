@@ -59,7 +59,6 @@ Authoritative legend data and taught bindings live under
 labels outside the registry.
 
 - Registry (source of truth for `?` legend): `packages/web/src/shortcuts/shortcuts.registry.ts`
-- Overlay sections derived from the registry: `packages/web/src/shortcuts/data/shortcuts.data.ts`
 - Taught bindings (handlers + Shortcut Showcase keycaps): `packages/web/src/shortcuts/keymap.ts`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `packages/web/src/shortcuts/useGlobalShortcuts.ts`
 - Event-jump chips (`S`): `packages/web/src/shortcuts/shift-hint/`

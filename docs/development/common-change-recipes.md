@@ -74,14 +74,13 @@ consistent.
 1. Add or update the entry in `packages/web/src/shortcuts/shortcuts.registry.ts`
    (id, keys, label, section, optional `when`). The `?` legend and overlay
    sections read from this registry — do not hard-code a second label list.
-2. If the Shortcut Showcase teaches the binding, also update
-   `packages/web/src/shortcuts/keymap.ts`. `keymap.test.ts` fails if the
-   registry row and keymap disagree.
+2. If the Shortcut Showcase teaches the binding, update
+   `packages/web/src/shortcuts/keymap.ts` — the registry rows and hint
+   keycaps derive from it.
 3. Register the key in the owning hook:
    - global / shell: `packages/web/src/shortcuts/useGlobalShortcuts.ts`
-   - week: `packages/web/src/views/Week/hooks/shortcuts/useWeekViewShortcuts.ts`
-     (+ behavior in `useWeekShortcutOwner.ts`)
-   - day: `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+   - day/week view keys: `packages/web/src/grid/shortcuts/useCalendarViewShortcuts.ts`
+     (behavior in `useWeekShortcutOwner.ts` / `DayCalendarGrid.tsx`)
    - shared grid edit/focus: `packages/web/src/grid/shortcuts/`
    - event jump (`S`): `packages/web/src/shortcuts/shift-hint/`
    - Hardcore Mode (`H`): `packages/web/src/shortcuts/keyboard-only/`

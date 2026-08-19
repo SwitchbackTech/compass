@@ -8,8 +8,9 @@
  * and bare-letter capture listeners (`s`, `h`).
  *
  * Only taught bindings live here — this is not a registry of every shortcut.
- * `shortcuts.registry.ts` remains the display list for the help overlay;
- * `keymap.test.ts` keeps the two from drifting apart.
+ * `shortcuts.registry.ts` remains the display list for the help overlay; its
+ * rows for these bindings derive from this table, so a remap here updates the
+ * legend by construction.
  */
 export const KEYMAP = {
   createEvent: { hotkey: "C", keycaps: ["C"] },

@@ -23,7 +23,7 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
-import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";

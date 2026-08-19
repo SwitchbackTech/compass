@@ -32,10 +32,7 @@ export type ShowcaseStep = {
   keycaps?: readonly string[];
 };
 
-/**
- * Keycaps reference KEYMAP so a remap updates the hints automatically;
- * keymap.test.ts pins the 1:1 cases.
- */
+// Keycaps reference KEYMAP so a remap updates the hints automatically.
 const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
   create: {
     title: "Create with the keyboard",
