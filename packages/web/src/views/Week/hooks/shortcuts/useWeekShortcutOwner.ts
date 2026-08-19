@@ -10,6 +10,7 @@ import {
 import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import {
@@ -18,15 +19,9 @@ import {
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
-import { useWeekViewShortcuts } from "@web/views/Week/hooks/shortcuts/useWeekViewShortcuts";
 import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import {
-  focusWeekGridEventTarget,
-  getFirstVisibleWeekGridEventTarget,
-  getFocusedWeekGridEventTarget,
-  listVisibleWeekGridEventTargets,
-} from "@web/views/Week/interaction/targeting/week-event.targeting";
+import { weekEventTargeting } from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 export interface ShortcutProps {
   isCurrentWeek: boolean;
@@ -41,7 +36,7 @@ export interface ShortcutProps {
 
 /**
  * Week shortcut owner: draft create/nav/focus behavior + bus subscription,
- * then thin key registration via `useWeekViewShortcuts`.
+ * then thin key registration via `useCalendarViewShortcuts`.
  */
 export const useWeekShortcutOwner = ({
   isCurrentWeek,
@@ -101,12 +96,12 @@ export const useWeekShortcutOwner = ({
     shiftViewByDay(1);
   }, [discardDraft, shiftViewByDay]);
 
+  // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
+  // null calendarId while calendars are still loading.
+  const canSeedDraft = !isCalendarsPending || Boolean(defaultTargetCalendarId);
+
   const createAllDayDraftEvent = useCallback(() => {
-    // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
-    // null calendarId while calendars are still loading.
-    if (isCalendarsPending && !defaultTargetCalendarId) {
-      return;
-    }
+    if (!canSeedDraft) return;
 
     void createAlldayDraft(
       startOfView,
@@ -114,12 +109,10 @@ export const useWeekShortcutOwner = ({
       "createShortcut",
       defaultTargetCalendarId,
     );
-  }, [defaultTargetCalendarId, endOfView, isCalendarsPending, startOfView]);
+  }, [canSeedDraft, defaultTargetCalendarId, endOfView, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    if (isCalendarsPending && !defaultTargetCalendarId) {
-      return;
-    }
+    if (!canSeedDraft) return;
 
     void createTimedDraft(
       isCurrentWeek,
@@ -127,14 +120,12 @@ export const useWeekShortcutOwner = ({
       "createShortcut",
       defaultTargetCalendarId,
     );
-  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
+  }, [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView]);
 
   // Idle Shift+Arrow place-create. Existing-draft / focused-target guards live
   // in useGridEventEditShortcuts so a failed clamp/midnight move never reseeds.
   const placeTimedDraftEvent = useCallback(() => {
-    if (isCalendarsPending && !defaultTargetCalendarId) {
-      return;
-    }
+    if (!canSeedDraft) return;
 
     void createTimedDraft(
       isCurrentWeek,
@@ -142,7 +133,7 @@ export const useWeekShortcutOwner = ({
       "keyboardPlace",
       defaultTargetCalendarId,
     );
-  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
+  }, [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView]);
 
   // The command palette's create-event rows (event.cmd.constants.ts) can only
   // reach this view through the bus; the "C"/"A" keys below call the create
@@ -167,16 +158,16 @@ export const useWeekShortcutOwner = ({
   useFocusSidebarShortcut();
 
   const focusFirstCalendarEvent = useCallback(() => {
-    const target = getFirstVisibleWeekGridEventTarget();
+    const target = weekEventTargeting.getFirstVisibleGridEventTarget();
     if (!target) return;
 
-    focusWeekGridEventTarget(target);
+    weekEventTargeting.focusGridEventTarget(target);
   }, []);
 
   const targeting = {
-    focus: focusWeekGridEventTarget,
-    getFocused: getFocusedWeekGridEventTarget,
-    listVisible: listVisibleWeekGridEventTargets,
+    focus: weekEventTargeting.focusGridEventTarget,
+    getFocused: weekEventTargeting.getFocusedGridEventTarget,
+    listVisible: weekEventTargeting.listVisibleGridEventTargets,
   };
 
   useGridEventEditShortcuts({
@@ -195,21 +186,21 @@ export const useWeekShortcutOwner = ({
       timedEvents,
     });
 
-  useWeekViewShortcuts({
-    onPreviousWeek: goToPreviousWeek,
-    onNextWeek: goToNextWeek,
+  useCalendarViewShortcuts({
+    onPrevPeriod: goToPreviousWeek,
+    onNextPeriod: goToNextWeek,
     onShiftViewBackward: shiftViewBackward,
     onShiftViewForward: shiftViewForward,
     onGoToToday: toToday,
-    onCreateAllDayDraft: createAllDayDraftEvent,
-    onCreateTimedDraft: createTimedDraftEvent,
+    onCreateAllDayEvent: createAllDayDraftEvent,
+    onCreateTimedEvent: createTimedDraftEvent,
     onFocusCalendar: focusFirstCalendarEvent,
   });
 
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
-    focus: focusWeekGridEventTarget,
-    listVisible: listVisibleWeekGridEventTargets,
+    focus: targeting.focus,
+    listVisible: targeting.listVisible,
     mode: "week",
     timedEvents,
   });

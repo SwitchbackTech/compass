@@ -6,8 +6,8 @@ This runbook covers keyboard shortcut parity in Compass. The principle: anything
 
 Two files matter, at different depths:
 
-- `packages/web/src/shortcuts/shortcuts.registry.ts` is the display registry: every shortcut's legend entry (label, keys, section, context). When adding a shortcut, update the registry and it appears in the legend overlay (opened with `?`), which is searchable and context-aware.
-- `packages/web/src/shortcuts/keymap.ts` is the runtime binding source for the shortcuts the onboarding flow teaches — the Shortcut Showcase gates its exit on create and save, and its practice arena plus the post-showcase checklist cover arrow focus, edit sequence, event jump, move, edge cycle, undo/redo, and hardcore. The real handlers, the showcase, and its hint keycaps all import these bindings, and `keymap.test.ts` pins the registry rows against them. Remapping a taught shortcut means editing `keymap.ts` plus the registry row; the test fails if they disagree. Shortcuts outside the keymap still bind via literals at their handler sites.
+- `packages/web/src/shortcuts/shortcuts.registry.ts` is the display registry: every shortcut's legend entry (label, keys, section, context). When adding a shortcut, update the registry and it appears in the legend overlay (opened with `?`), which is searchable and context-aware. The full, always-current shortcut list is that overlay — this doc deliberately does not duplicate it.
+- `packages/web/src/shortcuts/keymap.ts` is the runtime binding source for the shortcuts the onboarding flow teaches; the real handlers, the showcase hint keycaps, and the registry's legend rows all derive from it, so remapping a taught shortcut is a one-file edit. Shortcuts outside the keymap bind at their handler sites (the Day/Week view keys live in `useCalendarViewShortcuts.ts`).
 
 ## Scope
 
@@ -42,72 +42,6 @@ Helpful notes:
 - Shortcuts shown as `Cmd` apply on Mac. On Windows/Linux, use `Ctrl` in place of `Cmd` unless noted otherwise.
 - `Mod` means Command on Mac and Control on Windows/Linux.
 - `Meta` in key combinations refers to the Command key on Mac and the Windows key on Windows.
-
----
-
-## Shortcut Reference
-
-| Shortcut                    | View      | Action                            |
-| --------------------------- | --------- | --------------------------------- |
-| `D`                         | Global    | Navigate to Day view              |
-| `W`                         | Global    | Navigate to Week view             |
-| `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
-| `]`                         | Global    | Toggle sidebar                    |
-| `?`                         | Global    | Toggle shortcuts legend           |
-| `Cmd+Z` / `Ctrl+Z`          | Global    | Undo last event action            |
-| `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Global | Redo last undone event action     |
-| `H`                         | Global    | Toggle Hardcore Mode              |
-| `J`                         | Day view  | Previous day                      |
-| `K`                         | Day view  | Next day                          |
-| `T`                         | Day view  | Go to today                       |
-| `PageUp` / `PageDown`       | Day view  | Scroll the timed grid up/down     |
-| `I`                         | Day view  | Focus sidebar                     |
-| `U`                         | Day view  | Focus first calendar event        |
-| `S`                         | Day view  | Toggle event jump keys            |
-| `C`                         | Day view  | Create timed event                |
-| `A`                         | Day view  | Create all-day event              |
-| `Delete`                    | Day view  | Delete focused event              |
-| `ArrowUp` / `ArrowDown` / `ArrowLeft` / `ArrowRight` | Day view | Focus previous/next event chronologically |
-| `Arrow keys`                | Day view  | Move open draft event             |
-| `Enter`                     | Day view  | Open focused event                |
-| `E` then `T`                | Day view  | Edit focused event title          |
-| `E` then `D`                | Day view  | Edit focused event description    |
-| `E` then `S`                | Day view  | Edit focused event start time     |
-| `E` then `E`                | Day view  | Edit focused event end time       |
-| `E` then `R`                | Day view  | Edit focused event recurrence     |
-| `E` then `A`                | Day view  | Edit focused event account        |
-| `E` then `C`                | Day view  | Edit focused event color          |
-| `Cmd+D` / `Ctrl+D`          | Day view  | Duplicate focused event           |
-| `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
-| `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
-| `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
-| `J`                         | Week view | Previous week                     |
-| `K`                         | Week view | Next week                         |
-| `T`                         | Week view | Go to today                       |
-| `PageUp` / `PageDown`       | Week view | Scroll the timed grid up/down     |
-| `C`                         | Week view | Create timed event                |
-| `A`                         | Week view | Create all-day event              |
-| `I`                         | Week view | Focus sidebar                     |
-| `U`                         | Week view | Focus first calendar event        |
-| `S`                         | Week view | Toggle event jump keys            |
-| `Delete`                    | Week view | Delete focused event              |
-| `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event on the same day |
-| `ArrowLeft` / `ArrowRight`  | Week view | Focus time-nearest event on previous/next non-empty day |
-| `Arrow keys`                | Week view | Move open draft event             |
-| `Enter`                     | Week view | Open focused event                |
-| `E` then `T`                | Week view | Edit focused event title          |
-| `E` then `D`                | Week view | Edit focused event description    |
-| `E` then `S`                | Week view | Edit focused event start time     |
-| `E` then `E`                | Week view | Edit focused event end time       |
-| `E` then `R`                | Week view | Edit focused event recurrence     |
-| `E` then `A`                | Week view | Edit focused event account        |
-| `E` then `C`                | Week view | Edit focused event color          |
-| `Cmd+D` / `Ctrl+D`          | Week view | Duplicate focused event           |
-| `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
-| `Shift+ArrowRight`          | Week view | Move focused event to next day    |
-| `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
-| `L`                         | Global    | Navigate to Life view             |
-| `Cmd+Enter` / `Ctrl+Enter`  | Form      | Save event form                   |
 
 ---
 

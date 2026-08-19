@@ -72,13 +72,24 @@ const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   stopPropagation: false,
 } as const;
 
-const isArrowKey = (
-  key: string,
-): key is "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" =>
-  key === "ArrowUp" ||
-  key === "ArrowDown" ||
-  key === "ArrowLeft" ||
-  key === "ArrowRight";
+const SPATIAL_DIRECTION = {
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+} as const;
+
+const isArrowKey = (key: string): key is keyof typeof SPATIAL_DIRECTION =>
+  key in SPATIAL_DIRECTION;
+
+// Week view: refuse moves that would leave the visible week window.
+const isOutsideVisibleWeek = (
+  date: Dayjs,
+  days: number,
+  weekDays: Dayjs[],
+): boolean =>
+  (days === -1 && !date.isAfter(weekDays[0], "day")) ||
+  (days === 1 && !date.isBefore(weekDays[weekDays.length - 1], "day"));
 
 /**
  * Form-closed grid draft whose card currently has DOM focus. Drafts stamp
@@ -263,7 +274,6 @@ export function useGridEventEditShortcuts({
   ) => {
     if (dayBoundary.kind !== "clamp" || !event.isAllDay) return false;
 
-    const { weekDays } = dayBoundary;
     // All-day endDate is stored exclusive (the day after the last occupied
     // day), so it's shifted back a day to compare against the inclusive
     // weekDays window — matching nudgeAllDayEdgeDates's own inclusiveEnd.
@@ -271,89 +281,86 @@ export function useGridEventEditShortcuts({
       edge === "startDate"
         ? dayjs(event.startDate)
         : dayjs(event.endDate).subtract(1, "day");
-    if (movement.days === -1 && !edgeDate.isAfter(weekDays[0], "day")) {
-      return true;
+    return isOutsideVisibleWeek(edgeDate, movement.days, dayBoundary.weekDays);
+  };
+
+  // Day view: navigate so a day-crossing move keeps the event on screen.
+  const followAcrossMidnight = (
+    previousStart: Dayjs,
+    nudgedEvent: GridEvent,
+  ) => {
+    if (dayBoundary.kind !== "follow") return;
+    const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
+    if (!nextStart.isSame(previousStart, "day")) {
+      dayBoundary.onCrossed(nextStart);
     }
-    if (
-      movement.days === 1 &&
-      !edgeDate.isBefore(weekDays[weekDays.length - 1], "day")
-    ) {
-      return true;
-    }
-    return false;
+  };
+
+  // Nudge one edge of a focused card. `commit` is the only difference between
+  // a saved event (persist the update) and a form-closed draft (rewrite the
+  // draft schedule and, on Day, follow across midnight).
+  const moveFocusedEdge = (
+    keyboardEvent: KeyboardEvent,
+    event: GridEvent,
+    edge: EventEdge,
+    commit: (nudgedEvent: GridEvent) => void,
+    afterNudge?: (nudgedEvent: GridEvent) => void,
+  ) => {
+    if (!event._id) return;
+
+    const movement = getArrowKeyMovement(
+      keyboardEvent.key,
+      Boolean(event.isAllDay),
+    );
+    if (!movement) return;
+    if (wouldAllDayEdgeLeaveVisibleWeek(event, edge, movement)) return;
+
+    nudgeEventEdgeFromKeyboard({
+      edge,
+      event,
+      keyboardEvent,
+      onNudge: (nudgedEvent, nextEdge) => {
+        commit(nudgedEvent);
+        edgeFocusActions.setEdge(
+          event._id!,
+          nextEdge,
+          describeEdgeDate(nudgedEvent, nextEdge),
+        );
+        afterNudge?.(nudgedEvent);
+      },
+    });
   };
 
   const moveFocusedEventEdge = (
     keyboardEvent: KeyboardEvent,
     event: GridEvent,
     edge: EventEdge,
-  ) => {
-    if (!event._id) return;
-
-    const movement = getArrowKeyMovement(
-      keyboardEvent.key,
-      Boolean(event.isAllDay),
-    );
-    if (!movement) return;
-    if (wouldAllDayEdgeLeaveVisibleWeek(event, edge, movement)) return;
-
-    nudgeEventEdgeFromKeyboard({
-      edge,
-      event,
-      keyboardEvent,
-      onNudge: (nudgedEvent, nextEdge) => {
-        updateEvent({ event: nudgedEvent }, true, {
-          onOptimisticApplied: () => draftActions.discard(),
-        });
-        edgeFocusActions.setEdge(
-          event._id!,
-          nextEdge,
-          describeEdgeDate(nudgedEvent, nextEdge),
-        );
-      },
+  ) =>
+    moveFocusedEdge(keyboardEvent, event, edge, (nudgedEvent) => {
+      updateEvent({ event: nudgedEvent }, true, {
+        onOptimisticApplied: () => draftActions.discard(),
+      });
     });
-  };
 
   const moveFocusedDraftEdge = (
     keyboardEvent: KeyboardEvent,
     event: GridEvent,
     edge: EventEdge,
   ) => {
-    if (!event._id) return;
-
     const { gridDraft } = useDraftStore.getState();
     if (!gridDraft) return;
 
-    const movement = getArrowKeyMovement(
-      keyboardEvent.key,
-      Boolean(event.isAllDay),
-    );
-    if (!movement) return;
-    if (wouldAllDayEdgeLeaveVisibleWeek(event, edge, movement)) return;
-
     const previousStart = dayjs(event.startDate).startOf("day");
-
-    nudgeEventEdgeFromKeyboard({
-      edge,
-      event,
+    moveFocusedEdge(
       keyboardEvent,
-      onNudge: (nudgedEvent, nextEdge) => {
+      event,
+      edge,
+      (nudgedEvent) =>
         draftActions.setGridDraft(
           applyNudgedDatesToDraft(gridDraft, nudgedEvent),
-        );
-        edgeFocusActions.setEdge(
-          event._id!,
-          nextEdge,
-          describeEdgeDate(nudgedEvent, nextEdge),
-        );
-        if (dayBoundary.kind === "follow") {
-          const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
-          if (!nextStart.isSame(previousStart, "day")) {
-            dayBoundary.onCrossed(nextStart);
-          }
-        }
-      },
-    });
+        ),
+      (nudgedEvent) => followAcrossMidnight(previousStart, nudgedEvent),
+    );
   };
 
   const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
@@ -386,18 +393,15 @@ export function useGridEventEditShortcuts({
       );
       if (!movement) return;
 
-      if (dayBoundary.kind === "clamp") {
-        const start = dayjs(event.startDate);
-        const { weekDays } = dayBoundary;
-        if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
-          return;
-        }
-        if (
-          movement.days === 1 &&
-          !start.isBefore(weekDays[weekDays.length - 1], "day")
-        ) {
-          return;
-        }
+      if (
+        dayBoundary.kind === "clamp" &&
+        isOutsideVisibleWeek(
+          dayjs(event.startDate),
+          movement.days,
+          dayBoundary.weekDays,
+        )
+      ) {
+        return;
       }
 
       const previousStart = dayjs(event.startDate).startOf("day");
@@ -409,12 +413,7 @@ export function useGridEventEditShortcuts({
           updateEvent({ event: nudgedEvent }, true, {
             onOptimisticApplied: () => draftActions.discard(),
           });
-          if (dayBoundary.kind === "follow") {
-            const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
-            if (!nextStart.isSame(previousStart, "day")) {
-              dayBoundary.onCrossed(nextStart);
-            }
-          }
+          followAcrossMidnight(previousStart, nudgedEvent);
         },
       });
       return;
@@ -563,44 +562,29 @@ export function useGridEventEditShortcuts({
     if (!isArrowKey(keyboardEvent.key)) return;
 
     // Day view: all four arrows move chronological focus. Period changes stay
-    // on j/k (same split as week view: arrows focus, j/k navigate).
-    if (dayBoundary.kind === "follow") {
-      const adjacent = getChronologicallyAdjacentTarget({
-        allDayEvents,
-        direction:
-          keyboardEvent.key === "ArrowUp" || keyboardEvent.key === "ArrowLeft"
-            ? "previous"
-            : "next",
-        focused: targeting.getFocused(),
-        timedEvents,
-        visible: targeting.listVisible(),
-      });
-      if (!adjacent) return;
-
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
-      adjacent.element.scrollIntoView({ block: "nearest" });
-      targeting.focus(adjacent);
-      return;
-    }
-
-    const spatialDirection =
-      keyboardEvent.key === "ArrowUp"
-        ? "up"
-        : keyboardEvent.key === "ArrowDown"
-          ? "down"
-          : keyboardEvent.key === "ArrowLeft"
-            ? "left"
-            : "right";
-
-    const adjacent = getSpatiallyAdjacentTarget({
-      allDayEvents,
-      direction: spatialDirection,
-      focused: targeting.getFocused(),
-      timedEvents,
-      visible: targeting.listVisible(),
-      weekDays: dayBoundary.weekDays,
-    });
+    // on j/k (same split as week view: arrows focus, j/k navigate). Week uses
+    // spatial adjacency across the visible days.
+    const adjacent =
+      dayBoundary.kind === "follow"
+        ? getChronologicallyAdjacentTarget({
+            allDayEvents,
+            direction:
+              keyboardEvent.key === "ArrowUp" ||
+              keyboardEvent.key === "ArrowLeft"
+                ? "previous"
+                : "next",
+            focused: targeting.getFocused(),
+            timedEvents,
+            visible: targeting.listVisible(),
+          })
+        : getSpatiallyAdjacentTarget({
+            allDayEvents,
+            direction: SPATIAL_DIRECTION[keyboardEvent.key],
+            focused: targeting.getFocused(),
+            timedEvents,
+            visible: targeting.listVisible(),
+            weekDays: dayBoundary.weekDays,
+          });
     if (!adjacent) return;
 
     keyboardEvent.preventDefault();

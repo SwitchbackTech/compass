@@ -94,33 +94,29 @@ export const SidebarStatusBar: FC = () => {
 
   const text = status?.text ?? "";
 
+  // Highest-priority active indicator wins the bar; the sync-status button is
+  // the fallback when none applies.
+  const indicator = isKeyboardOnly ? (
+    <KeyboardOnlyIndicator />
+  ) : showEventJump ? (
+    <EventJumpIndicator />
+  ) : showEdgeFocus ? (
+    <EdgeFocusIndicator />
+  ) : isKeyboardPlace ? (
+    <KeyboardPlaceIndicator />
+  ) : !status && activeTipId ? (
+    <ShortcutTipIndicator />
+  ) : !status &&
+    (!authenticated ||
+      (access.kind === "server" && access.status === "trialing")) ? (
+    <TrialCountdownChip />
+  ) : null;
+
   return (
     <div className="flex h-6 shrink-0 items-center px-4">
-      {isKeyboardOnly ? (
+      {indicator ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
-          <KeyboardOnlyIndicator />
-        </div>
-      ) : showEventJump ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
-          <EventJumpIndicator />
-        </div>
-      ) : showEdgeFocus ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
-          <EdgeFocusIndicator />
-        </div>
-      ) : isKeyboardPlace ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
-          <KeyboardPlaceIndicator />
-        </div>
-      ) : !status && activeTipId ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
-          <ShortcutTipIndicator />
-        </div>
-      ) : !status &&
-        (!authenticated ||
-          (access.kind === "server" && access.status === "trialing")) ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
-          <TrialCountdownChip />
+          {indicator}
         </div>
       ) : (
         <button

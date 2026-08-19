@@ -50,47 +50,35 @@ export const shouldAdjustComplimentDate = (
 export const shouldAdjustComplimentTime = (
   changed: "start" | "end",
   vals: Params_TimeChange,
-) => {
-  let shouldAdjust!: boolean;
-  let duration!: number;
-  let step!: number;
-  let compliment!: Dayjs;
-
+):
+  | { shouldAdjust: false }
+  | { shouldAdjust: true; adjustment: number; compliment: Dayjs } => {
   const { oldStart, oldEnd, start, end } = vals;
 
   const _start = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
   const _end = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
+
+  // The picked side crossed (or landed on) its compliment. Kept as explicit
+  // isAfter/isBefore (not a negated isBefore) so an unparseable time compares
+  // false and never triggers an adjustment.
   const isSame = _start.isSame(_end);
+  const shouldAdjust =
+    changed === "start"
+      ? _start.isAfter(_end) || isSame
+      : _end.isBefore(_start) || isSame;
+  if (!shouldAdjust) return { shouldAdjust: false };
 
-  if (changed === "start") {
-    shouldAdjust = _start.isAfter(_end) || isSame;
+  const duration = Math.abs(
+    dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT).diff(
+      dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT),
+      "minutes",
+    ),
+  );
+  const step = Math.abs(_start.diff(_end, "minutes"));
 
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
-    }
-  }
-
-  if (changed === "end") {
-    shouldAdjust = _end.isBefore(_start) || isSame;
-
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
-    }
-  }
-
-  const adjustment = duration + step;
-
-  return { shouldAdjust, adjustment, compliment };
+  return {
+    shouldAdjust: true,
+    adjustment: duration + step,
+    compliment: changed === "start" ? _end : _start,
+  };
 };

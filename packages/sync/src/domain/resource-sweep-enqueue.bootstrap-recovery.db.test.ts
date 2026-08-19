@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
+import { resourceJob } from "@sync/storage/contracts/job.contracts";
 import {
   type ResourceBootstrapState,
   type SyncResourceRecord,
@@ -31,7 +32,7 @@ const recoverStalledBootstraps = (
   enqueueForResources(
     deps,
     (b, l) => deps.resources.listStalledBootstraps(b, l),
-    "bootstrapCatchup",
+    (r, n) => resourceJob(r, "bootstrapCatchup", n()),
     before,
     nowFn,
     limit,

@@ -4,11 +4,12 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { verifyNotification } from "@sync/notifications/notification-verification";
-import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
-import { type NotificationSubscription } from "@sync/providers/provider-notifications.port";
+import { parseGoogleNotification } from "@sync/providers/google/google-notifications.adapter";
 import { redactedCause } from "@sync/safety/redact-error";
-import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
-import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
+import {
+  calendarListSyncJob,
+  resourceJob,
+} from "@sync/storage/contracts/job.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -25,9 +26,6 @@ const notificationRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Header parsing only — no network, no auth — so one shared instance is fine.
-const googleNotifications = new GoogleNotificationAdapter();
 
 const logger = Logger("sync:notification.routes");
 
@@ -48,7 +46,7 @@ export function registerNotificationRoutes(
   deps: NotificationApiDeps,
 ): void {
   app.post(NOTIFICATIONS_PATH, notificationRateLimit, async (req, res) => {
-    const notification = googleNotifications.parseCallback(
+    const notification = parseGoogleNotification(
       req.headers as Record<string, string | undefined>,
     );
     if (!notification) {
@@ -68,11 +66,7 @@ export function registerNotificationRoutes(
         notification.channelId,
       );
       const now = new Date((deps.now ?? Date.now)());
-      const verdict = verifyNotification(
-        notification,
-        toSubscription(resource),
-        now,
-      );
+      const verdict = verifyNotification(notification, resource, now);
 
       // Never reveal the verdict to the caller (response stays 200 either
       // way), but a rejection is still worth a quiet log line - a fleet-wide
@@ -103,34 +97,13 @@ export function registerNotificationRoutes(
           resource._id,
           now,
         );
+        // Background priority on purpose: webhooks are provider-paced.
+        // Promoting them to user priority would make the entire steady state
+        // urgent and defeat the tier that protects Refresh / post-OAuth work.
         const job =
           resource.resourceKind === "calendarList"
-            ? {
-                tenantId: resource.tenantId,
-                principalId: resource.principalId,
-                connectionId: resource.connectionId,
-                resourceId: null,
-                commandId: null,
-                kind: "calendarListSync" as const,
-                priority: JOB_PRIORITY.background,
-                runAfter: now,
-                coalescingKey: `calendarListSync:${resource.connectionId}`,
-              }
-            : {
-                tenantId: resource.tenantId,
-                principalId: resource.principalId,
-                connectionId: resource.connectionId,
-                resourceId: resource._id,
-                commandId: null,
-                kind: "incrementalPull" as const,
-                // Background on purpose: webhooks are provider-paced. Promoting
-                // them to user priority would make the entire steady state
-                // urgent and defeat the tier that protects Refresh / post-OAuth
-                // work.
-                priority: JOB_PRIORITY.background,
-                runAfter: now,
-                coalescingKey: `incrementalPull:${resource._id}`,
-              };
+            ? calendarListSyncJob(resource, now)
+            : resourceJob(resource, "incrementalPull", now);
         await new JobRepository(deps.mongo.db).enqueue(job);
       }
       res.status(Status.OK).end();
@@ -143,25 +116,4 @@ export function registerNotificationRoutes(
       res.status(Status.INTERNAL_SERVER).end();
     }
   });
-}
-
-// Build the stored subscription verifyNotification checks against, or null when
-// the channel is unknown or its subscription is not fully recorded.
-function toSubscription(
-  resource: SyncResourceRecord | null,
-): NotificationSubscription | null {
-  if (
-    !resource?.subscriptionId ||
-    !resource.subscriptionResourceId ||
-    !resource.subscriptionToken ||
-    !resource.subscriptionExpiresAt
-  ) {
-    return null;
-  }
-  return {
-    channelId: resource.subscriptionId,
-    resourceId: resource.subscriptionResourceId,
-    token: resource.subscriptionToken,
-    expiresAt: resource.subscriptionExpiresAt,
-  };
 }

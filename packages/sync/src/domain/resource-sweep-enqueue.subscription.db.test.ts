@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
+import { resourceJob } from "@sync/storage/contracts/job.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -27,7 +28,7 @@ const maintainExpiringSubscriptions = (
   enqueueForResources(
     deps,
     (b, l) => deps.resources.listExpiringSubscriptions(b, l),
-    "subscriptionMaintain",
+    (r, n) => resourceJob(r, "subscriptionMaintain", n()),
     before,
     nowFn,
     limit,

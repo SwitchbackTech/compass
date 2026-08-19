@@ -91,3 +91,47 @@ export const JobEnqueueSchema = JobRecordSchema.omit({
   updatedAt: true,
 });
 export type JobEnqueue = z.infer<typeof JobEnqueueSchema>;
+
+// The canonical enqueue shapes. The coalescing-key conventions live here and
+// nowhere else: resource-scoped work coalesces per (kind, resource), and
+// calendar-list discovery coalesces per CONNECTION (resourceId: null), so a
+// sweep-enqueued and a connect-enqueued discovery for one connection always
+// collapse into the same job.
+export function resourceJob(
+  resource: Pick<JobEnqueue, "tenantId" | "principalId" | "connectionId"> & {
+    _id: string;
+  },
+  kind: Exclude<JobKind, "calendarListSync">,
+  runAfter: Date,
+  priority: JobPriority = JOB_PRIORITY.background,
+): JobEnqueue {
+  return {
+    tenantId: resource.tenantId,
+    principalId: resource.principalId,
+    connectionId: resource.connectionId,
+    resourceId: resource._id,
+    commandId: null,
+    kind,
+    priority,
+    runAfter,
+    coalescingKey: `${kind}:${resource._id}`,
+  };
+}
+
+export function calendarListSyncJob(
+  scope: Pick<JobEnqueue, "tenantId" | "principalId" | "connectionId">,
+  runAfter: Date,
+  priority: JobPriority = JOB_PRIORITY.background,
+): JobEnqueue {
+  return {
+    tenantId: scope.tenantId,
+    principalId: scope.principalId,
+    connectionId: scope.connectionId,
+    resourceId: null,
+    commandId: null,
+    kind: "calendarListSync",
+    priority,
+    runAfter,
+    coalescingKey: `calendarListSync:${scope.connectionId}`,
+  };
+}

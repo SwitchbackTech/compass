@@ -45,7 +45,10 @@ import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
-import { type JobRecord } from "@sync/storage/contracts/job.contracts";
+import {
+  type JobRecord,
+  resourceJob,
+} from "@sync/storage/contracts/job.contracts";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
@@ -539,7 +542,7 @@ function buildSchedulers(
         const enqueued = await enqueueForResources(
           { jobs, onEnqueueError: onEnqueueError("reconcile") },
           (b, l) => resources.listStaleEvents(b, l),
-          "incrementalPull",
+          (r, n) => resourceJob(r, "incrementalPull", n()),
           before,
           () => new Date(),
         );
@@ -578,7 +581,7 @@ function buildSchedulers(
         enqueueForResources(
           { jobs, onEnqueueError: onEnqueueError("subscription") },
           (b, l) => resources.listExpiringSubscriptions(b, l),
-          "subscriptionMaintain",
+          (r, n) => resourceJob(r, "subscriptionMaintain", n()),
           before,
           () => new Date(),
         ),
@@ -593,7 +596,7 @@ function buildSchedulers(
         const enqueued = await enqueueForResources(
           { jobs, onEnqueueError: onEnqueueError("bootstrap-recovery") },
           (b, l) => resources.listStalledBootstraps(b, l),
-          "bootstrapCatchup",
+          (r, n) => resourceJob(r, "bootstrapCatchup", n()),
           before,
           () => new Date(),
         );

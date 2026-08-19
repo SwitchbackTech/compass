@@ -20,7 +20,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";

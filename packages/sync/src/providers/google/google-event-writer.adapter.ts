@@ -138,8 +138,6 @@ const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
 // caller-chosen id, patch and delete can be conditioned on a version, and
 // provider errors are classified into neutral, caller-actionable reasons.
 export class GoogleEventWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleEventsApiFactory;
 
   constructor(makeApi: GoogleEventsApiFactory = defaultApiFactory) {

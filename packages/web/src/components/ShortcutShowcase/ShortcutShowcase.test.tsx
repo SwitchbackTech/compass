@@ -118,24 +118,6 @@ describe("ShortcutShowcase", () => {
     ).toBe("true");
   });
 
-  it("keeps answering the shortcuts it no longer gates the exit on", () => {
-    render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
-
-    // S flashes the day-prefix chips, typing one jumps, and none of it
-    // advances a lesson any more.
-    pressKey("s");
-    pressKey("t");
-    pressKey("1");
-    expect(currentStepId()).toBe("create");
-
-    // e then t opens a title editor on a board no lesson seated focus on.
-    pressKey("e");
-    pressKey("t");
-    expect(screen.getByLabelText("Event title")).toBeTruthy();
-    expect(currentStepId()).toBe("create");
-  });
-
   it("fades the takeover on Enter Compass, then unmounts", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);

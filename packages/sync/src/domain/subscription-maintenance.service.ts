@@ -95,29 +95,26 @@ export async function maintainSubscription(
   const channelId = randomUUID();
   const channelToken = randomUUID();
 
-  let channel: Awaited<ReturnType<ProviderNotificationAdapter["watchEvents"]>>;
+  if (resource.resourceKind !== "calendarList" && !calendar) {
+    throw new Error(
+      `events subscription for resource ${resource._id} is missing its calendar`,
+    );
+  }
+
+  let channel: Awaited<ReturnType<ProviderNotificationAdapter["watch"]>>;
   try {
-    if (resource.resourceKind === "calendarList") {
-      channel = await deps.notifications.watchCalendarList({
-        accessToken,
-        channelId,
-        token: channelToken,
-        callbackUrl: deps.callbackUrl,
-      });
-    } else {
-      if (!calendar) {
-        throw new Error(
-          `events subscription for resource ${resource._id} is missing its calendar`,
-        );
-      }
-      channel = await deps.notifications.watchEvents({
-        accessToken,
-        calendarId: calendar.providerCalendarId,
-        channelId,
-        token: channelToken,
-        callbackUrl: deps.callbackUrl,
-      });
-    }
+    channel = await deps.notifications.watch({
+      accessToken,
+      // Undefined for a calendarList resource: watch the account's calendar
+      // list instead of one calendar's events.
+      calendarId:
+        resource.resourceKind === "calendarList"
+          ? undefined
+          : calendar?.providerCalendarId,
+      channelId,
+      token: channelToken,
+      callbackUrl: deps.callbackUrl,
+    });
   } catch (error) {
     if (error instanceof ProviderNotificationError) {
       if (

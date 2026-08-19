@@ -9,11 +9,7 @@ import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
-import {
-  focusDayGridEventTarget,
-  getFocusedDayGridEventTarget,
-  listVisibleDayGridEventTargets,
-} from "@web/views/Day/interaction/targeting/day-event.targeting";
+import { dayEventTargeting } from "@web/views/Day/interaction/targeting/day-event.targeting";
 
 /**
  * Day-view edit shortcuts: Delete, Mod+D, Shift+arrows (nudge / day-move),
@@ -41,9 +37,9 @@ export function useDayEventNudgeShortcuts({
   shiftHints: ActiveShiftHint[];
 } {
   const targeting = {
-    focus: focusDayGridEventTarget,
-    getFocused: getFocusedDayGridEventTarget,
-    listVisible: listVisibleDayGridEventTargets,
+    focus: dayEventTargeting.focusGridEventTarget,
+    getFocused: dayEventTargeting.getFocusedGridEventTarget,
+    listVisible: dayEventTargeting.listVisibleGridEventTargets,
   };
 
   useGridEventEditShortcuts({
@@ -88,8 +84,8 @@ export function useDayEventNudgeShortcuts({
 
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
-    focus: focusDayGridEventTarget,
-    listVisible: listVisibleDayGridEventTargets,
+    focus: targeting.focus,
+    listVisible: targeting.listVisible,
     mode: "day",
     timedEvents,
   });

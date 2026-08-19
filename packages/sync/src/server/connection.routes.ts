@@ -54,7 +54,10 @@ import {
   respondInternalError,
 } from "@sync/server/internal-http";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
-import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
+import {
+  calendarListSyncJob,
+  JOB_PRIORITY,
+} from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -852,17 +855,17 @@ async function linkConnection(
   // rather than piling up. A failure throws so the connect is reported failed and
   // retried, rather than silently leaving a connection that never syncs.
   const jobs = repos.jobs;
-  await jobs.enqueue({
-    tenantId: state.tenantId,
-    principalId: state.principalId,
-    connectionId: connection._id,
-    resourceId: null,
-    commandId: null,
-    kind: "calendarListSync",
-    priority: JOB_PRIORITY.user,
-    runAfter: new Date(),
-    coalescingKey: `calendarListSync:${connection._id}`,
-  });
+  await jobs.enqueue(
+    calendarListSyncJob(
+      {
+        tenantId: state.tenantId,
+        principalId: state.principalId,
+        connectionId: connection._id,
+      },
+      new Date(),
+      JOB_PRIORITY.user,
+    ),
+  );
 }
 
 // Map the busy-availability domain result (Date instants) to the wire contract

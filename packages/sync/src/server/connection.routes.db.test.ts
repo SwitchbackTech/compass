@@ -76,7 +76,6 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
 // exercises buildAuthorizationUrl; both record their inputs instead of hitting
 // the network.
 class FakeAuthAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
   revoked: string[] = [];
   authorizations: Array<{
     state: string;
