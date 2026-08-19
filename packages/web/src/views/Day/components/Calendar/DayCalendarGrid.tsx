@@ -10,7 +10,10 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  isFirstImportFailed,
+  isFirstImportInProgress,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getWritableCalendars } from "@web/calendars/calendar.util";
 import {
@@ -117,7 +120,7 @@ export function DayCalendarGrid() {
     showEventsLoadError,
     isFetching,
   );
-  const { connection, state: googleState } = useConnectGoogle();
+  const { connection, refresh, state: googleState } = useConnectGoogle();
   // See Grid.tsx's Week-view equivalent: googleState alone can't tell a
   // first-ever import apart from routine catch-up on an established account.
   const isImportingEmpty =
@@ -126,6 +129,11 @@ export function DayCalendarGrid() {
     dayEvents.length === 0 &&
     googleState === "IMPORTING" &&
     isFirstImportInProgress(connection);
+  const isImportFailed =
+    !isPending &&
+    !showEventsLoadError &&
+    dayEvents.length === 0 &&
+    isFirstImportFailed(connection);
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,
@@ -453,10 +461,12 @@ export function DayCalendarGrid() {
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
           isErrorEvents={showEventsLoadError}
+          isImportFailed={isImportFailed}
           isImportingEmpty={isImportingEmpty}
           isLoadingEvents={isLoadingEvents}
           onAllDayMouseDown={handleAllDayMouseDown}
           onRetryEvents={() => void refetch()}
+          onRetryImport={() => refresh()}
           onTimedMouseDown={handleTimedMouseDown}
           timedEventsLayer={timedEventsLayer}
           today={today}

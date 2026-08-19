@@ -546,6 +546,75 @@ describe("dispatchSyncJob", () => {
     expect(discarded).toEqual([]);
   });
 
+  it("drops a job after consecutive refreshFailed attempts so 401s do not burn the ladder", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await credentials.store({
+      connectionId: calendar.connectionId,
+      provider: "google",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    for (let i = 0; i < 3; i += 1) {
+      await credentials.incrementRefreshFailure(calendar.connectionId);
+    }
+    const reader = new FakeReader([]);
+    const discarded: string[] = [];
+    const flakyCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError("refreshFailed", "network blip");
+      },
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
+      invalidateAccessToken: async () => {},
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, flakyCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("token refresh failed 3 time(s)");
+    }
+    expect(discarded).toEqual([]);
+    const after = await credentials.findByConnection(calendar.connectionId);
+    expect(after?.refreshFailureCount).toBe(3);
+  });
+
+  it("does not drop a refreshFailed job just because other retries already ran", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await credentials.store({
+      connectionId: calendar.connectionId,
+      provider: "google",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const reader = new FakeReader([]);
+    const job = {
+      ...jobFor(resource, "incrementalPull"),
+      attempt: 5,
+    };
+
+    await expect(
+      dispatchSyncJob(
+        deps(reader, {
+          getValidAccessToken: async () => {
+            throw new ProviderAuthError("refreshFailed", "network blip");
+          },
+          discardRevoked: async () => {},
+          invalidateAccessToken: async () => {},
+        }),
+        job,
+        now,
+      ),
+    ).rejects.toThrow(ProviderAuthError);
+  });
+
   it("remints the access token in-process and completes a pull after a one-off 401", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");

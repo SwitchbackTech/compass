@@ -119,7 +119,7 @@ describe("SyncJobWorker", () => {
   ) => new SyncJobWorker(deps(reader), OWNER, { now, ...options });
 
   const seedCalendar = (
-    overrides: Partial<{ active: boolean }> = {},
+    overrides: Parameters<typeof seedProviderCalendar>[1] = {},
   ): Promise<ProviderCalendarRecord> =>
     seedProviderCalendar(calendars, overrides);
 
@@ -208,6 +208,71 @@ describe("SyncJobWorker", () => {
     expect(
       await jobs.findById(resource.tenantId, resource.principalId, job._id),
     ).toBeNull();
+  });
+
+  it("re-derives connection health after a successful pull settles", async () => {
+    const connection = await connections.upsertByProviderAccount({
+      tenantId: objectId(),
+      principalId: objectId(),
+      provider: "google",
+      account: {
+        providerAccountId: "acct-1",
+        email: "user@example.com",
+        displayName: "User",
+      },
+      capabilities: ["readEvents", "readBusy", "writeEvents"],
+      state: "delayed",
+      stateReason: "providerErrors",
+    });
+    const credentials = new CredentialRepository(storage.db());
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const calendar = await seedCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      now(),
+    );
+    const eventsResource = await seedResource(calendar, "cursor-0");
+    await resources.setBootstrapState(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "ready",
+    );
+    await enqueue(eventsResource, "incrementalPull");
+
+    await worker(
+      new FakeReader([
+        pageOf([single("new-1")], { nextSyncToken: "cursor-1" }),
+      ]),
+    ).runOnce();
+
+    const after = await connections.findById(
+      connection.tenantId,
+      connection.principalId,
+      connection._id,
+    );
+    expect(after?.state).toBe("healthy");
+    expect(after?.stateReason).toBeNull();
+    expect(after?.lastHealthyAt).toBeInstanceOf(Date);
   });
 
   it("hands an expired-cursor pull off by enqueuing a repair and completing the pull", async () => {
@@ -303,6 +368,8 @@ describe("SyncJobWorker", () => {
     expect(after?.state).toBe("failed");
     expect(after?.failureClass).toBe("retryableTransient");
     expect(after?.leaseOwner).toBeNull();
+    expect(after?.lastError).toContain("flaky");
+    expect(after?.lastErrorAt).toEqual(now());
   });
 
   it("does not call onFail while a transient failure still has retries left", async () => {
@@ -341,6 +408,27 @@ describe("SyncJobWorker", () => {
 
     expect(failed).toHaveLength(1);
     expect(failed[0]?._id).toEqual(job._id);
+  });
+
+  it("records lastError on a retrying job so connection health can see it", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+
+    await workerWith(
+      new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      { maxAttempts: 5 },
+    ).runOnce();
+
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    expect(after?.state).toBe("pending");
+    expect(after?.failureClass).toBe("retryableTransient");
+    expect(after?.lastError).toContain("flaky");
+    expect(after?.lastErrorAt).toEqual(now());
   });
 
   it("keeps a failed job's coalescing key so enqueue does not replace it", async () => {

@@ -37,6 +37,7 @@ export class CredentialRepository {
           scopes: fields.scopes,
           accessToken: null,
           accessTokenExpiresAt: null,
+          refreshFailureCount: 0,
           updatedAt: now,
         },
         // _id comes from the query filter on insert; setting it here too would
@@ -73,6 +74,7 @@ export class CredentialRepository {
         $set: {
           accessToken,
           accessTokenExpiresAt: expiresAt,
+          refreshFailureCount: 0,
           updatedAt: new Date(),
         },
       },
@@ -95,6 +97,21 @@ export class CredentialRepository {
         },
       },
     );
+  }
+
+  // Count a transient token-endpoint failure against the consecutive budget.
+  // Returns the new count, or 0 if the credential was deleted concurrently.
+  async incrementRefreshFailure(connectionId: ConnectionId): Promise<number> {
+    const result = await this.collection.findOneAndUpdate(
+      { _id: connectionId },
+      {
+        $inc: { refreshFailureCount: 1 },
+        $set: { updatedAt: new Date() },
+      },
+      { returnDocument: "after" },
+    );
+    if (!result) return 0;
+    return CredentialRecordSchema.parse(result).refreshFailureCount;
   }
 
   // Remove a connection's credential (disconnect / account deletion). Returns

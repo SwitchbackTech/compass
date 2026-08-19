@@ -237,6 +237,22 @@ describe("CredentialCustody", () => {
     expect(adapter.revokedTokens).toEqual([]);
   });
 
+  it("increments refreshFailureCount on a transient refresh failure", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const adapter = new FakeAdapter({
+      refreshError: new ProviderAuthError("refreshFailed", "blip"),
+    });
+    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    await custody.store(baseCredential(connectionId));
+
+    await expect(
+      custody.getValidAccessToken(connectionId),
+    ).rejects.toMatchObject({ reason: "refreshFailed" });
+    const after = await repo.findByConnection(connectionId);
+    expect(after?.refreshFailureCount).toBe(1);
+    expect(after?.refreshToken).toBe("stored-refresh-token");
+  });
+
   it("discardRevoked deletes the credential and is idempotent", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter();

@@ -145,6 +145,7 @@ export class JobRepository {
           leaseExpiresAt: null,
           failureClass: null,
         },
+        $unset: { lastError: "", lastErrorAt: "" },
         $max: { priority: fields.priority },
         $currentDate: { updatedAt: true },
       },
@@ -309,6 +310,8 @@ export class JobRepository {
     id: SyncJobId,
     owner: string,
     runAfter: Date,
+    lastError?: string | null,
+    at: Date = new Date(),
   ): Promise<boolean> {
     const result = await this.collection.updateOne(
       { _id: id, leaseOwner: owner },
@@ -319,7 +322,9 @@ export class JobRepository {
           leaseOwner: null,
           leaseExpiresAt: null,
           failureClass: "retryableTransient" as const,
+          ...(lastError ? { lastError } : {}),
         },
+        $min: { lastErrorAt: at },
         $currentDate: { updatedAt: true },
       },
     );
@@ -328,7 +333,12 @@ export class JobRepository {
 
   // Mark a job the worker owns as a terminal failure needing attention
   // (retries exhausted).
-  async fail(id: SyncJobId, owner: string): Promise<boolean> {
+  async fail(
+    id: SyncJobId,
+    owner: string,
+    lastError?: string | null,
+    at: Date = new Date(),
+  ): Promise<boolean> {
     const result = await this.collection.updateOne(
       { _id: id, leaseOwner: owner },
       {
@@ -337,7 +347,9 @@ export class JobRepository {
           leaseOwner: null,
           leaseExpiresAt: null,
           failureClass: "retryableTransient" as const,
+          ...(lastError ? { lastError } : {}),
         },
+        $min: { lastErrorAt: at },
         $currentDate: { updatedAt: true },
       },
     );
@@ -417,6 +429,7 @@ export class JobRepository {
           leaseExpiresAt: null,
           failureClass: null,
         },
+        $unset: { lastError: "", lastErrorAt: "" },
         $inc: { requeuedCount: 1 },
         $currentDate: { updatedAt: true },
       },
@@ -521,6 +534,7 @@ export class JobRepository {
           leaseExpiresAt: null,
           failureClass: null,
         },
+        $unset: { lastError: "", lastErrorAt: "" },
         $currentDate: { updatedAt: true },
       },
     );
@@ -535,12 +549,15 @@ export class JobRepository {
   }
 
   // The oldest piece of overdue work for one connection, if any: a pending
-  // job past its runAfter, a claimed job whose lease lapsed, or ANY failed
-  // job (a terminal failure is always overdue — nothing will run it again
-  // without the self-heal sweep or an operator). Feeds
-  // ConnectionStateEvidence.oldestDueWorkAt, which was previously wired to a
-  // hardcoded null — a wedged failed job was invisible to the connection's
-  // own health state (2026-07-30: every signal green with jobs stuck ~25h).
+  // job past its runAfter, a claimed job whose lease lapsed, ANY failed job,
+  // or a retrying job that already recorded lastErrorAt (so first-import
+  // retries surface as delayed after DELAYED_THRESHOLD_MS instead of sitting
+  // on "importing" for the whole 20-attempt ladder).
+  //
+  // Failed jobs must not use a just-stamped lastErrorAt as their due time —
+  // that would hide a terminal fail behind DELAYED_THRESHOLD_MS. Use the
+  // older of runAfter and lastErrorAt so a dead-letter whose last retry was
+  // recent still alarms from the first error.
   async findOldestOverdueByConnection(
     tenantId: TenantId,
     principalId: PrincipalId,
@@ -550,11 +567,37 @@ export class JobRepository {
     runAfter: Date;
     failureClass: JobRecord["failureClass"];
   } | null> {
+    const scope = { tenantId, principalId, connectionId };
+    const candidates: Array<{
+      runAfter: Date;
+      failureClass: JobRecord["failureClass"];
+    }> = [];
+
+    const retrying = await this.collection.findOne(
+      {
+        ...scope,
+        lastErrorAt: { $lte: now },
+        $or: [
+          { state: "pending" },
+          { state: "claimed", leaseExpiresAt: { $lt: now } },
+        ],
+      },
+      {
+        sort: { lastErrorAt: 1 },
+        projection: { lastErrorAt: 1, failureClass: 1 },
+      },
+    );
+    if (retrying?.["lastErrorAt"] instanceof Date) {
+      candidates.push({
+        runAfter: retrying["lastErrorAt"],
+        failureClass: (retrying["failureClass"] ??
+          "retryableTransient") as JobRecord["failureClass"],
+      });
+    }
+
     const result = await this.collection.findOne(
       {
-        tenantId,
-        principalId,
-        connectionId,
+        ...scope,
         $or: [
           { state: "pending", runAfter: { $lte: now } },
           { state: "claimed", leaseExpiresAt: { $lt: now } },
@@ -563,14 +606,28 @@ export class JobRepository {
       },
       {
         sort: { runAfter: 1 },
-        projection: { runAfter: 1, failureClass: 1 },
+        projection: { runAfter: 1, lastErrorAt: 1, failureClass: 1, state: 1 },
       },
     );
-    if (!result || !(result["runAfter"] instanceof Date)) return null;
-    return {
-      runAfter: result["runAfter"],
-      failureClass: result["failureClass"] ?? null,
-    };
+    if (result?.["runAfter"] instanceof Date) {
+      const lastErrorAt =
+        result["lastErrorAt"] instanceof Date ? result["lastErrorAt"] : null;
+      const runAfter =
+        result["state"] === "failed" &&
+        lastErrorAt &&
+        lastErrorAt.getTime() < result["runAfter"].getTime()
+          ? lastErrorAt
+          : result["runAfter"];
+      candidates.push({
+        runAfter,
+        failureClass: result["failureClass"] ?? null,
+      });
+    }
+
+    if (candidates.length === 0) return null;
+    return candidates.reduce((oldest, next) =>
+      next.runAfter.getTime() < oldest.runAfter.getTime() ? next : oldest,
+    );
   }
 
   // Outstanding work for one connection (support diagnostics / S45).

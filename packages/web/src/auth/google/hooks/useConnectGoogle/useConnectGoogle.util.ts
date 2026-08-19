@@ -336,6 +336,41 @@ export const isFirstImportInProgress = (
   );
 
 /**
+ * The first-ever import exhausted retries or stalled into delayed/ATTENTION
+ * before the connection was ever healthy. Distinct from an established
+ * account's delayed catch-up (which has lastHealthyAt).
+ */
+export const isFirstImportFailed = (
+  connection?: GoogleSyncConnectionSummary | null,
+): boolean =>
+  Boolean(
+    connection &&
+      !connection.lastHealthyAt &&
+      (connection.state === "delayed" ||
+        connection.connectionState === "ATTENTION"),
+  );
+
+export type CalendarConnectionBannerKind =
+  | "reconnect"
+  | "importFailed"
+  | "delayed";
+
+// Persistent in-calendar banner. Reconnect wins, then a failed first import,
+// then an established account's delayed catch-up. First-import-in-progress
+// stays on the grid overlay, not this banner.
+export const getCalendarConnectionBannerKind = (
+  state: GoogleUiState,
+  connection?: GoogleSyncConnectionSummary | null,
+): CalendarConnectionBannerKind | null => {
+  if (connectionNeedsReconnect(state, connection)) return "reconnect";
+  if (isFirstImportFailed(connection)) return "importFailed";
+  if (state === "ATTENTION" || connection?.state === "delayed") {
+    return "delayed";
+  }
+  return null;
+};
+
+/**
  * The sidebar's take on one account's status. Two rules the sidebar applies
  * that Settings doesn't: a connect/reconnect that has been clicked but hasn't
  * round-tripped yet wins over the (still pre-click) connection summary, and a

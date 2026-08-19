@@ -1,4 +1,5 @@
 import { type ProviderCalendarSourceId } from "@core/types/sync/identity.contracts";
+import { discoverCalendarsWithAuthRetry } from "@sync/domain/discover-calendars-with-auth-retry";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type ProviderCalendarAdapter,
@@ -86,23 +87,30 @@ export async function syncCalendarList(
 
   // Resume incrementally from the stored cursor; a cursorExpired verdict means
   // the token is too old, so re-list in full. Both leave `fullList` telling us
-  // whether absence implies removal below.
+  // whether absence implies removal below. 401s remint in-process so a stale
+  // cached access token does not stamp a durable discovery failure.
   let fullList = resource.syncCursor === null;
   let discovery: Awaited<
     ReturnType<ProviderCalendarAdapter["discoverCalendars"]>
   >;
   try {
-    discovery = await deps.discovery.discoverCalendars({
-      accessToken,
-      cursor: resource.syncCursor ?? undefined,
-    });
+    discovery = (
+      await discoverCalendarsWithAuthRetry(deps, connectionId, {
+        accessToken,
+        cursor: resource.syncCursor ?? undefined,
+      })
+    ).discovery;
   } catch (error) {
     if (
       error instanceof ProviderCalendarError &&
       error.reason === "cursorExpired"
     ) {
       fullList = true;
-      discovery = await deps.discovery.discoverCalendars({ accessToken });
+      discovery = (
+        await discoverCalendarsWithAuthRetry(deps, connectionId, {
+          accessToken,
+        })
+      ).discovery;
     } else {
       // transient / discoveryFailed / unexpected: rethrow. Durable discovery
       // refusals (discoveryFailed) are settled as drops in dispatchSyncJob;

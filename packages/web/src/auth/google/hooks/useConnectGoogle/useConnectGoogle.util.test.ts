@@ -2,9 +2,11 @@ import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   formatLastSyncedLabel,
   formatLastUpdatedClause,
+  getCalendarConnectionBannerKind,
   getGoogleConnectionConfig,
   getGoogleSyncStatus,
   getSidebarSyncStatus,
+  isFirstImportFailed,
   isFirstImportInProgress,
 } from "./useConnectGoogle.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -481,6 +483,103 @@ describe("isFirstImportInProgress", () => {
         makeConnection({ state: "actionRequired", lastHealthyAt: null }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("isFirstImportFailed", () => {
+  const makeConnection = (
+    overrides: Partial<GoogleSyncConnectionSummary> = {},
+  ): GoogleSyncConnectionSummary => ({
+    id: "c1",
+    state: "delayed",
+    stateReason: "providerErrors",
+    lastSyncedAt: null,
+    lastHealthyAt: null,
+    accountEmail: "a@example.com",
+    connectionState: "ATTENTION",
+    ...overrides,
+  });
+
+  it("returns false with no connection", () => {
+    expect(isFirstImportFailed(null)).toBe(false);
+    expect(isFirstImportFailed(undefined)).toBe(false);
+  });
+
+  it("returns true for a never-healthy delayed connection", () => {
+    expect(isFirstImportFailed(makeConnection())).toBe(true);
+  });
+
+  it("returns false once the connection has ever gone healthy", () => {
+    expect(
+      isFirstImportFailed(
+        makeConnection({ lastHealthyAt: "2026-07-24T11:45:00.000Z" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false while the first import is still in progress", () => {
+    expect(
+      isFirstImportFailed(
+        makeConnection({
+          state: "importing",
+          stateReason: null,
+          connectionState: "IMPORTING",
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("getCalendarConnectionBannerKind", () => {
+  const makeConnection = (
+    overrides: Partial<GoogleSyncConnectionSummary> = {},
+  ): GoogleSyncConnectionSummary => ({
+    id: "c1",
+    state: "healthy",
+    stateReason: null,
+    lastSyncedAt: null,
+    lastHealthyAt: "2026-07-24T11:45:00.000Z",
+    accountEmail: "a@example.com",
+    connectionState: "HEALTHY",
+    ...overrides,
+  });
+
+  it("returns reconnect when the product state requires re-auth", () => {
+    expect(
+      getCalendarConnectionBannerKind(
+        "RECONNECT_REQUIRED",
+        makeConnection({
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
+          connectionState: "RECONNECT_REQUIRED",
+        }),
+      ),
+    ).toBe("reconnect");
+  });
+
+  it("returns importFailed for a never-healthy delayed connection", () => {
+    expect(
+      getCalendarConnectionBannerKind(
+        "ATTENTION",
+        makeConnection({
+          state: "delayed",
+          lastHealthyAt: null,
+          connectionState: "ATTENTION",
+        }),
+      ),
+    ).toBe("importFailed");
+  });
+
+  it("returns delayed for an established connection in ATTENTION", () => {
+    expect(getCalendarConnectionBannerKind("ATTENTION", makeConnection())).toBe(
+      "delayed",
+    );
+  });
+
+  it("returns null when the connection is healthy", () => {
+    expect(
+      getCalendarConnectionBannerKind("HEALTHY", makeConnection()),
+    ).toBeNull();
   });
 });
 

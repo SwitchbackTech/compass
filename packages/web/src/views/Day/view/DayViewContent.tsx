@@ -3,6 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
+import { CalendarConnectionBannerGate } from "@web/components/CalendarConnectionBanner/CalendarConnectionBannerGate";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
@@ -125,6 +126,7 @@ export const DayViewContent = memo(() => {
         className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />
+        <CalendarConnectionBannerGate />
         <DemoEventsBannerGate range={demoEventsRange} />
 
         <div className="flex w-full flex-1 overflow-hidden">

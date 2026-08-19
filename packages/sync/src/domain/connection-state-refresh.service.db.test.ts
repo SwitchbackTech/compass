@@ -754,4 +754,15 @@ describe("refreshConnectionState", () => {
     expect(after.state).toBe("actionRequired");
     expect(after.stateReason).toBe("authorizationRevoked");
   });
+
+  it("derives actionRequired/authorizationExpired after consecutive refresh failures", async () => {
+    const connection = await seedImportingConnection();
+    for (let i = 0; i < 3; i += 1) {
+      await credentials.incrementRefreshFailure(connection._id);
+    }
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("actionRequired");
+    expect(after.stateReason).toBe("authorizationExpired");
+  });
 });

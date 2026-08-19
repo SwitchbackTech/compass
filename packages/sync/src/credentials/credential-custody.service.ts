@@ -111,6 +111,12 @@ export class CredentialCustody {
       ) {
         await this.discardRevoked(connectionId);
       }
+      if (
+        error instanceof ProviderAuthError &&
+        error.reason === "refreshFailed"
+      ) {
+        await this.credentials.incrementRefreshFailure(connectionId);
+      }
       throw error;
     }
     const cached = await this.credentials.cacheAccessToken(

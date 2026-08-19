@@ -5,6 +5,7 @@ import {
 } from "google-auth-library";
 import { ProviderAccountFactsSchema } from "@core/types/sync/connection.contracts";
 import { GOOGLE_SCOPES } from "@sync/providers/google/google.scopes";
+import { googleStatus } from "@sync/providers/google/google-error";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,
@@ -143,11 +144,16 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     try {
       ({ credentials } = await client.refreshAccessToken());
     } catch (error) {
-      // invalid_grant means the refresh token itself is revoked or expired, so
-      // no retry will help — surface it as revoked authority for the caller to
-      // move the connection to action-required. Anything else is transient.
+      // A dead grant is not worth the job retry ladder: invalid_grant (and
+      // sibling token-endpoint codes) or HTTP 400/401 mean the refresh token
+      // is revoked, expired, or the client is rejected. 5xx / network stay
+      // refreshFailed so a blip can recover. A 401 whose body isn't exactly
+      // `invalid_grant` used to retry 20 times with the credential still
+      // stored, leaving calendars stale and never prompting reconnect.
       throw new ProviderAuthError(
-        isInvalidGrant(error) ? "authorizationRevoked" : "refreshFailed",
+        isRefreshPermanentlyRejected(error)
+          ? "authorizationRevoked"
+          : "refreshFailed",
         "Google rejected the refresh token",
         { cause: redactedCause(error) },
       );
@@ -205,13 +211,26 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
   }
 }
 
-// A Google token-endpoint rejection carries the reason in the response body's
-// `error` field. `invalid_grant` specifically means the refresh token is
-// revoked or expired. Reading the response (not the request) is leak-safe.
-function isInvalidGrant(error: unknown): boolean {
-  const data = (error as { response?: { data?: { error?: string } } })?.response
-    ?.data;
-  return data?.error === "invalid_grant";
+// Token-endpoint codes that mean the stored refresh token cannot be used
+// again — reconnect is required. Reading the response (not the request) is
+// leak-safe.
+const PERMANENT_REFRESH_ERRORS = new Set([
+  "invalid_grant",
+  "unauthorized_client",
+  "invalid_client",
+]);
+
+function tokenEndpointErrorCode(error: unknown): string | undefined {
+  const data = (error as { response?: { data?: { error?: unknown } } })
+    ?.response?.data;
+  return typeof data?.error === "string" ? data.error : undefined;
+}
+
+function isRefreshPermanentlyRejected(error: unknown): boolean {
+  const code = tokenEndpointErrorCode(error);
+  if (code && PERMANENT_REFRESH_ERRORS.has(code)) return true;
+  const status = googleStatus(error);
+  return status === 400 || status === 401;
 }
 
 // Google returns granted scopes as a single space-delimited string. A subset of

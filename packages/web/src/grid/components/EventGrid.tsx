@@ -28,7 +28,13 @@ export interface EventGridProps {
    * show a non-blocking scouting indicator instead of a blank grid.
    */
   isImportingEmpty?: boolean;
+  /**
+   * The first Google import failed (or stalled into attention) and the visible
+   * range is still empty — show an error with Retry instead of a blank grid.
+   */
+  isImportFailed?: boolean;
   onRetryEvents?: () => void;
+  onRetryImport?: () => void;
   onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   onTimedMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   timedEventsLayer: ReactNode;
@@ -44,7 +50,9 @@ export const EventGrid: FC<EventGridProps> = ({
   isLoadingEvents = false,
   isErrorEvents = false,
   isImportingEmpty = false,
+  isImportFailed = false,
   onRetryEvents,
+  onRetryImport,
   onAllDayMouseDown,
   onTimedMouseDown,
   timedEventsLayer,
@@ -90,19 +98,42 @@ export const EventGrid: FC<EventGridProps> = ({
         style={{ zIndex: ZIndex.MAX }}
       />
     )}
-    {isImportingEmpty && !isLoadingEvents && !isErrorEvents && (
-      <>
+    {isImportingEmpty &&
+      !isLoadingEvents &&
+      !isErrorEvents &&
+      !isImportFailed && (
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center justify-center px-4"
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 px-4"
           style={{ zIndex: ZIndex.MAX }}
         >
-          <PixelPirateScouting className="h-16 w-16" />
+          <div aria-hidden="true">
+            <PixelPirateScouting className="h-16 w-16" />
+          </div>
+          <p className="text-sm text-text-muted" role="status">
+            Adding your calendar…
+          </p>
         </div>
-        <span aria-live="polite" className="sr-only" role="status">
-          Looking for events
-        </span>
-      </>
+      )}
+    {isImportFailed && !isLoadingEvents && !isErrorEvents && (
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-background px-4"
+        style={{ zIndex: ZIndex.MAX }}
+      >
+        <div className="flex max-w-sm flex-col items-center gap-3 rounded-md border border-border-strong bg-surface-raised px-5 py-4 text-center shadow-[0_8px_24px_var(--color-shadow-default)]">
+          <p className="text-sm text-text" role="alert">
+            Couldn&apos;t add your calendar.
+          </p>
+          {onRetryImport ? (
+            <button
+              className="c-focus-ring rounded-sm bg-accent px-3 py-1.5 text-on-accent text-sm hover:bg-accent-hover"
+              onClick={onRetryImport}
+              type="button"
+            >
+              Retry
+            </button>
+          ) : null}
+        </div>
+      </div>
     )}
     {isErrorEvents && !isLoadingEvents && (
       <div

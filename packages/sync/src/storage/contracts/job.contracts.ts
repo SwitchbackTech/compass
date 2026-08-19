@@ -74,6 +74,10 @@ export const JobRecordSchema = z.strictObject({
   // doc already holds a key and re-parses it, so a single unparseable job
   // took down every sweep fleet-wide for 23h (2026-07-31).
   requeuedCount: z.number().int().min(0).default(0),
+  // Sanitized last engine/provider error for operator logs and health. Never
+  // holds tokens. Defaulted so docs predating this field still parse.
+  lastError: z.string().trim().max(500).nullable().default(null),
+  lastErrorAt: z.date().nullable().default(null),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -87,6 +91,8 @@ export const JobEnqueueSchema = JobRecordSchema.omit({
   leaseExpiresAt: true,
   failureClass: true,
   requeuedCount: true,
+  lastError: true,
+  lastErrorAt: true,
   createdAt: true,
   updatedAt: true,
 });
