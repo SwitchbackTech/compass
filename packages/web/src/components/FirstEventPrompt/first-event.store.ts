@@ -72,6 +72,12 @@ export const firstEventPromptActions = {
     useFirstEventPromptStore.setState({ isDone: true, isCelebrating: false });
   },
   dismiss: () => {
+    // The dismiss button only exists on the not-yet-celebrating view, but
+    // its click is deferred behind a fade-out (FirstEventPrompt.tsx); a real
+    // create can land and start celebrating during that fade. Once
+    // celebrating (or already done), a genuine completion wins - don't let
+    // a stale dismiss overwrite it.
+    if (useFirstEventPromptStore.getState().isCelebrating) return;
     track("first_event_prompt_dismissed");
     markFirstEventDone("dismissed");
     useFirstEventPromptStore.setState({ isDone: true, isCelebrating: false });

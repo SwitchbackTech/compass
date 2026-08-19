@@ -75,4 +75,20 @@ describe("firstEventPromptActions", () => {
     noteFirstRealEventCreated();
     expect(useFirstEventPromptStore.getState().isCelebrating).toBe(false);
   });
+
+  it("a real create that lands mid-dismiss-fade wins over the deferred dismiss", () => {
+    // FirstEventPrompt defers dismiss() behind a fade-out, so a create can
+    // resolve and start celebrating before the deferred dismiss() actually
+    // runs. It must not clobber that completion back to "dismissed".
+    markShowcaseSeen();
+    noteFirstRealEventCreated();
+    expect(useFirstEventPromptStore.getState().isCelebrating).toBe(true);
+
+    firstEventPromptActions.dismiss();
+    expect(useFirstEventPromptStore.getState().isCelebrating).toBe(true);
+    expect(useFirstEventPromptStore.getState().isDone).toBe(false);
+    expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
+      "completed",
+    );
+  });
 });
