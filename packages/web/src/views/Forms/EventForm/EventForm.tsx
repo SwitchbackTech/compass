@@ -26,6 +26,7 @@ import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   getTimeOptionByValue,
   mapToBackend,
+  tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
@@ -479,7 +480,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         isAllDay,
       };
 
-      const schedule = mapToBackend(selectedDateTimes);
+      const mapped = tryMapToBackend(selectedDateTimes);
+      if (!mapped.ok) {
+        showErrorToast(
+          "uff-dah, looks like you got the start & end times mixed up",
+        );
+        return;
+      }
+      const schedule = mapped.schedule;
       const start = dayjs(schedule.start).toDate();
       const end = dayjs(schedule.end).toDate();
 

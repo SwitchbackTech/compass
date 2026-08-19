@@ -1,3 +1,4 @@
+import { ZodError } from "zod/v4";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
@@ -235,6 +236,20 @@ export const mapToBackend = (s: SelectedDates): EventSchedule => {
     end: endDate,
     timeZone,
   });
+};
+
+export type MapToBackendResult =
+  | { ok: true; schedule: EventSchedule }
+  | { ok: false };
+
+/** Same as `mapToBackend`, but returns a result instead of throwing on schema failure. */
+export const tryMapToBackend = (s: SelectedDates): MapToBackendResult => {
+  try {
+    return { ok: true, schedule: mapToBackend(s) };
+  } catch (error) {
+    if (error instanceof ZodError) return { ok: false };
+    throw error;
+  }
 };
 
 // uses inferred timezone and shortened string to

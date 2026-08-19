@@ -10,7 +10,7 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { getFormDates } from "../form.datetime.util";
-import { TimePickers } from "./TimePickers";
+import { END_TIME_ORDER_ERROR, TimePickers } from "./TimePickers";
 import { describe, expect, it } from "bun:test";
 
 const START_DATE = new Date("2026-04-24T14:00:00.000Z");
@@ -132,5 +132,46 @@ describe("TimePickers", () => {
     await pick(user, "Start time", "11 PM");
 
     expectDraft("2026-04-24T23:00:00+00:00", "2026-04-25T22:00:00+00:00");
+  });
+
+  it("shows an inline error when the mouse picks an end before start, without crashing", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await pick(user, "End time", "1 PM");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
+    expect(screen.getByRole("combobox", { name: "End time" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
+    expect(screen.getByText("3 PM")).toBeInTheDocument();
+  });
+
+  it("shows an inline error when the keyboard commits an end before start, without crashing", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const end = screen.getByRole("combobox", { name: "End time" });
+    await user.click(end);
+    await user.keyboard("1 PM{Enter}");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
+    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
+    expect(screen.getByText("3 PM")).toBeInTheDocument();
+  });
+
+  it("clears the inline error after a valid end time is chosen", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await pick(user, "End time", "1 PM");
+    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
+
+    await pick(user, "End time", "4 PM");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T16:00:00+00:00");
   });
 });
