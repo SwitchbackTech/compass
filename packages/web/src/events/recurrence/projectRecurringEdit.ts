@@ -91,12 +91,11 @@ const convertScheduleKind = (
   };
 };
 
-// Shift every affected instance by the drag's delta so the change renders
-// optimistically. Both series-wide scopes shift by the same delta; they
-// differ only in which instances are affected (computed by the caller). Each
-// instance shifts relative to its own time, and the dragged instance — still
-// at its old time in the cache here — lands on the edited time because
-// (old + (edited - original)) === edited.
+// Shift a sibling instance by the drag's delta so a series-wide edit
+// renders optimistically. Both series-wide scopes use the same delta; they
+// differ only in which instances are affected. The edited occurrence is
+// applied as-is by the caller — it may already sit at the new time after a
+// this-event save — so this helper never shifts that card a second time.
 const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
   if (edited.schedule.kind !== original.schedule.kind) {
     return {
@@ -154,7 +153,10 @@ export function projectRecurringEdit({
   const affected =
     scope === "all"
       ? seriesEvents
-      : seriesEvents.filter((event) => isAtOrAfter(event, original.schedule));
+      : seriesEvents.filter(
+          (event) =>
+            event.id === edited.id || isAtOrAfter(event, original.schedule),
+        );
 
   // Downgrading a series/occurrence to a standalone single event: drop every
   // other affected instance and keep only the edited one.
@@ -167,9 +169,13 @@ export function projectRecurringEdit({
     };
   }
 
-  const upserts = affected.map((event) =>
-    shiftEvent(seriesPatch(event, edited), original, edited),
-  );
+  const upserts = affected.map((event) => {
+    const patched = seriesPatch(event, edited);
+    if (event.id === edited.id) {
+      return { ...patched, schedule: edited.schedule };
+    }
+    return shiftEvent(patched, original, edited);
+  });
 
   return { removeIds: new Set(), upserts };
 }

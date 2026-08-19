@@ -131,8 +131,8 @@ describe("projectRecurringEdit", () => {
       },
       {
         id: events[1].id,
-        start: "2026-07-02T18:00:00+00:00",
-        end: "2026-07-02T19:30:00+00:00",
+        start: "2026-07-02T18:00:00.000Z",
+        end: "2026-07-02T19:30:00.000Z",
       },
       {
         id: events[2].id,
@@ -180,8 +180,8 @@ describe("projectRecurringEdit", () => {
     ).toEqual([
       {
         id: events[1].id,
-        start: "2026-07-03T18:00:00+00:00",
-        end: "2026-07-03T19:30:00+00:00",
+        start: "2026-07-03T18:00:00.000Z",
+        end: "2026-07-03T19:30:00.000Z",
       },
       {
         id: events[2].id,
@@ -407,6 +407,144 @@ describe("projectRecurringEdit", () => {
         : null,
     );
     expect(starts).toEqual(["2026-03-07 15:00", "2026-03-08 15:00"]);
+  });
+
+  test("does not double-shift an already-moved instance on an all-events promote", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const original = events[1];
+    // Four days later: still inside a typical Jul 1–8 week window. Shifting
+    // again would land on 2026-07-10, which that week query would drop.
+    const edited = {
+      ...original,
+      content: { kind: "details" as const, title: "Moved", description: "" },
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+    };
+    const seriesEvents = [events[0], edited, events[2]];
+
+    const result = projectRecurringEdit({
+      scope: "all",
+      edited,
+      original,
+      seriesEvents,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        ...(event.schedule.kind === "timed"
+          ? {
+              start: event.schedule.start as string,
+              end: event.schedule.end as string,
+            }
+          : {}),
+        title: event.content.kind === "details" ? event.content.title : null,
+      })),
+    ).toEqual([
+      {
+        id: events[0].id,
+        start: "2026-07-05T16:00:00+00:00",
+        end: "2026-07-05T17:00:00+00:00",
+        title: "Moved",
+      },
+      {
+        id: events[1].id,
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        title: "Moved",
+      },
+      {
+        id: events[2].id,
+        start: "2026-07-07T16:00:00+00:00",
+        end: "2026-07-07T17:00:00+00:00",
+        title: "Moved",
+      },
+    ]);
+  });
+
+  test("does not double-shift an already-moved instance on a this-and-following promote", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const original = events[1];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+    };
+    const seriesEvents = [events[0], edited, events[2]];
+
+    const result = projectRecurringEdit({
+      scope: "thisAndFollowing",
+      edited,
+      original,
+      seriesEvents,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        ...(event.schedule.kind === "timed"
+          ? {
+              start: event.schedule.start as string,
+              end: event.schedule.end as string,
+            }
+          : {}),
+      })),
+    ).toEqual([
+      {
+        id: events[1].id,
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+      },
+      {
+        id: events[2].id,
+        start: "2026-07-07T16:00:00+00:00",
+        end: "2026-07-07T17:00:00+00:00",
+      },
+    ]);
+  });
+
+  test("keeps an already-moved-earlier instance in a this-and-following promote", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const original = events[2];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-02T16:00:00.000Z",
+        end: "2026-07-02T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+    };
+    const seriesEvents = [events[0], events[1], edited];
+
+    const result = projectRecurringEdit({
+      scope: "thisAndFollowing",
+      edited,
+      original,
+      seriesEvents,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        ...(event.schedule.kind === "timed"
+          ? { start: event.schedule.start as string }
+          : {}),
+      })),
+    ).toEqual([
+      {
+        id: events[2].id,
+        start: "2026-07-02T16:00:00.000Z",
+      },
+    ]);
   });
 });
 
