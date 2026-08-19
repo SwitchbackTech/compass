@@ -1,6 +1,13 @@
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
-import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
+import {
+  FakeReader,
+  pageOf as page,
+  TIMED_SCHEDULE as schedule,
+  seedProviderCalendar,
+  singleEvent as single,
+  fakeTokenSource as tokenSource,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   type CalendarPullDeps,
@@ -9,13 +16,10 @@ import {
 import {
   type ProviderEvent,
   type ProviderEventCancellation,
-  type ProviderEventRead,
 } from "@sync/providers/provider-event.port";
 import {
-  type ProviderEventPage,
   ProviderEventReadError,
   type ProviderEventReader,
-  type ProviderEventReadInput,
 } from "@sync/providers/provider-event-reader.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
@@ -29,41 +33,6 @@ import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource
 const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
-class FakeReader implements ProviderEventReader {
-  calls: ProviderEventReadInput[] = [];
-  #pages: ProviderEventPage[];
-  #error?: unknown;
-
-  constructor(
-    pages: ProviderEventPage[],
-    error?: unknown,
-    private readonly errorOnce = false,
-  ) {
-    this.#pages = [...pages];
-    this.#error = error;
-  }
-
-  async listEventPage(
-    input: ProviderEventReadInput,
-  ): Promise<ProviderEventPage> {
-    this.calls.push(input);
-    if (this.#error) {
-      const error = this.#error;
-      if (this.errorOnce) this.#error = undefined;
-      throw error;
-    }
-    const page = this.#pages.shift();
-    if (!page) throw new Error("FakeReader: no page scripted");
-    return page;
-  }
-}
-
-const schedule = {
-  kind: "timed" as const,
-  start: "2026-07-14T09:00:00-06:00",
-  end: "2026-07-14T10:00:00-06:00",
-  timeZone: "America/Denver",
-};
 const content = (title: string) => ({
   title,
   description: "",
@@ -71,16 +40,6 @@ const content = (title: string) => ({
   organizer: null,
   attendees: [],
   conference: null,
-});
-const single = (id: string, title = id): ProviderEvent => ({
-  kind: "event",
-  providerEventId: id,
-  providerVersion: `etag-${id}`,
-  providerUpdatedAt: null,
-  content: content(title),
-  schedule,
-  busy: true,
-  recurrence: { kind: "single" },
 });
 const master = (id: string): ProviderEvent => ({
   ...single(id),
@@ -92,22 +51,6 @@ const cancellation = (id: string): ProviderEventCancellation => ({
   providerVersion: `etag-${id}`,
   series: null,
 });
-const page = (
-  events: ProviderEventRead[],
-  opts: { nextPageToken?: string | null; nextSyncToken?: string | null } = {},
-): ProviderEventPage => ({
-  events,
-  skipped: 0,
-  nextPageToken: opts.nextPageToken ?? null,
-  nextSyncToken: opts.nextSyncToken ?? null,
-});
-
-const tokenSource = {
-  getValidAccessToken: async () => "access-token",
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
-};
-
 describe("pullCalendarChanges", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;

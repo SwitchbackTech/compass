@@ -58,8 +58,10 @@ describe("Time Options", () => {
       end: "2:00 AM", // should be 600
     });
 
-    expect(impossibleStart.shouldAdjust).toBe(true);
-    expect(impossibleStart.adjustment).toBe(240);
+    expect(impossibleStart).toMatchObject({
+      shouldAdjust: true,
+      adjustment: 240,
+    });
 
     const sameStartAsEnd = shouldAdjustComplimentTime("start", {
       oldStart: "7:00 PM",
@@ -69,8 +71,10 @@ describe("Time Options", () => {
       end: "7:15 PM", // should be 730
     });
 
-    expect(sameStartAsEnd.shouldAdjust).toBe(true);
-    expect(sameStartAsEnd.adjustment).toBe(15);
+    expect(sameStartAsEnd).toMatchObject({
+      shouldAdjust: true,
+      adjustment: 15,
+    });
 
     const noAdjustment = shouldAdjustComplimentTime("start", {
       oldStart: "9:45 PM",
@@ -92,8 +96,10 @@ describe("Time Options", () => {
       end: "9:00 AM",
     });
 
-    expect(impossibleEnd.shouldAdjust).toBe(true);
-    expect(impossibleEnd.adjustment).toBe(60 * 5);
+    expect(impossibleEnd).toMatchObject({
+      shouldAdjust: true,
+      adjustment: 60 * 5,
+    });
 
     const sameStartAsEnd = shouldAdjustComplimentTime("end", {
       oldStart: "7:00 PM",
@@ -103,8 +109,10 @@ describe("Time Options", () => {
       end: "7:00 PM",
     });
 
-    expect(sameStartAsEnd.shouldAdjust).toBe(true);
-    expect(sameStartAsEnd.adjustment).toBe(30);
+    expect(sameStartAsEnd).toMatchObject({
+      shouldAdjust: true,
+      adjustment: 30,
+    });
 
     const noAdjustment = shouldAdjustComplimentTime("end", {
       oldStart: "9:45 PM",

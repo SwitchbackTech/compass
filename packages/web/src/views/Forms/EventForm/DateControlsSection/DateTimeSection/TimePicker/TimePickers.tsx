@@ -47,109 +47,75 @@ export const TimePickers: FC<Props> = ({
     changed: "start" | "end",
     value: string,
   ): { option: TimeOption; dayOffset: number } => {
-    const start = changed === "start" ? value : startTime.value;
-    const end = changed === "end" ? value : endTime.value;
+    const result = shouldAdjustComplimentTime(changed, {
+      oldStart: startTime.value,
+      start: changed === "start" ? value : startTime.value,
+      oldEnd: endTime.value,
+      end: changed === "end" ? value : endTime.value,
+    });
 
-    const { shouldAdjust, adjustment, compliment } = shouldAdjustComplimentTime(
+    if (!result.shouldAdjust) {
+      return {
+        option: changed === "start" ? endTime : startTime,
+        dayOffset: 0,
+      };
+    }
+
+    const corrected =
+      changed === "start"
+        ? result.compliment.add(result.adjustment, "minutes")
+        : result.compliment.subtract(result.adjustment, "minutes");
+    const option = getTimeOptionByValue(corrected);
+    const dayOffset = corrected
+      .startOf("day")
+      .diff(result.compliment.startOf("day"), "day");
+
+    (changed === "start" ? setEndTime : setStartTime)(option);
+    return { option, dayOffset };
+  };
+
+  // One handler for both pickers: the picked side keeps its selected date and
+  // the corrected compliment reduces to (picked time ± duration), so it is
+  // anchored to the picked side's date and the midnight day-carry applies to
+  // the compliment. Anchoring the compliment to its own selected date instead
+  // would double-count the span of a draft that already crosses midnight.
+  const onTimeSelected = (
+    changed: "start" | "end",
+    option: SelectOption<string>,
+  ) => {
+    const prior = changed === "start" ? startTime : endTime;
+    (changed === "start" ? setStartTime : setEndTime)(option);
+    const { option: corrected, dayOffset } = adjustComplimentTimeIfNeeded(
       changed,
-      {
-        oldStart: startTime.value,
-        start,
-        oldEnd: endTime.value,
-        end,
-      },
+      option.value,
     );
 
-    if (shouldAdjust) {
-      const corrected =
-        changed === "start"
-          ? compliment.add(adjustment, "minutes")
-          : compliment.subtract(adjustment, "minutes");
-      const option = getTimeOptionByValue(corrected);
-      const dayOffset = corrected
-        .startOf("day")
-        .diff(compliment.startOf("day"), "day");
+    if (prior.value && prior.value !== option.value) {
+      const anchorDate =
+        changed === "start" ? selectedStartDate : selectedEndDate;
+      const complimentDate = dayjs(anchorDate).add(dayOffset, "day").toDate();
 
-      if (changed === "start") {
-        setEndTime(option);
-      } else {
-        setStartTime(option);
+      const schedule = mapToBackend({
+        startDate: changed === "start" ? anchorDate : complimentDate,
+        endDate: changed === "start" ? complimentDate : anchorDate,
+        startTime: changed === "start" ? option : corrected,
+        endTime: changed === "start" ? corrected : option,
+        isAllDay: false,
+      });
+
+      // TS guard: isAllDay: false above always yields "timed".
+      if (schedule.kind === "timed") {
+        setDraft(
+          replaceGridDraftSchedule(draft, {
+            kind: "timed",
+            start: dayjs(schedule.start).toDate(),
+            end: dayjs(schedule.end).toDate(),
+            timeZone: schedule.timeZone,
+          }),
+        );
       }
-
-      return { option, dayOffset };
     }
-
-    return { option: changed === "start" ? endTime : startTime, dayOffset: 0 };
-  };
-
-  const onEndSelected = (option: SelectOption<string>) => {
-    setEndTime(option);
-    const { option: correctedStart, dayOffset } = adjustComplimentTimeIfNeeded(
-      "end",
-      option.value,
-    );
-
-    if (endTime.value && endTime.value !== option.value) {
-      // The corrected start reduces to (picked end - duration), so it is
-      // anchored to the end's date, and the day carry applies there. Anchoring
-      // it to selectedStartDate instead would double-count the span of a draft
-      // that already crosses midnight.
-      const startDate = dayjs(selectedEndDate).add(dayOffset, "day").toDate();
-
-      const schedule = mapToBackend({
-        startDate,
-        endDate: selectedEndDate,
-        startTime: correctedStart,
-        endTime: option,
-        isAllDay: false,
-      });
-
-      if (schedule.kind !== "timed") return; // TS guard: isAllDay: false above always yields "timed"
-
-      setDraft(
-        replaceGridDraftSchedule(draft, {
-          kind: "timed",
-          start: dayjs(schedule.start).toDate(),
-          end: dayjs(schedule.end).toDate(),
-          timeZone: schedule.timeZone,
-        }),
-      );
-    }
-    setIsEndMenuOpen(false);
-  };
-
-  const onStartSelected = (option: SelectOption<string>) => {
-    setStartTime(option);
-    const { option: correctedEnd, dayOffset } = adjustComplimentTimeIfNeeded(
-      "start",
-      option.value,
-    );
-
-    if (startTime.value && startTime.value !== option.value) {
-      // The corrected end reduces to (picked start + duration), so it is
-      // anchored to the start's date, and the day carry applies there.
-      const endDate = dayjs(selectedStartDate).add(dayOffset, "day").toDate();
-
-      const schedule = mapToBackend({
-        startDate: selectedStartDate,
-        endDate,
-        startTime: option,
-        endTime: correctedEnd,
-        isAllDay: false,
-      });
-
-      if (schedule.kind !== "timed") return; // TS guard: isAllDay: false above always yields "timed"
-
-      setDraft(
-        replaceGridDraftSchedule(draft, {
-          kind: "timed",
-          start: dayjs(schedule.start).toDate(),
-          end: dayjs(schedule.end).toDate(),
-          timeZone: schedule.timeZone,
-        }),
-      );
-      setIsStartMenuOpen(false);
-    }
+    (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
   };
 
   return (
@@ -158,7 +124,7 @@ export const TimePickers: FC<Props> = ({
         aria-label="Start time"
         inputId="startTimePicker"
         isMenuOpen={isStartMenuOpen}
-        onChange={onStartSelected}
+        onChange={(option) => onTimeSelected("start", option)}
         openMenuOnFocus
         options={timeOptions}
         setIsMenuOpen={setIsStartMenuOpen}
@@ -169,7 +135,7 @@ export const TimePickers: FC<Props> = ({
         aria-label="End time"
         inputId="endTimePicker"
         isMenuOpen={isEndMenuOpen}
-        onChange={onEndSelected}
+        onChange={(option) => onTimeSelected("end", option)}
         openMenuOnFocus
         options={timeOptions}
         setIsMenuOpen={setIsEndMenuOpen}

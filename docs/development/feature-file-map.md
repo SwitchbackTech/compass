@@ -70,14 +70,10 @@ labels outside the registry.
 
 ## Welcome, Showcase, And Checklist
 
-Anonymous calendar onboarding is three stacked surfaces, all mounted from
-`RootShell` except on `/life` (see `isLifePathname`).
-
-- Welcome modal (**Continue with Google** / **Sign up with email** / **Explore without an account**; only signup queues the showcase): `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
-- Shortcut Showcase (takeover practice calendar, entered post-signup or from the palette): `packages/web/src/components/ShortcutShowcase/` (`showcase.steps.ts` is the taught-step order)
-- Post-showcase checklist over real events: `packages/web/src/components/OnboardingChecklist/`
-- Replay from the command palette (“Practice shortcuts”, “Show welcome guide”): `packages/web/src/components/CommandPalette/navigation.cmd.constants.ts`
-- Legacy tour seen-flag is honored once so established users are not ambushed: `packages/web/src/components/ShortcutShowcase/showcase.storage.ts`
+Anonymous calendar onboarding (welcome modal, Shortcut Showcase, checklist)
+lives under `packages/web/src/components/{WelcomeModal,ShortcutShowcase,OnboardingChecklist}`.
+The flow, its entry points, and the storage contract are documented in
+[Frontend Runtime Flow](../frontend/frontend-runtime-flow.md#welcome-showcase-and-checklist).
 
 ## Sidebar
 

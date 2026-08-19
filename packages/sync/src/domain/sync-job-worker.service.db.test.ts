@@ -1,21 +1,18 @@
 import { faker } from "@faker-js/faker";
-import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
+import {
+  FakeReader,
+  pageOf,
+  seedProviderCalendar,
+  singleEvent as single,
+  fakeTokenSource as tokenSource,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   SyncJobWorker,
   type SyncJobWorkerDeps,
 } from "@sync/domain/sync-job-worker.service";
 import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
-import {
-  type ProviderEvent,
-  type ProviderEventRead,
-} from "@sync/providers/provider-event.port";
-import {
-  type ProviderEventPage,
-  ProviderEventReadError,
-  type ProviderEventReader,
-  type ProviderEventReadInput,
-} from "@sync/providers/provider-event-reader.port";
+import { ProviderEventReadError } from "@sync/providers/provider-event-reader.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
@@ -33,64 +30,6 @@ import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource
 const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 const OWNER = "worker-under-test";
-
-const schedule = {
-  kind: "timed" as const,
-  start: "2026-07-14T09:00:00-06:00",
-  end: "2026-07-14T10:00:00-06:00",
-  timeZone: "America/Denver",
-};
-const single = (id: string): ProviderEvent => ({
-  kind: "event",
-  providerEventId: id,
-  providerVersion: `etag-${id}`,
-  providerUpdatedAt: null,
-  content: {
-    title: id,
-    description: "",
-    location: null,
-    organizer: null,
-    attendees: [],
-    conference: null,
-  },
-  schedule,
-  busy: true,
-  recurrence: { kind: "single" },
-});
-const pageOf = (
-  events: ProviderEventRead[],
-  nextSyncToken: string | null = null,
-): ProviderEventPage => ({
-  events,
-  skipped: 0,
-  nextPageToken: null,
-  nextSyncToken,
-});
-
-// Replays scripted pages, or throws a scripted error on the next read.
-class FakeReader implements ProviderEventReader {
-  #pages: ProviderEventPage[];
-  #error: Error | null;
-
-  constructor(pages: ProviderEventPage[], error: Error | null = null) {
-    this.#pages = [...pages];
-    this.#error = error;
-  }
-  async listEventPage(
-    _input: ProviderEventReadInput,
-  ): Promise<ProviderEventPage> {
-    if (this.#error) throw this.#error;
-    const next = this.#pages.shift();
-    if (!next) throw new Error("FakeReader: no page scripted");
-    return next;
-  }
-}
-
-const tokenSource = {
-  getValidAccessToken: async () => "access-token",
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
-};
 
 describe("SyncJobWorker", () => {
   const storage = setupSyncStorage(import.meta.url);
@@ -260,7 +199,9 @@ describe("SyncJobWorker", () => {
     const job = await enqueue(resource, "incrementalPull");
 
     const result = await worker(
-      new FakeReader([pageOf([single("new-1")], "cursor-1")]),
+      new FakeReader([
+        pageOf([single("new-1")], { nextSyncToken: "cursor-1" }),
+      ]),
     ).runOnce();
 
     expect(result).toBe("processed");
@@ -293,7 +234,7 @@ describe("SyncJobWorker", () => {
     const job = await enqueue(resource, "repair");
 
     // A page with no nextSyncToken makes the repair report incomplete.
-    await worker(new FakeReader([pageOf([single("keep")], null)])).runOnce();
+    await worker(new FakeReader([pageOf([single("keep")])])).runOnce();
 
     const after = await jobs.findById(
       resource.tenantId,
@@ -430,7 +371,7 @@ describe("SyncJobWorker", () => {
     const job = await enqueue(resource, "repair");
 
     // random 0 => the low end of the +/-20% jitter on the 10s base (attempt 1).
-    await workerWith(new FakeReader([pageOf([single("keep")], null)]), {
+    await workerWith(new FakeReader([pageOf([single("keep")])]), {
       random: () => 0,
     }).runOnce();
 
@@ -451,7 +392,9 @@ describe("SyncJobWorker", () => {
     let everyMs = 0;
     let stopped = false;
     const w = new SyncJobWorker(
-      deps(new FakeReader([pageOf([single("a")], "cursor-1")])),
+      deps(
+        new FakeReader([pageOf([single("a")], { nextSyncToken: "cursor-1" })]),
+      ),
       OWNER,
       {
         now,
@@ -490,7 +433,7 @@ describe("SyncJobWorker", () => {
     const gatedReader = {
       async listEventPage() {
         await gate;
-        return pageOf([single("x")], "cursor-1");
+        return pageOf([single("x")], { nextSyncToken: "cursor-1" });
       },
     } as unknown as FakeReader;
 
@@ -781,7 +724,7 @@ describe("SyncJobWorker", () => {
     // The calendar becomes readable again and a fresh pull succeeds.
     await enqueue(resource, "incrementalPull");
     await worker(
-      new FakeReader([pageOf([single("ok")], "cursor-1")]),
+      new FakeReader([pageOf([single("ok")], { nextSyncToken: "cursor-1" })]),
     ).runOnce();
 
     const after = await resources.findById(
@@ -803,8 +746,8 @@ describe("SyncJobWorker", () => {
 
     const processed = await worker(
       new FakeReader([
-        pageOf([single("a")], "cursor-a1"),
-        pageOf([single("b")], "cursor-b1"),
+        pageOf([single("a")], { nextSyncToken: "cursor-a1" }),
+        pageOf([single("b")], { nextSyncToken: "cursor-b1" }),
       ]),
     ).drain();
 

@@ -18,7 +18,7 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 // exercise: the standalone-cancellation seam applyPage exposes for the pull
 // path's deletion policy.
 
-const objectId = () => faker.database.mongodbObjectId();
+const _objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
 const schedule = {

@@ -1,7 +1,11 @@
 import { faker } from "@faker-js/faker";
 import {
   ensureEventsResource,
+  FakeReader,
+  pageOf as page,
   seedProviderCalendar,
+  singleEvent as single,
+  fakeTokenSource as tokenSource,
 } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
@@ -11,14 +15,8 @@ import {
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
 import {
-  type ProviderEvent,
-  type ProviderEventRead,
-} from "@sync/providers/provider-event.port";
-import {
-  type ProviderEventPage,
   ProviderEventReadError,
   type ProviderEventReader,
-  type ProviderEventReadInput,
 } from "@sync/providers/provider-event-reader.port";
 import { ProviderNotificationError } from "@sync/providers/provider-notifications.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -38,75 +36,6 @@ import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource
 
 const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
-
-const schedule = {
-  kind: "timed" as const,
-  start: "2026-07-14T09:00:00-06:00",
-  end: "2026-07-14T10:00:00-06:00",
-  timeZone: "America/Denver",
-};
-const single = (id: string): ProviderEvent => ({
-  kind: "event",
-  providerEventId: id,
-  providerVersion: `etag-${id}`,
-  providerUpdatedAt: null,
-  content: {
-    title: id,
-    description: "",
-    location: null,
-    organizer: null,
-    attendees: [],
-    conference: null,
-  },
-  schedule,
-  busy: true,
-  recurrence: { kind: "single" },
-});
-const page = (
-  events: ProviderEventRead[],
-  nextSyncToken: string | null = null,
-): ProviderEventPage => ({
-  events,
-  skipped: 0,
-  nextPageToken: null,
-  nextSyncToken,
-});
-
-// A reader that replays scripted pages, or throws a scripted error (e.g. an
-// expired cursor) on the next read.
-class FakeReader implements ProviderEventReader {
-  #pages: ProviderEventPage[];
-  #error: ProviderEventReadError | null;
-  #errorOnce: boolean;
-
-  constructor(
-    pages: ProviderEventPage[],
-    error: ProviderEventReadError | null = null,
-    errorOnce = false,
-  ) {
-    this.#pages = [...pages];
-    this.#error = error;
-    this.#errorOnce = errorOnce;
-  }
-  async listEventPage(
-    _input: ProviderEventReadInput,
-  ): Promise<ProviderEventPage> {
-    if (this.#error) {
-      const error = this.#error;
-      if (this.#errorOnce) this.#error = null;
-      throw error;
-    }
-    const next = this.#pages.shift();
-    if (!next) throw new Error("FakeReader: no page scripted");
-    return next;
-  }
-}
-
-const tokenSource = {
-  getValidAccessToken: async () => "access-token",
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
-};
 
 // A notification adapter that records watch calls and returns a fixed channel,
 // so a subscriptionMaintain dispatch runs without a network round-trip.
@@ -259,7 +188,7 @@ describe("dispatchSyncJob", () => {
   it("invalidates after an empty incremental pull retry once the cursor already advanced", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-1");
-    const reader = new FakeReader([page([], "cursor-1")]);
+    const reader = new FakeReader([page([], { nextSyncToken: "cursor-1" })]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -297,7 +226,9 @@ describe("dispatchSyncJob", () => {
         subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
       },
     );
-    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+    const reader = new FakeReader([
+      page([single("new-1")], { nextSyncToken: "cursor-1" }),
+    ]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -342,9 +273,9 @@ describe("dispatchSyncJob", () => {
             resource._id,
             new Date("2026-07-10T00:00:03.000Z"),
           );
-          return page([single("first")], "cursor-1");
+          return page([single("first")], { nextSyncToken: "cursor-1" });
         }
-        return page([single("second")], "cursor-2");
+        return page([single("second")], { nextSyncToken: "cursor-2" });
       },
     };
 
@@ -419,7 +350,9 @@ describe("dispatchSyncJob", () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     expect(resource.subscriptionId).toBeNull();
-    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+    const reader = new FakeReader([
+      page([single("new-1")], { nextSyncToken: "cursor-1" }),
+    ]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -449,7 +382,9 @@ describe("dispatchSyncJob", () => {
       resource._id,
       now(),
     );
-    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+    const reader = new FakeReader([
+      page([single("new-1")], { nextSyncToken: "cursor-1" }),
+    ]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -500,7 +435,9 @@ describe("dispatchSyncJob", () => {
   it("settles a completed repair as done", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null);
-    const reader = new FakeReader([page([single("keep")], "cursor-1")]);
+    const reader = new FakeReader([
+      page([single("keep")], { nextSyncToken: "cursor-1" }),
+    ]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -517,7 +454,7 @@ describe("dispatchSyncJob", () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null);
     // A page with no nextSyncToken leaves the repair unable to trust the rebuild.
-    const reader = new FakeReader([page([single("keep")], null)]);
+    const reader = new FakeReader([page([single("keep")])]);
 
     const outcome = await dispatchSyncJob(
       deps(reader),
@@ -613,7 +550,7 @@ describe("dispatchSyncJob", () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     const reader = new FakeReader(
-      [page([], "cursor-1")],
+      [page([], { nextSyncToken: "cursor-1" })],
       new ProviderEventReadError("authExpired", "Google rejected the token"),
       true,
     );
@@ -723,7 +660,7 @@ describe("dispatchSyncJob", () => {
       deps(
         new FakeReader([
           page([single("imported")]),
-          page([single("imported")], "cursor-1"),
+          page([single("imported")], { nextSyncToken: "cursor-1" }),
         ]),
       ),
       jobFor(resource, "initialImport"),
@@ -767,7 +704,9 @@ describe("dispatchSyncJob", () => {
 
     const catchupOutcome = await dispatchSyncJob(
       deps(
-        new FakeReader([page([single("created-after-import")], "cursor-2")]),
+        new FakeReader([
+          page([single("created-after-import")], { nextSyncToken: "cursor-2" }),
+        ]),
       ),
       jobFor(resource, "bootstrapCatchup"),
       now,
@@ -809,7 +748,7 @@ describe("dispatchSyncJob", () => {
       deps(
         new FakeReader([
           page([single("imported")]),
-          page([single("imported")], "cursor-1"),
+          page([single("imported")], { nextSyncToken: "cursor-1" }),
         ]),
       ),
       jobFor(resource, "initialImport"),
@@ -866,7 +805,7 @@ describe("dispatchSyncJob", () => {
       deps(
         new FakeReader([
           page([single("imported")]),
-          page([single("imported")], "cursor-1"),
+          page([single("imported")], { nextSyncToken: "cursor-1" }),
         ]),
       ),
       jobFor(resource, "initialImport"),
@@ -955,7 +894,7 @@ describe("dispatchSyncJob", () => {
     const resource = await seedResource(calendar, "cursor-1");
 
     const outcome = await dispatchSyncJob(
-      deps(new FakeReader([page([], "cursor-2")])),
+      deps(new FakeReader([page([], { nextSyncToken: "cursor-2" })])),
       jobFor(resource, "bootstrapCatchup"),
       now,
     );
@@ -1000,7 +939,7 @@ describe("dispatchSyncJob", () => {
     const resource = await seedResource(calendar, "cursor-1");
     const warnings: string[] = [];
     const failingDeps: SyncJobDispatchDeps = {
-      ...deps(new FakeReader([page([], "cursor-2")])),
+      ...deps(new FakeReader([page([], { nextSyncToken: "cursor-2" })])),
       connections: {
         findById: async () => stubbedConnection,
         updateDerivedState: async () => {
