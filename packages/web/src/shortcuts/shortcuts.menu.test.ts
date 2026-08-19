@@ -1,9 +1,9 @@
-import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 
 const stripMetadata = (shortcuts: any[]) =>
   shortcuts.map(({ keys, label }) => ({ keys, label }));
 
-describe("shortcuts.data", () => {
+describe("shortcut menu sections", () => {
   describe("getShortcutMenuSections", () => {
     it("returns the same action-based sections for both views", () => {
       const dayIds = getShortcutMenuSections({

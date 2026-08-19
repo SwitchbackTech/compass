@@ -9,6 +9,11 @@ import {
   type CalendarAccessRole,
   type SyncCalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
+import {
+  googleFailureCause,
+  googleStatus,
+  isGoogleTransient,
+} from "@sync/providers/google/google-error";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
   type CalendarDiscovery,
@@ -16,7 +21,6 @@ import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
-import { redactedCause } from "@sync/safety/redact-error";
 
 // One page of a Google calendar-list read, narrowed to the fields discovery
 // needs. Google returns `nextSyncToken` only on the final page; intermediate
@@ -103,8 +107,6 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
 // list to provider-neutral facts and follows pagination, surfacing an expired
 // incremental cursor distinctly so the caller can re-list in full.
 export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleCalendarListApiFactory;
 
   constructor(makeApi: GoogleCalendarListApiFactory = defaultApiFactory) {
@@ -157,7 +159,7 @@ export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
       throw new ProviderCalendarError(
         classifyDiscoveryError(error),
         "Google rejected the calendar list read",
-        { cause: discoveryFailureCause(error) },
+        { cause: googleFailureCause(error) },
       );
     }
   }
@@ -248,65 +250,6 @@ function classifyDiscoveryError(
 ): "cursorExpired" | "transient" | "discoveryFailed" {
   const status = googleStatus(error);
   if (status === 410) return "cursorExpired";
-  if (isDiscoveryTransient(error, status)) return "transient";
+  if (isGoogleTransient(error, status)) return "transient";
   return "discoveryFailed";
-}
-
-const TRANSIENT_REASONS = [
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-  "backendError",
-  "internalError",
-];
-
-function isDiscoveryTransient(
-  error: unknown,
-  status: number | undefined,
-): boolean {
-  if (status === undefined || status === 429 || status >= 500) return true;
-  return googleErrorReasons(error).some((reason) =>
-    TRANSIENT_REASONS.includes(reason),
-  );
-}
-
-// Like redactedCause: drop request-derived fields (bearer token on config), but
-// keep the two response facts triage needs — numeric HTTP status and Google's
-// machine-readable reason. Mirrors readFailureCause / watchFailureCause.
-function discoveryFailureCause(error: unknown): Error | undefined {
-  const status = googleStatus(error);
-  const reason = googleErrorReasons(error)[0];
-  const facts = [
-    ...(status === undefined ? [] : [`HTTP ${status}`]),
-    ...(reason === undefined ? [] : [`reason ${reason}`]),
-  ];
-  if (facts.length === 0) return redactedCause(error);
-  const message = error instanceof Error ? error.message : null;
-  return new Error(
-    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
-  );
-}
-
-function googleErrorReasons(error: unknown): string[] {
-  const fromBody = (
-    error as {
-      response?: {
-        data?: { error?: { errors?: Array<{ reason?: unknown }> } };
-      };
-    }
-  )?.response?.data?.error?.errors;
-  const fromError = (error as { errors?: Array<{ reason?: unknown }> })?.errors;
-  const reasons: string[] = [];
-  for (const entry of [...(fromBody ?? []), ...(fromError ?? [])]) {
-    if (typeof entry?.reason === "string") reasons.push(entry.reason);
-  }
-  return reasons;
-}
-
-function googleStatus(error: unknown): number | undefined {
-  const status =
-    (error as { response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code;
-  return typeof status === "number" ? status : undefined;
 }

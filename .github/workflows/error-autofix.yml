@@ -11,9 +11,19 @@ name: Error autofix
 #   pr:     open a fix PR, human merges.
 #   merge:  open a fix PR and auto-merge it when the agent is confident and
 #           the deterministic gate below agrees.
+# Manual re-runs: "Re-run jobs" on a failed run reuses the workflow file
+# snapshot from that run, so fixes to this file never apply — dispatch a
+# fresh run instead, passing the PostHog issue number. Remove the issue's
+# autofix label first or preflight will skip it as already handled.
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "PostHog error issue number to (re-)run the autofix flow for"
+        required: true
+        type: string
 
 concurrency:
   group: error-autofix
@@ -21,15 +31,24 @@ concurrency:
 
 jobs:
   autofix:
+    # workflow_dispatch skips the posthog[bot] author check: dispatching
+    # already requires write access, and the operator names the issue.
     if: >-
       vars.ERROR_AUTOFIX_ENABLED == 'true' &&
-      github.event.issue.user.login == 'posthog[bot]'
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.issue.user.login == 'posthog[bot]')
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: write
       pull-requests: write
       issues: write
+      # Required by claude-code-action's OIDC exchange: with no github_token
+      # passed (see below), it authenticates via the runner's OIDC token to
+      # mint the Claude GitHub App installation token.
+      id-token: write
     outputs:
       proceed: ${{ steps.preflight.outputs.proceed }}
     steps:
@@ -43,7 +62,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
-        run: .github/scripts/autofix-preflight.sh "${{ github.event.issue.number }}"
+        run: .github/scripts/autofix-preflight.sh "${ISSUE_NUMBER}"
 
       - name: Write PostHog MCP config
         if: steps.preflight.outputs.proceed == 'true'
@@ -66,7 +85,7 @@ jobs:
           prompt: |
             Read .github/prompts/error-autofix.md and follow it exactly.
             Mode: ${{ vars.AUTOFIX_MODE }}
-            Target issue: #${{ github.event.issue.number }}
+            Target issue: #${{ env.ISSUE_NUMBER }}
           claude_args: |
             --max-turns 80
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep,mcp__posthog__*"
@@ -88,4 +107,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
-        run: .github/scripts/autofix-merge-guard.sh "${{ github.event.issue.number }}"
+        run: .github/scripts/autofix-merge-guard.sh "${{ github.event.issue.number || inputs.issue_number }}"

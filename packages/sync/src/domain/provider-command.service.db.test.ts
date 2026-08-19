@@ -57,7 +57,6 @@ const objectId = () => faker.database.mongodbObjectId();
 // A writer that records its calls and returns a fixed identity, or throws a
 // preset error. No network.
 class FakeWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   calls: ProviderCreateInput[] = [];
   result: ProviderWriteResult = {
     providerEventId: "g-evt-1",
@@ -95,7 +94,6 @@ const failingTokenSource = (error: unknown): AccessTokenSource => ({
 
 // Minimal auth adapter for CredentialCustody in the revoked-grant cases.
 class RevokedAuthAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
   constructor(
     private readonly behavior: {
       refreshError?: unknown;
@@ -498,7 +496,6 @@ describe("executeProviderCreate", () => {
 // A writer for the update path: configurable fetchEvent (replay detection) and
 // patchEvent (conditional write) results/errors, recording their inputs.
 class FakeUpdateWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   fetched: ProviderEvent | null = null;
   fetchError?: unknown;
   patchResult: ProviderWriteResult = {
@@ -915,7 +912,6 @@ describe("executeProviderUpdate", () => {
 // A writer for the delete path: a configurable deleteEvent (success or a preset
 // error), recording its inputs.
 class FakeDeleteWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   deleteCalls: ProviderDeleteInput[] = [];
   deleteError?: unknown;
   createEvent(): Promise<ProviderWriteResult> {
@@ -2091,7 +2087,6 @@ describe("executeProviderSeriesUpdate", () => {
 // independently scriptable so a test can isolate exactly which call it means
 // to exercise.
 class FakeRecurringWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   fetchEventResult: ProviderEvent | null = null;
   fetchEventError?: unknown;
   fetchInstanceResult: ProviderEvent | null = null;
@@ -2586,6 +2581,47 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       );
 
       expect(result.outcome.state).toBe("pending");
+    });
+
+    it("fails without tombstoning when the provider declines the delete (unsupportedCapability)", async () => {
+      // Google 400s a well-formed instance delete for special events (e.g. a
+      // contact-linked birthday occurrence). The event still exists at the
+      // provider, so hiding it locally would desync until the next pull
+      // resurrected it — the command fails honestly instead.
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+      writer.deleteError = new ProviderWriteError(
+        "unsupportedCapability",
+        "declined",
+      );
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("failed");
+      expect(
+        result.outcome.state === "failed" && result.outcome.failureReason,
+      ).toBe("unsupportedCapability");
+      // No local trace of the refused delete: no cancelled exception, and the
+      // occurrence still projects.
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(0);
+      expect(await occurrenceStartsFor(master._id)).toContain(SECOND_START_UTC);
     });
 
     it("still deletes when the resolved instance is identity-only (unreadable content)", async () => {

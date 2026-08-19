@@ -1,6 +1,9 @@
+import { EDIT_SEQUENCE_FIELD_BY_KEY } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   filterShortcutsByContext,
   getShortcutsBySection,
+  SHORTCUTS_REGISTRY,
 } from "@web/shortcuts/shortcuts.registry";
 
 describe("shortcuts.registry", () => {
@@ -161,6 +164,26 @@ describe("shortcuts.registry", () => {
       expect(byId.navigate.title).toBe("Navigate");
       expect(byId.create.title).toBe("Create");
       expect(byId.edit.title).toBe("Edit");
+    });
+  });
+
+  // Registry rows derive from KEYMAP by construction; these pin the two
+  // remaining cross-module facts a derivation cannot express.
+  describe("keymap coherence", () => {
+    it("maps the taught edit-sequence second key to the title field", () => {
+      expect(EDIT_SEQUENCE_FIELD_BY_KEY[KEYMAP.editTitle.sequence.second]).toBe(
+        "title",
+      );
+    });
+
+    it("lists the taught edit-title sequence in the legend", () => {
+      const entry = SHORTCUTS_REGISTRY.find(
+        (shortcut) => shortcut.id === "edit-focus-title",
+      );
+      expect(entry?.keys).toEqual([
+        KEYMAP.editTitle.sequence.leader,
+        KEYMAP.editTitle.sequence.second,
+      ]);
     });
   });
 });

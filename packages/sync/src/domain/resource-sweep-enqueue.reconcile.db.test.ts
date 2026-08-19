@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
+import { resourceJob } from "@sync/storage/contracts/job.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
@@ -27,7 +28,7 @@ const reconcileStaleCalendars = (
   enqueueForResources(
     deps,
     (b, l) => deps.resources.listStaleEvents(b, l),
-    "incrementalPull",
+    (r, n) => resourceJob(r, "incrementalPull", n()),
     before,
     nowFn,
     limit,

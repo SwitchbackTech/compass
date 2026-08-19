@@ -13,7 +13,6 @@ import {
   SHOWCASE_GRID_END_HOUR,
   SHOWCASE_GRID_START_HOUR,
 } from "@web/components/ShortcutShowcase/practice.state";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
@@ -36,17 +35,9 @@ const PracticeBlock: FC<{
   const contentColor = theme.getContrastText(base);
   const isFocused = state.focusedId === block.id;
   const isEditing = state.editor?.eventId === block.id;
-  const chipLetter = state.jumpChips?.[block.id];
   const top = ((block.startMin - GRID_START_MIN) / TOTAL_MIN) * 100;
   const height = ((block.endMin - block.startMin) / TOTAL_MIN) * 100;
 
-  // Accent bar, like the real grid's focused-edge indicator.
-  const edgeShadow =
-    isFocused && state.edge === "start"
-      ? "inset 0 3px 0 0 var(--accent)"
-      : isFocused && state.edge === "end"
-        ? "inset 0 -3px 0 0 var(--accent)"
-        : "";
   const focusShadow = isFocused
     ? "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)"
     : "";
@@ -61,7 +52,7 @@ const PracticeBlock: FC<{
         height: `${height}%`,
         backgroundColor: base,
         color: contentColor,
-        boxShadow: [focusShadow, edgeShadow].filter(Boolean).join(", "),
+        boxShadow: focusShadow,
       }}
     >
       {isEditing ? (
@@ -89,13 +80,6 @@ const PracticeBlock: FC<{
         <div className="truncate opacity-80">
           {formatTime(block.startMin)} to {formatTime(block.endMin)}
         </div>
-      )}
-      {chipLetter && (
-        <span className="absolute top-1 right-1">
-          <ShortcutHint variant="keycap">
-            {chipLetter.toUpperCase()}
-          </ShortcutHint>
-        </span>
       )}
     </div>
   );
@@ -168,12 +152,6 @@ export const PracticeCalendar: FC<{
           </div>
         </div>
       ))}
-
-      {state.hardcoreOn && (
-        <span className="absolute right-2 bottom-2 rounded-full bg-accent px-3 py-1 font-medium text-on-accent text-xs">
-          Hardcore Mode on
-        </span>
-      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { type calendar_v3 } from "@googleapis/calendar";
 import {
   type GoogleChannelsApi,
   GoogleNotificationAdapter,
+  parseGoogleNotification,
 } from "@sync/providers/google/google-notifications.adapter";
 import { ProviderNotificationError } from "@sync/providers/provider-notifications.port";
 
@@ -96,7 +97,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     });
     const { adapter, tokens } = adapterWith(api);
 
-    const channel = await adapter.watchEvents(watchInput);
+    const channel = await adapter.watch(watchInput);
 
     expect(tokens).toEqual(["at"]);
     expect(api.watchCalls[0]).toEqual({
@@ -129,7 +130,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     });
     const { adapter } = adapterWith(api);
 
-    const channel = await adapter.watchCalendarList({
+    const channel = await adapter.watch({
       accessToken: "at",
       channelId: "chan-list",
       token: "chan-token",
@@ -157,7 +158,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     });
     const { adapter } = adapterWith(api);
 
-    const channel = await adapter.watchEvents({
+    const channel = await adapter.watch({
       ...watchInput,
       ttlMs: 3600_000,
     });
@@ -174,7 +175,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const api = new FakeChannelsApi({ watch: { resourceId: "res-1" } });
     const { adapter } = adapterWith(api);
 
-    const channel = await adapter.watchEvents({
+    const channel = await adapter.watch({
       ...watchInput,
       ttlMs: 3600_000,
     });
@@ -187,7 +188,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchFailed");
@@ -200,7 +201,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchUnsupported");
@@ -213,7 +214,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchUnsupported");
@@ -232,7 +233,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchUnsupported");
@@ -253,7 +254,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("transient");
@@ -264,7 +265,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchFailed");
@@ -283,7 +284,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("watchFailed");
@@ -295,7 +296,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
       const { adapter } = adapterWith(api);
 
       const error = (await adapter
-        .watchEvents(watchInput)
+        .watch(watchInput)
         .catch((e) => e)) as ProviderNotificationError;
 
       expect(error.reason).toBe("transient");
@@ -312,7 +313,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("transient");
@@ -326,7 +327,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
-      .watchEvents(watchInput)
+      .watch(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error.reason).toBe("authorizationRevoked");
@@ -383,11 +384,9 @@ describe("GoogleNotificationAdapter watch/stop", () => {
   });
 });
 
-describe("GoogleNotificationAdapter parseCallback", () => {
-  const adapter = new GoogleNotificationAdapter();
-
+describe("parseGoogleNotification", () => {
   it("normalizes a change callback from the Google headers", () => {
-    const notification = adapter.parseCallback({
+    const notification = parseGoogleNotification({
       "x-goog-channel-id": "chan-1",
       "x-goog-channel-token": "chan-token",
       "x-goog-resource-id": "res-1",
@@ -403,7 +402,7 @@ describe("GoogleNotificationAdapter parseCallback", () => {
   });
 
   it("maps the initial sync handshake to initialSync", () => {
-    const notification = adapter.parseCallback({
+    const notification = parseGoogleNotification({
       "x-goog-channel-id": "chan-1",
       "x-goog-channel-token": "chan-token",
       "x-goog-resource-id": "res-1",
@@ -414,7 +413,7 @@ describe("GoogleNotificationAdapter parseCallback", () => {
   });
 
   it("carries a null token when the header is absent, for the verifier to reject", () => {
-    const notification = adapter.parseCallback({
+    const notification = parseGoogleNotification({
       "x-goog-channel-id": "chan-1",
       "x-goog-resource-id": "res-1",
       "x-goog-resource-state": "exists",
@@ -424,7 +423,11 @@ describe("GoogleNotificationAdapter parseCallback", () => {
   });
 
   it("returns null when the channel or resource header is missing", () => {
-    expect(adapter.parseCallback({ "x-goog-resource-id": "res-1" })).toBeNull();
-    expect(adapter.parseCallback({ "x-goog-channel-id": "chan-1" })).toBeNull();
+    expect(
+      parseGoogleNotification({ "x-goog-resource-id": "res-1" }),
+    ).toBeNull();
+    expect(
+      parseGoogleNotification({ "x-goog-channel-id": "chan-1" }),
+    ).toBeNull();
   });
 });

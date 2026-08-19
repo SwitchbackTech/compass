@@ -1,4 +1,13 @@
 import { faker } from "@faker-js/faker";
+import {
+  type ProviderEvent,
+  type ProviderEventRead,
+} from "@sync/providers/provider-event.port";
+import {
+  type ProviderEventPage,
+  type ProviderEventReader,
+  type ProviderEventReadInput,
+} from "@sync/providers/provider-event-reader.port";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -86,4 +95,85 @@ export const ensureEventsResource = async (
   );
   if (!seeded) throw new Error("seeded resource vanished");
   return seeded;
+};
+
+// The timed schedule most db tests give their scripted provider events.
+export const TIMED_SCHEDULE = {
+  kind: "timed" as const,
+  start: "2026-07-14T09:00:00-06:00",
+  end: "2026-07-14T10:00:00-06:00",
+  timeZone: "America/Denver",
+};
+
+// One single (non-recurring) provider event, ready for a scripted page.
+export const singleEvent = (id: string, title = id): ProviderEvent => ({
+  kind: "event",
+  providerEventId: id,
+  providerVersion: `etag-${id}`,
+  providerUpdatedAt: null,
+  content: {
+    title,
+    description: "",
+    location: null,
+    organizer: null,
+    attendees: [],
+    conference: null,
+  },
+  schedule: TIMED_SCHEDULE,
+  busy: true,
+  recurrence: { kind: "single" },
+});
+
+export const pageOf = (
+  events: ProviderEventRead[],
+  opts: {
+    nextPageToken?: string | null;
+    nextSyncToken?: string | null;
+    skipped?: number;
+  } = {},
+): ProviderEventPage => ({
+  events,
+  skipped: opts.skipped ?? 0,
+  nextPageToken: opts.nextPageToken ?? null,
+  nextSyncToken: opts.nextSyncToken ?? null,
+});
+
+// Replays scripted pages, records read inputs, or throws a scripted error
+// (optionally only once, e.g. an expired cursor) on the next read.
+export class FakeReader implements ProviderEventReader {
+  calls: ProviderEventReadInput[] = [];
+  #pages: ProviderEventPage[];
+  #error: unknown;
+  #errorOnce: boolean;
+
+  constructor(
+    pages: ProviderEventPage[],
+    error: unknown = null,
+    errorOnce = false,
+  ) {
+    this.#pages = [...pages];
+    this.#error = error;
+    this.#errorOnce = errorOnce;
+  }
+
+  async listEventPage(
+    input: ProviderEventReadInput,
+  ): Promise<ProviderEventPage> {
+    this.calls.push(input);
+    if (this.#error) {
+      const error = this.#error;
+      if (this.#errorOnce) this.#error = null;
+      throw error;
+    }
+    const page = this.#pages.shift();
+    if (!page) throw new Error("FakeReader: no page scripted");
+    return page;
+  }
+}
+
+// Access-token custody stub for engines that resolve tokens per job.
+export const fakeTokenSource = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };

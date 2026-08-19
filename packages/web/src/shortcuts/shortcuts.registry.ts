@@ -1,14 +1,21 @@
 import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
+import { KEYMAP } from "@web/shortcuts/keymap";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
+
+// Display keycaps for a tanstack hotkey string ("Mod+Shift+Z" -> ["Mod",
+// "Shift", "Z"]), so registry rows derive from the runtime binding instead of
+// hand-copying it.
+const caps = (hotkey: string): string[] => hotkey.split("+");
 
 /**
  * Shortcut registry: the display source for the `?` legend overlay. Each
  * shortcut has an id, section, label, and optional context predicate; the
  * predicate determines visibility based on app state.
  *
- * Runtime bindings live at the handler sites; the subset taught by the
- * Shortcut Showcase binds through `keymap.ts`, and `keymap.test.ts` keeps
- * those rows and this registry from drifting apart.
+ * Runtime bindings live at the handler sites; rows for bindings that
+ * `keymap.ts` owns derive their keys from KEYMAP, so a remap there updates
+ * the legend by construction.
  */
 export const SHORTCUTS_REGISTRY: Shortcut[] = [
   // Navigate - Up Next
@@ -115,7 +122,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   // Create
   {
     id: "create-timed",
-    keys: ["c"],
+    keys: [KEYMAP.createEvent.hotkey.toLowerCase()],
     label: "Create timed event",
     section: "create",
   },
@@ -153,7 +160,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "focus-shift-hold",
-    keys: ["s"],
+    keys: [KEYMAP.eventJump.bareLetter],
     label: "Toggle event jump keys",
     section: "focus",
   },
@@ -206,25 +213,25 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "edit-focus-prev",
-    keys: ["ArrowUp"],
+    keys: [KEYMAP.moveFocus.hotkeys.up],
     label: "Focus previous event",
     section: "edit",
   },
   {
     id: "edit-focus-next",
-    keys: ["ArrowDown"],
+    keys: [KEYMAP.moveFocus.hotkeys.down],
     label: "Focus next event",
     section: "edit",
   },
   {
     id: "edit-focus-left",
-    keys: ["ArrowLeft"],
+    keys: [KEYMAP.moveFocus.hotkeys.left],
     label: "Focus event on previous day",
     section: "edit",
   },
   {
     id: "edit-focus-right",
-    keys: ["ArrowRight"],
+    keys: [KEYMAP.moveFocus.hotkeys.right],
     label: "Focus event on next day",
     section: "edit",
   },
@@ -236,31 +243,31 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "edit-move-prev-day",
-    keys: ["Shift", "ArrowLeft"],
+    keys: caps(KEYMAP.moveEvent.hotkeys.left),
     label: "Move event to previous day",
     section: "edit",
   },
   {
     id: "edit-move-next-day",
-    keys: ["Shift", "ArrowRight"],
+    keys: caps(KEYMAP.moveEvent.hotkeys.right),
     label: "Move event to next day",
     section: "edit",
   },
   {
     id: "edit-move-earlier",
-    keys: ["Shift", "ArrowUp"],
+    keys: caps(KEYMAP.moveEvent.hotkeys.up),
     label: "Move event 15 min earlier",
     section: "edit",
   },
   {
     id: "edit-move-later",
-    keys: ["Shift", "ArrowDown"],
+    keys: caps(KEYMAP.moveEvent.hotkeys.down),
     label: "Move event 15 min later",
     section: "edit",
   },
   {
     id: "edit-cycle-edge",
-    keys: ["Tab"],
+    keys: [KEYMAP.edgeFocus.hotkey],
     label: "Cycle start/end edge focus",
     section: "edit",
   },
@@ -298,19 +305,19 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "other-undo",
-    keys: ["Mod", "Z"],
+    keys: caps(KEYMAP.undo.hotkey),
     label: "Undo last change",
     section: "other",
   },
   {
     id: "other-redo",
-    keys: ["Mod", "Shift", "Z"],
+    keys: caps(KEYMAP.redo.hotkey),
     label: "Redo last change",
     section: "other",
   },
   {
     id: "other-keyboard-only",
-    keys: ["h"],
+    keys: [KEYMAP.hardcore.bareLetter],
     label: "Toggle Hardcore Mode",
     section: "other",
   },
@@ -322,6 +329,25 @@ interface FilterOptions {
   isFormOpen?: boolean;
 }
 
+// Context-sensitive display labels, keyed by shortcut id. Each override lives
+// here, next to the registry, instead of in a branch chain.
+const LABEL_OVERRIDES: Record<string, (options: FilterOptions) => string> = {
+  "nav-previous": ({ view }) => `Previous ${view}`,
+  "nav-next": ({ view }) => `Next ${view}`,
+  "nav-today": ({ view, isViewingCurrentPeriod }) => {
+    if (isViewingCurrentPeriod) return "Scroll to now";
+    return view === "week" ? "Go to current week" : "Go to today";
+  },
+  "edit-focus-prev": ({ view }) =>
+    view === "week" ? "Focus previous event on day" : "Focus previous event",
+  "edit-focus-next": ({ view }) =>
+    view === "week" ? "Focus next event on day" : "Focus next event",
+  "edit-focus-left": ({ view }) =>
+    view === "day" ? "Focus previous event" : "Focus event on previous day",
+  "edit-focus-right": ({ view }) =>
+    view === "day" ? "Focus next event" : "Focus event on next day",
+};
+
 /**
  * Filter shortcuts based on context. Returns a new list of shortcuts that should
  * be visible given the current app state, with view-appropriate labels.
@@ -329,40 +355,12 @@ interface FilterOptions {
 export const filterShortcutsByContext = (
   options: FilterOptions,
 ): Shortcut[] => {
-  const { view, isViewingCurrentPeriod, isFormOpen } = options;
+  const { view, isFormOpen } = options;
 
-  return SHORTCUTS_REGISTRY.map((shortcut) => {
-    // Adjust labels based on view context
-    let label = shortcut.label;
-
-    if (shortcut.id === "nav-previous") {
-      label = `Previous ${view}`;
-    } else if (shortcut.id === "nav-next") {
-      label = `Next ${view}`;
-    } else if (shortcut.id === "nav-today") {
-      if (isViewingCurrentPeriod) {
-        label = "Scroll to now";
-      } else if (view === "week") {
-        label = "Go to current week";
-      } else {
-        label = "Go to today";
-      }
-    } else if (shortcut.id === "edit-focus-prev") {
-      label =
-        view === "week"
-          ? "Focus previous event on day"
-          : "Focus previous event";
-    } else if (shortcut.id === "edit-focus-next") {
-      label = view === "week" ? "Focus next event on day" : "Focus next event";
-    } else if (shortcut.id === "edit-focus-left") {
-      label =
-        view === "day" ? "Focus previous event" : "Focus event on previous day";
-    } else if (shortcut.id === "edit-focus-right") {
-      label = view === "day" ? "Focus next event" : "Focus event on next day";
-    }
-
-    return { ...shortcut, label };
-  }).filter((shortcut) => {
+  return SHORTCUTS_REGISTRY.map((shortcut) => ({
+    ...shortcut,
+    label: LABEL_OVERRIDES[shortcut.id]?.(options) ?? shortcut.label,
+  })).filter((shortcut) => {
     // Filter by view
     if (view === "life") {
       // Life view shows only life-specific navigate + other shortcuts
@@ -433,3 +431,14 @@ export const getShortcutsBySection = (
       shortcuts: shortcuts.filter((shortcut) => shortcut.section === id),
     }))
     .filter((section) => section.shortcuts.length > 0);
+
+export type ShortcutMenuView = FilterOptions["view"];
+
+/**
+ * Shortcut menu sections for the `?` legend overlay: the registry filtered
+ * for the current view/state, grouped by section.
+ */
+export const getShortcutMenuSections = (
+  config: FilterOptions,
+): ShortcutOverlaySection[] =>
+  getShortcutsBySection(filterShortcutsByContext(config));

@@ -153,6 +153,12 @@ export const EventMutationErrorCodeSchema = z.enum([
   // Sync has no executor for a "move" command yet (unconditionally fails it),
   // so this is rejected before any command is submitted — never retryable.
   "MOVE_UNSUPPORTED",
+  // The provider refuses this operation for this event — e.g. Google rejects
+  // deleting one occurrence of a contact-linked birthday (or other special)
+  // event. The request was well-formed and the provider is healthy, so this
+  // is neither INVALID_INPUT nor PROVIDER_FAILURE; retrying can never
+  // succeed.
+  "UNSUPPORTED_OPERATION",
   // The request body failed contract validation (e.g. an unrecognized key on
   // a strict schema). Always a client-side mistake, never retryable.
   "INVALID_INPUT",

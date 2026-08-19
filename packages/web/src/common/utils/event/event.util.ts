@@ -5,7 +5,10 @@ import {
   type BaseEvent,
   type CompassEvent,
 } from "@core/types/compass-event.contracts";
-import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
+import {
+  type EventMutationError,
+  EventMutationErrorSchema,
+} from "@core/types/event-command.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
@@ -208,15 +211,34 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
  * A known mutation failure authored by the backend. These have user-facing
  * feedback already, so they must not create error-tracking issues.
  */
-const isExpectedMutationError = (error: Error): boolean => {
+const parseExpectedMutationError = (error: Error) => {
   const parsed = EventMutationErrorSchema.safeParse(
     (error as ApiError).response?.data,
   );
-  return parsed.success;
+  return parsed.success ? parsed.data : null;
 };
 
 const CATCHALL_TOAST_MESSAGE =
   "Something went wrong behind the scenes. Please try again later.";
+
+// Curated copy for backend-authored mutation failures the user can act on.
+// Codes without an entry fall back to the catch-all — backend messages are
+// written for the API contract, not for a toast, so they are never shown
+// verbatim. UNSUPPORTED_OPERATION exists because a Google birthday-event
+// occurrence delete used to surface as the catch-all with nothing telling
+// the user why it would never work.
+const MUTATION_ERROR_TOAST_MESSAGES: Partial<
+  Record<EventMutationError["code"], string>
+> = {
+  UNSUPPORTED_OPERATION:
+    "Google doesn't allow this change for this event (like birthdays or holidays). Try deleting the entire series, or manage it in Google Calendar.",
+  CALENDAR_READ_ONLY:
+    "This calendar is read-only, so its events can't be changed from Compass.",
+  RECURRENCE_CONFLICT:
+    "This event was changed somewhere else. Refresh to load the latest version, then try again.",
+  GOOGLE_REVOKED:
+    "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
+};
 
 const showCatchallToast = (message: string) =>
   showErrorToast(message, { toastId: GENERIC_ERROR_TOAST_ID });
@@ -253,10 +275,16 @@ export const handleError = (error: Error) => {
     return;
   }
 
-  if (isExpectedMutationError(error)) {
-    // The backend authored a known mutation failure. Show its existing UI
-    // feedback without creating an error-tracking issue.
-    showCatchallToast(CATCHALL_TOAST_MESSAGE);
+  const mutationError = parseExpectedMutationError(error);
+  if (mutationError) {
+    // The backend authored a known mutation failure: tell the user what
+    // actually happened when we have copy for it (a generic toast on a
+    // deterministic refusal reads as "try again", which can never work).
+    // No error-tracking capture either way — these are expected outcomes.
+    showCatchallToast(
+      MUTATION_ERROR_TOAST_MESSAGES[mutationError.code] ??
+        CATCHALL_TOAST_MESSAGE,
+    );
     return;
   }
 

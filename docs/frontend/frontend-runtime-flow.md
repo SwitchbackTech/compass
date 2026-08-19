@@ -80,8 +80,8 @@ Welcome → signup → checklist contract:
 - the Shortcut Showcase therefore has exactly two entries: post-signup, and the
   command palette's "Practice shortcuts". `showcase.steps.ts` holds the order;
   taught keycaps come from `packages/web/src/shortcuts/keymap.ts`. Two lessons
-  gate the exit (create, save); the arena still answers every other shortcut,
-  it just does not make them a condition of leaving
+  gate the exit (create, save) and are the only shortcuts the arena
+  implements; the checklist re-teaches the rest on real events
 - every showcase step offers **Skip to calendar**, and **Skip to sign up** for
   anyone not already signed in; Escape does the former. There is no confirm in
   the way
@@ -159,14 +159,9 @@ PostHog's `before_send` runs two filters, in order:
 
 - unactionable exception signatures (SuperTokens/browser network blips,
   CefSharp scanner noise, opaque "Script error.", ResizeObserver loop warnings)
-- dead clicks posthog's own mutation clock mis-scored. posthog-js timestamps a
-  click in a bubble-phase `window` listener, but React has already flushed the
-  update and the MutationObserver microtask has already run by then, so the
-  click's own re-render is recorded as happening *before* it. On a screen that
-  goes quiet afterwards — the welcome FAQ, the Shortcut Showcase — nothing ever
-  corrects that, and posthog reports a working button as dead. The filter drops
-  exactly that shape: no mutation credited to the gesture, yet the last mutation
-  on the page landed within 50ms *before* it
+- dead clicks posthog's own mutation clock mis-scored (a click whose own
+  re-render posthog records as happening *before* it) — the mechanism and the
+  50ms window are documented in `posthog-dead-click-filter.util.ts` itself
 
 Neither filter touches `$rageclick`: repeated clicking is real frustration
 whatever the DOM did.

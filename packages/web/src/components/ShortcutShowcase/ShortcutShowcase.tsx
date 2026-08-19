@@ -17,21 +17,8 @@ import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalen
 import {
   commitTitle,
   createDraft,
-  cycleEdge,
-  focusFallback,
   initialPracticeState,
-  jumpToChipHint,
-  moveFocus,
-  moveFocusedEvent,
-  openTitleEditor,
-  type PracticeDirection,
   type PracticeState,
-  placeDraft,
-  redo,
-  resizeFocusedEdge,
-  toggleHardcore,
-  toggleJumpChips,
-  undo,
 } from "@web/components/ShortcutShowcase/practice.state";
 import {
   getShowcaseStep,
@@ -46,13 +33,9 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import {
-  isBareLetterKey,
-  keyboardKey,
-} from "@web/shortcuts/is-bare-letter-key";
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
-import { ARM_WINDOW_MS } from "@web/shortcuts/useEditSequenceShortcut";
 
 const TEXT_BUTTON_CLASS =
   "c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
@@ -61,21 +44,14 @@ const PRIMARY_BUTTON_CLASS =
 const SECONDARY_BUTTON_CLASS =
   "c-button c-button-secondary rounded-full px-4 py-1.5 text-xs";
 
-const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
-  ArrowUp: "up",
-  ArrowDown: "down",
-  ArrowLeft: "left",
-  ArrowRight: "right",
-};
-
 /**
  * Full-screen practice arena shown before a new user ever sees the real
  * calendar. Bindings come from KEYMAP (shared with the real handlers);
  * behavior is a deliberately simplified reimplementation against ephemeral
  * practice state, so nothing here touches storage or the real grid stores.
  *
- * Two lessons gate the exit (see showcase.steps.ts), but every shortcut the
- * arena ever answered still works here for anyone who wants to poke around.
+ * Only the two gating lessons (see showcase.steps.ts) are interactive; the
+ * checklist re-teaches the rest on real events after graduation.
  */
 const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
@@ -124,9 +100,6 @@ const ShowcaseTakeover: FC = () => {
 
   // Practice state at each step's entry, so Back can restore and redo.
   const entrySnapshotsRef = useRef<Record<number, PracticeState>>({});
-  const editSequenceArmedUntilRef = useRef(0);
-  // Typed-so-far jump key while the S chips are showing ("t" awaiting "t1").
-  const jumpBufferRef = useRef("");
 
   const advance = shortcutShowcaseActions.advance;
 
@@ -215,116 +188,11 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
-      // e -> t sequence (arm, then fire within the window).
-      if (
-        isBareLetterKey(event, KEYMAP.editTitle.sequence.leader) &&
-        !practiceRef.current.editor
-      ) {
-        editSequenceArmedUntilRef.current = Date.now() + ARM_WINDOW_MS;
-        event.preventDefault();
-        return;
-      }
-      if (
-        editSequenceArmedUntilRef.current > Date.now() &&
-        isBareLetterKey(event, KEYMAP.editTitle.sequence.second)
-      ) {
-        editSequenceArmedUntilRef.current = 0;
-        event.preventDefault();
-        // No lesson seats focus any more, so the chord picks a block itself
-        // rather than silently doing nothing on a cold board.
-        apply((state) => openTitleEditor(focusFallback(state)));
-        return;
-      }
-
-      // A second S closes the chips (matching the real toggle), unless S
-      // could still start a hint (never true for the Mon-Wed practice days).
-      if (
-        practiceRef.current.jumpChips &&
-        jumpBufferRef.current === "" &&
-        isBareLetterKey(event, KEYMAP.eventJump.bareLetter) &&
-        !Object.values(practiceRef.current.jumpChips).some((hint) =>
-          hint.startsWith(KEYMAP.eventJump.bareLetter),
-        )
-      ) {
-        event.preventDefault();
-        apply(toggleJumpChips);
-        return;
-      }
-
-      // Jump chips are a key-capture mode while visible: hints are the real
-      // day-prefix labels ("m1", "t2"), so collect typed characters until
-      // they exactly match one, keep collecting while a prefix still can,
-      // and reset on a dead end.
-      if (
-        practiceRef.current.jumpChips &&
-        /^[a-z0-9]$/i.test(event.key) &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      ) {
-        event.preventDefault();
-        const hints = Object.values(practiceRef.current.jumpChips);
-        const typed = jumpBufferRef.current + keyboardKey(event).toLowerCase();
-        if (hints.includes(typed)) {
-          jumpBufferRef.current = "";
-          apply((state) => jumpToChipHint(state, typed));
-        } else if (hints.some((hint) => hint.startsWith(typed))) {
-          jumpBufferRef.current = typed;
-        } else {
-          jumpBufferRef.current = "";
-        }
-        return;
-      }
-
-      if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
-        event.preventDefault();
-        jumpBufferRef.current = "";
-        apply(toggleJumpChips);
-        return;
-      }
-
-      if (isBareLetterKey(event, KEYMAP.hardcore.bareLetter)) {
-        event.preventDefault();
-        apply(toggleHardcore);
-        return;
-      }
-
       if (isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())) {
         event.preventDefault();
         const next = apply(createDraft);
         if (next.editor?.isNew && currentStepId === "create") advance();
         return;
-      }
-
-      if (
-        (event.metaKey || event.ctrlKey) &&
-        keyboardKey(event).toLowerCase() === "z"
-      ) {
-        event.preventDefault();
-        apply(event.shiftKey ? redo : undo);
-        return;
-      }
-
-      if (event.key === "Tab") {
-        event.preventDefault();
-        apply(cycleEdge);
-        return;
-      }
-
-      const direction = ARROW_DIRECTIONS[event.key];
-      if (!direction || event.metaKey || event.ctrlKey || event.altKey) return;
-      event.preventDefault();
-      const before = practiceRef.current;
-      if (event.shiftKey) {
-        if (before.edge && before.focusedId) {
-          apply((state) => resizeFocusedEdge(state, direction));
-        } else if (before.focusedId) {
-          apply((state) => moveFocusedEvent(state, direction));
-        } else {
-          apply(placeDraft);
-        }
-      } else {
-        apply((state) => moveFocus(state, direction));
       }
     };
 

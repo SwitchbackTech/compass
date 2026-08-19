@@ -1,5 +1,4 @@
 import { type ProviderAccountFacts } from "@core/types/sync/connection.contracts";
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 
 // The durable result of authorizing one provider account. It is the minimum a
@@ -31,8 +30,6 @@ export interface RefreshedCredential {
 // provider-specific detail (endpoints, id-token verification, idempotency)
 // stays inside the adapter.
 export interface ProviderAuthAdapter {
-  readonly provider: ProviderKind;
-
   // Build the URL to send the user to for consent. `state` is opaque here and
   // is validated by the caller when the provider redirects back.
   buildAuthorizationUrl(input: {

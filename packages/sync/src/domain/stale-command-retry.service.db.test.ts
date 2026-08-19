@@ -31,7 +31,6 @@ const storage = setupSyncStorage(import.meta.url);
 const objectId = () => faker.database.mongodbObjectId();
 
 class FakeDeleteWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   deleteError: Error | null = null;
   deleteCalls: ProviderDeleteInput[] = [];
   async deleteEvent(input: ProviderDeleteInput): Promise<void> {
@@ -53,7 +52,6 @@ class FakeDeleteWriter implements ProviderEventWriter {
 }
 
 class FakeCreateWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
   createError: Error | null = null;
   createCalls: ProviderCreateInput[] = [];
   result: ProviderWriteResult = {

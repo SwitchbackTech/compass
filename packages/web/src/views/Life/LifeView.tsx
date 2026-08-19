@@ -13,7 +13,7 @@ import {
   selectIsSidebarOpen,
   useViewStore,
 } from "@web/events/stores/view.store";
-import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";

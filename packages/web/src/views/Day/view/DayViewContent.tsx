@@ -22,13 +22,13 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
+import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
-import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
@@ -90,12 +90,12 @@ export const DayViewContent = memo(() => {
     emitViewCommand("CREATE_ALLDAY_DRAFT");
   }, []);
 
-  useDayViewShortcuts({
+  useCalendarViewShortcuts({
     onCreateTimedEvent: handleCreateTimedEvent,
     onCreateAllDayEvent: handleCreateAllDayEvent,
     onFocusCalendar: focusFirstDayCalendarEvent,
-    onNextDay: navigateToNextDay,
-    onPrevDay: navigateToPreviousDay,
+    onNextPeriod: navigateToNextDay,
+    onPrevPeriod: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
   });
 

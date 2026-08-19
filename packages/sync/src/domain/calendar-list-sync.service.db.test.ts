@@ -38,7 +38,6 @@ const discovered = (
 // `cursorExpiredFirst` throws cursorExpired on the first CURSORED call, so a test
 // exercises the full re-list fallback.
 class FakeDiscovery implements ProviderCalendarAdapter {
-  readonly provider = "google" as const;
   cursors: Array<string | undefined> = [];
   #passes: CalendarDiscovery[];
   #cursorExpiredFirst: boolean;
@@ -584,7 +583,6 @@ describe("syncCalendarList", () => {
   it("throws on a non-cursor discovery failure so the worker retries", async () => {
     const conn = connection();
     const discovery = {
-      provider: "google" as const,
       discoverCalendars: async () => {
         throw new ProviderCalendarError("discoveryFailed", "boom");
       },
