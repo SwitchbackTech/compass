@@ -4,7 +4,6 @@ Internal documentation for engineers and agents working in the Compass repo.
 
 ## Start Here
 
-- [Development Quickstart](./development/quickstart.md)
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Feature File Map](./development/feature-file-map.md)
 - [Common Change Recipes](./development/common-change-recipes.md)

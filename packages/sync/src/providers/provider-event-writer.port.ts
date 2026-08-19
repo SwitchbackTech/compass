@@ -1,6 +1,5 @@
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 
@@ -94,8 +93,6 @@ export interface ProviderWriteResult {
 // A provider-neutral event mutation port. Neutral inputs in, provider identity
 // out; Google request/response shapes never cross this boundary.
 export interface ProviderEventWriter {
-  readonly provider: ProviderKind;
-
   // Create at a caller-chosen id. A replay that finds the id already present
   // returns the existing identity rather than failing, so retries are safe.
   createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult>;
@@ -132,6 +129,7 @@ export type ProviderWriteErrorReason =
   | "readOnlyCalendar" // the target calendar cannot be written
   | "authorizationRevoked" // the credential is no longer valid
   | "transient" // network / 5xx / rate limit — safe to retry
+  | "unsupportedCapability" // the provider declines this operation for this event
   | "permanentProviderError"; // an unrecoverable provider rejection
 
 export class ProviderWriteError extends ProviderError<ProviderWriteErrorReason> {}

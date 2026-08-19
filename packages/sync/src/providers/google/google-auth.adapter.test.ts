@@ -94,11 +94,6 @@ function adapterWith(client: FakeGoogleClient) {
 }
 
 describe("GoogleAuthAdapter", () => {
-  it("identifies as the google provider", () => {
-    const { adapter } = adapterWith(new FakeGoogleClient());
-    expect(adapter.provider).toBe("google");
-  });
-
   it("refuses to construct without a client id and secret", () => {
     expect(() => new GoogleAuthAdapter("", CLIENT_SECRET)).toThrow(
       /client id and secret/,

@@ -186,6 +186,31 @@ describe("handleError", () => {
 
     expect(mockCaptureException).not.toHaveBeenCalled();
   });
+
+  it("shows curated copy for a mutation failure the user can act on, not the catch-all", () => {
+    // A deterministic provider refusal (Google declining a birthday-occurrence
+    // delete) used to show "Something went wrong behind the scenes. Please try
+    // again later." — an invitation to retry something that can never work.
+    const error = createServerError(Status.FORBIDDEN);
+    error.response = {
+      status: Status.FORBIDDEN,
+      data: {
+        code: "UNSUPPORTED_OPERATION",
+        message: "backend contract message, not toast copy",
+        retryable: false,
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    const [message] = mocks.error.mock.calls[0] ?? [];
+    expect(message).toContain("Google doesn't allow this change");
+    expect(message).not.toBe(
+      "Something went wrong behind the scenes. Please try again later.",
+    );
+  });
 });
 
 describe("isEventInRange", () => {

@@ -1,5 +1,9 @@
-import { faker } from "@faker-js/faker";
-import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
+import {
+  pageOf as page,
+  seedProviderCalendar,
+  singleEvent as single,
+  fakeTokenSource as tokenSource,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   type CalendarImportDeps,
@@ -22,13 +26,11 @@ import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occu
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
-const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
 // A reader serving scripted pages, one script for the windowed (fast) pass and
 // one for the full (cursor-earning) pass. Records every call.
 class FakeReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   calls: ProviderEventReadInput[] = [];
   #window: ProviderEventPage[];
   #full: ProviderEventPage[];
@@ -51,39 +53,6 @@ class FakeReader implements ProviderEventReader {
     return page;
   }
 }
-
-const tokenSource: AccessTokenSource = {
-  getValidAccessToken: async () => "access-token",
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
-};
-
-const schedule = {
-  kind: "timed" as const,
-  start: "2026-07-14T09:00:00-06:00",
-  end: "2026-07-14T10:00:00-06:00",
-  timeZone: "America/Denver",
-};
-
-const content = (title: string) => ({
-  title,
-  description: "",
-  location: null,
-  organizer: null,
-  attendees: [],
-  conference: null,
-});
-
-const single = (id: string, title = id): ProviderEvent => ({
-  kind: "event",
-  providerEventId: id,
-  providerVersion: `etag-${id}`,
-  providerUpdatedAt: null,
-  content: content(title),
-  schedule,
-  busy: true,
-  recurrence: { kind: "single" },
-});
 
 const master = (
   id: string,
@@ -108,20 +77,6 @@ const cancellation = (id: string): ProviderEventRead => ({
   providerEventId: id,
   providerVersion: `etag-${id}`,
   series: null,
-});
-
-const page = (
-  events: ProviderEventRead[],
-  opts: {
-    nextPageToken?: string | null;
-    nextSyncToken?: string | null;
-    skipped?: number;
-  } = {},
-): ProviderEventPage => ({
-  events,
-  skipped: opts.skipped ?? 0,
-  nextPageToken: opts.nextPageToken ?? null,
-  nextSyncToken: opts.nextSyncToken ?? null,
 });
 
 const emptyPage = () => page([]);

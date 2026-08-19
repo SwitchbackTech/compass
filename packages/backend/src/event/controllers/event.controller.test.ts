@@ -362,6 +362,24 @@ describe("EventController", () => {
     });
   });
 
+  it("maps unsupportedCapability to 403 UNSUPPORTED_OPERATION (not retryable)", async () => {
+    // A provider refusal for this specific event (e.g. Google declining a
+    // birthday-occurrence delete) used to share PROVIDER_FAILURE's retryable
+    // 502 — a generic error the client could retry forever without success.
+    mockSyncCommandFailure("unsupportedCapability");
+    const { res, json } = await createViaSync();
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.FORBIDDEN,
+    );
+    expect(json).toHaveBeenCalledWith({
+      code: "UNSUPPORTED_OPERATION",
+      message:
+        "Google doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in Google Calendar.",
+      retryable: false,
+    });
+  });
+
   // The regression lock for invariant 1 ("every write resolves
   // definitively"): a command sync leaves non-terminal must never read as
   // success here. Before this fix, a still-pending outcome returned 200 —

@@ -4,7 +4,6 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import {
   type NotificationChannel,
-  type ProviderNotification,
   type ProviderNotificationAdapter,
   ProviderNotificationError,
 } from "@sync/providers/provider-notifications.port";
@@ -19,7 +18,6 @@ const now = () => new Date("2026-07-10T00:00:00.000Z");
 // Records watch/stop calls and replays a scripted channel or throws a scripted
 // error, so a test drives the adapter without a network round-trip.
 class FakeNotifications implements ProviderNotificationAdapter {
-  readonly provider = "google" as const;
   watched: Array<{
     channelId: string;
     token: string;
@@ -41,9 +39,9 @@ class FakeNotifications implements ProviderNotificationAdapter {
     this.#stopError = opts.stopError ?? null;
   }
 
-  watchEvents = async (input: {
+  watch = async (input: {
     accessToken: string;
-    calendarId: string;
+    calendarId?: string;
     channelId: string;
     token: string;
     callbackUrl: string;
@@ -52,28 +50,10 @@ class FakeNotifications implements ProviderNotificationAdapter {
       channelId: input.channelId,
       token: input.token,
       calendarId: input.calendarId,
-      kind: "events",
+      kind: input.calendarId === undefined ? "calendarList" : "events",
     });
     if (this.#watchError) throw this.#watchError;
     // Echo the caller's channel id, as the real adapter does.
-    return {
-      ...(this.#channel as NotificationChannel),
-      channelId: input.channelId,
-    };
-  };
-
-  watchCalendarList = async (input: {
-    accessToken: string;
-    channelId: string;
-    token: string;
-    callbackUrl: string;
-  }): Promise<NotificationChannel> => {
-    this.watched.push({
-      channelId: input.channelId,
-      token: input.token,
-      kind: "calendarList",
-    });
-    if (this.#watchError) throw this.#watchError;
     return {
       ...(this.#channel as NotificationChannel),
       channelId: input.channelId,
@@ -91,10 +71,6 @@ class FakeNotifications implements ProviderNotificationAdapter {
     });
     if (this.#stopError) throw this.#stopError;
   };
-
-  parseCallback(): ProviderNotification | null {
-    return null;
-  }
 }
 
 const custody = {

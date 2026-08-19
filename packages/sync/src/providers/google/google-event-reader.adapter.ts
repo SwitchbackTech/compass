@@ -2,6 +2,12 @@ import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
+import {
+  GOOGLE_TRANSIENT_REASONS,
+  googleErrorReasons,
+  googleFailureCause,
+  googleStatus,
+} from "@sync/providers/google/google-error";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import { ProviderEventError } from "@sync/providers/provider-event.port";
@@ -12,7 +18,6 @@ import {
   type ProviderEventReader,
   type ProviderEventReadInput,
 } from "@sync/providers/provider-event-reader.port";
-import { redactedCause } from "@sync/safety/redact-error";
 
 // One page of a Google events.list read, narrowed to the fields import needs.
 // Google returns `nextSyncToken` only on the final page of a pass entitled to
@@ -83,8 +88,6 @@ const defaultApiFactory: GoogleEventListApiFactory = (accessToken) => {
 // events and normalizes each into a provider-neutral read, dropping (and
 // counting) any that are structurally unusable rather than failing the page.
 export class GoogleEventReaderAdapter implements ProviderEventReader {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleEventListApiFactory;
 
   #log: { warn: (message: string) => void };
@@ -150,24 +153,11 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
       throw new ProviderEventReadError(
         classifyReadError(error),
         "Google rejected the events list read",
-        { cause: readFailureCause(error) },
+        { cause: googleFailureCause(error) },
       );
     }
   }
 }
-
-// Reasons Google's 403 can carry for a quota/rate problem rather than a
-// genuine permission refusal - status alone cannot tell them apart. Same set
-// as the discovery (google-calendar.adapter.ts) and watch/writer
-// (google-notifications.adapter.ts, google-event-writer.adapter.ts) paths.
-const TRANSIENT_REASONS = [
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-  "backendError",
-  "internalError",
-];
 
 // Map a Google events.list failure to a read-error reason. An expired syncToken
 // (410 Gone) forces a full re-import. A 401 means the access token was rejected
@@ -181,63 +171,20 @@ const TRANSIENT_REASONS = [
 function classifyReadError(
   error: unknown,
 ): "cursorExpired" | "authExpired" | "transient" | "readFailed" {
-  const status = httpStatus(error);
+  const status = googleStatus(error);
   if (status === 410) return "cursorExpired";
   if (status === 401) return "authExpired";
   if (status === 429 || status === undefined || status >= 500) {
     return "transient";
   }
-  if (status === 403) {
-    const reason = googleErrorReason(error);
-    if (reason !== undefined && TRANSIENT_REASONS.includes(reason)) {
-      return "transient";
-    }
+  // First reason only, as before the shared-triage refactor: a 403 whose
+  // primary reason is durable stays durable even if a later errors[] entry
+  // happens to be quota-shaped.
+  if (
+    status === 403 &&
+    GOOGLE_TRANSIENT_REASONS.includes(googleErrorReasons(error)[0] ?? "")
+  ) {
+    return "transient";
   }
   return "readFailed";
-}
-
-// The cause attached to a read error. Like redactedCause it drops everything
-// request-derived (the gaxios config carries the bearer token), but keeps the
-// two response facts triage needs: the numeric HTTP status and Google's
-// machine-readable error reason. Without them a durable readFailed row is
-// guesswork to diagnose from logs (2026-07-30 prod triage).
-function readFailureCause(error: unknown): Error | undefined {
-  const status = httpStatus(error);
-  const reason = googleErrorReason(error);
-  const facts = [
-    ...(status === undefined ? [] : [`HTTP ${status}`]),
-    ...(reason === undefined ? [] : [`reason ${reason}`]),
-  ];
-  // Nothing response-derived to add (a bare network failure): fall back to the
-  // plain redacted message.
-  if (facts.length === 0) return redactedCause(error);
-  const message = error instanceof Error ? error.message : null;
-  return new Error(
-    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
-  );
-}
-
-// Google's machine-readable reason for a failed call (e.g. "notFound",
-// "rateLimitExceeded"), from the standard error body; googleapis also copies
-// the errors array onto the error object itself. Response-derived only.
-function googleErrorReason(error: unknown): string | undefined {
-  const fromBody = (
-    error as {
-      response?: { data?: { error?: { errors?: { reason?: unknown }[] } } };
-    }
-  )?.response?.data?.error?.errors?.[0]?.reason;
-  const fromError = (error as { errors?: { reason?: unknown }[] })?.errors?.[0]
-    ?.reason;
-  const reason = fromBody ?? fromError;
-  return typeof reason === "string" ? reason : undefined;
-}
-
-// The HTTP status of a googleapis/gaxios error, from the response or the error
-// code. Reading it does not touch the request. Undefined means no HTTP response
-// reached us (a network failure), which classifies as transient.
-function httpStatus(error: unknown): number | undefined {
-  const status =
-    (error as { response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code;
-  return typeof status === "number" ? status : undefined;
 }

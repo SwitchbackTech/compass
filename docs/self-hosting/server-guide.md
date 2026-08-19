@@ -2,7 +2,7 @@
 
 This guide explains how to setup Compass on your own infrastructure.
 
-If you'd rather have a local development setup or use the binaries, see the [developer's quickstart](../development/quickstart.md).
+If you'd rather have a local development setup or use the binaries, see [Local Development](../development/local-development.md).
 
 ## Before you start
 

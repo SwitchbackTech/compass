@@ -42,8 +42,6 @@ export type GoogleOAuthClientFactory = (
 // Google implementation of the provider authorization port. Identity is the
 // verified id-token `sub` — never the email, which is mutable and reassignable.
 export class GoogleAuthAdapter implements ProviderAuthAdapter {
-  readonly provider = "google" as const;
-
   #clientId: string;
   #makeClient: GoogleOAuthClientFactory;
 

@@ -4,7 +4,7 @@ import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
-import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
+import { resourceJob } from "@sync/storage/contracts/job.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
@@ -211,17 +211,9 @@ export async function syncCalendarList(
       resourceKind: "events",
       calendarId: record._id,
     });
-    await deps.jobs.enqueue({
-      tenantId,
-      principalId,
-      connectionId,
-      resourceId: eventsResource._id,
-      commandId: null,
-      kind: "initialImport",
-      priority: JOB_PRIORITY.background,
-      runAfter: now(),
-      coalescingKey: `initialImport:${eventsResource._id}`,
-    });
+    await deps.jobs.enqueue(
+      resourceJob(eventsResource, "initialImport", now()),
+    );
     imported += 1;
   }
 

@@ -2,7 +2,13 @@
 
 Compass has multiple workable development modes. Pick the lightest mode that supports the feature you are changing.
 
-For first-time setup, see [Development Quickstart](./quickstart.md).
+First-time setup:
+
+```bash
+git clone git@github.com:SwitchbackTech/compass.git
+cd compass
+bun install
+```
 
 ## Frontend-Only Mode
 
@@ -11,6 +17,8 @@ Command:
 ```bash
 bun run dev:web
 ```
+
+The frontend runs at <http://localhost:9080>.
 
 Use this for:
 

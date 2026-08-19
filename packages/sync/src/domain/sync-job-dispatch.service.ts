@@ -16,9 +16,9 @@ import {
 } from "@sync/providers/provider-event-reader.port";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
-  JOB_PRIORITY,
   type JobEnqueue,
   type JobRecord,
+  resourceJob,
 } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
@@ -221,19 +221,17 @@ async function runSyncJob(
     // Re-list while notifications land mid-pass, mirroring pullUntilQuiet: a
     // webhook that arrives while this job is CLAIMED coalesces onto it and
     // vanishes, so the moved change marker is the only signal that this pass
-    // listed a snapshot from before the change. Bounded for the same reason as
-    // pulls; on giving up the marker stays set and the daily rediscovery sweep
-    // covers the remainder.
-    let list = await syncCalendarList(deps, connection, now);
-    let passes = 1;
-    while (list.changedDuringSync && passes < MAX_PULL_PASSES) {
-      deps.log?.info?.(
-        `Sync connection ${job.connectionId}: notification landed mid-discovery, re-listing (pass ${passes + 1}/${MAX_PULL_PASSES})`,
-      );
-      list = await syncCalendarList(deps, connection, now);
-      passes += 1;
-    }
-    if (list.changedDuringSync) {
+    // listed a snapshot from before the change. On giving up the marker stays
+    // set and the daily rediscovery sweep covers the remainder.
+    const { last: list, gaveUp } = await repeatWhileChanged(
+      () => syncCalendarList(deps, connection, now),
+      (result) => result.changedDuringSync,
+      (pass) =>
+        deps.log?.info?.(
+          `Sync connection ${job.connectionId}: notification landed mid-discovery, re-listing (pass ${pass}/${MAX_PULL_PASSES})`,
+        ),
+    );
+    if (gaveUp) {
       deps.log?.warn(
         `Sync connection ${job.connectionId}: still receiving calendar-list notifications after ${MAX_PULL_PASSES} discovery passes; leaving the rest to the rediscovery sweep`,
       );
@@ -250,17 +248,10 @@ async function runSyncJob(
       },
       emittedAt: now(),
     });
-    // Open a calendar-list push channel once. Renewals are the expiry sweep; a
-    // rediscovery that already has a live channel must not churn it, and one
-    // the provider refused (watchUnsupportedAt) polls via the daily sweep until
-    // the next full pass clears the verdict for a fresh attempt.
-    if (
-      list.resource.subscriptionId === null &&
-      list.resource.watchUnsupportedAt === null
-    ) {
+    if (needsWatch(list.resource)) {
       return {
         result: "done",
-        followup: subscriptionFollowup(list.resource, now),
+        followup: resourceJob(list.resource, "subscriptionMaintain", now()),
       };
     }
     return { result: "done" };
@@ -338,7 +329,10 @@ async function runSyncJob(
       // Bootstrap the push channel once the calendar is imported. The followup
       // is coalesced and maintainSubscription no-ops on an already-live channel,
       // so a repeated import (a reclaimed lease, a re-import) never churns it.
-      return { result: "done", followup: subscriptionFollowup(resource, now) };
+      return {
+        result: "done",
+        followup: resourceJob(resource, "subscriptionMaintain", now()),
+      };
     }
     case "incrementalPull": {
       const pull = await pullUntilQuiet(deps, calendar, now);
@@ -355,30 +349,29 @@ async function runSyncJob(
         // (2026-08-01). Pulls already run for every stale calendar, so
         // piggybacking here needs no new sweep and heals the whole fleet.
         //
-        // watchUnsupportedAt gates the followup: once the provider has
-        // terminally refused a watch, re-attempting one per pull is pure
-        // waste. The daily calendar-list full pass clears the marker for one
-        // fresh attempt.
-        if (
-          pull.resource.subscriptionId === null &&
-          pull.resource.watchUnsupportedAt === null
-        ) {
+        if (needsWatch(pull.resource)) {
           return {
             result: "done",
-            followup: subscriptionFollowup(pull.resource, now),
+            followup: resourceJob(pull.resource, "subscriptionMaintain", now()),
           };
         }
         return { result: "done" };
       }
       if (pull.status === "notImported") {
         // A pull before the initial import ever ran: hand off to an import.
-        return { result: "done", followup: importFollowup(resource, now) };
+        return {
+          result: "done",
+          followup: resourceJob(resource, "initialImport", now()),
+        };
       }
       // cursorExpired: the provider cursor is unusable; a repair rebuilds.
       deps.log?.warn(
         `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on incremental pull, enqueuing repair`,
       );
-      return { result: "done", followup: repairFollowup(resource, now) };
+      return {
+        result: "done",
+        followup: resourceJob(resource, "repair", now()),
+      };
     }
     case "bootstrapCatchup": {
       // This pull closes the gap between saving the import cursor and making a
@@ -398,12 +391,18 @@ async function runSyncJob(
         return { result: "done" };
       }
       if (pull.status === "notImported") {
-        return { result: "done", followup: importFollowup(resource, now) };
+        return {
+          result: "done",
+          followup: resourceJob(resource, "initialImport", now()),
+        };
       }
       deps.log?.warn(
         `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on bootstrap catch-up pull, enqueuing repair`,
       );
-      return { result: "done", followup: repairFollowup(resource, now) };
+      return {
+        result: "done",
+        followup: resourceJob(resource, "repair", now()),
+      };
     }
     case "repair": {
       const repair = await repairCalendar(deps, calendar, now);
@@ -414,7 +413,11 @@ async function runSyncJob(
         if (needsBootstrapCompletion(resource)) {
           return {
             result: "done",
-            followup: subscriptionFollowup(repair.resource, now),
+            followup: resourceJob(
+              repair.resource,
+              "subscriptionMaintain",
+              now(),
+            ),
           };
         }
         return { result: "done" };
@@ -467,7 +470,7 @@ async function runSyncJob(
         );
         return {
           result: "done",
-          followup: bootstrapCatchupFollowup(resource, now),
+          followup: resourceJob(resource, "bootstrapCatchup", now()),
         };
       }
       return { result: "done" };
@@ -495,28 +498,44 @@ const MAX_PULL_PASSES = 3;
 //
 // Each pass re-reads from the cursor the previous pass advanced, so a pass with
 // nothing new is one cheap empty page.
+// Re-run `run` while a notification lands mid-pass, bounded by MAX_PULL_PASSES.
+// `gaveUp` is true when the last pass STILL saw a mid-pass change — the caller
+// logs which sweep covers the remainder.
+async function repeatWhileChanged<T>(
+  run: () => Promise<T>,
+  changedDuring: (result: T) => boolean,
+  onRerun: (pass: number, previous: T) => void,
+): Promise<{ last: T; passes: number; gaveUp: boolean }> {
+  let last = await run();
+  let passes = 1;
+  while (changedDuring(last) && passes < MAX_PULL_PASSES) {
+    onRerun(passes + 1, last);
+    last = await run();
+    passes += 1;
+  }
+  return { last, passes, gaveUp: changedDuring(last) };
+}
+
 async function pullUntilQuiet(
   deps: SyncJobDispatchDeps,
   calendar: ProviderCalendarRecord,
   now: () => Date,
 ): Promise<Awaited<ReturnType<typeof pullCalendarChanges>>> {
-  let pull = await pullCalendarChanges(deps, calendar, now);
-  let passes = 1;
-
-  while (
-    pull.status === "applied" &&
-    pull.changedDuringPull &&
-    passes < MAX_PULL_PASSES
-  ) {
-    deps.log?.info?.(
-      `Sync resource ${pull.resource._id} (calendar ${calendar._id}): notification landed mid-pull, re-pulling (pass ${passes + 1}/${MAX_PULL_PASSES})`,
-    );
-    pull = await pullCalendarChanges(deps, calendar, now);
-    passes += 1;
-  }
+  const {
+    last: pull,
+    passes,
+    gaveUp,
+  } = await repeatWhileChanged(
+    () => pullCalendarChanges(deps, calendar, now),
+    (result) => result.status === "applied" && result.changedDuringPull,
+    (pass, previous) =>
+      deps.log?.info?.(
+        `Sync resource ${previous.status === "applied" ? previous.resource._id : "unknown"} (calendar ${calendar._id}): notification landed mid-pull, re-pulling (pass ${pass}/${MAX_PULL_PASSES})`,
+      ),
+  );
 
   if (pull.status === "applied") {
-    if (pull.changedDuringPull) {
+    if (gaveUp) {
       deps.log?.warn(
         `Sync resource ${pull.resource._id} (calendar ${calendar._id}): still receiving notifications after ${MAX_PULL_PASSES} pull passes; leaving the rest to the reconcile sweep`,
       );
@@ -535,59 +554,17 @@ async function pullUntilQuiet(
   return pull;
 }
 
-function repairFollowup(
-  resource: SyncResourceRecord,
-  now: () => Date,
-): JobEnqueue {
-  return {
-    tenantId: resource.tenantId,
-    principalId: resource.principalId,
-    connectionId: resource.connectionId,
-    resourceId: resource._id,
-    commandId: null,
-    kind: "repair",
-    priority: JOB_PRIORITY.background,
-    runAfter: now(),
-    coalescingKey: `repair:${resource._id}`,
-  };
-}
-
-function importFollowup(
-  resource: SyncResourceRecord,
-  now: () => Date,
-): JobEnqueue {
-  return {
-    tenantId: resource.tenantId,
-    principalId: resource.principalId,
-    connectionId: resource.connectionId,
-    resourceId: resource._id,
-    commandId: null,
-    kind: "initialImport",
-    priority: JOB_PRIORITY.background,
-    runAfter: now(),
-    coalescingKey: `initialImport:${resource._id}`,
-  };
-}
-
-function bootstrapCatchupFollowup(
-  resource: SyncResourceRecord,
-  now: () => Date,
-): JobEnqueue {
-  return {
-    tenantId: resource.tenantId,
-    principalId: resource.principalId,
-    connectionId: resource.connectionId,
-    resourceId: resource._id,
-    commandId: null,
-    kind: "bootstrapCatchup",
-    priority: JOB_PRIORITY.background,
-    runAfter: now(),
-    coalescingKey: `bootstrapCatchup:${resource._id}`,
-  };
-}
-
 function needsBootstrapCompletion(resource: SyncResourceRecord): boolean {
   return resource.bootstrapState !== "ready";
+}
+
+// Open a push channel once: never churn a live one, and never re-attempt a
+// watch the provider terminally refused (watchUnsupportedAt) — the daily
+// calendar-list full pass clears that verdict for one fresh attempt.
+function needsWatch(resource: SyncResourceRecord): boolean {
+  return (
+    resource.subscriptionId === null && resource.watchUnsupportedAt === null
+  );
 }
 
 // Push derived connection state after bootstrap evidence changes. At dispatch
@@ -630,23 +607,4 @@ async function appendCalendarInvalidation(
     },
     emittedAt,
   });
-}
-
-function subscriptionFollowup(
-  resource: SyncResourceRecord,
-  now: () => Date,
-): JobEnqueue {
-  return {
-    tenantId: resource.tenantId,
-    principalId: resource.principalId,
-    connectionId: resource.connectionId,
-    resourceId: resource._id,
-    commandId: null,
-    kind: "subscriptionMaintain",
-    priority: JOB_PRIORITY.background,
-    runAfter: now(),
-    // The same key the expiry sweep uses, so a bootstrap watch and a renewal
-    // never double up into two channels.
-    coalescingKey: `subscriptionMaintain:${resource._id}`,
-  };
 }

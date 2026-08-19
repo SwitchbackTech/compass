@@ -139,8 +139,6 @@ const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
 // caller-chosen id, patch and delete can be conditioned on a version, and
 // provider errors are classified into neutral, caller-actionable reasons.
 export class GoogleEventWriter implements ProviderEventWriter {
-  readonly provider = "google" as const;
-
   #makeApi: GoogleEventsApiFactory;
 
   constructor(makeApi: GoogleEventsApiFactory = defaultApiFactory) {
@@ -230,6 +228,19 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // Already gone: a delete of an absent event is a success, so retries and
       // races converge instead of surfacing a spurious failure.
       if (isNotFound(error)) return;
+      // A 400 on a delete-by-known-id is Google declining the operation for
+      // this event, not a malformed request — e.g. cancelling one occurrence
+      // of a contact-linked birthday event is unsupported. Classifying it as
+      // permanentProviderError surfaced a retryable 502 the client could
+      // never resolve; a typed capability refusal maps to an honest,
+      // non-retryable error instead.
+      if (googleStatus(error) === 400) {
+        throw new ProviderWriteError(
+          "unsupportedCapability",
+          "Google declined to delete this event",
+          { cause: redactedCause(error) },
+        );
+      }
       throw classifyWriteError(error);
     }
   }

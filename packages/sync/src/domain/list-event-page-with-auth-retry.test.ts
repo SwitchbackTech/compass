@@ -25,7 +25,6 @@ const input = (accessToken: string): ProviderEventReadInput => ({
 });
 
 class ScriptedReader implements ProviderEventReader {
-  readonly provider = "google" as const;
   tokens: string[] = [];
   constructor(private readonly outcomes: Array<ProviderEventPage | Error>) {}
   async listEventPage(

@@ -1,4 +1,3 @@
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 
@@ -45,8 +44,6 @@ export interface ProviderEventReadInput {
 // where it left off. Reads masters and exceptions as distinct entities (never
 // provider-expanded instances) so the canonical store keeps them separable.
 export interface ProviderEventReader {
-  readonly provider: ProviderKind;
-
   listEventPage(input: ProviderEventReadInput): Promise<ProviderEventPage>;
 }
 

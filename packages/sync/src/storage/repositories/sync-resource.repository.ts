@@ -64,6 +64,38 @@ export class SyncResourceRepository {
     );
   }
 
+  // Owner-scoped single-document $set; every simple mutator below is one of
+  // these with a different payload. Bumps updatedAt on every write.
+  async #patch(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    fields: Partial<SyncResourceRecord>,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { ...fields, updatedAt: new Date() } },
+    );
+  }
+
+  // Shared shape of the global sweep finders: match, drop credential-less
+  // connections, sort deterministically, bound, parse.
+  async #listForSweep(
+    match: Record<string, unknown>,
+    sort: Record<string, 1 | -1>,
+    limit: number,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .aggregate<SyncResourceRecord>([
+        { $match: match },
+        ...EXCLUDE_CREDENTIALLESS_STAGES,
+        { $sort: sort },
+        { $limit: limit },
+      ])
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
   async ensure(input: SyncResourceUpsert): Promise<SyncResourceRecord> {
     const fields = SyncResourceUpsertSchema.parse(input);
     const now = new Date();
@@ -111,10 +143,7 @@ export class SyncResourceRepository {
     id: string,
     at: Date,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { lastAttemptAt: at, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, { lastAttemptAt: at });
   }
 
   // Save mid-batch page progress without moving the incremental cursor.
@@ -124,10 +153,7 @@ export class SyncResourceRepository {
     id: string,
     pageCursor: string,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { pageCursor, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, { pageCursor });
   }
 
   // Record a successful read pass. When `syncCursor` is a string, store it and
@@ -143,18 +169,12 @@ export class SyncResourceRepository {
     syncCursor: string | null,
     succeededAt: Date,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      {
-        $set: {
-          ...(syncCursor === null ? {} : { syncCursor, pageCursor: null }),
-          lastSuccessAt: succeededAt,
-          lastReadFailureAt: null,
-          lastReadFailureDetail: null,
-          updatedAt: new Date(),
-        },
-      },
-    );
+    await this.#patch(tenantId, principalId, id, {
+      ...(syncCursor === null ? {} : { syncCursor, pageCursor: null }),
+      lastSuccessAt: succeededAt,
+      lastReadFailureAt: null,
+      lastReadFailureDetail: null,
+    });
   }
 
   // Record that the provider DURABLY rejected reads for this resource (a 4xx
@@ -192,10 +212,7 @@ export class SyncResourceRepository {
     id: string,
     at: Date,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { changeNotifiedAt: at, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, { changeNotifiedAt: at });
   }
 
   // Clear the change marker a pull has now served, but only if it still holds
@@ -227,10 +244,7 @@ export class SyncResourceRepository {
     id: string,
     bootstrapState: ResourceBootstrapState,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { bootstrapState, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, { bootstrapState });
   }
 
   async updateSubscription(
@@ -239,18 +253,12 @@ export class SyncResourceRepository {
     id: string,
     subscription: SubscriptionInput,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      {
-        $set: {
-          ...subscription,
-          // A watch just succeeded, so any earlier unsupported verdict is
-          // stale by definition.
-          watchUnsupportedAt: null,
-          updatedAt: new Date(),
-        },
-      },
-    );
+    await this.#patch(tenantId, principalId, id, {
+      ...subscription,
+      // A watch just succeeded, so any earlier unsupported verdict is stale
+      // by definition.
+      watchUnsupportedAt: null,
+    });
   }
 
   // Record the provider's terminal refusal to open a push channel for this
@@ -264,10 +272,7 @@ export class SyncResourceRepository {
     id: string,
     at: Date,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { watchUnsupportedAt: at, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, { watchUnsupportedAt: at });
   }
 
   // Give every unwatchable-marked resource on a connection one fresh watch
@@ -296,18 +301,12 @@ export class SyncResourceRepository {
     principalId: PrincipalId,
     id: string,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      {
-        $set: {
-          subscriptionId: null,
-          subscriptionResourceId: null,
-          subscriptionToken: null,
-          subscriptionExpiresAt: null,
-          updatedAt: new Date(),
-        },
-      },
-    );
+    await this.#patch(tenantId, principalId, id, {
+      subscriptionId: null,
+      subscriptionResourceId: null,
+      subscriptionToken: null,
+      subscriptionExpiresAt: null,
+    });
   }
 
   // Find the resource a provider push channel belongs to. Keyed on the channel
@@ -346,10 +345,9 @@ export class SyncResourceRepository {
     id: string,
     generation: number,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      { $set: { activeGeneration: generation, updatedAt: new Date() } },
-    );
+    await this.#patch(tenantId, principalId, id, {
+      activeGeneration: generation,
+    });
   }
 
   // The active generation to read for each of the given event calendars. A
@@ -470,25 +468,19 @@ export class SyncResourceRepository {
     before: Date,
     limit: number,
   ): Promise<SyncResourceRecord[]> {
-    const records = await this.collection
-      .aggregate<SyncResourceRecord>([
-        {
-          $match: {
-            resourceKind: "events",
-            $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
-          },
-        },
-        ...EXCLUDE_CREDENTIALLESS_STAGES,
-        // Round-robin by ATTEMPT, not success: never-attempted first (null
-        // sorts lowest), then least-recently-attempted, so a resource that
-        // fails without succeeding still rotates to the back after each try
-        // rather than re-winning every sweep. The pull stamps lastAttemptAt
-        // before it can fail, so this holds even on failure.
-        { $sort: { lastAttemptAt: 1, lastSuccessAt: 1 } },
-        { $limit: limit },
-      ])
-      .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    // Round-robin by ATTEMPT, not success: never-attempted first (null sorts
+    // lowest), then least-recently-attempted, so a resource that fails without
+    // succeeding still rotates to the back after each try rather than
+    // re-winning every sweep. The pull stamps lastAttemptAt before it can
+    // fail, so this holds even on failure.
+    return this.#listForSweep(
+      {
+        resourceKind: "events",
+        $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+      },
+      { lastAttemptAt: 1, lastSuccessAt: 1 },
+      limit,
+    );
   }
 
   // Events resources whose bootstrap chain has stalled: not yet "ready" and
@@ -506,21 +498,15 @@ export class SyncResourceRepository {
     before: Date,
     limit: number,
   ): Promise<SyncResourceRecord[]> {
-    const records = await this.collection
-      .aggregate<SyncResourceRecord>([
-        {
-          $match: {
-            resourceKind: "events",
-            bootstrapState: { $ne: "ready" },
-            updatedAt: { $lt: before },
-          },
-        },
-        ...EXCLUDE_CREDENTIALLESS_STAGES,
-        { $sort: { updatedAt: 1 } },
-        { $limit: limit },
-      ])
-      .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return this.#listForSweep(
+      {
+        resourceKind: "events",
+        bootstrapState: { $ne: "ready" },
+        updatedAt: { $lt: before },
+      },
+      { updatedAt: 1 },
+      limit,
+    );
   }
 
   // Resources whose push subscription expires before `before` (soonest
@@ -557,20 +543,14 @@ export class SyncResourceRepository {
     before: Date,
     limit: number,
   ): Promise<SyncResourceRecord[]> {
-    const records = await this.collection
-      .aggregate<SyncResourceRecord>([
-        {
-          $match: {
-            resourceKind: "calendarList",
-            $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
-          },
-        },
-        ...EXCLUDE_CREDENTIALLESS_STAGES,
-        { $sort: { lastAttemptAt: 1, lastSuccessAt: 1 } },
-        { $limit: limit },
-      ])
-      .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return this.#listForSweep(
+      {
+        resourceKind: "calendarList",
+        $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+      },
+      { lastAttemptAt: 1, lastSuccessAt: 1 },
+      limit,
+    );
   }
 
   // Clear the calendarList resource's incremental cursor so the next
@@ -585,12 +565,10 @@ export class SyncResourceRepository {
     principalId: PrincipalId,
     id: string,
   ): Promise<void> {
-    await this.collection.updateOne(
-      { _id: id, tenantId, principalId },
-      {
-        $set: { syncCursor: null, pageCursor: null, updatedAt: new Date() },
-      },
-    );
+    await this.#patch(tenantId, principalId, id, {
+      syncCursor: null,
+      pageCursor: null,
+    });
   }
 
   // Hard-delete every sync resource for one connection (post-disconnect retention).
