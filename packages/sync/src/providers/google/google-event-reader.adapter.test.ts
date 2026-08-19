@@ -143,6 +143,39 @@ describe("GoogleEventReaderAdapter", () => {
     expect(result.events.map((e) => e.kind)).toEqual(["event", "cancellation"]);
   });
 
+  it("keeps a cancelled instance that has no etag", async () => {
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({
+            id: "series-1_20260808",
+            status: "cancelled",
+            etag: undefined,
+          }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(result.skipped).toBe(0);
+    expect(result.events).toEqual([
+      {
+        kind: "cancellation",
+        providerEventId: "series-1_20260808",
+        providerVersion: "",
+        series: {
+          seriesProviderId: "series-1",
+          recurrenceId: "2026-08-08T00:00:00.000Z",
+        },
+      },
+    ]);
+  });
+
   it("drops and counts a structurally unusable event without failing the page", async () => {
     const api = new FakeEventListApi([
       page({

@@ -187,6 +187,24 @@ describe("normalizeGoogleEvent", () => {
     expect(read.series).toBeNull();
   });
 
+  it("keeps a cancelled instance even when Google omits etag", () => {
+    const read = asCancellation(
+      normalizeGoogleEvent(
+        gEvent({
+          id: "0cu25g99pfkhlfarupevcjc297_20211123T170000Z",
+          status: "cancelled",
+          etag: undefined,
+        }),
+      ),
+    );
+
+    expect(read.providerVersion).toBe("");
+    expect(read.series).toEqual({
+      seriesProviderId: "0cu25g99pfkhlfarupevcjc297",
+      recurrenceId: "2021-11-23T17:00:00.000Z",
+    });
+  });
+
   it("reconstructs an all-day sparse cancelled instance from its id suffix", () => {
     const read = asCancellation(
       normalizeGoogleEvent(

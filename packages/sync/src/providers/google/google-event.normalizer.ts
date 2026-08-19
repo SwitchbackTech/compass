@@ -38,16 +38,20 @@ export function normalizeGoogleEvent(
   colorLabels: ReadonlyMap<string, string> = NO_COLOR_LABELS,
 ): ProviderEventRead {
   const providerEventId = requireId(item);
-  const providerVersion = requireVersion(item);
 
   if (item.status === "cancelled") {
+    // Incremental cancelled instances are often just `{id, status}`; etag can
+    // be absent. A missing version must not skip the deletion — that would
+    // advance the cursor past an unapplied cancel and leave a phantom.
     return {
       kind: "cancellation",
       providerEventId,
-      providerVersion,
+      providerVersion: item.etag ?? "",
       series: cancellationSeries(item),
     };
   }
+
+  const providerVersion = requireVersion(item);
 
   return {
     kind: "event",
