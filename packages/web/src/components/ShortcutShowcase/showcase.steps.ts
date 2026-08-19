@@ -8,11 +8,9 @@ import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
  * cleared step one before graduation (113 -> 68 over 30 days) while the
  * checklist re-taught jump, move, stretch, place and undo on real events
  * anyway. What is left is the one loop nothing else covers and nothing else
- * can: put an event on the calendar without touching the mouse.
- *
- * The practice arena still answers every shortcut it ever did — a curious user
- * can press S, H, Tab or Shift+Arrow and watch it work — those simply are not
- * gates on the way out any more. "graduation" is the exit, not a lesson.
+ * can: put an event on the calendar without touching the mouse. The practice
+ * arena implements only these lessons; the checklist teaches the rest on real
+ * events. "graduation" is the exit, not a lesson.
  */
 const STEP_IDS = ["create", "save", "graduation"] as const;
 

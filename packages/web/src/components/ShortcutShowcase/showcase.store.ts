@@ -12,18 +12,17 @@ export type ShortcutShowcaseState = {
   isActive: boolean;
   stepIndex: number;
   /**
-   * Bumped every time the showcase is marked seen. Storage stays the source of
-   * truth; this is the re-render signal for components that read it, because a
-   * localStorage write notifies nobody. Without it the checklist stayed hidden
-   * until the next render for anyone who skipped past the practice entirely.
+   * True once markSeen ran this session, so components re-render when the
+   * flag flips — a localStorage write notifies nobody. Storage stays the
+   * durable source; readers check this OR the stored flag.
    */
-  seenRevision: number;
+  hasSeenShowcase: boolean;
 };
 
 export const initialShortcutShowcaseState: ShortcutShowcaseState = {
   isActive: false,
   stepIndex: 0,
-  seenRevision: 0,
+  hasSeenShowcase: false,
 };
 
 /** Where a user who left early went next, so the funnel can tell them apart. */
@@ -39,9 +38,7 @@ export const stepIdAt = (index: number) =>
 /** Persist the seen flag and wake everyone reading it. */
 const markSeen = () => {
   markShortcutShowcaseSeen();
-  useShortcutShowcaseStore.setState((state) => ({
-    seenRevision: state.seenRevision + 1,
-  }));
+  useShortcutShowcaseStore.setState({ hasSeenShowcase: true });
 };
 
 /** Shared by finish/skip: mark seen so it never auto-launches again. */
@@ -124,5 +121,5 @@ export const selectShowcaseActive = (state: ShortcutShowcaseState) =>
 export const selectShowcaseStepIndex = (state: ShortcutShowcaseState) =>
   state.stepIndex;
 
-export const selectShowcaseSeenRevision = (state: ShortcutShowcaseState) =>
-  state.seenRevision;
+export const selectHasSeenShowcase = (state: ShortcutShowcaseState) =>
+  state.hasSeenShowcase;
