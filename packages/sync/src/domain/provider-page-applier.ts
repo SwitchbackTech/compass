@@ -122,6 +122,16 @@ export class ProviderPageApplier {
     }
     await this.#flushProjections();
 
+    // Unresolved series cancellations are also standalone deletions: pull
+    // applies them by full provider id before checkpointing this page, so a
+    // crash-resume cannot drop a sparse instance-shaped cancel. A later page
+    // that finds the master still tombstones via #pending.
+    for (const read of this.#pending) {
+      if (read.kind === "cancellation") {
+        standaloneCancellations.push(read);
+      }
+    }
+
     return standaloneCancellations;
   }
 
