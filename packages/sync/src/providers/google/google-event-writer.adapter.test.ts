@@ -5,8 +5,8 @@ import {
   deriveGoogleEventId,
   type GoogleEventsApi,
   GoogleEventWriter,
-  googleInstanceEventId,
 } from "@sync/providers/google/google-event-writer.adapter";
+import { googleInstanceEventId } from "@sync/providers/google/google-instance-id";
 import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
 // A gaxios-shaped error: a numeric HTTP status on `response`, an optional

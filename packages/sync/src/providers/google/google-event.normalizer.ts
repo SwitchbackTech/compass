@@ -12,6 +12,7 @@ import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
 import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdToSlot } from "@sync/providers/google/google-color.map";
+import { parseGoogleInstanceEventId } from "@sync/providers/google/google-instance-id";
 import {
   ProviderEventError,
   type ProviderEventRead,
@@ -79,10 +80,23 @@ function requireVersion(item: gSchema$Event): string {
 function cancellationSeries(
   item: gSchema$Event,
 ): { seriesProviderId: string; recurrenceId: string } | null {
-  if (!item.recurringEventId || !item.originalStartTime) return null;
+  if (item.recurringEventId && item.originalStartTime) {
+    return {
+      seriesProviderId: item.recurringEventId,
+      recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
+    };
+  }
+  // Incremental syncToken pages often omit recurringEventId and
+  // originalStartTime on cancelled instances, leaving only
+  // `{seriesId}_{YYYYMMDDTHHMMSSZ}` (or all-day YYYYMMDD). Reconstruct the
+  // series link from that id so pull can tombstone the occurrence instead of
+  // treating it as a standalone delete of an id Compass never stored.
+  if (!item.id) return null;
+  const parsed = parseGoogleInstanceEventId(item.id);
+  if (!parsed) return null;
   return {
-    seriesProviderId: item.recurringEventId,
-    recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
+    seriesProviderId: parsed.seriesProviderId,
+    recurrenceId: parsed.recurrenceId,
   };
 }
 

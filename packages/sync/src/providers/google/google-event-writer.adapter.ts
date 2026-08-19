@@ -11,6 +11,7 @@ import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
+import { googleInstanceEventId } from "@sync/providers/google/google-instance-id";
 import {
   type ProviderEvent,
   ProviderEventError,
@@ -362,24 +363,6 @@ function toRfc3339UtcMidnight(originalStartAt: string): string {
   return dayjs.utc(originalStartAt).format(dayjs.DateFormat.RFC3339);
 }
 
-// Google instance ids are `{seriesId}_{originalStart}`: all-day YYYYMMDD,
-// timed YYYYMMDDTHHMMSSZ (always UTC). Used when events.instances with
-// originalStart returns nothing or 400s — GET of this id still addresses
-// the occurrence, including after it was moved (the suffix is the ORIGINAL
-// start, not the current one).
-export function googleInstanceEventId(
-  seriesProviderEventId: string,
-  originalStartAt: string,
-  scheduleKind: "timed" | "allDay",
-): string {
-  const instant = dayjs.utc(originalStartAt);
-  const suffix =
-    scheduleKind === "allDay"
-      ? instant.format(dayjs.DateFormat.YEAR_MONTH_DAY_COMPACT_FORMAT)
-      : instant.format(dayjs.DateFormat.RFC5545);
-  return `${seriesProviderEventId}_${suffix}`;
-}
-
 function isOccurrenceItem(
   item: gSchema$Event | undefined,
   seriesProviderEventId: string,
@@ -422,6 +405,8 @@ async function resolveInstanceItem(
   }
 
   try {
+    // GET of the minted `{seriesId}_{originalStart}` id still addresses the
+    // occurrence after it was moved — the suffix is the original start.
     const event = await api.get({
       calendarId: input.calendarId,
       eventId: googleInstanceEventId(
