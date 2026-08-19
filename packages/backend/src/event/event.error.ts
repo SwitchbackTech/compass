@@ -27,6 +27,10 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   MOVE_UNSUPPORTED: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
   BILLING_REQUIRED: Status.FORBIDDEN,
+  // 403 like CALENDAR_READ_ONLY: the provider refuses the operation for this
+  // event (e.g. deleting one occurrence of a Google birthday event) — not a
+  // provider outage, so never the retryable 502 it used to surface as.
+  UNSUPPORTED_OPERATION: Status.FORBIDDEN,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -43,6 +47,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   MOVE_UNSUPPORTED: false,
   INVALID_INPUT: false,
   BILLING_REQUIRED: false,
+  UNSUPPORTED_OPERATION: false,
 };
 
 export class EventMutationException extends BaseError {

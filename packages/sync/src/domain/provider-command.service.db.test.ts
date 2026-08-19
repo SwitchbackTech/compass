@@ -2588,6 +2588,47 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       expect(result.outcome.state).toBe("pending");
     });
 
+    it("fails without tombstoning when the provider declines the delete (unsupportedCapability)", async () => {
+      // Google 400s a well-formed instance delete for special events (e.g. a
+      // contact-linked birthday occurrence). The event still exists at the
+      // provider, so hiding it locally would desync until the next pull
+      // resurrected it — the command fails honestly instead.
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+      writer.deleteError = new ProviderWriteError(
+        "unsupportedCapability",
+        "declined",
+      );
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("failed");
+      expect(
+        result.outcome.state === "failed" && result.outcome.failureReason,
+      ).toBe("unsupportedCapability");
+      // No local trace of the refused delete: no cancelled exception, and the
+      // occurrence still projects.
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(0);
+      expect(await occurrenceStartsFor(master._id)).toContain(SECOND_START_UTC);
+    });
+
     it("still deletes when the resolved instance is identity-only (unreadable content)", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");

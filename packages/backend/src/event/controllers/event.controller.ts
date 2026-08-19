@@ -172,6 +172,14 @@ const mapSyncFailure = (reason: SyncCommandFailureReason) => {
         "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
       );
     case "unsupportedCapability":
+      // The provider declined the operation for this specific event (e.g.
+      // Google rejects deleting one occurrence of a contact-linked birthday
+      // event). Retrying can never succeed, so this must not share
+      // PROVIDER_FAILURE's retryable 502.
+      return eventMutationError(
+        "UNSUPPORTED_OPERATION",
+        "Google doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in Google Calendar.",
+      );
     case "permanentProviderError":
       return eventMutationError(
         "PROVIDER_FAILURE",
