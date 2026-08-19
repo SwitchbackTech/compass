@@ -220,6 +220,7 @@ export class SyncJobWorker {
         // first then crashing would drop the followup.
         if (outcome.followup) await this.#deps.jobs.enqueue(outcome.followup);
         await this.#deps.jobs.complete(job._id, this.#owner);
+        await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
         return;
       case "drop":
         // Nothing to do (target vanished, credential unusable); settle so it
@@ -227,6 +228,7 @@ export class SyncJobWorker {
         // a stalled queue.
         this.#onDrop(job, outcome.reason);
         await this.#deps.jobs.complete(job._id, this.#owner);
+        await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
         return;
       case "retry":
         await this.#settleFailure(job, new Error(outcome.reason));

@@ -122,13 +122,12 @@ export async function dispatchSyncJob(
       const credential = await deps.credentials.findByConnection(
         job.connectionId,
       );
-      const expired =
-        (credential?.refreshFailureCount ?? 0) >= MAX_REFRESH_FAILED_ATTEMPTS;
-      if (expired || job.attempt >= MAX_REFRESH_FAILED_ATTEMPTS) {
+      const refreshFailures = credential?.refreshFailureCount ?? 0;
+      if (refreshFailures >= MAX_REFRESH_FAILED_ATTEMPTS) {
         await refreshConnectionStateAfterJob(deps, job, now);
         return {
           result: "drop",
-          reason: `token refresh failed ${job.attempt} time(s) for connection ${job.connectionId}; reconnect or retry from the app`,
+          reason: `token refresh failed ${refreshFailures} time(s) for connection ${job.connectionId}; reconnect or retry from the app`,
         };
       }
       throw error;
