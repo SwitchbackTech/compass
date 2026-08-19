@@ -250,12 +250,17 @@ describe("ProviderPageApplier", () => {
     const calendar = await seedCalendar();
     const run = applier(calendar);
 
-    await run.applyPage([
+    const returned = await run.applyPage([
       seriesCancellation("orphan_c", "ghost", "2026-07-21T09:00:00-06:00"),
     ]);
-    const orphans = await run.finish();
+    expect(returned.map((c) => c.providerEventId)).toEqual(["orphan_c"]);
+
+    const { orphans, leftoverCancellations } = await run.finish();
 
     expect(orphans).toBe(1);
+    expect(leftoverCancellations.map((c) => c.providerEventId)).toEqual([
+      "orphan_c",
+    ]);
     expect(run.importedCount).toBe(0);
   });
 

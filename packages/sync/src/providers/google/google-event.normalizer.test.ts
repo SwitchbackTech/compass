@@ -166,10 +166,56 @@ describe("normalizeGoogleEvent", () => {
     expect(read.series?.recurrenceId).toBe("2013-05-08T22:00:00.000Z");
   });
 
-  it("maps a cancelled standalone event to a cancellation with no series", () => {
+  it("reconstructs the series link from a sparse cancelled instance id", () => {
+    // Incremental syncToken pages often omit recurringEventId/originalStartTime.
     const read = asCancellation(normalizeGoogleEvent(asEvent(cancelled[1])));
 
+    expect(read.providerEventId).toBe(
+      "0cu25g99pfkhlfarupevcjc297_20211123T170000Z",
+    );
+    expect(read.series).toEqual({
+      seriesProviderId: "0cu25g99pfkhlfarupevcjc297",
+      recurrenceId: "2021-11-23T17:00:00.000Z",
+    });
+  });
+
+  it("maps a cancelled series master with a plain id to a standalone cancellation", () => {
+    const read = asCancellation(
+      normalizeGoogleEvent(gEvent({ id: "master-only", status: "cancelled" })),
+    );
+
     expect(read.series).toBeNull();
+  });
+
+  it("keeps a cancelled instance even when Google omits etag", () => {
+    const read = asCancellation(
+      normalizeGoogleEvent(
+        gEvent({
+          id: "0cu25g99pfkhlfarupevcjc297_20211123T170000Z",
+          status: "cancelled",
+          etag: undefined,
+        }),
+      ),
+    );
+
+    expect(read.providerVersion).toBe("");
+    expect(read.series).toEqual({
+      seriesProviderId: "0cu25g99pfkhlfarupevcjc297",
+      recurrenceId: "2021-11-23T17:00:00.000Z",
+    });
+  });
+
+  it("reconstructs an all-day sparse cancelled instance from its id suffix", () => {
+    const read = asCancellation(
+      normalizeGoogleEvent(
+        gEvent({ id: "series-1_20260808", status: "cancelled" }),
+      ),
+    );
+
+    expect(read.series).toEqual({
+      seriesProviderId: "series-1",
+      recurrenceId: "2026-08-08T00:00:00.000Z",
+    });
   });
 
   it("maps attendees, defaulting unknown response status and dropping the email-less", () => {

@@ -174,7 +174,10 @@ export async function pullCalendarChanges(
     }
   } while (pageToken);
 
-  await applier.finish();
+  const { leftoverCancellations } = await applier.finish();
+  // Series cancellations whose master never appeared (a sparse instance-shaped
+  // id that was actually a standalone event) fall back to whole-event delete.
+  deleted += await applyDeletions(deps, calendar, leftoverCancellations);
   await deps.resources.advanceCursor(
     resource.tenantId,
     resource.principalId,

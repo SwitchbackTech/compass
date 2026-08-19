@@ -122,20 +122,39 @@ export class ProviderPageApplier {
     }
     await this.#flushProjections();
 
+    // Unresolved series cancellations are also standalone deletions: pull
+    // applies them by full provider id before checkpointing this page, so a
+    // crash-resume cannot drop a sparse instance-shaped cancel. A later page
+    // that finds the master still tombstones via #pending.
+    for (const read of this.#pending) {
+      if (read.kind === "cancellation") {
+        standaloneCancellations.push(read);
+      }
+    }
+
     return standaloneCancellations;
   }
 
   // Final pass: link any still-buffered member to a now-available master,
   // project the masters that gained one, and return how many members never
   // linked (a provider anomaly — an instant with no master in any page).
-  async finish(): Promise<number> {
+  // Unresolved series cancellations are also returned so pull can fall back
+  // to standalone deletion by the full provider id — a rare standalone whose
+  // Google id looks like an instance must not be stranded as an orphan.
+  async finish(): Promise<{
+    orphans: number;
+    leftoverCancellations: ProviderEventCancellation[];
+  }> {
     for (const master of await this.#drainPending()) {
       await this.#projectSeries(master);
     }
     await this.#flushProjections();
+    const leftoverCancellations = this.#pending.filter(
+      (read): read is ProviderEventCancellation => read.kind === "cancellation",
+    );
     const orphans = this.#pending.length;
     this.#pending = [];
-    return orphans;
+    return { orphans, leftoverCancellations };
   }
 
   // Write every accumulated projection in this page as one batched
