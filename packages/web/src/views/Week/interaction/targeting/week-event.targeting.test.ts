@@ -1,10 +1,5 @@
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
-import {
-  focusWeekGridEventTarget,
-  getFirstVisibleWeekGridEventTarget,
-  getFocusedWeekGridEventTarget,
-  listVisibleWeekGridEventTargets,
-} from "./week-event.targeting";
+import { weekEventTargeting } from "./week-event.targeting";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
@@ -50,7 +45,7 @@ describe("weekGridEventTargeting", () => {
     });
     focused.focus();
 
-    expect(getFocusedWeekGridEventTarget()).toMatchObject({
+    expect(weekEventTargeting.getFocusedGridEventTarget()).toMatchObject({
       element: focused,
       eventId: "focused",
       eventType: "all-day",
@@ -62,7 +57,7 @@ describe("weekGridEventTargeting", () => {
     addEventButton({ eventId: "hidden", isVisible: false });
     const firstVisible = addEventButton({ eventId: "visible" });
 
-    expect(getFirstVisibleWeekGridEventTarget()).toMatchObject({
+    expect(weekEventTargeting.getFirstVisibleGridEventTarget()).toMatchObject({
       element: firstVisible,
       eventId: "visible",
       eventType: "timed",
@@ -71,10 +66,10 @@ describe("weekGridEventTargeting", () => {
 
   it("focuses a returned calendar target", () => {
     const button = addEventButton({ eventId: "target" });
-    const target = getFirstVisibleWeekGridEventTarget();
+    const target = weekEventTargeting.getFirstVisibleGridEventTarget();
 
     if (!target) throw new Error("expected target");
-    focusWeekGridEventTarget(target);
+    weekEventTargeting.focusGridEventTarget(target);
 
     expect(document.activeElement).toBe(button);
   });
@@ -84,7 +79,7 @@ describe("weekGridEventTargeting", () => {
     const first = addEventButton({ eventId: "first" });
     const second = addEventButton({ eventId: "second" });
 
-    expect(listVisibleWeekGridEventTargets()).toEqual([
+    expect(weekEventTargeting.listVisibleGridEventTargets()).toEqual([
       expect.objectContaining({ element: first, eventId: "first" }),
       expect.objectContaining({ element: second, eventId: "second" }),
     ]);

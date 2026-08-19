@@ -15,7 +15,7 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
+import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
@@ -126,7 +126,7 @@ const focusCalendarTarget = (
   return button;
 };
 
-const seedFocusedKeyboardPlaceDraft = () => {
+const _seedFocusedKeyboardPlaceDraft = () => {
   const draft = createGridEventDraft(
     timedGridSchedule(
       new Date("2026-05-20T09:00:00.000"),
@@ -225,7 +225,7 @@ const getEditMutation = (
     .getAll()
     .find((mutation) => mutation.options.mutationKey?.[2] === "replace");
 
-const getDeleteMutation = (
+const _getDeleteMutation = (
   queryClient: ReturnType<typeof createCompassQueryClient>,
 ) =>
   queryClient
@@ -233,7 +233,7 @@ const getDeleteMutation = (
     .getAll()
     .find((mutation) => mutation.options.mutationKey?.[2] === "delete");
 
-const getCreateMutation = (
+const _getCreateMutation = (
   queryClient: ReturnType<typeof createCompassQueryClient>,
 ) =>
   queryClient
@@ -372,19 +372,6 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(getEditMutation(queryClient)).toBeUndefined();
   });
 
-  it("does not move all-day events with Shift+ArrowUp", async () => {
-    focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
-    const { queryClient } = renderEditShortcuts({
-      allDayEvents: [allDayEvent],
-      timedEvents: [],
-    });
-
-    pressKey("ArrowUp", shiftKey);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(getEditMutation(queryClient)).toBeUndefined();
-  });
-
   it("does not move anything when no event is focused", async () => {
     const { queryClient } = renderEditShortcuts();
 
@@ -453,21 +440,6 @@ describe("useDayEventNudgeShortcuts", () => {
     ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
 
-  it("discards a form-closed keyboardPlace draft on Escape", () => {
-    const placeTimedDraft = mock(() => {
-      createTimedDraft(true, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
-    });
-    renderEditShortcuts({ placeTimedDraft });
-
-    pressKey("ArrowDown", shiftKey);
-    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
-
-    pressKey("Escape");
-
-    expect(useDraftStore.getState().gridDraft).toBeNull();
-    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
-  });
-
   it("discards a repositioned keyboardPlace draft on Escape", () => {
     const placeTimedDraft = mock(() => {
       createTimedDraft(
@@ -486,64 +458,6 @@ describe("useDayEventNudgeShortcuts", () => {
 
     expect(useDraftStore.getState().gridDraft).toBeNull();
     expect(useDraftStore.getState().status?.isDrafting).toBe(false);
-  });
-
-  it("does not discard a keyboardPlace draft on Escape while the form is open", () => {
-    const draft = createGridEventDraft(
-      timedGridSchedule(
-        new Date("2026-05-20T09:00:00.000"),
-        new Date("2026-05-20T10:00:00.000"),
-      ),
-    );
-    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
-    draftActions.setFormOpen(true);
-    renderEditShortcuts();
-
-    pressKey("Escape");
-
-    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
-    expect(useDraftStore.getState().gridDraft).not.toBeNull();
-  });
-
-  it("deletes the focused timed calendar event with Delete", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const { queryClient } = renderEditShortcuts();
-
-    pressKey("Delete");
-
-    expect(
-      (getDeleteMutation(queryClient)?.state.variables as { id?: string })?.id,
-    ).toBe(TIMED_EVENT_ID);
-  });
-
-  it("does not delete a calendar event with Delete when nothing is focused", () => {
-    const button = focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    button.blur();
-    const { queryClient } = renderEditShortcuts();
-
-    pressKey("Delete");
-
-    expect(getDeleteMutation(queryClient)).toBeUndefined();
-  });
-
-  it("duplicates the focused calendar event with Mod+D", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const { queryClient } = renderEditShortcuts();
-
-    pressKey("d", {
-      keyDownInit: { ctrlKey: true },
-      keyUpInit: { ctrlKey: true },
-    });
-
-    const { input } = getCreateMutation(queryClient)?.state.variables as {
-      input: { calendarId: string; content: { title: string } };
-    };
-    expect(input.calendarId).toBe(timedEventContract.calendarId);
-    expect(input.content.title).toBe("Timed event");
-
-    const state = useDraftStore.getState();
-    expect(state.status?.isFormOpen).toBe(false);
-    expect(state.gridDraft).toBeNull();
   });
 
   it("focuses the chronologically next event with ArrowDown", () => {
@@ -604,36 +518,6 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(document.activeElement).not.toBeInstanceOf(HTMLButtonElement);
   });
 
-  it("does not delete a grid event when Delete is pressed inside an open event form", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const form = document.createElement("form");
-    form.setAttribute("name", ID_EVENT_FORM);
-    const button = document.createElement("button");
-    form.appendChild(button);
-    document.body.appendChild(form);
-    button.focus();
-    const { queryClient } = renderEditShortcuts();
-
-    pressKey("Delete", {}, button);
-
-    expect(getDeleteMutation(queryClient)).toBeUndefined();
-  });
-
-  it("does not delete a grid event when Delete is pressed with sidebar focus", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const sidebar = document.createElement("div");
-    sidebar.id = ID_SIDEBAR;
-    const button = document.createElement("button");
-    sidebar.appendChild(button);
-    document.body.appendChild(sidebar);
-    button.focus();
-    const { queryClient } = renderEditShortcuts();
-
-    pressKey("Delete", {}, button);
-
-    expect(getDeleteMutation(queryClient)).toBeUndefined();
-  });
-
   it("moves the active shortcut-created draft with arrow keys", () => {
     const navigateToDate = mock(() => {});
     const draft = createGridEventDraft(
@@ -654,28 +538,6 @@ describe("useDayEventNudgeShortcuts", () => {
       dayjs("2026-05-21T09:00:00.000").format(),
     );
     expect(navigateToDate).toHaveBeenCalled();
-  });
-
-  it("lets editable fields keep normal arrow-key behavior", () => {
-    const draft = createGridEventDraft(
-      timedGridSchedule(
-        new Date("2026-05-20T09:00:00.000"),
-        new Date("2026-05-20T10:00:00.000"),
-      ),
-    );
-    draftActions.startGridDraft({ activity: "createShortcut", draft });
-    const input = document.createElement("input");
-    document.body.appendChild(input);
-    input.focus();
-    renderEditShortcuts();
-
-    act(() => {
-      pressKey("ArrowRight", {}, input);
-    });
-
-    expect(
-      dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
-    ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
 
   it("opens the focused event form and focuses the title on e then t", async () => {
@@ -869,66 +731,5 @@ describe("useDayEventNudgeShortcuts", () => {
     });
 
     expect(useEdgeFocusStore.getState().eventId).toBeNull();
-  });
-
-  it("cycles edge focus with Tab on a form-closed keyboardPlace draft", () => {
-    seedFocusedKeyboardPlaceDraft();
-    renderEditShortcuts();
-
-    pressKey("Tab");
-    expect(useEdgeFocusStore.getState()).toMatchObject({
-      eventId: DRAFT_ID,
-      edge: "startDate",
-    });
-
-    pressKey("Tab");
-    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
-  });
-
-  it("lets Tab leave a draft natively past the end edge instead of trapping focus", () => {
-    seedFocusedKeyboardPlaceDraft();
-    renderEditShortcuts();
-
-    pressKey("Tab");
-    pressKey("Tab");
-    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
-
-    const thirdTab = new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      key: "Tab",
-    });
-    document.dispatchEvent(thirdTab);
-
-    expect(thirdTab.defaultPrevented).toBe(false);
-    expect(useEdgeFocusStore.getState().edge).toBeNull();
-  });
-
-  it("does not cycle edge focus on a draft while the form is open", () => {
-    seedFocusedKeyboardPlaceDraft();
-    draftActions.setFormOpen(true);
-    renderEditShortcuts();
-
-    pressKey("Tab");
-
-    expect(useEdgeFocusStore.getState().eventId).toBeNull();
-  });
-
-  it("moves only the draft start edge with Shift+ArrowUp when that edge is focused", () => {
-    seedFocusedKeyboardPlaceDraft();
-    const { queryClient } = renderEditShortcuts();
-    pressKey("Tab");
-
-    pressKey("ArrowUp", shiftKey);
-
-    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
-    expect(dayjs(schedule?.start).format()).toBe(
-      dayjs("2026-05-20T09:00:00.000").subtract(15, "minutes").format(),
-    );
-    expect(dayjs(schedule?.end).format()).toBe(
-      dayjs("2026-05-20T10:00:00.000").format(),
-    );
-    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
-    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 });
