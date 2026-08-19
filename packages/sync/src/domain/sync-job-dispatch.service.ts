@@ -1,8 +1,9 @@
+import { MAX_REFRESH_FAILED_ATTEMPTS } from "@sync/credentials/refresh-failure.constants";
 import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
-import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
+import { refreshConnectionStateAfterJob } from "@sync/domain/connection-state-refresh.service";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
@@ -107,25 +108,43 @@ export async function dispatchSyncJob(
     ) {
       // Belt and braces: custody already discards on authorizationRevoked.
       await deps.custody.discardRevoked(job.connectionId);
-      // A reasoned drop, not a bare done: settling is identical, but the worker
-      // surfaces drop reasons. This path settled ~100 jobs per sweep invisibly
-      // on 2026-07-29 (credential-less migrated connections), which made the
-      // sweep look broken while it was running fine.
+      await refreshConnectionStateAfterJob(deps, job, now);
       return {
         result: "drop",
         reason: `credential unusable (${error.reason}) for connection ${job.connectionId}; sync resumes on reconnect`,
       };
     }
 
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      const credential = await deps.credentials.findByConnection(
+        job.connectionId,
+      );
+      const expired =
+        (credential?.refreshFailureCount ?? 0) >= MAX_REFRESH_FAILED_ATTEMPTS;
+      if (expired || job.attempt >= MAX_REFRESH_FAILED_ATTEMPTS) {
+        await refreshConnectionStateAfterJob(deps, job, now);
+        return {
+          result: "drop",
+          reason: `token refresh failed ${job.attempt} time(s) for connection ${job.connectionId}; reconnect or retry from the app`,
+        };
+      }
+      throw error;
+    }
+
     // The provider rejected the cached access token (401). Event reads
     // (pull/import/repair) remint in-process via listEventPageWithAuthRetry;
+    // calendar-list discovery remints via discoverCalendarsWithAuthRetry;
     // this fallback covers any path that still throws authExpired. Invalidate
     // so the worker retry mints a fresh token instead of replaying the same
     // rejected one. If the refresh then fails with authorizationRevoked, that
     // surfaces as ProviderAuthError on the next attempt and is handled above.
     if (
-      error instanceof ProviderEventReadError &&
-      error.reason === "authExpired"
+      (error instanceof ProviderEventReadError &&
+        error.reason === "authExpired") ||
+      (error instanceof ProviderCalendarError && error.reason === "authExpired")
     ) {
       await deps.custody.invalidateAccessToken(job.connectionId);
       throw error;
@@ -161,6 +180,7 @@ export async function dispatchSyncJob(
           detail,
         );
       }
+      await refreshConnectionStateAfterJob(deps, job, now);
       return {
         result: "drop",
         reason: `provider durably rejected reads for resource ${job.resourceId} (${detail}); sync resumes once the calendar is readable again`,
@@ -193,6 +213,7 @@ export async function dispatchSyncJob(
           detail,
         );
       }
+      await refreshConnectionStateAfterJob(deps, job, now);
       return {
         result: "drop",
         reason: `provider durably rejected calendar-list discovery for connection ${job.connectionId} (${detail}); sync resumes once the account can list calendars again`,
@@ -473,6 +494,7 @@ async function runSyncJob(
           followup: resourceJob(resource, "bootstrapCatchup", now()),
         };
       }
+      await refreshConnectionStateAfterJob(deps, job, now);
       return { result: "done" };
     }
   }
@@ -576,20 +598,7 @@ async function refreshConnectionStateAfterBootstrap(
   deps: SyncJobDispatchDeps,
   job: JobRecord,
 ): Promise<void> {
-  try {
-    const connection = await deps.connections.findById(
-      job.tenantId,
-      job.principalId,
-      job.connectionId,
-    );
-    if (!connection) return;
-    await refreshConnectionState(deps, connection);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    deps.log?.warn(
-      `Failed to refresh connection state after bootstrap for connection ${job.connectionId}: ${detail}`,
-    );
-  }
+  await refreshConnectionStateAfterJob(deps, job);
 }
 
 async function appendCalendarInvalidation(

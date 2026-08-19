@@ -61,6 +61,7 @@ export interface ProviderCalendarAdapter {
 export type ProviderCalendarErrorReason =
   | "discoveryFailed" // durable: the provider rejected the calendar-list read
   | "transient" // retryable: network, rate limit, quota, or server error
-  | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
+  | "cursorExpired" // the incremental cursor is too old; a full re-list is required
+  | "authExpired"; // 401: the access token was rejected; remint and retry once
 
 export class ProviderCalendarError extends ProviderError<ProviderCalendarErrorReason> {}

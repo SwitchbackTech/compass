@@ -1,3 +1,5 @@
+import { refreshConnectionStateAfterJob } from "@sync/domain/connection-state-refresh.service";
+import { sanitizeJobLastError } from "@sync/domain/job-last-error";
 import {
   dispatchSyncJob,
   type SyncJobDispatchDeps,
@@ -51,8 +53,8 @@ export interface SyncJobWorkerOptions {
   // failure (before the fail() write). Unlike onError (fires every attempt),
   // this fires exactly once, on the exhausting attempt — the signal worth
   // alerting on, since the job is now wedged until an operator or a manual
-  // refresh revives it.
-  onFail?: (job: JobRecord) => void;
+  // refresh revives it. The error is the last engine throw or retry reason.
+  onFail?: (job: JobRecord, error?: unknown) => void;
   // Reserve this worker away from the given job kinds — see
   // JobRepository.claimDueJob. Used to keep a subset of drains claiming only
   // quick jobs (pulls), so a long initialImport/repair elsewhere can never
@@ -114,7 +116,7 @@ export class SyncJobWorker {
   readonly #now: () => Date;
   readonly #onError: (error: unknown, job: JobRecord) => void;
   readonly #onDrop: (job: JobRecord, reason: string) => void;
-  readonly #onFail: (job: JobRecord) => void;
+  readonly #onFail: (job: JobRecord, error?: unknown) => void;
   readonly #excludeKinds?: JobRecord["kind"][];
 
   constructor(
@@ -206,7 +208,7 @@ export class SyncJobWorker {
         ),
         job,
       );
-      await this.#settleFailure(job);
+      await this.#settleFailure(job, error);
       return;
     }
 
@@ -227,7 +229,7 @@ export class SyncJobWorker {
         await this.#deps.jobs.complete(job._id, this.#owner);
         return;
       case "retry":
-        await this.#settleFailure(job);
+        await this.#settleFailure(job, new Error(outcome.reason));
         return;
     }
   }
@@ -237,17 +239,24 @@ export class SyncJobWorker {
   // so enqueue will not create a replacement until an operator clears it —
   // deliberate backpressure: a persistently-broken resource stops and asks for
   // attention rather than looping (or resurrecting on every sweep, which would
-  // be unlimited retries by another name).
-  async #settleFailure(job: JobRecord): Promise<void> {
+  // be unlimited retries by another name). After either settle, re-derive
+  // connection health so a first import that is retrying or dead-lettered is
+  // not stuck on "importing" in the SPA.
+  async #settleFailure(job: JobRecord, error?: unknown): Promise<void> {
+    const lastError = sanitizeJobLastError(error);
     if (job.attempt >= this.#maxAttempts) {
-      this.#onFail(job);
-      await this.#deps.jobs.fail(job._id, this.#owner);
+      this.#onFail(job, error);
+      await this.#deps.jobs.fail(job._id, this.#owner, lastError, this.#now());
+      await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
       return;
     }
     await this.#deps.jobs.scheduleRetry(
       job._id,
       this.#owner,
       this.#backoff(job.attempt, this.#now()),
+      lastError,
+      this.#now(),
     );
+    await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
   }
 }

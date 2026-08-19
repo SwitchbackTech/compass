@@ -241,15 +241,17 @@ function mapAccessRole(
 }
 
 // Map a Google calendarList.list failure to a discovery-error reason. An
-// expired syncToken (410 Gone) forces a full re-list; network / rate-limit /
-// quota / server errors are retryable; other 4xx (including notACalendarUser)
-// are durable refusals. Quota arrives as 403, so status alone cannot separate
-// it from a durable 403 — same TRANSIENT_REASONS set as the watch/writer path.
+// expired syncToken (410 Gone) forces a full re-list. A 401 means the access
+// token was rejected — remint in-process rather than treating it as a durable
+// discoveryFailed (which would stamp lastReadFailureAt and ask the user to
+// Refresh instead of Reconnect). Network / rate-limit / quota / server errors
+// are retryable; other 4xx (notACalendarUser, etc.) are durable refusals.
 function classifyDiscoveryError(
   error: unknown,
-): "cursorExpired" | "transient" | "discoveryFailed" {
+): "cursorExpired" | "authExpired" | "transient" | "discoveryFailed" {
   const status = googleStatus(error);
   if (status === 410) return "cursorExpired";
+  if (status === 401) return "authExpired";
   if (isGoogleTransient(error, status)) return "transient";
   return "discoveryFailed";
 }

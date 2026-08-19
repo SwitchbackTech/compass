@@ -21,6 +21,11 @@ export const CredentialRecordSchema = z.strictObject({
   // whenever the cached token has been invalidated.
   accessToken: z.string().min(1).nullable(),
   accessTokenExpiresAt: z.date().nullable(),
+  // Consecutive token-endpoint refreshFailed counts. Reset on a successful
+  // mint. After MAX_REFRESH_FAILED_ATTEMPTS the connection is treated as
+  // authorizationExpired so the UI can prompt reconnect instead of looping
+  // 401s. Defaulted: docs predating this field must still parse.
+  refreshFailureCount: z.number().int().min(0).default(0),
   // The scopes the credential was granted, for capability checks.
   scopes: z.array(z.string()),
   createdAt: z.date(),

@@ -400,6 +400,17 @@ describe("GoogleCalendarAdapter", () => {
     expect(second.calendars[0].providerCalendarId).toBe("account-b");
   });
 
+  it("maps a 401 to authExpired so the caller can remint the access token", async () => {
+    const api = new FakeCalendarListApi([], { response: { status: 401 } });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .discoverCalendars({ accessToken: "stale" })
+      .catch((e) => e)) as ProviderCalendarError;
+
+    expect(error.reason).toBe("authExpired");
+  });
+
   it("classifies an expired cursor (410) distinctly from a generic failure", async () => {
     const expired = new FakeCalendarListApi([], {
       response: { status: 410 },

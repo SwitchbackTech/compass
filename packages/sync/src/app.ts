@@ -474,11 +474,12 @@ function buildSchedulers(
         // A terminal failure is invisible otherwise: the job sits state:"failed"
         // holding its coalescing key with nothing paging anyone. Alertable so an
         // operator can set a PostHog alert on this event over launch weekend.
-        onFail: (job) => {
+        onFail: (job, error) => {
           logger.error(
             `Sync job ${job.kind} (${job._id}) exhausted retries and failed for resource ${
               job.resourceId ?? "none (connection-wide)"
             } on connection ${job.connectionId}`,
+            error,
           );
           void captureSafely(posthog, {
             event: SYNC_JOB_TERMINAL_FAILURE_EVENT,

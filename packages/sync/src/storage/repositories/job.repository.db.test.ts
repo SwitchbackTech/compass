@@ -699,6 +699,39 @@ describe("JobRepository", () => {
       expect(oldest?.failureClass).toBe("retryableTransient");
     });
 
+    it("treats a retrying job with lastErrorAt as overdue provider-error work", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const job = await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(1000),
+          coalescingKey: "pull:retrying-resource",
+        }),
+      );
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      expect(claimed?._id).toEqual(job._id);
+      await repo.scheduleRetry(
+        claimed!._id,
+        "worker",
+        new Date(NOW.getTime() + 10 * 60_000),
+        "HTTP 500",
+        past(5 * 60_000),
+      );
+
+      const oldest = await repo.findOldestOverdueByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+      expect(oldest?.runAfter).toEqual(past(5 * 60_000));
+      expect(oldest?.failureClass).toBe("retryableTransient");
+    });
+
     it("reports no overdue work for a connection with only healthy pending jobs", async () => {
       const connectionId = objectId() as JobEnqueue["connectionId"];
       const tenantId = objectId() as JobEnqueue["tenantId"];

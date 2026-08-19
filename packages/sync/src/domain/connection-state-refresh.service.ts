@@ -1,9 +1,11 @@
+import { MAX_REFRESH_FAILED_ATTEMPTS } from "@sync/credentials/refresh-failure.constants";
 import {
   BOOTSTRAP_STALLED_AFTER_MS,
   type ConnectionStateEvidence,
   type CredentialState,
   deriveConnectionState,
 } from "@sync/domain/connection-state";
+import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -184,7 +186,35 @@ function credentialState(
   credential: Awaited<ReturnType<CredentialRepository["findByConnection"]>>,
 ): CredentialState {
   if (!credential?.refreshToken) return "revoked";
+  if (credential.refreshFailureCount >= MAX_REFRESH_FAILED_ATTEMPTS) {
+    return "expired";
+  }
   return "valid";
+}
+
+// Re-derive health after a job drop, retry, or terminal fail so the SPA is
+// not stuck on "importing" / "healthy" until the next metadata poll.
+export async function refreshConnectionStateAfterJob(
+  deps: ConnectionStateRefreshDeps & {
+    log?: { warn: (message: string) => void };
+  },
+  job: Pick<JobRecord, "tenantId" | "principalId" | "connectionId">,
+  now?: () => Date,
+): Promise<void> {
+  try {
+    const connection = await deps.connections.findById(
+      job.tenantId,
+      job.principalId,
+      job.connectionId,
+    );
+    if (!connection) return;
+    await refreshConnectionState(deps, connection, now);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    deps.log?.warn(
+      `Failed to refresh connection state for connection ${job.connectionId}: ${detail}`,
+    );
+  }
 }
 
 function minDate(...dates: Array<Date | null | undefined>): Date | null {

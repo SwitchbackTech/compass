@@ -303,6 +303,8 @@ describe("SyncJobWorker", () => {
     expect(after?.state).toBe("failed");
     expect(after?.failureClass).toBe("retryableTransient");
     expect(after?.leaseOwner).toBeNull();
+    expect(after?.lastError).toContain("flaky");
+    expect(after?.lastErrorAt).toEqual(now());
   });
 
   it("does not call onFail while a transient failure still has retries left", async () => {
@@ -341,6 +343,27 @@ describe("SyncJobWorker", () => {
 
     expect(failed).toHaveLength(1);
     expect(failed[0]?._id).toEqual(job._id);
+  });
+
+  it("records lastError on a retrying job so connection health can see it", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+
+    await workerWith(
+      new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      { maxAttempts: 5 },
+    ).runOnce();
+
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    expect(after?.state).toBe("pending");
+    expect(after?.failureClass).toBe("retryableTransient");
+    expect(after?.lastError).toContain("flaky");
+    expect(after?.lastErrorAt).toEqual(now());
   });
 
   it("keeps a failed job's coalescing key so enqueue does not replace it", async () => {

@@ -385,6 +385,48 @@ describe("GoogleAuthAdapter", () => {
       expect(error.reason).toBe("authorizationRevoked");
     });
 
+    it.each([
+      "unauthorized_client",
+      "invalid_client",
+    ] as const)("classifies %s as authorizationRevoked", async (code) => {
+      const client = new FakeGoogleClient({
+        refreshError: { response: { data: { error: code } } },
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error.reason).toBe("authorizationRevoked");
+    });
+
+    it("classifies an HTTP 401 refresh rejection as authorizationRevoked even without invalid_grant", async () => {
+      const client = new FakeGoogleClient({
+        refreshError: { response: { status: 401 } },
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error.reason).toBe("authorizationRevoked");
+    });
+
+    it("classifies an HTTP 400 refresh rejection as authorizationRevoked", async () => {
+      const client = new FakeGoogleClient({
+        refreshError: { response: { status: 400 } },
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error.reason).toBe("authorizationRevoked");
+    });
+
     it("classifies any other refresh error as refreshFailed", async () => {
       const client = new FakeGoogleClient({
         refreshError: {
