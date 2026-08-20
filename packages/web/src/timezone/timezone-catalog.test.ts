@@ -22,6 +22,18 @@ describe("timezone-catalog", () => {
     expect(america.every((zone) => zone.id.includes("America"))).toBe(true);
   });
 
+  it("formats offset labels as strings, not objects", () => {
+    const chicago = zones.find((zone) => zone.id === "America/Chicago");
+    expect(chicago).toBeTruthy();
+    if (!chicago) return;
+
+    expect(chicago.offset).toMatch(/GMT/);
+    expect(chicago.secondary).not.toContain("[object Object]");
+    expect(
+      chicago.keywords.every((keyword) => typeof keyword === "string"),
+    ).toBe(true);
+  });
+
   it("sorts the current zone first, then by offset distance", () => {
     const sorted = sortTimeZonesByOffsetDistance(zones, "America/Denver");
     expect(sorted[0]?.id).toBe("America/Denver");

@@ -18,11 +18,9 @@ export function DefaultTimezonePicker() {
 
   return (
     <div>
-      <p className="mb-1 text-sm text-text" id="default-timezone-label">
-        Default timezone
-      </p>
+      <p className="mb-1 text-sm text-text">Default timezone</p>
       <button
-        aria-labelledby="default-timezone-label"
+        aria-label={`Default timezone: ${label}`}
         className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-left text-sm text-text hover:bg-surface-panel"
         onClick={() => {
           settingsActions.closeSettings();

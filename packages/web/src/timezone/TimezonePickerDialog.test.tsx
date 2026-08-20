@@ -30,7 +30,7 @@ describe("TimezonePickerDialog", () => {
     ).toBeInTheDocument();
 
     await user.type(
-      screen.getByRole("searchbox", { name: "Search timezones" }),
+      screen.getByRole("combobox", { name: "Search timezones" }),
       "Chi",
     );
 
@@ -55,7 +55,7 @@ describe("TimezonePickerDialog", () => {
       <TimezonePickerDialog onDismiss={() => timezoneDialogActions.close()} />,
     );
 
-    const search = screen.getByRole("searchbox", { name: "Search timezones" });
+    const search = screen.getByRole("combobox", { name: "Search timezones" });
     await user.type(search, "Chicago");
     await user.keyboard("{ArrowDown}{Enter}");
 

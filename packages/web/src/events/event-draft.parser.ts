@@ -14,6 +14,7 @@ import {
   type EventScheduleDraft,
   type NewEventRecurrenceDraft,
 } from "@web/events/event-draft.types";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 export type ParseEventDraftResult =
   | { ok: true; mode: "create"; input: CreateEventInput }
@@ -56,7 +57,7 @@ function isValidTimeZone(timeZone: string): boolean {
 }
 
 function toDateOnlyString(date: Date): string {
-  return dayjs(date).toYearMonthDayString();
+  return inEffectiveTimeZone(date).toYearMonthDayString();
 }
 
 // Formats the instant in the draft's own time zone so the offset matches the

@@ -58,13 +58,11 @@ export const createAlldayDraft = (
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
     ? today.startOf("day")
     : startOfView.startOf("day");
-  const startDate = start.format();
-  const endDate = start.add(1, "day").format();
   const draft = createGridEventDraft(
     {
       kind: "allDay",
-      start: new Date(startDate),
-      end: new Date(endDate),
+      start: start.toDate(),
+      end: start.add(1, "day").toDate(),
     },
     undefined,
     calendarId,

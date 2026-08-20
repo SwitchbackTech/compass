@@ -1,4 +1,9 @@
+import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
+import {
+  resetEffectiveTimeZoneStoreForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
 import {
   anchorDateForWindowOffset,
   computeVisibleDayCount,
@@ -7,13 +12,19 @@ import {
   isTimedEventInVisibleDays,
   WEEK_DAY_COUNT,
 } from "@web/views/Week/util/week-window.util";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 // Sunday-start week used across the tests
 const weekStart = dayjs("2026-06-28T00:00:00.000");
 const weekDay = (index: number) => weekStart.add(index, "day");
 const windowDays = (offset: number, count: number) =>
   [...Array(count)].map((_, index) => weekDay(offset + index));
+
+afterEach(() => {
+  act(() => {
+    resetEffectiveTimeZoneStoreForTests();
+  });
+});
 
 describe("computeVisibleDayCount", () => {
   it("fits the full week on wide tracks", () => {
@@ -117,5 +128,27 @@ describe("isAllDayEventInVisibleDays", () => {
   it("does not leak the exclusive end date into the next day", () => {
     // Ends (exclusively) on Friday: hidden in a Fri..Sat window
     expect(isAllDayEventInVisibleDays(multiDay, windowDays(5, 2))).toBe(false);
+  });
+
+  it("keeps a date-only all-day event on the pinned calendar day", () => {
+    act(() => {
+      setPinnedTimeZone("America/Chicago");
+    });
+    const chicagoWeek = Array.from({ length: 7 }, (_, index) =>
+      dayjs.tz("2026-05-17", "America/Chicago").add(index, "day"),
+    );
+
+    expect(
+      isAllDayEventInVisibleDays(
+        { startDate: "2026-05-17", endDate: "2026-05-18" },
+        chicagoWeek,
+      ),
+    ).toBe(true);
+    expect(
+      isAllDayEventInVisibleDays(
+        { startDate: "2026-05-24", endDate: "2026-05-25" },
+        chicagoWeek,
+      ),
+    ).toBe(false);
   });
 });

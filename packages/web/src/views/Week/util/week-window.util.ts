@@ -1,9 +1,13 @@
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   DAY_COLUMN_MIN_USABLE_WIDTH,
   GRID_MARGIN_LEFT,
 } from "@web/grid/grid.constants";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 export const WEEK_DAY_COUNT = 7;
 
@@ -64,7 +68,7 @@ export const isTimedEventInVisibleDays = (
   event: EventDates,
   visibleDays: Dayjs[],
 ) => {
-  const start = dayjs(event.startDate);
+  const start = inEffectiveTimeZone(event.startDate);
   return visibleDays.some((day) => day.isSame(start, "day"));
 };
 
@@ -83,8 +87,12 @@ export const isAllDayEventInVisibleDays = (
     return false;
   }
 
-  const eventStart = dayjs(event.startDate).startOf("day");
-  const exclusiveEnd = dayjs(event.endDate).startOf("day");
+  const eventStart = calendarDateInEffectiveTimeZone(event.startDate).startOf(
+    "day",
+  );
+  const exclusiveEnd = calendarDateInEffectiveTimeZone(event.endDate).startOf(
+    "day",
+  );
   const eventEnd = exclusiveEnd.isAfter(eventStart)
     ? exclusiveEnd.subtract(1, "day")
     : eventStart;

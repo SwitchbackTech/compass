@@ -22,29 +22,22 @@ function regionFromIanaId(id: string): string {
   return slash === -1 ? id : id.slice(0, slash);
 }
 
-function offsetMinutesAt(timeZone: string, at: Date): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    timeZoneName: "shortOffset",
-    hour: "numeric",
-  }).formatToParts(at);
-  const raw = parts.find((part) => part.type === "timeZoneName")?.value ?? "";
+function offsetAt(
+  timeZone: string,
+  at: Date,
+): { minutes: number; label: string } {
+  const raw =
+    new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+      .formatToParts(at)
+      .find((part) => part.type === "timeZoneName")?.value ?? "";
   const match = raw.match(/([+-])(\d{1,2})(?::?(\d{2}))?/);
   if (!match) {
-    return 0;
+    return { minutes: 0, label: raw };
   }
   const sign = match[1] === "-" ? -1 : 1;
   const hours = Number(match[2]);
   const minutes = Number(match[3] ?? "0");
-  return sign * (hours * 60 + minutes);
-}
-
-function formatOffsetLabel(timeZone: string, at: Date): string {
-  return (
-    new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
-      .formatToParts(at)
-      .find((part) => part.type === "timeZoneName")?.value ?? ""
-  );
+  return { minutes: sign * (hours * 60 + minutes), label: raw };
 }
 
 let cachedZoneIds: string[] | null = null;
@@ -65,16 +58,16 @@ export function buildTimeZoneList(at: Date = new Date()): TimeZoneListItem[] {
     const city = timeZoneCityName(id);
     const region = regionFromIanaId(id);
     const abbreviation = formatTimeZoneAbbreviation(id, at);
-    const offset = formatOffsetLabel(id, at);
+    const offset = offsetAt(id, at);
     return {
       id,
       city,
       region,
       abbreviation,
-      offset,
-      offsetMinutes: offsetMinutesAt(id, at),
-      secondary: [abbreviation, offset].filter(Boolean).join(", "),
-      keywords: [id, region, abbreviation, offset],
+      offset: offset.label,
+      offsetMinutes: offset.minutes,
+      secondary: [abbreviation, offset.label].filter(Boolean).join(", "),
+      keywords: [id, region, abbreviation, offset.label],
     };
   });
   cachedList = { minute, items };

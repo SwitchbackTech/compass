@@ -157,7 +157,7 @@ describe("SettingsModal", () => {
 
     expect(screen.getByText("Default timezone")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Default timezone" }),
+      screen.getByRole("button", { name: /Default timezone/ }),
     ).toBeInTheDocument();
   });
 

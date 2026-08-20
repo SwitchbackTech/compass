@@ -1,6 +1,7 @@
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   type UIEvent as ReactUIEvent,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -57,6 +58,12 @@ export function TimezonePickerDialog({
   const optionIds = [AUTO_ID, ...zones.map((zone) => zone.id)];
   const visibleZones = zones.slice(0, visibleCount);
 
+  useEffect(() => {
+    document
+      .getElementById(`${listId}-${activeId}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [activeId, listId]);
+
   const selectZone = (timeZone: string | null) => {
     setPinnedTimeZone(timeZone);
     onDismiss();
@@ -108,10 +115,13 @@ export function TimezonePickerDialog({
       <div className="flex w-full flex-col gap-3">
         <input
           ref={searchRef}
+          aria-activedescendant={`${listId}-${activeId}`}
           aria-autocomplete="list"
           aria-controls={listId}
-          aria-activedescendant={`${listId}-${activeId}`}
+          aria-expanded={true}
+          aria-haspopup="listbox"
           aria-label="Search timezones"
+          role="combobox"
           autoComplete="off"
           className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-3 py-2 text-sm text-text outline-none placeholder:text-text-muted"
           onChange={(event) => {

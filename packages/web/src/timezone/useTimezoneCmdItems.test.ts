@@ -32,7 +32,7 @@ describe("useTimezoneCmdItems", () => {
     );
   });
 
-  it("opens the timezone picker", () => {
+  it("opens the timezone picker from the command palette restore path", () => {
     const { result } = renderHook(() => useTimezoneCmdItems());
     act(() => {
       result.current[0]?.onClick?.();

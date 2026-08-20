@@ -24,6 +24,7 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   const { schedule } = event;
@@ -620,4 +621,5 @@ const editableDetailsFromEvent = (
 
 // Local, not toISOString: all-day draft Dates are local midnight, so a UTC
 // rendering would shift the day for any non-UTC viewer.
-const toDateOnlyString = (date: Date) => dayjs(date).toYearMonthDayString();
+const toDateOnlyString = (date: Date) =>
+  inEffectiveTimeZone(date).toYearMonthDayString();

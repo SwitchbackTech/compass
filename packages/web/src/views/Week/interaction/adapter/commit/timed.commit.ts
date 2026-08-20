@@ -1,4 +1,3 @@
-import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   hasTimedDragVisualMoved,
@@ -6,6 +5,10 @@ import {
 } from "@web/grid/interaction/commit/timed-moved";
 import { type TimedDragVisual } from "@web/grid/interaction/types/timed-drag.types";
 import { type TimedResizeVisual } from "@web/grid/interaction/types/timed-resize.types";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 export { hasTimedDragVisualMoved, hasTimedResizeVisualMoved };
 
@@ -15,7 +18,9 @@ export const timedDragVisualToGridEvent = (
 ): GridEvent => {
   // The column under the drag knows its own date, so the target day is
   // assigned absolutely; time-of-day rides on the visual's minutes.
-  const movedDay = dayjs(visual.dayDate).startOf("day");
+  const movedDay = /^\d{4}-\d{2}-\d{2}$/.test(visual.dayDate)
+    ? calendarDateInEffectiveTimeZone(visual.dayDate)
+    : inEffectiveTimeZone(event.startDate).startOf("day");
 
   return {
     ...event,
@@ -28,7 +33,7 @@ export const timedResizeVisualToGridEvent = (
   event: GridEvent,
   visual: TimedResizeVisual,
 ): GridEvent => {
-  const resizedDay = dayjs(event.startDate).startOf("day");
+  const resizedDay = inEffectiveTimeZone(event.startDate).startOf("day");
 
   return {
     ...event,
