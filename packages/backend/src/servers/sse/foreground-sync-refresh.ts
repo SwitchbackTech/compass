@@ -3,6 +3,10 @@ import { PrincipalIdSchema } from "@core/types/sync/identity.contracts";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import {
+  defaultSchedule,
+  type TickScheduler,
+} from "@backend/servers/sse/tick-scheduler";
 
 const logger = Logger("app:sse.foreground-sync-refresh");
 // Tick more often than Sync's 30s resource-staleness guard so a change that
@@ -16,9 +20,9 @@ export interface ForegroundSyncRefreshDeps {
   sse: Pick<typeof sseServer, "connectedUserIds">;
 }
 
-export interface ForegroundSyncRefreshOptions {
+interface ForegroundSyncRefreshOptions {
   intervalMs?: number;
-  schedule?: (tick: () => void, delayMs: number) => { clear: () => void };
+  schedule?: TickScheduler;
 }
 
 // One backend-owned loop, rather than one timer per tab. Sync performs the
@@ -27,8 +31,10 @@ export interface ForegroundSyncRefreshOptions {
 export class ForegroundSyncRefresh {
   readonly #deps: ForegroundSyncRefreshDeps;
   readonly #intervalMs: number;
-  readonly #schedule: NonNullable<ForegroundSyncRefreshOptions["schedule"]>;
+  readonly #schedule: TickScheduler;
   #timer: { clear: () => void } | null = null;
+  // Distinct from #timer: during an in-flight tick the handle has already
+  // fired, so only this flag can stop the finally-block from rescheduling.
   #stopped = true;
 
   constructor(
@@ -92,16 +98,9 @@ export class ForegroundSyncRefresh {
   }
 }
 
-function defaultSchedule(
-  tick: () => void,
-  delayMs: number,
-): { clear: () => void } {
-  const timer = setTimeout(tick, delayMs);
-  timer.unref?.();
-  return { clear: () => clearTimeout(timer) };
-}
-
 export const foregroundSyncRefresh = new ForegroundSyncRefresh({
+  // Deferred rather than resolved eagerly: getSyncServiceClient() reads global
+  // CONFIG, and this singleton is constructed at module import time.
   client: {
     refreshForegroundConnections: (principalIds, correlationId) =>
       getSyncServiceClient().refreshForegroundConnections(
