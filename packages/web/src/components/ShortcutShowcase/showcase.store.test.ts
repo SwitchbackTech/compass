@@ -64,17 +64,6 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("steps back to redo a lesson and no-ops on the first step", () => {
-    shortcutShowcaseActions.replay();
-    shortcutShowcaseActions.advance();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(1);
-
-    shortcutShowcaseActions.back();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
-    shortcutShowcaseActions.back();
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
-  });
-
   it("skips on the first request, from any step and either exit", () => {
     shortcutShowcaseActions.replay();
     shortcutShowcaseActions.advance();

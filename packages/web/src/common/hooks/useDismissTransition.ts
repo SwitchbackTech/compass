@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "@web/common/hooks/prefersReducedMotion";
 
 /**
@@ -19,21 +19,29 @@ export function useDismissTransition(durationMs: number) {
     };
   }, []);
 
-  const beginDismiss = (onComplete: () => void): boolean => {
-    if (closingRef.current) return false;
-    closingRef.current = true;
-    setClosing(true);
-    const delay = prefersReducedMotion() ? 0 : durationMs;
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null;
-      // Clear closing before onComplete so stay-mounted surfaces (UpNextBanner)
-      // can dismiss a later event, and so both updates batch in one render.
-      closingRef.current = false;
-      setClosing(false);
-      onComplete();
-    }, delay);
-    return true;
-  };
+  // Stable across renders: a caller that schedules a dismiss from inside a
+  // useEffect (keyed on `beginDismiss` to run once per e.g. "just started
+  // celebrating") must not see a fresh function identity on every unrelated
+  // re-render, or that effect's cleanup restarts the timer indefinitely.
+  const beginDismiss = useCallback(
+    (onComplete: () => void): boolean => {
+      if (closingRef.current) return false;
+      closingRef.current = true;
+      setClosing(true);
+      const delay = prefersReducedMotion() ? 0 : durationMs;
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+        // Clear closing before onComplete so stay-mounted surfaces
+        // (UpNextBanner) can dismiss a later event, and so both updates
+        // batch in one render.
+        closingRef.current = false;
+        setClosing(false);
+        onComplete();
+      }, delay);
+      return true;
+    },
+    [durationMs],
+  );
 
   return { closing, beginDismiss };
 }

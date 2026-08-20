@@ -6,7 +6,7 @@ import { TrialGateModal } from "@web/billing/TrialGateModal";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
-import { OnboardingChecklist } from "@web/components/OnboardingChecklist/OnboardingChecklist";
+import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
@@ -72,7 +72,7 @@ export function RootShell() {
       <AuthModal />
       {!deferCalendarOnboarding && <WelcomeModal />}
       {!deferCalendarOnboarding && <ShortcutShowcase />}
-      {!deferCalendarOnboarding && <OnboardingChecklist />}
+      {!deferCalendarOnboarding && <FirstEventPrompt />}
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
     </AuthModalProvider>
   );

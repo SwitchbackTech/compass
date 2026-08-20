@@ -78,17 +78,20 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("teaches create then save, and graduates on Enter", async () => {
+  it("teaches create as one motion, and graduates on Enter", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
+    expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
 
-    // create: C opens a draft with its title editor.
+    // C opens a draft with its title editor; the lesson stays on "create"
+    // and the hint swaps rather than advancing to a second step.
     pressKey("c");
-    expect(currentStepId()).toBe("save");
+    expect(currentStepId()).toBe("create");
+    expect(screen.getByText(/Type a title, then press Enter/)).toBeTruthy();
 
-    // save: type a title into the editor, Enter commits.
+    // Typing a title and pressing Enter commits it and advances.
     await user.type(
       screen.getByLabelText("Event title"),
       "Coffee with Alex{Enter}",
@@ -171,16 +174,14 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("offers 'Do it for me' from the first step, and swaps it out at graduation", async () => {
+  it("'Do it for me' performs the whole lesson and lands on graduation", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
     // No idle wait or failed attempt required: the way out is always offered.
     await user.click(screen.getByRole("button", { name: "Do it for me" }));
-    expect(currentStepId()).toBe("save");
-
-    showStep("graduation");
+    expect(currentStepId()).toBe("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
     expect(screen.getByRole("button", { name: "Enter Compass" })).toBeTruthy();
   });
@@ -218,39 +219,29 @@ describe("ShortcutShowcase", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("Previous restores the prior step's board so it can be redone", async () => {
-    const user = userEvent.setup();
-    render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
-
-    pressKey("c");
-    expect(currentStepId()).toBe("save");
-    expect(screen.getByLabelText("Event title")).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Previous" }));
-    expect(currentStepId()).toBe("create");
-    // The board rewound with the step: the draft is gone, C works again.
-    expect(screen.queryByLabelText("Event title")).toBeNull();
-    pressKey("c");
-    expect(currentStepId()).toBe("save");
-  });
-
   it("Escape inside the title editor closes the editor, not the showcase", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
     pressKey("c");
-    expect(currentStepId()).toBe("save");
+    expect(currentStepId()).toBe("create");
 
     await user.type(screen.getByLabelText("Event title"), "Standup prep");
     pressKey("Escape");
-    // Editor committed and closed; the showcase is still running.
+    // Editor committed and closed; the showcase is still running, and the
+    // lesson hasn't advanced (only a title commit advances it).
     expect(screen.queryByLabelText("Event title")).toBeNull();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(currentStepId()).toBe("create");
     expect(screen.getByText("Standup prep")).toBeTruthy();
 
+    // C works again, reopening the editor for another try.
+    pressKey("c");
+    expect(screen.getByLabelText("Event title")).toBeTruthy();
+
     // With no editor open, Escape now leaves.
+    pressKey("Escape");
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });

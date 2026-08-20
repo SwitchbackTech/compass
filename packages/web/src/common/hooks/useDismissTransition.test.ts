@@ -112,4 +112,17 @@ describe("useDismissTransition", () => {
 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps the same beginDismiss identity across re-renders", () => {
+    // A caller may key a useEffect on `beginDismiss` (e.g. "schedule a
+    // dismiss once, when some condition first becomes true"). A fresh
+    // function identity on every unrelated re-render would restart that
+    // effect's timer indefinitely.
+    const { result, rerender } = renderHook(() => useDismissTransition(300));
+    const first = result.current.beginDismiss;
+
+    rerender();
+
+    expect(result.current.beginDismiss).toBe(first);
+  });
 });

@@ -311,8 +311,8 @@
   @apply border border-border bg-surface-overlay text-text hover:bg-surface-panel;
 }
 
-/* Compact rows (checklist, sidebar, welcome pills): same color/hover as
-   c-button-primary, without the default c-button height, shadow, or lift. */
+/* Compact rows (sidebar, welcome pills): same color/hover as c-button-primary,
+   without the default c-button height, shadow, or lift. */
 @utility c-button-compact {
   @apply c-focus-ring inline-flex items-center font-medium transition-[background-color] duration-150 ease-out disabled:pointer-events-none disabled:opacity-60;
 }

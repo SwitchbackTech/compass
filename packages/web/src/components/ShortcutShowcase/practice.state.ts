@@ -6,9 +6,10 @@ import { type EventColorSlot } from "@core/types/event-color.contracts";
  * while the takeover is mounted, so every transition can be a plain pure
  * function with no side effects.
  *
- * Only the two gating lessons live here (create a draft, title-and-save).
- * The checklist re-teaches jump, move, stretch, place and undo on real
- * events, so the arena no longer reimplements them.
+ * Only the one gating lesson lives here (create a draft, then title-and-save
+ * as one continuous motion). Graduation hands off to a prompt on the real
+ * calendar, not a checklist that reimplements jump, move, stretch, place and
+ * undo.
  */
 
 export type PracticeEventBlock = {

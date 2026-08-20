@@ -10,12 +10,9 @@ type StorageKey =
   // Set when a welcome-modal exit hands off to signup before the showcase;
   // consumed once, right after signup completes, to offer it then.
   | "compass.onboarding.has-pending-showcase-offer"
-  // JSON map of completed checklist item ids, written the moment each is
-  // detected so credit is retroactive no matter when the card is noticed.
-  | "compass.onboarding.checklist-progress"
-  // "completed" | "dismissed": the checklist's terminal state. Absent means
-  // it is still live (or never shown).
-  | "compass.onboarding.checklist-done"
+  // "completed" | "dismissed": the first-event prompt's terminal state.
+  // Absent means it is still live (or never shown).
+  | "compass.onboarding.first-event-done"
   | "compass.trial.started-at"
   | "compass.shortcuts.tips-muted"
   | "compass.sidebar.width"
@@ -43,8 +40,7 @@ export const STORAGE_KEYS: Record<
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
   | "HAS_SEEN_SHORTCUT_SHOWCASE"
   | "HAS_PENDING_SHOWCASE_OFFER"
-  | "CHECKLIST_PROGRESS"
-  | "CHECKLIST_DONE"
+  | "FIRST_EVENT_DONE"
   | "TRIAL_STARTED_AT"
   | "SHORTCUT_TIPS_MUTED"
   | "LIFE_PREFERENCES"
@@ -67,8 +63,7 @@ export const STORAGE_KEYS: Record<
     "compass.onboarding.has-dismissed-tasks-removal-notice",
   HAS_SEEN_SHORTCUT_SHOWCASE: "compass.onboarding.has-seen-shortcut-showcase",
   HAS_PENDING_SHOWCASE_OFFER: "compass.onboarding.has-pending-showcase-offer",
-  CHECKLIST_PROGRESS: "compass.onboarding.checklist-progress",
-  CHECKLIST_DONE: "compass.onboarding.checklist-done",
+  FIRST_EVENT_DONE: "compass.onboarding.first-event-done",
   TRIAL_STARTED_AT: "compass.trial.started-at",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   LIFE_PREFERENCES: "compass.life.preferences",

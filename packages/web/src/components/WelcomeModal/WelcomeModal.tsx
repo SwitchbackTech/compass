@@ -71,7 +71,7 @@ export function WelcomeModal() {
     // Exploring without an account lands straight on the calendar. The
     // shortcut practice is an educational layer for people who have a real
     // calendar to practice on, so it waits for signup (or the palette); the
-    // checklist teaches the same moves on the sample events meanwhile.
+    // first-event prompt takes over on the real calendar in the meantime.
     shortcutShowcaseActions.markSkippedWithoutStarting();
     track("welcome_modal_dismissed", { cta });
     beginDismiss(() => setIsOpen(false));
