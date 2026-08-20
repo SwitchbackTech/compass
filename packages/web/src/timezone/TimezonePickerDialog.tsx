@@ -1,18 +1,20 @@
 import {
   type KeyboardEvent as ReactKeyboardEvent,
+  type UIEvent as ReactUIEvent,
   useId,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 import {
   setPinnedTimeZone,
   useEffectiveTimeZone,
   usePinnedTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
+import { TimezoneOptionButton } from "@web/timezone/TimezoneOptionButton";
 import {
   buildTimeZoneList,
   filterTimeZones,
@@ -20,6 +22,7 @@ import {
 } from "@web/timezone/timezone-catalog";
 
 const AUTO_ID = "auto";
+const VISIBLE_PAGE = 40;
 
 interface TimezonePickerDialogProps {
   onDismiss: () => void;
@@ -36,17 +39,23 @@ export function TimezonePickerDialog({
   const listId = useId();
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState(pinnedTimeZone ?? AUTO_ID);
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_PAGE);
   const now = useMemo(() => new Date(), []);
-  const zones = useMemo(() => {
-    const list = buildTimeZoneList(now);
-    const sorted = sortTimeZonesByOffsetDistance(list, effectiveTimeZone);
-    return filterTimeZones(sorted, query);
-  }, [effectiveTimeZone, now, query]);
+  const catalog = useMemo(
+    () =>
+      sortTimeZonesByOffsetDistance(buildTimeZoneList(now), effectiveTimeZone),
+    [effectiveTimeZone, now],
+  );
+  const zones = useMemo(
+    () => filterTimeZones(catalog, query),
+    [catalog, query],
+  );
 
   const browserZone = getBrowserTimeZone();
   const browserAbbreviation = formatTimeZoneAbbreviation(browserZone, now);
   const isAuto = pinnedTimeZone === null;
   const optionIds = [AUTO_ID, ...zones.map((zone) => zone.id)];
+  const visibleZones = zones.slice(0, visibleCount);
 
   const selectZone = (timeZone: string | null) => {
     setPinnedTimeZone(timeZone);
@@ -60,6 +69,7 @@ export function TimezonePickerDialog({
       Math.max(0, (currentIndex === -1 ? 0 : currentIndex) + delta),
     );
     setActiveId(optionIds[nextIndex] ?? AUTO_ID);
+    setVisibleCount((count) => (nextIndex > count ? nextIndex : count));
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
@@ -77,6 +87,12 @@ export function TimezonePickerDialog({
         selectZone(activeId);
       }
     }
+  };
+
+  const handleListScroll = (event: ReactUIEvent<HTMLDivElement>) => {
+    const list = event.currentTarget;
+    if (list.scrollTop + list.clientHeight < list.scrollHeight - 24) return;
+    setVisibleCount((count) => Math.min(zones.length, count + VISIBLE_PAGE));
   };
 
   return (
@@ -101,6 +117,7 @@ export function TimezonePickerDialog({
           onChange={(event) => {
             setQuery(event.target.value);
             setActiveId(AUTO_ID);
+            setVisibleCount(VISIBLE_PAGE);
           }}
           onKeyDown={handleKeyDown}
           placeholder="Search city, region, or abbreviation"
@@ -111,6 +128,7 @@ export function TimezonePickerDialog({
           aria-label="Timezones"
           className="max-h-80 overflow-y-auto"
           id={listId}
+          onScroll={handleListScroll}
           role="listbox"
         >
           <TimezoneOptionButton
@@ -121,7 +139,7 @@ export function TimezonePickerDialog({
             onSelect={() => selectZone(null)}
             selected={isAuto}
           />
-          {zones.map((zone) => (
+          {visibleZones.map((zone) => (
             <TimezoneOptionButton
               active={activeId === zone.id}
               description={zone.secondary}
@@ -135,37 +153,5 @@ export function TimezonePickerDialog({
         </div>
       </div>
     </OverlayPanel>
-  );
-}
-
-function TimezoneOptionButton({
-  active,
-  description,
-  id,
-  label,
-  onSelect,
-  selected,
-}: {
-  active: boolean;
-  description: string;
-  id: string;
-  label: string;
-  onSelect: () => void;
-  selected: boolean;
-}) {
-  return (
-    <button
-      aria-selected={selected}
-      className={`flex w-full flex-col items-start rounded-sm px-3 py-2 text-left text-sm ${
-        active ? "bg-surface-overlay" : ""
-      } ${selected ? "text-text" : "text-text-muted"} hover:bg-surface-overlay hover:text-text`}
-      id={id}
-      onClick={onSelect}
-      role="option"
-      type="button"
-    >
-      <span className="text-text">{label}</span>
-      <span className="text-text-muted text-xs">{description}</span>
-    </button>
   );
 }

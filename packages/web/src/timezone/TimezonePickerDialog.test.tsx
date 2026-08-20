@@ -38,6 +38,17 @@ describe("TimezonePickerDialog", () => {
     expect(getPinnedTimeZone()).toBe("America/Chicago");
   });
 
+  it("does not mount the full IANA catalog on first paint", () => {
+    render(
+      <TimezonePickerDialog onDismiss={() => timezoneDialogActions.close()} />,
+    );
+
+    const options = screen.getAllByRole("option");
+    expect(options[0]).toHaveAccessibleName(/Use browser timezone \(Auto\)/);
+    expect(options.length).toBeGreaterThan(1);
+    expect(options.length).toBeLessThan(80);
+  });
+
   it("pins the highlighted search result on Enter", async () => {
     const user = userEvent.setup();
     render(

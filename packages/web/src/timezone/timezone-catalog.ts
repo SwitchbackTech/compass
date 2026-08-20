@@ -47,15 +47,21 @@ function formatOffsetLabel(timeZone: string, at: Date): string {
   );
 }
 
-let cachedZones: string[] | null = null;
+let cachedZoneIds: string[] | null = null;
+let cachedList: { minute: number; items: TimeZoneListItem[] } | null = null;
 
 function supportedTimeZones(): string[] {
-  cachedZones ??= Intl.supportedValuesOf("timeZone");
-  return cachedZones;
+  cachedZoneIds ??= Intl.supportedValuesOf("timeZone");
+  return cachedZoneIds;
 }
 
 export function buildTimeZoneList(at: Date = new Date()): TimeZoneListItem[] {
-  return supportedTimeZones().map((id) => {
+  const minute = Math.floor(at.getTime() / 60_000);
+  if (cachedList?.minute === minute) {
+    return cachedList.items;
+  }
+
+  const items = supportedTimeZones().map((id) => {
     const city = timeZoneCityName(id);
     const region = regionFromIanaId(id);
     const abbreviation = formatTimeZoneAbbreviation(id, at);
@@ -71,6 +77,8 @@ export function buildTimeZoneList(at: Date = new Date()): TimeZoneListItem[] {
       keywords: [id, region, abbreviation, offset],
     };
   });
+  cachedList = { minute, items };
+  return items;
 }
 
 export function sortTimeZonesByOffsetDistance(
