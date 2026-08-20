@@ -53,10 +53,6 @@ export function getPinnedTimeZone(): string | null {
   return pinnedTimeZoneStore.get();
 }
 
-export function isTimeZonePinned(): boolean {
-  return pinnedTimeZoneStore.get() !== null;
-}
-
 export function getEffectiveTimeZone(): string {
   return currentEffectiveTimeZone();
 }

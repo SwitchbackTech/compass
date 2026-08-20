@@ -1,5 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { TimeZoneSchema } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
   computeCurrentEventDateRange,
@@ -613,6 +614,6 @@ describe("mapToBackend timed overnight", () => {
 
     expect(schedule.kind).toBe("timed");
     if (schedule.kind !== "timed") return;
-    expect(schedule.timeZone).toBe("America/Chicago");
+    expect(schedule.timeZone).toBe(TimeZoneSchema.parse("America/Chicago"));
   });
 });

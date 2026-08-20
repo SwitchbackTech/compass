@@ -38,6 +38,19 @@ describe("TimezonePickerDialog", () => {
     expect(getPinnedTimeZone()).toBe("America/Chicago");
   });
 
+  it("pins the highlighted search result on Enter", async () => {
+    const user = userEvent.setup();
+    render(
+      <TimezonePickerDialog onDismiss={() => timezoneDialogActions.close()} />,
+    );
+
+    const search = screen.getByRole("searchbox", { name: "Search timezones" });
+    await user.type(search, "Chicago");
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    expect(getPinnedTimeZone()).toBe("America/Chicago");
+  });
+
   it("returns to Auto from the first row", async () => {
     const user = userEvent.setup();
     act(() => {

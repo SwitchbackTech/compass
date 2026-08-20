@@ -62,7 +62,7 @@ export function TimezonePickerDialog({
     setActiveId(optionIds[nextIndex] ?? AUTO_ID);
   };
 
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
       moveActive(1);
@@ -89,7 +89,7 @@ export function TimezonePickerDialog({
       variant="modal"
       widthClassName="w-[480px]"
     >
-      <div className="flex w-full flex-col gap-3" onKeyDown={handleKeyDown}>
+      <div className="flex w-full flex-col gap-3">
         <input
           ref={searchRef}
           aria-autocomplete="list"
@@ -102,6 +102,7 @@ export function TimezonePickerDialog({
             setQuery(event.target.value);
             setActiveId(AUTO_ID);
           }}
+          onKeyDown={handleKeyDown}
           placeholder="Search city, region, or abbreviation"
           type="search"
           value={query}

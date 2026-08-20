@@ -49,7 +49,7 @@ export const convertAllDayToTimedDates = (
   event: Pick<CompassEvent, "startDate">,
   startMinute: number,
 ): { startDate: string; endDate: string } => {
-  const start = calendarDateInEffectiveTimeZone(event.startDate)
+  const start = calendarDateInEffectiveTimeZone(event.startDate ?? "")
     .startOf("day")
     .add(startMinute, "minute");
   return {
@@ -108,13 +108,15 @@ export const nudgeEventDates = (
   if (!event.startDate || !event.endDate) return null;
   if (event.isAllDay && movement.minutes !== 0) return null;
 
+  const startDate = event.startDate;
+  const endDate = event.endDate;
   const parse = event.isAllDay
     ? calendarDateInEffectiveTimeZone
     : inEffectiveTimeZone;
-  const nextStart = parse(event.startDate)
+  const nextStart = parse(startDate)
     .add(movement.days, "day")
     .add(movement.minutes, "minutes");
-  const nextEnd = parse(event.endDate)
+  const nextEnd = parse(endDate)
     .add(movement.days, "day")
     .add(movement.minutes, "minutes");
 
@@ -149,19 +151,21 @@ export const nudgeEventEdgeDates = (
   edge: EventEdge,
   movement: EventNudgeMovement,
 ): { startDate: string; endDate: string; edge: EventEdge } | null => {
-  if (!event.startDate || !event.endDate) return null;
+  const startDate = event.startDate;
+  const endDate = event.endDate;
+  if (!startDate || !endDate) return null;
 
   if (event.isAllDay) {
     if (movement.days === 0) return null;
-    return nudgeAllDayEdgeDates(event, edge, movement.days);
+    return nudgeAllDayEdgeDates({ startDate, endDate }, edge, movement.days);
   }
 
   if (movement.minutes === 0) return null;
-  return nudgeTimedEdgeDates(event, edge, movement.minutes);
+  return nudgeTimedEdgeDates({ startDate, endDate }, edge, movement.minutes);
 };
 
 const nudgeTimedEdgeDates = (
-  event: Pick<CompassEvent, "startDate" | "endDate">,
+  event: { startDate: string; endDate: string },
   edge: EventEdge,
   minutesDelta: number,
 ): { startDate: string; endDate: string; edge: EventEdge } | null => {
@@ -212,7 +216,7 @@ const nudgeTimedEdgeDates = (
 };
 
 const nudgeAllDayEdgeDates = (
-  event: Pick<CompassEvent, "startDate" | "endDate">,
+  event: { startDate: string; endDate: string },
   edge: EventEdge,
   daysDelta: number,
 ): { startDate: string; endDate: string; edge: EventEdge } => {
