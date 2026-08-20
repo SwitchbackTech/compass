@@ -10,10 +10,19 @@ import {
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+import { mapWithConcurrency } from "@sync/util/map-with-concurrency";
+
+const FOREGROUND_ENQUEUE_CONCURRENCY = 10;
 
 export interface ConnectionRefreshDeps {
   resources: SyncResourceRepository;
   jobs: JobRepository;
+  connections: Pick<ProviderConnectionRepository, "listByPrincipal">;
+}
+
+export interface ForegroundRefreshDeps {
+  resources: Pick<SyncResourceRepository, "listStaleEventsByPrincipal">;
+  jobs: Pick<JobRepository, "enqueueForeground">;
   connections: Pick<ProviderConnectionRepository, "listByPrincipal">;
 }
 
@@ -102,6 +111,62 @@ export async function refreshPrincipalCalendars(
   );
   for (const outcome of outcomes) {
     tally[outcome] += 1;
+  }
+  return tally;
+}
+
+/**
+ * Bound staleness for a principal actively viewing Compass when a Google push
+ * notification is lost. Unlike the manual refresh path this only touches
+ * ready resources that have not recently attempted a pull; it deliberately
+ * does not rediscover calendars or revive failed jobs every foreground tick.
+ */
+export async function refreshStalePrincipalCalendars(
+  deps: ForegroundRefreshDeps,
+  tenantId: TenantId,
+  principalId: PrincipalId,
+  staleBefore: Date,
+  now: () => Date = () => new Date(),
+): Promise<ConnectionRefreshTally> {
+  const [candidates, connections] = await Promise.all([
+    deps.resources.listStaleEventsByPrincipal(
+      tenantId,
+      principalId,
+      staleBefore,
+    ),
+    deps.connections.listByPrincipal(tenantId, principalId),
+  ]);
+  const refreshableConnectionIds = new Set(
+    connections
+      .filter(
+        (connection) =>
+          connection.state === "healthy" || connection.state === "delayed",
+      )
+      .map((connection) => connection._id),
+  );
+  const resources = candidates.filter((resource) =>
+    refreshableConnectionIds.has(resource.connectionId),
+  );
+  const runAfter = now();
+  const tally: ConnectionRefreshTally = {
+    resources: resources.length,
+    created: 0,
+    boosted: 0,
+    requeuedFailed: 0,
+    inFlight: 0,
+  };
+  const outcomes = await mapWithConcurrency(
+    resources,
+    FOREGROUND_ENQUEUE_CONCURRENCY,
+    async (resource) => {
+      const { outcome } = await deps.jobs.enqueueForeground(
+        resourceJob(resource, "incrementalPull", runAfter, JOB_PRIORITY.user),
+      );
+      return outcome;
+    },
+  );
+  for (const outcome of outcomes) {
+    if (outcome !== "failed") tally[outcome] += 1;
   }
   return tally;
 }

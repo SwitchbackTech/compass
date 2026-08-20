@@ -1,6 +1,10 @@
+import { faker } from "@faker-js/faker";
 import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { refreshPrincipalCalendars } from "@sync/domain/connection-refresh.service";
+import {
+  refreshPrincipalCalendars,
+  refreshStalePrincipalCalendars,
+} from "@sync/domain/connection-refresh.service";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
@@ -114,6 +118,111 @@ describe("refreshPrincipalCalendars (db)", () => {
         .countDocuments({
           coalescingKey: `calendarListSync:${calendar.connectionId}`,
         }),
+    ).toBe(1);
+  });
+
+  it("foreground refresh only enqueues ready resources without a recent attempt", async () => {
+    const { resources, jobs, calendars, connections } = deps();
+    const connection = await connections.upsertByProviderAccount({
+      tenantId: faker.database.mongodbObjectId(),
+      principalId: faker.database.mongodbObjectId(),
+      provider: "google",
+      account: {
+        providerAccountId: "foreground-refresh@gmail.com",
+        email: "foreground-refresh@gmail.com",
+        displayName: "Foreground refresh",
+      },
+      capabilities: ["readEvents"],
+      state: "healthy",
+      stateReason: null,
+    });
+    const staleCalendar: ProviderCalendarRecord = await seedProviderCalendar(
+      calendars,
+      {
+        tenantId: connection.tenantId,
+        principalId: connection.principalId,
+        connectionId: connection._id,
+      },
+    );
+    const recentCalendar: ProviderCalendarRecord = await seedProviderCalendar(
+      calendars,
+      {
+        tenantId: staleCalendar.tenantId,
+        principalId: staleCalendar.principalId,
+        connectionId: staleCalendar.connectionId,
+        providerCalendarId: "recent@google.com",
+        primary: false,
+      },
+    );
+    const importingCalendar: ProviderCalendarRecord =
+      await seedProviderCalendar(calendars, {
+        tenantId: staleCalendar.tenantId,
+        principalId: staleCalendar.principalId,
+        connectionId: staleCalendar.connectionId,
+        providerCalendarId: "importing@google.com",
+        primary: false,
+      });
+    const stale = await resources.ensure({
+      tenantId: staleCalendar.tenantId,
+      principalId: staleCalendar.principalId,
+      connectionId: staleCalendar.connectionId,
+      resourceKind: "events",
+      calendarId: staleCalendar._id,
+    });
+    const recent = await resources.ensure({
+      tenantId: recentCalendar.tenantId,
+      principalId: recentCalendar.principalId,
+      connectionId: recentCalendar.connectionId,
+      resourceKind: "events",
+      calendarId: recentCalendar._id,
+    });
+    await resources.ensure({
+      tenantId: importingCalendar.tenantId,
+      principalId: importingCalendar.principalId,
+      connectionId: importingCalendar.connectionId,
+      resourceKind: "events",
+      calendarId: importingCalendar._id,
+    });
+    await resources.setBootstrapState(
+      stale.tenantId,
+      stale.principalId,
+      stale._id,
+      "ready",
+    );
+    await resources.setBootstrapState(
+      recent.tenantId,
+      recent.principalId,
+      recent._id,
+      "ready",
+    );
+    await resources.markAttempt(
+      recent.tenantId,
+      recent.principalId,
+      recent._id,
+      new Date("2026-08-10T11:59:50.000Z"),
+    );
+
+    const tally = await refreshStalePrincipalCalendars(
+      { resources, jobs, connections },
+      stale.tenantId,
+      stale.principalId,
+      new Date("2026-08-10T11:59:30.000Z"),
+      now,
+    );
+
+    expect(tally).toMatchObject({ resources: 1, created: 1 });
+    expect(
+      await storage
+        .db()
+        .collection(SYNC_COLLECTIONS.jobs)
+        .findOne({
+          coalescingKey: `incrementalPull:${stale._id}`,
+        }),
+    ).toMatchObject({ priority: JOB_PRIORITY.user });
+    expect(
+      await storage.db().collection(SYNC_COLLECTIONS.jobs).countDocuments({
+        kind: "incrementalPull",
+      }),
     ).toBe(1);
   });
 });

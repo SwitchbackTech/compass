@@ -10,6 +10,7 @@ import {
 import {
   type ConnectionListResponse,
   ConnectionRefreshResponseSchema,
+  ForegroundRefreshRequestSchema,
   GoogleConnectionAdoptionRequestSchema,
   type ProviderCalendar,
   ProviderCalendarSchema,
@@ -26,6 +27,7 @@ import {
   ConnectionIdSchema,
   type PrincipalId,
   type TenantId,
+  TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
@@ -34,7 +36,10 @@ import {
   type BusyAvailability,
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
-import { refreshPrincipalCalendars } from "@sync/domain/connection-refresh.service";
+import {
+  refreshPrincipalCalendars,
+  refreshStalePrincipalCalendars,
+} from "@sync/domain/connection-refresh.service";
 import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
@@ -65,6 +70,7 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
+import { mapWithConcurrency } from "@sync/util/map-with-concurrency";
 
 const logger = Logger("sync:connection.routes");
 
@@ -74,6 +80,10 @@ export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
 export const REFRESH_PATH = "/internal/connections/refresh";
+export const FOREGROUND_REFRESH_PATH =
+  "/internal/connections/foreground-refresh";
+const FOREGROUND_STALE_AFTER_MS = 30_000;
+const FOREGROUND_PRINCIPAL_CONCURRENCY = 10;
 export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
 // Where the provider redirects the browser after consent; `begin` builds the
@@ -422,6 +432,62 @@ export function registerConnectionRoutes(
           "Failed to compute busy availability",
           redactedCause(error),
         );
+        respondInternalError(res);
+      }
+    },
+  );
+
+  // Server-driven safety net for users with an open Compass stream. Push
+  // remains the fast path; this bounds a missed notification without turning
+  // every browser tab into an independent provider poller.
+  app.post(
+    FOREGROUND_REFRESH_PATH,
+    internalRateLimit,
+    deps.serviceAuthMiddleware,
+    async (req, res) => {
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive") {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      try {
+        const parsed = ForegroundRefreshRequestSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(Status.BAD_REQUEST).json({ error: "invalid_request" });
+          return;
+        }
+        const repos = syncRepositories(deps.mongo);
+        const now = new Date((deps.now ?? Date.now)());
+        const tallies = await mapWithConcurrency(
+          parsed.data.principalIds,
+          FOREGROUND_PRINCIPAL_CONCURRENCY,
+          (principalId) =>
+            refreshStalePrincipalCalendars(
+              {
+                resources: repos.syncResources,
+                jobs: repos.jobs,
+                connections: repos.connections,
+              },
+              TenantIdSchema.parse(principalId),
+              principalId,
+              new Date(now.getTime() - FOREGROUND_STALE_AFTER_MS),
+              () => now,
+            ),
+        );
+        const totals = tallies.reduce(
+          (total, tally) => ({
+            enqueued: total.enqueued + tally.created + tally.boosted,
+            inFlight: total.inFlight + tally.inFlight,
+            resources: total.resources + tally.resources,
+          }),
+          { enqueued: 0, inFlight: 0, resources: 0 },
+        );
+        res
+          .status(Status.OK)
+          .json(ConnectionRefreshResponseSchema.parse(totals));
+      } catch (error) {
+        logger.error("Failed foreground refresh batch", redactedCause(error));
         respondInternalError(res);
       }
     },

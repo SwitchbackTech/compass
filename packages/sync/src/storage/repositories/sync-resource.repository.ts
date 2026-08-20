@@ -456,6 +456,30 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
+  // Foreground freshness fallback: resources for one currently-connected
+  // principal that have not even attempted a pull since `before`. Attempt
+  // time, rather than success time, prevents a failing provider resource from
+  // being boosted every cycle and bypassing its retry backoff.
+  async listStaleEventsByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    before: Date,
+    limit = 200,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .find({
+        tenantId,
+        principalId,
+        resourceKind: "events",
+        bootstrapState: "ready",
+        $or: [{ lastAttemptAt: { $lt: before } }, { lastAttemptAt: null }],
+      })
+      .sort({ lastAttemptAt: 1 })
+      .limit(limit)
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
   // Events resources whose last successful sync is older than `before` (or which
   // never succeeded), oldest first, bounded. This is the reconcile sweep's input
   // — a missed-webhook fallback for connections that CAN still authenticate — so

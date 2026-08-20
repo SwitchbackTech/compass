@@ -1,6 +1,7 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
+import { foregroundSyncRefresh } from "@backend/servers/sse/foreground-sync-refresh";
 import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
@@ -29,6 +30,7 @@ async function start() {
     // locally connected. Started here (not at module import) so a test
     // importing the bridge for its types never triggers a live network poll.
     syncChangeFeedBridge.start();
+    foregroundSyncRefresh.start();
   } catch (error) {
     logger.error("Problems encountered during startup", error);
 
@@ -50,6 +52,7 @@ async function closeHttpServer(): Promise<void> {
 async function gracefulShutdown(): Promise<void> {
   try {
     syncChangeFeedBridge.stop();
+    foregroundSyncRefresh.stop();
     await closeHttpServer();
     await mongoService.stop();
     await stopPostHogLogs();

@@ -13,7 +13,10 @@ import {
 } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
-import { signInternalRequest } from "@sync/auth/internal-auth";
+import {
+  signInternalRequest,
+  signServiceRequest,
+} from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
 import {
   deriveOAuthStateSecret,
@@ -32,6 +35,7 @@ import {
   CALENDARS_PATH,
   CONNECTIONS_PATH,
   EVENTS_FULL_PATH,
+  FOREGROUND_REFRESH_PATH,
   OAUTH_CALLBACK_PATH,
   REFRESH_PATH,
 } from "@sync/server/connection.routes";
@@ -155,6 +159,15 @@ const signedHeaders = (
       tenantId,
       principalId,
     }),
+  };
+};
+
+const serviceSignedHeaders = (): Record<string, string> => {
+  const timestamp = Date.now();
+  return {
+    "content-type": "application/json",
+    "x-sync-timestamp": String(timestamp),
+    "x-sync-signature": signServiceRequest(SECRET, timestamp),
   };
 };
 
@@ -1636,5 +1649,30 @@ describe("POST /internal/connections/refresh", () => {
     );
     expect(still?.leaseOwner).toBe("worker-1");
     expect(still?.state).toBe("claimed");
+  });
+
+  it("batch foreground refresh enqueues only stale ready resources", async () => {
+    const principalId = objectId();
+    const { resource } = await seedEventsResource(principalId, principalId);
+    await resources.setBootstrapState(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "ready",
+    );
+    await startService();
+
+    const res = await fetch(`${base}${FOREGROUND_REFRESH_PATH}`, {
+      method: "POST",
+      headers: serviceSignedHeaders(),
+      body: JSON.stringify({ principalIds: [principalId] }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      enqueued: 1,
+      inFlight: 0,
+      resources: 1,
+    });
   });
 });

@@ -20,6 +20,7 @@ import {
   CALENDARS_PATH,
   CONNECTIONS_PATH,
   EVENTS_FULL_PATH,
+  FOREGROUND_REFRESH_PATH,
 } from "@sync/server/connection.routes";
 import { PRINCIPAL_PATH } from "@sync/server/principal.routes";
 import {
@@ -610,6 +611,30 @@ describe("SyncServiceClient", () => {
     });
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("sends foreground principals in one service-authenticated batch", async () => {
+    const principalIds = [objectId(), objectId()];
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ enqueued: 1, inFlight: 0, resources: 2 }),
+    }));
+
+    const result = await client(fn).refreshForegroundConnections(
+      principalIds as never,
+    );
+
+    expect(result.ok).toBe(true);
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${FOREGROUND_REFRESH_PATH}`);
+    expect(JSON.parse(sent?.body ?? "{}")).toEqual({ principalIds });
+    expect(
+      verifyServiceRequest({
+        secret: SECRET,
+        headers: sent?.headers ?? {},
+        now: NOW,
+      }).ok,
+    ).toBe(true);
   });
 
   it("adopts a server-exchanged Google authorization with a signed POST", async () => {
