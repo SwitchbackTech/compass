@@ -7,6 +7,7 @@ import {
   subscribeToStorageKey,
 } from "@web/common/utils/external-store.util";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
+import { resetTimezoneMismatchSnoozeForTests } from "@web/timezone/timezone-mismatch";
 
 function isValidTimeZone(value: string): boolean {
   try {
@@ -146,8 +147,8 @@ export function setBrowserTimeZoneForTests(timeZone: string): void {
 
 export function resetEffectiveTimeZoneStoreForTests(): void {
   persistentBrowserStore.remove(STORAGE_KEYS.DEFAULT_TIMEZONE);
-  persistentBrowserStore.remove(STORAGE_KEYS.TIMEZONE_MISMATCH_SNOOZED_BROWSER);
   pinnedTimeZoneStore.set(null);
   browserTimeZoneStore.set(getBrowserTimeZone());
   syncEffectiveTimeZone();
+  resetTimezoneMismatchSnoozeForTests();
 }

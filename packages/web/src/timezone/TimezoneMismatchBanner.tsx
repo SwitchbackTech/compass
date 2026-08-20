@@ -17,9 +17,9 @@ export function TimezoneMismatchBanner({
   );
 
   return (
-    <div
+    <section
+      aria-label="Timezone mismatch"
       className="flex flex-wrap items-center justify-between gap-3 border-border border-b bg-surface-panel px-4 py-2 text-text-muted text-xs"
-      role="status"
     >
       <p>{message}</p>
       <div className="flex shrink-0 gap-2">
@@ -38,6 +38,6 @@ export function TimezoneMismatchBanner({
           {keepLabel}
         </button>
       </div>
-    </div>
+    </section>
   );
 }
