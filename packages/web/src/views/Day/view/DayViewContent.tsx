@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, useRef } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -32,6 +31,7 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
+import { useToday } from "@web/views/Week/hooks/useToday";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -42,7 +42,8 @@ export const DayViewContent = memo(() => {
   const mainRef = useRef<HTMLDivElement | null>(null);
 
   const dateInView = useDateInView();
-  const isViewingToday = dateInView.isSame(dayjs(), "day");
+  const { today } = useToday();
+  const isViewingToday = dateInView.isSame(today, "day");
 
   const {
     navigateToDate,
@@ -71,9 +72,6 @@ export const DayViewContent = memo(() => {
   );
 
   const handleGoToToday = useCallback(() => {
-    // Compare dates in the same timezone to avoid timezone issues
-    // Both dates are in local timezone, ensuring accurate day comparison
-    const today = dayjs().startOf("day");
     const isViewingToday = dateInView.isSame(today, "day");
 
     if (isViewingToday) {
@@ -81,7 +79,7 @@ export const DayViewContent = memo(() => {
     } else {
       navigateToToday();
     }
-  }, [dateInView, navigateToToday]);
+  }, [dateInView, navigateToToday, today]);
 
   const handleCreateTimedEvent = useCallback(() => {
     emitViewCommand("CREATE_TIMED_DRAFT");

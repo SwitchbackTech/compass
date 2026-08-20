@@ -17,6 +17,7 @@ import {
 import { draftActions } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { isDraftRenderedInAllDayRow } from "@web/grid/layout/all-day-draft.position";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 // Keeps a newly-timed event off the very top edge of the scrolled-in
 // viewport rather than glued flush against it.
@@ -53,17 +54,15 @@ export const createAlldayDraft = (
   activity: "createShortcut",
   calendarId: CalendarId | null = null,
 ) => {
-  const today = dayjs();
+  const today = dayjs().tz(getEffectiveTimeZone());
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
     ? today.startOf("day")
     : startOfView.startOf("day");
-  const startDate = start.format();
-  const endDate = start.add(1, "day").format();
   const draft = createGridEventDraft(
     {
       kind: "allDay",
-      start: new Date(startDate),
-      end: new Date(endDate),
+      start: start.toDate(),
+      end: start.add(1, "day").toDate(),
     },
     undefined,
     calendarId,
@@ -73,10 +72,11 @@ export const createAlldayDraft = (
 };
 
 export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
-  const currentMinute = dayjs().minute();
+  const now = dayjs().tz(getEffectiveTimeZone());
+  const currentMinute = now.minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 
-  const fullStart = isCurrentWeek ? dayjs() : startOfWeek.hour(dayjs().hour());
+  const fullStart = isCurrentWeek ? now : startOfWeek.hour(now.hour());
   const _start = fullStart.minute(nextMinuteInterval).second(0);
 
   const _end = _start.add(1, "hour");

@@ -1,13 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
-import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
+import * as browserTimezone from "@web/timezone/browser-timezone";
 import {
   getEffectiveTimeZone,
+  resetEffectiveTimeZoneStoreForTests,
   setEffectiveTimeZoneForTests,
+  setPinnedTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { GridTimezoneLabel } from "@web/timezone/GridTimezoneLabel";
+import {
+  selectTimezoneDialogOpen,
+  timezoneDialogActions,
+  useTimezoneDialogStore,
+} from "@web/timezone/timezone-dialog.store";
 import { describe, expect, it, spyOn } from "bun:test";
 
 describe("GridTimezoneLabel", () => {
@@ -55,7 +62,23 @@ describe("GridTimezoneLabel", () => {
     ).toHaveTextContent("GMT+5:30");
   });
 
-  it("rereads the browser timezone on the poll interval", () => {
+  it("opens the timezone picker", async () => {
+    const user = userEvent.setup();
+    render(<GridTimezoneLabel />);
+
+    await user.click(
+      screen.getByRole("button", { name: /Calendar timezone:/ }),
+    );
+
+    expect(selectTimezoneDialogOpen(useTimezoneDialogStore.getState())).toBe(
+      true,
+    );
+    act(() => {
+      timezoneDialogActions.close();
+    });
+  });
+
+  it("keeps a pinned zone across the browser poll", () => {
     const intervalCallbacks: Array<() => void> = [];
     const setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(
       ((callback: TimerHandler) => {
@@ -71,34 +94,71 @@ describe("GridTimezoneLabel", () => {
     ).mockImplementation(() => {});
 
     try {
-      const browserZone = getBrowserTimeZone();
-      expect(browserZone).not.toBe("Pacific/Kiritimati");
-
       act(() => {
         setEffectiveTimeZoneForTests("Pacific/Kiritimati");
       });
 
       render(<GridTimezoneLabel />);
-      expect(
-        screen.getByRole("button", {
-          name: `Calendar timezone: ${formatTimeZoneAbbreviation("Pacific/Kiritimati")}`,
-        }),
-      ).toBeInTheDocument();
-
       act(() => {
         for (const callback of intervalCallbacks) {
           callback();
         }
       });
 
-      expect(getEffectiveTimeZone()).toBe(browserZone);
-      const browserAbbreviation = formatTimeZoneAbbreviation(browserZone);
+      expect(getEffectiveTimeZone()).toBe("Pacific/Kiritimati");
       expect(
         screen.getByRole("button", {
-          name: `Calendar timezone: ${browserAbbreviation}`,
+          name: `Calendar timezone: ${formatTimeZoneAbbreviation("Pacific/Kiritimati")}`,
         }),
-      ).toHaveTextContent(browserAbbreviation);
+      ).toBeInTheDocument();
     } finally {
+      setIntervalSpy.mockRestore();
+      clearIntervalSpy.mockRestore();
+    }
+  });
+
+  it("rereads the browser timezone on the poll interval in Auto mode", () => {
+    const intervalCallbacks: Array<() => void> = [];
+    const setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(
+      ((callback: TimerHandler) => {
+        if (typeof callback === "function") {
+          intervalCallbacks.push(() => callback());
+        }
+        return 1 as unknown as ReturnType<typeof setInterval>;
+      }) as unknown as typeof setInterval,
+    );
+    const clearIntervalSpy = spyOn(
+      globalThis,
+      "clearInterval",
+    ).mockImplementation(() => {});
+
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+      setPinnedTimeZone(null);
+    });
+    expect(getEffectiveTimeZone()).not.toBe("Pacific/Kiritimati");
+
+    const browserSpy = spyOn(
+      browserTimezone,
+      "getBrowserTimeZone",
+    ).mockReturnValue("Pacific/Kiritimati");
+
+    try {
+      render(<GridTimezoneLabel />);
+      act(() => {
+        for (const callback of intervalCallbacks) {
+          callback();
+        }
+      });
+
+      expect(getEffectiveTimeZone()).toBe("Pacific/Kiritimati");
+      expect(
+        screen.getByRole("button", {
+          name: `Calendar timezone: ${formatTimeZoneAbbreviation("Pacific/Kiritimati")}`,
+        }),
+      ).toBeInTheDocument();
+    } finally {
+      browserSpy.mockRestore();
       setIntervalSpy.mockRestore();
       clearIntervalSpy.mockRestore();
     }

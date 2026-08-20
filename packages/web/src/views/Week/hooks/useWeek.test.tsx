@@ -1,6 +1,7 @@
 import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const DATE_FORMAT = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
@@ -253,9 +254,10 @@ describe("useWeek", () => {
     expect(result.current.query.startOfView.format(DATE_FORMAT)).toBe(
       "2026-08-06",
     );
-    // WEEK_DAY_COUNT days from the anchor → exclusive end is the following midnight.
+    // WEEK_DAY_COUNT days from the anchor → exclusive end is the following
+    // midnight in the effective calendar timezone.
     expect(result.current.query.endOfView.format()).toBe(
-      dayjs("2026-08-13", DATE_FORMAT).startOf("day").format(),
+      dayjs.tz("2026-08-13", getEffectiveTimeZone()).startOf("day").format(),
     );
   });
 });

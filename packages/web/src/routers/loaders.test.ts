@@ -132,16 +132,15 @@ describe("loadDateParam", () => {
     expect(result).toMatchObject({ dateString: "2026-05-20" });
   });
 
-  // dayEventQueryRange formats dateInView to build the day's query bounds, so
-  // a UTC-mode value would shift the window off local midnight and drop
-  // evening events from the day view and Up Next card.
-  it("returns local-mode midnight, not UTC", () => {
+  // Midnight in the effective timezone. A UTC-mode parse of a date-only
+  // string would shift the day's query window and drop evening events.
+  it("returns midnight on the requested calendar date", () => {
     const result = loadDateParam({
       params: { dateString: "2026-05-20" },
     });
 
-    expect(result.dateInView.isUTC()).toBe(false);
     expect(result.dateInView.hour()).toBe(0);
+    expect(result.dateInView.format("YYYY-MM-DD")).toBe("2026-05-20");
   });
 });
 

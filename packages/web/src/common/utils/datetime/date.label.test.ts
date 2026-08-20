@@ -1,9 +1,20 @@
+import { act } from "react";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
+import {
+  resetEffectiveTimeZoneStoreForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
+import { afterEach, describe, expect, it } from "bun:test";
 
 const meridians = (label: string) =>
   (label.match(/am/gi) || label.match(/pm/gi) || []).length;
 
 describe("Time Labels", () => {
+  afterEach(() => {
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+    });
+  });
   it("removes minutes and am/pm when possible", () => {
     const morningLabel = getTimesLabel(
       "2022-07-06T06:00:00Z",
@@ -56,5 +67,15 @@ describe("Time Labels", () => {
     expect(
       getTimesLabel("2026-07-31T17:00:00+02:00", "2026-07-31T18:30:00+02:00"),
     ).toBe("3 - 4:30 PM");
+  });
+
+  it("localizes the label to a pinned calendar timezone", () => {
+    act(() => {
+      setPinnedTimeZone("America/Chicago");
+    });
+
+    expect(getTimesLabel("2022-07-06T06:00:00Z", "2022-07-06T07:00:00Z")).toBe(
+      "1 - 2 AM",
+    );
   });
 });

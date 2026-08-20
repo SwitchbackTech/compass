@@ -7,6 +7,7 @@ import { weekEventsQueryOptions } from "@web/events/queries/event.query.options"
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
+import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 import { type Category_View } from "@web/views/Week/week-view.types";
 
@@ -29,13 +30,14 @@ export const useWeek = (
   // Bare /week has no dateString. Default to today when only one day is
   // visible, otherwise the week-aligned start. Once navigation writes a
   // dateString, that drives the anchor at every width.
+  const timeZone = useEffectiveTimeZone();
   const defaultAnchorDate =
     visibleDayCount === 1 ? today : today.startOf("week");
   const anchorDateString =
     params?.dateString ?? defaultAnchorDate.format(DATE_FORMAT);
   const anchor = useMemo(
-    () => dayjs(anchorDateString, DATE_FORMAT),
-    [anchorDateString],
+    () => dayjs.tz(anchorDateString, timeZone),
+    [anchorDateString, timeZone],
   );
   const setAnchor = useCallback(
     (date: Dayjs) =>

@@ -14,6 +14,8 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 interface SelectedDates {
   startDate: Date;
@@ -204,10 +206,7 @@ export const getCalendarHeadingLabel = (
   }
 };
 
-// Browser IANA zone (e.g. "America/Chicago"), used to stamp timed schedules
-// built from local form input (B_G).
-export const getBrowserTimeZone = (): string =>
-  Intl.DateTimeFormat().resolvedOptions().timeZone;
+export { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 export const mapToBackend = (s: SelectedDates): EventSchedule => {
   if (s.isAllDay) {
@@ -227,7 +226,7 @@ export const mapToBackend = (s: SelectedDates): EventSchedule => {
     });
   }
 
-  const timeZone = getBrowserTimeZone();
+  const timeZone = getEffectiveTimeZone();
   const { startDate, endDate } = _addTimesToDates(s, timeZone);
 
   return EventScheduleSchema.parse({
@@ -299,7 +298,7 @@ const _cleanStartMeridiem = (start: string, end: string) => {
 };
 
 const _getTimeLabel = (date: string) =>
-  getTimeLabel(dayjs(date).format(HOURS_AM_FORMAT));
+  getTimeLabel(inEffectiveTimeZone(date).format(HOURS_AM_FORMAT));
 
 export const computeCurrentEventDateRange = (
   to: {

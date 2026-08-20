@@ -1,4 +1,5 @@
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   DRAFT_PADDING_BOTTOM,
@@ -14,6 +15,10 @@ import {
   type GridMeasurements,
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 export interface EventPositionInput {
   columnIndex?: number;
@@ -26,8 +31,8 @@ export const getTimedEventPosition = (
   event: GridEvent,
   input: EventPositionInput,
 ): EventPosition => {
-  const start = dayjs(event.startDate);
-  const end = dayjs(event.endDate);
+  const start = inEffectiveTimeZone(event.startDate);
+  const end = inEffectiveTimeZone(event.endDate);
   const dateIndex =
     input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
@@ -77,8 +82,8 @@ export const getBusyPeriodPosition = (
   segment: { start: string; end: string },
   input: BusyPeriodPositionInput,
 ): EventPosition => {
-  const start = dayjs(segment.start);
-  const end = dayjs(segment.end);
+  const start = inEffectiveTimeZone(segment.start);
+  const end = inEffectiveTimeZone(segment.end);
   const dateIndex =
     input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
@@ -147,37 +152,59 @@ const getVisibleAllDaySpan = (
   event: GridEvent,
   visibleDates: GridVisibleDate[],
 ) => {
-  const visibleStart = visibleDates[0]?.date.startOf("day");
+  const visibleStart = visibleDates[0]?.date;
   if (!visibleStart) {
     return null;
   }
 
   const visibleEnd =
-    visibleDates[visibleDates.length - 1]?.date.startOf("day") ?? visibleStart;
-  const eventStart = dayjs(event.startDate).startOf("day");
-  const exclusiveEnd = dayjs(event.endDate).startOf("day");
-  const eventEnd = exclusiveEnd.isAfter(eventStart)
-    ? exclusiveEnd.subtract(1, "day")
-    : eventStart;
+    visibleDates[visibleDates.length - 1]?.date ?? visibleStart;
+  const eventStartKey = calendarDayKey(
+    calendarDateInEffectiveTimeZone(event.startDate),
+  );
+  const exclusiveEndKey = calendarDayKey(
+    calendarDateInEffectiveTimeZone(event.endDate),
+  );
+  const eventEndKey =
+    exclusiveEndKey > eventStartKey
+      ? calendarDayKey(
+          calendarDateInEffectiveTimeZone(event.endDate).subtract(1, "day"),
+        )
+      : eventStartKey;
+  const visibleStartKey = calendarDayKey(visibleStart);
+  const visibleEndKey = calendarDayKey(visibleEnd);
 
-  if (eventEnd.isBefore(visibleStart) || eventStart.isAfter(visibleEnd)) {
+  if (eventEndKey < visibleStartKey || eventStartKey > visibleEndKey) {
     return null;
   }
 
-  const start = eventStart.isBefore(visibleStart) ? visibleStart : eventStart;
-  const end = eventEnd.isAfter(visibleEnd) ? visibleEnd : eventEnd;
+  const startKey =
+    eventStartKey < visibleStartKey ? visibleStartKey : eventStartKey;
+  const endKey = eventEndKey > visibleEndKey ? visibleEndKey : eventEndKey;
+  const start = visibleDates.find(
+    ({ date }) => calendarDayKey(date) === startKey,
+  )?.date;
+  const end = visibleDates.find(
+    ({ date }) => calendarDayKey(date) === endKey,
+  )?.date;
+
+  if (!start || !end) {
+    return null;
+  }
 
   return { end, start };
 };
+
+const calendarDayKey = (date: Dayjs) => date.format(YEAR_MONTH_DAY_FORMAT);
 
 const getVisibleDateIndex = (date: Dayjs, visibleDates: GridVisibleDate[]) => {
   if (visibleDates.length === 0) {
     return null;
   }
 
-  const normalizedDate = date.startOf("day");
-  const matchingIndex = visibleDates.findIndex(({ date: visibleDate }) =>
-    visibleDate.isSame(normalizedDate, "day"),
+  const eventDay = calendarDayKey(date);
+  const matchingIndex = visibleDates.findIndex(
+    ({ date: visibleDate }) => calendarDayKey(visibleDate) === eventDay,
   );
 
   if (matchingIndex !== -1) {

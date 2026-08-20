@@ -40,6 +40,7 @@ import {
 } from "@web/settings/settings.store";
 import { useThemeStore } from "@web/settings/theme/theme.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
+import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 type StoreReset = () => void;
@@ -63,6 +64,7 @@ const storeResets: StoreReset[] = [
   resetCalendarVisibilityStoreForTests,
   resetDefaultCalendarStoreForTests,
   resetEffectiveTimeZoneStoreForTests,
+  () => useTimezoneDialogStore.setState({ isOpen: false }, true),
   resetCollapsedAccountsStoreForTests,
   resetRecentCommandsStoreForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across

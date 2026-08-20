@@ -1,11 +1,16 @@
+import { act } from "react";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type AllDayDragVisual } from "@web/grid/interaction/types/all-day-drag.types";
 import { type TimedDragVisual } from "@web/grid/interaction/types/timed-drag.types";
 import {
+  resetEffectiveTimeZoneStoreForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
+import {
   allDayDragVisualToTimedGridEvent,
   timedDragVisualToAllDayGridEvent,
 } from "./cross-row.commit";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 // All-day dates are date-only with an exclusive end, so this single-day event
 // on the 13th ends on the 14th.
@@ -65,6 +70,12 @@ const timedDragVisual = (
   ...overrides,
 });
 
+afterEach(() => {
+  act(() => {
+    resetEffectiveTimeZoneStoreForTests();
+  });
+});
+
 describe("allDayDragVisualToTimedGridEvent", () => {
   it("invents a default-length block at the dropped start time on the drop column", () => {
     const result = allDayDragVisualToTimedGridEvent(
@@ -105,6 +116,20 @@ describe("allDayDragVisualToTimedGridEvent", () => {
 
     expect(result._id).toBe("all-day-event");
     expect(result.title).toBe("All-day event");
+  });
+
+  it("interprets drop minutes in the pinned calendar timezone", () => {
+    act(() => {
+      setPinnedTimeZone("America/Chicago");
+    });
+
+    const result = allDayDragVisualToTimedGridEvent(
+      allDayEvent,
+      allDayDragVisual({ dayDate: "2026-05-15", timedStartMinutes: 600 }),
+    );
+
+    expect(result.startDate).toContain("2026-05-15T10:00:00");
+    expect(result.startDate).toMatch(/-05:00$/);
   });
 });
 

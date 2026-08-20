@@ -152,6 +152,15 @@ describe("SettingsModal", () => {
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
   });
 
+  it("shows a default timezone control", () => {
+    renderSettings();
+
+    expect(screen.getByText("Default timezone")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Default timezone/ }),
+    ).toBeInTheDocument();
+  });
+
   it("lists every connected account with its own status", () => {
     renderSettings({
       connections: [

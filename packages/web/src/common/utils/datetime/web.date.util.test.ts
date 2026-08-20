@@ -1,5 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { TimeZoneSchema } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
   computeCurrentEventDateRange,
@@ -15,6 +16,7 @@ import {
   toUTCOffset,
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
+import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import {
   afterAll,
@@ -596,5 +598,22 @@ describe("mapToBackend timed overnight", () => {
 
     expect(() => mapToBackend(selected)).toThrow();
     expect(tryMapToBackend(selected).ok).toBe(false);
+  });
+
+  it("stamps the pinned timezone on new timed events", () => {
+    setPinnedTimeZone("America/Chicago");
+
+    const day = dayjs("2026-08-11T00:00:00");
+    const schedule = mapToBackend({
+      startDate: day.toDate(),
+      endDate: day.toDate(),
+      startTime: getTimeOptionByValue(day.hour(9).minute(0)),
+      endTime: getTimeOptionByValue(day.hour(10).minute(0)),
+      isAllDay: false,
+    });
+
+    expect(schedule.kind).toBe("timed");
+    if (schedule.kind !== "timed") return;
+    expect(schedule.timeZone).toBe(TimeZoneSchema.parse("America/Chicago"));
   });
 });

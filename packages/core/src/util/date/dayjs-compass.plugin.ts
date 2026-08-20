@@ -140,8 +140,8 @@ function rruleUntilToIsoString(this: typeof dayjs, rrule: string): string {
   return origDateFromUntil;
 }
 
-function setDefaultTimezone(this: typeof dayjs.tz) {
-  const defaultTimezone = this.guess();
+function setDefaultTimezone(this: typeof dayjs.tz, timezone?: string) {
+  const defaultTimezone = timezone ?? this.guess();
 
   Object.assign(this, { defaultTimezone });
 
@@ -167,6 +167,9 @@ export const dayjsCompassPlugin: PluginFunc<never> = (...params) => {
   const setDefault = setDefaultTimezone.bind(dayjsStatic.tz);
 
   setDefault();
+  dayjsStatic.setDefaultTimezone = (timezone: string) => {
+    setDefaultTimezone.call(dayjsStatic.tz, timezone);
+  };
 
   dayjsClass.prototype.next = next;
   dayjsClass.prototype.startOfNextWeek = startOfNextWeek;

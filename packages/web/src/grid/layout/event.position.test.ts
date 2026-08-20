@@ -1,4 +1,6 @@
+import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import {
   getAllDayEventPosition,
   getTimedEventPosition,
@@ -307,5 +309,35 @@ describe("event position", () => {
     );
 
     expect(position.top).toBe(3);
+  });
+
+  it("shifts a timed event's row when the effective timezone is pinned", () => {
+    const utcTop = getTimedEventPosition(
+      {
+        endDate: "2026-05-20T10:00:00.000Z",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-05-20T09:00:00.000Z",
+      } as never,
+      { measurements, visibleDates, isDraft: false },
+    ).top;
+
+    act(() => {
+      setPinnedTimeZone("America/Chicago");
+    });
+
+    const chicagoTop = getTimedEventPosition(
+      {
+        endDate: "2026-05-20T10:00:00.000Z",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-05-20T09:00:00.000Z",
+      } as never,
+      { measurements, visibleDates, isDraft: false },
+    ).top;
+
+    expect(utcTop).toBe(9 * 60);
+    expect(chicagoTop).toBe(4 * 60);
+    expect(chicagoTop).not.toBe(utcTop);
   });
 });

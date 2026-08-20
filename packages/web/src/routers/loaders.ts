@@ -5,11 +5,12 @@ import {
   DEFAULT_CALENDAR_ROUTE,
   ROOT_ROUTES,
 } from "@web/common/constants/routes";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 export interface DayLoaderData {
-  // Local-mode, not UTC: dayEventQueryRange formats this to build the day's
-  // query bounds, so a UTC-mode value would shift the window off local
-  // midnight and drop evening events.
+  // Midnight in the effective timezone: dayEventQueryRange formats this to
+  // build the day's query bounds, so a UTC-mode parse of a date-only string
+  // would shift the window and drop evening events.
   dateInView: Dayjs;
   dateString: string;
 }
@@ -30,7 +31,7 @@ export async function loadAuthenticated() {
 }
 
 export function loadTodayData(): DayLoaderData {
-  const dateInView = dayjs();
+  const dateInView = dayjs().tz(getEffectiveTimeZone());
   const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
   return { dateInView, dateString: dateInView.format(dateFormat) };
@@ -94,9 +95,6 @@ export function loadDateParam({
 }): DayLoaderData {
   return {
     dateString: params.dateString,
-    dateInView: dayjs(
-      params.dateString,
-      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
-    ),
+    dateInView: dayjs.tz(params.dateString, getEffectiveTimeZone()),
   };
 }

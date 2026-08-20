@@ -1,6 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { calendarDateInEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { CROSS_ROW_TIMED_DURATION_MIN } from "../math/cross-row.drag";
 import { type AllDayDragVisual } from "../types/all-day-drag.types";
 import { type TimedDragVisual } from "../types/timed-drag.types";
@@ -19,7 +19,7 @@ export const allDayDragVisualToTimedGridEvent = (
   event: GridEvent,
   visual: AllDayDragVisual,
 ): GridEvent => {
-  const day = dayjs(visual.dayDate).startOf("day");
+  const day = calendarDateInEffectiveTimeZone(visual.dayDate);
   const startMinutes = visual.timedStartMinutes ?? 0;
 
   return {
@@ -42,7 +42,7 @@ export const timedDragVisualToAllDayGridEvent = (
   event: GridEvent,
   visual: TimedDragVisual,
 ): GridEvent => {
-  const day = dayjs(visual.dayDate);
+  const day = calendarDateInEffectiveTimeZone(visual.dayDate);
 
   return {
     ...event,

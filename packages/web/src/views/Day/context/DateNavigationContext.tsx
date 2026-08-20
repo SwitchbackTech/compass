@@ -1,8 +1,15 @@
 import { useMatch, useNavigate } from "@tanstack/react-router";
-import { createContext, type PropsWithChildren, useCallback } from "react";
+import {
+  createContext,
+  type PropsWithChildren,
+  useCallback,
+  useMemo,
+} from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { type DayLoaderData, loadTodayData } from "@web/routers/loaders";
+import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { calendarDateInEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 interface DateNavigationContextProps extends DayLoaderData {
   navigateToDate: (date: Dayjs) => void;
@@ -28,7 +35,12 @@ export function DateNavigationProvider({ children }: PropsWithChildren) {
     shouldThrow: false,
   })?.loaderData as DayLoaderData | undefined;
 
-  const { dateInView, dateString } = routeData ?? loadTodayData();
+  const { dateString } = routeData ?? loadTodayData();
+  const timeZone = useEffectiveTimeZone();
+  const dateInView = useMemo(
+    () => calendarDateInEffectiveTimeZone(dateString, timeZone),
+    [dateString, timeZone],
+  );
 
   const navigateToDate = useCallback(
     (date: dayjs.Dayjs) => {
