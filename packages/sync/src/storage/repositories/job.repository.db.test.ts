@@ -289,6 +289,27 @@ describe("JobRepository", () => {
       expect(job.priority).toBe(JOB_PRIORITY.user);
     });
 
+    it("enqueueForeground leaves a terminal job failed", async () => {
+      const coalescingKey = "foreground:failed";
+      const created = await repo.enqueue(
+        enqueue({ coalescingKey, runAfter: past(1000) }),
+      );
+      await repo.claimDueJob("owner", NOW, LEASE_MS);
+      expect(await repo.fail(created._id, "owner")).toBe(true);
+
+      const { job, outcome } = await repo.enqueueForeground(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+
+      expect(outcome).toBe("failed");
+      expect(job.state).toBe("failed");
+      expect(job.priority).not.toBe(JOB_PRIORITY.user);
+    });
+
     it("enqueueUrgent leaves a claimed row's lease untouched", async () => {
       const coalescingKey = "urgent:claimed";
       await repo.enqueue(enqueue({ coalescingKey, runAfter: past(1000) }));

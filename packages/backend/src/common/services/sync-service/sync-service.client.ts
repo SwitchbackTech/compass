@@ -25,6 +25,7 @@ import {
   ConnectionListResponseSchema,
   type ConnectionRefreshResponse,
   ConnectionRefreshResponseSchema,
+  type ForegroundRefreshRequest,
   type GoogleConnectionAdoptionRequest,
   type GoogleConnectionAdoptionResponse,
   GoogleConnectionAdoptionResponseSchema,
@@ -51,6 +52,8 @@ const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const CONNECTIONS_REFRESH_PATH = "/internal/connections/refresh";
+const CONNECTIONS_FOREGROUND_REFRESH_PATH =
+  "/internal/connections/foreground-refresh";
 const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
 const EVENTS_FULL_PATH = "/internal/events/full";
@@ -289,6 +292,19 @@ export class SyncServiceClient {
     });
   }
 
+  refreshForegroundConnections(
+    principalIds: ForegroundRefreshRequest["principalIds"],
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionRefreshResponse>> {
+    return this.#requestUnscoped({
+      method: "POST",
+      path: CONNECTIONS_FOREGROUND_REFRESH_PATH,
+      body: { principalIds },
+      schema: ConnectionRefreshResponseSchema,
+      correlationId,
+    });
+  }
+
   // A page of full-fidelity event rows (content + schedule + series linkage) for
   // the given calendars and range, scoped to the signed principal. Backs the
   // browser calendar read — each row carries what the app needs to render AND
@@ -462,9 +478,10 @@ export class SyncServiceClient {
   // claim — see signServiceRequest — so it can never be confused with, or
   // used to replay, a per-principal-signed request.
   async #requestUnscoped<T>(input: {
-    method: "GET";
+    method: "GET" | "POST";
     path: string;
     query?: URLSearchParams;
+    body?: unknown;
     schema: z.ZodType<T>;
     correlationId?: string;
     timeoutMs?: number;

@@ -31,6 +31,12 @@ export type EnqueueUrgentOutcome =
   | "requeuedFailed"
   | "inFlight";
 
+export type EnqueueForegroundOutcome =
+  | "created"
+  | "boosted"
+  | "inFlight"
+  | "failed";
+
 // The exact complement of listFailedForRequeue's eligibility filter: {$gte}
 // does not match a missing requeuedCount, so a legacy job counts as eligible
 // there and never as exhausted here. Keep the two in step.
@@ -187,6 +193,59 @@ export class JobRepository {
       return { job: created, outcome: "inFlight" };
     }
 
+    return { job: created, outcome: "created" };
+  }
+
+  // Urgent like a user refresh, except a periodic foreground safety tick must
+  // never revive a terminal job and create an unbounded retry ladder. Races
+  // are harmless: enqueue is coalesced, and the final row decides the outcome.
+  async enqueueForeground(
+    input: JobEnqueue,
+  ): Promise<{ job: JobRecord; outcome: EnqueueForegroundOutcome }> {
+    const fields = JobEnqueueSchema.parse(input);
+    const now = fields.runAfter;
+    const boost = async () => {
+      await this.collection.updateOne(
+        { coalescingKey: fields.coalescingKey, state: "pending" },
+        {
+          $min: { runAfter: now },
+          $max: { priority: fields.priority },
+          $currentDate: { updatedAt: true },
+        },
+      );
+    };
+
+    const existing = await this.collection.findOne({
+      coalescingKey: fields.coalescingKey,
+    });
+    if (existing?.state === "failed") {
+      return { job: JobRecordSchema.parse(existing), outcome: "failed" };
+    }
+    if (existing?.state === "claimed") {
+      return { job: JobRecordSchema.parse(existing), outcome: "inFlight" };
+    }
+    if (existing?.state === "pending") {
+      await boost();
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error("Foreground job disappeared after boost");
+      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+    }
+
+    const created = await this.enqueue(fields);
+    if (created.state === "failed") return { job: created, outcome: "failed" };
+    if (created.state === "claimed") {
+      return { job: created, outcome: "inFlight" };
+    }
+    if (created.priority < fields.priority || created.runAfter > now) {
+      await boost();
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error("Foreground job disappeared after late boost");
+      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+    }
     return { job: created, outcome: "created" };
   }
 

@@ -207,6 +207,16 @@ export type ConnectionRefreshResponse = z.infer<
   typeof ConnectionRefreshResponseSchema
 >;
 
+// Content-free batch used by the backend's one foreground freshness loop.
+// Personal Compass tenants use the same ObjectId for tenant + principal, so
+// Sync can safely derive both after the service-authenticated request.
+export const ForegroundRefreshRequestSchema = z.strictObject({
+  principalIds: z.array(PrincipalIdSchema).min(1).max(500),
+});
+export type ForegroundRefreshRequest = z.infer<
+  typeof ForegroundRefreshRequestSchema
+>;
+
 export const CalendarListQuerySchema = z.strictObject({
   // Optional narrowing; principal scope always comes from authenticated
   // context, never from the request body.
