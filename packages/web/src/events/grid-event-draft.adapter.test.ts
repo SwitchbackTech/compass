@@ -1,3 +1,4 @@
+import { act } from "react";
 import { Origin } from "@core/constants/core.constants";
 import {
   type Calendar,
@@ -7,6 +8,11 @@ import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
+  resetEffectiveTimeZoneStoreForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
+import {
+  allDayGridSchedule,
   createGridEventDraft,
   duplicateGridEventDraft,
   editGridEventDraft,
@@ -401,4 +407,22 @@ test("suppressedSeriesIdForDraft: the base event's own id once a series base's r
   const edited = patchGridDraftRecurrence(draft, ["RRULE:FREQ=DAILY"]);
 
   expect(suppressedSeriesIdForDraft(edited)).toEqual(seriesEvent.id);
+});
+
+test("all-day YMD stays on the pinned calendar day when it is west of the runtime", () => {
+  act(() => {
+    setPinnedTimeZone("America/Chicago");
+  });
+  try {
+    const draft = createGridEventDraft(
+      allDayGridSchedule("2026-05-17", "2026-05-18"),
+    );
+
+    expect(gridEventDraftToGridEvent(draft).startDate).toBe("2026-05-17");
+    expect(gridEventDraftToGridEvent(draft).endDate).toBe("2026-05-18");
+  } finally {
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+    });
+  }
 });

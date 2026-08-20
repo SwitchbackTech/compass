@@ -24,7 +24,10 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
-import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   const { schedule } = event;
@@ -196,18 +199,18 @@ export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getEffectiveTimeZone() };
 }
 
-// All-day draft Dates are local midnight everywhere (drag creation, form
-// patches, shortcuts). new Date("YYYY-MM-DD") would parse as UTC midnight,
-// which reads as the previous day when formatted back in local time west of
-// UTC — dayjs parses date-only strings as local.
+// All-day draft Dates are midnight in the effective calendar timezone.
+// Parsing YYYY-MM-DD as browser-local midnight, then formatting with
+// inEffectiveTimeZone, shifts the calendar day when the pin is west of the
+// runtime zone.
 export function allDayGridSchedule(
   start: string,
   end: string,
 ): GridScheduleDraft {
   return {
     kind: "allDay",
-    start: dayjs(start).toDate(),
-    end: dayjs(end).toDate(),
+    start: calendarDateInEffectiveTimeZone(start).toDate(),
+    end: calendarDateInEffectiveTimeZone(end).toDate(),
   };
 }
 
