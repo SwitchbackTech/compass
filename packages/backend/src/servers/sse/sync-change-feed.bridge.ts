@@ -7,6 +7,10 @@ import {
   syncInvalidationToServerMessages,
   UNKNOWN_CALENDAR_ID,
 } from "@backend/servers/sse/sync-invalidation.to-server-message";
+import {
+  defaultSchedule,
+  type TickScheduler,
+} from "@backend/servers/sse/tick-scheduler";
 
 const logger = Logger("app:sse.sync-change-feed");
 
@@ -28,7 +32,7 @@ export interface SyncChangeFeedBridgeOptions {
   pollIntervalMs?: number;
   errorBackoffMs?: number;
   // Injectable timer so tests can drive ticks deterministically.
-  schedule?: (tick: () => void, delayMs: number) => { clear: () => void };
+  schedule?: TickScheduler;
 }
 
 // Polls Sync's single, global (cross-tenant) change feed with ONE shared
@@ -47,10 +51,7 @@ export class SyncChangeFeedBridge {
   readonly #sse: SyncChangeFeedBridgeDeps["sse"];
   readonly #pollIntervalMs: number;
   readonly #errorBackoffMs: number;
-  readonly #schedule: (
-    tick: () => void,
-    delayMs: number,
-  ) => { clear: () => void };
+  readonly #schedule: TickScheduler;
 
   #cursor: ChangeFeedCursor | null = null;
   #stopped = true;
@@ -144,17 +145,6 @@ export class SyncChangeFeedBridge {
     this.#cursor = page.nextCursor;
     this.#scheduleNext(this.#pollIntervalMs);
   }
-}
-
-// Real timer used when the caller injects none. .unref() keeps it from
-// holding the process open in tests or graceful shutdown.
-function defaultSchedule(
-  tick: () => void,
-  delayMs: number,
-): { clear: () => void } {
-  const timer = setTimeout(tick, delayMs);
-  timer.unref?.();
-  return { clear: () => clearTimeout(timer) };
 }
 
 // Constructed but NOT started here: this module is imported for its types by

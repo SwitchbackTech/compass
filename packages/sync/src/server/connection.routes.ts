@@ -27,7 +27,6 @@ import {
   ConnectionIdSchema,
   type PrincipalId,
   type TenantId,
-  TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
@@ -38,7 +37,8 @@ import {
 } from "@sync/domain/busy-query.service";
 import {
   refreshPrincipalCalendars,
-  refreshStalePrincipalCalendars,
+  refreshStaleForegroundPrincipals,
+  toConnectionRefreshResponse,
 } from "@sync/domain/connection-refresh.service";
 import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
@@ -70,7 +70,6 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
-import { mapWithConcurrency } from "@sync/util/map-with-concurrency";
 
 const logger = Logger("sync:connection.routes");
 
@@ -82,8 +81,6 @@ export const BEGIN_PATH = "/internal/connections/begin";
 export const REFRESH_PATH = "/internal/connections/refresh";
 export const FOREGROUND_REFRESH_PATH =
   "/internal/connections/foreground-refresh";
-const FOREGROUND_STALE_AFTER_MS = 30_000;
-const FOREGROUND_PRINCIPAL_CONCURRENCY = 10;
 export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
 // Where the provider redirects the browser after consent; `begin` builds the
@@ -451,41 +448,30 @@ export function registerConnectionRoutes(
         return;
       }
 
+      const parsed = ForegroundRefreshRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_request" });
+        return;
+      }
+
       try {
-        const parsed = ForegroundRefreshRequestSchema.safeParse(req.body);
-        if (!parsed.success) {
-          res.status(Status.BAD_REQUEST).json({ error: "invalid_request" });
-          return;
-        }
         const repos = syncRepositories(deps.mongo);
-        const now = new Date((deps.now ?? Date.now)());
-        const tallies = await mapWithConcurrency(
+        const tally = await refreshStaleForegroundPrincipals(
+          {
+            resources: repos.syncResources,
+            jobs: repos.jobs,
+            connections: repos.connections,
+          },
           parsed.data.principalIds,
-          FOREGROUND_PRINCIPAL_CONCURRENCY,
-          (principalId) =>
-            refreshStalePrincipalCalendars(
-              {
-                resources: repos.syncResources,
-                jobs: repos.jobs,
-                connections: repos.connections,
-              },
-              TenantIdSchema.parse(principalId),
-              principalId,
-              new Date(now.getTime() - FOREGROUND_STALE_AFTER_MS),
-              () => now,
-            ),
-        );
-        const totals = tallies.reduce(
-          (total, tally) => ({
-            enqueued: total.enqueued + tally.created + tally.boosted,
-            inFlight: total.inFlight + tally.inFlight,
-            resources: total.resources + tally.resources,
-          }),
-          { enqueued: 0, inFlight: 0, resources: 0 },
+          new Date((deps.now ?? Date.now)()),
         );
         res
           .status(Status.OK)
-          .json(ConnectionRefreshResponseSchema.parse(totals));
+          .json(
+            ConnectionRefreshResponseSchema.parse(
+              toConnectionRefreshResponse(tally),
+            ),
+          );
       } catch (error) {
         logger.error("Failed foreground refresh batch", redactedCause(error));
         respondInternalError(res);
@@ -662,20 +648,19 @@ export function registerConnectionRoutes(
           auth.principalId,
           () => new Date((deps.now ?? Date.now)()),
         );
-        const enqueued = tally.created + tally.boosted + tally.requeuedFailed;
         logger.info(
           `Refresh calendars for ${auth.tenantId}/${auth.principalId}: ` +
             `resources=${tally.resources} created=${tally.created} ` +
             `boosted=${tally.boosted} requeuedFailed=${tally.requeuedFailed} ` +
             `inFlight=${tally.inFlight}`,
         );
-        res.status(Status.OK).json(
-          ConnectionRefreshResponseSchema.parse({
-            enqueued,
-            inFlight: tally.inFlight,
-            resources: tally.resources,
-          }),
-        );
+        res
+          .status(Status.OK)
+          .json(
+            ConnectionRefreshResponseSchema.parse(
+              toConnectionRefreshResponse(tally),
+            ),
+          );
       } catch (error) {
         logger.error(
           `Failed to refresh calendars for ${auth.tenantId}/${auth.principalId}`,

@@ -1,29 +1,9 @@
 import { faker } from "@faker-js/faker";
+import { FakeScheduler } from "@backend/__tests__/helpers/fake-scheduler";
 import {
   ForegroundSyncRefresh,
   type ForegroundSyncRefreshDeps,
 } from "@backend/servers/sse/foreground-sync-refresh";
-
-class FakeScheduler {
-  pending: Array<{ delayMs: number; tick: () => void }> = [];
-
-  schedule = (tick: () => void, delayMs: number): { clear: () => void } => {
-    const entry = { delayMs, tick };
-    this.pending.push(entry);
-    return {
-      clear: () => {
-        this.pending = this.pending.filter((item) => item !== entry);
-      },
-    };
-  };
-
-  async fireNext(): Promise<void> {
-    const entry = this.pending.shift();
-    if (!entry) throw new Error("no tick scheduled");
-    entry.tick();
-    await Bun.sleep(0);
-  }
-}
 
 describe("ForegroundSyncRefresh", () => {
   it("refreshes each connected principal once per backend tick", async () => {
@@ -52,11 +32,11 @@ describe("ForegroundSyncRefresh", () => {
     });
 
     refresh.start();
-    expect(scheduler.pending.map((entry) => entry.delayMs)).toEqual([30_000]);
+    expect(scheduler.delays).toEqual([30_000]);
     await scheduler.fireNext();
 
     expect(calls).toEqual(users);
-    expect(scheduler.pending.map((entry) => entry.delayMs)).toEqual([30_000]);
+    expect(scheduler.delays).toEqual([30_000]);
     refresh.stop();
     expect(scheduler.pending).toEqual([]);
   });

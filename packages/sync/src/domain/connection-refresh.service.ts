@@ -1,6 +1,7 @@
 import {
   type PrincipalId,
   type TenantId,
+  TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 import {
   calendarListSyncJob,
@@ -12,6 +13,13 @@ import { type ProviderConnectionRepository } from "@sync/storage/repositories/pr
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { mapWithConcurrency } from "@sync/util/map-with-concurrency";
 
+// A resource pulled this recently does not need a fallback nudge; see
+// listStaleEventsByPrincipal for why this compares attempt, not success, time.
+const FOREGROUND_STALE_AFTER_MS = 30_000;
+// Bounds on the two nested fan-outs below. Their product is the ceiling on
+// simultaneous enqueue workflows for one batch, and therefore on the Mongo
+// load a foreground tick can put behind webhook-driven work.
+const FOREGROUND_PRINCIPAL_CONCURRENCY = 10;
 const FOREGROUND_ENQUEUE_CONCURRENCY = 10;
 
 export interface ConnectionRefreshDeps {
@@ -34,6 +42,25 @@ export type ConnectionRefreshTally = {
   inFlight: number;
 };
 
+const emptyTally = (): ConnectionRefreshTally => ({
+  resources: 0,
+  created: 0,
+  boosted: 0,
+  requeuedFailed: 0,
+  inFlight: 0,
+});
+
+// Both refresh endpoints report the same three numbers. Foreground never
+// revives a failed job, so its requeuedFailed is structurally 0 and this stays
+// a faithful total for either caller.
+export function toConnectionRefreshResponse(tally: ConnectionRefreshTally) {
+  return {
+    enqueued: tally.created + tally.boosted + tally.requeuedFailed,
+    inFlight: tally.inFlight,
+    resources: tally.resources,
+  };
+}
+
 /**
  * Enqueue (or boost) an incremental pull for every events resource owned by
  * the principal. Uses enqueueUrgent so a repeat Refresh pulls runAfter forward
@@ -54,11 +81,8 @@ export async function refreshPrincipalCalendars(
   ]);
   const runAfter = now();
   const tally: ConnectionRefreshTally = {
+    ...emptyTally(),
     resources: resources.length,
-    created: 0,
-    boosted: 0,
-    requeuedFailed: 0,
-    inFlight: 0,
   };
 
   // Revive every failed job (of any kind) for each connection this refresh
@@ -149,11 +173,8 @@ export async function refreshStalePrincipalCalendars(
   );
   const runAfter = now();
   const tally: ConnectionRefreshTally = {
+    ...emptyTally(),
     resources: resources.length,
-    created: 0,
-    boosted: 0,
-    requeuedFailed: 0,
-    inFlight: 0,
   };
   const outcomes = await mapWithConcurrency(
     resources,
@@ -169,4 +190,40 @@ export async function refreshStalePrincipalCalendars(
     if (outcome !== "failed") tally[outcome] += 1;
   }
   return tally;
+}
+
+/**
+ * One foreground tick's worth of work: refresh every principal the backend
+ * reports as holding an open Compass stream, and fold the per-principal
+ * tallies into one. Both fan-outs are capped, so a maximum-size batch can
+ * never put more than PRINCIPAL x ENQUEUE enqueue workflows on Mongo at once.
+ */
+export async function refreshStaleForegroundPrincipals(
+  deps: ForegroundRefreshDeps,
+  principalIds: readonly PrincipalId[],
+  now: Date,
+): Promise<ConnectionRefreshTally> {
+  const staleBefore = new Date(now.getTime() - FOREGROUND_STALE_AFTER_MS);
+  const tallies = await mapWithConcurrency(
+    principalIds,
+    FOREGROUND_PRINCIPAL_CONCURRENCY,
+    (principalId) =>
+      refreshStalePrincipalCalendars(
+        deps,
+        // A personal Compass tenant is keyed by the principal's own ObjectId.
+        TenantIdSchema.parse(principalId),
+        principalId,
+        staleBefore,
+        () => now,
+      ),
+  );
+  const total = emptyTally();
+  for (const tally of tallies) {
+    total.resources += tally.resources;
+    total.created += tally.created;
+    total.boosted += tally.boosted;
+    total.requeuedFailed += tally.requeuedFailed;
+    total.inFlight += tally.inFlight;
+  }
+  return total;
 }

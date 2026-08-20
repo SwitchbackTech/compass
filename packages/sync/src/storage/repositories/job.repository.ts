@@ -31,11 +31,7 @@ export type EnqueueUrgentOutcome =
   | "requeuedFailed"
   | "inFlight";
 
-export type EnqueueForegroundOutcome =
-  | "created"
-  | "boosted"
-  | "inFlight"
-  | "failed";
+type EnqueueForegroundOutcome = "created" | "boosted" | "inFlight" | "failed";
 
 // The exact complement of listFailedForRequeue's eligibility filter: {$gte}
 // does not match a missing requeuedCount, so a legacy job counts as eligible
@@ -106,34 +102,18 @@ export class JobRepository {
   ): Promise<{ job: JobRecord; outcome: EnqueueUrgentOutcome }> {
     const fields = JobEnqueueSchema.parse(input);
     const now = fields.runAfter;
-
-    const requireByKey = async (
-      outcome: EnqueueUrgentOutcome,
-      missing: string,
-    ) => {
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error(missing);
-      return { job: JobRecordSchema.parse(job), outcome };
-    };
-
     const boostPending = () =>
-      this.collection.updateOne(
-        { coalescingKey: fields.coalescingKey, state: "pending" },
-        {
-          $min: { runAfter: now },
-          $max: { priority: fields.priority },
-          $currentDate: { updatedAt: true },
-        },
-      );
+      this.#boostPending(fields.coalescingKey, now, fields.priority);
 
-    // pending → boost. $min pulls a future runAfter back without robbing an
-    // older job of its place; $max can never demote. Wart: this short-circuits
-    // retry backoff, but attempt is untouched so the ladder still terminates.
+    // pending → boost. Wart: this short-circuits retry backoff, but attempt is
+    // untouched so the ladder still terminates.
     const boosted = await boostPending();
     if (boosted.matchedCount === 1) {
-      return requireByKey("boosted", "Boosted job disappeared after update");
+      return this.#requireByKey(
+        fields.coalescingKey,
+        "boosted",
+        "Boosted job disappeared after update",
+      );
     }
 
     // failed → revive. Frees the coalescing key that durable failures hold
@@ -157,7 +137,8 @@ export class JobRepository {
       },
     );
     if (revived.matchedCount === 1) {
-      return requireByKey(
+      return this.#requireByKey(
+        fields.coalescingKey,
         "requeuedFailed",
         "Revived job disappeared after update",
       );
@@ -186,7 +167,11 @@ export class JobRepository {
         created.runAfter.getTime() > now.getTime())
     ) {
       await boostPending();
-      return requireByKey("boosted", "Job disappeared after late boost");
+      return this.#requireByKey(
+        fields.coalescingKey,
+        "boosted",
+        "Job disappeared after late boost",
+      );
     }
 
     if (created.state === "claimed") {
@@ -204,17 +189,19 @@ export class JobRepository {
   ): Promise<{ job: JobRecord; outcome: EnqueueForegroundOutcome }> {
     const fields = JobEnqueueSchema.parse(input);
     const now = fields.runAfter;
-    const boost = async () => {
-      await this.collection.updateOne(
-        { coalescingKey: fields.coalescingKey, state: "pending" },
-        {
-          $min: { runAfter: now },
-          $max: { priority: fields.priority },
-          $currentDate: { updatedAt: true },
-        },
+    const boostPending = async (missing: string) => {
+      await this.#boostPending(fields.coalescingKey, now, fields.priority);
+      return this.#requireByKey(
+        fields.coalescingKey,
+        "boosted" as const,
+        missing,
       );
     };
 
+    // Read first, then branch. Unlike enqueueUrgent this path has no failed →
+    // revive write, so a blind boost/revive pair would cost two extra round
+    // trips per resource on the common no-existing-row path — and this runs
+    // for every stale resource of every connected principal.
     const existing = await this.collection.findOne({
       coalescingKey: fields.coalescingKey,
     });
@@ -225,28 +212,49 @@ export class JobRepository {
       return { job: JobRecordSchema.parse(existing), outcome: "inFlight" };
     }
     if (existing?.state === "pending") {
-      await boost();
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error("Foreground job disappeared after boost");
-      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+      return boostPending("Foreground job disappeared after boost");
     }
 
+    // The row may have appeared, been claimed, or failed since the read above.
+    // enqueue() coalesces on the unique key, so the row it returns — not the
+    // stale read — decides the outcome. By elimination the remaining state is
+    // pending, which the late boost brings up to user priority.
     const created = await this.enqueue(fields);
     if (created.state === "failed") return { job: created, outcome: "failed" };
     if (created.state === "claimed") {
       return { job: created, outcome: "inFlight" };
     }
     if (created.priority < fields.priority || created.runAfter > now) {
-      await boost();
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error("Foreground job disappeared after late boost");
-      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+      return boostPending("Foreground job disappeared after late boost");
     }
     return { job: created, outcome: "created" };
+  }
+
+  // The one boost write behind both urgent enqueue paths. $min pulls a future
+  // runAfter back without robbing an older job of its place; $max can never
+  // demote. Guarded on `pending`, so it can never disturb a claimed row's
+  // lease or resurrect a failed one.
+  #boostPending(coalescingKey: string, runAfter: Date, priority: number) {
+    return this.collection.updateOne(
+      { coalescingKey, state: "pending" },
+      {
+        $min: { runAfter },
+        $max: { priority },
+        $currentDate: { updatedAt: true },
+      },
+    );
+  }
+
+  // Re-read a coalesced row after a blind, state-guarded write. The row is
+  // expected to exist, so absence is an invariant break, not a miss.
+  async #requireByKey<O extends string>(
+    coalescingKey: string,
+    outcome: O,
+    missing: string,
+  ): Promise<{ job: JobRecord; outcome: O }> {
+    const job = await this.collection.findOne({ coalescingKey });
+    if (!job) throw new Error(missing);
+    return { job: JobRecordSchema.parse(job), outcome };
   }
 
   async findById(

@@ -1,39 +1,13 @@
 import { faker } from "@faker-js/faker";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type ServerMessage } from "@core/types/server-message.contracts";
+import { FakeScheduler } from "@backend/__tests__/helpers/fake-scheduler";
 import {
   SyncChangeFeedBridge,
   type SyncChangeFeedBridgeDeps,
 } from "@backend/servers/sse/sync-change-feed.bridge";
 
 const objectId = () => faker.database.mongodbObjectId();
-
-// Captures every scheduled tick without real timers; a test fires the next
-// one explicitly, so ticks run deterministically and instantly.
-class FakeScheduler {
-  pending: Array<{ delayMs: number; tick: () => void }> = [];
-
-  schedule = (tick: () => void, delayMs: number): { clear: () => void } => {
-    const entry = { delayMs, tick };
-    this.pending.push(entry);
-    return {
-      clear: () => {
-        this.pending = this.pending.filter((e) => e !== entry);
-      },
-    };
-  };
-
-  // Run the next scheduled tick (and await any promise it kicks off).
-  async fireNext(): Promise<void> {
-    const entry = this.pending.shift();
-    if (!entry) throw new Error("no tick scheduled");
-    entry.tick();
-    // Let the async #tick body run to its next await point and back.
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-  }
-}
 
 class FakeClient {
   calls: Array<string | null> = [];
