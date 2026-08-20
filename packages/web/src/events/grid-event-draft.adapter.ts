@@ -13,7 +13,6 @@ import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   type ParseEventDraftResult,
@@ -24,6 +23,7 @@ import {
   type GridEventDraft,
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   const { schedule } = event;
@@ -192,7 +192,7 @@ export function parseGridEventDraft(
 }
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
-  return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
+  return { kind: "timed", start, end, timeZone: getEffectiveTimeZone() };
 }
 
 // All-day draft Dates are local midnight everywhere (drag creation, form

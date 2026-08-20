@@ -30,7 +30,9 @@ type StorageKey =
   | "compass.calendars.collapsed-accounts"
   // Recently-used command palette item ids, most recent first. Device-local;
   // an id that no longer resolves to a visible item is skipped, not an error.
-  | "compass.commands.recent";
+  | "compass.commands.recent"
+  // Pinned calendar timezone. Absent means Auto (follow the browser).
+  | "compass.timezone.default";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -50,7 +52,8 @@ export const STORAGE_KEYS: Record<
   | "HIDDEN_CALENDAR_IDS"
   | "DEFAULT_CALENDAR_ID"
   | "COLLAPSED_ACCOUNTS"
-  | "RECENT_COMMANDS",
+  | "RECENT_COMMANDS"
+  | "DEFAULT_TIMEZONE",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -74,4 +77,5 @@ export const STORAGE_KEYS: Record<
   DEFAULT_CALENDAR_ID: "compass.calendars.default-id",
   COLLAPSED_ACCOUNTS: "compass.calendars.collapsed-accounts",
   RECENT_COMMANDS: "compass.commands.recent",
+  DEFAULT_TIMEZONE: "compass.timezone.default",
 } as const;

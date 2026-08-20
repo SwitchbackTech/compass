@@ -2,7 +2,6 @@ import { Origin } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { withColor, withColorHex } from "@core/types/event-color.contracts";
-import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
@@ -10,6 +9,7 @@ import {
   timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
 // The ONE authoritative spot for a busy event's display title (packet 08
@@ -138,8 +138,8 @@ const timedEventsFrom = (events: Event[], annotations?: EventAnnotations) =>
   gridEventsFrom(events, "timed", annotations).filter((event) => {
     if (!event.startDate || !event.endDate) return true;
     return !shouldRenderTimedInAllDayRow(
-      dayjs(event.startDate),
-      dayjs(event.endDate),
+      inEffectiveTimeZone(event.startDate),
+      inEffectiveTimeZone(event.endDate),
     );
   });
 
@@ -151,11 +151,17 @@ const multiDayTimedAsAllDayFrom = (
     .filter((event) => event.schedule.kind === "timed")
     .filter((event) => {
       const { start, end } = event.schedule;
-      return shouldRenderTimedInAllDayRow(dayjs(start), dayjs(end));
+      return shouldRenderTimedInAllDayRow(
+        inEffectiveTimeZone(start),
+        inEffectiveTimeZone(end),
+      );
     })
     .map((event) => {
       const { start, end } = event.schedule;
-      const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
+      const dates = timedMultiDayToAllDayDates(
+        inEffectiveTimeZone(start),
+        inEffectiveTimeZone(end),
+      );
       return eventToGridEvent(event, {
         ...annotations,
         scheduleOverride: {

@@ -41,6 +41,7 @@ import {
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
+import { useTimezoneCmdItems } from "@web/timezone/useTimezoneCmdItems";
 import { filterSections, getLabelMatchRanges } from "./command-palette.search";
 import { type CommandItem, type CommandSection } from "./command-palette.types";
 
@@ -295,6 +296,7 @@ export const CommandPalette = ({
   const showAccountsCmdItems = useShowAccountsCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const themeCmdItems = useThemeCmdItems();
+  const timezoneCmdItems = useTimezoneCmdItems();
   const { undo, redo, canUndo, canRedo } = useUndoRedo(mutationDependencies);
   const recentCommandIds = useRecentCommandIds();
 
@@ -348,7 +350,12 @@ export const CommandPalette = ({
     {
       id: "settings",
       heading: "Settings",
-      items: [...authCmdItems, ...showAccountsCmdItems, ...logoutCmdItems],
+      items: [
+        ...timezoneCmdItems,
+        ...authCmdItems,
+        ...showAccountsCmdItems,
+        ...logoutCmdItems,
+      ],
     },
     ...getMoreCommandPaletteSections(currentView),
   ];
@@ -391,6 +398,7 @@ export const LifeCommandPalette = ({
   useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
   const themeCmdItems = useThemeCmdItems();
+  const timezoneCmdItems = useTimezoneCmdItems();
 
   if (!open) return null;
 
@@ -411,6 +419,11 @@ export const LifeCommandPalette = ({
           id: "appearance",
           heading: "Appearance",
           items: themeCmdItems,
+        },
+        {
+          id: "settings",
+          heading: "Settings",
+          items: timezoneCmdItems,
         },
         ...getMoreCommandPaletteSections("life"),
       ]}

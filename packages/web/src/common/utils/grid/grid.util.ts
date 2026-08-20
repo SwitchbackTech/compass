@@ -4,6 +4,7 @@ import {
   GRID_EVENT_TITLE_VERTICAL_SLACK_PX,
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
@@ -35,7 +36,8 @@ export const assignEventToRow = (
 };
 
 export const getCurrentMinute = () => {
-  return dayjs().get("hours") * 60 + dayjs().get("minutes");
+  const now = dayjs().tz(getEffectiveTimeZone());
+  return now.get("hours") * 60 + now.get("minutes");
 };
 
 // Timed grid always renders exactly TIMED_VISIBLE_HOURS worth of rows in

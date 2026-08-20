@@ -1,4 +1,3 @@
-import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   shouldRenderTimedInAllDayRow,
@@ -10,6 +9,7 @@ import {
   getGridDraftId,
   gridEventDraftToGridEvent,
 } from "@web/events/grid-event-draft.adapter";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 export const isDraftRenderedInAllDayRow = (draft: GridEventDraft): boolean => {
   const { schedule } = draft.values;
@@ -17,7 +17,10 @@ export const isDraftRenderedInAllDayRow = (draft: GridEventDraft): boolean => {
   return (
     schedule.kind === "allDay" ||
     (schedule.kind === "timed" &&
-      shouldRenderTimedInAllDayRow(dayjs(schedule.start), dayjs(schedule.end)))
+      shouldRenderTimedInAllDayRow(
+        inEffectiveTimeZone(schedule.start),
+        inEffectiveTimeZone(schedule.end),
+      ))
   );
 };
 
@@ -29,8 +32,8 @@ export const draftToAllDayRowGridEvent = (draft: GridEventDraft): GridEvent => {
   }
 
   const dates = timedMultiDayToAllDayDates(
-    dayjs(schedule.start),
-    dayjs(schedule.end),
+    inEffectiveTimeZone(schedule.start),
+    inEffectiveTimeZone(schedule.end),
   );
 
   return {

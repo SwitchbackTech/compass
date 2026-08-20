@@ -7,7 +7,6 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import dayjs from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -50,6 +49,7 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
+import { useToday } from "@web/views/Week/hooks/useToday";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { DayCalendarColumnHeaders } from "./DayCalendarColumnHeaders";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
@@ -86,7 +86,7 @@ const isDayInteractionMotionActive = () => false;
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
   const { navigateToDate } = useDateNavigation();
-  const today = useMemo(() => dayjs(), []);
+  const { today } = useToday();
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
   // Seed shortcuts with the form's default create target, not day-column order.
@@ -293,13 +293,13 @@ export function DayCalendarGrid() {
     () =>
       openShortcutDraft(() =>
         createTimedDraft(
-          dateInView.isSame(dayjs(), "day"),
+          dateInView.isSame(today, "day"),
           dateInView,
           "createShortcut",
           defaultTargetCalendarId,
         ),
       ),
-    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+    [dateInView, defaultTargetCalendarId, openShortcutDraft, today],
   );
 
   // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
@@ -309,14 +309,14 @@ export function DayCalendarGrid() {
       openShortcutDraft(
         () =>
           createTimedDraft(
-            dateInView.isSame(dayjs(), "day"),
+            dateInView.isSame(today, "day"),
             dateInView,
             "keyboardPlace",
             defaultTargetCalendarId,
           ),
         false,
       ),
-    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+    [dateInView, defaultTargetCalendarId, openShortcutDraft, today],
   );
   const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,

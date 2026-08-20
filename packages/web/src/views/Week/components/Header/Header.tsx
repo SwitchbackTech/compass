@@ -1,7 +1,7 @@
 import { type FC } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
+import { useToday } from "@web/views/Week/hooks/useToday";
 import { type Util_Scroll } from "../../hooks/grid/useScroll";
 import { type WeekProps } from "../../hooks/useWeek";
 
@@ -11,11 +11,12 @@ interface Props {
 }
 export const Header: FC<Props> = ({ scrollUtil, weekProps }) => {
   const { scrollToNow } = scrollUtil;
+  const { today } = useToday();
 
   const headerLabel = getCalendarHeadingLabel(
     weekProps.component.startOfView,
     weekProps.component.endOfView,
-    dayjs(),
+    today,
   );
 
   const onTodayClick = () => {

@@ -49,6 +49,7 @@ import {
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
+import { DefaultTimezonePicker } from "@web/timezone/DefaultTimezonePicker";
 
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
@@ -142,6 +143,7 @@ export const SettingsModal: FC = () => {
           </button>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <DefaultTimezonePicker />
           <DefaultCalendarPicker
             calendars={writableCalendars}
             connections={connections}

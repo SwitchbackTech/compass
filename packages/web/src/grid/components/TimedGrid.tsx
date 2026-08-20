@@ -33,6 +33,7 @@ import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 interface TimedGridProps {
   columnsId?: string;
@@ -148,7 +149,8 @@ export const TimedGrid: FC<TimedGridProps> = ({
 };
 
 const CalendarTimeColumn = () => {
-  const currentHour = useMinuteTick().hour();
+  const timeZone = useEffectiveTimeZone();
+  const currentHour = useMinuteTick().tz(timeZone).hour();
   const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
   const hourLabels = useMemo(() => getHourLabels(), []);
 

@@ -18,6 +18,7 @@ import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/L
 import { SettingsModal } from "@web/components/Settings/SettingsModal";
 import { RecurrenceScopeOpportunityHost } from "@web/events/recurrence/RecurrenceScopeOpportunityHost";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
+import { TimezoneDialogHost } from "@web/timezone/TimezoneDialogHost";
 import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
 
 /**
@@ -70,6 +71,7 @@ export const CompassRequiredProviders = ({
               <DeleteAccountConfirmationProvider>
                 {children}
                 <SettingsModal />
+                <TimezoneDialogHost />
                 <AboutModal />
               </DeleteAccountConfirmationProvider>
               <ThemeAwareToastContainer />

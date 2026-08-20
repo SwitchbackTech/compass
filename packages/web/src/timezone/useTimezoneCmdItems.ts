@@ -1,0 +1,20 @@
+import { GlobeIcon } from "@phosphor-icons/react";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
+import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
+import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
+
+export function useTimezoneCmdItems(): CommandItem[] {
+  const timeZone = useEffectiveTimeZone();
+  const abbreviation = formatTimeZoneAbbreviation(timeZone);
+
+  return [
+    {
+      id: "change-default-timezone",
+      label: `Change default timezone (${abbreviation})`,
+      icon: GlobeIcon,
+      keywords: ["timezone", "time zone", "tz", abbreviation],
+      onClick: () => timezoneDialogActions.open(),
+    },
+  ];
+}

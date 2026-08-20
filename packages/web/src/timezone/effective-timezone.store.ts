@@ -1,21 +1,96 @@
 import { useSyncExternalStore } from "react";
-import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
-import { createExternalStore } from "@web/common/utils/external-store.util";
+import dayjs from "@core/util/date/dayjs";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import {
+  createExternalStore,
+  subscribeToStorageKey,
+} from "@web/common/utils/external-store.util";
+import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
-/**
- * Part I: the effective timezone is always the browser zone (Auto). Part II
- * will pin a user choice on top of this store; until then, subscribers still
- * need a live value so the corner label can update without a reload.
- */
-const effectiveTimeZoneStore = createExternalStore(getBrowserTimeZone());
-
-export function getEffectiveTimeZone(): string {
-  return effectiveTimeZoneStore.get();
+function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-/** Auto-mode refresh. Part II must no-op this when a zone is pinned. */
+function readPinnedTimeZone(): string | null {
+  const raw = persistentBrowserStore.get(STORAGE_KEYS.DEFAULT_TIMEZONE);
+  if (!raw || raw.trim().length === 0 || !isValidTimeZone(raw)) {
+    return null;
+  }
+  return raw;
+}
+
+const pinnedTimeZoneStore = createExternalStore<string | null>(
+  readPinnedTimeZone(),
+);
+const browserTimeZoneStore = createExternalStore(getBrowserTimeZone());
+
+function applyDayjsDefault(timeZone: string): void {
+  dayjs.setDefaultTimezone(timeZone);
+}
+
+function currentEffectiveTimeZone(): string {
+  return pinnedTimeZoneStore.get() ?? browserTimeZoneStore.get();
+}
+
+function syncEffectiveTimeZone(): void {
+  applyDayjsDefault(currentEffectiveTimeZone());
+}
+
+syncEffectiveTimeZone();
+
+function refreshPinnedFromStorage(): void {
+  pinnedTimeZoneStore.set(readPinnedTimeZone());
+  syncEffectiveTimeZone();
+}
+
+export function getPinnedTimeZone(): string | null {
+  return pinnedTimeZoneStore.get();
+}
+
+export function isTimeZonePinned(): boolean {
+  return pinnedTimeZoneStore.get() !== null;
+}
+
+export function getEffectiveTimeZone(): string {
+  return currentEffectiveTimeZone();
+}
+
+/**
+ * Refresh the tracked browser zone. The effective zone only follows this
+ * value in Auto mode (no pin).
+ */
 export function refreshEffectiveTimeZoneFromBrowser(): void {
-  effectiveTimeZoneStore.set(getBrowserTimeZone());
+  browserTimeZoneStore.set(getBrowserTimeZone());
+  if (pinnedTimeZoneStore.get() === null) {
+    syncEffectiveTimeZone();
+  }
+}
+
+/**
+ * Pin an IANA zone, or pass null to return to Auto. Returns false when the
+ * storage write fails, leaving the previous preference in place.
+ */
+export function setPinnedTimeZone(timeZone: string | null): boolean {
+  if (timeZone !== null && !isValidTimeZone(timeZone)) {
+    return false;
+  }
+
+  const saved =
+    timeZone === null
+      ? persistentBrowserStore.remove(STORAGE_KEYS.DEFAULT_TIMEZONE)
+      : persistentBrowserStore.set(STORAGE_KEYS.DEFAULT_TIMEZONE, timeZone);
+
+  if (saved) {
+    pinnedTimeZoneStore.set(timeZone);
+    syncEffectiveTimeZone();
+  }
+  return saved;
 }
 
 if (typeof document !== "undefined") {
@@ -26,18 +101,37 @@ if (typeof document !== "undefined") {
   });
 }
 
-export function useEffectiveTimeZone(): string {
-  return useSyncExternalStore(
-    effectiveTimeZoneStore.subscribe,
-    effectiveTimeZoneStore.get,
+function subscribe(onChange: () => void): () => void {
+  const unsubscribePinned = pinnedTimeZoneStore.subscribe(onChange);
+  const unsubscribeBrowser = browserTimeZoneStore.subscribe(onChange);
+  const unsubscribeStorage = subscribeToStorageKey(
+    STORAGE_KEYS.DEFAULT_TIMEZONE,
+    refreshPinnedFromStorage,
   );
+
+  return () => {
+    unsubscribePinned();
+    unsubscribeBrowser();
+    unsubscribeStorage();
+  };
 }
 
-/** Test-only: set the in-memory effective zone without persistence. */
+export function useEffectiveTimeZone(): string {
+  return useSyncExternalStore(subscribe, getEffectiveTimeZone);
+}
+
+export function usePinnedTimeZone(): string | null {
+  return useSyncExternalStore(subscribe, getPinnedTimeZone);
+}
+
+/** Test-only: pin in memory (and storage when available) without extra UI. */
 export function setEffectiveTimeZoneForTests(timeZone: string): void {
-  effectiveTimeZoneStore.set(timeZone);
+  setPinnedTimeZone(timeZone);
 }
 
 export function resetEffectiveTimeZoneStoreForTests(): void {
-  refreshEffectiveTimeZoneFromBrowser();
+  persistentBrowserStore.remove(STORAGE_KEYS.DEFAULT_TIMEZONE);
+  pinnedTimeZoneStore.set(null);
+  browserTimeZoneStore.set(getBrowserTimeZone());
+  syncEffectiveTimeZone();
 }

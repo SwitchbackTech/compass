@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import {
   afterEach,
@@ -57,5 +58,16 @@ describe("useToday", () => {
 
     expect(result.current.today.isSame("2026-02-06", "day")).toBe(true);
     expect(result.current.todayIndex).toBe(result.current.today.get("day"));
+  });
+
+  it("uses the pinned timezone for the calendar day", () => {
+    setSystemTime(new Date("2026-02-06T01:00:00.000Z"));
+    act(() => {
+      setPinnedTimeZone("America/Denver");
+    });
+
+    const { result } = renderHook(() => useToday());
+
+    expect(result.current.today.format("YYYY-MM-DD")).toBe("2026-02-05");
   });
 });
