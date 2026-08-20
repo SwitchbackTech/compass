@@ -13,6 +13,7 @@ import {
   mapToBackend,
   parseUserTime,
   toUTCOffset,
+  tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import {
@@ -581,5 +582,19 @@ describe("mapToBackend timed overnight", () => {
     expect(schedule.kind).toBe("timed");
     if (schedule.kind !== "timed") return;
     expect(dayjs(schedule.end).isAfter(dayjs(schedule.start))).toBe(true);
+  });
+
+  it("does not throw when timed end is before start; tryMapToBackend reports failure", () => {
+    const day = dayjs("2026-08-11T00:00:00");
+    const selected = {
+      startDate: day.toDate(),
+      endDate: day.toDate(),
+      startTime: getTimeOptionByValue(day.hour(15).minute(0)),
+      endTime: getTimeOptionByValue(day.hour(14).minute(0)),
+      isAllDay: false,
+    };
+
+    expect(() => mapToBackend(selected)).toThrow();
+    expect(tryMapToBackend(selected).ok).toBe(false);
   });
 });

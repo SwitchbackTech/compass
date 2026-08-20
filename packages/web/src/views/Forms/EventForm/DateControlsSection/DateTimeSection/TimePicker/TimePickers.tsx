@@ -1,16 +1,25 @@
-import { type FC, useState } from "react";
+import { type FC, useId, useState } from "react";
+import { YMDHAM_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import {
   getTimeOptionByValue,
   getTimeOptions,
-  mapToBackend,
+  tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { replaceGridDraftSchedule } from "@web/events/grid-event-draft.adapter";
 import { TimePicker } from "./TimePicker";
+
+export const END_TIME_ORDER_ERROR = "End time must be after start time";
+
+const isEndBeforeStartOnDummyDay = (startValue: string, endValue: string) => {
+  const startAt = dayjs(`2000-01-01 ${startValue}`, YMDHAM_FORMAT);
+  const endAt = dayjs(`2000-01-01 ${endValue}`, YMDHAM_FORMAT);
+  return startAt.isValid() && endAt.isValid() && endAt.isBefore(startAt);
+};
 
 interface Props {
   draft: GridEventDraft;
@@ -36,13 +45,16 @@ export const TimePickers: FC<Props> = ({
   const timeOptions = getTimeOptions();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false);
+  const [timeError, setTimeError] = useState<string | null>(null);
+  const timeErrorId = useId();
 
   // shouldAdjustComplimentTime does its math on a fixed calendar-day anchor, so
   // a correction that crosses midnight lands on an adjacent day. Formatting it
   // back to a bare "h:mm A" drops that day, and pairing the wrapped time with an
   // unchanged date produced an inverted schedule that made mapToBackend throw an
   // unhandled ZodError. Return the day delta so the caller can shift the date
-  // with it.
+  // with it. Pure: the caller commits picker state only after the schedule
+  // validates, so a leftover Zod failure cannot desync the form.
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string,
@@ -70,8 +82,16 @@ export const TimePickers: FC<Props> = ({
       .startOf("day")
       .diff(result.compliment.startOf("day"), "day");
 
-    (changed === "start" ? setEndTime : setStartTime)(option);
     return { option, dayOffset };
+  };
+
+  const closeMenu = (changed: "start" | "end") => {
+    (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
+  };
+
+  const rejectTimeSelection = (changed: "start" | "end") => {
+    setTimeError(END_TIME_ORDER_ERROR);
+    closeMenu(changed);
   };
 
   // One handler for both pickers: the picked side keeps its selected date and
@@ -84,63 +104,102 @@ export const TimePickers: FC<Props> = ({
     option: SelectOption<string>,
   ) => {
     const prior = changed === "start" ? startTime : endTime;
-    (changed === "start" ? setStartTime : setEndTime)(option);
+    if (!prior.value || prior.value === option.value) {
+      setTimeError(null);
+      closeMenu(changed);
+      return;
+    }
+
     const { option: corrected, dayOffset } = adjustComplimentTimeIfNeeded(
       changed,
       option.value,
     );
 
-    if (prior.value && prior.value !== option.value) {
-      const anchorDate =
-        changed === "start" ? selectedStartDate : selectedEndDate;
-      const complimentDate = dayjs(anchorDate).add(dayOffset, "day").toDate();
-
-      const schedule = mapToBackend({
-        startDate: changed === "start" ? anchorDate : complimentDate,
-        endDate: changed === "start" ? complimentDate : anchorDate,
-        startTime: changed === "start" ? option : corrected,
-        endTime: changed === "start" ? corrected : option,
-        isAllDay: false,
-      });
-
-      // TS guard: isAllDay: false above always yields "timed".
-      if (schedule.kind === "timed") {
-        setDraft(
-          replaceGridDraftSchedule(draft, {
-            kind: "timed",
-            start: dayjs(schedule.start).toDate(),
-            end: dayjs(schedule.end).toDate(),
-            timeZone: schedule.timeZone,
-          }),
-        );
-      }
+    const userStart = changed === "start" ? option.value : startTime.value;
+    const userEnd = changed === "end" ? option.value : endTime.value;
+    const isSameCalendarDay = dayjs(selectedStartDate).isSame(
+      selectedEndDate,
+      "day",
+    );
+    // Same-day invert: duration auto-correct would hide the mistake.
+    // Overnight drafts already have end-before-start on the clock; midnight
+    // wrap (dayOffset !== 0) still shifts the compliment date.
+    if (
+      isSameCalendarDay &&
+      dayOffset === 0 &&
+      isEndBeforeStartOnDummyDay(userStart, userEnd)
+    ) {
+      rejectTimeSelection(changed);
+      return;
     }
-    (changed === "start" ? setIsStartMenuOpen : setIsEndMenuOpen)(false);
+
+    const anchorDate =
+      changed === "start" ? selectedStartDate : selectedEndDate;
+    const complimentDate = dayjs(anchorDate).add(dayOffset, "day").toDate();
+
+    const mapped = tryMapToBackend({
+      startDate: changed === "start" ? anchorDate : complimentDate,
+      endDate: changed === "start" ? complimentDate : anchorDate,
+      startTime: changed === "start" ? option : corrected,
+      endTime: changed === "start" ? corrected : option,
+      isAllDay: false,
+    });
+
+    if (!mapped.ok) {
+      rejectTimeSelection(changed);
+      return;
+    }
+
+    setTimeError(null);
+    (changed === "start" ? setStartTime : setEndTime)(option);
+    (changed === "start" ? setEndTime : setStartTime)(corrected);
+
+    // TS guard: isAllDay: false above always yields "timed".
+    if (mapped.schedule.kind === "timed") {
+      setDraft(
+        replaceGridDraftSchedule(draft, {
+          kind: "timed",
+          start: dayjs(mapped.schedule.start).toDate(),
+          end: dayjs(mapped.schedule.end).toDate(),
+          timeZone: mapped.schedule.timeZone,
+        }),
+      );
+    }
+    closeMenu(changed);
   };
 
   return (
-    <div className="flex items-center">
-      <TimePicker
-        aria-label="Start time"
-        inputId="startTimePicker"
-        isMenuOpen={isStartMenuOpen}
-        onChange={(option) => onTimeSelected("start", option)}
-        openMenuOnFocus
-        options={timeOptions}
-        setIsMenuOpen={setIsStartMenuOpen}
-        value={startTime}
-      />
-      -
-      <TimePicker
-        aria-label="End time"
-        inputId="endTimePicker"
-        isMenuOpen={isEndMenuOpen}
-        onChange={(option) => onTimeSelected("end", option)}
-        openMenuOnFocus
-        options={timeOptions}
-        setIsMenuOpen={setIsEndMenuOpen}
-        value={endTime}
-      />
+    <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex items-center">
+        <TimePicker
+          aria-label="Start time"
+          inputId="startTimePicker"
+          isMenuOpen={isStartMenuOpen}
+          onChange={(option) => onTimeSelected("start", option)}
+          openMenuOnFocus
+          options={timeOptions}
+          setIsMenuOpen={setIsStartMenuOpen}
+          value={startTime}
+        />
+        -
+        <TimePicker
+          aria-describedby={timeError ? timeErrorId : undefined}
+          aria-invalid={timeError ? true : undefined}
+          aria-label="End time"
+          inputId="endTimePicker"
+          isMenuOpen={isEndMenuOpen}
+          onChange={(option) => onTimeSelected("end", option)}
+          openMenuOnFocus
+          options={timeOptions}
+          setIsMenuOpen={setIsEndMenuOpen}
+          value={endTime}
+        />
+      </div>
+      {timeError ? (
+        <p className="text-error text-xs" id={timeErrorId} role="alert">
+          {timeError}
+        </p>
+      ) : null}
     </div>
   );
 };
