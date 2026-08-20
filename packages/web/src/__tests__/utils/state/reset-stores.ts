@@ -39,6 +39,7 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useThemeStore } from "@web/settings/theme/theme.store";
+import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 type StoreReset = () => void;
@@ -61,6 +62,7 @@ const storeResets: StoreReset[] = [
   // before this runs; this just resyncs the module-singleton store to match.
   resetCalendarVisibilityStoreForTests,
   resetDefaultCalendarStoreForTests,
+  resetEffectiveTimeZoneStoreForTests,
   resetCollapsedAccountsStoreForTests,
   resetRecentCommandsStoreForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across

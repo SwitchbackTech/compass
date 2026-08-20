@@ -453,9 +453,7 @@ export function DayCalendarGrid() {
         onOpenEvent={openEventFormForEvent}
         timedEvents={displayedTimedEvents}
       >
-        {displayedCalendars.length > 0 ? (
-          <DayCalendarColumnHeaders calendars={displayedCalendars} />
-        ) : null}
+        <DayCalendarColumnHeaders calendars={displayedCalendars} />
         <EventGrid
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
