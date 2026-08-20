@@ -15,7 +15,7 @@ export const GridTimezoneLabel = () => {
   return (
     <button
       aria-label={`Calendar timezone: ${abbreviation}`}
-      className="c-focus-ring max-w-full truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
+      className="c-focus-ring min-h-6 w-full max-w-full truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
       type="button"
     >
       {abbreviation}

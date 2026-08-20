@@ -1,20 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import {
-  getEffectiveTimeZone,
-  resetEffectiveTimeZoneStoreForTests,
-} from "@web/timezone/effective-timezone.store";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 const monday = dayjs("2026-08-17T12:00:00.000Z");
 
 describe("DayLabels", () => {
-  afterEach(() => {
-    resetEffectiveTimeZoneStoreForTests();
-  });
-
   it("shows the effective timezone in the grid corner", () => {
     render(
       <DayLabels

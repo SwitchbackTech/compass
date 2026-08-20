@@ -1,20 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
-import {
-  getEffectiveTimeZone,
-  resetEffectiveTimeZoneStoreForTests,
-} from "@web/timezone/effective-timezone.store";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { DayCalendarColumnHeaders } from "@web/views/Day/components/Calendar/DayCalendarColumnHeaders";
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 const calendar = createMockCalendar({ name: "Personal" });
 
 describe("DayCalendarColumnHeaders", () => {
-  afterEach(() => {
-    resetEffectiveTimeZoneStoreForTests();
-  });
-
   it("shows the effective timezone in the grid corner", () => {
     render(<DayCalendarColumnHeaders calendars={[calendar]} />);
 
@@ -27,5 +20,19 @@ describe("DayCalendarColumnHeaders", () => {
     expect(screen.getByRole("region", { name: "Calendars" })).toHaveTextContent(
       "Personal",
     );
+  });
+
+  it("still shows the timezone when there are no calendars", () => {
+    render(<DayCalendarColumnHeaders calendars={[]} />);
+
+    const abbreviation = formatTimeZoneAbbreviation(getEffectiveTimeZone());
+    expect(
+      screen.getByRole("button", {
+        name: `Calendar timezone: ${abbreviation}`,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Calendars" }),
+    ).not.toBeInTheDocument();
   });
 });

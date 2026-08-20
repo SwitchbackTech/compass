@@ -1,19 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
-import {
-  resetEffectiveTimeZoneStoreForTests,
-  setEffectiveTimeZoneForTests,
-} from "@web/timezone/effective-timezone.store";
+import { setEffectiveTimeZoneForTests } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { GridTimezoneLabel } from "@web/timezone/GridTimezoneLabel";
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 describe("GridTimezoneLabel", () => {
-  afterEach(() => {
-    resetEffectiveTimeZoneStoreForTests();
-  });
-
   it("is a focusable button named with the effective zone abbreviation", async () => {
     const user = userEvent.setup();
     act(() => {

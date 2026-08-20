@@ -18,7 +18,9 @@ describe("effective-timezone.store", () => {
       configurable: true,
       value: originalVisibilityState,
     });
-    resetEffectiveTimeZoneStoreForTests();
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+    });
   });
 
   it("defaults to the browser timezone", () => {

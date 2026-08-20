@@ -17,24 +17,19 @@ export function refreshEffectiveTimeZoneFromBrowser(): void {
   effectiveTimeZoneStore.set(getBrowserTimeZone());
 }
 
-function subscribe(onChange: () => void): () => void {
-  const unsubscribeStore = effectiveTimeZoneStore.subscribe(onChange);
-
-  const onVisibility = () => {
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       refreshEffectiveTimeZoneFromBrowser();
     }
-  };
-  document.addEventListener("visibilitychange", onVisibility);
-
-  return () => {
-    unsubscribeStore();
-    document.removeEventListener("visibilitychange", onVisibility);
-  };
+  });
 }
 
 export function useEffectiveTimeZone(): string {
-  return useSyncExternalStore(subscribe, effectiveTimeZoneStore.get);
+  return useSyncExternalStore(
+    effectiveTimeZoneStore.subscribe,
+    effectiveTimeZoneStore.get,
+  );
 }
 
 /** Test-only: set the in-memory effective zone without persistence. */
