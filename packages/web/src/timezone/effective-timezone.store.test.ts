@@ -28,12 +28,11 @@ describe("effective-timezone.store", () => {
   });
 
   it("notifies subscribers when the effective zone changes", () => {
-    const { result, rerender } = renderHook(useEffectiveTimeZone);
+    const { result } = renderHook(useEffectiveTimeZone);
 
     act(() => {
       setEffectiveTimeZoneForTests("America/Denver");
     });
-    rerender();
 
     expect(result.current).toBe("America/Denver");
   });
@@ -43,7 +42,7 @@ describe("effective-timezone.store", () => {
       setEffectiveTimeZoneForTests("America/Denver");
     });
 
-    const { result, rerender } = renderHook(useEffectiveTimeZone);
+    const { result } = renderHook(useEffectiveTimeZone);
     expect(result.current).toBe("America/Denver");
 
     act(() => {
@@ -53,7 +52,6 @@ describe("effective-timezone.store", () => {
       });
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    rerender();
 
     expect(result.current).toBe(getBrowserTimeZone());
   });

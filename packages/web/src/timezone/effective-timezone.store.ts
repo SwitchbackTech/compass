@@ -13,6 +13,7 @@ export function getEffectiveTimeZone(): string {
   return effectiveTimeZoneStore.get();
 }
 
+/** Auto-mode refresh. Part II must no-op this when a zone is pinned. */
 export function refreshEffectiveTimeZoneFromBrowser(): void {
   effectiveTimeZoneStore.set(getBrowserTimeZone());
 }
