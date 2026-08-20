@@ -55,12 +55,12 @@ describe("GridTimezoneLabel", () => {
     ).toHaveTextContent("GMT+5:30");
   });
 
-  it("rereads the browser timezone on the minute tick", () => {
-    let intervalCallback: (() => void) | undefined;
+  it("rereads the browser timezone on the poll interval", () => {
+    const intervalCallbacks: Array<() => void> = [];
     const setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(
       ((callback: TimerHandler) => {
         if (typeof callback === "function") {
-          intervalCallback = () => callback();
+          intervalCallbacks.push(() => callback());
         }
         return 1 as unknown as ReturnType<typeof setInterval>;
       }) as unknown as typeof setInterval,
@@ -86,7 +86,9 @@ describe("GridTimezoneLabel", () => {
       ).toBeInTheDocument();
 
       act(() => {
-        intervalCallback?.();
+        for (const callback of intervalCallbacks) {
+          callback();
+        }
       });
 
       expect(getEffectiveTimeZone()).toBe(browserZone);

@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import {
   refreshEffectiveTimeZoneFromBrowser,
   useEffectiveTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
+
+const BROWSER_ZONE_POLL_MS = 60_000;
 
 /**
  * Week/Day grid-corner control showing the effective timezone abbreviation.
@@ -14,19 +16,18 @@ import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbrev
 export const GridTimezoneLabel = () => {
   const timeZone = useEffectiveTimeZone();
   const now = useMinuteTick();
-  const skipBrowserRefreshOnMount = useRef(true);
 
-  // There is no timezonechange event. Reread the browser zone on the existing
-  // minute cadence so Auto mode follows an OS change without a tab blur. Skip
-  // the mount run so tests (and Part II pins, once refresh is Auto-gated) are
-  // not wiped on first paint. DST abbreviation flips use `now` directly.
+  // There is no timezonechange event. Poll so Auto mode follows an OS change
+  // without a tab blur. Do not refresh on mount — that would wipe a test pin
+  // (and a Part II pin, until refresh is Auto-gated). DST abbreviation flips
+  // still use `now` from the minute tick.
   useEffect(() => {
-    if (skipBrowserRefreshOnMount.current) {
-      skipBrowserRefreshOnMount.current = false;
-      return;
-    }
-    refreshEffectiveTimeZoneFromBrowser();
-  }, [now]);
+    const id = setInterval(
+      refreshEffectiveTimeZoneFromBrowser,
+      BROWSER_ZONE_POLL_MS,
+    );
+    return () => clearInterval(id);
+  }, []);
 
   const abbreviation = formatTimeZoneAbbreviation(timeZone, now.toDate());
 
