@@ -22,6 +22,7 @@ export function TimezoneOptionButton({
       id={id}
       onClick={onSelect}
       role="option"
+      tabIndex={-1}
       type="button"
     >
       <span className="text-text">{label}</span>
