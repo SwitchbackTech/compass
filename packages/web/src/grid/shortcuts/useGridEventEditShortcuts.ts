@@ -133,8 +133,16 @@ export type GridEventEditDayBoundary =
     }
   | {
       kind: "clamp";
-      /** Week view: refuse nudges that leave the visible week window. */
+      /** Week view: nudges that leave the visible week window shift it. */
       weekDays: Dayjs[];
+      /**
+       * Carry a whole-event nudge across the window edge by shifting the
+       * view (days is the nudge direction; eventId is the carried event, for
+       * restoring focus after the shifted window renders). Absent: refuse
+       * the nudge (edge nudges always refuse - resizing across the window is
+       * not a flow).
+       */
+      onCrossed?: (days: 1 | -1, eventId: string) => void;
     };
 
 /**
@@ -393,13 +401,17 @@ export function useGridEventEditShortcuts({
       );
       if (!movement) return;
 
-      if (
+      const crossesWeekWindow =
         dayBoundary.kind === "clamp" &&
         isOutsideVisibleWeek(
           dayjs(event.startDate),
           movement.days,
           dayBoundary.weekDays,
-        )
+        );
+      // Without a carry handler the window edge is a wall (old behavior).
+      if (
+        crossesWeekWindow &&
+        !(dayBoundary.kind === "clamp" && dayBoundary.onCrossed)
       ) {
         return;
       }
@@ -414,6 +426,14 @@ export function useGridEventEditShortcuts({
             onOptimisticApplied: () => draftActions.discard(),
           });
           followAcrossMidnight(previousStart, nudgedEvent);
+          if (
+            crossesWeekWindow &&
+            dayBoundary.kind === "clamp" &&
+            (movement.days === 1 || movement.days === -1) &&
+            nudgedEvent._id
+          ) {
+            dayBoundary.onCrossed?.(movement.days, nudgedEvent._id);
+          }
         },
       });
       return;

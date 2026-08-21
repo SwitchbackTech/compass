@@ -14,6 +14,7 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
+import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
 import { useFocusNoticeShortcut } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
 import {
@@ -38,6 +39,7 @@ export function RootShell() {
   useCalendarShellShortcuts();
   useKeyboardOnlyMode();
   useFocusNoticeShortcut();
+  useEventContextMenuShortcut();
 
   const showTrialGate = access.kind === "anonymous-trial" && access.isExpired;
   const showBillingGate = access.kind === "server" && access.isReadOnly;

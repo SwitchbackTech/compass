@@ -202,6 +202,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
   },
   {
+    id: "edit-menu",
+    keys: ["m"],
+    label: "Open event menu",
+    section: "edit",
+  },
+  {
     id: "edit-save",
     keys: ["Mod", "Enter"],
     label: "Save event form",
