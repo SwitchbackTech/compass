@@ -17,7 +17,7 @@ export const FOCUS_NOTICE_LETTER = "f";
  * Repeat presses cycle through visible notices; Tab moves within one, Enter
  * activates, Escape dismisses toasts (useEscapeToDismissToast).
  *
- * Same capture-listener style and yields as the other bare letters (`s`, `h`):
+ * Same capture-listener style and yields as the other bare letters (`s`):
  * stands down while app-locked, typing, an `e`… sequence is armed, or event
  * jump chips own letters (`f` is a jump key for Friday).
  */

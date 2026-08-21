@@ -86,8 +86,8 @@ consistent.
    - Pointer suppression (mouse permanently inert): `packages/web/src/shortcuts/keyboard-only/`
 4. Respect `app-lock`, `escape-ownership`, and “do not fire while typing in
    inputs” (use the existing `useAppShortcut` helpers; do not attach bare
-   `window` listeners for new app shortcuts). Bare-letter shortcuts (`S`, `H`,
-   `E`…) must yield to an armed edit sequence.
+   `window` listeners for new app shortcuts). Bare-letter shortcuts (`S`, `F`,
+   `M`, `E`…) must yield to an armed edit sequence.
 5. Add or update registry/data tests and the owning hook tests. Update
    [Shortcuts acceptance](../acceptance/shortcuts.md) when user-visible
    behavior changes.

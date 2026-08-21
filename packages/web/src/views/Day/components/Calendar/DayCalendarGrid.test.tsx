@@ -121,7 +121,7 @@ const EventFormProbe = () => {
   ) : null;
 };
 
-const { canCreateDraftOnCalendar, DayCalendarGrid } =
+const { DayCalendarGrid } =
   require("./DayCalendarGrid") as typeof import("./DayCalendarGrid");
 
 const renderDayCalendarGrid = (calendars?: Calendar[]) => {
@@ -630,41 +630,6 @@ describe("DayCalendarGrid", () => {
       name: /all-day event: untitled event/i,
     });
     expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
-  });
-
-  it("rejects draft creation on a read-only calendar", () => {
-    const holidays = makeCalendar("Holidays", {
-      access: "reader",
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
-    });
-
-    const showError = mock();
-    expect(canCreateDraftOnCalendar(holidays, showError)).toBeFalse();
-    expect(showError).toHaveBeenCalledWith(
-      "You can't edit the Holidays calendar.",
-    );
-  });
-
-  it("treats the local calendar as read-only once a Google account is connected", () => {
-    const local = makeCalendar("Compass", {
-      id: getLocalCalendarSentinelId(),
-      provider: "local",
-    });
-    const google = makeCalendar("Primary", { isPrimary: true });
-
-    const showError = mock();
-    expect(
-      canCreateDraftOnCalendar(local, showError, new Set([google.id])),
-    ).toBeFalse();
-    expect(showError).toHaveBeenCalledWith(
-      "You can't edit the Compass calendar.",
-    );
   });
 
   it("renders a saved all-day event at full calendar-column width", async () => {

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { type Calendar } from "@core/types/calendar.contracts";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -14,7 +13,6 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraftFromGridEvent,
@@ -50,21 +48,6 @@ import {
 } from "./dayCalendarDraft.util";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayCalendarScrollToNow } from "./useDayCalendarScrollToNow";
-
-export const canCreateDraftOnCalendar = (
-  calendar: Calendar | null,
-  showError: (message: string) => unknown = showErrorToast,
-  writableCalendarIds?: ReadonlySet<string>,
-): boolean => {
-  if (!calendar) return true;
-  const canWrite = writableCalendarIds
-    ? writableCalendarIds.has(calendar.id)
-    : calendar.capabilities.canWrite;
-  if (canWrite) return true;
-
-  showError(`You can't edit the ${calendar.name} calendar.`);
-  return false;
-};
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
