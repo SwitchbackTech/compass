@@ -7,6 +7,7 @@ import {
   subscribeToStorageKey,
 } from "@web/common/utils/external-store.util";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
+import { resetTimezoneMismatchSnoozeForTests } from "@web/timezone/timezone-mismatch";
 
 function isValidTimeZone(value: string): boolean {
   try {
@@ -120,9 +121,28 @@ export function usePinnedTimeZone(): string | null {
   return useSyncExternalStore(subscribe, getPinnedTimeZone);
 }
 
+function getStoredBrowserTimeZone(): string {
+  return browserTimeZoneStore.get();
+}
+
+export function useBrowserTimeZone(): string {
+  return useSyncExternalStore(subscribe, getStoredBrowserTimeZone);
+}
+
 /** Test-only: pin in memory (and storage when available) without extra UI. */
 export function setEffectiveTimeZoneForTests(timeZone: string): void {
   setPinnedTimeZone(timeZone);
+}
+
+/** Test-only: set the tracked browser zone without going through Intl. */
+export function setBrowserTimeZoneForTests(timeZone: string): void {
+  if (!isValidTimeZone(timeZone)) {
+    return;
+  }
+  browserTimeZoneStore.set(timeZone);
+  if (pinnedTimeZoneStore.get() === null) {
+    syncEffectiveTimeZone();
+  }
 }
 
 export function resetEffectiveTimeZoneStoreForTests(): void {
@@ -130,4 +150,5 @@ export function resetEffectiveTimeZoneStoreForTests(): void {
   pinnedTimeZoneStore.set(null);
   browserTimeZoneStore.set(getBrowserTimeZone());
   syncEffectiveTimeZone();
+  resetTimezoneMismatchSnoozeForTests();
 }

@@ -81,6 +81,26 @@ describe("OverlayPanel", () => {
     expect(last).toHaveFocus();
   });
 
+  it("does not trap Tab onto tabindex=-1 buttons", async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayPanel title="Confirm" onDismiss={() => {}}>
+        <button type="button">First</button>
+        <button type="button" tabIndex={-1}>
+          Skipped
+        </button>
+        <button type="button">Last</button>
+      </OverlayPanel>,
+    );
+
+    const first = screen.getByRole("button", { name: "First" });
+    const last = screen.getByRole("button", { name: "Last" });
+    expect(first).toHaveFocus();
+
+    await user.tab();
+    expect(last).toHaveFocus();
+  });
+
   it("skips focus restore when skipFocusRestoreRef is set", () => {
     const skipFocusRestoreRef = { current: false };
     const { rerender } = render(<button type="button">Outside</button>);

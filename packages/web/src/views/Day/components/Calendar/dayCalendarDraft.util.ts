@@ -1,4 +1,3 @@
-import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   shouldRenderTimedInAllDayRow,
@@ -14,7 +13,10 @@ import {
   positionAllDayDraftEvent,
 } from "@web/grid/layout/all-day-draft.position";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
-import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 export const addVisibleDraftEvent = ({
   draft,
@@ -106,8 +108,8 @@ export const isDraftVisibleOnDate = (
         inEffectiveTimeZone(schedule.end),
       );
       const visibleDay = visibleDate.startOf("day");
-      const start = dayjs(dates.startDate).startOf("day");
-      const end = dayjs(dates.endDate).startOf("day");
+      const start = calendarDateInEffectiveTimeZone(dates.startDate);
+      const end = calendarDateInEffectiveTimeZone(dates.endDate);
       const inclusiveEnd = end.isAfter(start) ? end.subtract(1, "day") : start;
 
       return (
@@ -121,8 +123,8 @@ export const isDraftVisibleOnDate = (
   }
 
   const visibleDay = visibleDate.startOf("day");
-  const start = dayjs(schedule.start).startOf("day");
-  const end = dayjs(schedule.end).startOf("day");
+  const start = inEffectiveTimeZone(schedule.start).startOf("day");
+  const end = inEffectiveTimeZone(schedule.end).startOf("day");
   const inclusiveEnd = end.isAfter(start) ? end.subtract(1, "day") : start;
 
   return (

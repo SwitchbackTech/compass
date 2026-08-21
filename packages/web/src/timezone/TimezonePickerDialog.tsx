@@ -125,8 +125,14 @@ export function TimezonePickerDialog({
           autoComplete="off"
           className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-3 py-2 text-sm text-text outline-none placeholder:text-text-muted"
           onChange={(event) => {
-            setQuery(event.target.value);
-            setActiveId(AUTO_ID);
+            const nextQuery = event.target.value;
+            setQuery(nextQuery);
+            const nextZones = filterTimeZones(catalog, nextQuery);
+            setActiveId(
+              nextQuery.trim().length > 0
+                ? (nextZones[0]?.id ?? AUTO_ID)
+                : AUTO_ID,
+            );
             setVisibleCount(VISIBLE_PAGE);
           }}
           onKeyDown={handleKeyDown}

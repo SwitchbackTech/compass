@@ -57,7 +57,7 @@ describe("TimezonePickerDialog", () => {
 
     const search = screen.getByRole("combobox", { name: "Search timezones" });
     await user.type(search, "Chicago");
-    await user.keyboard("{ArrowDown}{Enter}");
+    await user.keyboard("{Enter}");
 
     expect(getPinnedTimeZone()).toBe("America/Chicago");
   });
@@ -78,5 +78,21 @@ describe("TimezonePickerDialog", () => {
 
     expect(getPinnedTimeZone()).toBeNull();
     expect(getEffectiveTimeZone()).toBe(getBrowserTimeZone());
+  });
+
+  it("keeps timezone options out of the tab order", async () => {
+    const user = userEvent.setup();
+    render(
+      <TimezonePickerDialog onDismiss={() => timezoneDialogActions.close()} />,
+    );
+
+    const search = screen.getByRole("combobox", { name: "Search timezones" });
+    expect(search).toHaveFocus();
+    for (const option of screen.getAllByRole("option")) {
+      expect(option).toHaveAttribute("tabindex", "-1");
+    }
+
+    await user.tab();
+    expect(search).toHaveFocus();
   });
 });
