@@ -292,7 +292,7 @@ Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 
 ### Expected Results
 
-- Chips appear on events when `S` is pressed and stay until Esc.
+- Chips appear on events currently visible in the grid when `S` is pressed and stay until Esc. Scrolled-off events keep their jump keys but hide their chips.
 - A day letter highlights that column and focuses the first event; digits refine to `Wn`.
 - Arrow keys keep jump mode on so letter-then-arrows works.
 - Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
