@@ -19,6 +19,7 @@ export function TimezoneMismatchBanner({
   return (
     <section
       aria-label="Timezone mismatch"
+      data-notice=""
       className="flex flex-wrap items-center justify-between gap-3 border-border border-b bg-surface-panel px-4 py-2 text-text-muted text-xs"
     >
       <p>{message}</p>

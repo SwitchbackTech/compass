@@ -22,14 +22,23 @@ export const SaveSection: React.FC<Props> = ({
     // Pinned footer bar: EventForm renders this outside its scrollable body,
     // so it stays visible while the fields scroll.
     <div className="flex items-center justify-start gap-3 border-border border-t px-4 py-3">
+      {/* onClick lives on the buttons, not the tooltip wrapper div: keyboard
+          activation targets the button itself, and the wrapper only worked
+          for it by event bubbling. */}
       {onCancel && (
-        <TooltipWrapper onClick={onCancel} description={cancelText}>
-          <Btn title={cancelText}>{cancelText}</Btn>
+        <TooltipWrapper description={cancelText}>
+          <Btn onClick={onCancel} title={cancelText}>
+            {cancelText}
+          </Btn>
         </TooltipWrapper>
       )}
 
-      <TooltipWrapper onClick={onSave} shortcut={["Mod", "Enter"]}>
-        <SaveButton minWidth={110} aria-keyshortcuts="Meta+Enter">
+      <TooltipWrapper shortcut={["Mod", "Enter"]}>
+        <SaveButton
+          aria-keyshortcuts="Meta+Enter"
+          minWidth={110}
+          onClick={onSave}
+        >
           {saveText}
         </SaveButton>
       </TooltipWrapper>

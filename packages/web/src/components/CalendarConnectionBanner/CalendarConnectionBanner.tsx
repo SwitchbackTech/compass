@@ -38,6 +38,7 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
           ? "border-error/40 bg-error/10 text-text"
           : "border-warning/40 bg-warning/10 text-text"
       }`}
+      data-notice=""
       role={isError ? "alert" : "status"}
     >
       <p>{message}</p>

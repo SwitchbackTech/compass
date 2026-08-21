@@ -45,6 +45,7 @@ const PromptCard: FC = () => {
       aria-label="Create your first event"
       className="fixed right-6 bottom-6 starting:translate-y-2 starting:opacity-0 transition-all duration-300 data-closing:opacity-0 motion-reduce:transition-none"
       data-closing={closing || undefined}
+      data-notice=""
       data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
