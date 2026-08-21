@@ -15,18 +15,21 @@ import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.
  */
 export function usePointerSuppression() {
   useEffect(() => {
-    const blockPointer = createPointerBlockListener({
+    const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: pointerBlockActions.pulseBlockedClick,
     });
 
     for (const type of POINTER_BLOCK_EVENT_TYPES) {
-      window.addEventListener(type, blockPointer, true);
+      window.addEventListener(type, onPointerEvent, true);
     }
+    const handleKeyDown = (event: KeyboardEvent) => onKeyDown(event);
+    window.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
       for (const type of POINTER_BLOCK_EVENT_TYPES) {
-        window.removeEventListener(type, blockPointer, true);
+        window.removeEventListener(type, onPointerEvent, true);
       }
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, []);
 }

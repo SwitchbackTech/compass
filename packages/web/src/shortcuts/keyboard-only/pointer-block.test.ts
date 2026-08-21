@@ -135,12 +135,12 @@ describe("createPointerBlockListener", () => {
 
   it("blocks a trusted mouse gesture and pulses once, on pointerdown only", () => {
     const onBlockedGesture = mock(() => {});
-    const listener = createPointerBlockListener({ onBlockedGesture });
+    const { onPointerEvent } = createPointerBlockListener({ onBlockedGesture });
 
     const down = fakeEvent({ type: "pointerdown", detail: 0 });
     const click = fakeEvent({ type: "click", detail: 1 });
-    listener(down.event);
-    listener(click.event);
+    onPointerEvent(down.event);
+    onPointerEvent(click.event);
 
     expect(down.preventDefault).toHaveBeenCalledTimes(1);
     expect(click.preventDefault).toHaveBeenCalledTimes(1);
@@ -148,17 +148,21 @@ describe("createPointerBlockListener", () => {
   });
 
   it("passes keyboard-activation clicks untouched", () => {
-    const listener = createPointerBlockListener({ onBlockedGesture: () => {} });
+    const { onPointerEvent } = createPointerBlockListener({
+      onBlockedGesture: () => {},
+    });
 
     const click = fakeEvent({ type: "click", detail: 0, pointerType: "" });
-    listener(click.event);
+    onPointerEvent(click.event);
 
     expect(click.preventDefault).not.toHaveBeenCalled();
     expect(click.stopPropagation).not.toHaveBeenCalled();
   });
 
   it("blocks a button-0 contextmenu that tails a blocked pointerdown, then passes a later keyboard one", () => {
-    const listener = createPointerBlockListener({ onBlockedGesture: () => {} });
+    const { onPointerEvent } = createPointerBlockListener({
+      onBlockedGesture: () => {},
+    });
 
     // Standalone keyboard contextmenu: passes.
     const keyboardMenu = fakeEvent({
@@ -167,18 +171,35 @@ describe("createPointerBlockListener", () => {
       detail: 0,
       pointerType: "",
     });
-    listener(keyboardMenu.event);
+    onPointerEvent(keyboardMenu.event);
     expect(keyboardMenu.preventDefault).not.toHaveBeenCalled();
 
     // Same shape immediately after a blocked pointerdown: mouse gesture tail.
-    listener(fakeEvent({ type: "pointerdown" }).event);
+    onPointerEvent(fakeEvent({ type: "pointerdown" }).event);
     const gestureMenu = fakeEvent({
       type: "contextmenu",
       button: 0,
       detail: 0,
       pointerType: "",
     });
-    listener(gestureMenu.event);
+    onPointerEvent(gestureMenu.event);
     expect(gestureMenu.preventDefault).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets Shift+F10 open a menu even after a recent blocked click", () => {
+    const { onPointerEvent, onKeyDown } = createPointerBlockListener({
+      onBlockedGesture: () => {},
+    });
+
+    onPointerEvent(fakeEvent({ type: "pointerdown" }).event);
+    onKeyDown({ key: "F10" });
+    const keyboardMenu = fakeEvent({
+      type: "contextmenu",
+      button: 0,
+      detail: 0,
+      pointerType: "",
+    });
+    onPointerEvent(keyboardMenu.event);
+    expect(keyboardMenu.preventDefault).not.toHaveBeenCalled();
   });
 });

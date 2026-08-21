@@ -62,13 +62,17 @@ export interface PointerBlockEvent {
  * The capture-phase listener body. Owns the pointerdown timestamp used to
  * catch contextmenu events that tail a blocked mouse gesture, and pulses
  * onBlockedGesture once per gesture (pointerdown), not again on click.
+ *
+ * Shift+F10 / the Menu key clear the timestamp on keydown so a keyboard
+ * contextmenu still opens if the user clicked within the last 500ms.
+ * macOS Ctrl+click has no F10/ContextMenu keydown, so it stays blocked.
  */
 export const createPointerBlockListener = (options: {
   onBlockedGesture: () => void;
 }) => {
   let lastBlockedPointerDownAt: number | null = null;
 
-  return (event: PointerBlockEvent): void => {
+  const onPointerEvent = (event: PointerBlockEvent): void => {
     const msSinceBlockedPointerDown =
       lastBlockedPointerDownAt === null
         ? undefined
@@ -92,6 +96,14 @@ export const createPointerBlockListener = (options: {
       options.onBlockedGesture();
     }
   };
+
+  const onKeyDown = (event: Pick<KeyboardEvent, "key">): void => {
+    if (event.key === "F10" || event.key === "ContextMenu") {
+      lastBlockedPointerDownAt = null;
+    }
+  };
+
+  return { onPointerEvent, onKeyDown };
 };
 
 export const shouldBlockPointerEvent = (
