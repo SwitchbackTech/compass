@@ -5,6 +5,7 @@ import {
   fillTitleAndSaveEventForm,
   getSavedEventsByTitle,
   getVisibleDayDates,
+  openAllDayEventFormWithKeyboard,
   openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -90,7 +91,7 @@ test("ArrowDown opens the event-form date picker without a mouse", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
-  await openTimedEventFormWithKeyboard(page);
+  await openAllDayEventFormWithKeyboard(page);
 
   const startDate = page.locator('input[title="Pick Start Date"]');
   await startDate.focus();
