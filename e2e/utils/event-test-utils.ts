@@ -104,10 +104,12 @@ const ensureWeekView = async (page: Page) => {
     return;
   }
 
-  const viewButton = getViewSwitcherButton(page);
-  await viewButton.waitFor({ state: "visible", timeout: 5000 });
-  await viewButton.click();
-  await page.getByRole("option", { name: "Week" }).click();
+  await getViewSwitcherButton(page).waitFor({
+    state: "visible",
+    timeout: 5000,
+  });
+  await blurActiveElement(page);
+  await page.keyboard.press("w");
   await page.waitForURL((url) => url.pathname.startsWith("/week"), {
     timeout: 10000,
   });
@@ -299,26 +301,32 @@ export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 
-export const openTimedEventFormWithMouse = async (page: Page) => {
+/** Opens a timed draft via the `c` shortcut (KEYMAP.createEvent). */
+export const openTimedEventFormWithKeyboard = async (page: Page) => {
   const titleInput = getFormTitleInput(page);
 
   if (!(await titleInput.isVisible().catch(() => false))) {
-    const { x, y } = await getMainGridPoint(page);
-    await page.mouse.click(x, y);
+    await blurActiveElement(page);
+    await page.locator("#mainGrid").focus();
+    await page.keyboard.press("c");
   }
 
   await titleInput.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
 };
 
-export const openAllDayEventFormWithMouse = async (page: Page) => {
-  await clickGridCenter(page, page.locator("#allDayRow"));
+/** Opens an all-day draft via the `a` shortcut. */
+export const openAllDayEventFormWithKeyboard = async (page: Page) => {
+  await blurActiveElement(page);
+  await page.locator("#mainGrid").focus();
+  await page.keyboard.press("a");
   await getFormTitleInput(page).waitFor({
     state: "visible",
     timeout: FORM_TIMEOUT,
   });
 };
 
-export const openEventForEditingWithMouse = async (
+/** Focuses the event card and opens its form with Enter. */
+export const openEventForEditingWithKeyboard = async (
   page: Page,
   eventTitle: string,
 ) => {
@@ -326,16 +334,27 @@ export const openEventForEditingWithMouse = async (
   const eventButton = page.getByRole("button", { name: eventTitle }).last();
 
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
-  await eventButton.click({ force: true });
+  await eventButton.focus();
+  await page.keyboard.press("Enter");
   await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
 };
 
-export const deleteEventWithMouse = async (page: Page) => {
+/**
+ * Deletes the event whose form is open, driving the actions menu by keyboard
+ * (focus + Enter on native controls, so this doubles as coverage that
+ * keyboard activation works).
+ */
+export const deleteEventWithKeyboard = async (page: Page) => {
   const form = page.getByRole("form");
   await expect(form).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
-  await form.getByLabel("Open actions menu").click();
-  await page.getByRole("menuitem", { name: /delete/i }).click();
+  const menuButton = form.getByLabel("Open actions menu");
+  await menuButton.focus();
+  await page.keyboard.press("Enter");
+  const deleteItem = page.getByRole("menuitem", { name: /delete/i });
+  await deleteItem.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
+  await deleteItem.focus();
+  await page.keyboard.press("Enter");
 };
 
 export const expectTimedEventVisible = async (page: Page, title: string) => {

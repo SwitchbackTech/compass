@@ -5,7 +5,7 @@ import {
   fillTitleAndSaveEventForm,
   getSavedEventsByTitle,
   getVisibleDayDates,
-  openTimedEventFormWithMouse,
+  openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -20,7 +20,7 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Move Narrow");
-  await openTimedEventFormWithMouse(page);
+  await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 

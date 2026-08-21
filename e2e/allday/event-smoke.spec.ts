@@ -3,7 +3,7 @@ import {
   createEventTitle,
   expectAllDayEventVisible,
   fillTitleAndSaveEventForm,
-  openAllDayEventFormWithMouse,
+  openAllDayEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -11,7 +11,7 @@ test("creates an all-day event", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("All-Day Event");
-  await openAllDayEventFormWithMouse(page);
+  await openAllDayEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
 
   await expectAllDayEventVisible(page, title);

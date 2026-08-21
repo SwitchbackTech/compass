@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
   ensureSidebarOpen,
   getViewSwitcherButton,
-  openTimedEventFormWithMouse,
+  openTimedEventFormWithKeyboard,
 } from "../utils/event-test-utils";
 
 // Wide enough for all 7 week columns (track needs GRID_MARGIN_LEFT +
@@ -330,7 +330,8 @@ test("sidebar lists calendars, toggles visibility in localStorage, and shows car
     name: new RegExp(`^(Show|Hide) ${CALENDAR_B_NAME} calendar$`),
   });
 
-  await toggleB.click();
+  await toggleB.focus();
+  await page.keyboard.press("Enter");
   await expect(toggleB).toHaveAttribute("aria-pressed", "false");
   await expect(grid.getByRole("button", { name: EVENT_B_TITLE })).toHaveCount(
     0,
@@ -346,7 +347,8 @@ test("sidebar lists calendars, toggles visibility in localStorage, and shows car
     )
     .toEqual([CALENDAR_B_ID]);
 
-  await toggleB.click();
+  await toggleB.focus();
+  await page.keyboard.press("Enter");
   await expect(toggleB).toHaveAttribute("aria-pressed", "true");
   await expect(grid.getByRole("button", { name: EVENT_B_TITLE })).toBeVisible();
 
@@ -362,8 +364,10 @@ test("day view separates visible calendars into distinct columns", async ({
 }) => {
   await setupCalendarExperiencePage(page);
 
-  await getViewSwitcherButton(page).click();
-  await page.getByRole("option", { name: /^day/i }).click();
+  await page.keyboard.press("d");
+  await page.waitForURL((url) => url.pathname.startsWith("/day"), {
+    timeout: 10000,
+  });
 
   const dayAgenda = page.getByRole("region", { name: "Calendar agenda" });
   const calendarHeaders = dayAgenda.getByRole("region", {
@@ -406,7 +410,7 @@ test("day view separates visible calendars into distinct columns", async ({
 test("a new event form offers only writable calendars", async ({ page }) => {
   await setupCalendarExperiencePage(page, []);
 
-  await openTimedEventFormWithMouse(page);
+  await openTimedEventFormWithKeyboard(page);
   const form = page.getByRole("form");
   // CalendarSelect's trigger is a <button aria-haspopup="listbox"
   // aria-expanded>; Chromium computes that combination as role "combobox".
@@ -415,7 +419,8 @@ test("a new event form offers only writable calendars", async ({ page }) => {
   });
   await expect(trigger).toBeVisible();
 
-  await trigger.click();
+  await trigger.focus();
+  await page.keyboard.press("Enter");
   // Scoped by name: the sidebar's always-visible month picker is also a
   // role="listbox" (of day options), and the two would otherwise collide.
   const listbox = page.getByRole("listbox", { name: "Calendar" });
