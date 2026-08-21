@@ -31,25 +31,57 @@ describe("unwrapSyncResult", () => {
     });
   });
 
-  it("throws a 503 that hides the sync-internal error kind and status", () => {
-    const result: SyncClientResult<void> = {
-      ok: false,
-      error: { kind: "unauthorized", status: 401, correlationId: "corr-1" },
-    };
-
+  const unwrapError = (result: SyncClientResult<void>): BaseError => {
     let thrown: unknown;
     try {
       unwrapSyncResult(result, deps);
     } catch (e) {
       thrown = e;
     }
-
     expect(thrown).toBeInstanceOf(BaseError);
-    expect((thrown as BaseError).statusCode).toBe(Status.SERVICE_UNAVAILABLE);
-    expect((thrown as BaseError).result).toBe(deps.userMessage);
-    // Neither the internal description nor the client payload leaks the
-    // sync-internal error kind or status.
-    expect((thrown as BaseError).message).not.toContain("unauthorized");
-    expect((thrown as BaseError).message).not.toContain("401");
+    return thrown as BaseError;
+  };
+
+  it("throws the retryable 503 when sync is momentarily unreachable", () => {
+    const thrown = unwrapError({
+      ok: false,
+      error: { kind: "unavailable", status: 503, correlationId: "corr-1" },
+    });
+
+    expect(thrown.statusCode).toBe(Status.SERVICE_UNAVAILABLE);
+    expect(thrown.isOperational).toBe(true);
+    expect(thrown.result).toBe(deps.userMessage);
+  });
+
+  // A 503 is downgraded to a `warn` by logLevelForError so a sync restart
+  // stops filing GitHub issues, which is only safe because a kind that means
+  // "sync is genuinely broken" never lands on it. Flattening every kind to
+  // 503 would hide a drifted internalAuthToken (`unauthorized`) or a broken
+  // response contract (`invalidResponse`) from error tracking permanently.
+  it("throws a 502, not the retryable 503, for a non-transient kind", () => {
+    for (const kind of [
+      "unauthorized",
+      "invalidResponse",
+      "unexpectedStatus",
+    ] as const) {
+      const thrown = unwrapError({
+        ok: false,
+        error: { kind, status: 401, correlationId: "corr-1" },
+      });
+
+      expect(thrown.statusCode).toBe(Status.BAD_GATEWAY);
+      expect(thrown.code).toBe("SYNC_PROXY_FAILURE");
+    }
+  });
+
+  it("hides the sync-internal error kind and status from the client", () => {
+    const thrown = unwrapError({
+      ok: false,
+      error: { kind: "unauthorized", status: 401, correlationId: "corr-1" },
+    });
+
+    expect(thrown.result).toBe(deps.userMessage);
+    expect(thrown.message).not.toContain("unauthorized");
+    expect(thrown.message).not.toContain("401");
   });
 });

@@ -34,9 +34,19 @@ describe("createCompassQueryClient", () => {
     const unsubscribes: Array<() => void> = [];
     for (let i = 0; i < 16; i++) {
       const observer = new QueryObserver(client, options as never);
-      unsubscribes.push(observer.subscribe(() => {}));
-      // Let the in-flight fetch settle, the way a progressive mount does.
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      // Mount progressively, and wait for the query to be genuinely settled
+      // before the next observer subscribes. A fixed sleep would let a slow
+      // worker leave the fetch in flight, where the later observers dedupe
+      // into it and the test reports 1 fetch whether or not retryOnMount is
+      // set - passing for the wrong reason, and silently stopping guarding.
+      await new Promise<void>((resolve) => {
+        unsubscribes.push(
+          observer.subscribe((result) => {
+            if (result.isError && result.fetchStatus === "idle") resolve();
+          }),
+        );
+        if (observer.getCurrentResult().fetchStatus === "idle") resolve();
+      });
     }
     unsubscribes.forEach((unsubscribe) => unsubscribe());
 
