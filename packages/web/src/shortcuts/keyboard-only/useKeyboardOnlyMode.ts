@@ -7,6 +7,10 @@ import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import {
+  createPointerBlockListener,
+  POINTER_BLOCK_EVENT_TYPES,
+} from "@web/shortcuts/keyboard-only/pointer-block";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
@@ -57,35 +61,26 @@ export function useKeyboardOnlyMode() {
     };
   }, []);
 
-  // Click suppression while active. Window capture runs before React's
-  // delegated root listeners (and grid PointerCaptureBoundary), so clicks
-  // never reach event open handlers. Scroll and hover stay live.
+  // Pointer suppression while active. Window capture runs before React's
+  // delegated root listeners (and grid PointerCaptureBoundary), so pointer
+  // gestures never reach event open handlers. Scroll and hover stay live, and
+  // shouldBlockPointerEvent passes keyboard-activation clicks (Enter/Space on
+  // a native button) and synthetic .click() calls through.
   useEffect(() => {
     if (!isActive) return;
 
-    const blockPointer = (event: Event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest("[data-onboarding-ui]")) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      // Pulse once per gesture (pointerdown), not again on click/mousedown.
-      if (event.type === "pointerdown") {
-        keyboardOnlyActions.pulseBlockedClick();
-      }
-    };
+    const blockPointer = createPointerBlockListener({
+      onBlockedGesture: keyboardOnlyActions.pulseBlockedClick,
+    });
 
-    window.addEventListener("pointerdown", blockPointer, true);
-    window.addEventListener("mousedown", blockPointer, true);
-    window.addEventListener("click", blockPointer, true);
-    window.addEventListener("auxclick", blockPointer, true);
+    for (const type of POINTER_BLOCK_EVENT_TYPES) {
+      window.addEventListener(type, blockPointer, true);
+    }
 
     return () => {
-      window.removeEventListener("pointerdown", blockPointer, true);
-      window.removeEventListener("mousedown", blockPointer, true);
-      window.removeEventListener("click", blockPointer, true);
-      window.removeEventListener("auxclick", blockPointer, true);
+      for (const type of POINTER_BLOCK_EVENT_TYPES) {
+        window.removeEventListener(type, blockPointer, true);
+      }
     };
   }, [isActive]);
 }

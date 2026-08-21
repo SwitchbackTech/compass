@@ -53,53 +53,26 @@ describe("useKeyboardOnlyMode", () => {
     document.body.innerHTML = "";
   });
 
-  it("enters on h and suppresses clicks until Escape", () => {
+  it("enters on h and exits on Escape", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
       pressH();
     });
-
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
-
-    const root = document.getElementById("root")!;
-    const button = document.createElement("button");
-    button.textContent = "Click me";
-    root.appendChild(button);
-
-    let clicked = false;
-    button.addEventListener("click", () => {
-      clicked = true;
-    });
-
-    act(() => {
-      window.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
-      );
-      window.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true }),
-      );
-    });
-
-    expect(clicked).toBe(false);
-    expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBe(1);
 
     act(() => {
       dispatchKey("keydown", "Escape");
     });
-
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
-
-    clicked = false;
-    act(() => {
-      button.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true }),
-      );
-    });
-    expect(clicked).toBe(true);
   });
 
-  it("allows clicks inside onboarding UI while keyboard-only is on", () => {
+  // Blocking of trusted mouse events cannot be exercised via dispatchEvent
+  // (isTrusted is [LegacyUnforgeable]); that behavior is unit-tested on the
+  // listener in pointer-block.test.ts and end-to-end in
+  // e2e/timed/keyboard-only-mode.spec.ts. Here we prove the wiring passes
+  // synthetic activation through while active.
+  it("passes synthetic .click() calls while active", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
@@ -107,25 +80,15 @@ describe("useKeyboardOnlyMode", () => {
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
-    const tour = document.createElement("div");
-    tour.setAttribute("data-onboarding-ui", "");
     const button = document.createElement("button");
-    button.textContent = "Next";
-    tour.appendChild(button);
-    document.body.appendChild(tour);
-
+    document.getElementById("root")!.appendChild(button);
     let clicked = false;
     button.addEventListener("click", () => {
       clicked = true;
     });
 
     act(() => {
-      button.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
-      );
-      button.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true }),
-      );
+      button.click();
     });
 
     expect(clicked).toBe(true);
