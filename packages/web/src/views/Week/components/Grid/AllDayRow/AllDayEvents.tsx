@@ -1,4 +1,4 @@
-import { type MouseEvent, useMemo } from "react";
+import { useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isGridEventInteractionReadOnly,
@@ -174,16 +174,6 @@ const AllDayEventItem = ({
         : undefined,
     [event._id, hasEventIdentity],
   );
-  // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only card would otherwise stop
-  // being clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to an "open" action bypasses the
-  // engine entirely for this card.
-  const onMouseDown = isReadOnly
-    ? (_e: MouseEvent, clickedEvent: GridEvent) =>
-        onOpenReadOnlyDetails(clickedEvent)
-    : undefined;
-
   return (
     <AllDayEventMemo
       calendarIdentity={calendarIdentity}
@@ -193,7 +183,6 @@ const AllDayEventItem = ({
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onKeyDown={isReadOnly ? onOpenReadOnlyDetails : onKeyDown}
-      onMouseDown={onMouseDown}
       ref={registrationRef}
       weekDays={weekDays}
     />

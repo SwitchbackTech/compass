@@ -244,7 +244,7 @@ describe("Week grid read-only interaction gate", () => {
     expect(weekEventRegistry.resolve(event.id, "all-day")).toBeNull();
   });
 
-  it("still opens a read-only all-day event for inspection on click", () => {
+  it("still opens a read-only all-day event for inspection via Enter", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
     const event = createAllDayEvent(readOnlyCalendar.id);
@@ -256,7 +256,7 @@ describe("Week grid read-only interaction gate", () => {
       name: /all-day event: team holiday/i,
     });
     act(() => {
-      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+      fireEvent.keyDown(card, { key: "Enter" });
     });
 
     // Assert the draft the form renders from - opening the form without a
@@ -267,7 +267,7 @@ describe("Week grid read-only interaction gate", () => {
     act(() => draftActions.discard());
   });
 
-  it("still opens a read-only timed event for inspection on click", () => {
+  it("still opens a read-only timed event for inspection via Enter", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
     const event = createTimedEvent(readOnlyCalendar.id, {
@@ -279,7 +279,7 @@ describe("Week grid read-only interaction gate", () => {
 
     const card = screen.getByRole("button", { name: /inspect me/i });
     act(() => {
-      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+      fireEvent.keyDown(card, { key: "Enter" });
     });
 
     // Assert the draft the form actually renders from, not just that some

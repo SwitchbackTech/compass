@@ -16,7 +16,6 @@ describe("TimedGrid", () => {
         <button type="button">Before</button>
         <TimedGrid
           eventsLayer={null}
-          onMouseDown={() => {}}
           timedColumnsRef={() => {}}
           timedGridRef={() => {}}
           today={today}
@@ -39,7 +38,6 @@ describe("TimedGrid", () => {
     render(
       <TimedGrid
         eventsLayer={null}
-        onMouseDown={() => {}}
         timedColumnsRef={() => {}}
         timedGridRef={() => {}}
         today={today}

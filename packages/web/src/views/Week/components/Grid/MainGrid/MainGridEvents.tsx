@@ -197,16 +197,6 @@ const MainGridEventItem = ({
         : undefined,
     [event._id, hasEventIdentity],
   );
-  // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only card would otherwise stop
-  // being clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to an "open" action bypasses the
-  // engine entirely for this card, so it never becomes a drag/resize target
-  // no matter how the pointer moves.
-  const onEventMouseDown = isReadOnly
-    ? (clickedEvent: GridEvent) => onOpenReadOnlyDetails(clickedEvent)
-    : undefined;
-
   return (
     <GridEventMemo
       calendarIdentity={calendarIdentity}
@@ -217,7 +207,6 @@ const MainGridEventItem = ({
       interactionAttributes={interactionAttributes}
       measurements={measurements}
       onEventKeyDown={isReadOnly ? onOpenReadOnlyDetails : onEventKeyDown}
-      onEventMouseDown={onEventMouseDown}
       ref={registrationRef}
       weekProps={weekProps}
     />

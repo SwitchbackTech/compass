@@ -1,12 +1,5 @@
-import {
-  type MouseEvent as ReactMouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-} from "react";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { useCallback, useEffect, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
-import { type CalendarId } from "@core/types/domain-primitives";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -14,11 +7,7 @@ import {
   isFirstImportInProgress,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getWritableCalendars } from "@web/calendars/calendar.util";
-import {
-  useConnectedAccountEmails,
-  useDefaultTargetCalendar,
-} from "@web/calendars/useDefaultTargetCalendar";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -38,8 +27,6 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
-import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
-import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
@@ -48,7 +35,6 @@ import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
-import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { DayCalendarColumnHeaders } from "./DayCalendarColumnHeaders";
@@ -64,7 +50,6 @@ import {
 } from "./dayCalendarDraft.util";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayCalendarScrollToNow } from "./useDayCalendarScrollToNow";
-import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 export const canCreateDraftOnCalendar = (
   calendar: Calendar | null,
@@ -81,8 +66,6 @@ export const canCreateDraftOnCalendar = (
   return false;
 };
 
-const isDayInteractionMotionActive = () => false;
-
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
   const { navigateToDate } = useDateNavigation();
@@ -92,13 +75,6 @@ export function DayCalendarGrid() {
   // Seed shortcuts with the form's default create target, not day-column order.
   const defaultTargetCalendarId =
     useDefaultTargetCalendar(calendars)?.id ?? null;
-  const accountEmailOrder = useConnectedAccountEmails();
-  const writableCalendarIds = useMemo(() => {
-    const writable = getWritableCalendars(calendars, {
-      hasConnectedAccount: accountEmailOrder.length > 0,
-    });
-    return new Set(writable.map((calendar) => calendar.id));
-  }, [accountEmailOrder.length, calendars]);
   const {
     allDayEvents,
     error: eventsError,
@@ -144,14 +120,8 @@ export function DayCalendarGrid() {
     visibleDates,
   } = useDayCalendarColumns({ allDayEvents, dateInView, timedEvents });
   const { gridRefs, measurements } = useGridMeasurements({
-    isInteractionMotionActive: isDayInteractionMotionActive,
     visibleDateCount: visibleDates.length,
   });
-  const dateCalcs = useGridCoordinates(
-    measurements,
-    gridRefs.mainGridRef,
-    visibleDates,
-  );
   const gridDraft = useDraftStore(selectGridDraft);
   // Strip height must include the all-day draft: layer rendering used to
   // re-stack with the draft while EventGrid still sized from saved events only.
@@ -179,19 +149,6 @@ export function DayCalendarGrid() {
   const tintedVisibleDates = useMemo(
     () => withAllDayColumnTints(visibleDates, renderedAllDayEvents, "calendar"),
     [renderedAllDayEvents, visibleDates],
-  );
-
-  const calendarColumnKeys = useMemo(
-    () => displayedCalendars.map((calendar) => calendar.id),
-    [displayedCalendars],
-  );
-  const getDayInteractionLayoutSources = useCallback(
-    () => ({
-      allDayColumnsElement: gridRefs.allDayColumnsRef.current,
-      mainGridElement: gridRefs.mainGridRef.current,
-      timedColumnsElement: gridRefs.timedColumnsRef.current,
-    }),
-    [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
   );
 
   useDayCalendarScrollToNow(gridRefs.mainGridRef);
@@ -253,9 +210,6 @@ export function DayCalendarGrid() {
     getDayEventById,
     onOpenEvent: openEventFormForEvent,
   });
-
-  const getAllDayDraftStartDate = (clientX: number) =>
-    dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
 
   const openShortcutDraft = useCallback(
     (createDraft: () => void, openForm = true) => {
@@ -336,54 +290,6 @@ export function DayCalendarGrid() {
     () => onViewCommand("CREATE_TIMED_DRAFT", createTimedDraftFromShortcut),
     [createTimedDraftFromShortcut],
   );
-  const onAllDayMouseDown = useAllDayDraftCreation({
-    getStartDate: getAllDayDraftStartDate,
-    onCreateGridDraft: openGridDraftForm,
-  });
-
-  const { startTimedDraftCreation } = useDayTimedDraftCreation({
-    dateCalcs,
-    onOpenDraft: openGridDraftForm,
-  });
-  const getCalendarAtX = useCallback(
-    (clientX: number) =>
-      displayedCalendars[dateCalcs.getVisibleDateIndexByX(clientX)] ?? null,
-    [dateCalcs, displayedCalendars],
-  );
-  const createOnCalendarSurface = useCallback(
-    (
-      event: ReactMouseEvent<HTMLElement>,
-      createDraft: (
-        event: ReactMouseEvent<HTMLElement>,
-        calendarId: CalendarId | null,
-      ) => void,
-    ) => {
-      const calendar = getCalendarAtX(event.clientX);
-
-      if (
-        !canCreateDraftOnCalendar(calendar, showErrorToast, writableCalendarIds)
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-
-      createDraft(event, calendar?.id ?? null);
-    },
-    [getCalendarAtX, writableCalendarIds],
-  );
-  const handleAllDayMouseDown = useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
-      createOnCalendarSurface(event, onAllDayMouseDown);
-    },
-    [createOnCalendarSurface, onAllDayMouseDown],
-  );
-  const handleTimedMouseDown = useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
-      createOnCalendarSurface(event, startTimedDraftCreation);
-    },
-    [createOnCalendarSurface, startTimedDraftCreation],
-  );
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
@@ -445,32 +351,21 @@ export function DayCalendarGrid() {
       className="flex h-full min-w-xs flex-1 flex-col bg-background px-0.5 pb-0.5"
       onContextMenu={handleContextMenu}
     >
-      <DayInteractionCoordinator
-        allDayEvents={displayedAllDayEvents}
-        calendarColumnKeys={calendarColumnKeys}
-        dateInView={dateInView}
-        getLayoutSources={getDayInteractionLayoutSources}
-        onOpenEvent={openEventFormForEvent}
-        timedEvents={displayedTimedEvents}
-      >
-        <DayCalendarColumnHeaders calendars={displayedCalendars} />
-        <EventGrid
-          allDayEventsLayer={allDayEventsLayer}
-          allDayRowsCount={allDayRowsCount}
-          gridRefs={gridRefs}
-          isErrorEvents={showEventsLoadError}
-          isImportFailed={isImportFailed}
-          isImportingEmpty={isImportingEmpty}
-          isLoadingEvents={isLoadingEvents}
-          onAllDayMouseDown={handleAllDayMouseDown}
-          onRetryEvents={() => void refetch()}
-          onRetryImport={() => refresh()}
-          onTimedMouseDown={handleTimedMouseDown}
-          timedEventsLayer={timedEventsLayer}
-          today={today}
-          visibleDates={tintedVisibleDates}
-        />
-      </DayInteractionCoordinator>
+      <DayCalendarColumnHeaders calendars={displayedCalendars} />
+      <EventGrid
+        allDayEventsLayer={allDayEventsLayer}
+        allDayRowsCount={allDayRowsCount}
+        gridRefs={gridRefs}
+        isErrorEvents={showEventsLoadError}
+        isImportFailed={isImportFailed}
+        isImportingEmpty={isImportingEmpty}
+        isLoadingEvents={isLoadingEvents}
+        onRetryEvents={() => void refetch()}
+        onRetryImport={() => refresh()}
+        timedEventsLayer={timedEventsLayer}
+        today={today}
+        visibleDates={tintedVisibleDates}
+      />
       {contextMenu}
       <ShiftHintOverlay hints={shiftHints} />
       <EditSequenceMenu getAnchor={getEditSequenceAnchor} />

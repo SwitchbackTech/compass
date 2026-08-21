@@ -1,26 +1,15 @@
-import {
-  type FC,
-  type MutableRefObject,
-  type ReactNode,
-  type RefCallback,
-  useMemo,
-} from "react";
+import { type FC, type ReactNode, type RefCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { TimedGrid } from "@web/grid/components/TimedGrid";
 import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
-import { useDragEventSmartScroll } from "@web/views/Week/hooks/grid/useDragEventSmartScroll";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
-import { useTimedGridDraftCreation } from "@web/views/Week/hooks/grid/useTimedGridDraftCreation";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
   children?: (props: MainGridRenderProps) => ReactNode;
-  dateCalcs: DateCalcs;
   mainGridElementRef: RefCallback<HTMLElement>;
-  mainGridRef: MutableRefObject<HTMLElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
   timedColumnsElementRef: RefCallback<HTMLDivElement>;
@@ -28,17 +17,12 @@ interface Props {
 }
 
 interface MainGridRenderProps {
-  onTimedMouseDown: ReturnType<
-    typeof useTimedGridDraftCreation
-  >["startTimedDraftCreation"];
   timedEventsLayer: ReactNode;
 }
 
 export const MainGrid: FC<Props> = ({
   children,
-  dateCalcs,
   mainGridElementRef,
-  mainGridRef,
   measurements,
   today,
   timedColumnsElementRef,
@@ -46,20 +30,10 @@ export const MainGrid: FC<Props> = ({
 }) => {
   const { component } = weekProps;
   const { weekDays } = component;
-  const { startTimedDraftCreation } = useTimedGridDraftCreation({
-    dateCalcs,
-    weekProps,
-  });
-
-  useDragEventSmartScroll(mainGridRef);
 
   if (children) {
     return (
-      <MainGridChildren
-        measurements={measurements}
-        onTimedMouseDown={startTimedDraftCreation}
-        weekProps={weekProps}
-      >
+      <MainGridChildren measurements={measurements} weekProps={weekProps}>
         {children}
       </MainGridChildren>
     );
@@ -69,7 +43,6 @@ export const MainGrid: FC<Props> = ({
     <MainGridCalendar
       mainGridElementRef={mainGridElementRef}
       measurements={measurements}
-      onTimedMouseDown={startTimedDraftCreation}
       timedColumnsElementRef={timedColumnsElementRef}
       today={today}
       weekDays={weekDays}
@@ -81,16 +54,12 @@ export const MainGrid: FC<Props> = ({
 interface MainGridChildrenProps {
   children: (props: MainGridRenderProps) => ReactNode;
   measurements: Measurements_Grid;
-  onTimedMouseDown: ReturnType<
-    typeof useTimedGridDraftCreation
-  >["startTimedDraftCreation"];
   weekProps: WeekProps;
 }
 
 const MainGridChildren: FC<MainGridChildrenProps> = ({
   children,
   measurements,
-  onTimedMouseDown,
   weekProps,
 }) => {
   const timedEventsLayer = useMemo(
@@ -109,7 +78,6 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
   return (
     <>
       {children({
-        onTimedMouseDown,
         timedEventsLayer,
       })}
     </>
@@ -119,9 +87,6 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
 interface MainGridCalendarProps {
   mainGridElementRef: RefCallback<HTMLElement>;
   measurements: Measurements_Grid;
-  onTimedMouseDown: ReturnType<
-    typeof useTimedGridDraftCreation
-  >["startTimedDraftCreation"];
   timedColumnsElementRef: RefCallback<HTMLDivElement>;
   today: Dayjs;
   weekDays: Dayjs[];
@@ -131,7 +96,6 @@ interface MainGridCalendarProps {
 const MainGridCalendar: FC<MainGridCalendarProps> = ({
   mainGridElementRef,
   measurements,
-  onTimedMouseDown,
   timedColumnsElementRef,
   today,
   weekDays,
@@ -153,7 +117,6 @@ const MainGridCalendar: FC<MainGridCalendarProps> = ({
   return (
     <TimedGrid
       eventsLayer={timedEventsLayer}
-      onMouseDown={onTimedMouseDown}
       timedColumnsRef={timedColumnsElementRef}
       timedGridRef={mainGridElementRef}
       today={today}

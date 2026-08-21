@@ -1,17 +1,10 @@
-import {
-  type Dispatch,
-  type SetStateAction,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   draftActions,
   selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { lockGlobalCursor } from "@web/interaction/dom/cursor.lock";
 
 export interface Status_Drag {
   durationMin: number;
@@ -66,17 +59,6 @@ const ZERO_DRAG_OFFSET: DragOffset = { x: 0, y: 0 };
 export const useDraftState = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-
-  // Force the `move` cursor while dragging a draft, via the same global lock
-  // the engine uses. Callers only toggle `setIsDragging`; the cursor follows.
-  // The lock is released when the drag stops or the component unmounts.
-  useEffect(() => {
-    if (!isDragging) {
-      return;
-    }
-
-    return lockGlobalCursor("move");
-  }, [isDragging]);
 
   // Mid-drag cursor-offset (pixels between the pointer and the dragged
   // event's origin), populated only while a mouse-drag is active. Kept as

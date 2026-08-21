@@ -49,10 +49,7 @@ describe("EventCard", () => {
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
   });
 
-  it("renders timed event details, interaction attributes, and resize handles", () => {
-    const onEventMouseDown = mock();
-    const onScalerMouseDown = mock();
-
+  it("renders timed event details and interaction attributes", () => {
     render(
       <TimedEventCard
         displayMode="saved"
@@ -65,8 +62,6 @@ describe("EventCard", () => {
           "data-week-interaction-event-type": "timed",
         }}
         motionMode="idle"
-        onEventMouseDown={onEventMouseDown}
-        onScalerMouseDown={onScalerMouseDown}
         position={position}
       />,
     );
@@ -80,21 +75,6 @@ describe("EventCard", () => {
 
     const timeLabel = screen.getByText("9 - 10 AM");
     expect(timeLabel).toHaveAttribute("data-calendar-event-time-label", "true");
-
-    const handles = document.querySelectorAll(
-      "[data-calendar-event-resize-handle]",
-    );
-    expect(handles).toHaveLength(2);
-
-    fireEvent.mouseDown(handles[0]);
-    fireEvent.mouseDown(handles[1]);
-
-    expect(onScalerMouseDown).toHaveBeenCalledTimes(2);
-    expect(onScalerMouseDown.mock.calls[0]?.[2]).toBe("startDate");
-    expect(onScalerMouseDown.mock.calls[1]?.[2]).toBe("endDate");
-
-    fireEvent.mouseDown(card);
-    expect(onEventMouseDown).toHaveBeenCalledTimes(1);
   });
 
   it("wraps a long timed event title at word boundaries and clamps with an ellipsis", () => {
@@ -342,10 +322,7 @@ describe("EventCard", () => {
     expect(container.querySelector('svg[class*="right-1"]')).toBeNull();
   });
 
-  it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
-    const onEventMouseDown = mock();
-    const onScalerMouseDown = mock();
-
+  it("renders all-day event details and interaction attributes", () => {
     render(
       <AllDayEventCard
         event={createEvent({
@@ -357,8 +334,6 @@ describe("EventCard", () => {
           "data-week-interaction-event-type": "all-day",
         }}
         isPlaceholder={false}
-        onEventMouseDown={onEventMouseDown}
-        onScalerMouseDown={onScalerMouseDown}
         position={position}
       />,
     );
@@ -370,25 +345,6 @@ describe("EventCard", () => {
     expect(card).toHaveAttribute("data-week-interaction-event-id", "event-2");
     expect(card).toHaveAttribute("data-week-interaction-event-type", "all-day");
     expect(screen.getByText("Conference")).toBeInTheDocument();
-
-    const handles = document.querySelectorAll(
-      "[data-calendar-event-resize-handle]",
-    );
-    expect(handles[0]).toHaveAttribute(
-      "data-calendar-event-resize-handle",
-      "startDate",
-    );
-    expect(handles[1]).toHaveAttribute(
-      "data-calendar-event-resize-handle",
-      "endDate",
-    );
-
-    fireEvent.mouseDown(handles[0]);
-    fireEvent.mouseDown(handles[1]);
-    fireEvent.mouseDown(card);
-
-    expect(onScalerMouseDown).toHaveBeenCalledTimes(2);
-    expect(onEventMouseDown).toHaveBeenCalledTimes(1);
   });
 
   it("keeps all-day event keyboard activation from reaching parent shortcuts", () => {

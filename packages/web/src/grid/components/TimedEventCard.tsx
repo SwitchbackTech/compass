@@ -38,7 +38,6 @@ import {
 } from "@web/grid/grid.constants";
 import {
   EVENT_CONTENT_ATTRIBUTE,
-  EVENT_RESIZE_HANDLE_ATTRIBUTE,
   EVENT_TIME_LABEL_ATTRIBUTE,
 } from "@web/grid/interaction/dom";
 import {
@@ -70,15 +69,9 @@ interface TimedEventCardProps {
   motionMode: "dragging" | "idle" | "resizing";
   onBlur?: () => void;
   onEventKeyDown?: (event: GridEvent) => void;
-  onEventMouseDown?: (event: GridEvent, e: MouseEvent) => void;
   onFocus?: () => void;
   onMouseEnter?: (e: MouseEvent<HTMLDivElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLDivElement>) => void;
-  onScalerMouseDown?: (
-    event: GridEvent,
-    e: MouseEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => void;
   position: EventPosition;
 }
 
@@ -94,11 +87,9 @@ const TimedEventCardBase = (
     motionMode,
     onBlur,
     onEventKeyDown,
-    onEventMouseDown,
     onFocus,
     onMouseEnter,
     onMouseLeave,
-    onScalerMouseDown,
     position,
   }: TimedEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
@@ -229,20 +220,6 @@ const TimedEventCardBase = (
     whiteSpace: "nowrap",
   };
 
-  const showResizeCursor = !isPlaceholder && !isResizing && !isDragging;
-
-  const scalerStyle = (
-    placement: Pick<CSSProperties, "top" | "bottom">,
-  ): CSSProperties => ({
-    position: "absolute",
-    width: "100%",
-    height: "4.5px",
-    opacity: 0,
-    left: 0,
-    zIndex: ZIndex.LAYER_4,
-    cursor: showResizeCursor ? "row-resize" : undefined,
-    ...placement,
-  });
   const eventTitle = event.title || "Untitled event";
   const timeRange =
     !event.isAllDay && event.startDate && event.endDate
@@ -300,14 +277,6 @@ const TimedEventCardBase = (
 
         onEventKeyDown(event);
       }}
-      onMouseDown={(e: MouseEvent) => {
-        if (!onEventMouseDown) {
-          e.stopPropagation();
-          return;
-        }
-
-        onEventMouseDown(event, e);
-      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -324,40 +293,14 @@ const TimedEventCardBase = (
         {...{ [EVENT_CONTENT_ATTRIBUTE]: "true" }}
       >
         <span style={titleStyle}>{event.title}</span>
-        {!event.isAllDay && (
-          <>
-            {showTimeLabel && (
-              <span
-                className="relative"
-                {...{ [EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
-                style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
-              >
-                {timeRange}
-              </span>
-            )}
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
-            <div
-              aria-hidden="true"
-              role="presentation"
-              {...{ [EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
-              style={scalerStyle({ top: "-0.25px" })}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                onScalerMouseDown?.(event, e, "startDate");
-              }}
-            />
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
-            <div
-              aria-hidden="true"
-              role="presentation"
-              {...{ [EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
-              style={scalerStyle({ bottom: "-0.25px" })}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                onScalerMouseDown?.(event, e, "endDate");
-              }}
-            />
-          </>
+        {!event.isAllDay && showTimeLabel && (
+          <span
+            className="relative"
+            {...{ [EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
+            style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
+          >
+            {timeRange}
+          </span>
         )}
       </div>
       {showRepeatIcon && <EventRepeatIcon baseColor={bgColor} />}

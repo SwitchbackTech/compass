@@ -13,10 +13,7 @@ import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
-import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
 import { MainGrid } from "@web/views/Week/components/Grid/MainGrid/MainGrid";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
-import { useDragEdgeNavigation } from "@web/views/Week/hooks/grid/useDragEdgeNavigation";
 import {
   type Measurements_Grid,
   type Refs_Grid,
@@ -25,7 +22,6 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_Y_START } from "@web/views/Week/layout.constants";
 
 interface Props {
-  dateCalcs: DateCalcs;
   gridRefs: Refs_Grid;
   measurements: Measurements_Grid;
   today: Dayjs;
@@ -33,13 +29,12 @@ interface Props {
 }
 
 export const Grid: FC<Props> = ({
-  dateCalcs,
   gridRefs,
   measurements,
   today,
   weekProps,
 }) => {
-  const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
+  const { allDayRef, allDayRowRef, mainGridElementRef } = gridRefs;
   // Subscribes to the same cache entry the event layers read, so this reports
   // their load without issuing a second fetch.
   const {
@@ -82,8 +77,6 @@ export const Grid: FC<Props> = ({
   const isImportFailed =
     isSuccess && !hasVisibleEvents && isFirstImportFailed(connection);
 
-  useDragEdgeNavigation(mainGridRef, weekProps);
-
   const gridDraft = useDraftStore(selectGridDraft);
   // Include the live all-day draft so create/edit chips tint columns before save.
   const allDayEventsForTint = useMemo(
@@ -111,21 +104,18 @@ export const Grid: FC<Props> = ({
     <AllDayRow
       allDayRef={allDayRef}
       allDayRowRef={allDayRowRef}
-      dateCalcs={dateCalcs}
       measurements={measurements}
       weekProps={weekProps}
     >
-      {({ allDayEventsLayer, allDayRowsCount, onAllDayMouseDown }) => (
+      {({ allDayEventsLayer, allDayRowsCount }) => (
         <MainGrid
-          dateCalcs={dateCalcs}
           mainGridElementRef={mainGridElementRef}
-          mainGridRef={mainGridRef}
           measurements={measurements}
           timedColumnsElementRef={gridRefs.timedColumnsElementRef}
           today={today}
           weekProps={weekProps}
         >
-          {({ onTimedMouseDown, timedEventsLayer }) => (
+          {({ timedEventsLayer }) => (
             <div
               style={{
                 display: "flex",
@@ -145,15 +135,12 @@ export const Grid: FC<Props> = ({
                 isImportFailed={isImportFailed}
                 isImportingEmpty={isImportingEmpty}
                 isLoadingEvents={isLoadingEvents}
-                onAllDayMouseDown={onAllDayMouseDown}
                 onRetryEvents={() => void refetch()}
                 onRetryImport={() => refresh()}
-                onTimedMouseDown={onTimedMouseDown}
                 timedEventsLayer={timedEventsLayer}
                 today={today}
                 visibleDates={visibleDates}
               />
-              <EdgeNavigationIndicators />
             </div>
           )}
         </MainGrid>
