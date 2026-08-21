@@ -1,3 +1,4 @@
+import { QueryObserver } from "@tanstack/react-query";
 import { createCompassQueryClient } from "./query-client";
 import { describe, expect, test } from "bun:test";
 
@@ -7,8 +8,39 @@ describe("createCompassQueryClient", () => {
     const defaults = client.getDefaultOptions();
 
     expect(defaults.queries?.retry).toBe(false);
+    expect(defaults.queries?.retryOnMount).toBe(false);
     expect(defaults.queries?.staleTime).toBe(0);
     expect(defaults.mutations?.retry).toBe(false);
+  });
+
+  // calendarQueryKeys.all alone is read by 16 components. They mount at
+  // slightly different moments, so each failed fetch has already resolved
+  // before the next observer subscribes and TanStack's in-flight dedupe never
+  // fires - with retryOnMount left on, one unreachable backend produced one
+  // request per call site (prod saw exactly 16 GET /calendars in 1.3s during
+  // the 2026-08-21 sync restart).
+  test("an errored query is fetched once, not once per mounting observer", async () => {
+    let fetches = 0;
+    const client = createCompassQueryClient();
+    const options = {
+      queryKey: ["calendars"],
+      queryFn: async () => {
+        fetches += 1;
+        throw new Error("backend unavailable");
+      },
+      staleTime: 60_000,
+    };
+
+    const unsubscribes: Array<() => void> = [];
+    for (let i = 0; i < 16; i++) {
+      const observer = new QueryObserver(client, options as never);
+      unsubscribes.push(observer.subscribe(() => {}));
+      // Let the in-flight fetch settle, the way a progressive mount does.
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    unsubscribes.forEach((unsubscribe) => unsubscribe());
+
+    expect(fetches).toBe(1);
   });
 
   test("creates isolated query caches", () => {
