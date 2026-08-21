@@ -1,11 +1,34 @@
 import { type FC, useEffect, useState } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import {
+  selectShowcaseActive,
+  useShortcutShowcaseStore,
+} from "@web/components/ShortcutShowcase/showcase.store";
+import {
   selectPointerBlockPulse,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
 
 const HINT_VISIBLE_MS = 2500;
+const HINT_BRIEF_MS = 400;
+const HINT_FULL_LIMIT = 3;
+const HINT_COUNT_KEY = "compass.pointer-hint-count";
+
+const readHintCount = () => {
+  try {
+    return Number(sessionStorage.getItem(HINT_COUNT_KEY) ?? "0");
+  } catch {
+    return 0;
+  }
+};
+
+const writeHintCount = (count: number) => {
+  try {
+    sessionStorage.setItem(HINT_COUNT_KEY, String(count));
+  } catch {
+    // sessionStorage can throw in privacy modes; the hint still shows.
+  }
+};
 
 /**
  * Teaches instead of silently ignoring: when a mouse click is blocked, a
@@ -15,12 +38,21 @@ const HINT_VISIBLE_MS = 2500;
  */
 export const PointerHint: FC = () => {
   const pulse = usePointerBlockStore(selectPointerBlockPulse);
+  const showcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   const [isVisible, setIsVisible] = useState(false);
+  const [isBrief, setIsBrief] = useState(false);
 
   useEffect(() => {
     if (pulse === 0) return;
+    const next = readHintCount() + 1;
+    writeHintCount(next);
+    const brief = next > HINT_FULL_LIMIT;
+    setIsBrief(brief);
     setIsVisible(true);
-    const timer = window.setTimeout(() => setIsVisible(false), HINT_VISIBLE_MS);
+    const timer = window.setTimeout(
+      () => setIsVisible(false),
+      brief ? HINT_BRIEF_MS : HINT_VISIBLE_MS,
+    );
     return () => window.clearTimeout(timer);
   }, [pulse]);
 
@@ -34,8 +66,16 @@ export const PointerHint: FC = () => {
       role="status"
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
-      Compass is keyboard only. Press <kbd className="c-keycap">?</kbd> for
-      shortcuts.
+      {showcaseActive ? (
+        "Keyboard only. Follow the keys on screen."
+      ) : isBrief ? (
+        "Keyboard only."
+      ) : (
+        <>
+          Compass is keyboard only. Press <kbd className="c-keycap">?</kbd> for
+          shortcuts.
+        </>
+      )}
     </div>
   );
 };

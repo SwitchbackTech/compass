@@ -85,3 +85,20 @@ test("m opens the focused event's menu without a mouse", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
 });
+
+test("ArrowDown opens the event-form date picker without a mouse", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await openTimedEventFormWithKeyboard(page);
+
+  const startDate = page.locator('input[title="Pick Start Date"]');
+  await startDate.focus();
+  await page.keyboard.press("ArrowDown");
+
+  const calendar = page.locator(".react-datepicker__month");
+  await expect(calendar).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(calendar).toHaveCount(0);
+});

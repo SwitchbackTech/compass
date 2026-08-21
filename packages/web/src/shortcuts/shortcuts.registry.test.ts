@@ -65,6 +65,20 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
+    it("lists f, m, and Shift+F10 in the legend", () => {
+      const shortcuts = filterShortcutsByContext({
+        view: "week",
+        isViewingCurrentPeriod: true,
+      });
+      const byId = Object.fromEntries(
+        shortcuts.map((shortcut) => [shortcut.id, shortcut]),
+      );
+
+      expect(byId["focus-notice"]?.keys).toEqual(["f"]);
+      expect(byId["edit-menu"]?.keys).toEqual(["m"]);
+      expect(byId["edit-menu-shift-f10"]?.keys).toEqual(["Shift", "F10"]);
+    });
+
     it("lists s event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({

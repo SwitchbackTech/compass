@@ -76,4 +76,10 @@ test("right-click is blocked; m opens the menu instead", async ({ page }) => {
   await expect(page.getByRole("menuitem").first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menuitem")).toHaveCount(0);
+
+  await eventButton.focus();
+  await page.keyboard.press("Shift+F10");
+  await expect(page.getByRole("menuitem").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menuitem")).toHaveCount(0);
 });

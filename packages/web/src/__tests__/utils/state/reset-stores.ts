@@ -39,6 +39,10 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useThemeStore } from "@web/settings/theme/theme.store";
+import {
+  initialPointerBlockState,
+  usePointerBlockStore,
+} from "@web/shortcuts/keyboard-only/pointer-block.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
 
@@ -72,6 +76,7 @@ const storeResets: StoreReset[] = [
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
+  () => usePointerBlockStore.setState(initialPointerBlockState, true),
 ];
 
 export function resetAllStores() {
