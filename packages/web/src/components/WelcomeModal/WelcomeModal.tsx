@@ -135,13 +135,9 @@ export function WelcomeModal() {
       <div className="flex w-full flex-col gap-6" onKeyDown={handleShortcutKey}>
         {/* Top row: pirate top-left, auth pills top-right */}
         <div className="flex items-center justify-between">
-          <div
-            aria-label="No signup required"
-            className="group relative flex items-center c-focus-ring rounded-sm"
-            tabIndex={0}
-          >
+          <div className="group relative flex items-center">
             <PixelPirate className="h-14 w-14 shrink-0" />
-            <div className="pointer-events-none absolute left-full ml-1 flex -translate-x-1 items-center opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100">
+            <div className="pointer-events-none absolute left-full ml-1 flex -translate-x-1 items-center opacity-0 transition-all duration-200 ease-out group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
               <span
                 aria-hidden
                 className="h-0 w-0 border-y-4 border-y-transparent border-r-4 border-r-surface-overlay"
