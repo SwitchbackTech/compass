@@ -164,6 +164,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Toggle event jump keys",
     section: "focus",
   },
+  {
+    id: "focus-notice",
+    keys: ["f"],
+    label: "Focus latest notice",
+    section: "focus",
+  },
 
   // Edit
   {

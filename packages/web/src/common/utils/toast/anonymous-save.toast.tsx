@@ -69,7 +69,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2" data-notice="">
       <p className="text-sm text-text">
         Sign up to save your calendar across browsers.
       </p>
