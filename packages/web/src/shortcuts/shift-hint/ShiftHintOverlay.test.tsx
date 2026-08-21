@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { type ActiveShiftHint } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -33,6 +33,11 @@ const hintFor = (element: HTMLElement, hint = "m1"): ActiveShiftHint => ({
   index: 1,
   element,
 });
+
+const overlayRoot = () => document.querySelector("[data-shift-event-hints]");
+
+const overlayChip = () =>
+  overlayRoot()?.firstElementChild as HTMLElement | null;
 
 describe("ShiftHintOverlay", () => {
   let originalInnerHeight: number;
@@ -71,9 +76,9 @@ describe("ShiftHintOverlay", () => {
 
     render(<ShiftHintOverlay hints={[hintFor(event)]} />);
 
-    const chip = screen.getByText("M1", { hidden: true }).parentElement;
-    expect(chip?.style.top).toBe("224px");
-    expect(chip?.style.left).toBe("214px");
+    expect(overlayRoot()?.textContent).toBe("M1");
+    expect(overlayChip()?.style.top).toBe("224px");
+    expect(overlayChip()?.style.left).toBe("214px");
   });
 
   it("hides the chip when the event is above a clipping scroller", () => {
@@ -88,7 +93,7 @@ describe("ShiftHintOverlay", () => {
 
     render(<ShiftHintOverlay hints={[hintFor(event)]} />);
 
-    expect(screen.queryByText("M1", { hidden: true })).toBeNull();
+    expect(overlayRoot()?.textContent).toBe("");
   });
 
   it("anchors a partially clipped event to the visible top-right", () => {
@@ -103,8 +108,8 @@ describe("ShiftHintOverlay", () => {
 
     render(<ShiftHintOverlay hints={[hintFor(event, "su1")]} />);
 
-    const chip = screen.getByText("SU1", { hidden: true }).parentElement;
-    expect(chip?.style.top).toBe("204px");
-    expect(chip?.style.left).toBe("206px");
+    expect(overlayChip()?.textContent).toBe("SU1");
+    expect(overlayChip()?.style.top).toBe("204px");
+    expect(overlayChip()?.style.left).toBe("206px");
   });
 });
