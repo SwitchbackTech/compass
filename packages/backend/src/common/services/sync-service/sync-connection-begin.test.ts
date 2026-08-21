@@ -45,17 +45,31 @@ describe("beginSyncConnection", () => {
     });
   });
 
-  it("maps every client error kind to a 503 without leaking sync internals", async () => {
-    for (const kind of [
-      "timeout",
-      "unauthorized",
-      "badRequest",
-      "invalidResponse",
-      "unexpectedStatus",
-    ] as const) {
+  // Transient kinds get the retryable 503 (which logLevelForError logs at
+  // `warn`, so a sync restart no longer files a GitHub issue). Everything
+  // else must stay a 502 at `error` level, or a permanently broken sync -
+  // drifted shared secret, broken response contract - would be invisible to
+  // error tracking. Neither branch leaks the kind or status to the browser.
+  it("maps each client error kind to the right opaque status", async () => {
+    const expected = {
+      timeout: Status.SERVICE_UNAVAILABLE,
+      unavailable: Status.SERVICE_UNAVAILABLE,
+      unauthorized: Status.BAD_GATEWAY,
+      badRequest: Status.BAD_GATEWAY,
+      notFound: Status.BAD_GATEWAY,
+      conflict: Status.BAD_GATEWAY,
+      invalidResponse: Status.BAD_GATEWAY,
+      unexpectedStatus: Status.BAD_GATEWAY,
+    } as const;
+
+    for (const [kind, status] of Object.entries(expected)) {
       const client = clientReturning({
         ok: false,
-        error: { kind, status: 409, correlationId: "corr-1" },
+        error: {
+          kind: kind as keyof typeof expected,
+          status: 409,
+          correlationId: "corr-1",
+        },
       });
 
       let thrown: unknown;
@@ -66,7 +80,7 @@ describe("beginSyncConnection", () => {
       }
 
       expect(thrown).toBeInstanceOf(BaseError);
-      expect((thrown as BaseError).statusCode).toBe(Status.SERVICE_UNAVAILABLE);
+      expect((thrown as BaseError).statusCode).toBe(status);
       // The sync error kind/status must not reach the browser-facing message.
       expect((thrown as BaseError).message).not.toContain(kind);
       expect((thrown as BaseError).message).not.toContain("409");
