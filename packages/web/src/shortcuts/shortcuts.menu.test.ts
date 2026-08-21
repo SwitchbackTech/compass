@@ -302,10 +302,6 @@ describe("shortcut menu sections", () => {
         label: "Undo last change",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
-        keys: ["h"],
-        label: "Toggle Hardcore Mode",
-      });
-      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],
         label: "Redo last change",
       });

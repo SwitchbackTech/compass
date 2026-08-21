@@ -7,6 +7,7 @@ import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
+import { PointerHint } from "@web/components/PointerHint/PointerHint";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
@@ -15,7 +16,7 @@ import {
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
-import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
+import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";
 import { useFocusNoticeShortcut } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
 import {
   useCalendarShellShortcuts,
@@ -37,7 +38,7 @@ export function RootShell() {
   useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
-  useKeyboardOnlyMode();
+  usePointerSuppression();
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
@@ -55,6 +56,7 @@ export function RootShell() {
         <Outlet />
         <TrialGateModal />
         <AuthModal />
+        <PointerHint />
       </AuthModalProvider>
     );
   }
@@ -65,6 +67,7 @@ export function RootShell() {
         <Outlet />
         <BillingGateModal status={access.status} />
         <AuthModal />
+        <PointerHint />
       </AuthModalProvider>
     );
   }
@@ -78,6 +81,7 @@ export function RootShell() {
       {!deferCalendarOnboarding && <ShortcutShowcase />}
       {!deferCalendarOnboarding && <FirstEventPrompt />}
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
+      <PointerHint />
     </AuthModalProvider>
   );
 }

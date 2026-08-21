@@ -9,10 +9,6 @@ import {
 } from "@phosphor-icons/react";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {
-  keyboardOnlyActions,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import {
   LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
   type ViewName,
@@ -121,30 +117,6 @@ export const getNavigationCommandItems = ({
       onClick: onShowShortcuts,
     });
   }
-
-  calendarItems.push({
-    id: "enter-keyboard-only",
-    label: "Toggle Hardcore Mode",
-    icon: KeyboardIcon,
-    shortcut: ["h"],
-    keywords: [
-      "keyboard",
-      "hardcore",
-      "clicks",
-      "pointer",
-      "mouseless",
-      "hotkeys",
-    ],
-    // Defer so the palette closes before click-blocking installs.
-    onClick: () =>
-      queueMicrotask(() => {
-        if (useKeyboardOnlyStore.getState().isActive) {
-          keyboardOnlyActions.exit();
-        } else {
-          keyboardOnlyActions.enter();
-        }
-      }),
-  });
 
   if (onPracticeShortcuts) {
     calendarItems.push({

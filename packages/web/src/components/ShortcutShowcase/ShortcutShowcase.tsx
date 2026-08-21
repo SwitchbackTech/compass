@@ -65,7 +65,7 @@ const ShowcaseTakeover: FC = () => {
   const { authenticated } = useContext(SessionContext);
 
   // The takeover owns the keyboard: silence every real app handler
-  // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
+  // (useAppShortcut, the e-sequence, bare letters s/f/m) while it is up.
   useAppLockReason("shortcutShowcase", true);
 
   const graduate = () => {
@@ -218,7 +218,6 @@ const ShowcaseTakeover: FC = () => {
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
-      data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_MODAL }}
     >
       <div

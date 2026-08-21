@@ -83,16 +83,6 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
-    it("lists h keyboard-only mode in every view's other section", () => {
-      for (const view of ["day", "week", "life"] as const) {
-        const ids = filterShortcutsByContext({
-          view,
-          isViewingCurrentPeriod: true,
-        }).map((shortcut) => shortcut.id);
-        expect(ids).toContain("other-keyboard-only");
-      }
-    });
-
     it("lists the edit sequences with nothing focused, so the legend can show them", () => {
       // Regression: these were gated on live DOM focus, which the legend itself
       // stole when it focused its search input, making them unreachable.

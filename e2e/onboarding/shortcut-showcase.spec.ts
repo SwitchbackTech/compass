@@ -13,7 +13,11 @@ const openPracticeFromPalette = async (page: Page) => {
   const search = page.getByLabel("Command palette search");
   await expect(search).toBeVisible();
   await search.fill("Practice shortcuts");
-  await page.getByRole("option", { name: /Practice shortcuts/ }).click();
+  const practiceOption = page.getByRole("option", {
+    name: /Practice shortcuts/,
+  });
+  await expect(practiceOption).toBeVisible();
+  await page.keyboard.press("Enter");
 };
 
 const leaveWelcome = async (page: Page) => {
@@ -21,9 +25,10 @@ const leaveWelcome = async (page: Page) => {
     name: "Welcome to Compass Calendar",
   });
   await expect(welcomeDialog).toBeVisible();
-  await welcomeDialog
-    .getByRole("button", { name: "Explore without an account" })
-    .click();
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Explore without an account" }),
+  ).toBeVisible();
+  await page.keyboard.press("s");
   await expect(welcomeDialog).toBeHidden();
 };
 

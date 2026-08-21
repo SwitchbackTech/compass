@@ -54,7 +54,6 @@ export interface PointerBlockEvent {
   detail?: number;
   button?: number;
   pointerType?: string;
-  target: EventTarget | null;
   preventDefault(): void;
   stopPropagation(): void;
 }
@@ -70,11 +69,6 @@ export const createPointerBlockListener = (options: {
   let lastBlockedPointerDownAt: number | null = null;
 
   return (event: PointerBlockEvent): void => {
-    const target = event.target;
-    if (target instanceof Element && target.closest("[data-onboarding-ui]")) {
-      return;
-    }
-
     const msSinceBlockedPointerDown =
       lastBlockedPointerDownAt === null
         ? undefined

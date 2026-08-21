@@ -243,23 +243,6 @@ export const ensureSidebarOpen = async (page: Page) => {
   }
 };
 
-export const clickGridCenter = async (page: Page, locator: Locator) => {
-  await locator.scrollIntoViewIfNeeded();
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error("Expected grid element to be visible for interaction.");
-  }
-
-  const x = box.x + box.width * 0.3;
-  const y = box.y + box.height * 0.3;
-
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  // Allow draft state to settle before mouseup so the form can open reliably.
-  await page.waitForTimeout(175);
-  await page.mouse.up();
-};
-
 export const getMainGridPoint = async (
   page: Page,
   { xRatio = 0.3, yRatio = 0.3 } = {},

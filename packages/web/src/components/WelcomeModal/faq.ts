@@ -8,18 +8,18 @@ export const FAQ_ITEMS = [
     answer: "Everything here is faster, simpler, open-source...er.",
   },
   {
-    question: "What does 'keyboard-first' actually mean?",
+    question: "What does 'the keyboard calendar' actually mean?",
     answer:
-      "You can target any element on screen without endless Tabbing, chain shortcuts into sequences, and pull up a command palette for anything you can't remember. Compass also surfaces the right shortcut at the right moment instead of dumping the full list on you. It feels a bit like playing Tetris.",
+      "You can target any element on screen without endless Tabbing, chain shortcuts into sequences, and pull up a command palette for anything you can't remember. Compass surfaces the right shortcut at the right moment instead of dumping the full list on you. It feels a bit like playing Tetris.",
+  },
+  {
+    question: "Why doesn't my mouse work?",
+    answer:
+      "Compass is keyboard only, on purpose. Clicks do nothing; every action has a key. That constraint is what makes the shortcuts stick, and within a day or two you'll be moving faster than any mouse allows. Scrolling still works.",
   },
   {
     question: "I don't know any shortcuts yet. Will I be lost?",
     answer:
-      "No. Smart recommendations teach you shortcuts as you go, one at a time, right when they're useful. Turn on Hardcore Mode when you're ready and it'll block mouse clicks so the shortcuts stick.",
-  },
-  {
-    question: "Do I have to give up my mouse completely?",
-    answer:
-      "Never, unless you want to. Every shortcut has a mouse equivalent, so you can mix and match. Hardcore Mode is opt-in for when you're ready to go all-in on the keyboard.",
+      "No. The practice arena teaches the core motion in under a minute, hints appear right when they're useful, and ? opens the full legend. Cmd+K opens a command palette for anything you can't remember.",
   },
 ];

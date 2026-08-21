@@ -3,7 +3,8 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
-  getMainGridPoint,
+  getSavedEventsByTitle,
+  openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -19,19 +20,49 @@ const DAY_PREFIX_KEYS: Record<string, string[]> = {
   SA: ["s", "a"],
 };
 
-const createTimedEventAt = async (
+/**
+ * Creates a timed event on today via `c`, then nudges it by quarter-hour
+ * steps so the trio gets distinct start times for chronological jump
+ * indices. Direction flips near midnight so a nudge never leaves the day.
+ */
+const createTimedEventOffsetBy = async (
   page: CalendarPage,
   title: string,
-  { xRatio, yRatio }: { xRatio: number; yRatio: number },
+  quarterHours: number,
 ) => {
-  const { x, y } = await getMainGridPoint(page, { xRatio, yRatio });
-  await page.mouse.click(x, y);
+  await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
+  if (quarterHours === 0) return;
+
+  const [saved] = await getSavedEventsByTitle(page, title);
+  const startHour = new Date(saved.startDate).getHours();
+  const key = startHour >= 22 ? "Shift+ArrowUp" : "Shift+ArrowDown";
+
+  const eventButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: title });
+  await eventButton.focus();
+  for (let press = 0; press < quarterHours; press++) {
+    await page.keyboard.press(key);
+  }
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return event?.startDate !== saved.startDate;
+    })
+    .toBe(true);
 };
 
 const shiftHintOverlay = (page: CalendarPage) =>
   page.locator("[data-shift-event-hints]");
+
+const blurActive = (page: CalendarPage) =>
+  page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  });
 
 test("tap s shows day-prefix jump keys and focuses the assigned event", async ({
   page,
@@ -42,20 +73,26 @@ test("tap s shows day-prefix jump keys and focuses the assigned event", async ({
   const middleTitle = createEventTitle("Middle Flash");
   const lateTitle = createEventTitle("Late Flash");
 
-  // Same timed column; earlier y ≈ earlier start for chronological indices.
-  await createTimedEventAt(page, earlyTitle, { xRatio: 0.42, yRatio: 0.25 });
-  await createTimedEventAt(page, middleTitle, { xRatio: 0.42, yRatio: 0.4 });
-  await createTimedEventAt(page, lateTitle, { xRatio: 0.42, yRatio: 0.55 });
+  // Same day; nudges give distinct start times for chronological indices.
+  await createTimedEventOffsetBy(page, earlyTitle, 0);
+  await createTimedEventOffsetBy(page, middleTitle, 1);
+  await createTimedEventOffsetBy(page, lateTitle, 2);
 
-  const middleButton = page
+  // Indices are chronological; the direction near midnight flips which title
+  // sits second, so resolve index 2's title from the stored start times.
+  const events = await Promise.all(
+    [earlyTitle, middleTitle, lateTitle].map(async (title) => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return { title, start: event.startDate };
+    }),
+  );
+  const secondTitle = events.sort((a, b) => a.start.localeCompare(b.start))[1]
+    .title;
+  const secondButton = page
     .locator("#mainGrid")
-    .getByRole("button", { name: middleTitle });
+    .getByRole("button", { name: secondTitle });
 
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  });
+  await blurActive(page);
   await page.keyboard.press("s");
 
   const overlay = shiftHintOverlay(page);
@@ -79,7 +116,7 @@ test("tap s shows day-prefix jump keys and focuses the assigned event", async ({
   await page.keyboard.down("2");
   await page.keyboard.up("2");
 
-  await expect(middleButton).toBeFocused();
+  await expect(secondButton).toBeFocused();
   // Mode stays on after a digit focus so another index can be typed.
   await expect(shiftHintOverlay(page)).toHaveCount(1);
 
@@ -92,7 +129,8 @@ test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet");
-  await createTimedEventAt(page, title, { xRatio: 0.42, yRatio: 0.35 });
+  await createTimedEventOffsetBy(page, title, 0);
+  await blurActive(page);
 
   await page.keyboard.down("Shift");
   await page.keyboard.press("Tab");
@@ -105,7 +143,8 @@ test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet J");
-  await createTimedEventAt(page, title, { xRatio: 0.42, yRatio: 0.35 });
+  await createTimedEventOffsetBy(page, title, 0);
+  await blurActive(page);
 
   await page.keyboard.down("Shift");
   await page.keyboard.down("j");

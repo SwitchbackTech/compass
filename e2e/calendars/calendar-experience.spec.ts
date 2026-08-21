@@ -465,21 +465,12 @@ test("a read-only event blocks a drag attempt", async ({ page }) => {
     new RegExp(`${EVENT_B_TITLE}.*${CALENDAR_B_NAME} calendar`),
   );
 
-  const box = await card.boundingBox();
-  if (!box) {
-    throw new Error("Expected the read-only event card to be visible.");
-  }
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-
-  // A read-only card has no drag/resize registry entry (packet 08 step 8),
-  // so this never becomes a real move - no mutation fires and the card
+  // A read-only event is not a mutable nudge target, so Shift+Arrow on the
+  // focused card never becomes a real move - no mutation fires and the card
   // stays exactly where it was.
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  await page.mouse.move(cx, cy + 80, { steps: 5 });
-  await page.waitForTimeout(150);
-  await page.mouse.up();
+  await card.focus();
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.keyboard.press("Shift+ArrowRight");
   await page.waitForTimeout(150);
 
   expect(harness.mutationRequests).toHaveLength(0);
@@ -493,15 +484,15 @@ test("a read-only event opens as a read-only form", async ({ page }) => {
     .getByRole("button", { name: EVENT_B_TITLE })
     .last();
 
-  // Opens via the context menu's View action rather than a direct
-  // left-click: the read-only card's mousedown-time open races other
-  // press-cycle listeners in a real browser (~50% silent no-op; two fix
-  // attempts - stopPropagation and a deferred click-time open - each moved
-  // but did not close the race). Known issue recorded in the packet 08
-  // close-out; keyboard ("M") and this View path are the deterministic
-  // inspection routes today.
-  await card.click({ button: "right" });
-  await page.getByRole("menu").getByRole("menuitem", { name: "View" }).click();
+  // Opens via the context menu's View action, driven by the keyboard: m
+  // opens the menu on the focused card, and Enter runs the seeded item.
+  await card.focus();
+  await page.keyboard.press("m");
+  const viewItem = page
+    .getByRole("menu")
+    .getByRole("menuitem", { name: "View" });
+  await viewItem.focus();
+  await page.keyboard.press("Enter");
 
   const form = page.getByRole("form");
   const titleInput = form.getByPlaceholder("Title");
@@ -523,7 +514,8 @@ test("a read-only event's context menu offers view and duplicate but not delete"
     .getByRole("button", { name: EVENT_B_TITLE })
     .last();
 
-  await card.click({ button: "right" });
+  await card.focus();
+  await page.keyboard.press("m");
 
   const menu = page.getByRole("menu");
   await expect(menu.getByRole("menuitem", { name: "View" })).toBeVisible();

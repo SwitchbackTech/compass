@@ -4,10 +4,6 @@ import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
-  keyboardOnlyActions,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
@@ -56,7 +52,6 @@ describe("useShiftHoldEventHints", () => {
   beforeEach(() => {
     clearAppLockReasons();
     eventJumpActions.reset();
-    keyboardOnlyActions.exit();
     resetEditSequenceArm();
   });
 
@@ -64,7 +59,6 @@ describe("useShiftHoldEventHints", () => {
     cleanup();
     clearAppLockReasons();
     eventJumpActions.reset();
-    keyboardOnlyActions.exit();
     resetEditSequenceArm();
     document.body.innerHTML = "";
   });
@@ -186,19 +180,6 @@ describe("useShiftHoldEventHints", () => {
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
-  });
-
-  it("activates while keyboard-only mode is on", () => {
-    keyboardOnlyActions.enter();
-    const { result } = mountHints();
-
-    act(() => {
-      pressS();
-    });
-
-    expect(useEventJumpStore.getState().isActive).toBe(true);
-    expect(result.current.hints.length).toBeGreaterThan(0);
-    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
   });
 
   it("clears hints when Escape is pressed", () => {

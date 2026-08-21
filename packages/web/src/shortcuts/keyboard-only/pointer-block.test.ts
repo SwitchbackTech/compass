@@ -126,7 +126,6 @@ describe("createPointerBlockListener", () => {
       detail: 1,
       button: 0,
       pointerType: "mouse",
-      target: null,
       preventDefault,
       stopPropagation,
       ...overrides,
@@ -156,23 +155,6 @@ describe("createPointerBlockListener", () => {
 
     expect(click.preventDefault).not.toHaveBeenCalled();
     expect(click.stopPropagation).not.toHaveBeenCalled();
-  });
-
-  it("exempts targets inside [data-onboarding-ui]", () => {
-    const tour = document.createElement("div");
-    tour.setAttribute("data-onboarding-ui", "");
-    const button = document.createElement("button");
-    tour.appendChild(button);
-    document.body.appendChild(tour);
-
-    const onBlockedGesture = mock(() => {});
-    const listener = createPointerBlockListener({ onBlockedGesture });
-    const down = fakeEvent({ type: "pointerdown", target: button });
-    listener(down.event);
-
-    expect(down.preventDefault).not.toHaveBeenCalled();
-    expect(onBlockedGesture).not.toHaveBeenCalled();
-    tour.remove();
   });
 
   it("blocks a button-0 contextmenu that tails a blocked pointerdown, then passes a later keyboard one", () => {

@@ -327,12 +327,6 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Redo last change",
     section: "other",
   },
-  {
-    id: "other-keyboard-only",
-    keys: [KEYMAP.hardcore.bareLetter],
-    label: "Toggle Hardcore Mode",
-    section: "other",
-  },
 ];
 
 interface FilterOptions {
