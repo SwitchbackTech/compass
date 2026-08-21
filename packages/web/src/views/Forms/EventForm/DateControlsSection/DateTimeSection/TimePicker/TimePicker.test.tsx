@@ -12,26 +12,31 @@ const intervalOptions: SelectOption<string>[] = [
   { value: "13:30", label: "1:30 PM" },
 ];
 const dayOptions = getTimeOptions();
+const onePm = { label: "1 PM", value: "1:00 PM" };
 const fiveThirty = { label: "5:30 PM", value: "5:30 PM" };
 
 function Harness({
   initialValue = intervalOptions[0],
   options = intervalOptions,
+  freshOptions = false,
 }: {
   initialValue?: SelectOption<string>;
   options?: SelectOption<string>[];
+  freshOptions?: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
+  const resolvedOptions = freshOptions ? getTimeOptions() : options;
 
   return (
     <div>
+      <button type="button">Title</button>
       <TimePicker
         aria-label="Start time"
         inputId="startTimePicker"
         isMenuOpen={isMenuOpen}
         onChange={setValue}
-        options={options}
+        options={resolvedOptions}
         setIsMenuOpen={setIsMenuOpen}
         value={value}
       />
@@ -67,16 +72,36 @@ describe("TimePicker", () => {
     expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
   });
 
-  it("keeps the original value when Tabbing without choosing a new option", async () => {
+  it("keeps the original time when Tabbing through without changing the draft", async () => {
     const user = userEvent.setup();
-    render(<Harness />);
+    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
 
-    const combobox = screen.getByRole("combobox", { name: "Start time" });
-    await user.click(combobox);
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+
     await user.tab();
 
     expect(screen.getByText("1 PM")).toBeInTheDocument();
-    expect(screen.queryByText("1:30 PM")).not.toBeInTheDocument();
+    expect(screen.queryByText("12 AM")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
+  });
+
+  it("commits the next interval when ArrowDown then Tab", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={onePm} options={dayOptions} />);
+
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+
+    await user.keyboard("{ArrowDown}");
+    await user.tab();
+
+    expect(screen.getByText("1:15 PM")).toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
   });
 
@@ -108,14 +133,16 @@ describe("TimePicker", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
-  it("announces that Tab selects the focused option", async () => {
+  it("announces that Tab confirms a newly chosen option or leaves the time unchanged", async () => {
     const user = userEvent.setup();
     render(<Harness />);
 
     await user.click(screen.getByRole("combobox", { name: "Start time" }));
 
     expect(
-      screen.getByText(/press Tab to select the option and exit the menu/i),
+      screen.getByText(
+        /press Tab to confirm a newly chosen option and exit, or to leave the current time unchanged/i,
+      ),
     ).toBeInTheDocument();
   });
 });

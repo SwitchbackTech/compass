@@ -36,6 +36,15 @@ const timePickerTextStyles = {
 
 const TIMEPICKER = "timepicker";
 
+const MENU_NAV_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+]);
+
 function optionFromFocusedMenu(
   container: HTMLElement | null,
   options: TimeOption[] | undefined,
@@ -64,6 +73,7 @@ export const TimePicker = ({
 }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
+  const userAdjustedRef = useRef(false);
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
 
@@ -116,6 +126,10 @@ export const TimePicker = ({
         onKeyDown={(e) => {
           const key = e.key;
 
+          if (MENU_NAV_KEYS.has(key)) {
+            userAdjustedRef.current = true;
+          }
+
           if (key === "Enter" || key === "Backspace") {
             e.stopPropagation();
           }
@@ -130,11 +144,14 @@ export const TimePicker = ({
           }
 
           if (key === "Tab") {
-            // Commit the focused option ourselves. react-select's
-            // tabSelectsValue preventDefaults Tab and, with blurInputOnSelect,
-            // leaves focus on the document instead of the next field.
+            // Commit only after the user changed the draft (arrows or
+            // typing). Bare Tab through must leave the current time
+            // alone so keyboard users can move past the pickers.
+            // react-select's tabSelectsValue preventDefaults Tab and,
+            // with blurInputOnSelect, leaves focus on the document
+            // instead of the next field.
             if (e.nativeEvent.isComposing) return;
-            if (!e.shiftKey) {
+            if (!e.shiftKey && userAdjustedRef.current) {
               const option = optionFromFocusedMenu(
                 containerRef.current,
                 selectOptions,
@@ -145,7 +162,13 @@ export const TimePicker = ({
             setIsMenuOpen(false);
           }
         }}
+        onInputChange={(_inputValue, { action }) => {
+          if (action === "input-change") {
+            userAdjustedRef.current = true;
+          }
+        }}
         onMenuOpen={() => {
+          userAdjustedRef.current = false;
           setIsMenuOpen(true);
           scheduleScrollToSelected();
         }}
@@ -166,7 +189,7 @@ export const TimePicker = ({
           }) => {
             switch (context) {
               case "menu":
-                return "Use Up and Down to choose options, press Enter to select the currently focused option, press Escape to exit the menu, press Tab to select the option and exit the menu.";
+                return "Use Up and Down to choose options, press Enter to select the currently focused option, press Escape to exit the menu, press Tab to confirm a newly chosen option and exit, or to leave the current time unchanged.";
               case "input":
                 return isInitialFocus
                   ? `${ariaLabel || "Select"} is focused ${isSearchable ? ",type to refine list" : ""}, press Down to open the menu, ${isMulti ? " press left to focus selected values" : ""}`

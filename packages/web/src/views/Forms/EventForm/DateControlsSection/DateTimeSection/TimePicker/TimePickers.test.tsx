@@ -188,6 +188,27 @@ describe("TimePickers", () => {
     expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
   });
 
+  it("does not change the draft when Tabbing through the time pickers", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        start={new Date("2026-04-24T13:00:00.000Z")}
+        end={new Date("2026-04-24T14:15:00.000Z")}
+      />,
+    );
+
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "End time" })).toHaveFocus();
+    await user.tab();
+
+    expect(screen.queryByText("12 AM")).not.toBeInTheDocument();
+    expect(screen.getByText("1 PM")).toBeInTheDocument();
+    expect(screen.getByText("2:15 PM")).toBeInTheDocument();
+    expectDraft("2026-04-24T13:00:00+00:00", "2026-04-24T14:15:00+00:00");
+  });
+
   it("does not reject a later overnight end just because the clock is before start", async () => {
     const user = userEvent.setup();
     render(
