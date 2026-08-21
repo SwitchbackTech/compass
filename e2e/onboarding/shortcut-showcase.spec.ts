@@ -84,7 +84,11 @@ test("Skip to sign up leaves the practice for the signup form on step 1", async 
   await expect(showcase).toContainText("Create an event");
 
   // One click, from the first step, with no lesson finished and no confirm.
-  await showcase.getByRole("button", { name: "Skip to sign up" }).click();
+  // The advertised S letter, not a click: the side actions are key-bound.
+  await expect(
+    showcase.getByRole("button", { name: /Skip to sign up/ }),
+  ).toBeVisible();
+  await page.keyboard.press("s");
   await expect(showcase).toHaveCount(0);
   await expect(page).toHaveURL(/auth=signup/);
 });
