@@ -5,12 +5,6 @@ import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 export type TimedGridScrollDirection = "up" | "down";
 export type TimedGridScrollUnit = "page" | "hour";
 
-const deltaForUnit = (
-  clientHeight: number,
-  unit: TimedGridScrollUnit,
-): number =>
-  unit === "page" ? clientHeight : clientHeight / TIMED_VISIBLE_HOURS;
-
 /**
  * Scrolls the timed grid by one viewport or one hour. Returns whether a
  * grid was found so callers can preventDefault only when the shortcut
@@ -23,7 +17,10 @@ export const scrollTimedGrid = (
   const grid = getElemById(ID_GRID_MAIN);
   if (!grid) return false;
 
-  const delta = deltaForUnit(grid.clientHeight, unit);
+  const delta =
+    unit === "page"
+      ? grid.clientHeight
+      : grid.clientHeight / TIMED_VISIBLE_HOURS;
   if (delta <= 0) return false;
 
   grid.scrollBy({ top: direction === "down" ? delta : -delta });
