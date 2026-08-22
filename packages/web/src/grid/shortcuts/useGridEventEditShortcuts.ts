@@ -262,7 +262,6 @@ export function useGridEventEditShortcuts({
     if (!duplicate) return;
 
     draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
-    draftActions.setFormOpen(true);
   };
 
   const describeEdgeDate = (event: GridEvent, edge: EventEdge) => {

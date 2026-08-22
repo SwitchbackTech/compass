@@ -278,7 +278,7 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   const isAllDay = schedule.kind === "allDay";
 
   return {
-    _id: getGridDraftId(draft)!,
+    _id: getGridDraftId(draft),
     title: draft.values.title,
     description: draft.values.description,
     origin: Origin.COMPASS,

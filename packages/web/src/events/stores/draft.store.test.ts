@@ -101,8 +101,8 @@ describe("draftActions.setGridDraft", () => {
     });
   });
 
-  // Same reason: a fresh status object per move would re-render every
-  // selectDraftStatus subscriber for a value that never changed.
+  // Same reason: a fresh status object per move would re-render every status
+  // subscriber for a value that never changed.
   it("keeps the same status reference when nothing about it changed", () => {
     draftActions.startGridDraft({
       activity: "keyboardPlace",

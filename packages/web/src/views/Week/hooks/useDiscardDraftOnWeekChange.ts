@@ -6,14 +6,12 @@ import { draftActions } from "@web/events/stores/draft.store";
  * Skips mount so a draft seeded before this hook runs is not wiped.
  */
 export const useDiscardDraftOnWeekChange = (week: number) => {
-  const isFirstWeekRef = useRef(true);
+  const previousWeekRef = useRef(week);
 
   useEffect(() => {
-    if (isFirstWeekRef.current) {
-      isFirstWeekRef.current = false;
-      return;
-    }
+    if (previousWeekRef.current === week) return;
 
+    previousWeekRef.current = week;
     draftActions.discard();
   }, [week]);
 };

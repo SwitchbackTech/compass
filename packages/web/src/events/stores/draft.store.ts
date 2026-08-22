@@ -92,8 +92,8 @@ export const draftActions = {
   // Reuses the existing `status` object when it already says what this call
   // would set. Keyboard reposition and form field edits call this on every
   // change, and a fresh `status` each time would re-render every
-  // `selectDraftStatus` subscriber for a value that never changed. `activity`
-  // and `isFormOpen` stay with the gesture that started the draft.
+  // status subscriber for a value that never changed. `activity` and
+  // `isFormOpen` stay with the gesture that started the draft.
   setGridDraft: (draft: GridEventDraft | null) =>
     useDraftStore.setState(
       (state) => {
@@ -120,7 +120,7 @@ export const draftActions = {
     ),
 
   // No-op when already at the requested value so redundant callers do not
-  // re-render every `selectDraftStatus` subscriber.
+  // re-render every status subscriber.
   setFormOpen: (isFormOpen: boolean) =>
     useDraftStore.setState(
       (state) =>
@@ -148,8 +148,6 @@ export const selectDraftId = (state: State_DraftEvent) =>
       ? state.gridDraft.source.id
       : state.gridDraft.clientId
     : undefined;
-
-export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
 export const selectIsEventFormOpen = (state: State_DraftEvent) =>
   Boolean(state.status?.isFormOpen) && state.gridDraft !== null;
