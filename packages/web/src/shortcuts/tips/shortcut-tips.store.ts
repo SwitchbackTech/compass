@@ -42,13 +42,7 @@ function nextTipInRotation(
   return tips[(lastIndex + 1) % tips.length] ?? tips[0];
 }
 
-const MOUSE_ACTIVITIES = new Set([
-  "gridClick",
-  "sidebarClick",
-  "dnd",
-  "eventRightClick",
-  "creating",
-]);
+const MOUSE_ACTIVITIES = new Set(["gridClick", "eventRightClick"]);
 const KEYBOARD_ACTIVITIES = new Set(["createShortcut", "keyboardEdit"]);
 
 export const shortcutTipsActions = {

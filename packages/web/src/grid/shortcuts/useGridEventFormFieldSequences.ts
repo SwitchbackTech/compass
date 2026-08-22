@@ -84,7 +84,6 @@ export function useGridEventFormFieldSequences({
       if (!draft) return;
 
       draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-      draftActions.setFormOpen(true);
       focusFieldAfterPaint(field);
       return;
     }

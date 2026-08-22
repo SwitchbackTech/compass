@@ -1,5 +1,4 @@
-import { useCallback, useMemo } from "react";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import { useCallback } from "react";
 import { useEventById } from "@web/events/queries/useEventById";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
@@ -89,15 +88,10 @@ export function SidebarEventDetails({
     onSave,
   });
 
-  const scopeDialogDraft = useMemo(() => {
-    if (!confirmation.pendingAction || !draft) return null;
-
-    return gridEventDraftToSchemaEvent(
-      confirmation.pendingAction.type === "save"
-        ? confirmation.pendingAction.draft
-        : draft,
-    );
-  }, [confirmation.pendingAction, draft]);
+  const scopeDialogDraft =
+    confirmation.pendingAction?.type === "save"
+      ? confirmation.pendingAction.draft
+      : draft;
 
   return (
     <EventFormPanel

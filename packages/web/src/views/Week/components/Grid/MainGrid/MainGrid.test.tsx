@@ -28,7 +28,6 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { DECK_INDENT } from "@web/grid/grid.constants";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
@@ -204,28 +203,19 @@ const renderGridRegions = () => {
 
   const view = render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: {},
-            state: {},
-          } as never
-        }
-      >
-        <AllDayRow
-          allDayRef={mock()}
-          allDayRowRef={mock()}
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-        <MainGrid
-          mainGridElementRef={mock()}
-          measurements={measurements}
-          timedColumnsElementRef={mock()}
-          today={startOfView}
-          weekProps={createWeekProps()}
-        />
-      </DraftContext.Provider>
+      <AllDayRow
+        allDayRef={mock()}
+        allDayRowRef={mock()}
+        measurements={measurements}
+        weekProps={createWeekProps()}
+      />
+      <MainGrid
+        mainGridElementRef={mock()}
+        measurements={measurements}
+        timedColumnsElementRef={mock()}
+        today={startOfView}
+        weekProps={createWeekProps()}
+      />
     </Provider>,
   );
 
@@ -237,29 +227,20 @@ const renderWeekGrid = (events: CompassEvent[] = []) => {
 
   return render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: {},
-            state: {},
-          } as never
-        }
-      >
-        <Grid
-          gridRefs={{
-            allDayColumnsRef: { current: null },
-            allDayRef: mock(),
-            allDayRowRef: mock(),
-            mainGridElementRef: mock(),
-            mainGridRef: { current: null },
-            timedColumnsElementRef: mock(),
-            timedColumnsRef: { current: null },
-          }}
-          measurements={measurements}
-          today={startOfView}
-          weekProps={createWeekProps()}
-        />
-      </DraftContext.Provider>
+      <Grid
+        gridRefs={{
+          allDayColumnsRef: { current: null },
+          allDayRef: mock(),
+          allDayRowRef: mock(),
+          mainGridElementRef: mock(),
+          mainGridRef: { current: null },
+          timedColumnsElementRef: mock(),
+          timedColumnsRef: { current: null },
+        }}
+        measurements={measurements}
+        today={startOfView}
+        weekProps={createWeekProps()}
+      />
     </Provider>,
   );
 };

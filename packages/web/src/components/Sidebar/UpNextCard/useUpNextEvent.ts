@@ -60,7 +60,6 @@ export function useUpNextEvent() {
       if (!draft) return;
 
       draftActions.startGridDraft({ activity, draft });
-      draftActions.setFormOpen(true);
     },
     [sourceEvent],
   );

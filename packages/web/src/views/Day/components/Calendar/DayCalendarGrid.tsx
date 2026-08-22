@@ -138,7 +138,6 @@ export function DayCalendarGrid() {
 
   const openGridDraftForm = useCallback((draft: GridEventDraft) => {
     draftActions.startGridDraft({ activity: "gridClick", draft });
-    draftActions.setFormOpen(true);
   }, []);
 
   const openEventFormForEvent = useCallback(

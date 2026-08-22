@@ -21,4 +21,6 @@ export const createWeekEventRegistry = week.createRegistry;
 
 export const weekEventRegistry = week.registry;
 
+export const weekEventTargeting = week.targeting;
+
 export const useWeekEventRegistrationRef = week.useRegistrationRef;

@@ -44,6 +44,9 @@ const WebEventSchema = ValidatedCompassEventSchema.extend({
 });
 export type WebEvent = z.infer<typeof WebEventSchema>;
 
+// Display projection of Event for grid cards (layout + joined calendar
+// metadata). Field names stay CompassEvent-shaped so existing card
+// renderers can read `_id` / `startDate` / `isAllDay` without a nested wrap.
 const GridEventSchema = WebEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
@@ -57,15 +60,6 @@ const GridEventSchema = WebEventSchema.extend({
     initialX: z.number().nullable(),
     initialY: z.number().nullable(),
   }),
-  // Real schema fields now that the whole chain is zod/v4 (calendarId used to
-  // be a type-only intersection because a v4 field schema inside a v3 object
-  // crashed at parse time). Populated by event.view-model.ts's
-  // gridEventsFrom and grid-event-draft.adapter.ts's
-  // gridEventDraftToSchemaEvent. Optional so the legacy bridge doesn't have
-  // to guarantee it in every branch - card rendering degrades gracefully
-  // (no accent/label suffix) when it's missing. isBusy backs the read-only
-  // gate (packet 08 step 8) - see isEventReadOnly in
-  // calendars/useCalendarLookup.ts.
   calendarId: CalendarIdSchema.optional(),
   isBusy: z.boolean().optional(),
   isDemo: z.boolean().optional(),

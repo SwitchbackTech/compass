@@ -11,8 +11,8 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { suppressedSeriesIdForDraft } from "@web/events/grid-event-draft.adapter";
 import {
   mergeGridEventWithDraftOverlay,
-  useGridDraftSchemaOverlay,
-} from "@web/events/hooks/useGridDraftSchemaOverlay";
+  useGridDraftOverlay,
+} from "@web/events/hooks/useGridDraftOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   selectDraftId,
@@ -39,7 +39,7 @@ interface Props {
 }
 
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
-  const draftOverlay = useGridDraftSchemaOverlay();
+  const draftOverlay = useGridDraftOverlay();
   const {
     events: weekEvents,
     isPending: isLoadingWeekView,

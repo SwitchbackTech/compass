@@ -10,8 +10,8 @@ import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   mergeGridEventWithDraftOverlay,
-  useGridDraftSchemaOverlay,
-} from "@web/events/hooks/useGridDraftSchemaOverlay";
+  useGridDraftOverlay,
+} from "@web/events/hooks/useGridDraftOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectDraftId, useDraftStore } from "@web/events/stores/draft.store";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -36,7 +36,7 @@ export const AllDayEvents = ({
   queryStartOfView,
   weekDays,
 }: Props) => {
-  const draftOverlay = useGridDraftSchemaOverlay();
+  const draftOverlay = useGridDraftOverlay();
   const {
     allDayEvents,
     events: weekEvents,

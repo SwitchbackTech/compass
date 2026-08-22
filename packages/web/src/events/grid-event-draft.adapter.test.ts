@@ -17,7 +17,6 @@ import {
   duplicateGridEventDraft,
   editGridEventDraft,
   gridEventDraftToGridEvent,
-  gridEventDraftToSchemaEvent,
   parseGridEventDraft,
   patchGridDraftRecurrence,
   replaceGridDraftSchedule,
@@ -74,7 +73,7 @@ test("builds an edit draft from a persisted scheduled event", () => {
   });
 });
 
-test("replaces only the draft schedule during a drag or resize", () => {
+test("replaces only the draft schedule", () => {
   const draft = createGridEventDraft({
     kind: "allDay",
     start: new Date("2026-07-11"),
@@ -101,10 +100,10 @@ test("keeps the schedule's own UTC offset instead of forcing Z", () => {
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
-  const schemaEvent = gridEventDraftToSchemaEvent(draft);
+  const gridEvent = gridEventDraftToGridEvent(draft);
 
-  expect(schemaEvent.startDate).not.toMatch(/Z$/);
-  expect(schemaEvent.endDate).not.toMatch(/Z$/);
+  expect(gridEvent.startDate).not.toMatch(/Z$/);
+  expect(gridEvent.endDate).not.toMatch(/Z$/);
 });
 
 test("parses an edit draft into a replace command", () => {
@@ -266,7 +265,7 @@ test("duplicating an all-day event round-trips the same calendar day through the
 
   // The grid projection the draft renders from must agree with what gets
   // saved.
-  expect(gridEventDraftToSchemaEvent(duplicate)).toMatchObject({
+  expect(gridEventDraftToGridEvent(duplicate)).toMatchObject({
     startDate: "2026-07-20",
     endDate: "2026-07-21",
   });
@@ -276,21 +275,18 @@ test("an occurrence projects with no rule when the series base isn't resolved", 
   const draft = editGridEventDraft(occurrenceEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
-  const schemaEvent = gridEventDraftToSchemaEvent(draft);
-
-  expect(schemaEvent.recurrence).toEqual({ eventId: SERIES_ID });
+  expect(gridEventDraftToGridEvent(draft).recurrence).toEqual({
+    eventId: SERIES_ID,
+  });
 });
 
-test("an occurrence projects the resolved series rules when seriesRules is provided", () => {
+test("an occurrence resolves series rules when seriesRules is provided", () => {
   const draft = editGridEventDraft(occurrenceEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
-  const schemaEvent = gridEventDraftToSchemaEvent(draft, SERIES_RULES);
-
-  expect(schemaEvent.recurrence).toEqual({
-    eventId: SERIES_ID,
-    rule: SERIES_RULES,
-  });
+  expect(resolveDraftRecurrenceRules(draft, SERIES_RULES)).toEqual(
+    SERIES_RULES,
+  );
 });
 
 test("a patch that echoes the hydrated rule unchanged keeps the draft's recurrence as preserve", () => {

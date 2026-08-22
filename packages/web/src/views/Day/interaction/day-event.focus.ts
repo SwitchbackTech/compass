@@ -1,4 +1,4 @@
-import { dayEventTargeting } from "@web/views/Day/interaction/targeting/day-event.targeting";
+import { dayEventTargeting } from "@web/views/Day/interaction/registry/day-event.registry";
 
 export function focusFirstDayCalendarEvent() {
   const target = dayEventTargeting.getFirstVisibleGridEventTarget();

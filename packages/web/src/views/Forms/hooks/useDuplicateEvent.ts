@@ -40,7 +40,6 @@ export function useDuplicateEvent(_id: string) {
     if (!duplicate) return;
 
     draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
-    draftActions.setFormOpen(true);
   }, [calendars, create, defaultCalendar?.id, event]);
 
   return duplicateEvent;
