@@ -6,8 +6,6 @@ import {
   GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_EVENT_TITLE_LINE_HEIGHT,
 } from "@web/grid/grid.constants";
-import { createDraftEventMount } from "@web/grid/interaction/dom";
-import { FloatingDraftEvent } from "@web/interaction/dom/draft-event";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -27,7 +25,6 @@ import {
   describe,
   expect,
   it,
-  mock,
   setSystemTime,
 } from "bun:test";
 
@@ -176,8 +173,6 @@ const RegisteredTimedEventHarness = ({
           : undefined
       }
       measurements={measurements}
-      onEventMouseDown={mock()}
-      onScalerMouseDown={mock()}
       ref={ref}
       weekProps={calendarWeekProps}
     />
@@ -211,8 +206,6 @@ const RegisteredAllDayEventHarness = ({
       }
       isPlaceholder={isPlaceholder}
       measurements={measurements}
-      onMouseDown={mock()}
-      onScalerMouseDown={mock()}
       ref={ref}
       weekDays={weekProps.component.weekDays}
     />
@@ -274,12 +267,6 @@ describe("weekEventRegistry", () => {
       WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
       "all-day",
     );
-    expect(
-      element.querySelector('[data-calendar-event-resize-handle="startDate"]'),
-    ).toBeTruthy();
-    expect(
-      element.querySelector('[data-calendar-event-resize-handle="endDate"]'),
-    ).toBeTruthy();
 
     unmount();
 
@@ -372,69 +359,5 @@ describe("weekEventRegistry", () => {
     expect(timeLabel.style.fontSize).toBe(GRID_EVENT_TIME_LABEL_FONT_SIZE);
     expect(timeLabel.style.opacity).toBe(GRID_EVENT_TIME_LABEL_OPACITY);
     expect(timeLabel.previousElementSibling).toBe(title);
-  });
-});
-
-describe("createDraftEventMount", () => {
-  it("clones a Week event for draft event use without duplicate interactive attributes", () => {
-    const source = document.createElement("div");
-    const child = document.createElement("button");
-
-    source.id = "source-id";
-    source.className = "event-class transition-[background-color]";
-    source.setAttribute("tabindex", "0");
-    source.setAttribute("aria-describedby", "description-id");
-    source.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, "event-1");
-    source.setAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE, "timed");
-    source.style.width = "100px";
-    source.getBoundingClientRect = () =>
-      ({
-        height: 44,
-        left: 12,
-        top: 24,
-        width: 140,
-      }) as DOMRect;
-    child.id = "child-id";
-    child.setAttribute("aria-controls", "menu-id");
-    child.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, "event-1");
-    child.style.transition = "opacity 150ms ease";
-    source.append(child);
-
-    const mount = createDraftEventMount({
-      source,
-    });
-    const clonedChild = mount.clone.querySelector("button");
-    const draftEvent = new FloatingDraftEvent();
-
-    draftEvent.mount(mount);
-
-    expect(mount.rect).toEqual({
-      height: 44,
-      left: 12,
-      top: 24,
-      width: 140,
-    });
-    expect(mount.clone.className).toBe(source.className);
-    expect(mount.clone.id).toBe("");
-    expect(mount.clone.getAttribute("tabindex")).toBeNull();
-    expect(mount.clone.getAttribute("aria-describedby")).toBeNull();
-    expect(
-      mount.clone.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE),
-    ).toBeNull();
-    expect(
-      mount.clone.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
-    ).toBeNull();
-    expect(mount.clone).toHaveAttribute("aria-hidden", "true");
-    expect(mount.clone.style.transition).toBe("none");
-    expect(clonedChild?.id).toBe("");
-    expect(clonedChild?.getAttribute("aria-controls")).toBeNull();
-    expect(
-      clonedChild?.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE),
-    ).toBeNull();
-    expect(clonedChild?.style.transition).toBe("none");
-    expect(draftEvent.getNode()?.style.width).toBe("140px");
-    expect(draftEvent.getNode()?.style.height).toBe("44px");
-
-    draftEvent.unmount();
   });
 });

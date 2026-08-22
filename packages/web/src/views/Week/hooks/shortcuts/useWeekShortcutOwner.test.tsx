@@ -692,14 +692,18 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     );
   });
 
-  it("does not move the focused event off-screen with Shift+ArrowLeft on the first visible day", () => {
+  it("carries the focused event across the window edge with Shift+ArrowLeft on the first visible day", () => {
     const button = addCalendarTarget(leftmostEvent.id);
     button.focus();
 
-    const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
+    const { queryClient, shiftViewByDay } = renderShortcuts({
+      includeLeftmostEvent: true,
+    });
     pressKey("ArrowLeft", shiftKey);
 
-    expect(getEditMutation(queryClient)).toBeUndefined();
+    // The nudge commits and the view slides one day to keep it on screen.
+    expect(getEditMutation(queryClient)).toBeDefined();
+    expect(shiftViewByDay).toHaveBeenCalledWith(-1);
   });
 
   it("does not move all-day events with Shift+ArrowUp", () => {

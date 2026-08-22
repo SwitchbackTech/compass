@@ -21,7 +21,6 @@ import {
   eventFocusColor,
   eventFocusOutlineClass,
 } from "@web/grid/components/calendar-accent.util";
-import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
 import {
   selectEdgeForEvent,
   useEdgeFocusStore,
@@ -40,14 +39,8 @@ export interface AllDayEventCardProps {
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
   onEventKeyDown?: (event: GridEvent) => void;
-  onEventMouseDown?: (e: MouseEvent, event: GridEvent) => void;
   onMouseEnter?: (e: MouseEvent<HTMLDivElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLDivElement>) => void;
-  onScalerMouseDown?: (
-    event: GridEvent,
-    e: MouseEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => void;
   position: EventPosition;
 }
 
@@ -59,10 +52,8 @@ const AllDayEventCardBase = (
     interactionAttributes,
     isPlaceholder,
     onEventKeyDown,
-    onEventMouseDown,
     onMouseEnter,
     onMouseLeave,
-    onScalerMouseDown,
     position,
   }: AllDayEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
@@ -112,19 +103,6 @@ const AllDayEventCardBase = (
     boxShadow: edgeFocusShadow,
   } as CSSProperties;
 
-  const showResizeCursor = !isPlaceholder;
-  const scalerStyle = (
-    placement: Pick<CSSProperties, "left" | "right">,
-  ): CSSProperties => ({
-    position: "absolute",
-    width: "4.5px",
-    height: "100%",
-    opacity: 0,
-    top: 0,
-    zIndex: ZIndex.LAYER_4,
-    cursor: showResizeCursor ? "col-resize" : undefined,
-    ...placement,
-  });
   const baseAccessibleLabel = `${isRecurring ? "Recurring " : ""}${event.isDemo ? "Sample " : ""}All-day event: ${event.title || "Untitled event"}`;
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
@@ -168,12 +146,6 @@ const AllDayEventCardBase = (
         e.stopPropagation();
         onEventKeyDown?.(event);
       }}
-      onMouseDown={(e: MouseEvent) => {
-        // Stop bubble so the all-day row create handler cannot overwrite a
-        // card click (including read-only open for busy / multi-day timed).
-        e.stopPropagation();
-        onEventMouseDown?.(e, event);
-      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -199,28 +171,6 @@ const AllDayEventCardBase = (
         </span>
       </div>
       {showRepeatIcon && <EventRepeatIcon baseColor={bgColor} />}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
-      <div
-        aria-hidden="true"
-        role="presentation"
-        {...{ [EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
-        style={scalerStyle({ left: "-0.25px" })}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          onScalerMouseDown?.(event, e, "startDate");
-        }}
-      />
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
-      <div
-        aria-hidden="true"
-        role="presentation"
-        {...{ [EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
-        style={scalerStyle({ right: "-0.25px" })}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          onScalerMouseDown?.(event, e, "endDate");
-        }}
-      />
     </div>
   );
 };

@@ -5,7 +5,7 @@
  * remap here propagates to the real handlers, the showcase, and its hint
  * chips in one edit. Bindings come in three shapes because the app has three
  * dispatch styles: tanstack hotkey strings, the bespoke `e`… sequence engine,
- * and bare-letter capture listeners (`s`, `h`).
+ * and bare-letter capture listeners (`s`, `f`, `m`).
  *
  * Only taught bindings live here — this is not a registry of every shortcut.
  * `shortcuts.registry.ts` remains the display list for the help overlay; its
@@ -38,5 +38,4 @@ export const KEYMAP = {
   edgeFocus: { hotkey: "Tab", keycaps: ["Tab"] },
   undo: { hotkey: "Mod+Z", keycaps: ["Mod", "Z"] },
   redo: { hotkey: "Mod+Shift+Z", keycaps: ["Mod", "Shift", "Z"] },
-  hardcore: { bareLetter: "h", keycaps: ["H"] },
 } as const;

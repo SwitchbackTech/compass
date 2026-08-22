@@ -1,10 +1,6 @@
-import { type FC, type MouseEvent } from "react";
-import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { type FC } from "react";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
-import {
-  getEventDragOffset,
-  gridEventDefaultPosition,
-} from "@web/common/utils/event/event.util";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToGridEvent } from "@web/events/grid-event-draft.adapter";
 import {
@@ -21,7 +17,6 @@ import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
-import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getWeekInteractionTargetAttributes } from "@web/views/Week/interaction/registry/week-event.registry";
@@ -33,8 +28,6 @@ interface Props {
   recurringPreviews?: readonly GridEventEntity[];
   weekProps: WeekProps;
 }
-
-const handleGridDraftClick = () => {};
 
 const openDraftFormOrFocusTitle = () => {
   if (!isEventFormOpen()) {
@@ -51,8 +44,7 @@ export const GridDraft: FC<Props> = ({
   recurringPreviews = [],
   weekProps,
 }) => {
-  const { actions, state } = useDraftContext();
-  const { startDragging, startResizing } = actions;
+  const { state } = useDraftContext();
   const { draft, dragOffset, isDragging, isResizing } = state;
   // A live drag-create looks like a resize: the user is dragging one edge of
   // the draft. It just isn't a local resize, so `isResizing` stays false.
@@ -67,36 +59,10 @@ export const GridDraft: FC<Props> = ({
       }
     : null;
 
-  const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
-    if (!draft) return; // TS Guard
-
-    startDragging(
-      getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent),
-      moveEvent,
-    );
-  };
-
-  const handleScalerMouseDown = (
-    _event: GridEventEntity,
-    e: MouseEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => {
-    e.stopPropagation();
-    e.preventDefault();
-    startResizing(dateToChange);
-  };
-
   const motionMode =
     isResizing || isCreating ? "resizing" : isDragging ? "dragging" : "idle";
 
   const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
-  const isMultiDayTimedDraft =
-    rendersInAllDayRow && draft?.values.schedule.kind === "timed";
-
-  const { onMouseDown } = useGridEventMouseDown(
-    handleGridDraftClick,
-    isMultiDayTimedDraft ? () => {} : handleDrag,
-  );
 
   if (!draft || !draftAsGridEvent) return null;
 
@@ -148,17 +114,6 @@ export const GridDraft: FC<Props> = ({
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           onKeyDown={openDraftFormOrFocusTitle}
-          onMouseDown={
-            isMultiDayTimedDraft
-              ? undefined
-              : (e: MouseEvent, event: GridEventEntity) => {
-                  e.preventDefault();
-                  onMouseDown(e, event);
-                }
-          }
-          onScalerMouseDown={
-            isMultiDayTimedDraft ? undefined : handleScalerMouseDown
-          }
           weekDays={weekProps.component.weekDays}
         />
       ) : (
@@ -170,12 +125,7 @@ export const GridDraft: FC<Props> = ({
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           motionMode={motionMode}
-          onEventMouseDown={(event: GridEventEntity, e: MouseEvent) => {
-            e.preventDefault();
-            onMouseDown(e, event);
-          }}
           onEventKeyDown={openDraftFormOrFocusTitle}
-          onScalerMouseDown={handleScalerMouseDown}
           weekProps={weekProps}
         />
       )}

@@ -190,11 +190,13 @@ describe("shortcut menu sections", () => {
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["s"], label: "Toggle event jump keys" },
+        { keys: ["f"], label: "Focus latest notice" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["s"], label: "Toggle event jump keys" },
+        { keys: ["f"], label: "Focus latest notice" },
       ]);
     });
 
@@ -298,10 +300,6 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Z"],
         label: "Undo last change",
-      });
-      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
-        keys: ["h"],
-        label: "Toggle Hardcore Mode",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],

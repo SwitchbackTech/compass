@@ -3,7 +3,7 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
-  openTimedEventFormWithMouse,
+  openTimedEventFormWithKeyboard,
 } from "../utils/event-test-utils";
 
 // Most E2E coverage skips onboarding to keep the calendar tests focused. This
@@ -28,9 +28,11 @@ test("welcomes a first-time user and seeds sample events", async ({
   });
   await expect(welcomeDialog).toBeVisible();
 
-  await welcomeDialog
-    .getByRole("button", { name: "Explore without an account" })
-    .click();
+  // The welcome modal advertises S for this action; prove the shortcut.
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Explore without an account" }),
+  ).toBeVisible();
+  await page.keyboard.press("s");
   await expect(welcomeDialog).toBeHidden();
 
   // Nothing stands between the welcome screen and the calendar any more.
@@ -54,7 +56,7 @@ test("welcomes a first-time user and seeds sample events", async ({
   await expect(prompt).toContainText("You've got the skills");
 
   const title = createEventTitle("First-run event");
-  await openTimedEventFormWithMouse(page);
+  await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
 
   // The prompt celebrates the first real event, then retires.

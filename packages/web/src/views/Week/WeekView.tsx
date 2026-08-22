@@ -40,7 +40,6 @@ import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransiti
 import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -123,15 +122,6 @@ export const WeekView = () => {
     viewStart: weekProps.component.startOfView,
   });
 
-  const getWeekInteractionLayoutSources = useCallback(
-    () => ({
-      allDayColumnsElement: gridRefs.allDayColumnsRef.current,
-      mainGridElement: gridRefs.mainGridRef.current,
-      timedColumnsElement: gridRefs.timedColumnsRef.current,
-    }),
-    [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
-  );
-
   const openWelcomeGuide = useCallback(() => {
     welcomeGuideActions.open();
   }, []);
@@ -180,20 +170,14 @@ export const WeekView = () => {
                   weekDays={weekProps.component.weekDays}
                 />
 
-                <WeekInteractionCoordinator
-                  getLayoutSources={getWeekInteractionLayoutSources}
-                  weekProps={weekProps}
-                >
-                  <ContextMenuWrapper id="grid-context-menu">
-                    <Grid
-                      dateCalcs={dateCalcs}
-                      gridRefs={gridRefs}
-                      measurements={measurements}
-                      today={today}
-                      weekProps={weekProps}
-                    />
-                  </ContextMenuWrapper>
-                </WeekInteractionCoordinator>
+                <ContextMenuWrapper id="grid-context-menu">
+                  <Grid
+                    gridRefs={gridRefs}
+                    measurements={measurements}
+                    today={today}
+                    weekProps={weekProps}
+                  />
+                </ContextMenuWrapper>
               </div>
             </WeekGridScrollArea>
           </div>

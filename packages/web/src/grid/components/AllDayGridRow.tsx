@@ -1,9 +1,4 @@
-import {
-  type FC,
-  type MouseEventHandler,
-  type ReactNode,
-  type RefCallback,
-} from "react";
+import { type FC, type ReactNode, type RefCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   ID_ALLDAY_COLUMNS,
@@ -31,7 +26,6 @@ interface AllDayRowProps {
   columnsId?: string;
   eventsLayer: ReactNode;
   gridOffsetTopPx?: number;
-  onMouseDown: MouseEventHandler<HTMLElement>;
   rowsCount?: number;
   rowId?: string;
   visibleDates: GridVisibleDate[];
@@ -58,7 +52,6 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
   columnsId = ID_ALLDAY_COLUMNS,
   eventsLayer,
   gridOffsetTopPx = 0,
-  onMouseDown,
   rowsCount = 0,
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
@@ -71,7 +64,6 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
       aria-label="All-day events"
       id={rowId}
       ref={allDayRowRef}
-      onMouseDown={onMouseDown}
       style={{
         height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
         minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,

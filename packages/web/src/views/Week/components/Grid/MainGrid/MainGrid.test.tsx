@@ -3,13 +3,12 @@ import { type PropsWithChildren, useState } from "react";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,
   fireEvent,
   render,
   screen,
-  waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import {
   seedEventQueries,
@@ -17,10 +16,7 @@ import {
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
-import {
-  ID_GRID_COLUMNS_TIMED,
-  ZIndex,
-} from "@web/common/constants/web.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   allDayGridSchedule,
@@ -29,14 +25,9 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import {
   initialDraftState,
-  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import {
-  DECK_INDENT,
-  DRAFT_DURATION_MIN,
-  GRID_TIME_STEP,
-} from "@web/grid/grid.constants";
+import { DECK_INDENT } from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
@@ -44,7 +35,6 @@ import {
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
   weekEventRegistry,
 } from "@web/views/Week/interaction/registry/week-event.registry";
-import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -104,7 +94,6 @@ const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
   cleanup();
-  setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
   pendingEventIds = [];
   seededWeekEvents = [];
@@ -168,19 +157,6 @@ const seedGrid = (
   });
 };
 
-const createDateCalcs = () => ({
-  getDateByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
-    firstDayInView.add(y, "minute"),
-  getDateStrByXY: (
-    _x: number,
-    y: number,
-    firstDayInView: Dayjs,
-    format?: string,
-  ) => firstDayInView.add(y, "minute").format(format),
-  getMinuteByY: (y: number) => y,
-  getYByDate: () => 0,
-});
-
 const createWeekProps = () => ({
   component: {
     category: "current" as const,
@@ -223,55 +199,15 @@ const createSavedEvent = (
     _id: createObjectIdString(),
   }) as CompassEvent;
 
-const renderMainGrid = () => {
-  seedGrid();
-  const dateCalcs = createDateCalcs();
-  const mainGridRef = { current: null };
-  const actions = {
-    stopDragging: mock(),
-    stopResizing: mock(),
-  };
-
-  const view = render(
-    <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions,
-            state: {},
-          } as never
-        }
-      >
-        <MainGrid
-          dateCalcs={dateCalcs}
-          mainGridElementRef={mock()}
-          mainGridRef={mainGridRef}
-          measurements={measurements}
-          timedColumnsElementRef={mock()}
-          today={startOfView}
-          weekProps={createWeekProps()}
-        />
-      </DraftContext.Provider>
-    </Provider>,
-  );
-
-  return view;
-};
-
 const renderGridRegions = () => {
   seedGrid();
-  const dateCalcs = createDateCalcs();
-  const mainGridRef = { current: null };
 
   const view = render(
     <Provider>
       <DraftContext.Provider
         value={
           {
-            actions: {
-              stopDragging: mock(),
-              stopResizing: mock(),
-            },
+            actions: {},
             state: {},
           } as never
         }
@@ -279,14 +215,11 @@ const renderGridRegions = () => {
         <AllDayRow
           allDayRef={mock()}
           allDayRowRef={mock()}
-          dateCalcs={dateCalcs}
           measurements={measurements}
           weekProps={createWeekProps()}
         />
         <MainGrid
-          dateCalcs={dateCalcs}
           mainGridElementRef={mock()}
-          mainGridRef={mainGridRef}
           measurements={measurements}
           timedColumnsElementRef={mock()}
           today={startOfView}
@@ -301,23 +234,18 @@ const renderGridRegions = () => {
 
 const renderWeekGrid = (events: CompassEvent[] = []) => {
   seedGrid(events);
-  const dateCalcs = createDateCalcs();
 
   return render(
     <Provider>
       <DraftContext.Provider
         value={
           {
-            actions: {
-              stopDragging: mock(),
-              stopResizing: mock(),
-            },
+            actions: {},
             state: {},
           } as never
         }
       >
         <Grid
-          dateCalcs={dateCalcs}
           gridRefs={{
             allDayColumnsRef: { current: null },
             allDayRef: mock(),
@@ -336,205 +264,7 @@ const renderWeekGrid = (events: CompassEvent[] = []) => {
   );
 };
 
-const dragEmptyGrid = (
-  row: HTMLElement,
-  { fromMinute, toMinute }: { fromMinute: number; toMinute: number },
-) => {
-  fireEvent.mouseDown(row, {
-    button: 0,
-    buttons: 1,
-    clientX: 100,
-    clientY: fromMinute,
-  });
-  fireEvent.mouseMove(window, {
-    buttons: 1,
-    clientX: 100,
-    clientY: toMinute,
-  });
-  fireEvent.mouseUp(window, { clientX: 100, clientY: toMinute });
-};
-
-const clickEmptyGrid = (row: HTMLElement, minute: number) => {
-  fireEvent.mouseDown(row, {
-    button: 0,
-    buttons: 1,
-    clientX: 100,
-    clientY: minute,
-  });
-  fireEvent.mouseUp(window, { clientX: 100, clientY: minute });
-};
-
-const expectDraftRange = async (startDate: string, endDate: string) => {
-  await waitFor(() => {
-    const draft = selectGridDraft(useDraftStore.getState());
-
-    expect(draft).not.toBeNull();
-    expect(dayjs(draft!.values.schedule.start).toISOString()).toBe(
-      new Date(startDate).toISOString(),
-    );
-    expect(dayjs(draft!.values.schedule.end).toISOString()).toBe(
-      new Date(endDate).toISOString(),
-    );
-  });
-};
-
-const getFirstTimedGridRow = (container: HTMLElement) => {
-  const timedColumns = container.querySelector(`#${ID_GRID_COLUMNS_TIMED}`);
-  const timedRows = timedColumns?.nextElementSibling;
-
-  if (!(timedRows?.firstElementChild instanceof HTMLElement)) {
-    throw new Error("Timed grid row was not rendered");
-  }
-
-  return timedRows.firstElementChild;
-};
-
-const expectDraftIsInactive = () => {
-  const draftStatus = useDraftStore.getState().status;
-
-  if (!draftStatus) {
-    throw new Error("Draft status was not initialized");
-  }
-
-  expect(draftStatus.activity).toBeNull();
-  expect(draftStatus.isDrafting).toBe(false);
-};
-
-const getEndResizeHandle = (eventButton: HTMLElement) => {
-  const resizeHandle = eventButton.querySelector(
-    '[data-calendar-event-resize-handle="endDate"]',
-  );
-
-  if (!(resizeHandle instanceof HTMLElement)) {
-    throw new Error("Saved event resize handle was not rendered");
-  }
-
-  return resizeHandle;
-};
-
-const expectSavedEventDoesNotStartDraftMotion = () => {
-  const eventButton = screen.getByRole("button", { name: /saved event/i });
-
-  fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
-  expectDraftIsInactive();
-
-  fireEvent.mouseDown(getEndResizeHandle(eventButton), {
-    button: 0,
-    buttons: 1,
-  });
-  expectDraftIsInactive();
-};
-
-describe("MainGrid empty-grid draft creation", () => {
-  it("creates the selected range when dragging upward from an empty timed slot", async () => {
-    const { container } = renderMainGrid();
-    const row = getFirstTimedGridRow(container);
-
-    dragEmptyGrid(row, { fromMinute: 11 * 60, toMinute: 10 * 60 });
-
-    await expectDraftRange(
-      startOfView.add(10, "hour").format(),
-      startOfView.add(11, "hour").format(),
-    );
-  });
-
-  it("keeps creating the selected range when dragging downward from an empty timed slot", async () => {
-    const { container } = renderMainGrid();
-    const row = getFirstTimedGridRow(container);
-
-    dragEmptyGrid(row, { fromMinute: 11 * 60, toMinute: 12 * 60 });
-
-    await expectDraftRange(
-      startOfView.add(11, "hour").format(),
-      startOfView.add(12, "hour").format(),
-    );
-  });
-
-  // The store draft is the live preview for both views now, so it has to track
-  // the pointer mid-gesture rather than staying frozen until mouseup. Needs two
-  // moves: the first one has always written the draft (it starts the preview).
-  it("tracks the pointer in the store draft on every move, before mouseup", async () => {
-    const { container } = renderMainGrid();
-    const row = getFirstTimedGridRow(container);
-
-    fireEvent.mouseDown(row, {
-      button: 0,
-      buttons: 1,
-      clientX: 100,
-      clientY: 11 * 60,
-    });
-
-    fireEvent.mouseMove(window, {
-      buttons: 1,
-      clientX: 100,
-      clientY: 12 * 60,
-    });
-    await expectDraftRange(
-      startOfView.add(11, "hour").format(),
-      startOfView.add(12, "hour").format(),
-    );
-
-    fireEvent.mouseMove(window, {
-      buttons: 1,
-      clientX: 100,
-      clientY: 14 * 60,
-    });
-    await expectDraftRange(
-      startOfView.add(11, "hour").format(),
-      startOfView.add(14, "hour").format(),
-    );
-
-    fireEvent.mouseUp(window, { clientX: 100, clientY: 14 * 60 });
-  });
-
-  it("keeps quick empty-grid clicks at the default draft duration", async () => {
-    const { container } = renderMainGrid();
-    const row = getFirstTimedGridRow(container);
-
-    clickEmptyGrid(row, 11 * 60);
-
-    await expectDraftRange(
-      startOfView.add(11, "hour").format(),
-      startOfView.add(11, "hour").add(DRAFT_DURATION_MIN, "minute").format(),
-    );
-  });
-
-  it("shrinks a downward drag to one grid step without flipping the start", async () => {
-    const { container } = renderMainGrid();
-    const row = getFirstTimedGridRow(container);
-
-    dragEmptyGrid(row, {
-      fromMinute: 11 * 60,
-      toMinute: 11 * 60 + GRID_TIME_STEP,
-    });
-
-    await expectDraftRange(
-      startOfView.add(11, "hour").format(),
-      startOfView.add(11, "hour").add(GRID_TIME_STEP, "minute").format(),
-    );
-  });
-});
-
 describe("Week calendar accessibility", () => {
-  it("creates a one-day draft from empty all-day space", async () => {
-    renderGridRegions();
-
-    fireEvent.mouseDown(
-      screen.getByRole("region", { name: "All-day events" }),
-      { button: 0, clientX: 100, clientY: 0 },
-    );
-
-    await waitFor(() => {
-      const draft = selectGridDraft(useDraftStore.getState());
-
-      expect(draft?.values.schedule).toEqual({
-        end: new Date("2024-01-15"),
-        kind: "allDay",
-        start: new Date("2024-01-14"),
-      });
-    });
-  });
-
   it("labels timed and all-day calendar regions", () => {
     renderGridRegions();
 
@@ -788,44 +518,5 @@ describe("saved Week event ownership", () => {
 
     fireEvent.blur(back);
     expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
-  });
-
-  it("keeps saved timed mouse and resize events out of the draft motion owner", () => {
-    const savedEvent = createSavedEvent();
-    seedGrid([savedEvent]);
-
-    render(
-      <Provider>
-        <MainGridEvents
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-      </Provider>,
-    );
-
-    expectSavedEventDoesNotStartDraftMotion();
-  });
-
-  it("keeps saved all-day mouse and resize events out of the draft motion owner", () => {
-    const savedEvent = createSavedEvent({
-      _id: "saved-all-day-event",
-      endDate: "2024-01-17T00:00:00.000Z",
-      isAllDay: true,
-      startDate: "2024-01-15T00:00:00.000Z",
-    });
-    seedGrid([savedEvent]);
-
-    render(
-      <Provider>
-        <AllDayEvents
-          measurements={measurements}
-          queryEndOfView={startOfView.add(6, "day").endOf("day")}
-          queryStartOfView={startOfView}
-          weekDays={weekDaysInView}
-        />
-      </Provider>,
-    );
-
-    expectSavedEventDoesNotStartDraftMotion();
   });
 });

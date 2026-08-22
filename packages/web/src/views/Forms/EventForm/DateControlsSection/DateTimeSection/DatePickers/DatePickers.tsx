@@ -71,6 +71,24 @@ export const DatePickers: FC<Props> = ({
         e.stopPropagation();
         break;
       }
+      // Combobox convention: ArrowDown on the closed input opens the
+      // calendar, matching what onInputClick does for the mouse.
+      case e.key === "ArrowDown": {
+        const isOpen =
+          picker === "start" ? isStartDatePickerOpen : isEndDatePickerOpen;
+        if (isOpen) break;
+
+        e.preventDefault();
+        e.stopPropagation();
+        if (picker === "start") {
+          setIsEndDatePickerOpen(false);
+          setIsStartDatePickerOpen(true);
+        } else {
+          setIsStartDatePickerOpen(false);
+          setIsEndDatePickerOpen(true);
+        }
+        break;
+      }
       case e.key === "Enter": {
         e.stopPropagation();
         e.preventDefault();

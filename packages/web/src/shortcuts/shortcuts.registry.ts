@@ -164,6 +164,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Toggle event jump keys",
     section: "focus",
   },
+  {
+    id: "focus-notice",
+    keys: ["f"],
+    label: "Focus latest notice",
+    section: "focus",
+  },
 
   // Edit
   {
@@ -193,6 +199,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     id: "edit-duplicate",
     keys: ["Mod", "D"],
     label: "Duplicate focused event",
+    section: "edit",
+  },
+  {
+    id: "edit-menu",
+    keys: ["m"],
+    label: "Open event menu",
+    section: "edit",
+  },
+  {
+    id: "edit-menu-shift-f10",
+    keys: ["Shift", "F10"],
+    label: "Open event menu",
     section: "edit",
   },
   {
@@ -313,12 +331,6 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     id: "other-redo",
     keys: caps(KEYMAP.redo.hotkey),
     label: "Redo last change",
-    section: "other",
-  },
-  {
-    id: "other-keyboard-only",
-    keys: [KEYMAP.hardcore.bareLetter],
-    label: "Toggle Hardcore Mode",
     section: "other",
   },
 ];

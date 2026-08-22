@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
@@ -7,6 +7,7 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
+import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
 import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
@@ -170,10 +171,35 @@ export const useWeekShortcutOwner = ({
     listVisible: weekEventTargeting.listVisibleGridEventTargets,
   };
 
+  // Set when a Shift+Arrow nudge carried an event across the window edge;
+  // consumed once the shifted window's weekDays land so focus restoration
+  // targets the post-shift card rather than a node the shift is about to
+  // replace.
+  const pendingCarryFocusIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const eventId = pendingCarryFocusIdRef.current;
+    if (!eventId) return;
+    pendingCarryFocusIdRef.current = null;
+    focusCalendarEventElement(eventId);
+  }, [weekDays]);
+
   useGridEventEditShortcuts({
     allDayEvents,
     timedEvents,
-    dayBoundary: { kind: "clamp", weekDays },
+    dayBoundary: {
+      kind: "clamp",
+      weekDays,
+      // Shift+Arrow at the window edge carries the event: the nudge commits
+      // and the view slides one day to keep it on screen. Raw shiftViewByDay
+      // (not shiftViewForward/Backward) so the carried event's optimistic
+      // update isn't discarded with the draft. Focus restoration waits for
+      // the shifted window to render (the weekDays effect below) - the
+      // nudge's own refocus retries run against the pre-shift DOM.
+      onCrossed: (days, eventId) => {
+        pendingCarryFocusIdRef.current = eventId;
+        shiftViewByDay(days);
+      },
+    },
     targeting,
     placeTimedDraft: placeTimedDraftEvent,
     repositionDraftByKey: repositionDraftByKeyboard,

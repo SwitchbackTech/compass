@@ -18,11 +18,6 @@ import {
 import { KEYBOARD_PLACE_HINT_PARTS } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
 import {
-  initialKeyboardOnlyState,
-  keyboardOnlyActions,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import {
   eventJumpActions,
   initialEventJumpState,
   useEventJumpStore,
@@ -112,14 +107,12 @@ describe("SidebarStatusBar", () => {
     connection = null;
     isSseDegraded = false;
     draftActions.discard();
-    useKeyboardOnlyStore.setState(initialKeyboardOnlyState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
   });
 
   afterEach(() => {
     draftActions.discard();
-    useKeyboardOnlyStore.setState(initialKeyboardOnlyState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
   });
@@ -333,17 +326,6 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
-  });
-
-  it("yields the keyboardPlace hint to Hardcore Mode", () => {
-    seedKeyboardPlaceDraft();
-    keyboardOnlyActions.enter();
-    const { wrapper } = createStoreWrapper();
-
-    render(<SidebarStatusBar />, { wrapper });
-
-    expect(screen.getByRole("status")).toHaveTextContent("Hardcore Mode · Esc");
     expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 

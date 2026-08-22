@@ -14,7 +14,6 @@ describe("AllDayGridRow", () => {
         allDayColumnsRef={() => {}}
         allDayRowRef={() => {}}
         eventsLayer={null}
-        onMouseDown={() => {}}
         visibleDates={[
           {
             date: today,

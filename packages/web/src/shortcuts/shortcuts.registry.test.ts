@@ -65,6 +65,20 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
+    it("lists f, m, and Shift+F10 in the legend", () => {
+      const shortcuts = filterShortcutsByContext({
+        view: "week",
+        isViewingCurrentPeriod: true,
+      });
+      const byId = Object.fromEntries(
+        shortcuts.map((shortcut) => [shortcut.id, shortcut]),
+      );
+
+      expect(byId["focus-notice"]?.keys).toEqual(["f"]);
+      expect(byId["edit-menu"]?.keys).toEqual(["m"]);
+      expect(byId["edit-menu-shift-f10"]?.keys).toEqual(["Shift", "F10"]);
+    });
+
     it("lists s event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
@@ -81,16 +95,6 @@ describe("shortcuts.registry", () => {
         isViewingCurrentPeriod: true,
       }).map((shortcut) => shortcut.id);
       expect(life).not.toContain("focus-shift-hold");
-    });
-
-    it("lists h keyboard-only mode in every view's other section", () => {
-      for (const view of ["day", "week", "life"] as const) {
-        const ids = filterShortcutsByContext({
-          view,
-          isViewingCurrentPeriod: true,
-        }).map((shortcut) => shortcut.id);
-        expect(ids).toContain("other-keyboard-only");
-      }
     });
 
     it("lists the edit sequences with nothing focused, so the legend can show them", () => {

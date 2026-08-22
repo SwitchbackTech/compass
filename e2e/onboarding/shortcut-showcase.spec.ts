@@ -13,7 +13,11 @@ const openPracticeFromPalette = async (page: Page) => {
   const search = page.getByLabel("Command palette search");
   await expect(search).toBeVisible();
   await search.fill("Practice shortcuts");
-  await page.getByRole("option", { name: /Practice shortcuts/ }).click();
+  const practiceOption = page.getByRole("option", {
+    name: /Practice shortcuts/,
+  });
+  await expect(practiceOption).toBeVisible();
+  await page.keyboard.press("Enter");
 };
 
 const leaveWelcome = async (page: Page) => {
@@ -21,9 +25,10 @@ const leaveWelcome = async (page: Page) => {
     name: "Welcome to Compass Calendar",
   });
   await expect(welcomeDialog).toBeVisible();
-  await welcomeDialog
-    .getByRole("button", { name: "Explore without an account" })
-    .click();
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Explore without an account" }),
+  ).toBeVisible();
+  await page.keyboard.press("s");
   await expect(welcomeDialog).toBeHidden();
 };
 
@@ -84,7 +89,11 @@ test("Skip to sign up leaves the practice for the signup form on step 1", async 
   await expect(showcase).toContainText("Create an event");
 
   // One click, from the first step, with no lesson finished and no confirm.
-  await showcase.getByRole("button", { name: "Skip to sign up" }).click();
+  // The advertised S letter, not a click: the side actions are key-bound.
+  await expect(
+    showcase.getByRole("button", { name: /Skip to sign up/ }),
+  ).toBeVisible();
+  await page.keyboard.press("s");
   await expect(showcase).toHaveCount(0);
   await expect(page).toHaveURL(/auth=signup/);
 });

@@ -3,17 +3,17 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
-  getMainGridPoint,
+  getSavedEventsByTitle,
+  getVisibleDayDates,
+  openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-const createTimedEventAt = async (
+const createTimedEvent = async (
   page: Parameters<typeof prepareCalendarPage>[0],
   title: string,
-  { xRatio }: { xRatio: number },
 ) => {
-  const { x, y } = await getMainGridPoint(page, { xRatio, yRatio: 0.35 });
-  await page.mouse.click(x, y);
+  await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 };
@@ -23,24 +23,45 @@ test("ArrowRight moves focus to the nearest event on the next non-empty day", as
 }) => {
   await prepareCalendarPage(page);
 
-  const mondayTitle = createEventTitle("Monday Focus");
-  const wednesdayTitle = createEventTitle("Wednesday Focus");
+  const firstTitle = createEventTitle("Anchor Focus");
+  const movedTitle = createEventTitle("Neighbor Focus");
 
-  // Leftmost columns are earlier weekdays; ratios stay inside timed columns.
-  await createTimedEventAt(page, mondayTitle, { xRatio: 0.12 });
-  await createTimedEventAt(page, wednesdayTitle, { xRatio: 0.42 });
+  // Both events land on today via the c shortcut; nudge the second onto an
+  // adjacent day, away from the week edge so the move never carries the view.
+  await createTimedEvent(page, firstTitle);
+  await createTimedEvent(page, movedTitle);
 
-  const mondayButton = page
+  const [saved] = await getSavedEventsByTitle(page, movedTitle);
+  const days = await getVisibleDayDates(page);
+  const todayIndex = days.indexOf(saved.startDate.slice(0, 10));
+  const moveRight = todayIndex < days.length - 1;
+
+  const movedButton = page
     .locator("#mainGrid")
-    .getByRole("button", { name: mondayTitle });
-  const wednesdayButton = page
-    .locator("#mainGrid")
-    .getByRole("button", { name: wednesdayTitle });
+    .getByRole("button", { name: movedTitle });
+  await movedButton.focus();
+  await page.keyboard.press(moveRight ? "Shift+ArrowRight" : "Shift+ArrowLeft");
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, movedTitle);
+      return event?.startDate.slice(0, 10);
+    })
+    .toBe(days[moveRight ? todayIndex + 1 : todayIndex - 1]);
 
-  await mondayButton.focus();
-  await expect(mondayButton).toBeFocused();
+  // Focus the event on the earlier day and ArrowRight to its neighbor.
+  const leftTitle = moveRight ? firstTitle : movedTitle;
+  const rightTitle = moveRight ? movedTitle : firstTitle;
+  const leftButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: leftTitle });
+  const rightButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: rightTitle });
+
+  await leftButton.focus();
+  await expect(leftButton).toBeFocused();
 
   await page.keyboard.press("ArrowRight");
 
-  await expect(wednesdayButton).toBeFocused();
+  await expect(rightButton).toBeFocused();
 });

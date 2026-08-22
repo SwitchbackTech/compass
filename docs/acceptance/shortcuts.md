@@ -21,7 +21,7 @@ Use this guide to validate:
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
 - focusing events with arrow keys (chronological in Day, spatial in Week)
-- toggling event-jump chips (`S`) and Hardcore Mode (`H`)
+- toggling event-jump chips (`S`); the mouse is permanently inert (Compass is keyboard-only)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
 - confirming that shortcuts do not fire while typing in inputs
@@ -126,7 +126,7 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 ### Expected Results
 
 - The command palette opens immediately.
-- Items include: Create event, Create all-day event, Go to Today, Toggle Hardcore Mode, Practice shortcuts, Show welcome guide, Undo last change, Redo last change, Log Out.
+- Items include: Create event, Create all-day event, Go to Today, Practice shortcuts, Show welcome guide, Undo last change, Redo last change, Log Out.
 - Undo / Redo rows show their keycaps and stay disabled when there is no history.
 - Google Calendar connection status and actions appear in the sidebar, not the command palette.
 - Typing filters the list.
@@ -279,7 +279,7 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` exits (in day view a second `S` also toggles off). Bare Shift and Shift+Tab do not show jump chips. Press `H` to toggle Hardcore Mode independently.
+Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` exits (in day view a second `S` also toggles off). Bare Shift and Shift+Tab do not show jump chips.
 
 ### Steps
 
@@ -288,7 +288,6 @@ Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
 4. Press `Esc` to exit.
 5. Press Shift alone or Shift+Tab and confirm jump mode does not activate.
-6. Press `H` and confirm Hardcore Mode enters.
 
 ### Expected Results
 
@@ -297,33 +296,28 @@ Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 - Arrow keys keep jump mode on so letter-then-arrows works.
 - Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
 - While a modal holds the app lock, or focus is in an editable field, `S` does not toggle jump mode.
-- `H` toggles Hardcore Mode; Esc exits it.
 
 ---
 
-## Scenario 13: H Enters Hardcore Mode
+## Scenario 13: The Mouse Is Permanently Inert
 
 ### UX
 
-Bare `H` toggles Hardcore Mode (keyboard-only). While active, pointer clicks are blocked (scroll and hover still work) so the user practices keyboard navigation. A persistent “Hardcore Mode · Esc” indicator shows how to exit. Mode is not persisted across refresh. Shift alone does not enter this mode.
+Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do nothing anywhere in the app (scroll and hover still work). A blocked click shows a transient hint pointing at the `?` legend. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
 
 ### Steps
 
 1. Navigate to `/week` with at least one event visible.
-2. Press `H` (not a chord).
-3. Try clicking an event with the mouse.
-4. Use `U` / arrows / `Enter` to open an event with the keyboard.
-5. Press `Esc` (with no modal/form open) or press `H` again.
+2. Try clicking an event with the mouse; try right-clicking it.
+3. Use `U` / arrows / `Enter` to open an event with the keyboard.
+4. Tab to any native button and press Enter.
 
 ### Expected Results
 
-- A “Hardcore Mode · Esc” indicator appears.
-- Clicks do not open events or focus controls; the indicator may pulse on a blocked click.
-- Clicks inside onboarding UI (`[data-onboarding-ui]`) still work.
-- Keyboard shortcuts continue to work.
-- If a modal, floating layer, or event form is open, `Esc` dismisses that owner first; a later `Esc` exits Hardcore Mode.
-- Exiting clears the indicator. Reloading the page also clears the mode.
-- Event-jump chips (`S`) clear when Hardcore enters. Shift alone / Shift-Shift do not toggle Hardcore Mode.
+- Clicks do not open events or focus controls; a "Compass is keyboard only" hint appears briefly.
+- Right-click does not open the context menu; `M` (or Shift+F10) on a focused event does.
+- Keyboard shortcuts and Enter/Space activation of buttons continue to work.
+- `F` focuses the newest action toast or banner; Tab moves within it, Escape dismisses.
 
 ---
 
@@ -389,5 +383,5 @@ If time is limited, run these checks before shipping shortcut-related changes:
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips.
-16. `H` enters Hardcore Mode (clicks blocked, indicator visible); Esc or another `H` exits. Shift-Shift does not.
+16. Mouse clicks, right-clicks, and double-clicks are inert everywhere; a blocked click shows the keyboard-only hint. `M` opens the focused event's menu; `F` focuses the newest notice.
 17. PageUp / PageDown scroll the timed grid in Day and Week view even when an event is focused; they do not fire in a text input.

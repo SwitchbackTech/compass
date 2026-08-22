@@ -2,11 +2,7 @@ import {
   type CommandPaletteViewName,
   getNavigationCommandItems,
 } from "@web/components/CommandPalette/navigation.cmd.constants";
-import {
-  initialKeyboardOnlyState,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {
   const noopHandlers = {
@@ -15,7 +11,7 @@ describe("getNavigationCommandItems", () => {
     onShowShortcuts: () => {},
   };
 
-  it("lists Today first, then Day, Week, Life, then shortcuts and keyboard-only", () => {
+  it("lists Today first, then Day, Week, Life, then shortcuts", () => {
     const labels = getNavigationCommandItems(noopHandlers).map(
       (item) => item.label,
     );
@@ -25,7 +21,6 @@ describe("getNavigationCommandItems", () => {
       "Go to Week",
       "Go to Life",
       "Show shortcuts",
-      "Toggle Hardcore Mode",
     ]);
   });
 
@@ -48,12 +43,7 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual([
-      "Go to Day",
-      "Go to Week",
-      "Go to Life",
-      "Toggle Hardcore Mode",
-    ]);
+    expect(labels).toEqual(["Go to Day", "Go to Week", "Go to Life"]);
   });
 
   it("advertises every view shortcut in the command palette", () => {
@@ -77,7 +67,7 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual(["Go to Day", "Go to Week", "Toggle Hardcore Mode"]);
+    expect(labels).toEqual(["Go to Day", "Go to Week"]);
   });
 
   it("runs the matching navigation callbacks", () => {
@@ -105,36 +95,5 @@ describe("getNavigationCommandItems", () => {
     expect(navigatedViews).toEqual(["day", "week", "life"]);
     expect(didGoToToday).toBe(true);
     expect(didShowShortcuts).toBe(true);
-  });
-
-  describe("enter-keyboard-only", () => {
-    beforeEach(() => {
-      useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
-    });
-
-    it("toggles keyboard-only mode on the next microtask", async () => {
-      const items = getNavigationCommandItems({
-        onNavigateToView: () => {},
-      });
-      const toggle = items.find((item) => item.id === "enter-keyboard-only");
-
-      toggle?.onClick?.();
-      expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
-      await Promise.resolve();
-      expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
-
-      toggle?.onClick?.();
-      await Promise.resolve();
-      expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
-    });
-
-    it("advertises h as the shortcut", () => {
-      const item = getNavigationCommandItems({
-        onNavigateToView: () => {},
-      }).find((entry) => entry.id === "enter-keyboard-only");
-
-      expect(item?.label).toBe("Toggle Hardcore Mode");
-      expect(item?.shortcut).toEqual(["h"]);
-    });
   });
 });

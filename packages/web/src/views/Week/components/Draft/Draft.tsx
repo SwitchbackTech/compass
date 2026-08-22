@@ -11,8 +11,6 @@ import { useDraftContext } from "./context/useDraftContext";
 import { getActiveTimedDraftDeckLayout } from "./grid/activeTimedDraftDeckLayout";
 import { GridDraft } from "./grid/GridDraft";
 import { getRecurringDraftPreviews } from "./grid/getRecurringDraftPreviews";
-import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
-import { useGridMouseUp } from "./grid/hooks/useGridMouseUp";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -20,9 +18,6 @@ interface Props {
 }
 
 export const Draft: FC<Props> = ({ measurements, weekProps }) => {
-  useGridMouseUp();
-  useGridMouseMove();
-
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,

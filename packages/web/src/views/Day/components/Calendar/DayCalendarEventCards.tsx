@@ -1,4 +1,4 @@
-import { type MouseEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -72,16 +72,6 @@ export const DayAllDayCalendarEvent = ({
         : undefined,
     [event._id, hasEventIdentity],
   );
-  // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only or draft-only card would
-  // otherwise stop being clickable. Wire the click to the same "open" action
-  // the keyboard path uses.
-  const onEventMouseDown =
-    isReadOnly || isPlaceholder
-      ? (_mouseEvent: MouseEvent, clickedEvent: GridEvent) =>
-          onOpenEvent(clickedEvent)
-      : undefined;
-
   const position = getAllDayEventPosition(event, {
     columnIndex,
     isDraft: isPlaceholder,
@@ -97,7 +87,6 @@ export const DayAllDayCalendarEvent = ({
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
-      onEventMouseDown={onEventMouseDown}
       position={{
         ...position,
         zIndex: isActiveDraft
@@ -146,14 +135,6 @@ export const DayTimedCalendarEvent = ({
         : undefined,
     [event._id, hasEventIdentity],
   );
-  // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only or draft-only card would
-  // otherwise stop being clickable. Wire the click to the same "open" action
-  // the keyboard path uses.
-  const onEventMouseDown =
-    isReadOnly || isPlaceholder
-      ? (clickedEvent: GridEvent) => onOpenEvent(clickedEvent)
-      : undefined;
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
     const ring = `0 0 0 0.75px var(--background)`;
@@ -188,7 +169,6 @@ export const DayTimedCalendarEvent = ({
       motionMode="idle"
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       onEventKeyDown={onOpenEvent}
-      onEventMouseDown={onEventMouseDown}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       position={{ ...position, zIndex }}
       ref={registrationRef}

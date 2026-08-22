@@ -39,9 +39,12 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useThemeStore } from "@web/settings/theme/theme.store";
+import {
+  initialPointerBlockState,
+  usePointerBlockStore,
+} from "@web/shortcuts/keyboard-only/pointer-block.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
-import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 type StoreReset = () => void;
 
@@ -67,18 +70,13 @@ const storeResets: StoreReset[] = [
   () => useTimezoneDialogStore.setState({ isOpen: false }, true),
   resetCollapsedAccountsStoreForTests,
   resetRecentCommandsStoreForTests,
-  // Lives on window.__weekInteractionMotionActive, which survives across
-  // test files (the preload reuses one jsdom window). A test that starts a
-  // real drag and never completes it would otherwise leave every later
-  // file's grid mousedown handlers inert (they early-return while motion
-  // is active) - order-dependent, so it only surfaces on some runners.
-  () => setWeekInteractionMotionActive(false),
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
   () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
   () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
+  () => usePointerBlockStore.setState(initialPointerBlockState, true),
 ];
 
 export function resetAllStores() {

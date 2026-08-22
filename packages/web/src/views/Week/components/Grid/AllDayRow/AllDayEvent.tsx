@@ -1,4 +1,4 @@
-import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
+import { type ForwardedRef, forwardRef, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -15,13 +15,7 @@ interface Props {
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   weekDays: WeekProps["component"]["weekDays"];
-  onMouseDown?: (e: MouseEvent, event: GridEvent) => void;
   onKeyDown?: (event: GridEvent) => void;
-  onScalerMouseDown?: (
-    event: GridEvent,
-    e: MouseEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => void;
 }
 
 const AllDayEventBase = (
@@ -33,9 +27,7 @@ const AllDayEventBase = (
     isPlaceholder,
     measurements,
     weekDays,
-    onMouseDown,
     onKeyDown,
-    onScalerMouseDown,
   }: Props,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
@@ -51,15 +43,6 @@ const AllDayEventBase = (
     visibleDates,
   });
 
-  const handleEventMouseDown = (e: MouseEvent, selectedEvent: GridEvent) => {
-    // Always stop bubble so the all-day row's create-draft handler cannot
-    // overwrite a card click (including read-only open).
-    e.stopPropagation();
-    if (!onMouseDown) return;
-
-    onMouseDown(e, selectedEvent);
-  };
-
   return (
     <AllDayEventCard
       calendarIdentity={calendarIdentity}
@@ -68,8 +51,6 @@ const AllDayEventBase = (
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
-      onEventMouseDown={handleEventMouseDown}
-      onScalerMouseDown={onScalerMouseDown}
       position={position}
       ref={ref}
     />

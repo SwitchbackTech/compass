@@ -21,12 +21,7 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import {
-  initialKeyboardOnlyState,
-  keyboardOnlyActions,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
+import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";
 import { recordRecentCommand } from "./recent-commands.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -103,7 +98,6 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
-    useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
@@ -204,7 +198,6 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Life
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show shortcuts
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Toggle keyboard-only mode
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Practice shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
@@ -232,14 +225,9 @@ describe("CommandPalette", () => {
     unsubscribe();
   });
 
-  it("runs Enter selection while keyboard-only mode blocks clicks", () => {
+  it("runs Enter selection while pointer suppression blocks clicks", () => {
     // Mount the same capture-phase click blocker RootShell uses in production.
-    const { unmount: unmountMode } = renderHook(() => useKeyboardOnlyMode());
-
-    act(() => {
-      keyboardOnlyActions.enter();
-    });
-    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    const { unmount: unmountMode } = renderHook(() => usePointerSuppression());
 
     renderPalette();
     const input = getInput();
