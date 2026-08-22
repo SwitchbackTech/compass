@@ -12,8 +12,7 @@ import { getEventRepositorySource } from "./event.repository.util";
  * hooks re-key (and thus refetch from the correct source) when auth state flips.
  *
  * `refreshEventRepositorySource` must be called at every source transition; the
- * remembered session flag lets callers that don't know the session state (e.g.
- * `markBackendUnavailable`) recompute without passing one.
+ * remembered session flag lets auth-side callers recompute without passing it.
  *
  * Related: docs/frontend/frontend-runtime-flow.md
  */
@@ -21,9 +20,8 @@ let lastSessionExists = false;
 let hasComputed = false;
 
 // Seeded with a placeholder; the real source is computed lazily on first use.
-// Computing at module-init would deadlock: backend-unavailable-error.util imports
-// this module, so evaluating getEventRepositorySource here reads that module's
-// availability flag before it finishes initializing (temporal dead zone).
+// Computing at module-init would read remembered authentication before the
+// application has initialized it, so resolve the source lazily instead.
 const sourceStore = createExternalStore<EventRepositorySource>("local");
 
 /**

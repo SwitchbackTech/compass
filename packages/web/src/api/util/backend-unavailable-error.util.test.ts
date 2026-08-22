@@ -1,12 +1,6 @@
 import { Status } from "@core/errors/status.codes";
 import { type ApiError, type ApiResponse } from "../api.types";
-import {
-  isBackendUnavailable,
-  isBackendUnavailableError,
-  markBackendAvailable,
-  markBackendUnavailable,
-  resetBackendAvailabilityForTests,
-} from "./backend-unavailable-error.util";
+import { isBackendUnavailableError } from "./backend-unavailable-error.util";
 
 /** Mirrors what `createApiError` builds for a response the backend/proxy returned. */
 const createApiErrorWithStatus = (status: number, data?: unknown): ApiError => {
@@ -15,10 +9,6 @@ const createApiErrorWithStatus = (status: number, data?: unknown): ApiError => {
   error.response = { status, data } as ApiResponse<unknown>;
   return error;
 };
-
-beforeEach(() => {
-  resetBackendAvailabilityForTests();
-});
 
 describe("isBackendUnavailableError", () => {
   it("detects API errors with no backend response", () => {
@@ -107,21 +97,5 @@ describe("isBackendUnavailableError", () => {
       false,
     );
     expect(isBackendUnavailableError("not an error")).toBe(false);
-  });
-});
-
-describe("backend availability", () => {
-  it("tracks when the backend is unavailable", () => {
-    markBackendUnavailable();
-
-    expect(isBackendUnavailable()).toBe(true);
-  });
-
-  it("clears unavailable state when the backend responds", () => {
-    markBackendUnavailable();
-
-    markBackendAvailable();
-
-    expect(isBackendUnavailable()).toBe(false);
   });
 });

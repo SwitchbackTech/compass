@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { type CalendarId } from "@core/types/domain-primitives";
+import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
@@ -18,6 +19,13 @@ const EVENT_QUERY_CACHE_OPTIONS = {
   // "always": staleTime would otherwise skip focus refetch for 2 minutes and
   // leave a missed SSE/sleep gap on screen.
   refetchOnWindowFocus: "always" as const,
+  // Event reads are the calendar's primary content. A short proxy restart or
+  // Wi-Fi transition should recover in place instead of replacing cached
+  // cloud data with an empty IndexedDB result and leaving the query idle.
+  retry: (failureCount: number, error: unknown) =>
+    failureCount < 3 && isBackendUnavailableError(error),
+  retryDelay: (attemptIndex: number) =>
+    Math.min(1000 * 2 ** attemptIndex, 4000),
 };
 
 export type EventsQueryArgs = {
