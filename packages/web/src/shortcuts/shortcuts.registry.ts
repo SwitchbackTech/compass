@@ -98,6 +98,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Scroll grid down",
     section: "navigate",
   },
+  {
+    id: "nav-scroll-hour-up",
+    keys: caps("Alt+ArrowUp"),
+    label: "Scroll grid up one hour",
+    section: "navigate",
+  },
+  {
+    id: "nav-scroll-hour-down",
+    keys: caps("Alt+ArrowDown"),
+    label: "Scroll grid down one hour",
+    section: "navigate",
+  },
 
   // Navigate - View switchers (all views)
   {
