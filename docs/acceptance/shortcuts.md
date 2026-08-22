@@ -16,7 +16,7 @@ Use this guide to validate:
 - navigating between views with the keyboard (D, W)
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
-- scrolling the timed grid with PageUp / PageDown, including while an event is focused
+- scrolling the timed grid with PageUp / PageDown and Alt+ArrowUp / Alt+ArrowDown, including while an event is focused
 - opening and using the command palette (Cmd+K), including undo/redo rows
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
@@ -343,24 +343,26 @@ All view-navigation and action shortcuts are suppressed when the user is focused
 
 ---
 
-## Scenario 15: Scroll The Timed Grid With PageUp / PageDown
+## Scenario 15: Scroll The Timed Grid With PageUp / PageDown And Alt+Arrows
 
 ### UX
 
-PageUp and PageDown always scroll the timed grid by one viewport, even when focus is on an event card, the sidebar, or another control. Arrow keys still move event focus; J/K still change the visible day or week. The shortcuts do not fire while typing in an input.
+PageUp and PageDown always scroll the timed grid by one viewport. Alt+ArrowUp and Alt+ArrowDown pan it by one hour. Both work even when focus is on an event card, the sidebar, or another control. Bare arrows still move event focus; J/K still change the visible day or week. The shortcuts do not fire while typing in an input.
 
 ### Steps
 
 1. Navigate to `/week` (or `/day`).
 2. Click an event so it is focused.
 3. Press PageDown, then PageUp.
-4. Open an event form, focus the title, and press PageDown.
+4. Press Alt+ArrowDown, then Alt+ArrowUp (Option+Arrow on Mac).
+5. Open an event form, focus the title, and press PageDown, then Alt+ArrowDown.
 
 ### Expected Results
 
-- PageDown moves the timed grid later in the day; PageUp moves it earlier.
-- The focused event does not change solely because of PageUp / PageDown.
-- PageDown does nothing while the title input is focused.
+- PageDown moves the timed grid later in the day by one viewport; PageUp moves it earlier by one viewport.
+- Alt+ArrowDown moves the timed grid later by one hour; Alt+ArrowUp moves it earlier by one hour.
+- The focused event does not change solely because of these scroll shortcuts.
+- PageDown and Alt+ArrowDown do nothing while the title input is focused.
 
 ---
 
@@ -384,4 +386,5 @@ If time is limited, run these checks before shipping shortcut-related changes:
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips.
 16. Mouse clicks, right-clicks, and double-clicks are inert everywhere; a blocked click shows the keyboard-only hint. `M` opens the focused event's menu; `F` focuses the newest notice.
-17. PageUp / PageDown scroll the timed grid in Day and Week view even when an event is focused; they do not fire in a text input.
+17. PageUp / PageDown scroll the timed grid by one viewport in Day and Week view even when an event is focused; they do not fire in a text input.
+18. Alt+ArrowUp / Alt+ArrowDown pan the timed grid by one hour in Day and Week view even when an event is focused; they do not fire in a text input.
