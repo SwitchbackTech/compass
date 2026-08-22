@@ -4,10 +4,16 @@ import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
+  selectLatestPointerAttempt,
   selectPointerBlockPulse,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import {
+  selectEventJumpPointerHintKey,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 const HINT_VISIBLE_MS = 2500;
 const HINT_BRIEF_MS = 400;
@@ -32,12 +38,15 @@ const writeHintCount = (count: number) => {
 
 /**
  * Teaches instead of silently ignoring: when a mouse click is blocked, a
- * transient pill explains that Compass is keyboard-only and points at the
- * legend. Mounted in RootShell so it shows with the sidebar closed too.
+ * transient pill explains the exact keyboard path for recognized targets and
+ * falls back to the legend while coverage is expanded. Mounted in RootShell
+ * so it shows with the sidebar closed too.
  * Top-center to stay clear of the Up Next banner's bottom-center spot.
  */
 export const PointerHint: FC = () => {
   const pulse = usePointerBlockStore(selectPointerBlockPulse);
+  const attempt = usePointerBlockStore(selectLatestPointerAttempt);
+  const eventJumpKey = useEventJumpStore(selectEventJumpPointerHintKey);
   const showcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   const [isVisible, setIsVisible] = useState(false);
   const [isBrief, setIsBrief] = useState(false);
@@ -68,6 +77,25 @@ export const PointerHint: FC = () => {
     >
       {showcaseActive ? (
         "Keyboard only. Follow the keys on screen."
+      ) : attempt?.actionId === POINTER_ACTIONS.sidebarClose ? (
+        <>
+          Press <kbd className="c-keycap">]</kbd> to close the sidebar.
+        </>
+      ) : attempt?.actionId === POINTER_ACTIONS.sidebarOpen ? (
+        <>
+          Press <kbd className="c-keycap">]</kbd> to open the sidebar.
+        </>
+      ) : attempt?.actionId === POINTER_ACTIONS.eventOpen ? (
+        eventJumpKey ? (
+          <>
+            Press <kbd className="c-keycap">{eventJumpKey}</kbd>, then{" "}
+            <kbd className="c-keycap">Enter</kbd> to open this event.
+          </>
+        ) : (
+          <>
+            Press <kbd className="c-keycap">S</kbd> to reveal event shortcuts.
+          </>
+        )
       ) : isBrief ? (
         "Keyboard only."
       ) : (

@@ -10,6 +10,7 @@ import {
   keyboardKey,
   normalizedKeyboardKey,
 } from "@web/shortcuts/is-bare-letter-key";
+import { POINTER_EVENT_JUMP_REQUEST } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   assignDayJumpKeys,
@@ -371,9 +372,30 @@ export function useShiftHoldEventHints({
       if (isActiveRef.current) deactivate();
     };
 
+    const onPointerEventJumpRequest = (event: Event) => {
+      if (isAppLocked()) return;
+      const eventId = (event as CustomEvent<{ eventId?: string }>).detail
+        ?.eventId;
+      if (!eventId) return;
+      const assignments = rebuildAssignments();
+      const assignment = assignments.find((item) => item.eventId === eventId);
+      if (!assignment) return;
+
+      isActiveRef.current = true;
+      bufferRef.current = "";
+      eventJumpActions.setActive(true);
+      eventJumpActions.setActiveDayKeys([assignment.dayKey]);
+      eventJumpActions.setPointerHintKey(assignment.hint.toUpperCase());
+      setHints(toActiveHints(assignments, visibleByIdRef.current));
+    };
+
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("blur", onBlur);
+    document.addEventListener(
+      POINTER_EVENT_JUMP_REQUEST,
+      onPointerEventJumpRequest,
+    );
 
     return () => {
       clearAmbiguousCommitTimer();
@@ -381,6 +403,10 @@ export function useShiftHoldEventHints({
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener(
+        POINTER_EVENT_JUMP_REQUEST,
+        onPointerEventJumpRequest,
+      );
       if (isActiveRef.current) {
         eventJumpActions.reset();
       }

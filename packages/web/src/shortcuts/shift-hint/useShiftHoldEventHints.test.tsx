@@ -3,6 +3,7 @@ import { EventIdSchema } from "@core/types/domain-primitives";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
+import { POINTER_EVENT_JUMP_REQUEST } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -140,6 +141,37 @@ describe("useShiftHoldEventHints", () => {
       expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
     );
     expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
+  it("turns a blocked event click into a directly usable event sequence", () => {
+    const { focus, result } = mountHints();
+
+    act(() => {
+      document.dispatchEvent(
+        new CustomEvent(POINTER_EVENT_JUMP_REQUEST, {
+          detail: { eventId: EVENT_B },
+        }),
+      );
+    });
+
+    expect(useEventJumpStore.getState()).toMatchObject({
+      isActive: true,
+      pointerHintKey: "W2",
+    });
+    expect(result.current.hints.map((hint) => hint.hint)).toEqual([
+      "w1",
+      "w2",
+      "r1",
+    ]);
+
+    act(() => {
+      dispatch("keydown", "w");
+      dispatch("keydown", "2");
+    });
+
+    expect(focus).toHaveBeenLastCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
   });
 
   it("does not activate on bare Shift or Shift+Tab", () => {

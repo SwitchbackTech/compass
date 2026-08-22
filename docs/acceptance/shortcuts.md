@@ -303,18 +303,21 @@ Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 
 ### UX
 
-Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do nothing anywhere in the app (scroll and hover still work). A blocked click shows a transient hint pointing at the `?` legend. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
+Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do not perform the clicked action (scroll and hover still work). A blocked click on a known action shows a transient, contextual hint with the keyboard path for that action. Clicking an event also activates its jump assignments, so the displayed event token works immediately without first pressing `S`. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
 
 ### Steps
 
 1. Navigate to `/week` with at least one event visible.
-2. Try clicking an event with the mouse; try right-clicking it.
-3. Use `U` / arrows / `Enter` to open an event with the keyboard.
-4. Tab to any native button and press Enter.
+2. Click an event, note its contextual event token, type that token, and press Enter.
+3. Close the form, then click the sidebar toggle and press the suggested `]` key.
+4. Try right-clicking an event.
+5. Tab to any native button and press Enter.
 
 ### Expected Results
 
-- Clicks do not open events or focus controls; a "Compass is keyboard only" hint appears briefly.
+- Clicking an event does not open or focus it, but jump chips appear and the hint identifies that event's exact token plus `Enter`; the shown sequence opens the event without an initial `S`.
+- Clicking either sidebar control does not toggle the sidebar; the hint says to press `]` and uses open/close language matching the current state.
+- Unannotated controls retain the generic keyboard-only fallback while contextual coverage is expanded.
 - Right-click does not open the context menu; `M` (or Shift+F10) on a focused event does.
 - Keyboard shortcuts and Enter/Space activation of buttons continue to work.
 - `F` focuses the newest action toast or banner; Tab moves within it, Escape dismisses.

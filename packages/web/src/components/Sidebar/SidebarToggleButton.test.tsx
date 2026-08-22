@@ -31,6 +31,10 @@ describe("SidebarToggleButton", () => {
 
     render(<SidebarToggleButton />, { wrapper });
 
+    expect(
+      screen.getByRole("button", { name: "Open sidebar" }),
+    ).toHaveAttribute("data-pointer-action", "sidebar.open");
+
     await user.click(screen.getByRole("button", { name: "Open sidebar" }));
 
     expect(
@@ -44,6 +48,10 @@ describe("SidebarToggleButton", () => {
     viewActions.setSidebarOpen(true);
 
     render(<SidebarToggleButton />, { wrapper });
+
+    expect(
+      screen.getByRole("button", { name: "Close sidebar" }),
+    ).toHaveAttribute("data-pointer-action", "sidebar.close");
 
     await user.click(screen.getByRole("button", { name: "Close sidebar" }));
 
