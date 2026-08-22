@@ -4,10 +4,10 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { gridEventDraftToGridEvent } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { useDraftContext } from "./context/useDraftContext";
 import { getActiveTimedDraftDeckLayout } from "./grid/activeTimedDraftDeckLayout";
 import { GridDraft } from "./grid/GridDraft";
 import { getRecurringDraftPreviews } from "./grid/getRecurringDraftPreviews";
@@ -22,11 +22,8 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { state } = useDraftContext();
-  const { draft } = state;
+  const draft = useDraftStore(selectGridDraft);
 
-  // Direct GridEventDraft → GridEvent for deck layout / recurrence previews.
-  // Cards still consume GridEvent; this skips the CompassEvent bridge.
   const draftGridEvent: GridEvent | null = useMemo(
     () => (draft ? gridEventDraftToGridEvent(draft) : null),
     [draft],
@@ -72,6 +69,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     <GridDraft
       activeAllDayDraftEvent={activeAllDayDraftEvent}
       deckLayout={deckLayout}
+      draft={draft}
       measurements={measurements}
       recurringPreviews={recurringPreviews}
       weekProps={weekProps}

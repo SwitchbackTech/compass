@@ -22,7 +22,6 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
@@ -160,40 +159,22 @@ const createAllDayEvent = (
 const renderMainGridEvents = () =>
   render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: { stopDragging: mock(), stopResizing: mock() },
-            state: {},
-          } as never
-        }
-      >
-        <MainGridEvents
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-      </DraftContext.Provider>
+      <MainGridEvents
+        measurements={measurements}
+        weekProps={createWeekProps()}
+      />
     </Provider>,
   );
 
 const renderAllDayEvents = () =>
   render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: { stopDragging: mock(), stopResizing: mock() },
-            state: {},
-          } as never
-        }
-      >
-        <AllDayEvents
-          measurements={measurements}
-          queryEndOfView={startOfView.add(6, "day").endOf("day")}
-          queryStartOfView={startOfView}
-          weekDays={weekDaysInView}
-        />
-      </DraftContext.Provider>
+      <AllDayEvents
+        measurements={measurements}
+        queryEndOfView={startOfView.add(6, "day").endOf("day")}
+        queryStartOfView={startOfView}
+        weekDays={weekDaysInView}
+      />
     </Provider>,
   );
 

@@ -27,7 +27,6 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   createGridEventDraft,
   getGridDraftId,
-  gridEventDraftToSchemaEvent,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import {
@@ -239,10 +238,7 @@ const setDayEvents = (events: CompassEvent[]) => {
   seededEvents = events.map(toStrictEvent);
 };
 
-const getDraft = () => {
-  const { gridDraft } = useDraftStore.getState();
-  return gridDraft ? gridEventDraftToSchemaEvent(gridDraft) : null;
-};
+const getDraft = () => useDraftStore.getState().gridDraft;
 const getGridDraft = () => useDraftStore.getState().gridDraft;
 const getIsFormOpen = () => selectIsEventFormOpen(useDraftStore.getState());
 
@@ -500,7 +496,7 @@ describe("DayCalendarGrid", () => {
     await user.keyboard("{Enter}");
 
     await waitFor(() => {
-      expect(getDraft()?._id).toBe(event._id ?? undefined);
+      expect(getGridDraftId(getDraft()!)).toBe(event._id ?? undefined);
     });
     expect(getIsFormOpen()).toBe(true);
   });

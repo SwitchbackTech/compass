@@ -30,8 +30,44 @@ describe("draftActions.startGridDraft", () => {
       activity: "gridClick",
       eventType: "allday",
       isDrafting: true,
-      isFormOpen: false,
+      isFormOpen: true,
     });
+  });
+
+  it("keeps the form closed for keyboard place-create", () => {
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+  });
+
+  it("keeps the form closed for event right-click", () => {
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+
+    draftActions.startGridDraft({ activity: "eventRightClick", draft });
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+  });
+
+  it("opens the form for keyboard edit", () => {
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
   });
 });
 
@@ -39,12 +75,13 @@ describe("draftActions.setGridDraft", () => {
   const timedDraft = (start: string, end: string) =>
     createGridEventDraft(timedGridSchedule(new Date(start), new Date(end)));
 
-  // Drag-creation calls setGridDraft on every mousemove, so it has to leave the
-  // gesture's own status alone: bumping `activity` would break the consumers
-  // that branch on it, and flipping `isFormOpen` would pop the form mid-drag.
+  // Keyboard place-create and form-field edits call setGridDraft on every
+  // change, so it has to leave the gesture's own status alone: bumping
+  // `activity` would break the consumers that branch on it, and flipping
+  // `isFormOpen` would pop the form mid-place.
   it("carries activity and isFormOpen through untouched", () => {
     draftActions.startGridDraft({
-      activity: "creating",
+      activity: "keyboardPlace",
       draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
     });
 
@@ -57,7 +94,7 @@ describe("draftActions.setGridDraft", () => {
     const state = useDraftStore.getState();
     expect(selectGridDraft(state)).toBe(next);
     expect(state.status).toMatchObject({
-      activity: "creating",
+      activity: "keyboardPlace",
       eventType: "timed",
       isDrafting: true,
       isFormOpen: false,
@@ -68,7 +105,7 @@ describe("draftActions.setGridDraft", () => {
   // selectDraftStatus subscriber for a value that never changed.
   it("keeps the same status reference when nothing about it changed", () => {
     draftActions.startGridDraft({
-      activity: "creating",
+      activity: "keyboardPlace",
       draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
     });
     const statusBefore = useDraftStore.getState().status;
@@ -82,7 +119,7 @@ describe("draftActions.setGridDraft", () => {
 
   it("resets status when the draft is cleared", () => {
     draftActions.startGridDraft({
-      activity: "creating",
+      activity: "keyboardPlace",
       draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
     });
 

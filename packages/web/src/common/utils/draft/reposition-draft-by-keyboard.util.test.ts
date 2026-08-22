@@ -66,7 +66,7 @@ describe("repositionDraftByKeyboard", () => {
 
     expect(
       repositionDraftByKeyboard({
-        activity: "dnd",
+        activity: "eventRightClick",
         draft,
         key: "ArrowDown",
       }),

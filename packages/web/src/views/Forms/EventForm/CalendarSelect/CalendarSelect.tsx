@@ -83,7 +83,7 @@ export const CalendarSelect = ({
   // A fresh create-draft has no calendarId yet; showing/selecting the
   // eventual default target here (rather than a blank control) is purely a
   // display default - it doesn't write to the draft until the user actually
-  // picks something. useSaveEventForm.ts/useDraftActions.ts fall back to the
+  // picks something. useSaveEventForm.ts falls back to the
   // same default target at submit time if the user never touches this.
   const defaultCalendar = useDefaultTargetCalendar(writableCalendars) ?? null;
   const displayedCalendar = selectedCalendar ?? defaultCalendar;

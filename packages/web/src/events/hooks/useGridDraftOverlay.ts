@@ -1,16 +1,15 @@
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import { gridEventDraftToGridEvent } from "@web/events/grid-event-draft.adapter";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 
-export function useGridDraftSchemaOverlay(): CompassEvent | null {
+export function useGridDraftOverlay(): GridEvent | null {
   const gridDraft = useDraftStore(selectGridDraft);
-  return gridDraft ? gridEventDraftToSchemaEvent(gridDraft) : null;
+  return gridDraft ? gridEventDraftToGridEvent(gridDraft) : null;
 }
 
 export function mergeGridEventWithDraftOverlay(
   event: GridEvent,
-  draft: CompassEvent | null,
+  draft: GridEvent | null,
 ): GridEvent {
   if (!draft || event._id !== draft._id) {
     return event;

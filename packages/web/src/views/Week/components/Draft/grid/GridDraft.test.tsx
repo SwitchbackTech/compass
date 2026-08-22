@@ -8,14 +8,10 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { DECK_MIN_WIDTH } from "@web/grid/grid.constants";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GridDraft } from "./GridDraft";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
-// The interactive draft GridDraft.tsx reads from context — always a
-// not-yet-saved "create" GridEventDraft in these fixtures (none of these
-// tests exercise editing an existing event).
 const createDraft = (
   overrides: {
     endDate?: string;
@@ -46,10 +42,6 @@ const createDraft = (
   return { ...draft, values: { ...draft.values, title } };
 };
 
-// activeAllDayDraftEvent/recurringPreviews are still GridEvent-shaped
-// props (out of this phase's scope — the wider grid *renderer* conversion),
-// so they need their own GridEvent-shaped fixture, independent of the
-// interactive GridEventDraft above.
 const createSchemaGridEvent = (
   overrides: Partial<GridEvent> = {},
 ): GridEvent => ({
@@ -89,40 +81,22 @@ const renderGridDraft = ({
   deckLayout?: { groupSize: number; order: number } | null;
   draft?: GridEventDraft;
   recurringPreviews?: GridEvent[];
-} = {}) => {
-  const value = {
-    actions: {
-      discard: mock(),
-      repositionDraftByKeyboard: mock(() => true),
-      startDragging: mock(),
-      startResizing: mock(),
-    },
-    state: {
-      draft,
-      dragOffset: { x: 0, y: 0 },
-      isDragging: false,
-      isFormOpen: true,
-      isResizing: false,
-    },
-  } as never;
-
-  return render(
-    <DraftContext.Provider value={value}>
-      <GridDraft
-        activeAllDayDraftEvent={activeAllDayDraftEvent}
-        deckLayout={deckLayout}
-        measurements={{
-          allDayRow: null,
-          colWidths: [100, 100, 100, 100, 100, 100, 100],
-          hourHeight: 48,
-          mainGrid: null,
-        }}
-        recurringPreviews={recurringPreviews}
-        weekProps={createWeekProps()}
-      />
-    </DraftContext.Provider>,
+} = {}) =>
+  render(
+    <GridDraft
+      activeAllDayDraftEvent={activeAllDayDraftEvent}
+      deckLayout={deckLayout}
+      draft={draft}
+      measurements={{
+        allDayRow: null,
+        colWidths: [100, 100, 100, 100, 100, 100, 100],
+        hourHeight: 48,
+        mainGrid: null,
+      }}
+      recurringPreviews={recurringPreviews}
+      weekProps={createWeekProps()}
+    />,
   );
-};
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -206,7 +180,6 @@ describe("GridDraft", () => {
       ],
     });
 
-    // The interactive draft plus one card per preview occurrence.
     expect(
       screen.getAllByRole("button", { name: /Timed event: Planning/ }),
     ).toHaveLength(3);

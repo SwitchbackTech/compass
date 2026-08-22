@@ -9,7 +9,7 @@ import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
-import { dayEventTargeting } from "@web/views/Day/interaction/targeting/day-event.targeting";
+import { dayEventTargeting } from "@web/views/Day/interaction/registry/day-event.registry";
 
 /**
  * Day-view edit shortcuts: Delete, Mod+D, Shift+arrows (nudge / day-move),

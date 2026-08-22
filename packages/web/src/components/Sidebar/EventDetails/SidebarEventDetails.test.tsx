@@ -41,7 +41,7 @@ describe("SidebarEventDetails", () => {
       start: new Date("2026-05-20"),
       end: new Date("2026-05-21"),
     });
-    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
 
     render(<SidebarEventDetails />);
 

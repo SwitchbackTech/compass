@@ -9,10 +9,8 @@ import { draftActions } from "@web/events/stores/draft.store";
  * form. Cards are projections of `weekEvents`, so the draft is rebuilt from
  * the source event they were derived from.
  *
- * Always startGridDraft, never `start`: `start` leaves gridDraft null, which
- * renders the form empty and strands arrow-key repositioning (it reads the
- * draft's own schedule). startGridDraft also derives eventType from the
- * schedule, so neither caller passes a category.
+ * startGridDraft derives eventType from the schedule, so neither caller
+ * passes a category. keyboardEdit and gridClick both open the form.
  */
 export const useGridEventDraftHandlers = (weekEvents: Event[]) => {
   const gridDraftFor = useCallback(
@@ -44,7 +42,6 @@ export const useGridEventDraftHandlers = (weekEvents: Event[]) => {
       if (!draft) return;
 
       draftActions.startGridDraft({ activity: "gridClick", draft });
-      draftActions.setFormOpen(true);
     },
     [gridDraftFor],
   );

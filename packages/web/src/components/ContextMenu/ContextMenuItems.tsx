@@ -206,9 +206,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     duplicate: () => {
       duplicateEvent();
     },
-    // Right-click already seeded `gridDraft` via startGridDraft. Form open is
-    // store-owned; Week's Draft hydrates the local portal draft from the store
-    // when isFormOpen flips (handleChange skips eventRightClick on purpose).
+    // Right-click seeds gridDraft with the form closed; Edit opens it.
     edit: () => {
       draftActions.setFormOpen(true);
     },
