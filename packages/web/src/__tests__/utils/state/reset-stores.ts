@@ -4,7 +4,6 @@
  * test isolation comes from resetting them between tests instead of building
  * a fresh store per render.
  */
-import { resetBackendAvailabilityForTests } from "@web/api/util/backend-unavailable-error.util";
 import {
   initialUserMetadataState,
   useUserMetadataStore,
@@ -55,12 +54,6 @@ const storeResets: StoreReset[] = [
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
   recurrenceScopeOpportunityActions.reset,
-  // Order matters for this pair: the availability flag must be cleared
-  // BEFORE the source store recomputes, or a test that tripped
-  // markBackendUnavailable() leaves every later file's repository source
-  // stuck on "local" (fetch failures are tolerated by BaseApi, so the
-  // poisoning is silent and only surfaces under CI's file ordering).
-  resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
   // Storage itself is cleared by resetBrowserState() (test-lifecycle.ts)
   // before this runs; this just resyncs the module-singleton store to match.
