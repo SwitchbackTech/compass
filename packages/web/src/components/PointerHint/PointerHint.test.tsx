@@ -79,7 +79,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      eventJumpActions.setPointerHintKey("W2");
+      eventJumpActions.setPointerHint({ eventId: "event-1", key: "W2" });
       pointerBlockActions.pulseBlockedClick({
         actionId: POINTER_ACTIONS.eventOpen,
         eventId: "event-1",
@@ -101,5 +101,20 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Keyboard only.");
     expect(screen.getByRole("status")).not.toHaveTextContent("Press");
+  });
+
+  it("keeps the contextual sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.sidebarClose,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press ] to close the sidebar.",
+    );
   });
 });

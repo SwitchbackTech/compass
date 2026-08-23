@@ -338,7 +338,19 @@ export function useShiftHoldEventHints({
             (assignment) => assignment.eventId === match.pendingExactEventId,
           );
           if (exact) {
-            scheduleAmbiguousCommit(exact.eventId, exact.dayKey, match.buffer);
+            // The advertised token plus Enter should not wait 400ms just
+            // because a longer sibling exists (W2 vs W20).
+            if (
+              exact.eventId === useEventJumpStore.getState().pointerHintEventId
+            ) {
+              commitFocus(exact.eventId, exact.dayKey, match.buffer);
+            } else {
+              scheduleAmbiguousCommit(
+                exact.eventId,
+                exact.dayKey,
+                match.buffer,
+              );
+            }
           }
         } else {
           clearAmbiguousCommitTimer();
@@ -356,7 +368,18 @@ export function useShiftHoldEventHints({
         );
         // Keep chips for the selected day so a following digit can refine.
         publishFiltered(match.dayPrefix);
-        focusEvent(match.firstEventId);
+        const pointerHintEventId =
+          useEventJumpStore.getState().pointerHintEventId;
+        const keepClickedEvent =
+          !!pointerHintEventId &&
+          assignmentsRef.current.some(
+            (item) =>
+              item.eventId === pointerHintEventId &&
+              item.dayKey === match.dayKey,
+          );
+        if (!keepClickedEvent) {
+          focusEvent(match.firstEventId);
+        }
         return;
       }
 
@@ -387,8 +410,15 @@ export function useShiftHoldEventHints({
       bufferRef.current = "";
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([assignment.dayKey]);
-      eventJumpActions.setPointerHintKey(assignment.hint.toUpperCase());
+      eventJumpActions.setPointerHint({
+        eventId: assignment.eventId,
+        key: assignment.hint.toUpperCase(),
+      });
       setHints(toActiveHints(assignments, visibleByIdRef.current));
+      // Focus now so the advertised Enter path works, including when this
+      // token is a prefix of a longer sibling (W2 vs W20) that would otherwise
+      // wait 400ms before focusing.
+      focusEvent(eventId);
     };
 
     document.addEventListener("keydown", onKeyDown, true);
@@ -440,6 +470,23 @@ export function useShiftHoldEventHints({
     );
     assignmentsRef.current = assignments;
     visibleByIdRef.current = visibleById;
+    const pointerHintEventId = useEventJumpStore.getState().pointerHintEventId;
+    if (pointerHintEventId) {
+      const assignment = assignments.find(
+        (item) => item.eventId === pointerHintEventId,
+      );
+      if (!assignment) {
+        eventJumpActions.setPointerHint(null);
+      } else {
+        const nextKey = assignment.hint.toUpperCase();
+        if (nextKey !== useEventJumpStore.getState().pointerHintKey) {
+          eventJumpActions.setPointerHint({
+            eventId: assignment.eventId,
+            key: nextKey,
+          });
+        }
+      }
+    }
     const source = bufferRef.current
       ? filterHintsByPrefix(assignments, bufferRef.current)
       : assignments;

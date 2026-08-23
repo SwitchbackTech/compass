@@ -27,7 +27,7 @@ test("mouse clicks are inert and show the keyboard-only hint", async ({
 
   await eventButton.click({ force: true });
   await expect(page.getByLabel("Title")).toHaveCount(0);
-  await expect(eventButton).not.toBeFocused();
+  await expect(eventButton).toBeFocused();
   await expect(page.locator("[data-pointer-hint]")).toBeVisible();
 
   // Clicking empty grid does not open a draft either.
@@ -35,8 +35,10 @@ test("mouse clicks are inert and show the keyboard-only hint", async ({
   await page.mouse.click(x, y);
   await expect(page.getByLabel("Title")).toHaveCount(0);
 
-  // The keyboard path still opens it.
-  await eventButton.focus();
+  // A blocked click still selects the event so Enter opens it without
+  // an extra keyboard focus step.
+  await eventButton.click({ force: true });
+  await expect(page.getByLabel("Title")).toHaveCount(0);
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Title")).toBeVisible();
 });

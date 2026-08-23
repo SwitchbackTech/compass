@@ -10,6 +10,8 @@ export type EventJumpState = {
   announcement: string;
   /** Assignment surfaced after a blocked click selects a specific event. */
   pointerHintKey: string | null;
+  /** Event that owns `pointerHintKey`, so rebuilds can refresh the token. */
+  pointerHintEventId: string | null;
 };
 
 export const initialEventJumpState: EventJumpState = {
@@ -17,6 +19,7 @@ export const initialEventJumpState: EventJumpState = {
   activeDayKeys: [],
   announcement: "",
   pointerHintKey: null,
+  pointerHintEventId: null,
 };
 
 export const useEventJumpStore = create<EventJumpState>()(
@@ -35,7 +38,9 @@ export const eventJumpActions = {
           ? useEventJumpStore.getState().activeDayKeys
           : [],
         announcement: isActive ? "Event jump on" : "Event jump off",
-        ...(!isActive ? { pointerHintKey: null } : {}),
+        ...(!isActive
+          ? { pointerHintKey: null, pointerHintEventId: null }
+          : {}),
       },
       false,
       { type: "setActive" },
@@ -54,10 +59,15 @@ export const eventJumpActions = {
       false,
       { type: "setActiveDayKeys" },
     ),
-  setPointerHintKey: (pointerHintKey: string | null) =>
-    useEventJumpStore.setState({ pointerHintKey }, false, {
-      type: "setPointerHintKey",
-    }),
+  setPointerHint: (pointerHint: { eventId: string; key: string } | null) =>
+    useEventJumpStore.setState(
+      {
+        pointerHintKey: pointerHint?.key ?? null,
+        pointerHintEventId: pointerHint?.eventId ?? null,
+      },
+      false,
+      { type: "setPointerHint" },
+    ),
   reset: () =>
     useEventJumpStore.setState(initialEventJumpState, false, { type: "reset" }),
 };
