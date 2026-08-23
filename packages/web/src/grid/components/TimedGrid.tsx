@@ -16,6 +16,7 @@ import { ScrollableRegion } from "@web/components/ScrollableRegion/ScrollableReg
 import { CalendarTimeColumn } from "@web/grid/components/CalendarTimeColumn";
 import {
   EVENT_WIDTH_MINIMUM,
+  TIMED_HOUR_SLOT_HEIGHT_CLASS,
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
@@ -129,7 +130,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
       >
         {getHourLabels(true).map((dayTime) => (
           <div
-            className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-border border-b"
+            className={`relative flex ${TIMED_HOUR_SLOT_HEIGHT_CLASS} w-full items-start border-border border-b`}
             key={dayTime}
             {...{ [DATA_TIMED_GRID_ROW]: "true" }}
           />

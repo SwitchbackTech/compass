@@ -1,9 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { DATA_TIMED_GRID_ROW } from "@web/common/constants/web.constants";
+import { TIMED_HOUR_SLOT_HEIGHT_CLASS } from "@web/grid/grid.constants";
 import { ALL_DAY_COLUMN_TINT_PERCENT } from "@web/grid/utils/allDayColumnTint.util";
-import { TimedGrid } from "./TimedGrid";
 import { describe, expect, it } from "bun:test";
+import "@testing-library/jest-dom";
+import { TimedGrid } from "./TimedGrid";
 
 const today = dayjs("2026-04-24T12:00:00.000Z");
 
@@ -60,5 +63,23 @@ describe("TimedGrid", () => {
     expect(column.style.backgroundColor).toContain(
       `${ALL_DAY_COLUMN_TINT_PERCENT}%`,
     );
+  });
+
+  it("uses the same hour-slot height for labels and timed grid rows", () => {
+    render(
+      <TimedGrid
+        eventsLayer={null}
+        timedColumnsRef={() => {}}
+        timedGridRef={() => {}}
+        today={today}
+        visibleDates={[{ date: today, key: "today" }]}
+      />,
+    );
+
+    const labelSlot = screen.getByText("1 AM").parentElement;
+    const hourRow = document.querySelector(`[${DATA_TIMED_GRID_ROW}]`);
+
+    expect(labelSlot).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
+    expect(hourRow).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
   });
 });
