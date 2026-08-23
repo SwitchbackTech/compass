@@ -142,6 +142,25 @@ describe("Tailwind theme CSS", () => {
     expect(
       readability(colors.onAccent, colors.accentSecondaryHover),
     ).toBeGreaterThanOrEqual(4.5);
+
+    const block = indexCss.match(/\[data-theme="light-beach"\]\s*\{([^}]*)\}/);
+    const body = block?.[1] ?? "";
+    const lightOnAccent = body.match(/--on-accent:\s*(#[0-9a-fA-F]{6});/)?.[1];
+    const lightSecondary = body.match(
+      /--accent-secondary:\s*(#[0-9a-fA-F]{6});/,
+    )?.[1];
+    const lightSecondaryHover = body.match(
+      /--accent-secondary-hover:\s*(#[0-9a-fA-F]{6});/,
+    )?.[1];
+    expect(lightOnAccent).toBeDefined();
+    expect(lightSecondary).toBeDefined();
+    expect(lightSecondaryHover).toBeDefined();
+    expect(readability(lightOnAccent!, lightSecondary!)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(
+      readability(lightOnAccent!, lightSecondaryHover!),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it("keeps lightColors hex values in sync with the light-beach block", () => {
