@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
@@ -98,7 +104,8 @@ describe("CalendarSelect", () => {
       .getAllByRole("option")
       .map((option) => option.textContent);
 
-    expect(optionNames).toEqual(["Personal (primary)", "Team"]);
+    // Trailing digit is the appended pick-key chip (1st, 2nd option).
+    expect(optionNames).toEqual(["Personal (primary)1", "Team2"]);
     expect(within(listbox).queryByText("Holidays")).not.toBeInTheDocument();
     expect(within(listbox).queryByText("Archived")).not.toBeInTheDocument();
   });
@@ -278,10 +285,63 @@ describe("CalendarSelect", () => {
     await openDropdown();
 
     // Alphabetically "Aardvark" sorts first, but it belongs to the newer
-    // account, so it comes second.
+    // account, so it comes second. Trailing digit is the pick-key chip.
     expect(
       screen.getAllByRole("option").map((option) => option.textContent),
-    ).toEqual(["Zebraold@example.com", "Aardvarknew@example.com"]);
+    ).toEqual(["Zebraold@example.com1", "Aardvarknew@example.com2"]);
+  });
+
+  it("picks a calendar by digit from the closed trigger without opening it", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const team = makeCalendar({ name: "Team" });
+    const onChange = mock();
+
+    renderCalendarSelect([primary, team], { onChange });
+
+    const button = screen.getByRole("combobox", { name: /calendar/i });
+    button.focus();
+    fireEvent.keyDown(button, { code: "Digit2", key: "2" });
+
+    expect(onChange).toHaveBeenCalledWith(team.id);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("picks a calendar by digit from the open list and shows per-option chips", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const team = makeCalendar({ name: "Team" });
+    const onChange = mock();
+
+    renderCalendarSelect([primary, team], { onChange });
+    await openDropdown();
+
+    expect(
+      within(
+        screen.getByRole("option", { name: "Personal (primary)" }),
+      ).getByText("1"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("option", { name: "Team" })).getByText("2"),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(screen.getByRole("listbox"), {
+      code: "Digit2",
+      key: "2",
+    });
+
+    expect(onChange).toHaveBeenCalledWith(team.id);
+  });
+
+  it("ignores an out-of-range digit", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const onChange = mock();
+
+    renderCalendarSelect([primary], { onChange });
+
+    const button = screen.getByRole("combobox", { name: /calendar/i });
+    button.focus();
+    fireEvent.keyDown(button, { code: "Digit9", key: "9" });
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("displays the user's starred calendar as the default target", async () => {

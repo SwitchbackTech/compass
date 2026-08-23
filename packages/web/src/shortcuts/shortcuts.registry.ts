@@ -241,6 +241,14 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
     when: { isFormOpen: true },
   },
+  // Not form-gated: the same digit pick also runs in the event context
+  // menu's color swatch strip, independent of whether the form is open.
+  {
+    id: "edit-pick-by-number",
+    keys: ["1-9", "0", "-", "="],
+    label: "Pick focused color or calendar",
+    section: "edit",
+  },
   {
     id: "edit-focus-prev",
     keys: [KEYMAP.moveFocus.hotkeys.up],
