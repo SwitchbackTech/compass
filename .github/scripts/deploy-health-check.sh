@@ -349,6 +349,67 @@ validate_backend_health() {
   check_passed "backend-health"
 }
 
+# The Sync service owns /sync/* -- Google's OAuth redirect (/sync/google) and
+# the push webhook (/sync/notifications/google). Those paths are reverse-proxied
+# by a Caddyfile that lives on the host and NOT in this repo, so an edit for an
+# unrelated reason can silently route them to the web app instead. That happened
+# on 2026-08-14 and went unnoticed for nine days: Google got 200 OK with the
+# SPA's HTML for every push, treated each as delivered, and never retried, so
+# real-time sync was dead fleet-wide and no user could connect a calendar.
+#
+# Both failure modes are invisible to every other check here -- the containers
+# are healthy and the API answers -- which is exactly why this one exists.
+#
+# The web app answers any path with 200 and text/html. Sync rejects a
+# notification carrying none of Google's headers with 400. So an html
+# content-type, or any status other than 400, means the route is misdirected.
+validate_sync_webhook_route() {
+  require_env FRONTEND_URL || return 1
+
+  local base probe method url out status ctype
+  base="${FRONTEND_URL%/}"
+
+  # Each probe is "METHOD URL": the webhook is a POST route and the OAuth
+  # callback a GET one, and hitting either with the wrong verb makes Express
+  # answer its own html 404, which looks exactly like the misroute we are
+  # testing for.
+  for probe in \
+    "POST $base/sync/notifications/google" \
+    "GET $base/sync/google"; do
+    method=${probe%% *}
+    url=${probe#* }
+
+    if is_local_url "$url" && [ -n "${SSH_TARGET:-}" ]; then
+      out=$(ssh_remote "curl -sS -X $method --max-time 20 -o /dev/null -w '%{http_code} %{content_type}' $(printf '%q' "$url")" 2>&1)
+    else
+      out=$(curl -sS -X "$method" --max-time 20 -o /dev/null -w '%{http_code} %{content_type}' "$url" 2>&1)
+    fi
+    if [ $? -ne 0 ]; then
+      printf 'curl failed for %s: %s\n' "$url" "$out" >&2
+      return 1
+    fi
+
+    status=${out%% *}
+    ctype=${out#* }
+
+    case "$ctype" in
+      text/html*)
+        printf 'the web app is answering %s (content-type %s): /sync/* is not proxied to the Sync service. Check the host Caddyfile for a `handle /sync/*` block.\n' "$url" "$ctype" >&2
+        return 1
+        ;;
+    esac
+
+    case "$url" in
+      */sync/notifications/google)
+        if [ "$status" != "400" ]; then
+          printf 'expected 400 from Sync at %s for a notification with no Google headers, got %s (content-type %s)\n' "$url" "$status" "$ctype" >&2
+          return 1
+        fi
+        ;;
+    esac
+  done
+}
+
 setup_ssh() {
   require_env SSH_HOST || return 1
   require_env SSH_USER || return 1
@@ -546,6 +607,7 @@ run_all_checks() {
     SUPPRESS_FRONTEND_FINISH=1 validate_frontend_version >/tmp/compass-frontend-version-check.log 2>&1 || true
   fi
   run_check "backend-health" validate_backend_health
+  run_check "sync-webhook-route" validate_sync_webhook_route
   run_check "compass-status" ssh_remote "cd ~/compass && ./compass status"
   run_check "compose-services" remote_check_stack
   run_check "compose-logs-readable" remote_check_logs

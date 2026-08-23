@@ -30,6 +30,7 @@ const sample = (): SyncHealthSnapshot => ({
     renewSoon: 1,
     expired: 0,
     missing: 2,
+    neverNotified: 3,
   },
   freshness: {
     sampleSize: 9,

@@ -31,6 +31,14 @@ export const SyncHealthSubscriptionCountsSchema = z.strictObject({
   renewSoon: z.number().int().nonnegative(),
   expired: z.number().int().nonnegative(),
   missing: z.number().int().nonnegative(),
+  // Resources holding a live subscription that have NEVER had a push
+  // notification delivered. The whole fleet sat at this number for at least
+  // nine days in August 2026 because the reverse proxy stopped routing
+  // /sync/* to the Sync service: Google got 200 OK with the web app's HTML,
+  // counted every push as delivered, and never retried. Nothing else went
+  // red — the reconcile sweep quietly absorbed the load and calendars just
+  // got slow. This is the number that makes that visible.
+  neverNotified: z.number().int().nonnegative(),
 });
 export type SyncHealthSubscriptionCounts = z.infer<
   typeof SyncHealthSubscriptionCountsSchema

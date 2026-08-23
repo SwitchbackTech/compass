@@ -140,29 +140,38 @@ async function summarizeSubscriptions(
   const collection = db.collection(SYNC_COLLECTIONS.syncResources);
   const eventsFilter = { resourceKind: "events" as const };
 
-  const [healthy, renewSoon, expired, missing] = await Promise.all([
-    collection.countDocuments({
-      ...eventsFilter,
-      subscriptionId: { $ne: null },
-      subscriptionExpiresAt: { $gte: renewBefore },
-    }),
-    collection.countDocuments({
-      ...eventsFilter,
-      subscriptionId: { $ne: null },
-      subscriptionExpiresAt: { $gte: now, $lt: renewBefore },
-    }),
-    collection.countDocuments({
-      ...eventsFilter,
-      subscriptionId: { $ne: null },
-      subscriptionExpiresAt: { $lt: now },
-    }),
-    collection.countDocuments({
-      ...eventsFilter,
-      subscriptionId: null,
-    }),
-  ]);
+  const [healthy, renewSoon, expired, missing, neverNotified] =
+    await Promise.all([
+      collection.countDocuments({
+        ...eventsFilter,
+        subscriptionId: { $ne: null },
+        subscriptionExpiresAt: { $gte: renewBefore },
+      }),
+      collection.countDocuments({
+        ...eventsFilter,
+        subscriptionId: { $ne: null },
+        subscriptionExpiresAt: { $gte: now, $lt: renewBefore },
+      }),
+      collection.countDocuments({
+        ...eventsFilter,
+        subscriptionId: { $ne: null },
+        subscriptionExpiresAt: { $lt: now },
+      }),
+      collection.countDocuments({
+        ...eventsFilter,
+        subscriptionId: null,
+      }),
+      // `$eq: null` matches a missing field too, which is what a resource that
+      // predates changeNotifiedAt looks like — deliberately counted, since such a
+      // resource has equally never been notified.
+      collection.countDocuments({
+        ...eventsFilter,
+        subscriptionId: { $ne: null },
+        changeNotifiedAt: null,
+      }),
+    ]);
 
-  return { healthy, renewSoon, expired, missing };
+  return { healthy, renewSoon, expired, missing, neverNotified };
 }
 
 async function summarizeFreshness(

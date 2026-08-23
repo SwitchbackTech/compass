@@ -132,6 +132,9 @@ describe("computeHealthSnapshot", () => {
     expect(snapshot.jobs.oldestDueAgeMs).toBe(15_000);
     expect(snapshot.subscriptions.healthy).toBe(1);
     expect(snapshot.subscriptions.missing).toBe(1);
+    // The subscribed resource in this fixture has no changeNotifiedAt, so it
+    // counts as never notified — the signal that push delivery is broken.
+    expect(snapshot.subscriptions.neverNotified).toBe(1);
     expect(snapshot.freshness.sampleSize).toBe(2);
     expect(snapshot.freshness.p50Ms).toBeGreaterThan(0);
     expect(snapshot.freshness.percentOver30s).toBeGreaterThan(0);
