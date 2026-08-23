@@ -19,6 +19,14 @@ export type ViewRegisteredEventTarget =
 export type ViewEventRegistry = EventRegistry<ViewInteractionEventType>;
 
 /**
+ * Marks a card that renders read-only (unwritable calendar or busy content).
+ * Those cards never enter the interaction registry - that absence is what
+ * stops the drag/resize engine from targeting them - so this attribute is the
+ * only way targeting can still find them for jump labels and focus.
+ */
+export const GRID_EVENT_READ_ONLY_ATTRIBUTE = "data-grid-event-readonly";
+
+/**
  * The `data-${viewName}-interaction-event-*` attribute names alone, with no
  * registry attached - for call sites (like stripping these attributes off a
  * cloned draft-event node) that need the naming scheme but have no reason to
@@ -86,10 +94,12 @@ export const createViewInteractionRegistry = (viewName: string) => {
   const getInteractionTargetAttributes = ({
     eventId,
     eventType,
+    isReadOnly = false,
   }: {
     eventId: string | undefined;
     eventType: ViewInteractionEventType;
-  }) => {
+    isReadOnly?: boolean;
+  }): Record<string, string> => {
     if (!eventId) {
       return {};
     }
@@ -97,13 +107,17 @@ export const createViewInteractionRegistry = (viewName: string) => {
     return {
       [idAttribute]: eventId,
       [typeAttribute]: eventType,
+      ...(isReadOnly ? { [GRID_EVENT_READ_ONLY_ATTRIBUTE]: "true" } : {}),
     };
   };
 
   const registry = createRegistry();
   const targeting = createGridEventTargeting({
+    eventIdAttribute: idAttribute,
+    eventTypeAttribute: typeAttribute,
+    isEventType: isViewInteractionEventType,
+    readOnlyAttribute: GRID_EVENT_READ_ONLY_ATTRIBUTE,
     registry,
-    targetSelector: `[${idAttribute}][${typeAttribute}]`,
   });
 
   const useRegistrationRef = ({

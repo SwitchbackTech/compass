@@ -22,10 +22,12 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import { GRID_EVENT_READ_ONLY_ATTRIBUTE } from "@web/grid/interaction/view-event-registry";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   weekEventRegistry,
+  weekEventTargeting,
 } from "@web/views/Week/interaction/registry/week-event.registry";
 import { AllDayEvents } from "../AllDayRow/AllDayEvents";
 import { MainGridEvents } from "./MainGridEvents";
@@ -190,6 +192,27 @@ describe("Week grid read-only interaction gate", () => {
     const card = screen.getByRole("button", { name: /shared meeting/i });
     expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
     expect(weekEventRegistry.resolve(event.id, "timed")).toBeNull();
+  });
+
+  it("marks a read-only timed event so keyboard navigation still reaches it", () => {
+    const readOnlyCalendar = makeCalendar();
+    seededCalendars = [readOnlyCalendar];
+    const event = createTimedEvent(readOnlyCalendar.id);
+    seededEvents = [event];
+
+    renderMainGridEvents();
+
+    const card = screen.getByRole("button", { name: /shared meeting/i });
+    expect(card).toHaveAttribute(GRID_EVENT_READ_ONLY_ATTRIBUTE, "true");
+    // jsdom lays nothing out, so stand in for the visibility check.
+    Object.defineProperty(card, "offsetParent", {
+      configurable: true,
+      get: () => document.body,
+    });
+
+    expect(
+      weekEventTargeting.listNavigableGridEventTargets().map((t) => t.eventId),
+    ).toEqual([event.id]);
   });
 
   it("keeps registering a writable-calendar timed event as an interaction target", () => {

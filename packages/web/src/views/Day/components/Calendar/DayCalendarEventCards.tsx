@@ -68,9 +68,10 @@ export const DayAllDayCalendarEvent = ({
         ? getDayInteractionTargetAttributes({
             eventId: event._id,
             eventType: "all-day",
+            isReadOnly,
           })
         : undefined,
-    [event._id, hasEventIdentity],
+    [event._id, hasEventIdentity, isReadOnly],
   );
   const position = getAllDayEventPosition(event, {
     columnIndex,
@@ -131,9 +132,10 @@ export const DayTimedCalendarEvent = ({
         ? getDayInteractionTargetAttributes({
             eventId: event._id,
             eventType: "timed",
+            isReadOnly,
           })
         : undefined,
-    [event._id, hasEventIdentity],
+    [event._id, hasEventIdentity, isReadOnly],
   );
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;

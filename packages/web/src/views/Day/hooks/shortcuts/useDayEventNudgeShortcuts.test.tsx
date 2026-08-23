@@ -31,7 +31,10 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
-import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
+import {
+  dayEventRegistry,
+  getDayInteractionTargetAttributes,
+} from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import {
   afterEach,
@@ -122,6 +125,28 @@ const focusCalendarTarget = (
   return button;
 };
 
+/** A read-only card: attributes stamped, deliberately never registered. */
+const addReadOnlyCalendarTarget = (
+  eventId: string,
+  eventType: "all-day" | "timed" = "timed",
+) => {
+  const button = document.createElement("button");
+  Object.defineProperty(button, "offsetParent", {
+    configurable: true,
+    get: () => document.body,
+  });
+  const attributes = getDayInteractionTargetAttributes({
+    eventId,
+    eventType,
+    isReadOnly: true,
+  });
+  for (const [key, value] of Object.entries(attributes)) {
+    button.setAttribute(key, value);
+  }
+  document.body.appendChild(button);
+  return button;
+};
+
 const renderEditShortcuts = ({
   allDayEvents = [],
   navigateToDate,
@@ -166,7 +191,7 @@ const renderEditShortcuts = ({
     markWrite: async () => {},
     reportError: () => {},
   };
-  renderHook(
+  const rendered = renderHook(
     () =>
       useDayEventNudgeShortcuts({
         allDayEvents,
@@ -180,7 +205,7 @@ const renderEditShortcuts = ({
       queryClient,
     },
   );
-  return { queryClient };
+  return { queryClient, rendered };
 };
 
 const offsetString = (date: Dayjs) =>
@@ -213,6 +238,21 @@ afterEach(() => {
 });
 
 describe("useDayEventNudgeShortcuts", () => {
+  it("labels a read-only event for event jump even though it never registers", () => {
+    const readOnlyButton = addReadOnlyCalendarTarget(TIMED_EVENT_ID);
+    const { rendered } = renderEditShortcuts();
+
+    act(() => {
+      pressKey("s");
+    });
+
+    // Compare ids, never the nodes: a failed toEqual on a jsdom element
+    // serializes the whole tree and eats the test process.
+    const hints = rendered.result.current.shiftHints;
+    expect(hints.map((hint) => hint.eventId)).toEqual([TIMED_EVENT_ID]);
+    expect(hints[0]?.element).toBe(readOnlyButton);
+  });
+
   it("moves the focused timed event 15 minutes earlier with Shift+ArrowUp", async () => {
     focusCalendarTarget(TIMED_EVENT_ID, "timed");
     const { queryClient } = renderEditShortcuts();
@@ -422,6 +462,28 @@ describe("useDayEventNudgeShortcuts", () => {
     pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(later);
+  });
+
+  it("focuses a read-only event with ArrowDown", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const readOnly = addReadOnlyCalendarTarget(LATER_TIMED_EVENT_ID);
+    earlier.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterTimedEvent] });
+
+    pressKey("ArrowDown");
+
+    expect(document.activeElement).toBe(readOnly);
+  });
+
+  it("navigates back off a focused read-only event with ArrowUp", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const readOnly = addReadOnlyCalendarTarget(LATER_TIMED_EVENT_ID);
+    readOnly.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterTimedEvent] });
+
+    pressKey("ArrowUp");
+
+    expect(document.activeElement).toBe(earlier);
   });
 
   it("focuses the chronologically next event with ArrowRight", () => {

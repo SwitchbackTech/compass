@@ -178,8 +178,12 @@ export function useGridEventEditShortcuts({
   repositionDraftByKey: (key: string) => boolean;
   targeting: {
     focus: (target: FocusableGridEventTarget) => void;
+    /** Registry-backed: the gate for any action that mutates the event. */
     getFocused: () => GridEventShortcutTarget | null;
-    listVisible: () => FocusableGridEventTarget[];
+    /** Also sees read-only cards - navigation only, never edits. */
+    getFocusedNavigable: () => FocusableGridEventTarget | null;
+    /** Also lists read-only cards - navigation only, never edits. */
+    listNavigable: () => FocusableGridEventTarget[];
   };
   timedEvents: GridEvent[];
 }) {
@@ -458,7 +462,9 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    if (targeting.getFocused() || useDraftStore.getState().gridDraft) {
+    // getFocusedNavigable, not getFocused: a focused read-only card is still a
+    // focused card, and the guard's job is to not drop a new draft under one.
+    if (targeting.getFocusedNavigable() || useDraftStore.getState().gridDraft) {
       return;
     }
 
@@ -592,16 +598,16 @@ export function useGridEventEditShortcuts({
               keyboardEvent.key === "ArrowLeft"
                 ? "previous"
                 : "next",
-            focused: targeting.getFocused(),
+            focused: targeting.getFocusedNavigable(),
             timedEvents,
-            visible: targeting.listVisible(),
+            visible: targeting.listNavigable(),
           })
         : getSpatiallyAdjacentTarget({
             allDayEvents,
             direction: SPATIAL_DIRECTION[keyboardEvent.key],
-            focused: targeting.getFocused(),
+            focused: targeting.getFocusedNavigable(),
             timedEvents,
-            visible: targeting.listVisible(),
+            visible: targeting.listNavigable(),
             weekDays: dayBoundary.weekDays,
           });
     if (!adjacent) return;

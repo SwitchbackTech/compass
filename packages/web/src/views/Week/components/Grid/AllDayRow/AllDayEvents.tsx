@@ -173,9 +173,10 @@ const AllDayEventItem = ({
         ? getWeekInteractionTargetAttributes({
             eventId: event._id,
             eventType: "all-day",
+            isReadOnly,
           })
         : undefined,
-    [event._id, hasEventIdentity],
+    [event._id, hasEventIdentity, isReadOnly],
   );
   return (
     <AllDayEventMemo
