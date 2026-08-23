@@ -1,8 +1,5 @@
-import { useSyncExternalStore } from "react";
 import { Status } from "@core/errors/status.codes";
 import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
-import { createExternalStore } from "@web/common/utils/external-store.util";
-import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type ApiError } from "../api.types";
 
 /**
@@ -15,8 +12,6 @@ const BACKEND_DOWN_STATUSES: number[] = [
   Status.SERVICE_UNAVAILABLE,
   Status.GATEWAY_TIMEOUT,
 ];
-
-const unavailableStore = createExternalStore(false);
 
 /**
  * The backend answers PROVIDER_FAILURE with a 502 (event.error.ts), so a
@@ -58,35 +53,4 @@ export function isBackendUnavailableError(error: unknown): boolean {
   }
 
   return isTransientBrowserNetworkMessage(error.message);
-}
-
-export function isBackendUnavailable(): boolean {
-  return unavailableStore.get();
-}
-
-/**
- * React hook: subscribe to backend availability so the UI can render off it.
- */
-export function useIsBackendUnavailable(): boolean {
-  return useSyncExternalStore(unavailableStore.subscribe, unavailableStore.get);
-}
-
-export function markBackendAvailable(): void {
-  // Runs on every successful request, so only do the transition work when the
-  // flag actually flips; the repository source only needs re-keying then.
-  if (!unavailableStore.get()) return;
-
-  unavailableStore.set(false);
-  // Source flips back to "remote"; re-key active queries.
-  refreshEventRepositorySource();
-}
-
-export function markBackendUnavailable(): void {
-  unavailableStore.set(true);
-  // Source flips to "local" once the backend is unavailable; re-key active queries.
-  refreshEventRepositorySource();
-}
-
-export function resetBackendAvailabilityForTests(): void {
-  unavailableStore.set(false);
 }
