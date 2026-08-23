@@ -339,6 +339,13 @@ function buildPostHogClient(config: SyncConfig): PostHogCaptureClient | null {
   });
 }
 
+// Consecutive health snapshots (5 min apart) that must all report a fully
+// unnotified fleet before the push-delivery alarm fires. Deliberately in
+// memory: a restart re-arming the hour is fine for a condition that persisted
+// for nine days, and it keeps a diagnostic counter out of the storage schema.
+const PUSH_SILENCE_ALERT_AFTER_SAMPLES = 12;
+let pushSilenceStreak = 0;
+
 function buildHealthSnapshotSweep(
   identity: ReturnType<typeof buildServiceIdentity>,
   mongo: SyncMongoService,
@@ -362,12 +369,25 @@ function buildHealthSnapshotSweep(
         // days in August 2026 with the number sitting at 425 of 425, because
         // the reverse proxy had stopped routing /sync/* here. A PostHog gauge
         // alone did not surface it, so say it in the log too.
+        //
+        // Only after the condition HOLDS, though. A single snapshot cannot
+        // tell a broken route from a quiet hour, and it is briefly true in two
+        // healthy situations: right after a route is repaired (nothing has
+        // changed at the provider yet), and on a fleet whose calendars simply
+        // sit idle. Firing on the first sample would have cried wolf on the
+        // very deploy that FIXED this. Requiring an hour of consecutive
+        // samples costs nothing against a nine-day outage.
         const { neverNotified, healthy, renewSoon } = snapshot.subscriptions;
         const live = healthy + renewSoon;
         if (live > 0 && neverNotified >= live) {
-          logger.error(
-            `Sync push delivery looks broken: all ${live} live subscription(s) have never received a notification. Check that the reverse proxy routes /sync/* to this service.`,
-          );
+          pushSilenceStreak += 1;
+          if (pushSilenceStreak === PUSH_SILENCE_ALERT_AFTER_SAMPLES) {
+            logger.error(
+              `Sync push delivery looks broken: all ${live} live subscription(s) have gone without a single notification for over an hour. Check that the reverse proxy routes /sync/* to this service.`,
+            );
+          }
+        } else {
+          pushSilenceStreak = 0;
         }
         return 1;
       },
