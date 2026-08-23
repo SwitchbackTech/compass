@@ -53,14 +53,6 @@ export type CalendarPullResult =
       // incrementally — initial import owns it until it produces one.
       status: "notImported";
       resource: SyncResourceRecord;
-    }
-  | {
-      // This calendar's cursor keeps expiring, so it is being held off. No
-      // provider call was made. The last repair already rebuilt the calendar
-      // from scratch, so the stored data is current — skipping costs freshness
-      // only for the hold-off window, not correctness.
-      status: "cursorBackoff";
-      resource: SyncResourceRecord;
     };
 
 // Apply the provider's incremental changes for one already-imported calendar.
@@ -104,16 +96,6 @@ export async function pullCalendarChanges(
   );
   if (resource.syncCursor === null) {
     return { status: "notImported", resource };
-  }
-
-  // Held off after repeated cursor expiries. Checked after markAttempt (so the
-  // resource still rotates to the back of the sweep ordering) and before the
-  // token fetch, so a held-off calendar costs no provider call at all.
-  if (
-    resource.cursorExpiredBackoffUntil !== null &&
-    resource.cursorExpiredBackoffUntil > now()
-  ) {
-    return { status: "cursorBackoff", resource };
   }
 
   // Read the change marker BEFORE the first provider read. Everything this pull

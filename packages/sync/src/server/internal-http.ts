@@ -16,10 +16,12 @@ const logger = Logger("sync:internal-http");
 // backend->Sync call arrives from one container ip and therefore shares a
 // single bucket: per-principal foreground refresh, the global change-feed
 // poll, connection-status checks, and the page-at-a-time event range drain.
-// 300/min did not - it sat about 1.3x idle load, so a couple of concurrent
-// users emptied the bucket and Sync 429ed the API, which surfaced to users as
-// 502/503 on reads and mutations (2026-08-23). Sized well above any legitimate
-// peak: a real runaway loop still trips it, normal traffic never does.
+// Measured idle load on prod is ~105/min, so the previous 300/min left under
+// 3x headroom on a value this comment calls a backstop — thin enough that a
+// handful of concurrent users would have started shedding load. To be clear
+// about what this did NOT cause: the 2026-08-23 502/503 bursts came from a
+// cursor-expiry repair storm stalling Sync, not from this limiter, which was
+// never observed to trip. Raised so it cannot become the next surprise.
 const INTERNAL_RATE_LIMIT_PER_MINUTE = 6_000;
 
 export const internalRateLimit: RequestHandler = rateLimit({
@@ -27,9 +29,9 @@ export const internalRateLimit: RequestHandler = rateLimit({
   limit: INTERNAL_RATE_LIMIT_PER_MINUTE,
   standardHeaders: true,
   legacyHeaders: false,
-  // Tripping this is never normal. Say so loudly: the previous limit throttled
-  // the API silently for days because express-rate-limit just returns 429 and
-  // the API only sees an opaque `unavailable`.
+  // Tripping this is never normal. Say so loudly: express-rate-limit otherwise
+  // just returns 429 and the API only ever sees an opaque `unavailable`, so a
+  // throttle is indistinguishable from Sync being down.
   handler: (req, res) => {
     logger.error(
       `Internal rate limit exceeded (${INTERNAL_RATE_LIMIT_PER_MINUTE}/min) for ${req.ip} on ${req.method} ${req.path}; the API is being throttled`,

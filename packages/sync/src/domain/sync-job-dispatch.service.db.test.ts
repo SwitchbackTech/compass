@@ -461,15 +461,31 @@ describe("dispatchSyncJob", () => {
     expect(held?.cursorExpiredBackoffUntil).toEqual(
       new Date(now().getTime() + 5 * 60_000),
     );
+  });
 
-    // Now within the hold-off: the pull settles without touching the provider.
-    const reader = alwaysExpired();
-    const dropped = await dispatchSyncJob(
+  // The behaviour the feature exists for, seeded directly rather than reached
+  // through three laps, so it still runs when the ladder above changes.
+  it("settles a pull inside the hold-off without touching the provider", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "stale-cursor");
+    await resources.recordCursorExpiry(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+      new Date(now().getTime() + 5 * 60_000),
+    );
+
+    const reader = new FakeReader(
+      [],
+      new ProviderEventReadError("cursorExpired", "gone"),
+    );
+    const outcome = await dispatchSyncJob(
       deps(reader),
       jobFor(resource, "incrementalPull"),
       now,
     );
-    expect(dropped.result).toBe("drop");
+
+    expect(outcome.result).toBe("drop");
     expect(reader.calls).toHaveLength(0);
   });
 

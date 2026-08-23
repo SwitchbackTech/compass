@@ -334,6 +334,30 @@ async function runSyncJob(
     };
   }
 
+  // Scheduling, not provider logic, so it sits here rather than inside the
+  // pull: a calendar whose cursor the provider keeps rejecting is held off from
+  // incremental pulls, because every expiry costs a full repair lap and some
+  // calendars never sustain a cursor at all. Only incrementalPull is gated --
+  // repair is what makes the data current again and must still run, and a
+  // bootstrapCatchup is finishing a one-time chain that should not stall.
+  // Stamp the attempt for the same reason the inactive drop above does.
+  if (
+    job.kind === "incrementalPull" &&
+    resource.cursorExpiredBackoffUntil !== null &&
+    resource.cursorExpiredBackoffUntil > now()
+  ) {
+    await deps.resources.markAttempt(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
+    return {
+      result: "drop",
+      reason: `calendar ${calendar._id} cursor keeps expiring; holding off pulls until ${resource.cursorExpiredBackoffUntil.toISOString()}`,
+    };
+  }
+
   switch (job.kind) {
     case "initialImport": {
       // Idempotent: a resource that already holds a cursor no-ops inside.
@@ -406,14 +430,6 @@ async function runSyncJob(
           followup: resourceJob(resource, "initialImport", now()),
         };
       }
-      if (pull.status === "cursorBackoff") {
-        // Held off after repeated expiries; the last repair already rebuilt
-        // this calendar. No provider call was made, so just settle.
-        return {
-          result: "drop",
-          reason: `calendar ${calendar._id} cursor keeps expiring; holding off pulls until ${pull.resource.cursorExpiredBackoffUntil?.toISOString()}`,
-        };
-      }
       // cursorExpired: the provider cursor is unusable; a repair rebuilds.
       // The repair runs NOW (it is what makes the data current again); the
       // widening hold-off applies to the next PULL, so a calendar whose cursor
@@ -458,9 +474,6 @@ async function runSyncJob(
           followup: resourceJob(resource, "initialImport", now()),
         };
       }
-      // A bootstrapping resource is never held off (it has no streak yet), but
-      // the status is part of the union — treat it like the expiry it stands in
-      // for and let the repair finish the bootstrap.
       deps.log?.warn(
         `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on bootstrap catch-up pull, enqueuing repair`,
       );
@@ -568,11 +581,11 @@ const CURSOR_EXPIRY_HOLD_OFF_MS = [
   6 * 60 * 60_000,
 ];
 
+// `streak` is always >= 1: the caller derives it from a nonnegative stored
+// count plus this lap. The `?? 0` is for noUncheckedIndexedAccess, not a real
+// out-of-range case.
 function cursorExpiryHoldOffMs(streak: number): number {
-  const index = Math.min(
-    Math.max(streak - 1, 0),
-    CURSOR_EXPIRY_HOLD_OFF_MS.length - 1,
-  );
+  const index = Math.min(streak - 1, CURSOR_EXPIRY_HOLD_OFF_MS.length - 1);
   return CURSOR_EXPIRY_HOLD_OFF_MS[index] ?? 0;
 }
 
