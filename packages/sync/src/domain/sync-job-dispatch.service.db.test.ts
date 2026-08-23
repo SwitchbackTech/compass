@@ -416,6 +416,127 @@ describe("dispatchSyncJob", () => {
     expect(outcome.followup.resourceId).toBe(resource._id);
   });
 
+  // A calendar whose provider never sustains an incremental cursor (Google's
+  // derived holiday calendars 410 a token minutes old) used to re-run
+  // pull -> repair -> pull every ~45s forever: one prod resource reached
+  // activeGeneration 1919 in four weeks (2026-08-23).
+  it("counts consecutive cursor expiries and eventually holds off the pull", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "stale-cursor");
+    const alwaysExpired = () =>
+      new FakeReader([], new ProviderEventReadError("cursorExpired", "gone"));
+
+    // The first two laps are deliberately free, so an ordinary calendar whose
+    // token genuinely aged out heals with no added latency.
+    for (const expectedStreak of [1, 2]) {
+      const outcome = await dispatchSyncJob(
+        deps(alwaysExpired()),
+        jobFor(resource, "incrementalPull"),
+        now,
+      );
+      expect(outcome.result).toBe("done");
+      const stored = await resources.findById(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+      );
+      expect(stored?.cursorExpiredStreak).toBe(expectedStreak);
+      expect(stored?.cursorExpiredBackoffUntil).toEqual(now());
+    }
+
+    // The third lap is where the cursor is judged unrecoverable and the
+    // hold-off starts widening.
+    const third = await dispatchSyncJob(
+      deps(alwaysExpired()),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    expect(third.result).toBe("done");
+    const held = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(held?.cursorExpiredStreak).toBe(3);
+    expect(held?.cursorExpiredBackoffUntil).toEqual(
+      new Date(now().getTime() + 5 * 60_000),
+    );
+
+    // Now within the hold-off: the pull settles without touching the provider.
+    const reader = alwaysExpired();
+    const dropped = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    expect(dropped.result).toBe("drop");
+    expect(reader.calls).toHaveLength(0);
+  });
+
+  it("clears the expiry streak once a pull applies through the cursor again", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "stale-cursor");
+
+    await dispatchSyncJob(
+      deps(
+        new FakeReader([], new ProviderEventReadError("cursorExpired", "gone")),
+      ),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    const expired = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(expired?.cursorExpiredStreak).toBe(1);
+
+    await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("new-1")], { nextSyncToken: "cursor-2" }),
+        ]),
+      ),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    const healed = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(healed?.cursorExpiredStreak).toBe(0);
+    expect(healed?.cursorExpiredBackoffUntil).toBeNull();
+  });
+
+  // Both stale-resource finders order by lastAttemptAt, so a drop that did not
+  // stamp it kept the resource pinned to the front of every sweep and it was
+  // re-enqueued forever (22 such drops in 19 minutes on prod, 2026-08-23).
+  it("stamps the attempt when dropping a job for an inactive calendar", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.providerCalendars)
+      .updateOne({ _id: calendar._id }, { $set: { active: false } });
+
+    const reader = new FakeReader([]);
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    expect(reader.calls).toHaveLength(0);
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.lastAttemptAt).toEqual(now());
+  });
+
   it("hands off a pull on a never-imported resource to an initial import", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null); // no cursor
