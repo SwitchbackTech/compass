@@ -338,7 +338,19 @@ export function useShiftHoldEventHints({
             (assignment) => assignment.eventId === match.pendingExactEventId,
           );
           if (exact) {
-            scheduleAmbiguousCommit(exact.eventId, exact.dayKey, match.buffer);
+            // A pointer click already focused this event so Enter works; do
+            // not wait 400ms just because a longer sibling (W2 vs W20) exists.
+            if (
+              exact.eventId === useEventJumpStore.getState().pointerHintEventId
+            ) {
+              commitFocus(exact.eventId, exact.dayKey, match.buffer);
+            } else {
+              scheduleAmbiguousCommit(
+                exact.eventId,
+                exact.dayKey,
+                match.buffer,
+              );
+            }
           }
         } else {
           clearAmbiguousCommitTimer();
@@ -356,7 +368,18 @@ export function useShiftHoldEventHints({
         );
         // Keep chips for the selected day so a following digit can refine.
         publishFiltered(match.dayPrefix);
-        focusEvent(match.firstEventId);
+        const pointerHintEventId =
+          useEventJumpStore.getState().pointerHintEventId;
+        const keepClickedEvent =
+          !!pointerHintEventId &&
+          assignmentsRef.current.some(
+            (item) =>
+              item.eventId === pointerHintEventId &&
+              item.dayKey === match.dayKey,
+          );
+        if (!keepClickedEvent) {
+          focusEvent(match.firstEventId);
+        }
         return;
       }
 

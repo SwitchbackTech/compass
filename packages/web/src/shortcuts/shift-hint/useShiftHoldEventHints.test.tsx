@@ -175,6 +175,74 @@ describe("useShiftHoldEventHints", () => {
     );
   });
 
+  it("does not steal focus to the first-of-day while typing a clicked event token", () => {
+    const { focus } = mountHints();
+
+    act(() => {
+      requestPointerEventJump(EVENT_B);
+    });
+    focus.mockClear();
+
+    act(() => {
+      dispatch("keydown", "w");
+    });
+
+    expect(focus).not.toHaveBeenCalled();
+    expect(useEventJumpStore.getState().pointerHintEventId).toBe(EVENT_B);
+  });
+
+  it("commits a clicked prefix token without waiting for a longer sibling", () => {
+    const focus = mock((_target: { eventId: string }) => {});
+    const ids = Array.from({ length: 20 }, (_, index) =>
+      EventIdSchema.parse(index.toString(16).padStart(24, "c")),
+    );
+    const clicked = ids[1]!;
+    const elements = ids.map((id) => {
+      const el = document.createElement("button");
+      el.textContent = id;
+      document.body.appendChild(el);
+      return el;
+    });
+    const timedEvents = ids.map((id, index) =>
+      timedFixture(
+        id,
+        `2026-08-05T${String(8 + Math.floor(index / 6)).padStart(2, "0")}:${String((index % 6) * 10).padStart(2, "0")}:00.000Z`,
+      ),
+    );
+
+    renderHook(() =>
+      useShiftHoldEventHints({
+        focus: (target) => focus(target),
+        listVisible: () =>
+          ids.map((id, index) => ({
+            eventId: id,
+            eventType: "timed" as const,
+            element: elements[index]!,
+          })),
+        mode: "week",
+        timedEvents,
+      }),
+    );
+
+    act(() => {
+      requestPointerEventJump(clicked);
+    });
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("W2");
+    focus.mockClear();
+
+    act(() => {
+      dispatch("keydown", "w");
+      dispatch("keydown", "2");
+    });
+
+    expect(focus).toHaveBeenLastCalledWith(
+      expect.objectContaining({ eventId: clicked }),
+    );
+    expect(focus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: ids[0] }),
+    );
+  });
+
   it("swallows unmatched letters while jump is active", () => {
     mountHints();
 
