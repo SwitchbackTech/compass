@@ -132,7 +132,7 @@ describe("computeHealthSnapshot", () => {
     expect(snapshot.jobs.oldestDueAgeMs).toBe(15_000);
     expect(snapshot.subscriptions.healthy).toBe(1);
     expect(snapshot.subscriptions.missing).toBe(1);
-    // The subscribed resource in this fixture has no changeNotifiedAt, so it
+    // The subscribed resource in this fixture has never received a push, so it
     // counts as never notified — the signal that push delivery is broken.
     expect(snapshot.subscriptions.neverNotified).toBe(1);
     expect(snapshot.freshness.sampleSize).toBe(2);
@@ -142,6 +142,57 @@ describe("computeHealthSnapshot", () => {
 
     // R-SEC-04 / S44: aggregates must never carry content or credential shapes.
     assertNoSafetyCanary(snapshot);
+  });
+
+  // The gauge used to read changeNotifiedAt, which the serving pull CLEARS
+  // within seconds. That made a fleet with perfectly healthy push delivery
+  // report ~100% "never notified", so the number said the same thing whether
+  // push worked or was completely dead (2026-08-23).
+  it("does not count a resource whose push was received and then served", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const resource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId,
+      resourceKind: "events",
+      calendarId: objectId() as never,
+    });
+    await resources.updateSubscription(tenantId, principalId, resource._id, {
+      subscriptionId: "ch-served",
+      subscriptionResourceId: "res-served",
+      subscriptionToken: "tok-served",
+      subscriptionExpiresAt: new Date(
+        NOW.getTime() + HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS + 60_000,
+      ),
+    });
+
+    const notifiedAt = new Date(NOW.getTime() - 30_000);
+    await resources.markChangeNotified(
+      tenantId,
+      principalId,
+      resource._id,
+      notifiedAt,
+    );
+    // The pull that serves the notification clears the pending marker.
+    await resources.clearChangeNotifiedIfUnchanged(
+      tenantId,
+      principalId,
+      resource._id,
+      notifiedAt,
+    );
+
+    const stored = await resources.findById(
+      tenantId,
+      principalId,
+      resource._id,
+    );
+    expect(stored?.changeNotifiedAt).toBeNull();
+    expect(stored?.pushLastReceivedAt).toEqual(notifiedAt);
+
+    const snapshot = await computeHealthSnapshot(deps());
+    expect(snapshot.subscriptions.neverNotified).toBe(0);
   });
 
   it("emits through PostHog when a client is configured", async () => {
