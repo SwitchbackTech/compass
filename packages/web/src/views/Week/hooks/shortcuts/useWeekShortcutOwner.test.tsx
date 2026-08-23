@@ -213,6 +213,28 @@ const addDraftTarget = (
   return button;
 };
 
+/** A read-only card: attributes stamped, deliberately never registered. */
+const addReadOnlyCalendarTarget = (
+  eventId: string,
+  eventType: "all-day" | "timed" = "timed",
+) => {
+  const button = document.createElement("button");
+  Object.defineProperty(button, "offsetParent", {
+    configurable: true,
+    get: () => document.body,
+  });
+  const attributes = getWeekInteractionTargetAttributes({
+    eventId,
+    eventType,
+    isReadOnly: true,
+  });
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value !== undefined) button.setAttribute(key, value);
+  }
+  document.body.appendChild(button);
+  return button;
+};
+
 const seedFocusedKeyboardPlaceDraft = () => {
   const draft = createGridEventDraft(
     timedGridSchedule(
@@ -272,7 +294,7 @@ const renderShortcuts = (options?: {
 
   const shiftViewByDay = mock();
 
-  renderHook(
+  const rendered = renderHook(
     () =>
       useWeekShortcutOwner({
         endOfView: dayjs("2026-05-24T00:00:00.000"),
@@ -295,7 +317,7 @@ const renderShortcuts = (options?: {
     { wrapper },
   );
 
-  return { queryClient, shiftViewByDay };
+  return { queryClient, rendered, shiftViewByDay };
 };
 
 describe("useWeekShortcutOwner day shifting", () => {
@@ -326,6 +348,26 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(button);
     });
+  });
+
+  it("labels a read-only event for event jump even though it never registers", () => {
+    const readOnlyButton = addReadOnlyCalendarTarget(readOnlyEvent.id);
+
+    const { rendered } = renderShortcuts({
+      includeEditableEvent: false,
+      extraEvents: [readOnlyEvent],
+      calendars: [writableCalendar, readOnlyCalendar],
+    });
+
+    act(() => {
+      pressKey("s");
+    });
+
+    // Compare ids, never the nodes: a failed toEqual on a jsdom element
+    // serializes the whole tree and eats the test process.
+    const hints = rendered.result.current.shiftHints;
+    expect(hints.map((hint) => hint.eventId)).toEqual([readOnlyEvent.id]);
+    expect(hints[0]?.element).toBe(readOnlyButton);
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {
@@ -482,6 +524,53 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(later);
+  });
+
+  it("focuses a read-only event with ArrowDown", () => {
+    const earlier = addCalendarTarget(editableEvent.id);
+    const readOnly = addReadOnlyCalendarTarget(readOnlyEvent.id);
+    earlier.focus();
+    renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [writableCalendar, readOnlyCalendar],
+    });
+
+    pressKey("ArrowDown");
+
+    expect(document.activeElement).toBe(readOnly);
+  });
+
+  it("navigates back off a focused read-only event with ArrowUp", () => {
+    const earlier = addCalendarTarget(editableEvent.id);
+    const readOnly = addReadOnlyCalendarTarget(readOnlyEvent.id);
+    readOnly.focus();
+    renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [writableCalendar, readOnlyCalendar],
+    });
+
+    pressKey("ArrowUp");
+
+    expect(document.activeElement).toBe(earlier);
+  });
+
+  it("does not place a draft under an unregistered read-only card with Shift+Arrow", async () => {
+    // The read-only card is unregistered, exactly as the grid renders it -
+    // registering it (as the older gating tests do) hides this fall-through.
+    addReadOnlyCalendarTarget(readOnlyEvent.id).focus();
+    const { queryClient } = renderShortcuts({
+      includeEditableEvent: false,
+      extraEvents: [readOnlyEvent],
+      calendars: [writableCalendar, readOnlyCalendar],
+    });
+
+    pressKey("ArrowRight", shiftKey);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(getEditMutation(queryClient)).toBeUndefined();
+    expect(useDraftStore.getState().gridDraft).toBeNull();
   });
 
   it("does not leave the day with ArrowDown when no later same-day event exists", () => {

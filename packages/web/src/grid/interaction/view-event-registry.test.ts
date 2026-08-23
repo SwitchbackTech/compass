@@ -2,6 +2,7 @@ import {
   calendarEventIdElementSelector,
   calendarEventIdValueSelector,
   createViewInteractionRegistry,
+  GRID_EVENT_READ_ONLY_ATTRIBUTE,
   readCalendarEventIdFromElement,
 } from "./view-event-registry";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -88,6 +89,22 @@ describe("createViewInteractionRegistry", () => {
     });
   });
 
+  it("getInteractionTargetAttributes marks a read-only card", () => {
+    const day = createViewInteractionRegistry("day");
+
+    expect(
+      day.getInteractionTargetAttributes({
+        eventId: "event-1",
+        eventType: "timed",
+        isReadOnly: true,
+      }),
+    ).toEqual({
+      "data-day-interaction-event-id": "event-1",
+      "data-day-interaction-event-type": "timed",
+      [GRID_EVENT_READ_ONLY_ATTRIBUTE]: "true",
+    });
+  });
+
   it("createRegistry produces a fresh, independent registry each call", () => {
     const day = createViewInteractionRegistry("day");
     const isolated = day.createRegistry();
@@ -114,9 +131,56 @@ describe("createViewInteractionRegistry", () => {
       eventType: "timed",
     });
 
-    expect(day.targeting.getFirstVisibleGridEventTarget()).toMatchObject({
+    expect(day.targeting.getFirstNavigableGridEventTarget()).toMatchObject({
       eventId: "event-1",
       eventType: "timed",
     });
   });
+
+  it("navigates to a read-only card that is never a drag/resize target", () => {
+    const week = createViewInteractionRegistry("week");
+    const readOnly = appendVisibleCard(week, "read-only-event");
+    readOnly.setAttribute(GRID_EVENT_READ_ONLY_ATTRIBUTE, "true");
+
+    const registered = appendVisibleCard(week, "writable-event");
+    week.registry.register({
+      element: registered,
+      eventId: "writable-event",
+      eventType: "timed",
+    });
+
+    expect(
+      week.targeting.listNavigableGridEventTargets().map((t) => t.eventId),
+    ).toEqual(["read-only-event", "writable-event"]);
+    // The registry - the drag/resize gate - still refuses it.
+    expect(week.registry.resolve("read-only-event", "timed")).toBeNull();
+
+    readOnly.focus();
+    expect(week.targeting.getFocusedGridEventTarget()).toBeNull();
+    expect(week.targeting.getFocusedNavigableGridEventTarget()?.eventId).toBe(
+      "read-only-event",
+    );
+  });
+
+  it("leaves unregistered drafts and previews out of the navigable list", () => {
+    const week = createViewInteractionRegistry("week");
+    appendVisibleCard(week, "draft-event");
+
+    expect(week.targeting.listNavigableGridEventTargets()).toEqual([]);
+  });
 });
+
+/** A card stamped with the view's id/type attributes and visible to jsdom. */
+const appendVisibleCard = (
+  view: ReturnType<typeof createViewInteractionRegistry>,
+  eventId: string,
+) => {
+  const element = document.body.appendChild(document.createElement("button"));
+  Object.defineProperty(element, "offsetParent", {
+    configurable: true,
+    get: () => document.body,
+  });
+  element.setAttribute(view.idAttribute, eventId);
+  element.setAttribute(view.typeAttribute, "timed");
+  return element;
+};

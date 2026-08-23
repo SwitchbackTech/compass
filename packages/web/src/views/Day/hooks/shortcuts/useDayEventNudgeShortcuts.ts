@@ -36,10 +36,14 @@ export function useDayEventNudgeShortcuts({
   getEditSequenceAnchor: () => HTMLElement | null;
   shiftHints: ActiveShiftHint[];
 } {
+  // getFocused is registry-backed and gates everything that mutates an event.
+  // The navigable pair also covers read-only cards, which can be focused and
+  // navigated but never edited.
   const targeting = {
     focus: dayEventTargeting.focusGridEventTarget,
     getFocused: dayEventTargeting.getFocusedGridEventTarget,
-    listVisible: dayEventTargeting.listVisibleGridEventTargets,
+    getFocusedNavigable: dayEventTargeting.getFocusedNavigableGridEventTarget,
+    listNavigable: dayEventTargeting.listNavigableGridEventTargets,
   };
 
   useGridEventEditShortcuts({
@@ -85,7 +89,7 @@ export function useDayEventNudgeShortcuts({
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: targeting.focus,
-    listVisible: targeting.listVisible,
+    listVisible: targeting.listNavigable,
     mode: "day",
     timedEvents,
   });

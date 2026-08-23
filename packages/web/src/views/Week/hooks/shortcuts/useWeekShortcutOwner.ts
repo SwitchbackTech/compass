@@ -160,16 +160,20 @@ export const useWeekShortcutOwner = ({
   useFocusSidebarShortcut();
 
   const focusFirstCalendarEvent = useCallback(() => {
-    const target = weekEventTargeting.getFirstVisibleGridEventTarget();
+    const target = weekEventTargeting.getFirstNavigableGridEventTarget();
     if (!target) return;
 
     weekEventTargeting.focusGridEventTarget(target);
   }, []);
 
+  // getFocused is registry-backed and gates everything that mutates an event.
+  // The navigable pair also covers read-only cards, which can be focused and
+  // navigated but never edited.
   const targeting = {
     focus: weekEventTargeting.focusGridEventTarget,
     getFocused: weekEventTargeting.getFocusedGridEventTarget,
-    listVisible: weekEventTargeting.listVisibleGridEventTargets,
+    getFocusedNavigable: weekEventTargeting.getFocusedNavigableGridEventTarget,
+    listNavigable: weekEventTargeting.listNavigableGridEventTargets,
   };
 
   // Set when a Shift+Arrow nudge carried an event across the window edge;
@@ -246,7 +250,7 @@ export const useWeekShortcutOwner = ({
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: targeting.focus,
-    listVisible: targeting.listVisible,
+    listVisible: targeting.listNavigable,
     mode: "week",
     timedEvents,
   });

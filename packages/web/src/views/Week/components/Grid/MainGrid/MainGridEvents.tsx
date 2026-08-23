@@ -193,9 +193,10 @@ const MainGridEventItem = ({
         ? getWeekInteractionTargetAttributes({
             eventId: event._id,
             eventType: "timed",
+            isReadOnly,
           })
         : undefined,
-    [event._id, hasEventIdentity],
+    [event._id, hasEventIdentity, isReadOnly],
   );
   return (
     <GridEventMemo

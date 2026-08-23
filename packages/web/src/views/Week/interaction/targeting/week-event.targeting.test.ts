@@ -59,16 +59,18 @@ describe("weekGridEventTargeting", () => {
     addEventButton({ eventId: "hidden", isVisible: false });
     const firstVisible = addEventButton({ eventId: "visible" });
 
-    expect(weekEventTargeting.getFirstVisibleGridEventTarget()).toMatchObject({
-      element: firstVisible,
-      eventId: "visible",
-      eventType: "timed",
-    });
+    expect(weekEventTargeting.getFirstNavigableGridEventTarget()).toMatchObject(
+      {
+        element: firstVisible,
+        eventId: "visible",
+        eventType: "timed",
+      },
+    );
   });
 
   it("focuses a returned calendar target", () => {
     const button = addEventButton({ eventId: "target" });
-    const target = weekEventTargeting.getFirstVisibleGridEventTarget();
+    const target = weekEventTargeting.getFirstNavigableGridEventTarget();
 
     if (!target) throw new Error("expected target");
     weekEventTargeting.focusGridEventTarget(target);
@@ -81,7 +83,7 @@ describe("weekGridEventTargeting", () => {
     const first = addEventButton({ eventId: "first" });
     const second = addEventButton({ eventId: "second" });
 
-    expect(weekEventTargeting.listVisibleGridEventTargets()).toEqual([
+    expect(weekEventTargeting.listNavigableGridEventTargets()).toEqual([
       expect.objectContaining({ element: first, eventId: "first" }),
       expect.objectContaining({ element: second, eventId: "second" }),
     ]);
