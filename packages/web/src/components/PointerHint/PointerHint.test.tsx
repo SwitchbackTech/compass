@@ -79,7 +79,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      eventJumpActions.setPointerHintKey("W2");
+      eventJumpActions.setPointerHint({ eventId: "event-1", key: "W2" });
       pointerBlockActions.pulseBlockedClick({
         actionId: POINTER_ACTIONS.eventOpen,
         eventId: "event-1",

@@ -18,6 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 const EVENT_A = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
 const EVENT_B = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
 const EVENT_C = EventIdSchema.parse("cccccccccccccccccccccccc");
+const EVENT_D = EventIdSchema.parse("dddddddddddddddddddddddd");
 
 const dispatch = (
   type: "keydown" | "keyup",
@@ -153,7 +154,11 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState()).toMatchObject({
       isActive: true,
       pointerHintKey: "W2",
+      pointerHintEventId: EVENT_B,
     });
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
     expect(result.current.hints.map((hint) => hint.hint)).toEqual([
       "w1",
       "w2",
@@ -190,6 +195,92 @@ describe("useShiftHoldEventHints", () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
+  it("stops swallowing printable keys when jump mode is cleared", () => {
+    mountHints();
+
+    act(() => {
+      requestPointerEventJump(EVENT_B);
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+
+    const whileActive = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "]",
+    });
+    document.dispatchEvent(whileActive);
+    expect(whileActive.defaultPrevented).toBe(true);
+
+    act(() => {
+      eventJumpActions.setActive(false);
+    });
+
+    const afterClear = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "]",
+    });
+    document.dispatchEvent(afterClear);
+    expect(afterClear.defaultPrevented).toBe(false);
+  });
+
+  it("refreshes the pointer hint token when an earlier event appears", () => {
+    const focus = mock((_target: { eventId: string }) => {});
+    const events = [
+      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-05T11:00:00.000Z"),
+      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
+    ];
+    const elements = [EVENT_A, EVENT_B, EVENT_C, EVENT_D].map((id) => {
+      const el = document.createElement("button");
+      el.textContent = id;
+      document.body.appendChild(el);
+      return el;
+    });
+
+    const { rerender } = renderHook(
+      ({ timedEvents }) =>
+        useShiftHoldEventHints({
+          focus: (target) => focus(target),
+          listVisible: () =>
+            timedEvents.flatMap((event) => {
+              const index = [EVENT_A, EVENT_B, EVENT_C, EVENT_D].indexOf(
+                event._id as typeof EVENT_A,
+              );
+              if (index < 0) return [];
+              return [
+                {
+                  eventId: event._id as string,
+                  eventType: "timed" as const,
+                  element: elements[index]!,
+                },
+              ];
+            }),
+          mode: "week",
+          timedEvents,
+        }),
+      { initialProps: { timedEvents: events } },
+    );
+
+    act(() => {
+      requestPointerEventJump(EVENT_B);
+    });
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("W2");
+
+    act(() => {
+      rerender({
+        timedEvents: [
+          timedFixture(EVENT_D, "2026-08-05T08:00:00.000Z"),
+          ...events,
+        ],
+      });
+    });
+
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("W3");
   });
 
   it("does not activate on bare Shift or Shift+Tab", () => {

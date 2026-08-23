@@ -387,8 +387,15 @@ export function useShiftHoldEventHints({
       bufferRef.current = "";
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([assignment.dayKey]);
-      eventJumpActions.setPointerHintKey(assignment.hint.toUpperCase());
+      eventJumpActions.setPointerHint({
+        eventId: assignment.eventId,
+        key: assignment.hint.toUpperCase(),
+      });
       setHints(toActiveHints(assignments, visibleByIdRef.current));
+      // Focus now so the advertised Enter path works, including when this
+      // token is a prefix of a longer sibling (W2 vs W20) that would otherwise
+      // wait 400ms before focusing.
+      focusEvent(eventId);
     };
 
     document.addEventListener("keydown", onKeyDown, true);
@@ -440,6 +447,21 @@ export function useShiftHoldEventHints({
     );
     assignmentsRef.current = assignments;
     visibleByIdRef.current = visibleById;
+    const pointerHintEventId = useEventJumpStore.getState().pointerHintEventId;
+    if (pointerHintEventId) {
+      const assignment = assignments.find(
+        (item) => item.eventId === pointerHintEventId,
+      );
+      const nextKey = assignment?.hint.toUpperCase() ?? null;
+      if (!assignment) {
+        eventJumpActions.setPointerHint(null);
+      } else if (nextKey !== useEventJumpStore.getState().pointerHintKey) {
+        eventJumpActions.setPointerHint({
+          eventId: assignment.eventId,
+          key: nextKey,
+        });
+      }
+    }
     const source = bufferRef.current
       ? filterHintsByPrefix(assignments, bufferRef.current)
       : assignments;
