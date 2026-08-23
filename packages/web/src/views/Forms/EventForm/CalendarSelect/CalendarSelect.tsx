@@ -7,7 +7,7 @@ import {
   useRole,
 } from "@floating-ui/react";
 import classNames from "classnames";
-import { useId, useRef, useState } from "react";
+import { type KeyboardEvent, useId, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -21,6 +21,11 @@ import {
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import {
+  digitPickIndex,
+  PICK_KEY_LABELS,
+} from "@web/shortcuts/digit-pick.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 
 interface CalendarSelectProps {
@@ -125,6 +130,21 @@ export const CalendarSelect = ({
     setIsOpen(false);
   };
 
+  // Picks the Nth calendar directly, whether the list is open or still
+  // closed - lets Mod+E, A, <digit> commit without opening it. Shared by the
+  // trigger and the floating list's onKeyDown so the two never diverge.
+  const pickCalendarByDigit = (e: KeyboardEvent<Element>): boolean => {
+    const pickIndex = digitPickIndex(e);
+    const pickedCalendar =
+      pickIndex === null ? undefined : writableCalendars[pickIndex];
+    if (!pickedCalendar) return false;
+
+    e.preventDefault();
+    e.stopPropagation();
+    selectCalendar(pickedCalendar);
+    return true;
+  };
+
   if (writableCalendars.length === 0) {
     return (
       <p className="my-1.5 text-error text-xs">
@@ -147,6 +167,8 @@ export const CalendarSelect = ({
         ref={refs.setReference}
         {...getReferenceProps({
           onKeyDown: (e) => {
+            if (pickCalendarByDigit(e)) return;
+
             // While the list is open, focus can sit on this trigger for a
             // frame - useListNavigation moves it to the active option
             // asynchronously - so a fast ArrowDown+Enter lands Enter here.
@@ -198,6 +220,8 @@ export const CalendarSelect = ({
           ref={refs.setFloating}
           {...getFloatingProps({
             onKeyDown: (e) => {
+              if (pickCalendarByDigit(e)) return;
+
               if (
                 activeIndex !== null &&
                 (e.key === "Enter" || e.key === " ")
@@ -256,6 +280,11 @@ export const CalendarSelect = ({
                     {calendar.accountEmail}
                   </span>
                 ) : null}
+                {index < PICK_KEY_LABELS.length && (
+                  <ShortcutHint className="shrink-0">
+                    {PICK_KEY_LABELS[index]}
+                  </ShortcutHint>
+                )}
               </div>
             );
           })}

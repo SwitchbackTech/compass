@@ -16,6 +16,10 @@ import {
 } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { draftActions } from "@web/events/stores/draft.store";
+import {
+  digitPickIndex,
+  PICK_KEY_LABELS,
+} from "@web/shortcuts/digit-pick.util";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSetEventColor } from "@web/views/Forms/hooks/useSetEventColor";
@@ -109,6 +113,10 @@ export function ContextMenuItemsView({
 
   const nav = useContext(ContextMenuNavContext);
   const selectedColor = event.color ?? null;
+  const pickColor = (color: EventColorSlot | null) => {
+    actions.setColor(color);
+    close();
+  };
 
   return (
     // role="none" keeps the menu -> menuitem ownership valid across this
@@ -141,17 +149,26 @@ export function ContextMenuItemsView({
         );
       })}
       {!isReadOnly && (
-        <fieldset className="m-0 min-w-0 border-border border-t px-3 py-2">
+        <fieldset
+          className="group/menu-colors m-0 min-w-0 border-border border-t px-3 py-2"
+          onKeyDown={(keyEvent) => {
+            const pickIndex = digitPickIndex(keyEvent);
+            const pickedColor =
+              pickIndex === null ? undefined : COLOR_OPTIONS[pickIndex];
+            if (pickedColor !== undefined) {
+              keyEvent.preventDefault();
+              keyEvent.stopPropagation();
+              pickColor(pickedColor);
+            }
+          }}
+        >
           <legend className="sr-only">Event color</legend>
           <div className="grid grid-cols-6 gap-1.5">
             {COLOR_OPTIONS.map((slot, colorIndex) => {
               const index = menuActions.length + colorIndex;
               const label = eventColorLabel(slot);
               const checked = selectedColor === slot;
-              const select = () => {
-                actions.setColor(slot);
-                close();
-              };
+              const select = () => pickColor(slot);
               const itemProps = nav
                 ? nav.getItemProps({ onClick: select })
                 : { onClick: select };
@@ -183,6 +200,14 @@ export function ContextMenuItemsView({
                   <span className="c-context-tooltip" role="tooltip">
                     {label}
                   </span>
+                  {PICK_KEY_LABELS[colorIndex] && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none invisible absolute inset-0 flex items-center justify-center rounded-sm bg-bg-primary/70 font-semibold text-[10px] text-text group-focus-within/menu-colors:visible"
+                    >
+                      {PICK_KEY_LABELS[colorIndex]}
+                    </span>
+                  )}
                 </span>
               );
             })}

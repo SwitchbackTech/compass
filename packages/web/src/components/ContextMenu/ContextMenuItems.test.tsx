@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
 import {
@@ -148,6 +149,38 @@ describe("ContextMenuItems", () => {
 
     await user.click(screen.getByRole("menuitemradio", { name: "Coral" }));
     expect(setColor).toHaveBeenCalledWith("coral");
+    expect(mockClose).toHaveBeenCalled();
+  });
+
+  it("picks a color by digit from the swatch strip and closes", () => {
+    const event = createMockGridEvent({ title: "Test Event" });
+    const setColor = mock();
+
+    const { ContextMenuItemsView } =
+      require("./ContextMenuItems") as typeof import("./ContextMenuItems");
+
+    renderWithTheme(
+      <ContextMenuItemsView
+        event={event}
+        close={mockClose}
+        actions={{
+          delete: mock(),
+          duplicate: mock(),
+          edit: mock(),
+          setColor,
+        }}
+      />,
+      { event },
+    );
+
+    // The pick is index-based off the fieldset, not target-relative - firing
+    // on "Coral" still picks index 0 ("Calendar default").
+    const anyFocusedSwatch = screen.getByRole("menuitemradio", {
+      name: "Coral",
+    });
+    fireEvent.keyDown(anyFocusedSwatch, { code: "Digit1", key: "1" });
+
+    expect(setColor).toHaveBeenCalledWith(null);
     expect(mockClose).toHaveBeenCalled();
   });
 

@@ -138,6 +138,21 @@ function dispatchKey(target: HTMLElement, key: string) {
   return event;
 }
 
+// digitPickIndex matches on the physical `code` first; a bare `key` (as
+// dispatchKey sends) only exercises its numpad fallback path. Set `code` too
+// so this hits the primary match real keyboards actually send.
+function dispatchDigitKey(target: HTMLElement, code: string, key: string) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    code,
+    key,
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 function dispatchArrowDown(target: HTMLElement) {
   const event = new KeyboardEvent("keydown", {
     bubbles: true,
@@ -486,6 +501,52 @@ describe("EventForm", () => {
     expect(
       screen.getByRole("radio", { name: "Calendar default" }),
     ).toHaveFocus();
+  });
+
+  it("picks a color directly with a digit after jumping to the color field", () => {
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createEditDraft(),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <WithEditLeader>
+          <EventForm
+            draft={draft}
+            isDraft={false}
+            isExistingEvent={true}
+            onClose={mock()}
+            onDelete={mock()}
+            onDuplicate={mock()}
+            onSubmit={mock()}
+            setDraft={setDraft}
+          />
+        </WithEditLeader>
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    dispatchKey(titleField, "c");
+
+    const defaultRadio = screen.getByRole("radio", {
+      name: "Calendar default",
+    });
+    expect(defaultRadio).toHaveFocus();
+
+    let event: KeyboardEvent;
+    act(() => {
+      event = dispatchDigitKey(defaultRadio, "Digit4", "4");
+    });
+
+    expect(event!.defaultPrevented).toBe(true);
+    expect(screen.getByRole("radio", { name: "Plum" })).toHaveFocus();
   });
 
   it("does not jump focus when a bare letter is typed without the Mod+E leader", () => {
