@@ -102,4 +102,25 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Keyboard only.");
     expect(screen.getByRole("status")).not.toHaveTextContent("Press");
   });
+
+  it("keeps a taught event hint readable after brief reminders", async () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      eventJumpActions.setPointerHint({ eventId: "event-1", key: "W2" });
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.eventOpen,
+        eventId: "event-1",
+      });
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press W2, then Enter to open this event.",
+    );
+  });
 });
