@@ -1,17 +1,7 @@
-import {
-  type FC,
-  type MouseEvent,
-  type ReactNode,
-  type RefCallback,
-  useMemo,
-} from "react";
+import { type FC, type ReactNode, type RefCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { draftActions } from "@web/events/stores/draft.store";
 import { AllDayGridRow } from "@web/grid/components/AllDayGridRow";
-import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_Y_START } from "@web/views/Week/layout.constants";
@@ -19,7 +9,6 @@ import { AllDayEvents } from "./AllDayEvents";
 
 interface Props {
   children?: (props: AllDayRowRenderProps) => ReactNode;
-  dateCalcs: DateCalcs;
   allDayRef: RefCallback<HTMLDivElement>;
   allDayRowRef: RefCallback<HTMLElement>;
   measurements: Measurements_Grid;
@@ -29,14 +18,12 @@ interface Props {
 interface AllDayRowRenderProps {
   allDayEventsLayer: ReactNode;
   allDayRowsCount: number;
-  onAllDayMouseDown: (event: MouseEvent<HTMLElement>) => void;
 }
 
 export const AllDayRow: FC<Props> = ({
   allDayRef,
   allDayRowRef,
   children,
-  dateCalcs,
   measurements,
   weekProps,
 }) => {
@@ -45,27 +32,12 @@ export const AllDayRow: FC<Props> = ({
     startOfView,
     endOfView,
   });
-  const getAllDayDraftStartDate = (clientX: number, clientY: number) =>
-    dateCalcs.getDateStrByXY(
-      clientX,
-      clientY,
-      startOfView,
-      YEAR_MONTH_DAY_FORMAT,
-    );
-  const openAllDayDraft = (draft: GridEventDraft) => {
-    draftActions.startGridDraft({ activity: "gridClick", draft });
-  };
-  const onMouseDown = useAllDayDraftCreation({
-    getStartDate: getAllDayDraftStartDate,
-    onCreateGridDraft: openAllDayDraft,
-  });
 
   if (children) {
     return (
       <AllDayRowChildren
         allDayRowsCount={rowsCount}
         measurements={measurements}
-        onAllDayMouseDown={onMouseDown}
         weekProps={weekProps}
       >
         {children}
@@ -79,7 +51,6 @@ export const AllDayRow: FC<Props> = ({
       allDayRowRef={allDayRowRef}
       allDayRowsCount={rowsCount}
       measurements={measurements}
-      onAllDayMouseDown={onMouseDown}
       weekProps={weekProps}
     />
   );
@@ -89,7 +60,6 @@ interface AllDayRowChildrenProps {
   allDayRowsCount: number;
   children: (props: AllDayRowRenderProps) => ReactNode;
   measurements: Measurements_Grid;
-  onAllDayMouseDown: (event: MouseEvent<HTMLElement>) => void;
   weekProps: WeekProps;
 }
 
@@ -97,7 +67,6 @@ const AllDayRowChildren: FC<AllDayRowChildrenProps> = ({
   allDayRowsCount,
   children,
   measurements,
-  onAllDayMouseDown,
   weekProps,
 }) => {
   const allDayEventsLayer = useAllDayEventsLayer(measurements, weekProps);
@@ -107,7 +76,6 @@ const AllDayRowChildren: FC<AllDayRowChildrenProps> = ({
       {children({
         allDayEventsLayer,
         allDayRowsCount,
-        onAllDayMouseDown,
       })}
     </>
   );
@@ -118,7 +86,6 @@ interface AllDayRowCalendarProps {
   allDayRowRef: RefCallback<HTMLElement>;
   allDayRowsCount: number;
   measurements: Measurements_Grid;
-  onAllDayMouseDown: (event: MouseEvent<HTMLElement>) => void;
   weekProps: WeekProps;
 }
 
@@ -127,7 +94,6 @@ const AllDayRowCalendar: FC<AllDayRowCalendarProps> = ({
   allDayRowRef,
   allDayRowsCount,
   measurements,
-  onAllDayMouseDown,
   weekProps,
 }) => {
   const { weekDays } = weekProps.component;
@@ -140,7 +106,6 @@ const AllDayRowCalendar: FC<AllDayRowCalendarProps> = ({
       eventsLayer={allDayEventsLayer}
       gridOffsetTopPx={GRID_Y_START}
       rowsCount={allDayRowsCount}
-      onMouseDown={onAllDayMouseDown}
       visibleDates={weekDays.map((date) => ({
         date,
         key: date.format(YEAR_MONTH_DAY_FORMAT),

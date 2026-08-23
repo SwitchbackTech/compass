@@ -23,6 +23,7 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   createGridEventDraft,
   getGridDraftId,
+  replaceGridDraftSchedule,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -32,7 +33,6 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import {
   getWeekInteractionTargetAttributes,
   weekEventRegistry,
@@ -148,7 +148,6 @@ const shiftKey = {
   keyUpInit: { shiftKey: true },
 };
 let pendingEventIds: string[] = [];
-let repositionDraftByKeyboard = mock();
 
 const { useWeekShortcutOwner } =
   require("./useWeekShortcutOwner") as typeof import("./useWeekShortcutOwner");
@@ -164,7 +163,6 @@ const getEditMutation = (queryClient: QueryClient) =>
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
-  repositionDraftByKeyboard = mock();
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
   draftActions.discard();
 });
@@ -267,18 +265,7 @@ const renderShortcuts = (options?: {
   function wrapper({ children }: PropsWithChildren) {
     return (
       <QueryClientProvider client={queryClient}>
-        <HotkeysProvider>
-          <DraftContext.Provider
-            value={
-              {
-                actions: { repositionDraftByKeyboard },
-                state: {},
-              } as never
-            }
-          >
-            {children}
-          </DraftContext.Provider>
-        </HotkeysProvider>
+        <HotkeysProvider>{children}</HotkeysProvider>
       </QueryClientProvider>
     );
   }
@@ -342,14 +329,31 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "createShortcut", draft });
     renderShortcuts();
 
     pressKey("ArrowRight");
 
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowRight");
+    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
+    expect(dayjs(schedule?.start).format()).toBe(
+      dayjs("2026-05-21T09:00:00.000").format(),
+    );
   });
 
   it("lets editable fields keep normal arrow-key behavior", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "createShortcut", draft });
     const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();
@@ -357,10 +361,20 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
 
     pressKey("ArrowRight", {}, input);
 
-    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
+    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
+    expect(dayjs(schedule?.start).format()).toBe(
+      dayjs("2026-05-20T09:00:00.000").format(),
+    );
   });
 
   it("moves the draft when arrow keys are pressed from a non-text event form control", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "createShortcut", draft });
     const form = document.createElement("form");
     form.setAttribute("name", ID_EVENT_FORM);
     const button = document.createElement("button");
@@ -371,7 +385,10 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
 
     pressKey("ArrowRight", {}, button);
 
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowRight");
+    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
+    expect(dayjs(schedule?.start).format()).toBe(
+      dayjs("2026-05-21T09:00:00.000").format(),
+    );
   });
 
   it("deletes the focused timed calendar event with Delete", () => {
@@ -692,14 +709,18 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     );
   });
 
-  it("does not move the focused event off-screen with Shift+ArrowLeft on the first visible day", () => {
+  it("carries the focused event across the window edge with Shift+ArrowLeft on the first visible day", () => {
     const button = addCalendarTarget(leftmostEvent.id);
     button.focus();
 
-    const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
+    const { queryClient, shiftViewByDay } = renderShortcuts({
+      includeLeftmostEvent: true,
+    });
     pressKey("ArrowLeft", shiftKey);
 
-    expect(getEditMutation(queryClient)).toBeUndefined();
+    // The nudge commits and the view slides one day to keep it on screen.
+    expect(getEditMutation(queryClient)).toBeDefined();
+    expect(shiftViewByDay).toHaveBeenCalledWith(-1);
   });
 
   it("does not move all-day events with Shift+ArrowUp", () => {
@@ -747,9 +768,6 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
   });
 
   it("repositions a keyboardPlace draft with a later Shift+Arrow", async () => {
-    repositionDraftByKeyboard = mock(() =>
-      Boolean(useDraftStore.getState().gridDraft),
-    );
     renderShortcuts();
 
     pressKey("ArrowDown", shiftKey);
@@ -757,15 +775,27 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
     });
+    const placed = useDraftStore.getState().gridDraft!;
+    draftActions.setGridDraft(
+      replaceGridDraftSchedule(
+        placed,
+        timedGridSchedule(
+          new Date("2026-05-20T09:00:00.000"),
+          new Date("2026-05-20T10:00:00.000"),
+        ),
+      ),
+    );
 
     pressKey("ArrowDown", shiftKey);
 
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
+    const after = useDraftStore.getState().gridDraft!.values.schedule.start;
+    expect(dayjs(after).format()).toBe(
+      dayjs("2026-05-20T09:15:00.000").format(),
+    );
     expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
   });
 
   it("does not reseed a keyboardPlace draft when Shift+Arrow cannot move it", async () => {
-    repositionDraftByKeyboard = mock(() => false);
     renderShortcuts();
 
     pressKey("ArrowDown", shiftKey);
@@ -773,7 +803,17 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
     });
-    const placedId = getGridDraftId(useDraftStore.getState().gridDraft!);
+    const placed = useDraftStore.getState().gridDraft!;
+    const placedId = getGridDraftId(placed);
+    draftActions.setGridDraft(
+      replaceGridDraftSchedule(
+        placed,
+        timedGridSchedule(
+          new Date("2026-05-20T23:00:00.000"),
+          new Date("2026-05-21T00:00:00.000"),
+        ),
+      ),
+    );
 
     pressKey("ArrowDown", shiftKey);
 
@@ -797,9 +837,6 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
   });
 
   it("discards a repositioned keyboardPlace draft on Escape", async () => {
-    repositionDraftByKeyboard = mock(() =>
-      Boolean(useDraftStore.getState().gridDraft),
-    );
     renderShortcuts();
 
     pressKey("ArrowDown", shiftKey);
@@ -978,7 +1015,6 @@ describe("useWeekShortcutOwner draft edge focus", () => {
     );
     expect(useEdgeFocusStore.getState().edge).toBe("startDate");
     expect(getEditMutation(queryClient)).toBeUndefined();
-    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
   });
 });
 

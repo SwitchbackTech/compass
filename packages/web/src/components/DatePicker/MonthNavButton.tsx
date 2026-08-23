@@ -31,6 +31,16 @@ export const MonthNavButton = ({
 
       e.currentTarget.style.backgroundColor = "transparent";
     }}
+    onFocus={(e) => {
+      if (isSidebarStyle) return;
+
+      e.currentTarget.style.backgroundColor = MONTH_NAV_BUTTON_HOVER_COLOR;
+    }}
+    onBlur={(e) => {
+      if (isSidebarStyle) return;
+
+      e.currentTarget.style.backgroundColor = "transparent";
+    }}
     style={{
       cursor: "pointer",
       color,

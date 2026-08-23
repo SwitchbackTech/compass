@@ -24,7 +24,10 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
-import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   const { schedule } = event;
@@ -119,8 +122,8 @@ export function editGridEventDraft(
 // that calendar is still writable - duplicating an event viewed on a
 // read-only calendar can't recreate it there, so this leaves calendarId
 // unset and lets the same null-calendarId fallback every other new draft
-// uses (CalendarSelect's displayed default, useSaveEventForm.ts/
-// useDraftActions.ts's submit-time fallback) pick the default target
+// uses (CalendarSelect's displayed default, useSaveEventForm.ts's
+// submit-time fallback) pick the default target
 // calendar instead.
 //
 // Series bases keep their RRULE on duplicate (legacy MapEvent.removeProviderData
@@ -196,18 +199,18 @@ export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getEffectiveTimeZone() };
 }
 
-// All-day draft Dates are local midnight everywhere (drag creation, form
-// patches, shortcuts). new Date("YYYY-MM-DD") would parse as UTC midnight,
-// which reads as the previous day when formatted back in local time west of
-// UTC — dayjs parses date-only strings as local.
+// All-day draft Dates are midnight in the effective calendar timezone.
+// Parsing YYYY-MM-DD as browser-local midnight, then formatting with
+// inEffectiveTimeZone, shifts the calendar day when the pin is west of the
+// runtime zone.
 export function allDayGridSchedule(
   start: string,
   end: string,
 ): GridScheduleDraft {
   return {
     kind: "allDay",
-    start: dayjs(start).toDate(),
-    end: dayjs(end).toDate(),
+    start: calendarDateInEffectiveTimeZone(start).toDate(),
+    end: calendarDateInEffectiveTimeZone(end).toDate(),
   };
 }
 
@@ -268,8 +271,6 @@ export function getGridDraftId(draft: GridEventDraft): string | undefined {
 
 /**
  * Direct GridEventDraft → GridEvent for the draft render hot path.
- * Avoids the CompassEvent bridge (`gridEventDraftToSchemaEvent`); overlays /
- * Day placeholders that still need CompassEvent keep that helper separately.
  */
 export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   const { schedule } = draft.values;
@@ -277,7 +278,7 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   const isAllDay = schedule.kind === "allDay";
 
   return {
-    _id: getGridDraftId(draft)!,
+    _id: getGridDraftId(draft),
     title: draft.values.title,
     description: draft.values.description,
     origin: Origin.COMPASS,
@@ -297,45 +298,6 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   };
 }
 
-// Converts a grid draft to the CompassEvent-shaped view used by schema
-// overlays, Day placeholders, and context-menu props. calendarId/isBusy/color
-// are widened onto the return (rather than adding them to the shared core
-// CompassEvent interface) so colored accents, the busy read-only gate, and
-// per-event fill stay correct without a second lookup.
-export function gridEventDraftToSchemaEvent(
-  draft: GridEventDraft,
-  seriesRules?: readonly string[],
-): CompassEvent & {
-  calendarId?: CalendarId;
-  isBusy?: boolean;
-  color?: EventColorSlot;
-} {
-  const { schedule } = draft.values;
-  const color = draft.values.color ?? undefined;
-
-  return {
-    _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
-    calendarId: draft.values.calendarId ?? undefined,
-    description: draft.values.description,
-    endDate:
-      schedule.kind === "allDay"
-        ? toDateOnlyString(schedule.end)
-        : dayjs(schedule.end).format(),
-    isAllDay: schedule.kind === "allDay",
-    isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
-    ...withColor(color),
-    recurrence: legacyRecurrenceFromDraft(draft, seriesRules),
-    startDate:
-      schedule.kind === "allDay"
-        ? toDateOnlyString(schedule.start)
-        : dayjs(schedule.start).format(),
-    title: draft.values.title,
-  };
-}
-
-// The reverse direction of gridEventDraftToSchemaEvent for recurrence rule
-// resolution on the form hot path. Grid rendering consumers still use the
-// CompassEvent projection above; the form reads/writes GridEventDraft directly.
 export function resolveDraftRecurrenceRules(
   draft: GridEventDraft,
   seriesRules?: readonly string[],

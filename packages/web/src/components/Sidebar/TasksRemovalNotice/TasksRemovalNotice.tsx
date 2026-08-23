@@ -59,6 +59,7 @@ export function createTasksRemovalNotice({
       <section
         aria-label="Tasks removed"
         className="flex flex-col gap-2 rounded-lg bg-surface-overlay p-3 text-xs"
+        data-notice=""
       >
         <div className="flex items-start justify-between gap-2">
           <p className="text-text leading-relaxed">

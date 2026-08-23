@@ -117,7 +117,7 @@ const CommandPaletteContent = ({
       : `${resultCount} result${resultCount === 1 ? "" : "s"}`;
 
   // Invoke the item action directly — not via HTMLElement.click() — so
-  // keyboard-only mode's capture-phase click blocker cannot swallow Enter.
+  // the capture-phase click blocker cannot swallow Enter.
   const activateItem = (item: CommandItem) => {
     if (item.disabled) return;
     recordRecentCommand(item.id);

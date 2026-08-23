@@ -12,7 +12,7 @@ export interface EventNudgeMovement {
   minutes: number;
 }
 
-/** Matches the drag-resize handle vocabulary (EVENT_RESIZE_HANDLE_ATTRIBUTE). */
+/** Start or end edge of an event, used by Tab edge-focus and Shift+arrow edge nudges. */
 export type EventEdge = "startDate" | "endDate";
 
 export const getArrowKeyMovement = (

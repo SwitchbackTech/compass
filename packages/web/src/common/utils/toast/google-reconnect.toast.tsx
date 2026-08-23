@@ -76,7 +76,7 @@ export const GoogleReconnectToast = ({
   const namedAccount = accountEmail?.trim();
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2" data-notice="">
       <p className="font-medium text-sm text-text">
         {namedAccount
           ? `Google Calendar disconnected (${namedAccount})`

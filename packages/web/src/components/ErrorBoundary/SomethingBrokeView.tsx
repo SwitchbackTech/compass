@@ -27,6 +27,10 @@ export const SomethingBrokeView = ({
 
     <button
       type="button"
+      // The reload button is the page's only action; seat focus so recovery
+      // is one Enter away.
+      // biome-ignore lint/a11y/noAutofocus: single-action recovery screen
+      autoFocus
       onClick={() => reloadLocation()}
       className="mt-5 cursor-pointer rounded border-2 border-border bg-accent-secondary px-4 py-2 font-semibold text-[16px] text-on-accent transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
     >

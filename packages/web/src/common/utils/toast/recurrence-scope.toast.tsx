@@ -49,7 +49,7 @@ function ScopeToastContent({
   const eventName = eventNameForToast(opportunity);
 
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" data-notice="">
       <p title={eventName}>
         {verb} “{eventName}”
       </p>

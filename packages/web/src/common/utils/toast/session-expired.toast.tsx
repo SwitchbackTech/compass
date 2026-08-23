@@ -36,7 +36,7 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2" data-notice="">
       <p className="text-sm text-text">
         You've been signed out. Please sign in again.
       </p>

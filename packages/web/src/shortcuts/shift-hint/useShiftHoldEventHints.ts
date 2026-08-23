@@ -298,8 +298,6 @@ export function useShiftHoldEventHints({
       if (key.length !== 1) return;
 
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
-      // Leave bare `h` alone so Hardcore can toggle (child listeners register
-      // before RootShell, so jump would otherwise mark the event prevented).
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
         key,
@@ -310,7 +308,6 @@ export function useShiftHoldEventHints({
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
-        if (key === "h") return;
         event.preventDefault();
         event.stopPropagation();
         suppressKeyUpRef.current.add(key);
@@ -398,8 +395,8 @@ export function useShiftHoldEventHints({
 
   useEffect(() => {
     if (!isActive) {
-      // External reset (e.g. Hardcore `h`) clears the store without going
-      // through deactivate(); drop local chips/buffer to match.
+      // External resets clear the store without going through deactivate();
+      // drop local chips/buffer to match.
       bufferRef.current = "";
       assignmentsRef.current = [];
       visibleByIdRef.current = new Map();

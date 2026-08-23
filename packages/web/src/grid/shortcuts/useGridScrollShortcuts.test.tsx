@@ -64,8 +64,51 @@ describe("useGridScrollShortcuts", () => {
 
     renderHook(() => useGridScrollShortcuts(), { wrapper });
     pressKey("PageDown", {}, input);
+    pressKey(
+      "ArrowDown",
+      { keyDownInit: { altKey: true }, keyUpInit: { altKey: true } },
+      input,
+    );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(scrollBy).not.toHaveBeenCalled();
+  });
+
+  it("pans the grid by one hour with Alt+ArrowDown and Alt+ArrowUp", async () => {
+    renderHook(() => useGridScrollShortcuts(), { wrapper });
+
+    const hourDelta = 500 / 13;
+    const altArrow = {
+      keyDownInit: { altKey: true },
+      keyUpInit: { altKey: true },
+    };
+
+    pressKey("ArrowDown", altArrow);
+    await waitFor(() => {
+      expect(scrollBy).toHaveBeenCalledWith({ top: hourDelta });
+    });
+
+    pressKey("ArrowUp", altArrow);
+    await waitFor(() => {
+      expect(scrollBy).toHaveBeenCalledWith({ top: -hourDelta });
+    });
+  });
+
+  it("pans by one hour when an event-like control is focused", async () => {
+    const button = document.createElement("button");
+    button.textContent = "Standup";
+    document.body.append(button);
+    button.focus();
+
+    renderHook(() => useGridScrollShortcuts(), { wrapper });
+    pressKey(
+      "ArrowDown",
+      { keyDownInit: { altKey: true }, keyUpInit: { altKey: true } },
+      button,
+    );
+
+    await waitFor(() => {
+      expect(scrollBy).toHaveBeenCalledWith({ top: 500 / 13 });
+    });
   });
 });

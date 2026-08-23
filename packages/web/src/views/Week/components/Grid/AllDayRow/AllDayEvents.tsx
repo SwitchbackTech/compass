@@ -1,4 +1,4 @@
-import { type MouseEvent, useMemo } from "react";
+import { useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isGridEventInteractionReadOnly,
@@ -10,8 +10,8 @@ import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   mergeGridEventWithDraftOverlay,
-  useGridDraftSchemaOverlay,
-} from "@web/events/hooks/useGridDraftSchemaOverlay";
+  useGridDraftOverlay,
+} from "@web/events/hooks/useGridDraftOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectDraftId, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
@@ -37,7 +37,7 @@ export const AllDayEvents = ({
   queryStartOfView,
   weekDays,
 }: Props) => {
-  const draftOverlay = useGridDraftSchemaOverlay();
+  const draftOverlay = useGridDraftOverlay();
   const {
     allDayEvents,
     events: weekEvents,
@@ -177,16 +177,6 @@ const AllDayEventItem = ({
         : undefined,
     [event._id, hasEventIdentity],
   );
-  // Unregistered for drag/resize also means the interaction engine's own
-  // click resolution never fires, so a read-only card would otherwise stop
-  // being clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to an "open" action bypasses the
-  // engine entirely for this card.
-  const onMouseDown = isReadOnly
-    ? (_e: MouseEvent, clickedEvent: GridEvent) =>
-        onOpenReadOnlyDetails(clickedEvent)
-    : undefined;
-
   return (
     <AllDayEventMemo
       calendarIdentity={calendarIdentity}
@@ -196,7 +186,6 @@ const AllDayEventItem = ({
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onKeyDown={isReadOnly ? onOpenReadOnlyDetails : onKeyDown}
-      onMouseDown={onMouseDown}
       ref={registrationRef}
       weekDays={weekDays}
     />

@@ -4,9 +4,9 @@ import {
   createEventTitle,
   ensureSidebarOpen,
   fillTitleAndSaveEventForm,
-  openAllDayEventFormWithMouse,
-  openEventForEditingWithMouse,
-  openTimedEventFormWithMouse,
+  openAllDayEventFormWithKeyboard,
+  openEventForEditingWithKeyboard,
+  openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -28,14 +28,14 @@ test("week view renders with no automatically detectable accessibility violation
 
 test("the timed event form is accessible when open", async ({ page }) => {
   await prepareCalendarPage(page);
-  await openTimedEventFormWithMouse(page);
+  await openTimedEventFormWithKeyboard(page);
 
   await expectNoAxeViolations(page, { checkpoint: "timed event form open" });
 });
 
 test("the all-day event form is accessible when open", async ({ page }) => {
   await prepareCalendarPage(page);
-  await openAllDayEventFormWithMouse(page);
+  await openAllDayEventFormWithKeyboard(page);
 
   await expectNoAxeViolations(page, { checkpoint: "all-day event form open" });
 });
@@ -43,11 +43,12 @@ test("the all-day event form is accessible when open", async ({ page }) => {
 test("the event actions menu is accessible when open", async ({ page }) => {
   await prepareCalendarPage(page);
   const title = createEventTitle("A11y Checkpoint");
-  await openTimedEventFormWithMouse(page);
+  await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
-  await openEventForEditingWithMouse(page, title);
+  await openEventForEditingWithKeyboard(page, title);
 
-  await page.getByRole("form").getByLabel("Open actions menu").click();
+  await page.getByRole("form").getByLabel("Open actions menu").focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("menu")).toBeVisible();
 
   await expectNoAxeViolations(page, {
@@ -79,7 +80,7 @@ test("the event actions menu is accessible when open", async ({ page }) => {
 
 test("the invalid-date validation error is accessible", async ({ page }) => {
   await prepareCalendarPage(page);
-  await openAllDayEventFormWithMouse(page);
+  await openAllDayEventFormWithKeyboard(page);
 
   const startDateInput = page.locator('input[title="Pick Start Date"]');
   await startDateInput.fill("not a date");

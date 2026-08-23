@@ -1,8 +1,27 @@
 import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 const logger = Logger("app:error.handler");
+
+// An OPERATIONAL 503 is a service-state condition the caller is expected to
+// retry through, not a defect in this process: the sync service is briefly
+// unreachable (AuthError.SyncConnectionUnavailable, e.g. during its own
+// deploy), maintenance mode is on, or Google isn't configured for this
+// instance. PostHogExceptionTransport only listens at `error`, so logging
+// these at `error` captured them as exceptions and — via the error-autofix
+// pipeline — filed GitHub issues for what is really upstream downtime. Log
+// them at `warn` instead: same message and metadata in the server log and
+// OTel, but no exception. A sustained outage still surfaces through the sync
+// service's own error telemetry and the gap in its sync_health_snapshot beat,
+// which is the signal that actually distinguishes "down" from "restarting".
+export const logLevelForError = (error: Error): "warn" | "error" =>
+  error instanceof BaseError &&
+  error.isOperational &&
+  error.statusCode === Status.SERVICE_UNAVAILABLE
+    ? "warn"
+    : "error";
 
 /**
  * Transforms error metadata into a BaseError class
@@ -83,7 +102,7 @@ class ErrorHandler {
       meta.result = error.result;
       meta.errorType = error.code ?? error.constructor.name;
     }
-    logger.error(error.message || String(error), meta);
+    logger[logLevelForError(error)](error.message || String(error), meta);
   }
 
   exitAfterProgrammerError(): void {

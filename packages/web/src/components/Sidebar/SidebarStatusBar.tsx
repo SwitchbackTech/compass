@@ -23,11 +23,6 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { KeyboardPlaceIndicator } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
-import { KeyboardOnlyIndicator } from "@web/shortcuts/keyboard-only/KeyboardOnlyIndicator";
-import {
-  selectKeyboardOnlyActive,
-  useKeyboardOnlyStore,
-} from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { EventJumpIndicator } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
   selectEventJumpActive,
@@ -58,7 +53,6 @@ export const SidebarStatusBar: FC = () => {
   const access = useAppAccess();
   useShortcutTipTrigger();
   const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
-  const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
@@ -96,9 +90,7 @@ export const SidebarStatusBar: FC = () => {
 
   // Highest-priority active indicator wins the bar; the sync-status button is
   // the fallback when none applies.
-  const indicator = isKeyboardOnly ? (
-    <KeyboardOnlyIndicator />
-  ) : showEventJump ? (
+  const indicator = showEventJump ? (
     <EventJumpIndicator />
   ) : showEdgeFocus ? (
     <EdgeFocusIndicator />

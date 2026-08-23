@@ -22,8 +22,6 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { draftActions } from "@web/events/stores/draft.store";
-import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
-import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import { MainGridEvents } from "./MainGridEvents";
@@ -32,9 +30,8 @@ import "@testing-library/jest-dom";
 
 // The store-level assertions in eventReadOnlyInteraction.test.tsx can't see
 // the symptom this bug actually produced: the sidebar panel opened while the
-// form inside it rendered nothing. That needs the real DraftProvider (so
-// useDraftActions' keyboardEdit branch really runs) mounted alongside the
-// form, which is what this file adds.
+// form inside it rendered nothing. That needs the real sidebar form mounted
+// alongside the grid, which is what this file adds.
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
 const weekDays = Array.from({ length: 7 }, (_, index) =>
@@ -111,10 +108,9 @@ function Harness({ children }: PropsWithChildren) {
 
 function GridWithSidebar() {
   const mainGridRef = useRef<HTMLDivElement | null>(null);
-  const dateCalcs = useDateCalcs(measurements, mainGridRef, weekDays);
 
   return (
-    <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps as never}>
+    <>
       <div ref={mainGridRef}>
         <MainGridEvents
           measurements={measurements}
@@ -122,7 +118,7 @@ function GridWithSidebar() {
         />
       </div>
       <SidebarEventDetails />
-    </DraftProvider>
+    </>
   );
 }
 

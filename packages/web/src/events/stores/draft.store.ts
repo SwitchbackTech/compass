@@ -6,9 +6,6 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 
 export type Activity_DraftEvent =
   | "createShortcut"
-  /** A drag-create gesture is live and `gridDraft` is its running preview. */
-  | "creating"
-  | "dnd"
   | "eventRightClick"
   | "gridClick"
   | "keyboardEdit"
@@ -16,8 +13,13 @@ export type Activity_DraftEvent =
    * Shift+Arrow place-create: timed draft on the grid with the form closed so
    * the user can keep repositioning before opening details with Enter.
    */
-  | "keyboardPlace"
-  | "sidebarClick";
+  | "keyboardPlace";
+
+const OPENS_FORM_ON_START: ReadonlySet<Activity_DraftEvent> = new Set([
+  "createShortcut",
+  "gridClick",
+  "keyboardEdit",
+]);
 
 export interface Status_DraftEvent {
   activity: Activity_DraftEvent | null;
@@ -26,8 +28,7 @@ export interface Status_DraftEvent {
   /**
    * Whether the floating event form is shown for the current draft. Kept
    * separate from `isDrafting`/`activity` because a draft can exist without the
-   * form being open (e.g. while drag-creating a timed event, the draft renders
-   * but the form stays closed until the gesture finishes).
+   * form being open (Shift+Arrow place-create keeps the form closed until Enter).
    */
   isFormOpen: boolean;
 }
@@ -67,15 +68,7 @@ export const draftActions = {
     activity,
     draft,
   }: {
-    activity: Extract<
-      Activity_DraftEvent,
-      | "createShortcut"
-      | "creating"
-      | "eventRightClick"
-      | "gridClick"
-      | "keyboardEdit"
-      | "keyboardPlace"
-    >;
+    activity: Activity_DraftEvent;
     draft: GridEventDraft;
   }) =>
     useDraftStore.setState(
@@ -89,7 +82,7 @@ export const draftActions = {
               ? Categories_Event.ALLDAY
               : Categories_Event.TIMED,
           isDrafting: true,
-          isFormOpen: false,
+          isFormOpen: OPENS_FORM_ON_START.has(activity),
         },
       }),
       false,
@@ -97,10 +90,10 @@ export const draftActions = {
     ),
 
   // Reuses the existing `status` object when it already says what this call
-  // would set. Drag-creation calls this on every mousemove, and a fresh
-  // `status` each time would re-render every `selectDraftStatus` subscriber
-  // for a value that never changed. `activity` and `isFormOpen` are carried
-  // through untouched: the gesture that started the draft owns those.
+  // would set. Keyboard reposition and form field edits call this on every
+  // change, and a fresh `status` each time would re-render every
+  // status subscriber for a value that never changed. `activity` and
+  // `isFormOpen` stay with the gesture that started the draft.
   setGridDraft: (draft: GridEventDraft | null) =>
     useDraftStore.setState(
       (state) => {
@@ -126,9 +119,8 @@ export const draftActions = {
       { type: "setGridDraft" },
     ),
 
-  // No-op when already at the requested value: Week's draft effects call this
-  // redundantly, and a fresh `status` object each time would re-render every
-  // `selectDraftStatus` subscriber.
+  // No-op when already at the requested value so redundant callers do not
+  // re-render every status subscriber.
   setFormOpen: (isFormOpen: boolean) =>
     useDraftStore.setState(
       (state) =>
@@ -156,8 +148,6 @@ export const selectDraftId = (state: State_DraftEvent) =>
       ? state.gridDraft.source.id
       : state.gridDraft.clientId
     : undefined;
-
-export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
 export const selectIsEventFormOpen = (state: State_DraftEvent) =>
   Boolean(state.status?.isFormOpen) && state.gridDraft !== null;

@@ -22,7 +22,6 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
@@ -160,40 +159,22 @@ const createAllDayEvent = (
 const renderMainGridEvents = () =>
   render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: { stopDragging: mock(), stopResizing: mock() },
-            state: {},
-          } as never
-        }
-      >
-        <MainGridEvents
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-      </DraftContext.Provider>
+      <MainGridEvents
+        measurements={measurements}
+        weekProps={createWeekProps()}
+      />
     </Provider>,
   );
 
 const renderAllDayEvents = () =>
   render(
     <Provider>
-      <DraftContext.Provider
-        value={
-          {
-            actions: { stopDragging: mock(), stopResizing: mock() },
-            state: {},
-          } as never
-        }
-      >
-        <AllDayEvents
-          measurements={measurements}
-          queryEndOfView={startOfView.add(6, "day").endOf("day")}
-          queryStartOfView={startOfView}
-          weekDays={weekDaysInView}
-        />
-      </DraftContext.Provider>
+      <AllDayEvents
+        measurements={measurements}
+        queryEndOfView={startOfView.add(6, "day").endOf("day")}
+        queryStartOfView={startOfView}
+        weekDays={weekDaysInView}
+      />
     </Provider>,
   );
 
@@ -244,7 +225,7 @@ describe("Week grid read-only interaction gate", () => {
     expect(weekEventRegistry.resolve(event.id, "all-day")).toBeNull();
   });
 
-  it("still opens a read-only all-day event for inspection on click", () => {
+  it("still opens a read-only all-day event for inspection via Enter", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
     const event = createAllDayEvent(readOnlyCalendar.id);
@@ -256,7 +237,7 @@ describe("Week grid read-only interaction gate", () => {
       name: /all-day event: team holiday/i,
     });
     act(() => {
-      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+      fireEvent.keyDown(card, { key: "Enter" });
     });
 
     // Assert the draft the form renders from - opening the form without a
@@ -267,7 +248,7 @@ describe("Week grid read-only interaction gate", () => {
     act(() => draftActions.discard());
   });
 
-  it("still opens a read-only timed event for inspection on click", () => {
+  it("still opens a read-only timed event for inspection via Enter", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
     const event = createTimedEvent(readOnlyCalendar.id, {
@@ -279,7 +260,7 @@ describe("Week grid read-only interaction gate", () => {
 
     const card = screen.getByRole("button", { name: /inspect me/i });
     act(() => {
-      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+      fireEvent.keyDown(card, { key: "Enter" });
     });
 
     // Assert the draft the form actually renders from, not just that some

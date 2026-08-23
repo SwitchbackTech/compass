@@ -24,6 +24,7 @@ import {
 } from "@web/events/stores/view.store";
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
+import { TimezoneMismatchBannerGate } from "@web/timezone/TimezoneMismatchBannerGate";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
@@ -125,6 +126,7 @@ export const DayViewContent = memo(() => {
       >
         <Header />
         <CalendarConnectionBannerGate />
+        <TimezoneMismatchBannerGate />
         <DemoEventsBannerGate range={demoEventsRange} />
 
         <div className="flex w-full flex-1 overflow-hidden">

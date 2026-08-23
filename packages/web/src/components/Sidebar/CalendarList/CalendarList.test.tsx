@@ -40,7 +40,7 @@ import {
 // is captured up front and a flag (flipped off in afterAll) decides which
 // implementation runs on each call - the same technique used in
 // SidebarActions.test.tsx for useVersionCheck. This lets a file that runs
-// after this one (e.g. useDraftActions.test.ts) get the real useSession back
+// after this one get the real useSession back
 // instead of permanently inheriting this file's mock.
 const actualUseSession = (await import("@web/auth/compass/session/useSession"))
   .useSession;

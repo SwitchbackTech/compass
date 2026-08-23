@@ -63,6 +63,7 @@ export const UpNextBanner: FC = () => {
       aria-atomic="true"
       className="fixed bottom-6 left-1/2 flex w-72 -translate-x-1/2 starting:translate-y-2 items-center gap-3 rounded-lg border border-border bg-surface-panel/80 px-3 py-2 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-300 ease-out data-closing:opacity-0 motion-reduce:transition-none"
       data-closing={closing || undefined}
+      data-notice=""
       role="status"
       style={{ zIndex: Z_INDEX_FLOATING_MENU }}
     >

@@ -1,4 +1,3 @@
-export const DRAFT_DURATION_MIN = 30;
 export const DRAFT_PADDING_BOTTOM = 3;
 export const EVENT_ALLDAY_HEIGHT = 20;
 export const EVENT_ALLDAY_GAP = 3;

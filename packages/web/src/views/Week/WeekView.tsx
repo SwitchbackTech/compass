@@ -22,24 +22,23 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
+import { TimezoneMismatchBannerGate } from "@web/timezone/TimezoneMismatchBannerGate";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
-import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
 import { Grid } from "@web/views/Week/components/Grid/Grid";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
 import { Header } from "@web/views/Week/components/Header/Header";
 import { Shortcuts } from "@web/views/Week/components/Shortcuts";
-import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
 import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransition";
+import { useDiscardDraftOnWeekChange } from "@web/views/Week/hooks/useDiscardDraftOnWeekChange";
 import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -77,12 +76,7 @@ export const WeekView = () => {
   const { gridRefs, measurements } = useGridLayout(visibleDayCount);
 
   const scrollUtil = useScroll(gridRefs.mainGridRef);
-
-  const dateCalcs = useDateCalcs(
-    measurements,
-    gridRefs.mainGridRef,
-    weekProps.component.weekDays,
-  );
+  useDiscardDraftOnWeekChange(weekProps.component.week);
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
   const util = weekProps.util;
@@ -122,15 +116,6 @@ export const WeekView = () => {
     viewStart: weekProps.component.startOfView,
   });
 
-  const getWeekInteractionLayoutSources = useCallback(
-    () => ({
-      allDayColumnsElement: gridRefs.allDayColumnsRef.current,
-      mainGridElement: gridRefs.mainGridRef.current,
-      timedColumnsElement: gridRefs.timedColumnsRef.current,
-    }),
-    [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
-  );
-
   const openWelcomeGuide = useCallback(() => {
     welcomeGuideActions.open();
   }, []);
@@ -155,62 +140,55 @@ export const WeekView = () => {
       />
       <Dedication />
 
-      <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
-        <Shortcuts shortcutsProps={shortcutProps}>
-          <div
-            id={ID_MAIN}
-            ref={mainRef}
-            className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
-          >
-            <Header scrollUtil={scrollUtil} weekProps={weekProps} />
-            <CalendarConnectionBannerGate />
-            <DemoEventsBannerGate range={demoEventsRange} />
+      <Shortcuts shortcutsProps={shortcutProps}>
+        <div
+          id={ID_MAIN}
+          ref={mainRef}
+          className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
+        >
+          <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+          <CalendarConnectionBannerGate />
+          <TimezoneMismatchBannerGate />
+          <DemoEventsBannerGate range={demoEventsRange} />
 
-            <WeekGridScrollArea>
-              <div
-                ref={setTrackRef}
-                className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
-              >
-                <DayLabels
-                  startOfView={weekProps.component.startOfView}
-                  today={today}
-                  week={weekProps.component.week}
-                  weekDays={weekProps.component.weekDays}
-                />
-
-                <WeekInteractionCoordinator
-                  getLayoutSources={getWeekInteractionLayoutSources}
-                  weekProps={weekProps}
-                >
-                  <ContextMenuWrapper id="grid-context-menu">
-                    <Grid
-                      dateCalcs={dateCalcs}
-                      gridRefs={gridRefs}
-                      measurements={measurements}
-                      today={today}
-                      weekProps={weekProps}
-                    />
-                  </ContextMenuWrapper>
-                </WeekInteractionCoordinator>
-              </div>
-            </WeekGridScrollArea>
-          </div>
-          <ContextMenuWrapper id="sidebar-context-menu">
-            <Draft measurements={measurements} weekProps={weekProps} />
-            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-              <Sidebar
-                calendarDate={calendarDate}
-                eventDetails={
-                  <SidebarEventDetails confirmAllRecurringEdits={false} />
-                }
-                onSelectDate={goToDateFromSidebar}
-                shortcutSections={shortcutSections}
-                shortcutsViewLabel="Week"
+          <WeekGridScrollArea>
+            <div
+              ref={setTrackRef}
+              className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
+            >
+              <DayLabels
+                startOfView={weekProps.component.startOfView}
+                today={today}
+                week={weekProps.component.week}
+                weekDays={weekProps.component.weekDays}
               />
-            </ResizableSidebarPanel>
-          </ContextMenuWrapper>
-        </Shortcuts>
-      </DraftProvider>
+
+              <ContextMenuWrapper id="grid-context-menu">
+                <Grid
+                  gridRefs={gridRefs}
+                  measurements={measurements}
+                  today={today}
+                  weekProps={weekProps}
+                />
+              </ContextMenuWrapper>
+            </div>
+          </WeekGridScrollArea>
+        </div>
+        <ContextMenuWrapper id="sidebar-context-menu">
+          <Draft measurements={measurements} weekProps={weekProps} />
+          <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
+            <Sidebar
+              calendarDate={calendarDate}
+              eventDetails={
+                <SidebarEventDetails confirmAllRecurringEdits={false} />
+              }
+              onSelectDate={goToDateFromSidebar}
+              shortcutSections={shortcutSections}
+              shortcutsViewLabel="Week"
+            />
+          </ResizableSidebarPanel>
+        </ContextMenuWrapper>
+      </Shortcuts>
     </div>
   );
 };

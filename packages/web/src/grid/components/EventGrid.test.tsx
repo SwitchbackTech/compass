@@ -21,8 +21,6 @@ const renderGrid = (count: number) =>
     <EventGrid
       allDayEventsLayer={<div data-testid="all-day-events-layer" />}
       gridRefs={createGridRefs()}
-      onAllDayMouseDown={mock()}
-      onTimedMouseDown={mock()}
       timedEventsLayer={<div data-testid="timed-events-layer" />}
       today={dayjs("2026-05-20T00:00:00.000")}
       visibleDates={Array.from({ length: count }, (_, index) => ({
@@ -74,8 +72,6 @@ describe("EventGrid", () => {
         <EventGrid
           allDayEventsLayer={<div />}
           gridRefs={createGridRefs()}
-          onAllDayMouseDown={mock()}
-          onTimedMouseDown={mock()}
           timedEventsLayer={<div />}
           today={dayjs("2026-05-20T00:00:00.000")}
           visibleDates={[
@@ -105,8 +101,6 @@ describe("EventGrid", () => {
         allDayGridOffsetTopPx={123}
         allDayRowsCount={3}
         gridRefs={createGridRefs()}
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -132,9 +126,7 @@ describe("EventGrid", () => {
         allDayEventsLayer={<div />}
         gridRefs={createGridRefs()}
         isErrorEvents
-        onAllDayMouseDown={mock()}
         onRetryEvents={onRetryEvents}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -164,8 +156,6 @@ describe("EventGrid", () => {
         gridRefs={createGridRefs()}
         isErrorEvents
         isLoadingEvents
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -190,8 +180,6 @@ describe("EventGrid", () => {
         allDayEventsLayer={<div />}
         gridRefs={createGridRefs()}
         isLoadingEvents
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -222,8 +210,6 @@ describe("EventGrid", () => {
         allDayEventsLayer={<div />}
         gridRefs={createGridRefs()}
         isImportingEmpty
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -256,8 +242,6 @@ describe("EventGrid", () => {
         gridRefs={createGridRefs()}
         isImportingEmpty
         isLoadingEvents
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -282,8 +266,6 @@ describe("EventGrid", () => {
         gridRefs={createGridRefs()}
         isErrorEvents
         isImportingEmpty
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[
@@ -310,9 +292,7 @@ describe("EventGrid", () => {
         allDayEventsLayer={<div />}
         gridRefs={createGridRefs()}
         isImportFailed
-        onAllDayMouseDown={mock()}
         onRetryImport={onRetryImport}
-        onTimedMouseDown={mock()}
         timedEventsLayer={<div />}
         today={dayjs("2026-05-20T00:00:00.000")}
         visibleDates={[

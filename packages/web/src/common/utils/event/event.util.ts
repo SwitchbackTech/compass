@@ -20,7 +20,6 @@ import {
   EVENT_SAVE_UNAVAILABLE_TOAST_ID,
   GENERIC_ERROR_TOAST_ID,
 } from "@web/common/constants/toast.constants";
-import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
   type GridEvent,
@@ -111,20 +110,6 @@ export const assembleGridEvent = (event: EventWithDates): GridEvent => {
   };
 
   return gridEvent;
-};
-
-export const getEventDragOffset = (
-  event?: GridEvent,
-  e?: PartialMouseEvent,
-): GridEvent["position"]["dragOffset"] => {
-  if (!event || !e) return { x: 0, y: 0 };
-
-  const target = e.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
-  };
 };
 
 export const getCalendarEventIdFromElement = (element: HTMLElement) =>
@@ -247,10 +232,7 @@ export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
     // No HTTP response reached us at all (offline, DNS, dropped connection)
     // or a 502/503/504 - the optimistic edit is about to roll back with
-    // nothing else on screen to explain why. The BackendDownView full-page
-    // gate only covers a SUSTAINED outage (and only for authenticated users);
-    // this covers the single failed save, including a transient blip that
-    // never trips the page-level gate at all.
+    // nothing else on screen to explain why.
     showErrorToast(
       "Couldn't save - check your connection. Your change was not applied.",
       { toastId: EVENT_SAVE_UNAVAILABLE_TOAST_ID },

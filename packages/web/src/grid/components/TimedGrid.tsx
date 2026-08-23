@@ -1,9 +1,4 @@
-import {
-  type FC,
-  type MouseEventHandler,
-  type ReactNode,
-  type RefCallback,
-} from "react";
+import { type FC, type ReactNode, type RefCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -34,7 +29,6 @@ import {
 interface TimedGridProps {
   columnsId?: string;
   eventsLayer: ReactNode;
-  onMouseDown: MouseEventHandler<HTMLElement>;
   today: Dayjs;
   timedColumnsRef: RefCallback<HTMLDivElement>;
   timedGridId?: string;
@@ -45,7 +39,6 @@ interface TimedGridProps {
 export const TimedGrid: FC<TimedGridProps> = ({
   columnsId = ID_GRID_COLUMNS_TIMED,
   eventsLayer,
-  onMouseDown,
   timedColumnsRef,
   timedGridId = ID_GRID_MAIN,
   timedGridRef,
@@ -135,12 +128,10 @@ export const TimedGrid: FC<TimedGridProps> = ({
         }
       >
         {getHourLabels(true).map((dayTime) => (
-          // biome-ignore lint/a11y/noStaticElementInteractions: Hour rows are pointer-only drag targets for creating timed events.
           <div
             className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-border border-b"
             key={dayTime}
             {...{ [DATA_TIMED_GRID_ROW]: "true" }}
-            onMouseDown={onMouseDown}
           />
         ))}
       </div>

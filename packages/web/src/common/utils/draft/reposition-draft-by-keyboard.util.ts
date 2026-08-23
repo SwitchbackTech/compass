@@ -1,4 +1,3 @@
-import dayjs from "@core/util/date/dayjs";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
@@ -9,6 +8,7 @@ import {
 } from "@web/events/event-draft.types";
 import { replaceGridDraftSchedule } from "@web/events/grid-event-draft.adapter";
 import { type Activity_DraftEvent } from "@web/events/stores/draft.store";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 const canRepositionDraftByKeyboard = (
   activity: Activity_DraftEvent | null | undefined,
@@ -41,8 +41,8 @@ export const repositionDraftByKeyboard = ({
   const movement = getArrowKeyMovement(key, isAllDay);
   if (!movement) return null;
 
-  const start = dayjs(draft.values.schedule.start);
-  const end = dayjs(draft.values.schedule.end);
+  const start = inEffectiveTimeZone(draft.values.schedule.start);
+  const end = inEffectiveTimeZone(draft.values.schedule.end);
   const nextStart = start
     .add(movement.days, "day")
     .add(movement.minutes, "minutes");

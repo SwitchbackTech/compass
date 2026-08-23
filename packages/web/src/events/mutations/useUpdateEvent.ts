@@ -30,8 +30,7 @@ import {
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 
 // Builds a GridEventDraft from the cached strict `Event` plus the incoming
-// GridEvent's changed fields (schedule/title/description), matching
-// WeekInteractionCoordinator.commitStrictSavedMutation (#2029), instead of
+// GridEvent's changed fields (schedule/title/description), instead of
 // hand-rolling a ReplaceEventInput via zod. Recurrence always stays
 // "preserve" here — this hook only ever moves/resizes an existing event,
 // never edits its recurrence rule.

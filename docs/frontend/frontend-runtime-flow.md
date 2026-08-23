@@ -62,7 +62,7 @@ Files:
 - `packages/web/src/components/FirstEventPrompt/`
 
 `RootShell` mounts the welcome modal, Shortcut Showcase, the first-event
-prompt, global navigation / calendar-shell shortcuts, and Hardcore Mode.
+prompt, global navigation / calendar-shell shortcuts, and pointer suppression.
 Those calendar-onboarding overlays are skipped on `/life`.
 
 Welcome → signup → first-event contract:
@@ -98,13 +98,13 @@ Welcome → signup → first-event contract:
 - users who already finished or skipped the retired guided tour are treated as
   having seen the showcase so it does not ambush them
 
-Hardcore Mode (`H`, also mounted from `RootShell`):
+Pointer suppression (always on, mounted from `RootShell`):
 
-- blocks pointer clicks while active; scroll and hover remain
-- clicks inside `[data-onboarding-ui]` still work so the showcase and the
-  first-event prompt stay usable
-- exits via Escape when nothing higher owns Escape, another `H`, or refresh
-- entering Hardcore clears event-jump chips so there is not a second Esc owner
+- blocks pointer clicks, right-clicks, and double-clicks everywhere; scroll
+  and hover remain
+- keyboard-activation clicks (Enter/Space on a native button), keyboard
+  contextmenu (Shift+F10), and synthetic `.click()` calls pass through
+- blocked clicks pulse `PointerHint`, a transient "keyboard only" pill
 
 See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
 [Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for

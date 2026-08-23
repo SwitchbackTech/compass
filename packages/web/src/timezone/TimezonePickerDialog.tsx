@@ -152,12 +152,11 @@ export function TimezonePickerDialog({
             const nextQuery = event.target.value;
             setQuery(nextQuery);
             const nextZones = filterTimeZones(catalog, nextQuery);
-            if (isTimeTravel) {
+            if (nextQuery.trim().length > 0) {
+              setActiveId(nextZones[0]?.id ?? (isTimeTravel ? "" : AUTO_ID));
+            } else if (isTimeTravel) {
               setActiveId(
-                nextZones[0]?.id ??
-                  (timeTravelZone !== null && nextQuery.trim() === ""
-                    ? STOP_ID
-                    : ""),
+                nextZones[0]?.id ?? (timeTravelZone !== null ? STOP_ID : ""),
               );
             } else {
               setActiveId(AUTO_ID);

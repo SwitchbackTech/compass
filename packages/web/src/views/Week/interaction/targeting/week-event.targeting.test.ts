@@ -1,5 +1,7 @@
-import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
-import { weekEventTargeting } from "./week-event.targeting";
+import {
+  weekEventRegistry,
+  weekEventTargeting,
+} from "../registry/week-event.registry";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {

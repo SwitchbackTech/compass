@@ -15,6 +15,8 @@ import { TimePicker } from "./TimePicker";
 
 export const END_TIME_ORDER_ERROR = "End time must be after start time";
 
+const timeOptions = getTimeOptions();
+
 const isEndBeforeStartOnDummyDay = (startValue: string, endValue: string) => {
   const startAt = dayjs(`2000-01-01 ${startValue}`, YMDHAM_FORMAT);
   const endAt = dayjs(`2000-01-01 ${endValue}`, YMDHAM_FORMAT);
@@ -42,7 +44,6 @@ export const TimePickers: FC<Props> = ({
   setStartTime,
   startTime,
 }) => {
-  const timeOptions = getTimeOptions();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false);
   const [timeError, setTimeError] = useState<string | null>(null);

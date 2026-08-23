@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from "react";
-import { type Dayjs } from "@core/util/date/dayjs";
+import { useCallback, useEffect, useRef } from "react";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -7,9 +7,15 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
+import { repositionDraftByKeyboard } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
+import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
 import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  isEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
@@ -17,11 +23,10 @@ import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { weekEventTargeting } from "@web/views/Week/interaction/targeting/week-event.targeting";
+import { weekEventTargeting } from "@web/views/Week/interaction/registry/week-event.registry";
 
 export interface ShortcutProps {
   isCurrentWeek: boolean;
@@ -55,9 +60,6 @@ export const useWeekShortcutOwner = ({
     useCalendarsQuery();
   const defaultTargetCalendarId =
     useDefaultTargetCalendar(calendars)?.id ?? null;
-  const {
-    actions: { repositionDraftByKeyboard },
-  } = useDraftContext();
 
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: queryStartOfView,
@@ -170,13 +172,57 @@ export const useWeekShortcutOwner = ({
     listVisible: weekEventTargeting.listVisibleGridEventTargets,
   };
 
+  // Set when a Shift+Arrow nudge carried an event across the window edge;
+  // consumed once the shifted window's weekDays land so focus restoration
+  // targets the post-shift card rather than a node the shift is about to
+  // replace.
+  const pendingCarryFocusIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const eventId = pendingCarryFocusIdRef.current;
+    if (!eventId) return;
+    pendingCarryFocusIdRef.current = null;
+    focusCalendarEventElement(eventId);
+  }, [weekDays]);
+
   useGridEventEditShortcuts({
     allDayEvents,
     timedEvents,
-    dayBoundary: { kind: "clamp", weekDays },
+    dayBoundary: {
+      kind: "clamp",
+      weekDays,
+      // Shift+Arrow at the window edge carries the event: the nudge commits
+      // and the view slides one day to keep it on screen. Raw shiftViewByDay
+      // (not shiftViewForward/Backward) so the carried event's optimistic
+      // update isn't discarded with the draft. Focus restoration waits for
+      // the shifted window to render (the weekDays effect below) - the
+      // nudge's own refocus retries run against the pre-shift DOM.
+      onCrossed: (days, eventId) => {
+        pendingCarryFocusIdRef.current = eventId;
+        shiftViewByDay(days);
+      },
+    },
     targeting,
     placeTimedDraft: placeTimedDraftEvent,
-    repositionDraftByKey: repositionDraftByKeyboard,
+    repositionDraftByKey: (key) => {
+      const { gridDraft, status } = useDraftStore.getState();
+      const viewStart = startOfView.startOf("day");
+      const viewEnd = endOfView.startOf("day");
+      const nextDraft = repositionDraftByKeyboard({
+        activity: status?.activity,
+        draft: gridDraft,
+        key,
+        isStartAllowed: (nextStart) => {
+          const start = dayjs(nextStart);
+          return (
+            !start.isBefore(viewStart, "day") && !start.isAfter(viewEnd, "day")
+          );
+        },
+      });
+      if (!nextDraft) return false;
+
+      draftActions.setGridDraft(nextDraft);
+      return true;
+    },
   });
 
   const { getMenuAnchor: getEditSequenceAnchor } =

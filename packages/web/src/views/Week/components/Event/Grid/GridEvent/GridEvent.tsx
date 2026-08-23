@@ -1,15 +1,8 @@
-import {
-  type ForwardedRef,
-  forwardRef,
-  type MouseEvent,
-  memo,
-  useState,
-} from "react";
+import { type ForwardedRef, forwardRef, memo, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
-import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { TimedEventCard } from "@web/grid/components/TimedEventCard";
 import { getTimedEventPosition } from "@web/grid/layout/event.position";
 import {
@@ -18,7 +11,6 @@ import {
 } from "@web/grid/layout/timed-deck.layout";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -29,13 +21,7 @@ interface Props {
   interactionAttributes?: Record<string, string | undefined>;
   measurements: Measurements_Grid;
   motionMode?: GridEventMotionMode;
-  onEventMouseDown?: (event: GridEventEntity, e: MouseEvent) => void;
   onEventKeyDown?: (event: GridEventEntity) => void;
-  onScalerMouseDown?: (
-    event: GridEventEntity,
-    e: MouseEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => void;
   weekProps: WeekProps;
 }
 
@@ -52,9 +38,7 @@ const GridEventBase = (
     interactionAttributes,
     measurements,
     motionMode = "idle",
-    onEventMouseDown,
     onEventKeyDown,
-    onScalerMouseDown,
     weekProps,
   }: Props,
   ref: ForwardedRef<HTMLDivElement>,
@@ -63,7 +47,6 @@ const GridEventBase = (
 
   const isDraft = displayMode === "draft";
   const isDragging = motionMode === "dragging";
-  const isPlaceholder = displayMode === "placeholder";
   const isResizing = motionMode === "resizing";
   const event = _event;
   const isDeck = Boolean(deckLayout);
@@ -109,27 +92,6 @@ const GridEventBase = (
     const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
     return `${ring}, ${drop}, ${highlight}`;
   })();
-  const handleEventMouseDown = (
-    selectedEvent: GridEventEntity,
-    e: MouseEvent,
-  ) => {
-    if (isWeekInteractionMotionActive()) {
-      return;
-    }
-
-    if (isRightClick(e)) {
-      // Ignores right click here so it can pass through to context menu
-      return;
-    }
-
-    if (!onEventMouseDown) {
-      e.stopPropagation();
-      return;
-    }
-
-    onEventMouseDown(selectedEvent, e);
-  };
-
   return (
     <TimedEventCard
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
@@ -142,8 +104,6 @@ const GridEventBase = (
       interactionAttributes={interactionAttributes}
       motionMode={motionMode}
       onEventKeyDown={onEventKeyDown}
-      onEventMouseDown={handleEventMouseDown}
-      onScalerMouseDown={onScalerMouseDown}
       position={{ ...position, zIndex }}
       ref={ref}
     />

@@ -2,8 +2,9 @@ import {
   createEventRegistry,
   type EventRegistry,
   type RegisteredEventTarget,
-} from "@web/grid/interaction/event.registry";
-import { useEventRegistrationRef } from "@web/grid/interaction/use-event-registration-ref";
+} from "./event.registry";
+import { createGridEventTargeting } from "./event.targeting";
+import { useEventRegistrationRef } from "./use-event-registration-ref";
 
 export type ViewInteractionEventType = "all-day" | "timed";
 
@@ -100,6 +101,10 @@ export const createViewInteractionRegistry = (viewName: string) => {
   };
 
   const registry = createRegistry();
+  const targeting = createGridEventTargeting({
+    registry,
+    targetSelector: `[${idAttribute}][${typeAttribute}]`,
+  });
 
   const useRegistrationRef = ({
     eventId,
@@ -122,6 +127,7 @@ export const createViewInteractionRegistry = (viewName: string) => {
     typeAttribute,
     createRegistry,
     registry,
+    targeting,
     getInteractionTargetAttributes,
     useRegistrationRef,
   };

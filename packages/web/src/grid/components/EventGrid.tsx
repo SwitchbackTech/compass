@@ -1,8 +1,4 @@
-import {
-  type FC,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
+import { type FC, type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
@@ -35,8 +31,6 @@ export interface EventGridProps {
   isImportFailed?: boolean;
   onRetryEvents?: () => void;
   onRetryImport?: () => void;
-  onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
-  onTimedMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   timedEventsLayer: ReactNode;
   today: Dayjs;
   visibleDates: GridVisibleDate[];
@@ -53,8 +47,6 @@ export const EventGrid: FC<EventGridProps> = ({
   isImportFailed = false,
   onRetryEvents,
   onRetryImport,
-  onAllDayMouseDown,
-  onTimedMouseDown,
   timedEventsLayer,
   today,
   visibleDates,
@@ -65,13 +57,11 @@ export const EventGrid: FC<EventGridProps> = ({
       allDayRowRef={gridRefs.allDayRowRef}
       eventsLayer={allDayEventsLayer}
       gridOffsetTopPx={allDayGridOffsetTopPx}
-      onMouseDown={onAllDayMouseDown}
       rowsCount={allDayRowsCount}
       visibleDates={visibleDates}
     />
     <TimedGrid
       eventsLayer={timedEventsLayer}
-      onMouseDown={onTimedMouseDown}
       timedColumnsRef={gridRefs.timedColumnsElementRef}
       timedGridRef={gridRefs.mainGridElementRef}
       today={today}

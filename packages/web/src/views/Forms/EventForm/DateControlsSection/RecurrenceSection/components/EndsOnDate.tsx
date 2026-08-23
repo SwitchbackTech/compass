@@ -40,6 +40,15 @@ export const EndsOnDate = ({
               onCalendarOpen={() => setOpen(true)}
               onChange={() => null}
               onInputClick={() => setOpen(true)}
+              // Combobox convention: ArrowDown on the closed input opens the
+              // calendar, matching onInputClick for the mouse.
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown" && !open) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpen(true);
+                }
+              }}
               onSelect={(date) => {
                 setUntil(date);
                 setOpen(false);

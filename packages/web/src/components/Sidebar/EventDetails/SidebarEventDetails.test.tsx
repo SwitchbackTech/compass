@@ -41,7 +41,7 @@ describe("SidebarEventDetails", () => {
       start: new Date("2026-05-20"),
       end: new Date("2026-05-21"),
     });
-    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
 
     render(<SidebarEventDetails />);
 
@@ -55,7 +55,6 @@ describe("SidebarEventDetails", () => {
       end: new Date("2026-05-21"),
     });
     draftActions.startGridDraft({ activity: "gridClick", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -71,7 +70,6 @@ describe("SidebarEventDetails", () => {
       end: new Date("2026-05-21"),
     });
     draftActions.startGridDraft({ activity: "gridClick", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -101,7 +99,6 @@ describe("SidebarEventDetails", () => {
     const draft = editGridEventDraft(existingEvent);
     if (!draft) throw new Error("expected an edit draft");
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -135,7 +132,6 @@ describe("SidebarEventDetails", () => {
     if (!draft) throw new Error("expected an edit draft");
     draft.values.title = "Changed title";
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -185,7 +181,6 @@ describe("SidebarEventDetails", () => {
     if (!draft) throw new Error("expected an edit draft");
     draft.values.title = "Changed title";
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -219,7 +214,6 @@ describe("SidebarEventDetails", () => {
     if (!draft) throw new Error("expected an edit draft");
     draft.values.title = "Changed title";
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />);
 
@@ -270,7 +264,6 @@ describe("SidebarEventDetails", () => {
     const draft = editGridEventDraft(existingEvent);
     if (!draft) throw new Error("expected an edit draft");
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />, { queryClient });
 
@@ -336,7 +329,6 @@ describe("SidebarEventDetails", () => {
     const draft = editGridEventDraft(recurringEvent);
     if (!draft) throw new Error("expected an edit draft");
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    draftActions.setFormOpen(true);
 
     render(<SidebarEventDetails />, { queryClient });
 

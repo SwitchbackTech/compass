@@ -82,6 +82,14 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "posthog"
+          # Scoped on purpose. The agent's output carries PostHog query
+          # results and whatever it reads out of the repo, and this repo is
+          # public, so bot-triggered runs stay redacted. But a redacted run
+          # reports API-level failures (an expired token, exhausted quota)
+          # as a bare `is_error: true` with no cause, which is undebuggable
+          # without the real message. An operator dispatching by hand already
+          # has write access, so those runs get the full output.
+          show_full_output: ${{ github.event_name == 'workflow_dispatch' }}
           prompt: |
             Read .github/prompts/error-autofix.md and follow it exactly.
             Mode: ${{ vars.AUTOFIX_MODE }}

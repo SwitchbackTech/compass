@@ -1,8 +1,10 @@
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { handleExpressError } from "@backend/common/errors/handlers/error.express.handler";
 import {
   error,
+  logLevelForError,
   toClientErrorPayload,
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -55,6 +57,54 @@ describe("error.handler", () => {
         message: "some-description",
         code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
       });
+    });
+  });
+
+  // Only `error`-level logs reach PostHogExceptionTransport, so this is what
+  // decides whether a failure becomes a captured exception (and an
+  // auto-filed GitHub issue) or stays an ordinary server-log warning.
+  describe("logLevelForError", () => {
+    it("warns on an operational 503 instead of capturing an exception", () => {
+      const unreachable = error(
+        AuthError.SyncConnectionUnavailable,
+        "Failed to list calendars from sync (unavailable)",
+      );
+
+      expect(unreachable.statusCode).toBe(Status.SERVICE_UNAVAILABLE);
+      expect(logLevelForError(unreachable)).toBe("warn");
+    });
+
+    it("warns on a retryable MAINTENANCE mutation error", () => {
+      expect(
+        logLevelForError(
+          eventMutationError("MAINTENANCE", "Cloud edits are paused"),
+        ),
+      ).toBe("warn");
+    });
+
+    it("keeps error level for a non-503 operational BaseError", () => {
+      expect(
+        logLevelForError(
+          error(UserError.MissingGoogleRefreshToken, "no refresh token"),
+        ),
+      ).toBe("error");
+    });
+
+    it("keeps error level for a 503 that is NOT operational", () => {
+      expect(
+        logLevelForError(
+          new BaseError(
+            "programmer-error",
+            "unexpected",
+            Status.SERVICE_UNAVAILABLE,
+            false,
+          ),
+        ),
+      ).toBe("error");
+    });
+
+    it("keeps error level for a plain Error", () => {
+      expect(logLevelForError(new Error("boom"))).toBe("error");
     });
   });
 

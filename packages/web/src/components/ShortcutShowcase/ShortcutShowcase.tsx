@@ -30,6 +30,7 @@ import {
   stepIdAt,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
@@ -64,7 +65,7 @@ const ShowcaseTakeover: FC = () => {
   const { authenticated } = useContext(SessionContext);
 
   // The takeover owns the keyboard: silence every real app handler
-  // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
+  // (useAppShortcut, the e-sequence, bare letters s/f/m) while it is up.
   useAppLockReason("shortcutShowcase", true);
 
   const graduate = () => {
@@ -160,6 +161,29 @@ const ShowcaseTakeover: FC = () => {
         apply(createDraft);
         return;
       }
+
+      // Side actions, letter-bound so the practice screen never needs a
+      // mouse. Only outside graduation - there Enter is the single action.
+      if (currentStepId !== "graduation") {
+        if (isBareLetterKey(event, "d")) {
+          event.preventDefault();
+          sideActionsRef.current.doItForMe();
+          return;
+        }
+        if (
+          isBareLetterKey(event, "s") &&
+          !sideActionsRef.current.authenticated
+        ) {
+          event.preventDefault();
+          sideActionsRef.current.skipToSignup();
+          return;
+        }
+        if (isBareLetterKey(event, "x")) {
+          event.preventDefault();
+          shortcutShowcaseActions.skip();
+          return;
+        }
+      }
     };
 
     document.addEventListener("keydown", onKeyDown, true);
@@ -176,6 +200,11 @@ const ShowcaseTakeover: FC = () => {
     advance();
   };
 
+  // Side-action letters for the capture listener; refs because the listener
+  // mounts once (same pattern as graduateRef).
+  const sideActionsRef = useRef({ doItForMe, skipToSignup, authenticated });
+  sideActionsRef.current = { doItForMe, skipToSignup, authenticated };
+
   const step =
     stepId === "create"
       ? {
@@ -189,7 +218,6 @@ const ShowcaseTakeover: FC = () => {
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
-      data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_MODAL }}
     >
       <div
@@ -213,7 +241,7 @@ const ShowcaseTakeover: FC = () => {
                 disabled={closing}
                 onClick={graduate}
               >
-                Enter Compass
+                Enter Compass <ShortcutHint>Enter</ShortcutHint>
               </button>
             ) : (
               <>
@@ -222,7 +250,7 @@ const ShowcaseTakeover: FC = () => {
                   className={PRIMARY_BUTTON_CLASS}
                   onClick={doItForMe}
                 >
-                  Do it for me
+                  Do it for me <ShortcutHint>D</ShortcutHint>
                 </button>
                 {!authenticated && (
                   <button
@@ -230,7 +258,7 @@ const ShowcaseTakeover: FC = () => {
                     className={SECONDARY_BUTTON_CLASS}
                     onClick={skipToSignup}
                   >
-                    Skip to sign up
+                    Skip to sign up <ShortcutHint>S</ShortcutHint>
                   </button>
                 )}
               </>
@@ -241,7 +269,7 @@ const ShowcaseTakeover: FC = () => {
                 className={TEXT_BUTTON_CLASS}
                 onClick={() => shortcutShowcaseActions.skip()}
               >
-                Skip to calendar
+                Skip to calendar <ShortcutHint>X</ShortcutHint>
               </button>
             )}
           </div>

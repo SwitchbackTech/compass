@@ -25,6 +25,7 @@ interface DemoEventsBannerProps {
 export const DemoEventsBanner: FC<DemoEventsBannerProps> = ({ onDismiss }) => (
   <div
     className="flex items-center justify-between gap-3 border-border border-b bg-surface-panel px-4 py-2 text-text-muted text-xs"
+    data-notice=""
     role="status"
   >
     <span>

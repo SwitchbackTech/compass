@@ -98,4 +98,25 @@ describe("createViewInteractionRegistry", () => {
     expect(isolated.resolve("isolated", "timed")).toBe(el);
     expect(day.registry.resolve("isolated", "timed")).toBeNull();
   });
+
+  it("exposes targeting against the view's shared registry", () => {
+    const day = createViewInteractionRegistry("day");
+    const el = document.body.appendChild(document.createElement("button"));
+    Object.defineProperty(el, "offsetParent", {
+      configurable: true,
+      get: () => document.body,
+    });
+    el.setAttribute(day.idAttribute, "event-1");
+    el.setAttribute(day.typeAttribute, "timed");
+    day.registry.register({
+      element: el,
+      eventId: "event-1",
+      eventType: "timed",
+    });
+
+    expect(day.targeting.getFirstVisibleGridEventTarget()).toMatchObject({
+      eventId: "event-1",
+      eventType: "timed",
+    });
+  });
 });

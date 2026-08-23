@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
   computeVisibleDayCount,
   WEEK_DAY_COUNT,
@@ -10,8 +9,7 @@ import {
  * Derives how many day columns the week grid can fit from the measured width
  * of the grid track. Defaults to the full week until a real measurement
  * arrives (the ref callback measures during commit, so the browser never
- * paints the unmeasured fallback). Updates freeze during drag interactions so
- * the window never re-derives mid-gesture.
+ * paints the unmeasured fallback).
  */
 export const useVisibleDayCount = () => {
   const [visibleDayCount, setVisibleDayCount] = useState(WEEK_DAY_COUNT);
@@ -22,10 +20,6 @@ export const useVisibleDayCount = () => {
   marginLeftRef.current = marginLeft;
 
   const measureNode = useCallback((node: HTMLDivElement) => {
-    if (isWeekInteractionMotionActive()) {
-      return;
-    }
-
     const width = node.getBoundingClientRect().width;
     if (!width) {
       // Unmeasurable (e.g. jsdom): keep showing the full week

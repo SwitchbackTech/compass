@@ -4,12 +4,7 @@ import {
   type EventListQuery,
 } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import {
-  isBackendUnavailable,
-  resetBackendAvailabilityForTests,
-} from "@web/api/util/backend-unavailable-error.util";
 import { type EventApi } from "@web/events/event.api";
-import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { RemoteEventRepository } from "@web/events/repositories/remote.event.repository";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -20,17 +15,7 @@ const api = {
   delete: mock(),
 } satisfies Record<keyof typeof EventApi, ReturnType<typeof mock>>;
 
-const localRepository = {
-  create: mock(),
-  list: mock(),
-  replace: mock(),
-  delete: mock(),
-} satisfies Record<keyof EventRepository, ReturnType<typeof mock>>;
-
-const repository = new RemoteEventRepository(
-  api as unknown as typeof EventApi,
-  localRepository as unknown as EventRepository,
-);
+const repository = new RemoteEventRepository(api as unknown as typeof EventApi);
 
 function createBackendUnavailableError(): Error {
   const error = new Error("Request failed");
@@ -41,8 +26,6 @@ function createBackendUnavailableError(): Error {
 describe("RemoteEventRepository", () => {
   beforeEach(() => {
     for (const fn of Object.values(api)) fn.mockClear();
-    for (const fn of Object.values(localRepository)) fn.mockClear();
-    resetBackendAvailabilityForTests();
   });
 
   describe("create", () => {
@@ -63,7 +46,7 @@ describe("RemoteEventRepository", () => {
       expect(result).toEqual(event);
     });
 
-    it("falls back to the local repository when the backend is unavailable", async () => {
+    it("fails closed when the backend is unavailable", async () => {
       const event = createMockEvent();
       const input: CreateEventInput = {
         calendarId: event.calendarId,
@@ -73,12 +56,9 @@ describe("RemoteEventRepository", () => {
       };
 
       api.create.mockRejectedValue(createBackendUnavailableError());
-      localRepository.create.mockResolvedValue(event);
-
-      await repository.create(input);
-
-      expect(localRepository.create).toHaveBeenCalledWith(input);
-      expect(isBackendUnavailable()).toBe(true);
+      await expect(repository.create(input)).rejects.toMatchObject({
+        name: "ApiError",
+      });
     });
   });
 
@@ -98,8 +78,7 @@ describe("RemoteEventRepository", () => {
       expect(result).toEqual(events);
     });
 
-    it("loads local events when the backend is unavailable", async () => {
-      const localEvents = [createMockEvent()];
+    it("does not replace cloud events with local events when the backend is unavailable", async () => {
       const query = {
         kind: "range" as const,
         start: "2024-01-01T00:00:00.000Z",
@@ -107,12 +86,9 @@ describe("RemoteEventRepository", () => {
       } as unknown as EventListQuery;
 
       api.list.mockRejectedValue(createBackendUnavailableError());
-      localRepository.list.mockResolvedValue(localEvents);
-
-      const result = await repository.list(query);
-
-      expect(localRepository.list).toHaveBeenCalledWith(query);
-      expect(result).toEqual(localEvents);
+      await expect(repository.list(query)).rejects.toMatchObject({
+        name: "ApiError",
+      });
     });
   });
 
@@ -150,18 +126,15 @@ describe("RemoteEventRepository", () => {
       expect(result).toEqual(event);
     });
 
-    it("falls back to the local repository when the backend is unavailable", async () => {
+    it("fails closed when the backend is unavailable", async () => {
       const event = createMockEvent();
       api.replace.mockRejectedValue(createBackendUnavailableError());
-      localRepository.replace.mockResolvedValue(event);
-
-      await repository.replace(event.id, baseInput);
-
-      expect(localRepository.replace).toHaveBeenCalledWith(event.id, baseInput);
-      expect(isBackendUnavailable()).toBe(true);
+      await expect(
+        repository.replace(event.id, baseInput),
+      ).rejects.toMatchObject({ name: "ApiError" });
     });
 
-    it("does not fall back for scope-all occurrence replaces when the backend is unavailable", async () => {
+    it("also fails closed for scope-all occurrence replaces", async () => {
       const occurrenceId =
         "aaaaaaaaaaaaaaaaaaaaaaaa::2026-07-03T16:00:00.000Z" as EventId;
       const input = { ...baseInput, scope: "all" as const };
@@ -171,8 +144,6 @@ describe("RemoteEventRepository", () => {
       await expect(repository.replace(occurrenceId, input)).rejects.toBe(
         unavailable,
       );
-      expect(localRepository.replace).not.toHaveBeenCalled();
-      expect(isBackendUnavailable()).toBe(true);
     });
   });
 });

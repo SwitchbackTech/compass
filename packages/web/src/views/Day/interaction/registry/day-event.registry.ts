@@ -21,4 +21,6 @@ export const createDayEventRegistry = day.createRegistry;
 
 export const dayEventRegistry = day.registry;
 
+export const dayEventTargeting = day.targeting;
+
 export const useDayEventRegistrationRef = day.useRegistrationRef;

@@ -11,11 +11,6 @@ import {
   handleErrorResponse,
   isApiError,
 } from "../util/api.util";
-import {
-  isBackendUnavailableError,
-  markBackendAvailable,
-  markBackendUnavailable,
-} from "../util/backend-unavailable-error.util";
 
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
@@ -41,7 +36,6 @@ const request = async <T>(
         ...requestConfig,
         body,
       });
-      markBackendAvailable();
       return result;
     }
 
@@ -54,7 +48,6 @@ const request = async <T>(
       },
       method,
     });
-    markBackendAvailable();
     const data = await getResponseData(response);
     const result = {
       config: requestConfig,
@@ -70,10 +63,6 @@ const request = async <T>(
 
     return result;
   } catch (error) {
-    if (isBackendUnavailableError(error)) {
-      markBackendUnavailable();
-    }
-
     if (isApiError(error)) {
       return handleErrorResponse(error, {
         onGoogleRevoked: BaseApi.defaults.onGoogleRevoked,
