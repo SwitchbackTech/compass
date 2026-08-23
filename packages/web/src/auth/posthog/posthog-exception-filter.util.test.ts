@@ -48,7 +48,7 @@ describe("filterPosthogBeforeSend", () => {
     ).toBeNull();
   });
 
-  it("drops the exact CefSharp scanner signature", () => {
+  it("drops the CefSharp scanner signature", () => {
     expect(
       filterPosthogBeforeSend(
         exceptionEvent([
@@ -56,6 +56,20 @@ describe("filterPosthogBeforeSend", () => {
             type: "Error",
             value:
               "Object Not Found Matching Id:1, MethodName:update, ParamCount:4",
+          },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("drops the CefSharp scanner signature regardless of the scan id", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([
+          {
+            type: "Error",
+            value:
+              "Object Not Found Matching Id:2, MethodName:update, ParamCount:4",
           },
         ]),
       ),
