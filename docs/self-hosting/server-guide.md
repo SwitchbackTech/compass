@@ -170,7 +170,9 @@ compass.example.com {  # <- this is the only line you need to change
 
  # Sync public surface (OAuth callback + Google push). The `sync` container
  # runs by default, so this block is required — omitting it breaks Google
- # Calendar connect.
+ # Calendar connect AND silently kills real-time sync. Keep it above the
+ # catch-all `handle` below, and proxy only `/sync/*`: the Sync service's
+ # private `/internal/*` routes share port 3010 and must never be exposed.
  handle /sync/* {
   reverse_proxy 127.0.0.1:3010
  }
@@ -185,6 +187,16 @@ This tells Caddy to serve your public domain over HTTPS, send `/api/*` requests
 to the Compass backend on `127.0.0.1:3000`, send `/sync/*` to the Sync service
 on `127.0.0.1:3010` (Google OAuth redirect `/sync/google` and push notifications),
 and send everything else to the web app on `127.0.0.1:9080`.
+
+> **Editing this file later?** Edit the live `/etc/caddy/Caddyfile`, never a
+> backup copy. Compass's own production host lost the `/sync/*` block for nine
+> days in August 2026 because an unrelated edit was made against a stale backup.
+> Nothing looked wrong: containers stayed healthy, the API answered, and the web
+> app served `/sync/notifications/google` with a `200`, so Google treated every
+> push notification as delivered and never retried. Calendar changes still
+> arrived, just via the slow reconcile sweep instead of within seconds, and no
+> new calendar could be connected at all. The `sync-webhook-route` deploy health
+> check exists to catch exactly this.
 
 Save the file and validate your changes:
 

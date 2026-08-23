@@ -177,6 +177,40 @@ export class SyncResourceRepository {
     });
   }
 
+  // Count one cursor-expiry lap and hold the resource off until `until`.
+  // $inc rather than a computed set so concurrent drains cannot lose a lap; a
+  // row written before the field reads as 0 and increments from there.
+  async recordCursorExpiry(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    until: Date,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      {
+        $inc: { cursorExpiredStreak: 1 },
+        $set: { cursorExpiredBackoffUntil: until, updatedAt: new Date() },
+      },
+    );
+  }
+
+  // A pull actually applied changes through the stored cursor, so the cursor
+  // works again: forget the streak. Deliberately NOT folded into advanceCursor,
+  // which a repair also calls — a repair writing a fresh token is exactly the
+  // lap we are counting, so clearing there would reset the streak every lap and
+  // the hold-off could never widen.
+  async clearCursorExpiry(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+  ): Promise<void> {
+    await this.#patch(tenantId, principalId, id, {
+      cursorExpiredStreak: 0,
+      cursorExpiredBackoffUntil: null,
+    });
+  }
+
   // Record that the provider DURABLY rejected reads for this resource (a 4xx
   // retrying cannot fix). The job that hit it is settled and removed rather than
   // left to burn its retry ladder, so this marker is the only evidence left —

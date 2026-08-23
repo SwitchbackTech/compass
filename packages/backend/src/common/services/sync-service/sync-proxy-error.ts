@@ -24,15 +24,23 @@ export function throwSyncProxyFailure(
   );
 }
 
-// Map a failed Sync command submit. Always PROVIDER_FAILURE so clients never
-// see GenericError.NotSure / HTTP 600. Timeout/unavailable stay retryable
-// because Sync may already have applied the write.
+// Map a failed Sync command submit. Never GenericError.NotSure / HTTP 600.
+// Timeout/unavailable are our own backpressure rather than a provider verdict,
+// so they mirror the read path's 503 instead of surfacing as a 502 (the two
+// paths disagreed until 2026-08-23, which made a Sync throttle look like a bad
+// gateway in the logs). Both stay retryable: Sync may already have applied the
+// write, so a caller MUST retry with the SAME idempotency key.
 export function throwSyncCommandSubmitFailure(
   kind: SyncClientErrorKind,
 ): never {
-  const message =
-    kind === "timeout" || kind === "unavailable"
-      ? `Sync command ${kind}; the mutation may already be applied`
-      : `Failed to submit command to sync (${kind})`;
-  throw eventMutationError("PROVIDER_FAILURE", message);
+  if (kind === "timeout" || kind === "unavailable") {
+    throw eventMutationError(
+      "SYNC_UNAVAILABLE",
+      `Sync command ${kind}; the mutation may already be applied`,
+    );
+  }
+  throw eventMutationError(
+    "PROVIDER_FAILURE",
+    `Failed to submit command to sync (${kind})`,
+  );
 }

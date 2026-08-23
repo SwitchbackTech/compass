@@ -315,9 +315,46 @@ async function runSyncJob(
   // initialImport for a deactivated calendar kept its coalescing key and burned
   // Google quota on every sweep until an operator noticed (2026-07-30).
   if (!calendar.active) {
+    // Stamp the attempt even though nothing ran. Both stale-resource finders
+    // select from sync_resources alone (it carries no active flag) and order by
+    // lastAttemptAt, so a resource that drops WITHOUT stamping keeps its old
+    // timestamp, sorts to the front of every batch, and is re-enqueued forever:
+    // 22 such drops in 19 minutes on prod, crowding out calendars that had real
+    // work (2026-08-23). Stamping rotates it to the back of the line, and
+    // removes it from the foreground finder's window entirely.
+    await deps.resources.markAttempt(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
     return {
       result: "drop",
       reason: `calendar ${calendar._id} is inactive; sync resumes if it is reactivated`,
+    };
+  }
+
+  // Scheduling, not provider logic, so it sits here rather than inside the
+  // pull: a calendar whose cursor the provider keeps rejecting is held off from
+  // incremental pulls, because every expiry costs a full repair lap and some
+  // calendars never sustain a cursor at all. Only incrementalPull is gated --
+  // repair is what makes the data current again and must still run, and a
+  // bootstrapCatchup is finishing a one-time chain that should not stall.
+  // Stamp the attempt for the same reason the inactive drop above does.
+  if (
+    job.kind === "incrementalPull" &&
+    resource.cursorExpiredBackoffUntil !== null &&
+    resource.cursorExpiredBackoffUntil > now()
+  ) {
+    await deps.resources.markAttempt(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
+    return {
+      result: "drop",
+      reason: `calendar ${calendar._id} cursor keeps expiring; holding off pulls until ${resource.cursorExpiredBackoffUntil.toISOString()}`,
     };
   }
 
@@ -357,6 +394,15 @@ async function runSyncJob(
     case "incrementalPull": {
       const pull = await pullUntilQuiet(deps, calendar, now);
       if (pull.status === "applied") {
+        // The stored cursor worked, so whatever streak it had is over. Guarded
+        // so the overwhelmingly common healthy pull writes nothing.
+        if (pull.resource.cursorExpiredStreak > 0) {
+          await deps.resources.clearCursorExpiry(
+            resource.tenantId,
+            resource.principalId,
+            resource._id,
+          );
+        }
         await appendCalendarInvalidation(deps, calendar, now());
         // Bootstrap a channel for an imported calendar that has none. The
         // initialImport followup is otherwise the ONLY thing that ever opens
@@ -385,8 +431,20 @@ async function runSyncJob(
         };
       }
       // cursorExpired: the provider cursor is unusable; a repair rebuilds.
+      // The repair runs NOW (it is what makes the data current again); the
+      // widening hold-off applies to the next PULL, so a calendar whose cursor
+      // never survives settles into a slow full-rebuild cadence instead of
+      // re-running the whole lap every ~45s.
+      const streak = pull.resource.cursorExpiredStreak + 1;
+      const holdOffMs = cursorExpiryHoldOffMs(streak);
+      await deps.resources.recordCursorExpiry(
+        resource.tenantId,
+        resource.principalId,
+        resource._id,
+        new Date(now().getTime() + holdOffMs),
+      );
       deps.log?.warn(
-        `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on incremental pull, enqueuing repair`,
+        `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on incremental pull (streak ${streak}), enqueuing repair and holding off pulls for ${Math.round(holdOffMs / 1000)}s`,
       );
       return {
         result: "done",
@@ -505,6 +563,31 @@ async function runSyncJob(
 // On giving up, the change marker is left set and the reconcile sweep covers
 // the remainder — slow, but bounded and visible in the log.
 const MAX_PULL_PASSES = 3;
+
+// How long to stop pulling a calendar after N consecutive cursor expiries.
+// The first two laps are free, so an ordinary calendar whose token genuinely
+// aged out (a long outage, a provider-side reissue) heals on the spot with no
+// added latency. Past that the cursor is not coming back — Google's derived
+// holiday calendars 410 a token minutes old, every time — and the only useful
+// response is to stop asking so often. Each lap still runs a full repair, so
+// the calendar stays correct at this cadence; it just stops burning a drain
+// lane and Google quota every ~45s (2026-08-23).
+const CURSOR_EXPIRY_HOLD_OFF_MS = [
+  0,
+  0,
+  5 * 60_000,
+  15 * 60_000,
+  60 * 60_000,
+  6 * 60 * 60_000,
+];
+
+// `streak` is always >= 1: the caller derives it from a nonnegative stored
+// count plus this lap. The `?? 0` is for noUncheckedIndexedAccess, not a real
+// out-of-range case.
+function cursorExpiryHoldOffMs(streak: number): number {
+  const index = Math.min(streak - 1, CURSOR_EXPIRY_HOLD_OFF_MS.length - 1);
+  return CURSOR_EXPIRY_HOLD_OFF_MS[index] ?? 0;
+}
 
 // Pull until no notification arrives mid-pull, then report the last result.
 //

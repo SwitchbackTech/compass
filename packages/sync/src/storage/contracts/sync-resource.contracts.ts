@@ -108,6 +108,22 @@ export const SyncResourceRecordSchema = z.strictObject({
   // Defaults tolerate rows written before the field — REQUIRED, see
   // watchUnsupportedAt above.
   changeNotifiedAt: z.date().nullable().default(null),
+  // How many incremental pulls in a row the provider has rejected with an
+  // expired cursor, and until when this resource is held off because of it.
+  //
+  // Some provider calendars never sustain an incremental cursor: Google's
+  // derived holiday calendars (en.usa#holiday@...) 410 a freshly issued
+  // nextSyncToken within a minute, so pull -> repair -> pull re-ran forever.
+  // Each lap did a full authoritative rebuild, so the DATA stayed correct — the
+  // cost was the loop itself: one prod resource reached activeGeneration 1919
+  // in four weeks and the churn crowded the drain lanes real calendars share
+  // (2026-08-23). The streak drives a widening hold-off so a chronically
+  // uncursorable calendar settles at a slow poll instead of a hot loop; a pull
+  // that finally applies clears both.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt above.
+  cursorExpiredStreak: z.number().int().nonnegative().default(0),
+  cursorExpiredBackoffUntil: z.date().nullable().default(null),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

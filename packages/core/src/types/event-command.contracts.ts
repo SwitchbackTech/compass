@@ -146,6 +146,11 @@ export const EventMutationErrorCodeSchema = z.enum([
   // reference but malformed.
   "INVALID_OCCURRENCE_ID",
   "PROVIDER_FAILURE",
+  // Sync itself was unreachable, timed out, or shed load (429/503) before the
+  // command reached a provider. Distinct from PROVIDER_FAILURE, which means the
+  // provider answered badly: this is our own backpressure, so it is a 503 and
+  // always safe to retry with the same idempotency key.
+  "SYNC_UNAVAILABLE",
   "GOOGLE_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).
   "MAINTENANCE",

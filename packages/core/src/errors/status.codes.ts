@@ -13,6 +13,7 @@ export enum Status {
   NOT_FOUND = 404,
   CONFLICT = 409,
   GONE = 410,
+  TOO_MANY_REQUESTS = 429,
 
   /* 5xx - Server Error */
   INTERNAL_SERVER = 500,

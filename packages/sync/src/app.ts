@@ -349,12 +349,26 @@ function buildHealthSnapshotSweep(
       // SweepScheduler always passes `before`; health ignore it and use now.
       sweep: async () => {
         // A single Atlas/DNS blip must not skip the whole 5-minute gauge.
-        await withTransientMongoRetry(() =>
+        const snapshot = await withTransientMongoRetry(() =>
           emitHealthSnapshot({
             deps: { mongo, identity },
             client,
           }),
         );
+        // Every live channel unnotified means push delivery is broken fleet
+        // wide, not that calendars are quiet. It looks like nothing is wrong:
+        // the reconcile sweep keeps calendars up to date on its ~10 minute
+        // cadence, so the only symptom is slowness. Prod ran this way for nine
+        // days in August 2026 with the number sitting at 425 of 425, because
+        // the reverse proxy had stopped routing /sync/* here. A PostHog gauge
+        // alone did not surface it, so say it in the log too.
+        const { neverNotified, healthy, renewSoon } = snapshot.subscriptions;
+        const live = healthy + renewSoon;
+        if (live > 0 && neverNotified >= live) {
+          logger.error(
+            `Sync push delivery looks broken: all ${live} live subscription(s) have never received a notification. Check that the reverse proxy routes /sync/* to this service.`,
+          );
+        }
         return 1;
       },
     },
