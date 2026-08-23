@@ -108,6 +108,16 @@ export const SyncResourceRecordSchema = z.strictObject({
   // Defaults tolerate rows written before the field — REQUIRED, see
   // watchUnsupportedAt above.
   changeNotifiedAt: z.date().nullable().default(null),
+  // When a push notification was last ACCEPTED for this resource. Set beside
+  // changeNotifiedAt and never cleared, which is the whole point: the marker
+  // above is a PENDING flag that the serving pull clears within seconds, so on
+  // a healthy fleet it reads null almost always and cannot answer "is push
+  // delivery working?". Confusing the two produced a fleet gauge that was
+  // ~100% "never notified" whether push was healthy or completely dead
+  // (2026-08-23). This field is the durable evidence.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt above.
+  pushLastReceivedAt: z.date().nullable().default(null),
   // How many incremental pulls in a row the provider has rejected with an
   // expired cursor, and until when this resource is held off because of it.
   //

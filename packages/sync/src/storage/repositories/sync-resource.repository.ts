@@ -246,7 +246,13 @@ export class SyncResourceRepository {
     id: string,
     at: Date,
   ): Promise<void> {
-    await this.#patch(tenantId, principalId, id, { changeNotifiedAt: at });
+    // pushLastReceivedAt is deliberately NOT cleared by the serving pull:
+    // changeNotifiedAt answers "is a change still owed?", this answers "has
+    // push delivery ever worked here?".
+    await this.#patch(tenantId, principalId, id, {
+      changeNotifiedAt: at,
+      pushLastReceivedAt: at,
+    });
   }
 
   // Clear the change marker a pull has now served, but only if it still holds

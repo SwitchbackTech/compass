@@ -161,13 +161,16 @@ async function summarizeSubscriptions(
         ...eventsFilter,
         subscriptionId: null,
       }),
-      // `$eq: null` matches a missing field too, which is what a resource that
-      // predates changeNotifiedAt looks like — deliberately counted, since such a
-      // resource has equally never been notified.
+      // pushLastReceivedAt, NOT changeNotifiedAt: the latter is a pending
+      // marker the serving pull clears within seconds, so counting it reported
+      // a fully unnotified fleet even while push was working perfectly.
+      // `$eq: null` matches a missing field too, which is what a resource
+      // predating the field looks like — deliberately counted, since such a
+      // resource has equally never been observed receiving a push.
       collection.countDocuments({
         ...eventsFilter,
         subscriptionId: { $ne: null },
-        changeNotifiedAt: null,
+        pushLastReceivedAt: null,
       }),
     ]);
 
