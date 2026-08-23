@@ -43,7 +43,7 @@ const Key = ({ children }: { children: string }) => (
   <kbd className="c-keycap">{children}</kbd>
 );
 
-const isTaughtPointerAttempt = (attempt: BlockedPointerAttempt | null) =>
+const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
   attempt?.actionId === POINTER_ACTIONS.eventOpen;
@@ -118,17 +118,18 @@ export const PointerHint: FC = () => {
     if (pulse === 0) return;
     const next = readHintCount() + 1;
     writeHintCount(next);
-    // Generic reminders shorten after a few clicks. Taught event/sidebar
-    // copy has to stay long enough to read the shortcut.
-    const brief = next > HINT_FULL_LIMIT && !isTaughtPointerAttempt(attempt);
+    const brief = next > HINT_FULL_LIMIT;
     setIsBrief(brief);
     setIsVisible(true);
+    const contextual = isContextualAttempt(
+      usePointerBlockStore.getState().latestAttempt,
+    );
     const timer = window.setTimeout(
       () => setIsVisible(false),
-      brief ? HINT_BRIEF_MS : HINT_VISIBLE_MS,
+      brief && !contextual ? HINT_BRIEF_MS : HINT_VISIBLE_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [attempt, pulse]);
+  }, [pulse]);
 
   if (!isVisible) return null;
 

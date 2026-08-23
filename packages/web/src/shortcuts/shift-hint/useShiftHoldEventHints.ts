@@ -338,8 +338,8 @@ export function useShiftHoldEventHints({
             (assignment) => assignment.eventId === match.pendingExactEventId,
           );
           if (exact) {
-            // A pointer click already focused this event so Enter works; do
-            // not wait 400ms just because a longer sibling (W2 vs W20) exists.
+            // The advertised token plus Enter should not wait 400ms just
+            // because a longer sibling exists (W2 vs W20).
             if (
               exact.eventId === useEventJumpStore.getState().pointerHintEventId
             ) {
