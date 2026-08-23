@@ -202,6 +202,11 @@ describe("GridTimezoneLabel", () => {
     expect(
       screen.queryByRole("group", { name: "Time travel timezones" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: `Calendar timezone: ${formatTimeZoneAbbreviation("America/New_York")}`,
+      }),
+    ).toHaveFocus();
     act(() => {
       resetTimeTravelStoreForTests();
     });
