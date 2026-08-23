@@ -33,6 +33,8 @@ type StorageKey =
   | "compass.commands.recent"
   // Pinned calendar timezone. Absent means Auto (follow the browser).
   | "compass.timezone.default"
+  // Secondary time-travel zone. Absent means the extra hour column is off.
+  | "compass.timezone.time-travel"
   // Browser IANA id the pin-mismatch banner is snoozed for. Absent means the
   // banner can show. It returns when the browser zone no longer matches.
   | "compass.timezone.mismatch-snoozed-browser";
@@ -57,6 +59,7 @@ export const STORAGE_KEYS: Record<
   | "COLLAPSED_ACCOUNTS"
   | "RECENT_COMMANDS"
   | "DEFAULT_TIMEZONE"
+  | "TIME_TRAVEL_TIMEZONE"
   | "TIMEZONE_MISMATCH_SNOOZED_BROWSER",
   StorageKey
 > = {
@@ -82,6 +85,7 @@ export const STORAGE_KEYS: Record<
   COLLAPSED_ACCOUNTS: "compass.calendars.collapsed-accounts",
   RECENT_COMMANDS: "compass.commands.recent",
   DEFAULT_TIMEZONE: "compass.timezone.default",
+  TIME_TRAVEL_TIMEZONE: "compass.timezone.time-travel",
   TIMEZONE_MISMATCH_SNOOZED_BROWSER:
     "compass.timezone.mismatch-snoozed-browser",
 } as const;

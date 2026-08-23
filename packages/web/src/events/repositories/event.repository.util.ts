@@ -1,7 +1,7 @@
 /**
  * Repository selection entry point.
  * This factory decides whether event reads/writes go to local IndexedDB or the remote API.
- * Remembered auth state, backend availability, and current session state decide the target.
+ * Remembered auth state and current session state decide the target.
  * Per-account Google reconnect-required is handled by write gates / read-only UI, not by
  * flipping the whole app onto IndexedDB.
  * Reads flow through TanStack Query (see event.query.options.ts + the useXEventsQuery
@@ -12,7 +12,6 @@
  * Related: docs/frontend/frontend-runtime-flow.md
  */
 
-import { isBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import {
   createGetEventRepositoryBySource,
@@ -26,23 +25,19 @@ import { RemoteEventRepository } from "./remote.event.repository";
  */
 export const getEventRepositorySource = createGetEventRepositorySource({
   hasUserEverAuthenticated,
-  isBackendUnavailable,
 });
 
 /**
  * Factory function to get the appropriate event repository based on session and authentication state.
  *
  * Repository selection logic:
- * 1. If the backend is unavailable: Use LocalEventRepository
- *    - Keeps frontend-only development and self-hosted UI-only deployments usable
- *    - Events remain saved in IndexedDB instead of failing remote requests
- * 2. If user has EVER authenticated: Use RemoteEventRepository
+ * 1. If user has EVER authenticated: Use RemoteEventRepository
  *    - Prevents remote account events from disappearing when the session is temporarily missing
  *    - Remote requests can surface the auth problem instead of silently saving locally
  *    - A single Google account needing reconnect does not demote healthy accounts
- * 3. If a session exists: Use RemoteEventRepository
+ * 2. If a session exists: Use RemoteEventRepository
  *    - Newly authenticated users persist through the backend even before remembered auth state updates
- * 4. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
+ * 3. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
  *    - Events stored locally until user decides to sign in
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())
