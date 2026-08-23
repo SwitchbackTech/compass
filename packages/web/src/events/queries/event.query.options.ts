@@ -22,7 +22,7 @@ const EVENT_QUERY_CACHE_OPTIONS = {
   // Event reads are the calendar's primary content. A short proxy restart or
   // Wi-Fi transition should recover in place instead of replacing cached
   // cloud data with an empty IndexedDB result and leaving the query idle.
-  retry: (failureCount: number, error: unknown) =>
+  retry: (failureCount: number, error: Error) =>
     failureCount < 3 && isBackendUnavailableError(error),
   retryDelay: (attemptIndex: number) =>
     Math.min(1000 * 2 ** attemptIndex, 4000),

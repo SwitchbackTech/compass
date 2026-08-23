@@ -1,16 +1,16 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Status } from "@core/errors/status.codes";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError } from "@web/api/api.types";
 import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
-import * as errorToast from "@web/common/utils/toast/error-toast.util";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
 import { afterEach, describe, expect, it, spyOn } from "bun:test";
 
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
-const showErrorToast = spyOn(errorToast, "showErrorToast");
 
 const checkoutFailed = (): ApiError => {
   const error = new Error(
@@ -39,7 +39,6 @@ const renderGate = () =>
 describe("BillingGateModal", () => {
   afterEach(() => {
     assign.mockClear();
-    showErrorToast.mockClear();
   });
 
   it("redirects to Stripe Checkout from Start trial", async () => {
@@ -47,6 +46,8 @@ describe("BillingGateModal", () => {
       BillingApi,
       "createCheckoutSession",
     ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
     const user = userEvent.setup();
     renderGate();
 
@@ -54,7 +55,7 @@ describe("BillingGateModal", () => {
 
     expect(createCheckoutSession).toHaveBeenCalled();
     expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
-    expect(showErrorToast).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
     createCheckoutSession.mockRestore();
   });
 
@@ -62,16 +63,21 @@ describe("BillingGateModal", () => {
     const createCheckoutSession = spyOn(
       BillingApi,
       "createCheckoutSession",
-    ).mockRejectedValue(checkoutFailed());
+    ).mockImplementation(() => Promise.reject(checkoutFailed()));
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
     const user = userEvent.setup();
     renderGate();
 
     await user.click(screen.getByRole("button", { name: "Start trial" }));
 
+    await waitFor(() => {
+      expect(mocks.error).toHaveBeenCalledWith(
+        "Couldn't start checkout. Please try again.",
+        expect.any(Object),
+      );
+    });
     expect(assign).not.toHaveBeenCalled();
-    expect(showErrorToast).toHaveBeenCalledWith(
-      "Couldn't start checkout. Please try again.",
-    );
     createCheckoutSession.mockRestore();
   });
 });

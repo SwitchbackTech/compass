@@ -1,22 +1,29 @@
-import { useEffect } from "react";
+import { XIcon } from "@phosphor-icons/react";
+import { useEffect, useRef } from "react";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
+import { GRID_TIME_COLUMN_WIDTH } from "@web/grid/grid.constants";
 import {
   refreshEffectiveTimeZoneFromBrowser,
   useEffectiveTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
+import {
+  setTimeTravelZone,
+  useTimeTravelZone,
+} from "@web/timezone/time-travel.store";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
 
 const BROWSER_ZONE_POLL_MS = 60_000;
 
 /**
  * Week/Day grid-corner control showing the effective timezone abbreviation.
- * A button from day one so Part III can reuse it as the time-travel trigger;
- * until then it opens the timezone picker.
+ * Click opens time travel (the same picker, committing a secondary zone).
  */
 export const GridTimezoneLabel = () => {
   const timeZone = useEffectiveTimeZone();
+  const timeTravelZone = useTimeTravelZone();
   const now = useMinuteTick();
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
 
   // There is no timezonechange event. Poll so Auto mode follows an OS change
   // without a tab blur. Do not refresh on mount — that would wipe a test pin
@@ -31,15 +38,61 @@ export const GridTimezoneLabel = () => {
   }, []);
 
   const abbreviation = formatTimeZoneAbbreviation(timeZone, now.toDate());
+  const openTimeTravel = () =>
+    timezoneDialogActions.open(undefined, "time-travel");
+  const isTraveling = timeTravelZone !== null;
+  const travelAbbreviation = isTraveling
+    ? formatTimeZoneAbbreviation(timeTravelZone, now.toDate())
+    : null;
 
   return (
-    <button
-      aria-label={`Calendar timezone: ${abbreviation}`}
-      className="c-focus-ring min-h-6 w-full max-w-full truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
-      onClick={() => timezoneDialogActions.open()}
-      type="button"
+    <div
+      aria-label={isTraveling ? "Time travel timezones" : undefined}
+      className={
+        isTraveling ? "flex w-full min-w-0 items-end" : "w-full max-w-full"
+      }
+      role={isTraveling ? "group" : undefined}
     >
-      {abbreviation}
-    </button>
+      {isTraveling ? (
+        <div
+          className="flex items-center justify-center gap-0.5"
+          style={{ width: GRID_TIME_COLUMN_WIDTH }}
+        >
+          <button
+            aria-label={`Time travel timezone: ${travelAbbreviation}`}
+            className="c-focus-ring min-h-6 min-w-0 truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
+            onClick={openTimeTravel}
+            type="button"
+          >
+            {travelAbbreviation}
+          </button>
+          <button
+            aria-label="Remove time travel timezone"
+            className="c-focus-ring flex size-4 shrink-0 items-center justify-center rounded-sm text-text-muted hover:text-text"
+            onClick={() => {
+              setTimeTravelZone(null);
+              calendarButtonRef.current?.focus();
+            }}
+            type="button"
+          >
+            <XIcon aria-hidden="true" className="size-3" />
+          </button>
+        </div>
+      ) : null}
+      <button
+        ref={calendarButtonRef}
+        aria-label={`Calendar timezone: ${abbreviation}`}
+        className={
+          isTraveling
+            ? "c-focus-ring min-h-6 truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
+            : "c-focus-ring min-h-6 w-full max-w-full truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text"
+        }
+        onClick={openTimeTravel}
+        style={isTraveling ? { width: GRID_TIME_COLUMN_WIDTH } : undefined}
+        type="button"
+      >
+        {abbreviation}
+      </button>
+    </div>
   );
 };

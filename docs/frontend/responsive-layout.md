@@ -27,13 +27,12 @@ week. Two pieces derive that window from the measured grid width:
 
 - `packages/web/src/views/Week/hooks/grid/useVisibleDayCount.ts` — a
   `ResizeObserver` on the grid track computes `visibleDayCount` via
-  `computeVisibleDayCount(trackWidth)`
-  (`packages/web/src/views/Week/util/week-window.util.ts`). Updates freeze
-  while a drag interaction is in flight (`isWeekInteractionMotionActive()`)
-  so the window never re-derives mid-gesture. Defaults to the full week
-  (`WEEK_DAY_COUNT = 7`) until a real measurement lands — jsdom never
-  measures, so tests default to a full week unless they explicitly mock the
-  observer.
+  `computeVisibleDayCount(trackWidth, marginLeft)`
+  (`packages/web/src/views/Week/util/week-window.util.ts`). The hour-label
+  gutter is subtracted so a second time-travel column does not change how
+  many days fit. Defaults to the full week (`WEEK_DAY_COUNT = 7`) until a
+  real measurement lands — jsdom never measures, so tests default to a full
+  week unless they explicitly mock the observer.
 - `packages/web/src/views/Week/hooks/useWeek.ts` — holds a single **anchor
   date** in the URL (not `useState`, so a refresh restores the same week),
   memoized on the date *string* rather than the `Dayjs` instance (`today` is a

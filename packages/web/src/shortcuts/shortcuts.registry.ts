@@ -98,6 +98,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Scroll grid down",
     section: "navigate",
   },
+  {
+    id: "nav-scroll-hour-up",
+    keys: caps("Alt+ArrowUp"),
+    label: "Scroll grid up one hour",
+    section: "navigate",
+  },
+  {
+    id: "nav-scroll-hour-down",
+    keys: caps("Alt+ArrowDown"),
+    label: "Scroll grid down one hour",
+    section: "navigate",
+  },
 
   // Navigate - View switchers (all views)
   {
@@ -333,6 +345,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Redo last change",
     section: "other",
   },
+  {
+    id: "other-time-travel",
+    keys: ["z"],
+    label: "Time travel",
+    section: "other",
+  },
 ];
 
 interface FilterOptions {
@@ -390,6 +408,9 @@ export const filterShortcutsByContext = (
           shortcut.id === "nav-day-view" ||
           shortcut.id === "nav-week-view"
         );
+      }
+      if (shortcut.id === "other-time-travel") {
+        return false;
       }
     } else {
       // Day/week view excludes life-specific shortcuts

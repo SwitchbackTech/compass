@@ -1,6 +1,10 @@
 import { useGridScrollShortcuts } from "@web/grid/shortcuts/useGridScrollShortcuts";
 import { KEYMAP } from "@web/shortcuts/keymap";
-import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
+import {
+  useAppShortcut,
+  useAppShortcutUp,
+} from "@web/shortcuts/useAppShortcut";
+import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
 
 export interface CalendarViewShortcutsConfig {
   /** J / K: previous / next period (day or week). */
@@ -18,7 +22,8 @@ export interface CalendarViewShortcutsConfig {
 /**
  * Shared Day/Week view shortcuts: j/k navigate the period, t goes to today,
  * "c" creates a timed event, "a" an all-day event, "u" focuses the calendar;
- * PageUp/PageDown scroll the timed grid via `useGridScrollShortcuts`.
+ * PageUp/PageDown and Alt+ArrowUp/Down scroll the timed grid via
+ * `useGridScrollShortcuts`.
  * Shift+J/K register only when the view provides a handler (Week's window
  * shift). "i" (focus sidebar) is registered separately via
  * useFocusSidebarShortcut. Behavior lives in each view's owner; this is only
@@ -41,4 +46,9 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
     config.onCreateTimedEvent?.(),
   );
   useAppShortcutUp("U", () => config.onFocusCalendar?.());
+  // Keydown so a macOS Cmd+Z keyup-replay (meta already released) cannot
+  // match this binding the way Mod+D vs D does on keyup.
+  useAppShortcut("Z", () =>
+    timezoneDialogActions.open(undefined, "time-travel"),
+  );
 }

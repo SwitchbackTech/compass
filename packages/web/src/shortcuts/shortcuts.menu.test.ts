@@ -75,7 +75,7 @@ describe("shortcut menu sections", () => {
       ]);
     });
 
-    it("lists PageUp/PageDown grid scroll in day and week, not life", () => {
+    it("lists PageUp/PageDown and Alt+Arrow grid scroll in day and week, not life", () => {
       for (const view of ["day", "week"] as const) {
         const [navigate] = getShortcutMenuSections({
           view,
@@ -90,6 +90,14 @@ describe("shortcut menu sections", () => {
           keys: ["PageDown"],
           label: "Scroll grid down",
         });
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+          keys: ["Alt", "ArrowUp"],
+          label: "Scroll grid up one hour",
+        });
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+          keys: ["Alt", "ArrowDown"],
+          label: "Scroll grid down one hour",
+        });
       }
 
       const [lifeNavigate] = getShortcutMenuSections({
@@ -103,6 +111,14 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(lifeNavigate.shortcuts)).not.toContainEqual({
         keys: ["PageDown"],
         label: "Scroll grid down",
+      });
+      expect(stripMetadata(lifeNavigate.shortcuts)).not.toContainEqual({
+        keys: ["Alt", "ArrowUp"],
+        label: "Scroll grid up one hour",
+      });
+      expect(stripMetadata(lifeNavigate.shortcuts)).not.toContainEqual({
+        keys: ["Alt", "ArrowDown"],
+        label: "Scroll grid down one hour",
       });
     });
 

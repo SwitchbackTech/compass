@@ -43,6 +43,7 @@ import {
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
+import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
 
 type StoreReset = () => void;
@@ -60,7 +61,9 @@ const storeResets: StoreReset[] = [
   resetCalendarVisibilityStoreForTests,
   resetDefaultCalendarStoreForTests,
   resetEffectiveTimeZoneStoreForTests,
-  () => useTimezoneDialogStore.setState({ isOpen: false }, true),
+  resetTimeTravelStoreForTests,
+  () =>
+    useTimezoneDialogStore.setState({ isOpen: false, purpose: "pin" }, true),
   resetCollapsedAccountsStoreForTests,
   resetRecentCommandsStoreForTests,
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
