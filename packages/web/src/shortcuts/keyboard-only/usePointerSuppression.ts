@@ -1,9 +1,14 @@
 import { useEffect } from "react";
 import {
+  requestPointerEventJump,
+  teachingFromBlockedPointer,
+} from "@web/shortcuts/keyboard-only/pointer-action";
+import {
   createPointerBlockListener,
   POINTER_BLOCK_EVENT_TYPES,
 } from "@web/shortcuts/keyboard-only/pointer-block";
 import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 
 /**
  * Compass is the keyboard calendar: the mouse does nothing, permanently.
@@ -16,7 +21,18 @@ import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.
 export function usePointerSuppression() {
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
-      onBlockedGesture: pointerBlockActions.pulseBlockedClick,
+      onBlockedGesture: (event) => {
+        const { attempt, jumpEventId } = teachingFromBlockedPointer(
+          event.composedPath?.() ?? [],
+          event.button ?? 0,
+        );
+        pointerBlockActions.pulseBlockedClick(attempt);
+        if (jumpEventId) {
+          // Never let a prior event's assignment flash for a new/locked target.
+          eventJumpActions.setPointerHintKey(null);
+          requestPointerEventJump(jumpEventId);
+        }
+      },
     });
 
     for (const type of POINTER_BLOCK_EVENT_TYPES) {

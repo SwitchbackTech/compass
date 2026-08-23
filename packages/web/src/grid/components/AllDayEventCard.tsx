@@ -26,6 +26,7 @@ import {
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
 import { type EventPosition } from "@web/grid/types/grid.types";
+import { eventPointerActionAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { EventRepeatIcon } from "./EventRepeatIcon";
 
 const REPEAT_ICON_MIN_WIDTH = 60;
@@ -122,6 +123,7 @@ const AllDayEventCardBase = (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...interactionAttributes}
+      {...eventPointerActionAttributes(isPlaceholder ? undefined : event._id)}
       aria-label={accessibleLabel}
       data-edge-focus={focusedEdge ?? undefined}
       ref={ref}

@@ -5,11 +5,17 @@ import {
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   initialPointerBlockState,
   pointerBlockActions,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import {
+  eventJumpActions,
+  initialEventJumpState,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const HINT_COUNT_KEY = "compass.pointer-hint-count";
@@ -18,12 +24,14 @@ describe("PointerHint", () => {
   beforeEach(() => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
+    useEventJumpStore.setState(initialEventJumpState, true);
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
   afterEach(() => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
+    useEventJumpStore.setState(initialEventJumpState, true);
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
@@ -50,6 +58,36 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Keyboard only. Follow the keys on screen.",
+    );
+  });
+
+  it("teaches the sidebar shortcut for the attempted action", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.sidebarClose,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press ] to close the sidebar.",
+    );
+  });
+
+  it("teaches the assigned sequence for the attempted event", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      eventJumpActions.setPointerHintKey("W2");
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.eventOpen,
+        eventId: "event-1",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press W2, then Enter to open this event.",
     );
   });
 

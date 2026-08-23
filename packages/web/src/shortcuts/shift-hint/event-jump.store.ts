@@ -8,12 +8,15 @@ export type EventJumpState = {
   activeDayKeys: string[];
   /** Polite live-region message for mode / day selection. */
   announcement: string;
+  /** Assignment surfaced after a blocked click selects a specific event. */
+  pointerHintKey: string | null;
 };
 
 export const initialEventJumpState: EventJumpState = {
   isActive: false,
   activeDayKeys: [],
   announcement: "",
+  pointerHintKey: null,
 };
 
 export const useEventJumpStore = create<EventJumpState>()(
@@ -32,6 +35,7 @@ export const eventJumpActions = {
           ? useEventJumpStore.getState().activeDayKeys
           : [],
         announcement: isActive ? "Event jump on" : "Event jump off",
+        ...(!isActive ? { pointerHintKey: null } : {}),
       },
       false,
       { type: "setActive" },
@@ -50,6 +54,10 @@ export const eventJumpActions = {
       false,
       { type: "setActiveDayKeys" },
     ),
+  setPointerHintKey: (pointerHintKey: string | null) =>
+    useEventJumpStore.setState({ pointerHintKey }, false, {
+      type: "setPointerHintKey",
+    }),
   reset: () =>
     useEventJumpStore.setState(initialEventJumpState, false, { type: "reset" }),
 };
@@ -65,3 +73,6 @@ export const selectEventJumpActiveDayKeys = (state: EventJumpState) =>
 
 export const selectEventJumpAnnouncement = (state: EventJumpState) =>
   state.announcement;
+
+export const selectEventJumpPointerHintKey = (state: EventJumpState) =>
+  state.pointerHintKey;

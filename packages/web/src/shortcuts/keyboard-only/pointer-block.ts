@@ -54,6 +54,7 @@ export interface PointerBlockEvent {
   detail?: number;
   button?: number;
   pointerType?: string;
+  composedPath?(): EventTarget[];
   preventDefault(): void;
   stopPropagation(): void;
 }
@@ -68,7 +69,7 @@ export interface PointerBlockEvent {
  * macOS Ctrl+click has no F10/ContextMenu keydown, so it stays blocked.
  */
 export const createPointerBlockListener = (options: {
-  onBlockedGesture: () => void;
+  onBlockedGesture: (event: PointerBlockEvent) => void;
 }) => {
   let lastBlockedPointerDownAt: number | null = null;
 
@@ -93,7 +94,7 @@ export const createPointerBlockListener = (options: {
     event.stopPropagation();
     if (event.type === "pointerdown") {
       lastBlockedPointerDownAt = performance.now();
-      options.onBlockedGesture();
+      options.onBlockedGesture(event);
     }
   };
 

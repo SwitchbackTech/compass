@@ -42,6 +42,10 @@ import {
   initialPointerBlockState,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import {
+  initialEventJumpState,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
@@ -73,6 +77,7 @@ const storeResets: StoreReset[] = [
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
+  () => useEventJumpStore.setState(initialEventJumpState, true),
 ];
 
 export function resetAllStores() {

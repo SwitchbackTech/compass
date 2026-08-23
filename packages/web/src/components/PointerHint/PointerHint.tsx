@@ -1,13 +1,22 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import {
+  type BlockedPointerAttempt,
+  POINTER_ACTIONS,
+} from "@web/shortcuts/keyboard-only/pointer-action";
+import {
+  selectLatestPointerAttempt,
   selectPointerBlockPulse,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import {
+  selectEventJumpPointerHintKey,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 const HINT_VISIBLE_MS = 2500;
 const HINT_BRIEF_MS = 400;
@@ -30,14 +39,72 @@ const writeHintCount = (count: number) => {
   }
 };
 
+const Key = ({ children }: { children: string }) => (
+  <kbd className="c-keycap">{children}</kbd>
+);
+
+const pointerHintMessage = ({
+  attempt,
+  eventJumpKey,
+  isBrief,
+  showcaseActive,
+}: {
+  attempt: BlockedPointerAttempt | null;
+  eventJumpKey: string | null;
+  isBrief: boolean;
+  showcaseActive: boolean;
+}): ReactNode => {
+  if (showcaseActive) return "Keyboard only. Follow the keys on screen.";
+
+  if (
+    attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
+    attempt?.actionId === POINTER_ACTIONS.sidebarOpen
+  ) {
+    const verb =
+      attempt.actionId === POINTER_ACTIONS.sidebarClose ? "close" : "open";
+    return (
+      <>
+        Press <Key>]</Key> to {verb} the sidebar.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.eventOpen) {
+    if (!eventJumpKey) {
+      return (
+        <>
+          Press <Key>S</Key> to reveal event shortcuts.
+        </>
+      );
+    }
+    return (
+      <>
+        Press <Key>{eventJumpKey}</Key>, then <Key>Enter</Key> to open this
+        event.
+      </>
+    );
+  }
+
+  if (isBrief) return "Keyboard only.";
+
+  return (
+    <>
+      Compass is keyboard only. Press <Key>?</Key> for shortcuts.
+    </>
+  );
+};
+
 /**
  * Teaches instead of silently ignoring: when a mouse click is blocked, a
- * transient pill explains that Compass is keyboard-only and points at the
- * legend. Mounted in RootShell so it shows with the sidebar closed too.
+ * transient pill explains the exact keyboard path for recognized targets and
+ * falls back to the legend while coverage is expanded. Mounted in RootShell
+ * so it shows with the sidebar closed too.
  * Top-center to stay clear of the Up Next banner's bottom-center spot.
  */
 export const PointerHint: FC = () => {
   const pulse = usePointerBlockStore(selectPointerBlockPulse);
+  const attempt = usePointerBlockStore(selectLatestPointerAttempt);
+  const eventJumpKey = useEventJumpStore(selectEventJumpPointerHintKey);
   const showcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   const [isVisible, setIsVisible] = useState(false);
   const [isBrief, setIsBrief] = useState(false);
@@ -66,16 +133,12 @@ export const PointerHint: FC = () => {
       role="status"
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
-      {showcaseActive ? (
-        "Keyboard only. Follow the keys on screen."
-      ) : isBrief ? (
-        "Keyboard only."
-      ) : (
-        <>
-          Compass is keyboard only. Press <kbd className="c-keycap">?</kbd> for
-          shortcuts.
-        </>
-      )}
+      {pointerHintMessage({
+        attempt,
+        eventJumpKey,
+        isBrief,
+        showcaseActive,
+      })}
     </div>
   );
 };
