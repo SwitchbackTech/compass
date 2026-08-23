@@ -35,6 +35,31 @@ export const resolveBlockedPointerAttempt = (
   return { actionId: "unknown" };
 };
 
+const PRIMARY_POINTER_BUTTON = 0;
+
+/**
+ * Right/middle clicks on an event must not start event jump: `m` would then
+ * be consumed as Monday instead of opening the context menu.
+ */
+export const teachingFromBlockedPointer = (
+  path: EventTarget[],
+  button = PRIMARY_POINTER_BUTTON,
+): { attempt: BlockedPointerAttempt; jumpEventId?: string } => {
+  const attempt = resolveBlockedPointerAttempt(path);
+  const isPrimary = button === PRIMARY_POINTER_BUTTON;
+  if (
+    isPrimary &&
+    attempt.actionId === POINTER_ACTIONS.eventOpen &&
+    attempt.eventId
+  ) {
+    return { attempt, jumpEventId: attempt.eventId };
+  }
+  if (!isPrimary && attempt.actionId === POINTER_ACTIONS.eventOpen) {
+    return { attempt: { actionId: "unknown" } };
+  }
+  return { attempt };
+};
+
 export const eventPointerActionAttributes = (eventId?: string) =>
   eventId
     ? {

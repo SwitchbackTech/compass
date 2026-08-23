@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import {
-  POINTER_ACTIONS,
   requestPointerEventJump,
-  resolveBlockedPointerAttempt,
+  teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   createPointerBlockListener,
@@ -23,14 +22,15 @@ export function usePointerSuppression() {
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: (event) => {
-        const attempt = resolveBlockedPointerAttempt(
+        const { attempt, jumpEventId } = teachingFromBlockedPointer(
           event.composedPath?.() ?? [],
+          event.button ?? 0,
         );
         pointerBlockActions.pulseBlockedClick(attempt);
-        if (attempt.actionId === POINTER_ACTIONS.eventOpen && attempt.eventId) {
+        if (jumpEventId) {
           // Never let a prior event's assignment flash for a new/locked target.
           eventJumpActions.setPointerHintKey(null);
-          requestPointerEventJump(attempt.eventId);
+          requestPointerEventJump(jumpEventId);
         }
       },
     });

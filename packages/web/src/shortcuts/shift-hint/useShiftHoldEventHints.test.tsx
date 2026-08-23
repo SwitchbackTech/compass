@@ -170,6 +170,28 @@ describe("useShiftHoldEventHints", () => {
     );
   });
 
+  it("swallows unmatched letters while jump is active", () => {
+    mountHints();
+
+    act(() => {
+      requestPointerEventJump(EVENT_B);
+    });
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "m",
+    });
+
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
   it("does not activate on bare Shift or Shift+Tab", () => {
     const { result } = mountHints();
 

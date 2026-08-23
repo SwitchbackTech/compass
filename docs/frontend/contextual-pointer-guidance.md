@@ -13,8 +13,10 @@ of a generic legend. Acceptance coverage lives in
 3. `PointerHint` renders copy for the attempt. Sidebar open/close teach `]`.
    Event open teaches the current jump token plus Enter, or `S` if no token is
    available.
-4. An event click also dispatches `compass:pointer-event-jump` so the mounted
-   grid's event-jump owner can assign tokens and activate leaderless sequences.
+4. A primary event click also dispatches `compass:pointer-event-jump` so the
+   mounted grid's event-jump owner can assign tokens and activate leaderless
+   sequences. Right-clicks stay on the generic fallback so `M` still opens
+   the context menu.
 
 Unannotated controls keep the generic keyboard-only fallback.
 
