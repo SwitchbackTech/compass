@@ -53,7 +53,6 @@ export const useVisibleDayCount = () => {
   );
 
   useEffect(() => {
-    marginLeftRef.current = marginLeft;
     if (nodeRef.current) {
       measureNode(nodeRef.current);
     }

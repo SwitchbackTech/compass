@@ -5,9 +5,9 @@ import { getColorsByHour } from "@web/common/utils/datetime/web.date.util";
 import { HourLabelColumn } from "@web/grid/components/HourLabelColumn";
 import {
   GRID_TIME_COLUMN_WIDTH,
+  gridMarginLeftFor,
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
-import { useGridMarginLeft } from "@web/grid/grid-margin";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { mappedHourLabels } from "@web/timezone/mapped-hour-labels";
 import { useTimeTravelZone } from "@web/timezone/time-travel.store";
@@ -15,19 +15,12 @@ import { useTimeTravelZone } from "@web/timezone/time-travel.store";
 export function CalendarTimeColumn({ at }: { at: Date }) {
   const effectiveTimeZone = useEffectiveTimeZone();
   const timeTravelZone = useTimeTravelZone();
-  const marginLeft = useGridMarginLeft();
+  const marginLeft = gridMarginLeftFor(timeTravelZone !== null);
   const currentHour = useMinuteTick().tz(effectiveTimeZone).hour();
   const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
   const primaryLabels = useMemo(
     () => mappedHourLabels(effectiveTimeZone, effectiveTimeZone, at),
     [at, effectiveTimeZone],
-  );
-  const secondaryLabels = useMemo(
-    () =>
-      timeTravelZone === null
-        ? []
-        : mappedHourLabels(effectiveTimeZone, timeTravelZone, at),
-    [at, effectiveTimeZone, timeTravelZone],
   );
 
   return (
@@ -43,7 +36,7 @@ export function CalendarTimeColumn({ at }: { at: Date }) {
     >
       {timeTravelZone !== null ? (
         <HourLabelColumn
-          labels={secondaryLabels}
+          labels={mappedHourLabels(effectiveTimeZone, timeTravelZone, at)}
           width={GRID_TIME_COLUMN_WIDTH}
         />
       ) : null}
