@@ -452,14 +452,16 @@ export function useShiftHoldEventHints({
       const assignment = assignments.find(
         (item) => item.eventId === pointerHintEventId,
       );
-      const nextKey = assignment?.hint.toUpperCase() ?? null;
       if (!assignment) {
         eventJumpActions.setPointerHint(null);
-      } else if (nextKey !== useEventJumpStore.getState().pointerHintKey) {
-        eventJumpActions.setPointerHint({
-          eventId: assignment.eventId,
-          key: nextKey,
-        });
+      } else {
+        const nextKey = assignment.hint.toUpperCase();
+        if (nextKey !== useEventJumpStore.getState().pointerHintKey) {
+          eventJumpActions.setPointerHint({
+            eventId: assignment.eventId,
+            key: nextKey,
+          });
+        }
       }
     }
     const source = bufferRef.current
