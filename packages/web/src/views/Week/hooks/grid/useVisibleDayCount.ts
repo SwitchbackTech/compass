@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useGridMarginLeft } from "@web/grid/grid-margin";
 import {
   computeVisibleDayCount,
   WEEK_DAY_COUNT,
@@ -13,35 +14,49 @@ import {
 export const useVisibleDayCount = () => {
   const [visibleDayCount, setVisibleDayCount] = useState(WEEK_DAY_COUNT);
   const observerRef = useRef<ResizeObserver | null>(null);
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  const marginLeft = useGridMarginLeft();
+  const marginLeftRef = useRef(marginLeft);
+  marginLeftRef.current = marginLeft;
 
-  const trackRef = useCallback((node: HTMLDivElement | null) => {
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-
-    if (!node) {
+  const measureNode = useCallback((node: HTMLDivElement) => {
+    const width = node.getBoundingClientRect().width;
+    if (!width) {
+      // Unmeasurable (e.g. jsdom): keep showing the full week
       return;
     }
 
-    const measure = () => {
-      const width = node.getBoundingClientRect().width;
-      if (!width) {
-        // Unmeasurable (e.g. jsdom): keep showing the full week
+    setVisibleDayCount(computeVisibleDayCount(width, marginLeftRef.current));
+  }, []);
+
+  const trackRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+      nodeRef.current = node;
+
+      if (!node) {
         return;
       }
 
-      setVisibleDayCount(computeVisibleDayCount(width));
-    };
+      measureNode(node);
 
-    measure();
+      if (typeof ResizeObserver === "undefined") {
+        return;
+      }
 
-    if (typeof ResizeObserver === "undefined") {
-      return;
+      const observer = new ResizeObserver(() => measureNode(node));
+      observer.observe(node);
+      observerRef.current = observer;
+    },
+    [measureNode],
+  );
+
+  useEffect(() => {
+    if (nodeRef.current) {
+      measureNode(nodeRef.current);
     }
-
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    observerRef.current = observer;
-  }, []);
+  }, [marginLeft, measureNode]);
 
   return { trackRef, visibleDayCount };
 };

@@ -20,7 +20,7 @@ export const colors = {
   accent: "#7CC6E4",
   accentHover: "#8CCDE7",
   accentStrong: "#598FA4",
-  accentSecondary: "#5C7C92",
+  accentSecondary: "#608197",
   accentSecondaryHover: "#6B8CA2",
   onAccent: "#05121A",
 

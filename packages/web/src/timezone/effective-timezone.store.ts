@@ -6,17 +6,11 @@ import {
   createExternalStore,
   subscribeToStorageKey,
 } from "@web/common/utils/external-store.util";
-import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
+import {
+  getBrowserTimeZone,
+  isValidTimeZone,
+} from "@web/timezone/browser-timezone";
 import { resetTimezoneMismatchSnoozeForTests } from "@web/timezone/timezone-mismatch";
-
-function isValidTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function readPinnedTimeZone(): string | null {
   const raw = persistentBrowserStore.get(STORAGE_KEYS.DEFAULT_TIMEZONE);

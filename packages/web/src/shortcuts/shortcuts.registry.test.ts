@@ -97,6 +97,22 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
+    it("lists time travel in day and week but not life", () => {
+      for (const view of ["day", "week"] as const) {
+        const ids = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        }).map((shortcut) => shortcut.id);
+        expect(ids).toContain("other-time-travel");
+      }
+
+      const life = filterShortcutsByContext({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      }).map((shortcut) => shortcut.id);
+      expect(life).not.toContain("other-time-travel");
+    });
+
     it("lists the edit sequences with nothing focused, so the legend can show them", () => {
       // Regression: these were gated on live DOM focus, which the legend itself
       // stole when it focused its search input, making them unreachable.

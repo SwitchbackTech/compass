@@ -1,3 +1,4 @@
+import { readability } from "./color.utils";
 import { colors, lightColors } from "./colors";
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -130,6 +131,36 @@ describe("Tailwind theme CSS", () => {
       expect(match).not.toBeNull();
       expect(match?.[1]?.toLowerCase()).toBe(hex.toLowerCase());
     }
+  });
+
+  it("keeps on-accent readable on accent-secondary fills", () => {
+    // Up Next and toast CTAs paint --on-accent on --accent-secondary.
+    // Axe fails the page scan when that pair is below WCAG AA 4.5:1.
+    expect(
+      readability(colors.onAccent, colors.accentSecondary),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      readability(colors.onAccent, colors.accentSecondaryHover),
+    ).toBeGreaterThanOrEqual(4.5);
+
+    const block = indexCss.match(/\[data-theme="light-beach"\]\s*\{([^}]*)\}/);
+    const body = block?.[1] ?? "";
+    const lightOnAccent = body.match(/--on-accent:\s*(#[0-9a-fA-F]{6});/)?.[1];
+    const lightSecondary = body.match(
+      /--accent-secondary:\s*(#[0-9a-fA-F]{6});/,
+    )?.[1];
+    const lightSecondaryHover = body.match(
+      /--accent-secondary-hover:\s*(#[0-9a-fA-F]{6});/,
+    )?.[1];
+    expect(lightOnAccent).toBeDefined();
+    expect(lightSecondary).toBeDefined();
+    expect(lightSecondaryHover).toBeDefined();
+    expect(readability(lightOnAccent!, lightSecondary!)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(
+      readability(lightOnAccent!, lightSecondaryHover!),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it("keeps lightColors hex values in sync with the light-beach block", () => {
