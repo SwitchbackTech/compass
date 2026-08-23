@@ -35,9 +35,7 @@ export const eventJumpActions = {
           ? useEventJumpStore.getState().activeDayKeys
           : [],
         announcement: isActive ? "Event jump on" : "Event jump off",
-        pointerHintKey: isActive
-          ? useEventJumpStore.getState().pointerHintKey
-          : null,
+        ...(!isActive ? { pointerHintKey: null } : {}),
       },
       false,
       { type: "setActive" },

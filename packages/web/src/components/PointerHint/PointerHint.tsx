@@ -1,10 +1,13 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
-import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
+import {
+  type BlockedPointerAttempt,
+  POINTER_ACTIONS,
+} from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   selectLatestPointerAttempt,
   selectPointerBlockPulse,
@@ -34,6 +37,61 @@ const writeHintCount = (count: number) => {
   } catch {
     // sessionStorage can throw in privacy modes; the hint still shows.
   }
+};
+
+const Key = ({ children }: { children: string }) => (
+  <kbd className="c-keycap">{children}</kbd>
+);
+
+const pointerHintMessage = ({
+  attempt,
+  eventJumpKey,
+  isBrief,
+  showcaseActive,
+}: {
+  attempt: BlockedPointerAttempt | null;
+  eventJumpKey: string | null;
+  isBrief: boolean;
+  showcaseActive: boolean;
+}): ReactNode => {
+  if (showcaseActive) return "Keyboard only. Follow the keys on screen.";
+
+  if (
+    attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
+    attempt?.actionId === POINTER_ACTIONS.sidebarOpen
+  ) {
+    const verb =
+      attempt.actionId === POINTER_ACTIONS.sidebarClose ? "close" : "open";
+    return (
+      <>
+        Press <Key>]</Key> to {verb} the sidebar.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.eventOpen) {
+    if (!eventJumpKey) {
+      return (
+        <>
+          Press <Key>S</Key> to reveal event shortcuts.
+        </>
+      );
+    }
+    return (
+      <>
+        Press <Key>{eventJumpKey}</Key>, then <Key>Enter</Key> to open this
+        event.
+      </>
+    );
+  }
+
+  if (isBrief) return "Keyboard only.";
+
+  return (
+    <>
+      Compass is keyboard only. Press <Key>?</Key> for shortcuts.
+    </>
+  );
 };
 
 /**
@@ -75,35 +133,12 @@ export const PointerHint: FC = () => {
       role="status"
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
-      {showcaseActive ? (
-        "Keyboard only. Follow the keys on screen."
-      ) : attempt?.actionId === POINTER_ACTIONS.sidebarClose ? (
-        <>
-          Press <kbd className="c-keycap">]</kbd> to close the sidebar.
-        </>
-      ) : attempt?.actionId === POINTER_ACTIONS.sidebarOpen ? (
-        <>
-          Press <kbd className="c-keycap">]</kbd> to open the sidebar.
-        </>
-      ) : attempt?.actionId === POINTER_ACTIONS.eventOpen ? (
-        eventJumpKey ? (
-          <>
-            Press <kbd className="c-keycap">{eventJumpKey}</kbd>, then{" "}
-            <kbd className="c-keycap">Enter</kbd> to open this event.
-          </>
-        ) : (
-          <>
-            Press <kbd className="c-keycap">S</kbd> to reveal event shortcuts.
-          </>
-        )
-      ) : isBrief ? (
-        "Keyboard only."
-      ) : (
-        <>
-          Compass is keyboard only. Press <kbd className="c-keycap">?</kbd> for
-          shortcuts.
-        </>
-      )}
+      {pointerHintMessage({
+        attempt,
+        eventJumpKey,
+        isBrief,
+        showcaseActive,
+      })}
     </div>
   );
 };

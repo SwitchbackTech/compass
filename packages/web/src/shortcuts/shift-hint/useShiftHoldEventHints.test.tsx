@@ -3,7 +3,7 @@ import { EventIdSchema } from "@core/types/domain-primitives";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
-import { POINTER_EVENT_JUMP_REQUEST } from "@web/shortcuts/keyboard-only/pointer-action";
+import { requestPointerEventJump } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -147,11 +147,7 @@ describe("useShiftHoldEventHints", () => {
     const { focus, result } = mountHints();
 
     act(() => {
-      document.dispatchEvent(
-        new CustomEvent(POINTER_EVENT_JUMP_REQUEST, {
-          detail: { eventId: EVENT_B },
-        }),
-      );
+      requestPointerEventJump(EVENT_B);
     });
 
     expect(useEventJumpStore.getState()).toMatchObject({

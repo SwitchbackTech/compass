@@ -10,7 +10,10 @@ import {
   keyboardKey,
   normalizedKeyboardKey,
 } from "@web/shortcuts/is-bare-letter-key";
-import { POINTER_EVENT_JUMP_REQUEST } from "@web/shortcuts/keyboard-only/pointer-action";
+import {
+  POINTER_EVENT_JUMP_REQUEST,
+  pointerEventJumpId,
+} from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   assignDayJumpKeys,
@@ -374,8 +377,7 @@ export function useShiftHoldEventHints({
 
     const onPointerEventJumpRequest = (event: Event) => {
       if (isAppLocked()) return;
-      const eventId = (event as CustomEvent<{ eventId?: string }>).detail
-        ?.eventId;
+      const eventId = pointerEventJumpId(event);
       if (!eventId) return;
       const assignments = rebuildAssignments();
       const assignment = assignments.find((item) => item.eventId === eventId);

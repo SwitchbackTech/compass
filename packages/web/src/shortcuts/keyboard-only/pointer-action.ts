@@ -16,8 +16,10 @@ export type BlockedPointerAttempt = {
   eventId?: string;
 };
 
+const POINTER_ACTION_IDS = new Set<string>(Object.values(POINTER_ACTIONS));
+
 const isPointerActionId = (value: string): value is PointerActionId =>
-  Object.values(POINTER_ACTIONS).includes(value as PointerActionId);
+  POINTER_ACTION_IDS.has(value);
 
 export const resolveBlockedPointerAttempt = (
   path: EventTarget[],
@@ -40,3 +42,17 @@ export const eventPointerActionAttributes = (eventId?: string) =>
         [POINTER_EVENT_ID_ATTRIBUTE]: eventId,
       }
     : {};
+
+export const requestPointerEventJump = (eventId: string) => {
+  document.dispatchEvent(
+    new CustomEvent(POINTER_EVENT_JUMP_REQUEST, { detail: { eventId } }),
+  );
+};
+
+export const pointerEventJumpId = (event: Event): string | undefined => {
+  if (!(event instanceof CustomEvent)) return undefined;
+  const eventId = event.detail?.eventId;
+  return typeof eventId === "string" && eventId.length > 0
+    ? eventId
+    : undefined;
+};

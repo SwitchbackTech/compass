@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import {
   POINTER_ACTIONS,
-  POINTER_EVENT_JUMP_REQUEST,
+  requestPointerEventJump,
   resolveBlockedPointerAttempt,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
@@ -23,20 +23,14 @@ export function usePointerSuppression() {
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: (event) => {
-        const path =
-          "composedPath" in event && typeof event.composedPath === "function"
-            ? event.composedPath()
-            : [];
-        const attempt = resolveBlockedPointerAttempt(path);
+        const attempt = resolveBlockedPointerAttempt(
+          event.composedPath?.() ?? [],
+        );
         pointerBlockActions.pulseBlockedClick(attempt);
         if (attempt.actionId === POINTER_ACTIONS.eventOpen && attempt.eventId) {
           // Never let a prior event's assignment flash for a new/locked target.
           eventJumpActions.setPointerHintKey(null);
-          document.dispatchEvent(
-            new CustomEvent(POINTER_EVENT_JUMP_REQUEST, {
-              detail: { eventId: attempt.eventId },
-            }),
-          );
+          requestPointerEventJump(attempt.eventId);
         }
       },
     });
