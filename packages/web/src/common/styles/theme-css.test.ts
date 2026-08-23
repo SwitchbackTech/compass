@@ -1,3 +1,4 @@
+import { readability } from "./color.utils";
 import { colors, lightColors } from "./colors";
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -130,6 +131,17 @@ describe("Tailwind theme CSS", () => {
       expect(match).not.toBeNull();
       expect(match?.[1]?.toLowerCase()).toBe(hex.toLowerCase());
     }
+  });
+
+  it("keeps on-accent readable on accent-secondary fills", () => {
+    // Up Next and toast CTAs paint --on-accent on --accent-secondary.
+    // Axe fails the page scan when that pair is below WCAG AA 4.5:1.
+    expect(
+      readability(colors.onAccent, colors.accentSecondary),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      readability(colors.onAccent, colors.accentSecondaryHover),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 
   it("keeps lightColors hex values in sync with the light-beach block", () => {
