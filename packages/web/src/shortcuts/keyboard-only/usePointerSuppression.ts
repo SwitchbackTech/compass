@@ -29,8 +29,11 @@ export function usePointerSuppression() {
         pointerBlockActions.pulseBlockedClick(attempt);
         if (jumpEventId) {
           // Never let a prior event's assignment flash for a new/locked target.
-          eventJumpActions.setPointerHintKey(null);
+          eventJumpActions.setPointerHint(null);
           requestPointerEventJump(jumpEventId);
+        } else {
+          // Jump mode swallows unmatched printable keys, including `]`.
+          eventJumpActions.setActive(false);
         }
       },
     });
