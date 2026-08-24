@@ -102,6 +102,27 @@ describe("shortcut draft creation", () => {
     expectSameTime(gridDraft?.values.schedule.end, "2026-06-01T11:15:00.000Z");
   });
 
+  it("clamps a near-midnight timed draft to end at midnight instead of spanning days", async () => {
+    // 23:22 -> start rounds to 23:30; a full hour would cross midnight and
+    // send the draft to the all-day row (multi-day timed display).
+    setSystemTime(new Date("2026-05-20T23:22:00.000Z"));
+
+    await createTimedDraft(
+      true,
+      dayjs("2026-05-18T00:00:00.000Z"),
+      "createShortcut",
+    );
+
+    const { gridDraft, status } = useDraftStore.getState();
+
+    expect(status?.eventType).toBe(Categories_Event.TIMED);
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-05-20T23:30:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-05-21T00:00:00.000Z");
+  });
+
   it("stores a provided calendarId on timed shortcut drafts", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
     const calendarId = CalendarIdSchema.parse(createObjectIdString());
