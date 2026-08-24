@@ -62,18 +62,14 @@ async function fileResponse(
     return null;
   }
 
-  const headers = new Headers();
   const type = contentType(filePath);
-
-  if (type) {
-    headers.set("Content-Type", type);
-  }
-
   const etag = `"${fileStat.size.toString(16)}-${fileStat.mtimeMs.toString(16)}"`;
-
-  headers.set("Cache-Control", cacheControl(resolvedFilePath));
-  headers.set("ETag", etag);
-  headers.set("Last-Modified", fileStat.mtime.toUTCString());
+  const headers = {
+    ...(type ? { "Content-Type": type } : {}),
+    "Cache-Control": cacheControl(resolvedFilePath),
+    ETag: etag,
+    "Last-Modified": fileStat.mtime.toUTCString(),
+  };
 
   if (isNotModified(request, etag, fileStat.mtimeMs)) {
     return new Response(null, { status: 304, headers });
@@ -99,9 +95,7 @@ function isNotModified(
   const ifNoneMatch = request.headers.get("if-none-match");
 
   if (ifNoneMatch !== null) {
-    return ifNoneMatch
-      .split(",")
-      .some((tag) => tag.trim().replace(/^W\//, "") === etag);
+    return ifNoneMatch.trim().replace(/^W\//, "") === etag;
   }
 
   const ifModifiedSince = Date.parse(
