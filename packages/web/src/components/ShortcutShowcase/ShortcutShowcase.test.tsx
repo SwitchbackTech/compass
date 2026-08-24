@@ -123,6 +123,11 @@ describe("ShortcutShowcase", () => {
     expect(currentStepId()).toBe("graduation");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
     expect(screen.getByText(/young cap'n/)).toBeTruthy();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Enter Compass/ }),
+      ).toHaveFocus();
+    });
 
     pressKey("Enter");
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
@@ -200,14 +205,28 @@ describe("ShortcutShowcase", () => {
 
   it("'Do it for me' performs the whole lesson and lands on graduation", async () => {
     const user = userEvent.setup();
-    render(<ShortcutShowcase />);
+    render(
+      <>
+        <button type="button">Outside calendar</button>
+        <ShortcutShowcase />
+      </>,
+    );
+    const outside = screen.getByRole("button", { name: "Outside calendar" });
     act(() => shortcutShowcaseActions.replay());
 
     // No idle wait or failed attempt required: the way out is always offered.
     await user.click(screen.getByRole("button", { name: "Do it for me" }));
     expect(currentStepId()).toBe("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Enter Compass" })).toBeTruthy();
+    const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
+    await waitFor(() => {
+      expect(enterCompass).toHaveFocus();
+    });
+
+    await user.tab({ shift: true });
+    expect(outside).not.toHaveFocus();
+    await user.tab();
+    expect(enterCompass).toHaveFocus();
   });
 
   it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {

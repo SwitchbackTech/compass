@@ -45,6 +45,10 @@ export function WelcomeModal() {
   // handoff during the fade must cancel that so the takeover does not cover
   // the auth form.
   const startShowcaseAfterDismissRef = useRef(false);
+  // openModal() only schedules a URL update. Hide immediately so Explore
+  // cannot start the practice on top of a login that has not committed yet.
+  const [hidingForAuth, setHidingForAuth] = useState(false);
+  const hidingForAuthRef = useRef(false);
   // Seat focus on the email signup button rather than the panel's first
   // focusable (now Log in) or the Google button: Enter on an OAuth redirect
   // would fling a first-time visitor off-site before they read anything.
@@ -53,7 +57,14 @@ export function WelcomeModal() {
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
   // back button (or Escape) removes the param again.
-  const visible = isOpen && !isAuthModalOpen && !authenticated;
+  const visible =
+    isOpen && !isAuthModalOpen && !authenticated && !hidingForAuth;
+
+  useEffect(() => {
+    if (isAuthModalOpen) return;
+    hidingForAuthRef.current = false;
+    setHidingForAuth(false);
+  }, [isAuthModalOpen]);
 
   const shownRef = useRef(false);
   useEffect(() => {
@@ -71,7 +82,7 @@ export function WelcomeModal() {
   // Fade the backdrop and gently scale the panel before unmounting, so the
   // first reveal of the sidebar underneath feels smooth rather than abrupt.
   const dismiss = (cta: "explore" | "dismissed" = "dismissed") => {
-    if (closing) return;
+    if (closing || hidingForAuthRef.current) return;
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
     track("welcome_modal_dismissed", { cta });
@@ -86,10 +97,16 @@ export function WelcomeModal() {
     });
   };
 
-  const handOffToAuth = (cta: "log_in" | "sign_up") => {
+  const beginAuthHandoff = () => {
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
+    hidingForAuthRef.current = true;
+    setHidingForAuth(true);
     cancelDismiss();
+  };
+
+  const handOffToAuth = (cta: "log_in" | "sign_up") => {
+    beginAuthHandoff();
     markWelcomeSeen();
     if (cta === "sign_up") {
       shortcutShowcaseActions.deferUntilSignup();
@@ -103,9 +120,7 @@ export function WelcomeModal() {
   // round trip that signs the user up and grants calendar access together,
   // because the Google scopes Compass asks for include the calendar.
   const handOffToGoogle = () => {
-    skipFocusRestoreRef.current = true;
-    startShowcaseAfterDismissRef.current = false;
-    cancelDismiss();
+    beginAuthHandoff();
     markWelcomeSeen();
     shortcutShowcaseActions.deferUntilSignup();
     track("welcome_modal_dismissed", { cta: "sign_up_google" });
@@ -114,6 +129,7 @@ export function WelcomeModal() {
   };
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
+    if (hidingForAuthRef.current) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const key = keyboardKey(e).toLowerCase();
     if (key === "g" && isGoogleAvailable) {

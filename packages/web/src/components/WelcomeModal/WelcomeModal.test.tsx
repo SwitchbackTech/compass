@@ -290,6 +290,25 @@ describe("WelcomeModal", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
+  it("does not start practice if explore is pressed after login before auth opens", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("i");
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+
+    await user.keyboard("s");
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 500);
+      });
+    });
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
   it("does not mark the practice seen when logging in", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);

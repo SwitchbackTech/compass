@@ -94,23 +94,19 @@ const ShowcaseTakeover: FC = () => {
   };
 
   const regionRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const root = regionRef.current;
-    if (!root) return;
-    const [firstFocusable] = getFocusableElements(root);
-    (firstFocusable ?? root).focus();
-  }, []);
 
   const handleTakeoverKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== "Tab" || !regionRef.current) return;
-    const focusables = getFocusableElements(regionRef.current);
+    const root = regionRef.current;
+    const focusables = getFocusableElements(root);
     if (focusables.length === 0) return;
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === root)) {
       event.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && (active === last || active === root)) {
       event.preventDefault();
       first.focus();
     }
@@ -141,6 +137,29 @@ const ShowcaseTakeover: FC = () => {
     },
     [apply],
   );
+
+  const seatFocus = useCallback(() => {
+    const root = regionRef.current;
+    if (!root || closingRef.current) return;
+    if (root.contains(document.activeElement)) return;
+    const [firstFocusable] = getFocusableElements(root);
+    (firstFocusable ?? root).focus();
+  }, []);
+
+  useEffect(() => {
+    seatFocus();
+  }, [seatFocus, stepId, practice.editor]);
+
+  useEffect(() => {
+    const onFocusIn = (event: FocusEvent) => {
+      const root = regionRef.current;
+      if (!root || closingRef.current) return;
+      if (root.contains(event.target as Node)) return;
+      seatFocus();
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => document.removeEventListener("focusin", onFocusIn);
+  }, [seatFocus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
