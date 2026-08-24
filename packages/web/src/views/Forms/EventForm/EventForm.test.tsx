@@ -153,6 +153,25 @@ function dispatchDigitKey(target: HTMLElement, code: string, key: string) {
   return event;
 }
 
+// digitPickIndex/physicalDigitIndex match on the physical `code` first; set
+// it alongside `key` so this hits the primary match real keyboards send.
+function dispatchModDigitKey(target: HTMLElement, code: string, key: string) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    code,
+    ctrlKey: isControl,
+    key,
+    metaKey: !isControl,
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 function dispatchArrowDown(target: HTMLElement) {
   const event = new KeyboardEvent("keydown", {
     bubbles: true,
@@ -571,6 +590,139 @@ describe("EventForm", () => {
     const event = dispatchKey(titleField, "l");
 
     expect(event.defaultPrevented).toBe(false);
+    expect(titleField).toHaveFocus();
+  });
+
+  it("jumps focus to the location field with Mod+7 from the title field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    const event = dispatchModDigitKey(titleField, "Digit7", "7");
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(screen.getByRole("textbox", { name: "Location" })).toHaveFocus();
+  });
+
+  it("jumps focus to the checked color swatch with Mod+6 from the title field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModDigitKey(titleField, "Digit6", "6");
+
+    expect(
+      screen.getByRole("radio", { name: "Calendar default" }),
+    ).toHaveFocus();
+  });
+
+  it("jumps focus to the description field with Mod+8 from the title field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModDigitKey(titleField, "Digit8", "8");
+
+    expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
+  });
+
+  it("picks a color directly with a bare digit after jumping to color with Mod+6", () => {
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createEditDraft(),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModDigitKey(titleField, "Digit6", "6");
+
+    const defaultRadio = screen.getByRole("radio", {
+      name: "Calendar default",
+    });
+    expect(defaultRadio).toHaveFocus();
+
+    let event: KeyboardEvent;
+    act(() => {
+      event = dispatchDigitKey(defaultRadio, "Digit4", "4");
+    });
+
+    expect(event!.defaultPrevented).toBe(true);
+    expect(screen.getByRole("radio", { name: "Plum" })).toHaveFocus();
+  });
+
+  it("does not throw jumping to the calendar field (Mod+5) on an edit draft, which has no calendar picker", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    expect(() => dispatchModDigitKey(titleField, "Digit5", "5")).not.toThrow();
     expect(titleField).toHaveFocus();
   });
 

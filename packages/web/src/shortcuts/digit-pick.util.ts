@@ -44,6 +44,21 @@ const KEY_FALLBACK_INDEX: Record<string, number> = Object.fromEntries(
 );
 
 /**
+ * Resolves a keydown to a 0-based physical-key index, modifier-agnostic.
+ * `event.code` is layout-independent, so this also backs Mod+digit form-field
+ * jumps (`useFormDigitJumpShortcut`), not just the bare-digit pickers below.
+ */
+export function physicalDigitIndex(
+  event: Pick<KeyboardEvent, "code" | "key">,
+): number | null {
+  const codeIndex = PICK_CODES.indexOf(event.code);
+  if (codeIndex !== -1) return codeIndex;
+
+  const keyIndex = KEY_FALLBACK_INDEX[event.key];
+  return keyIndex === undefined ? null : keyIndex;
+}
+
+/**
  * Resolves a keydown to a 0-based pick index for direct-select widgets (the
  * event color picker, calendar select). Returns null for anything else,
  * including Ctrl/Meta/Alt combos (browser tab switching, macOS symbols).
@@ -54,9 +69,5 @@ export function digitPickIndex(
 ): number | null {
   if (event.ctrlKey || event.metaKey || event.altKey) return null;
 
-  const codeIndex = PICK_CODES.indexOf(event.code);
-  if (codeIndex !== -1) return codeIndex;
-
-  const keyIndex = KEY_FALLBACK_INDEX[event.key];
-  return keyIndex === undefined ? null : keyIndex;
+  return physicalDigitIndex(event);
 }
