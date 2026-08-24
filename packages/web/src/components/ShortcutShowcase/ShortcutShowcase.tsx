@@ -1,6 +1,6 @@
 import {
   type FC,
-  type KeyboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useContext,
   useEffect,
@@ -89,7 +89,7 @@ const ShowcaseTakeover: FC = () => {
 
   const regionRef = useRef<HTMLElement>(null);
 
-  const handleTakeoverKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+  const handleTakeoverKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.key !== "Tab" || !regionRef.current) return;
     const root = regionRef.current;
     const focusables = getFocusableElements(root);
