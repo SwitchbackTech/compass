@@ -342,8 +342,12 @@ describe("SyncJobWorker", () => {
     await worker.runOnce();
 
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.error.message).toContain(job.kind);
-    expect(errors[0]?.error.message).toContain(String(job._id));
+    // The sanitized cause must be IN the message: the PostHog exception title
+    // is built from the message alone, so a bare "attempt N failed" hides the
+    // real error in event properties.
+    expect(errors[0]?.error.message).toBe(
+      `Sync job incrementalPull (${job._id}) attempt 1 failed: flaky`,
+    );
     expect(errors[0]?.error.cause).toBe(cause);
     expect(errors[0]?.job.resourceId).toBe(job.resourceId);
     expect(errors[0]?.job.connectionId).toEqual(job.connectionId);

@@ -198,12 +198,16 @@ export class SyncJobWorker {
     } catch (error) {
       // An engine threw (a transient provider/storage error dispatch does not
       // model as a status). Treat it as retryable; the cap still bounds it.
-      // Log the cause — without this, staging imports fail silently and the
-      // UI stays stuck on "Syncing calendar" with only a retryableTransient
-      // job row to show for it.
+      // The sanitized cause goes in the MESSAGE, not just `cause`: the PostHog
+      // exception title is built from the message alone, so without it every
+      // failure kind collapses into one opaque "attempt N failed" issue and
+      // the real error hides in event properties.
+      const lastError = sanitizeJobLastError(error);
       this.#onError(
         new Error(
-          `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed`,
+          `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed${
+            lastError ? `: ${lastError}` : ""
+          }`,
           { cause: error instanceof Error ? error : undefined },
         ),
         job,
