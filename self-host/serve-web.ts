@@ -1,3 +1,4 @@
+import { type Stats } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
@@ -22,15 +23,28 @@ function badRequest(): Response {
   return new Response("Bad Request", { status: 400 });
 }
 
+function cacheControl(filePath: string): string {
+  // Only Bun's split chunks (chunk-<hash>.js and their .js.map) are
+  // content-hashed, so their URLs change with their content. Everything else
+  // keeps a stable name across deploys while its content changes — including
+  // index.js, index.css, and index.js.map — and must revalidate via the
+  // ETag/Last-Modified sent below.
+  return path.basename(filePath).startsWith("chunk-")
+    ? "public, max-age=31536000, immutable"
+    : "no-cache";
+}
+
 function contentType(filePath: string): string | undefined {
   return textTypes[path.extname(filePath)];
 }
 
 async function fileResponse(
+  request: Request,
   filePath: string,
   resolvedRoot: string,
 ): Promise<Response | null> {
   let resolvedFilePath: string;
+  let fileStat: Stats;
 
   try {
     resolvedFilePath = await realpath(filePath);
@@ -39,19 +53,33 @@ async function fileResponse(
       return null;
     }
 
-    if (!(await stat(resolvedFilePath)).isFile()) {
+    fileStat = await stat(resolvedFilePath);
+
+    if (!fileStat.isFile()) {
       return null;
     }
   } catch {
     return null;
   }
 
-  const file = Bun.file(resolvedFilePath);
+  const headers = new Headers();
   const type = contentType(filePath);
 
-  return new Response(file, {
-    headers: type ? { "Content-Type": type } : {},
-  });
+  if (type) {
+    headers.set("Content-Type", type);
+  }
+
+  const etag = `"${fileStat.size.toString(16)}-${fileStat.mtimeMs.toString(16)}"`;
+
+  headers.set("Cache-Control", cacheControl(resolvedFilePath));
+  headers.set("ETag", etag);
+  headers.set("Last-Modified", fileStat.mtime.toUTCString());
+
+  if (isNotModified(request, etag, fileStat.mtimeMs)) {
+    return new Response(null, { status: 304, headers });
+  }
+
+  return new Response(Bun.file(resolvedFilePath), { headers });
 }
 
 function isInsideRoot(resolvedRoot: string, resolvedPath: string): boolean {
@@ -60,6 +88,30 @@ function isInsideRoot(resolvedRoot: string, resolvedPath: string): boolean {
   return (
     relativePath === "" ||
     (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+  );
+}
+
+function isNotModified(
+  request: Request,
+  etag: string,
+  mtimeMs: number,
+): boolean {
+  const ifNoneMatch = request.headers.get("if-none-match");
+
+  if (ifNoneMatch !== null) {
+    return ifNoneMatch
+      .split(",")
+      .some((tag) => tag.trim().replace(/^W\//, "") === etag);
+  }
+
+  const ifModifiedSince = Date.parse(
+    request.headers.get("if-modified-since") ?? "",
+  );
+
+  // HTTP dates carry whole seconds, so compare mtime at second precision.
+  return (
+    !Number.isNaN(ifModifiedSince) &&
+    Math.floor(mtimeMs / 1000) * 1000 <= ifModifiedSince
   );
 }
 
@@ -122,6 +174,7 @@ Bun.serve({
     }
 
     const indexResponse = await fileResponse(
+      request,
       path.join(root, "index.html"),
       resolvedRoot,
     );
@@ -131,7 +184,11 @@ Bun.serve({
     }
 
     const requestedPath = path.join(root, safePath || "index.html");
-    const staticResponse = await fileResponse(requestedPath, resolvedRoot);
+    const staticResponse = await fileResponse(
+      request,
+      requestedPath,
+      resolvedRoot,
+    );
 
     if (staticResponse) {
       return staticResponse;
