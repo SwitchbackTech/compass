@@ -8,10 +8,21 @@ interface Metafile {
     string,
     {
       imports: Array<{ path: string; kind: string }>;
+      inputs?: Record<string, unknown>;
       entryPoint?: string;
     }
   >;
 }
+
+// Dynamic imports made from deeper chunks are normally the lazy route views
+// and excluded from preloading, but some of them always execute on boot. Each
+// source file listed here gets its containing chunk (plus that chunk's static
+// closure) preloaded as well. RootShell is the root route's component - kept
+// a lazy import only so route-shape tests can mock its auth stack (see
+// router.routes.tsx) - and renders on every page load, 404s included.
+// Metafile input keys are relative to the build's cwd, so entries here are
+// matched by path suffix.
+export const ALWAYS_BOOT_SOURCES = ["src/components/RootShell/RootShell.tsx"];
 
 /**
  * Injects `<link rel="modulepreload">` tags for every boot-critical chunk into
@@ -24,11 +35,13 @@ interface Metafile {
  * dynamic import (app.bootstrap) always executes on boot, so it counts; a
  * second dynamic import added to index.tsx would get preloaded on the same
  * assumption. Dynamic imports in deeper chunks are the lazy route views and
- * are deliberately NOT followed.
+ * are deliberately NOT followed - except the chunks holding
+ * ALWAYS_BOOT_SOURCES, which are lazy imports that still run on every boot.
  */
 export async function injectModulePreloads(
   outdir: string,
   metafile: string | object | undefined,
+  alwaysBootSources: string[] = ALWAYS_BOOT_SOURCES,
 ): Promise<string[]> {
   if (!metafile) {
     throw new Error(
@@ -46,9 +59,24 @@ export async function injectModulePreloads(
     throw new Error("No entrypoint output found in the build metafile");
   }
 
-  const critical: string[] = [];
-  const seen = new Set([entry]);
-  const queue = [entry];
+  const roots = [entry];
+  for (const source of alwaysBootSources) {
+    const chunk = Object.keys(meta.outputs).find((key) =>
+      Object.keys(meta.outputs[key].inputs ?? {}).some(
+        (input) => input === source || input.endsWith(`/${source}`),
+      ),
+    );
+    if (!chunk) {
+      throw new Error(
+        `Always-boot source ${source} is in no build output; update ALWAYS_BOOT_SOURCES in inject-module-preloads.ts`,
+      );
+    }
+    if (!roots.includes(chunk)) roots.push(chunk);
+  }
+
+  const critical = roots.filter((key) => key !== entry);
+  const seen = new Set(roots);
+  const queue = [...roots];
   while (queue.length > 0) {
     const key = queue.shift() as string;
     for (const imp of meta.outputs[key].imports) {

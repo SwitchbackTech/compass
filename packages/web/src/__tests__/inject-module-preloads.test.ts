@@ -56,7 +56,7 @@ describe("injectModulePreloads", () => {
       },
     };
 
-    const critical = await injectModulePreloads(outdir, metafile);
+    const critical = await injectModulePreloads(outdir, metafile, []);
 
     expect(critical).toEqual([
       "chunk-static.js",
@@ -92,9 +92,61 @@ describe("injectModulePreloads", () => {
       },
     });
 
-    const critical = await injectModulePreloads(outdir, metafile);
+    const critical = await injectModulePreloads(outdir, metafile, []);
 
     expect(critical).toEqual(["chunk-a.js", "chunk-b.js", "chunk-shared.js"]);
+  });
+
+  it("preloads the chunk holding an always-boot source plus its static closure", async () => {
+    await writeHtml(HTML);
+    const metafile = {
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [staticImport("./chunk-boot.js")],
+        },
+        "./chunk-boot.js": {
+          imports: [dynamicImport("./chunk-rootshell.js")],
+        },
+        "./chunk-rootshell.js": {
+          // Input keys are cwd-relative in real builds; matched by suffix.
+          inputs: { "packages/web/src/components/RootShell/RootShell.tsx": {} },
+          imports: [
+            staticImport("./chunk-auth.js"),
+            dynamicImport("./chunk-lazy.js"),
+          ],
+        },
+        "./chunk-auth.js": { imports: [] },
+        "./chunk-lazy.js": { imports: [] },
+      },
+    };
+
+    const critical = await injectModulePreloads(outdir, metafile, [
+      "packages/web/src/components/RootShell/RootShell.tsx",
+    ]);
+
+    expect(critical).toEqual([
+      "chunk-rootshell.js",
+      "chunk-boot.js",
+      "chunk-auth.js",
+    ]);
+  });
+
+  it("fails loudly when an always-boot source is in no output", async () => {
+    await writeHtml(HTML);
+    const metafile = {
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [staticImport("./chunk-a.js")],
+        },
+        "./chunk-a.js": { imports: [] },
+      },
+    };
+
+    expect(
+      injectModulePreloads(outdir, metafile, ["packages/web/src/Gone.tsx"]),
+    ).rejects.toThrow("Always-boot source");
   });
 
   it("injects inside head even when a comment contains the closing tag text", async () => {
@@ -116,7 +168,7 @@ describe("injectModulePreloads", () => {
       },
     };
 
-    await injectModulePreloads(outdir, metafile);
+    await injectModulePreloads(outdir, metafile, []);
 
     expect(await readHtml()).toBe(`<!doctype html>
 <html>
@@ -143,7 +195,7 @@ describe("injectModulePreloads", () => {
       },
     };
 
-    expect(injectModulePreloads(outdir, metafile)).rejects.toThrow(
+    expect(injectModulePreloads(outdir, metafile, [])).rejects.toThrow(
       "No boot-critical chunks found",
     );
   });
@@ -160,6 +212,8 @@ describe("injectModulePreloads", () => {
       },
     };
 
-    expect(injectModulePreloads(outdir, metafile)).rejects.toThrow("no <head>");
+    expect(injectModulePreloads(outdir, metafile, [])).rejects.toThrow(
+      "no <head>",
+    );
   });
 });
