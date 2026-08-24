@@ -10,6 +10,11 @@
  *
  * Baseline when this was set up (2026-08-24, desktop preset over gzip):
  * LCP ~1.9s, FCP ~0.8s, script transfer ~1,085 KB.
+ *
+ * 2026-08-24: lazy-loading the event form (TipTap/react-datepicker/
+ * react-select) dropped script transfer to ~916 KB; budget tightened to
+ * 1,100 KB so statically re-importing the editor stack (~170 KB gz) fails
+ * the gate.
  */
 import { mkdirSync } from "node:fs";
 
@@ -37,7 +42,7 @@ const BUDGETS = [
   {
     metric: "scriptBytes",
     label: "Script transfer size",
-    max: 1_350_000,
+    max: 1_100_000,
     unit: "bytes",
     level: "error",
   },

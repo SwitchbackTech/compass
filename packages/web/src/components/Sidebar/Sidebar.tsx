@@ -1,4 +1,4 @@
-import { type HTMLAttributes, type ReactNode } from "react";
+import { type HTMLAttributes, lazy, type ReactNode, Suspense } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
   selectIsEventFormOpen,
@@ -6,10 +6,19 @@ import {
 } from "@web/events/stores/draft.store";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 import { CalendarList } from "./CalendarList/CalendarList";
-import { MonthPicker } from "./MonthPicker/MonthPicker";
 import { SidebarShell } from "./SidebarShell";
 import { TasksRemovalNotice } from "./TasksRemovalNotice/TasksRemovalNotice";
 import { UpNextCard } from "./UpNextCard/UpNextCard";
+
+// Lazy: MonthPicker is the only boot-path import of react-datepicker, so
+// splitting it keeps that library out of the entry chunk (the event form
+// reuses the same split chunk). The fallback holds the picker's approximate
+// height so the calendar list doesn't jump when the chunk lands.
+const MonthPicker = lazy(() =>
+  import("./MonthPicker/MonthPicker").then((module) => ({
+    default: module.MonthPicker,
+  })),
+);
 
 export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
   calendarDate: Dayjs;
@@ -54,11 +63,13 @@ export function Sidebar({
         </section>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
-          <MonthPicker
-            monthsShown={monthsShown}
-            onSelectDate={onSelectDate}
-            selectedDate={calendarDate}
-          />
+          <Suspense fallback={<div aria-hidden className="h-63" />}>
+            <MonthPicker
+              monthsShown={monthsShown}
+              onSelectDate={onSelectDate}
+              selectedDate={calendarDate}
+            />
+          </Suspense>
           <UpNextCard />
           <CalendarList />
           <TasksRemovalNotice />
