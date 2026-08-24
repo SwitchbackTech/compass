@@ -2,10 +2,11 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  Suspense,
   useCallback,
 } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { EventForm } from "@web/views/Forms/EventForm/EventForm";
+import { LazyEventForm as EventForm } from "@web/views/Forms/EventForm/EventForm.lazy";
 
 export type EventFormPanelConfirmation = {
   onDelete: () => void;
@@ -53,7 +54,7 @@ export function EventFormPanel({
   if (!isFormOpen || !draft) return null;
 
   return (
-    <>
+    <Suspense fallback={null}>
       <EventForm
         draft={draft}
         fieldErrors={fieldErrors}
@@ -68,6 +69,6 @@ export function EventFormPanel({
         setDraft={setDraft}
       />
       {confirmationUi}
-    </>
+    </Suspense>
   );
 }

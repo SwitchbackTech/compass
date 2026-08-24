@@ -74,16 +74,17 @@ describe("Sidebar", () => {
     draftActions.discard();
   });
 
-  it("renders the core sidebar sections", () => {
+  it("renders the core sidebar sections", async () => {
     const { wrapper } = createStoreWrapper();
     render(<Sidebar {...sidebarProps} />, { wrapper });
 
-    expect(screen.getByText("Calendar picker")).toBeTruthy();
+    // findBy: the month picker mounts through Sidebar's lazy() boundary.
+    expect(await screen.findByText("Calendar picker")).toBeTruthy();
     expect(screen.getByText("Calendar list")).toBeTruthy();
     expect(screen.getByText("Sidebar actions")).toBeTruthy();
   });
 
-  it("shows event details only while the draft store says the form is open", () => {
+  it("shows event details only while the draft store says the form is open", async () => {
     const { wrapper } = createStoreWrapper();
     const { rerender } = render(
       <Sidebar {...sidebarProps} eventDetails={<div>Event details</div>} />,
@@ -91,7 +92,7 @@ describe("Sidebar", () => {
     );
 
     expect(screen.queryByText("Event details")).toBeNull();
-    expect(screen.getByText("Calendar picker")).toBeTruthy();
+    expect(await screen.findByText("Calendar picker")).toBeTruthy();
 
     draftActions.startGridDraft({
       activity: "gridClick",
