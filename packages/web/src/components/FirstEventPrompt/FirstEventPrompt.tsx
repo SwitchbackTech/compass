@@ -1,9 +1,9 @@
-import { type FC, useEffect } from "react";
+import { type FC, useContext, useEffect } from "react";
 import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   firstEventPromptActions,
   isShowcaseHandoffEligible,
@@ -91,7 +91,7 @@ const PromptCard: FC = () => {
  * the card forever. Dismissing retires it silently.
  */
 export const FirstEventPrompt: FC = () => {
-  const { isOpen: isAuthModalOpen } = useAuthModal();
+  const { isOpen: isAuthModalOpen } = useContext(AuthModalContext);
   const isShowcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   // The store flag covers a markSeen this session (storage notifies nobody);
   // the storage read covers earlier sessions and the legacy tour key.

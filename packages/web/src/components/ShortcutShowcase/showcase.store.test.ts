@@ -43,7 +43,7 @@ describe("shortcutShowcaseActions", () => {
   });
 
   it("never offers itself twice after signup, but replay always works", () => {
-    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.deferUntilSignup();
     shortcutShowcaseActions.replay();
     shortcutShowcaseActions.skip();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -59,7 +59,7 @@ describe("shortcutShowcaseActions", () => {
 
   it("treats legacy tour finishers as having seen the showcase", () => {
     localStorage.setItem(LEGACY_TOUR_SEEN_KEY, "true");
-    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.deferUntilSignup();
     shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
@@ -79,7 +79,7 @@ describe("shortcutShowcaseActions", () => {
   });
 
   it("defers the offer through signup and redeems it exactly once", () => {
-    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.deferUntilSignup();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");
@@ -100,8 +100,7 @@ describe("shortcutShowcaseActions", () => {
     ).not.toBe("true");
   });
 
-  it("does not burn the offer on a login-style skip", () => {
-    shortcutShowcaseActions.markSkippedWithoutStarting();
+  it("does not start the practice until the pending signup offer is redeemed", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");

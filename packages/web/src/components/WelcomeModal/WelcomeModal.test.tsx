@@ -261,6 +261,22 @@ describe("WelcomeModal", () => {
     ).toBeNull();
   });
 
+  it("cancels a pending practice start when login opens during dismiss", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("s");
+    await user.keyboard("i");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 500);
+      });
+    });
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
   it("does not mark the practice seen when logging in", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);

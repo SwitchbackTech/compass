@@ -143,19 +143,6 @@ describe("RootShell calendar onboarding on /life", () => {
     );
   });
 
-  it("hides the first-event prompt while the auth modal is open", async () => {
-    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
-    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
-
-    await renderShell("/week?auth=login", { anonymous: true });
-
-    expect(
-      screen.queryByRole("complementary", {
-        name: "Create your first event",
-      }),
-    ).not.toBeInTheDocument();
-  });
-
   it("shows the first-event prompt on /week after the showcase has been seen", async () => {
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");

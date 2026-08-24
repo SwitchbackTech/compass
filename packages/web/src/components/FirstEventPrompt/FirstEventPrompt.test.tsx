@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import {
   initialFirstEventPromptState,
@@ -34,6 +35,26 @@ describe("FirstEventPrompt", () => {
 
   it("stays hidden before the showcase has ever been seen", () => {
     render(<FirstEventPrompt />);
+    expect(
+      screen.queryByRole("complementary", { name: "Create your first event" }),
+    ).toBeNull();
+  });
+
+  it("stays hidden while the auth modal is open", () => {
+    markShowcaseSeen();
+    render(
+      <AuthModalContext.Provider
+        value={{
+          isOpen: true,
+          currentView: "login",
+          openModal: () => {},
+          closeModal: () => {},
+          setView: () => {},
+        }}
+      >
+        <FirstEventPrompt />
+      </AuthModalContext.Provider>,
+    );
     expect(
       screen.queryByRole("complementary", { name: "Create your first event" }),
     ).toBeNull();

@@ -40,6 +40,10 @@ export function WelcomeModal() {
   // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
   // seats its own focus; restoring the underlay first causes a focus flash.
   const skipFocusRestoreRef = useRef(false);
+  // Explore starts the practice after this dialog unmounts. A login/signup
+  // handoff during the fade must cancel that so the takeover does not cover
+  // the auth form.
+  const startShowcaseAfterDismissRef = useRef(false);
   // Seat focus on the email signup button rather than the panel's first
   // focusable (now Log in) or the Google button: Enter on an OAuth redirect
   // would fling a first-time visitor off-site before they read anything.
@@ -67,23 +71,26 @@ export function WelcomeModal() {
   // first reveal of the sidebar underneath feels smooth rather than abrupt.
   const dismiss = (cta: "explore" | "dismissed" = "dismissed") => {
     if (closing) return;
+    skipFocusRestoreRef.current = true;
     markWelcomeSeen();
     track("welcome_modal_dismissed", { cta });
+    startShowcaseAfterDismissRef.current = true;
     // Start after this dialog unmounts so the practice takeover does not
     // share a focus trap with the fading welcome overlay.
     beginDismiss(() => {
       setIsOpen(false);
+      if (!startShowcaseAfterDismissRef.current) return;
+      startShowcaseAfterDismissRef.current = false;
       shortcutShowcaseActions.startFromWelcome();
     });
   };
 
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
+    startShowcaseAfterDismissRef.current = false;
     markWelcomeSeen();
     if (cta === "sign_up") {
-      shortcutShowcaseActions.markSkippedWithoutStarting({
-        pendingSignup: true,
-      });
+      shortcutShowcaseActions.deferUntilSignup();
       track("signup_started", { source: "welcome_modal" });
     }
     track("welcome_modal_dismissed", { cta });
@@ -95,8 +102,9 @@ export function WelcomeModal() {
   // because the Google scopes Compass asks for include the calendar.
   const handOffToGoogle = () => {
     skipFocusRestoreRef.current = true;
+    startShowcaseAfterDismissRef.current = false;
     markWelcomeSeen();
-    shortcutShowcaseActions.markSkippedWithoutStarting({ pendingSignup: true });
+    shortcutShowcaseActions.deferUntilSignup();
     track("welcome_modal_dismissed", { cta: "sign_up_google" });
     track("signup_started", { source: "welcome_modal_google" });
     void startGoogleAuthorization();

@@ -91,15 +91,9 @@ export const shortcutShowcaseActions = {
     track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex), exit });
     endShowcase();
   },
-  /**
-   * Welcome-modal signup: defer the offer until signup completes. Login
-   * and explore do not call this — login leaves the flags alone, explore
-   * starts the takeover via startFromWelcome.
-   */
-  markSkippedWithoutStarting: (options?: { pendingSignup?: boolean }) => {
-    if (options?.pendingSignup) {
-      markShowcaseOfferPending();
-    }
+  /** Welcome-modal signup: redeem the practice after signup completes. */
+  deferUntilSignup: () => {
+    markShowcaseOfferPending();
   },
   /** Called once, right after signup completes, to redeem a pending offer. */
   offerAfterSignupIfPending: () => {

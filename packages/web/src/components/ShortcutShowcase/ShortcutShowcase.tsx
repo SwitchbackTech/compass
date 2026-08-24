@@ -85,6 +85,11 @@ const ShowcaseTakeover: FC = () => {
     openModal("signUp");
   };
 
+  const regionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    regionRef.current?.focus();
+  }, []);
+
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
   const apply = useCallback(
@@ -215,10 +220,12 @@ const ShowcaseTakeover: FC = () => {
 
   return (
     <section
+      ref={regionRef}
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
       style={{ zIndex: Z_INDEX_MODAL }}
+      tabIndex={-1}
     >
       <div
         className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
