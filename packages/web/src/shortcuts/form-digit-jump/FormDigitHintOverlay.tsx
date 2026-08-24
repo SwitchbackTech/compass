@@ -1,15 +1,10 @@
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { getEventFormFieldElement } from "@web/common/utils/form/form.util";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { FORM_FIELD_DIGITS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { getVisibleHintRect } from "@web/shortcuts/shift-hint/shift-hint-visible-rect";
-
-/** Screen-reader copy, so the visible chips can stay aria-hidden. */
-const SR_TEXT = `Jump to field? ${FORM_FIELD_DIGITS.map(
-  (entry) => `${entry.digit} for ${entry.label.toLowerCase()}`,
-).join(", ")}. Release the modifier to dismiss.`;
+import { useHintLayoutRefresh } from "@web/shortcuts/useHintLayoutRefresh";
 
 /**
  * Numbered keycap chips anchored next to each form field while Mod is held
@@ -17,24 +12,23 @@ const SR_TEXT = `Jump to field? ${FORM_FIELD_DIGITS.map(
  * scrollable form body cannot clip a chip on a field near its edge.
  */
 export function FormDigitHintOverlay({ visible }: { visible: boolean }) {
-  const [, setLayoutTick] = useState(0);
-
-  useEffect(() => {
-    if (!visible) return;
-
-    const refresh = () => setLayoutTick((tick) => tick + 1);
-    window.addEventListener("resize", refresh);
-    // Capture scroll from the form's own scrollable body.
-    window.addEventListener("scroll", refresh, true);
-    return () => {
-      window.removeEventListener("resize", refresh);
-      window.removeEventListener("scroll", refresh, true);
-    };
-  }, [visible]);
+  useHintLayoutRefresh(visible);
 
   if (!visible || typeof document === "undefined") {
     return null;
   }
+
+  // Only fields whose element is currently rendered get announced or
+  // chipped, e.g. the calendar picker (digit 5) isn't rendered on an edit
+  // draft, so the shortcut wouldn't do anything there.
+  const presentFields = FORM_FIELD_DIGITS.flatMap((entry) => {
+    const anchor = getEventFormFieldElement(entry.field);
+    return anchor ? [{ ...entry, anchor }] : [];
+  });
+
+  const srText = `Jump to field? ${presentFields
+    .map((entry) => `${entry.digit} for ${entry.label.toLowerCase()}`)
+    .join(", ")}. Release the modifier to dismiss.`;
 
   return createPortal(
     <div
@@ -43,18 +37,14 @@ export function FormDigitHintOverlay({ visible }: { visible: boolean }) {
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
       <span aria-live="polite" className="sr-only" role="status">
-        {SR_TEXT}
+        {srText}
       </span>
       <div aria-hidden>
-        {FORM_FIELD_DIGITS.map((entry) => {
-          const anchor = getEventFormFieldElement(entry.field);
-          if (!anchor) {
-            // e.g. the calendar picker (digit 5) on an edit draft.
-            return null;
-          }
-
-          const visibleRect = getVisibleHintRect(anchor);
+        {presentFields.map((entry) => {
+          const visibleRect = getVisibleHintRect(entry.anchor);
           if (!visibleRect) {
+            // Scrolled out of view; the shortcut still works, but a
+            // portaled chip with nothing to anchor to would float in place.
             return null;
           }
 

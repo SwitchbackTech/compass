@@ -1,29 +1,16 @@
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { getVisibleHintRect } from "@web/shortcuts/shift-hint/shift-hint-visible-rect";
 import { type ActiveShiftHint } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
+import { useHintLayoutRefresh } from "@web/shortcuts/useHintLayoutRefresh";
 
 /**
  * Fixed-position keycap chips anchored to event cards while event-jump mode
  * is on. Portaled so overflow-hidden cards do not clip the hints.
  */
 export function ShiftHintOverlay({ hints }: { hints: ActiveShiftHint[] }) {
-  const [, setLayoutTick] = useState(0);
-
-  useEffect(() => {
-    if (hints.length === 0) return;
-
-    const refresh = () => setLayoutTick((tick) => tick + 1);
-    window.addEventListener("resize", refresh);
-    // Capture scroll from nested grid scrollers.
-    window.addEventListener("scroll", refresh, true);
-    return () => {
-      window.removeEventListener("resize", refresh);
-      window.removeEventListener("scroll", refresh, true);
-    };
-  }, [hints.length]);
+  useHintLayoutRefresh(hints.length > 0);
 
   if (hints.length === 0 || typeof document === "undefined") {
     return null;

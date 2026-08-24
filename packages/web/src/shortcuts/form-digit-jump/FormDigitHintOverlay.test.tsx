@@ -157,4 +157,13 @@ describe("FormDigitHintOverlay", () => {
     expect(status.textContent).toContain("8 for description");
     expect(chipsWrapper()?.getAttribute("aria-hidden")).not.toBeNull();
   });
+
+  it("does not announce a field with no chip, so the screen-reader summary never advertises a dead shortcut", () => {
+    buildForm();
+    render(<FormDigitHintOverlay visible={true} />);
+
+    // No #event-form-calendar element was added (edit-draft state), so digit
+    // 5 has neither a chip nor an announcement.
+    expect(screen.getByRole("status").textContent).not.toContain("calendar");
+  });
 });
