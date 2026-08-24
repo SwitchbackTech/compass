@@ -18,6 +18,19 @@
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "debug:web"],
       "port": 8080
+    },
+    {
+      "name": "Web build (static)",
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": [
+        "serve@14",
+        "-s",
+        "build/web",
+        "-l",
+        "9162",
+        "--no-clipboard"
+      ],
+      "port": 9162
     }
   ]
 }

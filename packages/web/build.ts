@@ -1,5 +1,6 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
+import { injectModulePreloads } from "./inject-module-preloads";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { execSync } from "node:child_process";
 import path from "node:path";
@@ -62,6 +63,7 @@ const result = await Bun.build({
   sourcemap: "external",
   minify: true,
   splitting: true,
+  metafile: true,
   define,
   plugins: [postcssPlugin],
   publicPath: "/",
@@ -81,8 +83,11 @@ await Bun.write(
 );
 
 await copyStaticAssets(OUTDIR);
+const preloaded = await injectModulePreloads(OUTDIR, result.metafile);
 
 // biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`Build complete → ${OUTDIR}`);
 // biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`  ${result.outputs.length} files written`);
+// biome-ignore lint/suspicious/noConsole: Preserve build progress output.
+console.log(`  ${preloaded.length} boot chunks modulepreloaded in index.html`);
