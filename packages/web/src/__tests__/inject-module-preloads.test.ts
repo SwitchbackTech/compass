@@ -13,6 +13,9 @@ const HTML = `<!doctype html>
 </html>
 `;
 
+const staticImport = (p: string) => ({ path: p, kind: "import-statement" });
+const dynamicImport = (p: string) => ({ path: p, kind: "dynamic-import" });
+
 describe("injectModulePreloads", () => {
   let outdir: string;
 
@@ -24,25 +27,36 @@ describe("injectModulePreloads", () => {
     rmSync(outdir, { recursive: true, force: true });
   });
 
-  const write = (name: string, content: string) =>
-    Bun.write(path.join(outdir, name), content);
+  const writeHtml = (content: string) =>
+    Bun.write(path.join(outdir, "index.html"), content);
+
+  const readHtml = () => Bun.file(path.join(outdir, "index.html")).text();
 
   it("preloads the static closure plus the entry's boot dynamic import, excluding lazy chunks", async () => {
-    await write(
-      "index.js",
-      'import{a}from"/chunk-static.js";import("/chunk-boot.js").then(({bootstrapApp:b})=>b());',
-    );
-    await write("chunk-static.js", 'import"/chunk-deep.js";export var a=1;');
-    await write("chunk-deep.js", "export var d=1;");
-    await write(
-      "chunk-boot.js",
-      'import{s}from"/chunk-shared.js";var v=()=>import("/chunk-lazy.js");export var bootstrapApp=()=>s(v);',
-    );
-    await write("chunk-shared.js", "export var s=1;");
-    await write("chunk-lazy.js", "export var l=1;");
-    await write("index.html", HTML);
+    await writeHtml(HTML);
+    const metafile = {
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [
+            staticImport("./chunk-static.js"),
+            dynamicImport("./chunk-boot.js"),
+          ],
+        },
+        "./chunk-static.js": { imports: [staticImport("./chunk-deep.js")] },
+        "./chunk-deep.js": { imports: [] },
+        "./chunk-boot.js": {
+          imports: [
+            staticImport("./chunk-shared.js"),
+            dynamicImport("./chunk-lazy.js"),
+          ],
+        },
+        "./chunk-shared.js": { imports: [] },
+        "./chunk-lazy.js": { imports: [] },
+      },
+    };
 
-    const critical = await injectModulePreloads(outdir);
+    const critical = await injectModulePreloads(outdir, metafile);
 
     expect(critical).toEqual([
       "chunk-static.js",
@@ -50,98 +64,102 @@ describe("injectModulePreloads", () => {
       "chunk-deep.js",
       "chunk-shared.js",
     ]);
-    const html = await Bun.file(path.join(outdir, "index.html")).text();
-    expect(html).toBe(`<!doctype html>
+    expect(await readHtml()).toBe(`<!doctype html>
 <html>
   <head>
     <link rel="stylesheet" href="/index.css" />
     <link rel="modulepreload" href="/chunk-static.js" />
-    <link rel="modulepreload" href="/chunk-boot.js" />
-    <link rel="modulepreload" href="/chunk-deep.js" />
-    <link rel="modulepreload" href="/chunk-shared.js" />
-  </head>
+  <link rel="modulepreload" href="/chunk-boot.js" />
+  <link rel="modulepreload" href="/chunk-deep.js" />
+  <link rel="modulepreload" href="/chunk-shared.js" />
+</head>
   <body></body>
 </html>
 `);
   });
 
-  it("ignores import-shaped text that names no emitted file", async () => {
-    await write(
-      "index.js",
-      'import"/chunk-real.js";var msg="failed: import(\\"/chunk-ghost.js\\")";',
-    );
-    await write("chunk-real.js", "export var r=1;");
-    await write("index.html", HTML);
+  it("visits shared chunks once and accepts a JSON-string metafile", async () => {
+    await writeHtml(HTML);
+    const metafile = JSON.stringify({
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [staticImport("./chunk-a.js"), staticImport("./chunk-b.js")],
+        },
+        "./chunk-a.js": { imports: [staticImport("./chunk-shared.js")] },
+        "./chunk-b.js": { imports: [staticImport("./chunk-shared.js")] },
+        "./chunk-shared.js": { imports: [] },
+      },
+    });
 
-    const critical = await injectModulePreloads(outdir);
+    const critical = await injectModulePreloads(outdir, metafile);
 
-    expect(critical).toEqual(["chunk-real.js"]);
+    expect(critical).toEqual(["chunk-a.js", "chunk-b.js", "chunk-shared.js"]);
   });
 
-  it("visits shared chunks once", async () => {
-    await write(
-      "index.js",
-      'import"/chunk-a.js";import"/chunk-b.js";import("/chunk-boot.js");',
-    );
-    await write("chunk-a.js", 'import{x}from"/chunk-shared.js";');
-    await write("chunk-b.js", 'import{x}from"/chunk-shared.js";');
-    await write("chunk-boot.js", 'import{x}from"/chunk-shared.js";');
-    await write("chunk-shared.js", "export var x=1;");
-    await write("index.html", HTML);
-
-    const critical = await injectModulePreloads(outdir);
-
-    expect(critical).toEqual([
-      "chunk-a.js",
-      "chunk-b.js",
-      "chunk-boot.js",
-      "chunk-shared.js",
-    ]);
-  });
-
-  it("injects at the real end of head, not inside a comment mentioning the tag", async () => {
-    await write("index.js", 'import"/chunk-a.js";');
-    await write("chunk-a.js", "export var a=1;");
-    await write(
-      "index.html",
-      `<!doctype html>
+  it("injects inside head even when a comment contains the closing tag text", async () => {
+    await writeHtml(`<!doctype html>
 <html>
   <head>
     <!-- links are injected before </head> -->
   </head>
   <body></body>
 </html>
-`,
-    );
+`);
+    const metafile = {
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [staticImport("./chunk-a.js")],
+        },
+        "./chunk-a.js": { imports: [] },
+      },
+    };
 
-    await injectModulePreloads(outdir);
+    await injectModulePreloads(outdir, metafile);
 
-    const html = await Bun.file(path.join(outdir, "index.html")).text();
-    expect(html).toBe(`<!doctype html>
+    expect(await readHtml()).toBe(`<!doctype html>
 <html>
   <head>
     <!-- links are injected before </head> -->
     <link rel="modulepreload" href="/chunk-a.js" />
-  </head>
+</head>
   <body></body>
 </html>
 `);
   });
 
-  it("fails loudly when the walk finds no chunks", async () => {
-    await write("index.js", "console.log(1);");
-    await write("index.html", HTML);
+  it("fails loudly when the build passes no metafile", async () => {
+    await writeHtml(HTML);
 
-    expect(injectModulePreloads(outdir)).rejects.toThrow(
+    expect(injectModulePreloads(outdir, undefined)).rejects.toThrow("metafile");
+  });
+
+  it("fails loudly when the walk finds no chunks", async () => {
+    await writeHtml(HTML);
+    const metafile = {
+      outputs: {
+        "./index.js": { entryPoint: "src/index.tsx", imports: [] },
+      },
+    };
+
+    expect(injectModulePreloads(outdir, metafile)).rejects.toThrow(
       "No boot-critical chunks found",
     );
   });
 
-  it("fails loudly when index.html has no </head>", async () => {
-    await write("index.js", 'import"/chunk-a.js";');
-    await write("chunk-a.js", "export var a=1;");
-    await write("index.html", "<html><body></body></html>");
+  it("fails loudly when index.html has no head", async () => {
+    await writeHtml("<html><body></body></html>");
+    const metafile = {
+      outputs: {
+        "./index.js": {
+          entryPoint: "src/index.tsx",
+          imports: [staticImport("./chunk-a.js")],
+        },
+        "./chunk-a.js": { imports: [] },
+      },
+    };
 
-    expect(injectModulePreloads(outdir)).rejects.toThrow("</head>");
+    expect(injectModulePreloads(outdir, metafile)).rejects.toThrow("no <head>");
   });
 });

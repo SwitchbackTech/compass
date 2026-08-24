@@ -63,6 +63,7 @@ const result = await Bun.build({
   sourcemap: "external",
   minify: true,
   splitting: true,
+  metafile: true,
   define,
   plugins: [postcssPlugin],
   publicPath: "/",
@@ -82,7 +83,7 @@ await Bun.write(
 );
 
 await copyStaticAssets(OUTDIR);
-const preloaded = await injectModulePreloads(OUTDIR);
+const preloaded = await injectModulePreloads(OUTDIR, result.metafile);
 
 // biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`Build complete → ${OUTDIR}`);
