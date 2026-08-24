@@ -1,5 +1,6 @@
 import {
   type FC,
+  type KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useContext,
   useEffect,
@@ -11,6 +12,7 @@ import { track } from "@web/auth/posthog/track";
 import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
+import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
 import {
@@ -85,6 +87,25 @@ const ShowcaseTakeover: FC = () => {
     openModal("signUp");
   };
 
+  const regionRef = useRef<HTMLElement>(null);
+
+  const handleTakeoverKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab" || !regionRef.current) return;
+    const root = regionRef.current;
+    const focusables = getFocusableElements(root);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === root)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || active === root)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
   const apply = useCallback(
@@ -110,6 +131,19 @@ const ShowcaseTakeover: FC = () => {
     },
     [apply],
   );
+
+  const seatFocus = useCallback(() => {
+    const root = regionRef.current;
+    if (!root || closingRef.current) return;
+    if (root.contains(document.activeElement)) return;
+    const [firstFocusable] = getFocusableElements(root);
+    (firstFocusable ?? root).focus();
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: stepId and practice.editor trigger a reseat after lesson chrome unmounts; seatFocus does not read them.
+  useEffect(() => {
+    seatFocus();
+  }, [seatFocus, stepId, practice.editor]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -215,10 +249,13 @@ const ShowcaseTakeover: FC = () => {
 
   return (
     <section
+      ref={regionRef}
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
+      onKeyDown={handleTakeoverKeyDown}
       style={{ zIndex: Z_INDEX_MODAL }}
+      tabIndex={-1}
     >
       <div
         className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}

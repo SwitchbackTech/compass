@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import {
   initialFirstEventPromptState,
@@ -39,6 +40,26 @@ describe("FirstEventPrompt", () => {
     ).toBeNull();
   });
 
+  it("stays hidden while the auth modal is open", () => {
+    markShowcaseSeen();
+    render(
+      <AuthModalContext.Provider
+        value={{
+          isOpen: true,
+          currentView: "login",
+          openModal: () => {},
+          closeModal: () => {},
+          setView: () => {},
+        }}
+      >
+        <FirstEventPrompt />
+      </AuthModalContext.Provider>,
+    );
+    expect(
+      screen.queryByRole("complementary", { name: "Create your first event" }),
+    ).toBeNull();
+  });
+
   it("stays hidden while the showcase takeover is active", () => {
     markShowcaseSeen();
     useShortcutShowcaseStore.setState({ isActive: true });
@@ -56,8 +77,8 @@ describe("FirstEventPrompt", () => {
       name: "Create your first event",
     });
     expect(prompt).toBeTruthy();
-    expect(screen.getByText("You've got the skills")).toBeTruthy();
-    expect(screen.getByText(/to create your first real event/)).toBeTruthy();
+    expect(screen.getByText("Add your first event")).toBeTruthy();
+    expect(screen.getByText(/type a title, then Enter/)).toBeTruthy();
     expect(screen.getByText("C")).toBeTruthy();
   });
 
@@ -66,7 +87,7 @@ describe("FirstEventPrompt", () => {
     render(<FirstEventPrompt />);
 
     act(() => noteFirstRealEventCreated());
-    expect(screen.getByText("That's a real one.")).toBeTruthy();
+    expect(screen.getByText("It's on the calendar.")).toBeTruthy();
     expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
       "completed",
     );

@@ -73,23 +73,26 @@ Welcome → signup → first-event contract:
   (`S`). Google leads because the scopes Compass requests include the calendar,
   so that one round trip signs the user up *and* connects it — the moment the
   product starts being worth keeping
-- **Explore without an account**, the backdrop, and Escape all land straight on
-  the calendar. None of them starts a takeover
+- **Explore without an account**, the backdrop, and Escape start the Shortcut
+  Showcase (`entry: "welcome"`) after the welcome dialog unmounts
+- **Log in** opens the auth modal and leaves the showcase flags alone, so a
+  returning user is not handed the practice or the first-event prompt
 - signing up (either route) defers a showcase offer via `showcase.storage.ts`;
   `offerAfterSignupIfPending()` redeems it once, right after signup completes
-- the Shortcut Showcase therefore has exactly two entries: post-signup, and the
-  command palette's "Practice shortcuts". `showcase.steps.ts` holds the order;
-  taught keycaps come from `packages/web/src/shortcuts/keymap.ts`. One lesson
-  gates the exit — create, then title-and-save, taught as a single continuous
-  motion rather than two steps — and is the only shortcut the arena implements
+- the Shortcut Showcase therefore has three entries: welcome dismiss,
+  post-signup, and the command palette's "Practice shortcuts".
+  `showcase.steps.ts` holds the order; taught keycaps come from
+  `packages/web/src/shortcuts/keymap.ts`. One lesson gates the exit — create,
+  then title-and-save, taught as a single continuous motion rather than two
+  steps — and is the only shortcut the arena implements
 - every showcase step offers **Skip to calendar**, and **Skip to sign up** for
   anyone not already signed in; Escape does the former. There is no confirm in
   the way
 - graduating the showcase hands off directly to `FirstEventPrompt`, a
   non-blocking card on the real calendar (not an app-lock modal) that asks the
   user to press `C` on a real event. It is shown once the showcase has been
-  seen *or* skipped past — including the explore-without-an-account path —
-  and completes the moment a genuine create lands (`noteFirstRealEventCreated`
+  finished or skipped, and stays hidden while the auth modal is open. It
+  completes the moment a genuine create lands (`noteFirstRealEventCreated`
   in `useEventMutations.ts`), then celebrates briefly and retires for good.
   Users who finished or dismissed the retired onboarding checklist are read
   as already done via a legacy storage key, so they never see it

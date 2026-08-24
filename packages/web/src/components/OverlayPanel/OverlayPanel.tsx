@@ -9,13 +9,8 @@ import {
   useRef,
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-
-const FOCUSABLE_SELECTOR =
-  'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
-
-const getFocusableElements = (root: HTMLElement) =>
-  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 
 interface Props {
   /** Icon or element displayed at the top of the panel */

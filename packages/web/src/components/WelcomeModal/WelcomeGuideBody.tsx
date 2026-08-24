@@ -1,14 +1,17 @@
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { FAQ_ITEMS } from "./faq";
-import { ProductHuntBadge } from "./ProductHuntBadge";
+import { useWelcomeFaqShortcuts } from "./useWelcomeFaqShortcuts";
 
 export function WelcomeGuideBody() {
   const disclosureIdPrefix = useId();
+  const faqHintId = `${disclosureIdPrefix}-faq-hint`;
   const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
     () => new Set(),
   );
 
-  const toggleFaq = (question: string) => {
+  const toggleFaq = useCallback((question: string) => {
     setExpandedFaqs((currentFaqs) => {
       const nextFaqs = new Set(currentFaqs);
 
@@ -20,25 +23,34 @@ export function WelcomeGuideBody() {
 
       return nextFaqs;
     });
-  };
+  }, []);
+
+  const toggleFaqAt = useCallback(
+    (index: number) => {
+      const item = FAQ_ITEMS[index];
+      if (item) toggleFaq(item.question);
+    },
+    [toggleFaq],
+  );
+
+  const isModHeld = useWelcomeFaqShortcuts(toggleFaqAt);
 
   return (
     <>
       <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
-          The keyboard-first calendar
+          Keyboard calendar
         </h2>
         <p className="text-text-muted">
           Rediscover the joy of shortcuts as you build your perfect schedule. No
-          mouse required.
+          clicks allowed.
         </p>
       </div>
 
-      <div className="flex w-full justify-center">
-        <ProductHuntBadge />
-      </div>
-
-      <div className="flex w-full flex-col divide-y divide-border">
+      <div
+        aria-describedby={faqHintId}
+        className="flex w-full flex-col divide-y divide-border"
+      >
         {FAQ_ITEMS.map((item, index) => {
           const isExpanded = expandedFaqs.has(item.question);
           const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
@@ -46,15 +58,20 @@ export function WelcomeGuideBody() {
 
           return (
             <div key={item.question} className="py-3">
-              <button
-                type="button"
-                aria-controls={answerId}
-                aria-expanded={isExpanded}
-                className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
-                onClick={() => toggleFaq(item.question)}
-              >
-                {item.question}
-              </button>
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  aria-controls={answerId}
+                  aria-expanded={isExpanded}
+                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
+                  onClick={() => toggleFaq(item.question)}
+                >
+                  {item.question}
+                </button>
+                {isModHeld && (
+                  <ShortcutHint className="shrink-0">{index + 1}</ShortcutHint>
+                )}
+              </div>
               <div
                 id={answerId}
                 aria-hidden={!isExpanded}
@@ -71,6 +88,15 @@ export function WelcomeGuideBody() {
           );
         })}
       </div>
+
+      <p
+        id={faqHintId}
+        className="flex flex-wrap items-center gap-1 text-text-muted text-xs"
+      >
+        Hold
+        <ShortcutKeys keys={["Mod"]} />
+        to see keys, then press 1–5.
+      </p>
     </>
   );
 }

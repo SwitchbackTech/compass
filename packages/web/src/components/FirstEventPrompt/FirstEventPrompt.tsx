@@ -1,8 +1,9 @@
-import { type FC, useEffect } from "react";
+import { type FC, useContext, useEffect } from "react";
 import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   firstEventPromptActions,
   isShowcaseHandoffEligible,
@@ -51,16 +52,13 @@ const PromptCard: FC = () => {
       <div className="w-72 rounded-xl border border-border bg-surface/95 px-4 py-3 text-text shadow-xl backdrop-blur-2xl backdrop-saturate-150">
         {isCelebrating ? (
           <div className="flex flex-col gap-1 py-2">
-            <span className="font-semibold text-sm">That's a real one.</span>
-            <span className="text-text-muted text-xs">
-              Your calendar is officially underway.
-            </span>
+            <span className="font-semibold text-sm">It's on the calendar.</span>
           </div>
         ) : (
           <>
             <div className="mb-2 flex items-start justify-between gap-2">
               <span className="font-semibold text-sm">
-                You've got the skills
+                Add your first event
               </span>
               <button
                 aria-label="Dismiss"
@@ -71,13 +69,11 @@ const PromptCard: FC = () => {
                 &times;
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-text-muted text-xs">
-                Put them to use — press
-              </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-text-muted text-xs">Press</span>
               <ShortcutKeys keys={[...KEYMAP.createEvent.keycaps]} />
               <span className="text-text-muted text-xs">
-                to create your first real event.
+                , type a title, then Enter.
               </span>
             </div>
           </>
@@ -95,6 +91,7 @@ const PromptCard: FC = () => {
  * the card forever. Dismissing retires it silently.
  */
 export const FirstEventPrompt: FC = () => {
+  const { isOpen: isAuthModalOpen } = useContext(AuthModalContext);
   const isShowcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   // The store flag covers a markSeen this session (storage notifies nobody);
   // the storage read covers earlier sessions and the legacy tour key.
@@ -102,7 +99,10 @@ export const FirstEventPrompt: FC = () => {
   const isDone = useFirstEventPromptStore(selectFirstEventDone);
   // Without storage (private mode), completion and dismissal can never
   // persist, so the card would haunt every reload; better to not show it.
+  // Sit above the auth modal in z-index, so stay hidden while login/signup
+  // is open even if the showcase flag is already set.
   const isLive =
+    !isAuthModalOpen &&
     !isDone &&
     persistentBrowserStore.isAvailable() &&
     isShowcaseHandoffEligible(isShowcaseActive, seenThisSession);

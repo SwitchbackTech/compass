@@ -154,6 +154,6 @@ describe("RootShell calendar onboarding on /life", () => {
         name: "Create your first event",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("You've got the skills")).toBeInTheDocument();
+    expect(screen.getByText("Add your first event")).toBeInTheDocument();
   });
 });

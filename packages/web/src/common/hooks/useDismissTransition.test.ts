@@ -101,6 +101,33 @@ describe("useDismissTransition", () => {
     expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
   });
 
+  it("cancelDismiss aborts the fade without calling onComplete", () => {
+    const onComplete = mock(() => {});
+    const { result } = renderHook(() => useDismissTransition(300));
+
+    act(() => {
+      result.current.beginDismiss(onComplete);
+    });
+    expect(result.current.closing).toBe(true);
+
+    act(() => {
+      result.current.cancelDismiss();
+    });
+
+    expect(result.current.closing).toBe(false);
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it("keeps the same cancelDismiss identity across re-renders", () => {
+    const { result, rerender } = renderHook(() => useDismissTransition(300));
+    const first = result.current.cancelDismiss;
+
+    rerender();
+
+    expect(result.current.cancelDismiss).toBe(first);
+  });
+
   it("clears the pending timer on unmount", () => {
     const { result, unmount } = renderHook(() => useDismissTransition(300));
 
