@@ -19,12 +19,17 @@ import {
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 
 const focusFieldAfterPaint = (field: EventFormFocusField) => {
-  // Form mount + title autoFocus both land after the current frame; wait two
-  // paints so sequences other than title can steal focus from autoFocus.
+  // Wait two paints so sequences other than title land after the title's
+  // autoFocus, then retry across frames: the form mounts through a lazy
+  // boundary (EventForm.lazy.ts), so on a cold cache the field can be a
+  // chunk fetch away, not just a commit away.
+  let attempts = 0;
+  const tryFocus = () => {
+    if (focusEventFormField(field)) return;
+    if (++attempts < 30) requestAnimationFrame(tryFocus);
+  };
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      focusEventFormField(field);
-    });
+    requestAnimationFrame(tryFocus);
   });
 };
 
