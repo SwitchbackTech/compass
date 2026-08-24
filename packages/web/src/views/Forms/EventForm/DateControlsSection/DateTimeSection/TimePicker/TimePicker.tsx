@@ -61,9 +61,12 @@ function optionFromFocusedMenu(
   options: TimeOption[] | undefined,
   currentValue: string | undefined,
 ): TimeOption | undefined {
-  const focusedLabel = container
-    ?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0]
-    ?.textContent?.trim();
+  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
+  const activeId = combobox?.getAttribute("aria-activedescendant");
+  const focusedEl = activeId
+    ? document.getElementById(activeId)
+    : container?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0];
+  const focusedLabel = focusedEl?.textContent?.trim();
   if (!focusedLabel) return undefined;
 
   const listed = options?.find((option) => option.label === focusedLabel);
@@ -121,13 +124,12 @@ export const TimePicker = ({
     };
   }, []);
 
+  const focusedMenuOption = () =>
+    optionFromFocusedMenu(containerRef.current, selectOptions, value?.value);
+
   const commitFocusedOption = () => {
     if (!userAdjustedRef.current) return;
-    const option = optionFromFocusedMenu(
-      containerRef.current,
-      selectOptions,
-      value?.value,
-    );
+    const option = focusedMenuOption();
     if (option) _onChange(option);
   };
 
@@ -143,7 +145,12 @@ export const TimePicker = ({
         blurInputOnSelect
         menuIsOpen={isMenuOpen}
         //@ts-expect-error uses custom onChange to manage focus in parent
-        onChange={_onChange}
+        onChange={(option: SelectOption<string> | null) => {
+          if (!option) return;
+          // react-select's internal focusedOption can stay on the draft
+          // time after the list is filtered. Prefer the announced row.
+          _onChange(focusedMenuOption() ?? option);
+        }}
         onKeyDown={(e) => {
           const key = e.key;
 
@@ -151,8 +158,18 @@ export const TimePicker = ({
             userAdjustedRef.current = true;
           }
 
-          if (key === "Backspace") {
+          if (key === "Enter" || key === "Backspace") {
             e.stopPropagation();
+          }
+
+          if (key === "Enter" && !e.nativeEvent.isComposing) {
+            // Bare Enter must not adopt the first list row (often 12 AM).
+            // After typing or arrowing, let react-select select so it
+            // clears the filter; onChange remaps to the announced row.
+            if (!userAdjustedRef.current) {
+              e.preventDefault();
+              setIsMenuOpen(false);
+            }
           }
 
           if (key === "Shift") {
@@ -162,19 +179,6 @@ export const TimePicker = ({
           if (key === "Escape") {
             setIsMenuOpen(false);
             e.stopPropagation();
-          }
-
-          if (key === "Enter") {
-            // react-select's internal focusedOption can stay on the
-            // draft time after the list is filtered. Commit the DOM
-            // focused row instead, and preventDefault so the stale
-            // option is not also selected.
-            e.stopPropagation();
-            if (e.nativeEvent.isComposing) return;
-            e.preventDefault();
-            commitFocusedOption();
-            setIsMenuOpen(false);
-            return;
           }
 
           if (key === "Tab") {
