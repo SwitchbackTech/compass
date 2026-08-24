@@ -89,17 +89,18 @@ export const FreqSelect = ({
           maxHeight: "none",
           overflowY: "visible",
         }),
-        // Same recipe as .timepicker__option--is-selected/--is-focused
-        // (index.css) - a translucent white overlay reads as a highlight on
-        // both themes' surfaces rather than needing per-theme tuning.
+        // Same recipe as TimePicker option styles — accent fill on
+        // focus so the highlight is readable on both themes.
         option: (styles, { isDisabled, isFocused, isSelected }) => ({
           ...styles,
           backgroundColor: isDisabled
             ? undefined
-            : isSelected || isFocused
-              ? "hsl(0 0 100 / 10%)"
-              : "transparent",
-          color: "var(--text)",
+            : isFocused
+              ? "var(--accent)"
+              : isSelected
+                ? "var(--surface-raised)"
+                : "transparent",
+          color: isFocused ? "var(--on-accent)" : "var(--text)",
           opacity: isDisabled ? 0.5 : 1,
           cursor: isDisabled ? "not-allowed" : "default",
         }),

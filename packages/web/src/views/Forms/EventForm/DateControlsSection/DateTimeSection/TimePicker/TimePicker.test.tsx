@@ -14,6 +14,7 @@ const intervalOptions: SelectOption<string>[] = [
 const dayOptions = getTimeOptions();
 const onePm = { label: "1 PM", value: "1:00 PM" };
 const fiveThirty = { label: "5:30 PM", value: "5:30 PM" };
+const nineFortyFive = { label: "9:45 AM", value: "9:45 AM" };
 
 function Harness({
   initialValue = intervalOptions[0],
@@ -199,5 +200,68 @@ describe("TimePicker arrow-key focus", () => {
 
     await user.keyboard("{ArrowDown}{ArrowDown}");
     expect(focusedOptionName(combobox)).toHaveTextContent("5:45 PM");
+  });
+});
+
+describe("TimePicker Enter commit", () => {
+  it("commits the arrow-focused meridiem, not the draft time", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialValue={nineFortyFive}
+        options={dayOptions}
+        freshOptions
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "12:45");
+    expect(focusedOptionName(combobox)).toHaveTextContent("12:45 AM");
+
+    await user.keyboard("{ArrowDown}");
+    expect(focusedOptionName(combobox)).toHaveTextContent("12:45 PM");
+
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("12:45 PM")).toBeInTheDocument();
+    expect(screen.queryByText("9:45 AM")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("commits the first filtered match on Enter without arrowing", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialValue={nineFortyFive}
+        options={dayOptions}
+        freshOptions
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "12:45");
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("12:45 AM")).toBeInTheDocument();
+    expect(screen.queryByText("9:45 AM")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("keeps the original time when Enter is pressed without changing the draft", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("1 PM")).toBeInTheDocument();
+    expect(screen.queryByText("12 AM")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 });

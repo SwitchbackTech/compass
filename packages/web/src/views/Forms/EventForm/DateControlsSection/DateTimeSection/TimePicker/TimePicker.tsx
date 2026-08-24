@@ -30,8 +30,19 @@ const themeColor =
 const timePickerTextStyles = {
   singleValue: themeColor("var(--text)"),
   input: themeColor("var(--text)"),
-  option: themeColor("var(--text)"),
   placeholder: themeColor("var(--text-muted)"),
+  option: (
+    base: CSSObjectWithLabel,
+    { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean },
+  ): CSSObjectWithLabel => ({
+    ...base,
+    color: isFocused ? "var(--on-accent)" : "var(--text)",
+    backgroundColor: isFocused
+      ? "var(--accent)"
+      : isSelected
+        ? "var(--surface-raised)"
+        : "transparent",
+  }),
 };
 
 const TIMEPICKER = "timepicker";
@@ -110,6 +121,16 @@ export const TimePicker = ({
     };
   }, []);
 
+  const commitFocusedOption = () => {
+    if (!userAdjustedRef.current) return;
+    const option = optionFromFocusedMenu(
+      containerRef.current,
+      selectOptions,
+      value?.value,
+    );
+    if (option) _onChange(option);
+  };
+
   return (
     <div ref={containerRef} className="c-time-picker">
       <CreatableSelect
@@ -130,7 +151,7 @@ export const TimePicker = ({
             userAdjustedRef.current = true;
           }
 
-          if (key === "Enter" || key === "Backspace") {
+          if (key === "Backspace") {
             e.stopPropagation();
           }
 
@@ -143,6 +164,19 @@ export const TimePicker = ({
             e.stopPropagation();
           }
 
+          if (key === "Enter") {
+            // react-select's internal focusedOption can stay on the
+            // draft time after the list is filtered. Commit the DOM
+            // focused row instead, and preventDefault so the stale
+            // option is not also selected.
+            e.stopPropagation();
+            if (e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            commitFocusedOption();
+            setIsMenuOpen(false);
+            return;
+          }
+
           if (key === "Tab") {
             // Commit only after the user changed the draft (arrows or
             // typing). Bare Tab through must leave the current time
@@ -151,14 +185,7 @@ export const TimePicker = ({
             // with blurInputOnSelect, leaves focus on the document
             // instead of the next field.
             if (e.nativeEvent.isComposing) return;
-            if (!e.shiftKey && userAdjustedRef.current) {
-              const option = optionFromFocusedMenu(
-                containerRef.current,
-                selectOptions,
-                value?.value,
-              );
-              if (option) _onChange(option);
-            }
+            if (!e.shiftKey) commitFocusedOption();
             setIsMenuOpen(false);
           }
         }}
