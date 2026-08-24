@@ -1,0 +1,21 @@
+# Build-time config for the CI performance budget (perf-budget.yml).
+# Only the values baked into the web bundle matter (nodeEnv, apiUrl,
+# empty PostHog key so analytics stays out of the measurement); the rest
+# exist to satisfy config schema validation and are never used.
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+web:
+  url: http://localhost:9161
+backend:
+  # Nothing listens on 3000 in the perf job; boot-time API calls fail fast,
+  # same as the e2e suite's setup.
+  apiUrl: http://localhost:3000/api
+  compassToken: unused-perf-build
+mongo:
+  uri: mongodb://localhost:27017/unused
+supertokens:
+  uri: http://localhost:3567
+  key: unused-perf-build
+google:
+  clientId: unused-perf-build
