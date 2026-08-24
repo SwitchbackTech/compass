@@ -104,6 +104,11 @@
       Bun names the src/index.tsx entrypoint's outputs after the entry file
       (/index.js + /index.css), so this file can reference them statically.
       copy-static-assets.ts asserts both exist at build time.
+
+      The built copy of this file additionally gets modulepreload links for
+      every boot-critical chunk, injected at the end of head by
+      inject-module-preloads.ts. (Don't write a literal closing head tag in
+      this comment: the injector anchors on the first one it finds.)
     -->
     <link rel="stylesheet" href="/index.css" />
   </head>
