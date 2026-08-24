@@ -36,7 +36,8 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
   );
-  const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
+  const { closing, beginDismiss, cancelDismiss } =
+    useDismissTransition(MODAL_DISMISS_MS);
   // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
   // seats its own focus; restoring the underlay first causes a focus flash.
   const skipFocusRestoreRef = useRef(false);
@@ -78,9 +79,9 @@ export function WelcomeModal() {
     // Start after this dialog unmounts so the practice takeover does not
     // share a focus trap with the fading welcome overlay.
     beginDismiss(() => {
-      setIsOpen(false);
       if (!startShowcaseAfterDismissRef.current) return;
       startShowcaseAfterDismissRef.current = false;
+      setIsOpen(false);
       shortcutShowcaseActions.startFromWelcome();
     });
   };
@@ -88,6 +89,7 @@ export function WelcomeModal() {
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
+    cancelDismiss();
     markWelcomeSeen();
     if (cta === "sign_up") {
       shortcutShowcaseActions.deferUntilSignup();
@@ -103,6 +105,7 @@ export function WelcomeModal() {
   const handOffToGoogle = () => {
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
+    cancelDismiss();
     markWelcomeSeen();
     shortcutShowcaseActions.deferUntilSignup();
     track("welcome_modal_dismissed", { cta: "sign_up_google" });

@@ -1,5 +1,6 @@
 import {
   type FC,
+  type KeyboardEvent,
   useCallback,
   useContext,
   useEffect,
@@ -33,6 +34,13 @@ import {
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+
+const FOCUSABLE_SELECTOR =
+  'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
+
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
@@ -87,8 +95,26 @@ const ShowcaseTakeover: FC = () => {
 
   const regionRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    regionRef.current?.focus();
+    const root = regionRef.current;
+    if (!root) return;
+    const [firstFocusable] = getFocusableElements(root);
+    (firstFocusable ?? root).focus();
   }, []);
+
+  const handleTakeoverKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab" || !regionRef.current) return;
+    const focusables = getFocusableElements(regionRef.current);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   const [practice, setPractice] = useState(initialPracticeState);
   const practiceRef = useRef(practice);
@@ -224,6 +250,7 @@ const ShowcaseTakeover: FC = () => {
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
+      onKeyDown={handleTakeoverKeyDown}
       style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
     >

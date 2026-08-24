@@ -43,5 +43,16 @@ export function useDismissTransition(durationMs: number) {
     [durationMs],
   );
 
-  return { closing, beginDismiss };
+  // Abort a fade without running onComplete — used when a later handoff
+  // (welcome → auth) must keep the previous surface mounted underneath.
+  const cancelDismiss = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    closingRef.current = false;
+    setClosing(false);
+  }, []);
+
+  return { closing, beginDismiss, cancelDismiss };
 }

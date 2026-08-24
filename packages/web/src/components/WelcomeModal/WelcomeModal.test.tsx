@@ -263,17 +263,30 @@ describe("WelcomeModal", () => {
 
   it("cancels a pending practice start when login opens during dismiss", async () => {
     const user = userEvent.setup();
-    render(<WelcomeModal />);
+    const { rerender } = render(<WelcomeModal />);
 
     await user.keyboard("s");
     await user.keyboard("i");
 
     expect(mockOpenModal).toHaveBeenCalledWith("login");
+    authModalState.isOpen = true;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+
     await act(async () => {
       await new Promise((resolve) => {
         setTimeout(resolve, 500);
       });
     });
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+
+    authModalState.isOpen = false;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeVisible();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 

@@ -51,6 +51,30 @@ describe("ShortcutShowcase", () => {
     clearAppLockReasons();
   });
 
+  it("focuses the first practice control and keeps Tab inside the takeover", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Outside calendar</button>
+        <ShortcutShowcase />
+      </>,
+    );
+    const outside = screen.getByRole("button", { name: "Outside calendar" });
+    outside.focus();
+
+    act(() => shortcutShowcaseActions.replay());
+
+    const first = screen.getByRole("button", { name: /Do it for me/ });
+    expect(first).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(outside).not.toHaveFocus();
+    expect(first).not.toHaveFocus();
+
+    await user.tab();
+    expect(first).toHaveFocus();
+  });
+
   it("renders nothing until started, then locks the app while up", () => {
     render(<ShortcutShowcase />);
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
