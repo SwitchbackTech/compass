@@ -92,11 +92,19 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("burns the offer when exploring without an account or logging in", () => {
+  it("starts from welcome without marking the practice seen", () => {
+    shortcutShowcaseActions.startFromWelcome();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
+  });
+
+  it("does not burn the offer on a login-style skip", () => {
     shortcutShowcaseActions.markSkippedWithoutStarting();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
-    ).toBe("true");
+    ).not.toBe("true");
     shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });

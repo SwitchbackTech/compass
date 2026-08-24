@@ -68,25 +68,25 @@ export function WelcomeModal() {
   const dismiss = (cta: "explore" | "dismissed" = "dismissed") => {
     if (closing) return;
     markWelcomeSeen();
-    // Exploring without an account lands straight on the calendar. The
-    // shortcut practice is an educational layer for people who have a real
-    // calendar to practice on, so it waits for signup (or the palette); the
-    // first-event prompt takes over on the real calendar in the meantime.
-    shortcutShowcaseActions.markSkippedWithoutStarting();
     track("welcome_modal_dismissed", { cta });
-    beginDismiss(() => setIsOpen(false));
+    // Start after this dialog unmounts so the practice takeover does not
+    // share a focus trap with the fading welcome overlay.
+    beginDismiss(() => {
+      setIsOpen(false);
+      shortcutShowcaseActions.startFromWelcome();
+    });
   };
 
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
-    shortcutShowcaseActions.markSkippedWithoutStarting({
-      pendingSignup: cta === "sign_up",
-    });
-    track("welcome_modal_dismissed", { cta });
     if (cta === "sign_up") {
+      shortcutShowcaseActions.markSkippedWithoutStarting({
+        pendingSignup: true,
+      });
       track("signup_started", { source: "welcome_modal" });
     }
+    track("welcome_modal_dismissed", { cta });
     openModal(cta === "log_in" ? "login" : "signUp");
   };
 
@@ -184,7 +184,7 @@ export function WelcomeModal() {
             type="button"
             ref={signUpButtonRef}
             onClick={() => handOffToAuth("sign_up")}
-            className="c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
+            className="c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full"
           >
             {isGoogleAvailable ? "Sign up with email" : "Sign up"}
             <ShortcutHint className="ml-2">U</ShortcutHint>

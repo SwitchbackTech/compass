@@ -35,10 +35,10 @@ test("welcomes a first-time user and seeds sample events", async ({
   await page.keyboard.press("s");
   await expect(welcomeDialog).toBeHidden();
 
-  // Nothing stands between the welcome screen and the calendar any more.
-  await expect(
-    page.getByRole("region", { name: "Shortcut practice" }),
-  ).toHaveCount(0);
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(showcase).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(showcase).toHaveCount(0);
 
   await expect(
     page.getByText(/Sample events to help you explore/i),
@@ -47,20 +47,18 @@ test("welcomes a first-time user and seeds sample events", async ({
     page.getByRole("button", { name: /Sample Timed event: Try Compass/i }),
   ).toBeVisible();
 
-  // The contextual handoff from practice to the real product: it appears
-  // whether or not the user ever ran the showcase itself.
   const prompt = page.getByRole("complementary", {
     name: "Create your first event",
   });
   await expect(prompt).toBeVisible();
-  await expect(prompt).toContainText("You've got the skills");
+  await expect(prompt).toContainText("Add your first event");
 
   const title = createEventTitle("First-run event");
   await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
 
   // The prompt celebrates the first real event, then retires.
-  await expect(prompt).toContainText("That's a real one.");
+  await expect(prompt).toContainText("It's on the calendar.");
   await expect(prompt).toBeHidden();
 
   await page.reload({ waitUntil: "domcontentloaded" });

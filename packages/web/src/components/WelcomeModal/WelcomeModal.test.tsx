@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
@@ -69,6 +76,9 @@ const { WelcomeModal } =
 const { STORAGE_KEYS } =
   require("@web/common/constants/storage.constants") as typeof import("@web/common/constants/storage.constants");
 
+const { useShortcutShowcaseStore, initialShortcutShowcaseState } =
+  require("@web/components/ShortcutShowcase/showcase.store") as typeof import("@web/components/ShortcutShowcase/showcase.store");
+
 describe("WelcomeModal", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -76,6 +86,11 @@ describe("WelcomeModal", () => {
     mockCloseModal.mockClear();
     authModalState.isOpen = false;
     window.history.replaceState(null, "", window.location.href);
+    useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
+  });
+
+  afterEach(() => {
+    useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
   });
 
   it("shows the new copy and the pixel pirate mascot", () => {
@@ -83,20 +98,13 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "The keyboard-first calendar",
+        name: "Keyboard calendar",
       }),
     ).toBeTruthy();
-    expect(screen.getByText(/Rediscover the joy of shortcuts/)).toBeTruthy();
+    expect(screen.getByText(/No clicks allowed/)).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
-    expect(
-      screen.getByRole("link", {
-        name: "Compass Calendar - The keyboard-first calendar. Get organized quickly. | Product Hunt",
-      }),
-    ).toHaveAttribute(
-      "href",
-      "https://www.producthunt.com/products/compass-calendar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-compass-calendar-2",
-    );
+    expect(screen.queryByRole("link", { name: /Product Hunt/i })).toBeNull();
   });
 
   it("opens the auth modal from the Log in pill", async () => {
@@ -234,17 +242,35 @@ describe("WelcomeModal", () => {
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
   });
 
-  it("explores without an account on S, and never queues the takeover", async () => {
+  it("starts the practice after exploring without an account", async () => {
     const user = userEvent.setup();
+
     render(<WelcomeModal />);
 
     await user.keyboard("s");
 
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
-    // Straight to the calendar: the practice is for people who committed.
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE)).toBe(
-      "true",
-    );
+    await waitFor(() => {
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    });
+    expect(
+      localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
+    expect(
+      localStorage.getItem(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER),
+    ).toBeNull();
+  });
+
+  it("does not mark the practice seen when logging in", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("i");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(
+      localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
     expect(
       localStorage.getItem(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER),
     ).toBeNull();
@@ -350,7 +376,7 @@ describe("WelcomeModal", () => {
       // Email signup steps aside to a clearly secondary label.
       expect(
         screen.getByRole("button", { name: "Sign up with email" }),
-      ).toBeTruthy();
+      ).toHaveClass("w-full", "h-10", "c-button-elevated");
     });
 
     it("starts Google auth from the button and queues the practice offer", async () => {

@@ -47,17 +47,19 @@ const endShowcase = () => {
   useShortcutShowcaseStore.setState({ isActive: false, stepIndex: 0 });
 };
 
-/**
- * Only two ways in now. The welcome modal used to launch the takeover before
- * anyone had committed to anything; signing up and connecting a calendar comes
- * first, and the practice is offered once there is a real calendar behind it.
- */
-const activate = (entry: "post_signup" | "palette") => {
+/** How the practice arena was opened, so the activation funnel can tell them apart. */
+export type ShowcaseEntry = "welcome" | "post_signup" | "palette";
+
+const activate = (entry: ShowcaseEntry) => {
   useShortcutShowcaseStore.setState({ isActive: true, stepIndex: 0 });
   track("shortcut_showcase_started", { entry });
 };
 
 export const shortcutShowcaseActions = {
+  /** Explore / Escape / backdrop from the welcome modal. */
+  startFromWelcome: () => {
+    activate("welcome");
+  },
   /** Palette re-entry: always allowed, always from the first step. */
   replay: () => {
     activate("palette");
@@ -90,15 +92,14 @@ export const shortcutShowcaseActions = {
     endShowcase();
   },
   /**
-   * Welcome-modal exit: signing up defers the offer to right after signup
-   * completes; log-in and exploring without an account burn it immediately.
+   * Welcome-modal signup: defer the offer until signup completes. Login
+   * and explore do not call this — login leaves the flags alone, explore
+   * starts the takeover via startFromWelcome.
    */
   markSkippedWithoutStarting: (options?: { pendingSignup?: boolean }) => {
     if (options?.pendingSignup) {
       markShowcaseOfferPending();
-      return;
     }
-    markSeen();
   },
   /** Called once, right after signup completes, to redeem a pending offer. */
   offerAfterSignupIfPending: () => {

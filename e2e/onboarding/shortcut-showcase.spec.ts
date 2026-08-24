@@ -4,22 +4,6 @@ import { expect, type Page, test } from "@playwright/test";
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1600, height: 900 } });
 
-/**
- * Signing up is the only other way in, and that needs a real backend, so the
- * palette is how e2e reaches the practice arena.
- */
-const openPracticeFromPalette = async (page: Page) => {
-  await page.keyboard.press("ControlOrMeta+k");
-  const search = page.getByLabel("Command palette search");
-  await expect(search).toBeVisible();
-  await search.fill("Practice shortcuts");
-  const practiceOption = page.getByRole("option", {
-    name: /Practice shortcuts/,
-  });
-  await expect(practiceOption).toBeVisible();
-  await page.keyboard.press("Enter");
-};
-
 const leaveWelcome = async (page: Page) => {
   const welcomeDialog = page.getByRole("dialog", {
     name: "Welcome to Compass Calendar",
@@ -32,28 +16,20 @@ const leaveWelcome = async (page: Page) => {
   await expect(welcomeDialog).toBeHidden();
 };
 
-test("exploring without an account lands on the calendar, not the practice", async ({
-  page,
-}) => {
+test("exploring without an account starts the practice", async ({ page }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
 
-  // The takeover is an educational layer for people who committed, so it no
-  // longer stands between the welcome screen and the app.
   await expect(
     page.getByRole("region", { name: "Shortcut practice" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("complementary", { name: "Create your first event" }),
   ).toBeVisible();
 });
 
-test("the palette runs the one-lesson practice happy path", async ({
+test("the welcome-started practice runs the one-lesson happy path", async ({
   page,
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await openPracticeFromPalette(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Create an event");
@@ -83,7 +59,6 @@ test("Skip to sign up leaves the practice for the signup form on step 1", async 
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await openPracticeFromPalette(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Create an event");
@@ -103,7 +78,6 @@ test("Escape leaves the practice and it never auto-replays", async ({
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await openPracticeFromPalette(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Create an event");

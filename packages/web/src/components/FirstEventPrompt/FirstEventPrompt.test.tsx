@@ -56,8 +56,8 @@ describe("FirstEventPrompt", () => {
       name: "Create your first event",
     });
     expect(prompt).toBeTruthy();
-    expect(screen.getByText("You've got the skills")).toBeTruthy();
-    expect(screen.getByText(/to create your first real event/)).toBeTruthy();
+    expect(screen.getByText("Add your first event")).toBeTruthy();
+    expect(screen.getByText(/type a title, then Enter/)).toBeTruthy();
     expect(screen.getByText("C")).toBeTruthy();
   });
 
@@ -66,7 +66,7 @@ describe("FirstEventPrompt", () => {
     render(<FirstEventPrompt />);
 
     act(() => noteFirstRealEventCreated());
-    expect(screen.getByText("That's a real one.")).toBeTruthy();
+    expect(screen.getByText("It's on the calendar.")).toBeTruthy();
     expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
       "completed",
     );
