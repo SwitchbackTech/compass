@@ -229,6 +229,28 @@ describe("TimePicker Enter commit", () => {
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
+  it("commits a clicked filtered option instead of the announced first match", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialValue={nineFortyFive}
+        options={dayOptions}
+        freshOptions
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "12:45");
+    expect(focusedOptionName(combobox)).toHaveTextContent("12:45 AM");
+
+    await user.click(screen.getByRole("option", { name: "12:45 PM" }));
+
+    expect(screen.getByText("12:45 PM")).toBeInTheDocument();
+    expect(screen.queryByText("9:45 AM")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
   it("commits the first filtered match on Enter without arrowing", async () => {
     const user = userEvent.setup();
     render(

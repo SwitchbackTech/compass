@@ -88,6 +88,7 @@ export const TimePicker = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
   const userAdjustedRef = useRef(false);
+  const remapEnterRef = useRef(false);
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
 
@@ -147,9 +148,14 @@ export const TimePicker = ({
         //@ts-expect-error uses custom onChange to manage focus in parent
         onChange={(option: SelectOption<string> | null) => {
           if (!option) return;
-          // react-select's internal focusedOption can stay on the draft
-          // time after the list is filtered. Prefer the announced row.
-          _onChange(focusedMenuOption() ?? option);
+          // Enter-only: react-select can report the draft time after a
+          // filter. Pointer clicks must keep the clicked option.
+          if (remapEnterRef.current) {
+            remapEnterRef.current = false;
+            _onChange(focusedMenuOption() ?? option);
+            return;
+          }
+          _onChange(option);
         }}
         onKeyDown={(e) => {
           const key = e.key;
@@ -169,6 +175,8 @@ export const TimePicker = ({
             if (!userAdjustedRef.current) {
               e.preventDefault();
               setIsMenuOpen(false);
+            } else {
+              remapEnterRef.current = true;
             }
           }
 
@@ -204,6 +212,7 @@ export const TimePicker = ({
           scheduleScrollToSelected();
         }}
         onMenuClose={() => {
+          remapEnterRef.current = false;
           cancelScrollToSelected();
           setIsMenuOpen(false);
         }}
