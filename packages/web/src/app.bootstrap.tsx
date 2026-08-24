@@ -12,6 +12,7 @@ import {
   showDbInitErrorToast,
 } from "@web/common/utils/app-init.util";
 import { App } from "@web/components/App/App";
+import { preloadEventFormOnFirstInput } from "@web/views/Forms/EventForm/EventForm.lazy";
 import "./index.css";
 
 export async function bootstrapApp(): Promise<void> {
@@ -35,6 +36,7 @@ export async function bootstrapApp(): Promise<void> {
   sessionInit();
 
   root.render(<App />);
+  preloadEventFormOnFirstInput();
 
   // Show toasts after app renders (so the toast container is available)
   if (dbInitError) {

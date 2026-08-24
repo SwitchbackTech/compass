@@ -1,24 +1,12 @@
 import {
   type Dispatch,
-  lazy,
   type ReactNode,
   type SetStateAction,
   Suspense,
   useCallback,
-  useEffect,
 } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { prefetchEventForm } from "@web/views/Forms/EventForm/prefetch-event-form";
-
-// Lazy: EventForm transitively pulls in TipTap, react-datepicker, and
-// react-select — none of which should download on app boot. This is the only
-// static edge into that graph, so splitting here keeps the editor stack in
-// its own chunk until a form actually opens (or the prefetch below warms it).
-const EventForm = lazy(() =>
-  import("@web/views/Forms/EventForm/EventForm").then((module) => ({
-    default: module.EventForm,
-  })),
-);
+import { LazyEventForm as EventForm } from "@web/views/Forms/EventForm/EventForm.lazy";
 
 export type EventFormPanelConfirmation = {
   onDelete: () => void;
@@ -62,22 +50,6 @@ export function EventFormPanel({
     },
     [draft, syncDraft],
   );
-
-  // Warm the EventForm chunk on the user's first input so the form opens
-  // without a visible fetch. Deliberately input-driven rather than a timer:
-  // an idle timer would fire during Lighthouse's trace window and count the
-  // chunk back into the boot script-transfer budget it was split to avoid.
-  useEffect(() => {
-    const listenerOptions = { capture: true, passive: true } as const;
-    window.addEventListener("pointermove", prefetchEventForm, listenerOptions);
-    window.addEventListener("pointerdown", prefetchEventForm, listenerOptions);
-    window.addEventListener("keydown", prefetchEventForm, listenerOptions);
-    return () => {
-      window.removeEventListener("pointermove", prefetchEventForm, true);
-      window.removeEventListener("pointerdown", prefetchEventForm, true);
-      window.removeEventListener("keydown", prefetchEventForm, true);
-    };
-  }, []);
 
   if (!isFormOpen || !draft) return null;
 

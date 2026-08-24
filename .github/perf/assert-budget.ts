@@ -8,13 +8,11 @@
  * Lighthouse is pinned because @lhci/cli's bundled Lighthouse 12 reports
  * NO_LCP against current Chrome; 13.x traces LCP correctly.
  *
- * Baseline when this was set up (2026-08-24, desktop preset over gzip):
- * LCP ~1.9s, FCP ~0.8s, script transfer ~1,085 KB.
- *
- * 2026-08-24: lazy-loading the event form (TipTap/react-datepicker/
- * react-select) dropped script transfer to ~916 KB; budget tightened to
- * 1,100 KB so statically re-importing the editor stack (~170 KB gz) fails
- * the gate.
+ * Baseline (2026-08-24, desktop preset over gzip): LCP ~1.9s, FCP ~0.8s,
+ * script transfer ~916 KB after the event-form lazy split. The 1,000 KB
+ * script budget leaves ~84 KB of headroom, deliberately less than the
+ * ~170 KB gz editor stack (TipTap/react-datepicker/react-select) so a
+ * static re-import of the event form fails the gate.
  */
 import { mkdirSync } from "node:fs";
 
@@ -42,7 +40,7 @@ const BUDGETS = [
   {
     metric: "scriptBytes",
     label: "Script transfer size",
-    max: 1_100_000,
+    max: 1_000_000,
     unit: "bytes",
     level: "error",
   },

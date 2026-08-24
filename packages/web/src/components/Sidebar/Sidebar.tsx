@@ -1,4 +1,5 @@
-import { type HTMLAttributes, lazy, type ReactNode, Suspense } from "react";
+import { lazyRouteComponent } from "@tanstack/react-router";
+import { type HTMLAttributes, type ReactNode, Suspense } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
   selectIsEventFormOpen,
@@ -14,10 +15,9 @@ import { UpNextCard } from "./UpNextCard/UpNextCard";
 // splitting it keeps that library out of the entry chunk (the event form
 // reuses the same split chunk). The fallback holds the picker's approximate
 // height so the calendar list doesn't jump when the chunk lands.
-const MonthPicker = lazy(() =>
-  import("./MonthPicker/MonthPicker").then((module) => ({
-    default: module.MonthPicker,
-  })),
+const MonthPicker = lazyRouteComponent(
+  () => import("./MonthPicker/MonthPicker"),
+  "MonthPicker",
 );
 
 export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
