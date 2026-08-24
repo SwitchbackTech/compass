@@ -10,8 +10,10 @@ FROM oven/bun:1.2.18-slim AS runtime
 
 WORKDIR /app
 
-RUN addgroup --system --gid 1001 compass \
- && adduser --system --uid 1001 --ingroup compass --no-create-home compass
+# groupadd/useradd, not addgroup/adduser: Debian 13 (trixie) based
+# oven/bun slim images no longer ship the adduser package.
+RUN groupadd --system --gid 1001 compass \
+ && useradd --system --uid 1001 --gid compass --no-create-home --shell /usr/sbin/nologin compass
 
 COPY --from=build --chown=compass:compass /app/build/backend ./
 RUN mkdir -p /app/logs && chown compass:compass /app/logs
