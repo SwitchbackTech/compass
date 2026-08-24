@@ -1,4 +1,7 @@
-import { digitPickIndex } from "@web/shortcuts/digit-pick.util";
+import {
+  digitPickIndex,
+  physicalDigitIndex,
+} from "@web/shortcuts/digit-pick.util";
 import { describe, expect, it } from "bun:test";
 
 const event = (
@@ -42,5 +45,22 @@ describe("digitPickIndex", () => {
     expect(
       digitPickIndex(event({ code: "ArrowRight", key: "ArrowRight" })),
     ).toBeNull();
+  });
+});
+
+describe("physicalDigitIndex", () => {
+  it("matches the physical top row and numpad fallback like digitPickIndex", () => {
+    expect(physicalDigitIndex(event({ code: "Digit1", key: "1" }))).toBe(0);
+    expect(physicalDigitIndex(event({ code: "Numpad3", key: "3" }))).toBe(2);
+    expect(physicalDigitIndex(event({ code: "KeyA", key: "a" }))).toBeNull();
+  });
+
+  it("ignores modifiers, unlike digitPickIndex", () => {
+    expect(physicalDigitIndex(event({ code: "Digit1", metaKey: true }))).toBe(
+      0,
+    );
+    expect(physicalDigitIndex(event({ code: "Digit1", ctrlKey: true }))).toBe(
+      0,
+    );
   });
 });

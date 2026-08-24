@@ -19,59 +19,63 @@ const queryEventFormElement = <T extends Element>(selector: string): T | null =>
 export const getEventFormElement = (): HTMLElement | null =>
   queryEventFormElement<HTMLElement>(EVENT_FORM_SELECTOR);
 
-const focusFirstMatch = (selectors: string[]) => {
+const findFirstMatch = (selectors: string[]): HTMLElement | null => {
   for (const selector of selectors) {
     const element = queryEventFormElement<HTMLElement>(selector);
     if (element) {
-      element.focus();
-      return true;
+      return element;
     }
   }
-  return false;
+  return null;
 };
+
+/** Per-field fallback selectors, in priority order. */
+const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
+  title: [`${EVENT_FORM_SELECTOR} input[name="Event Title"]`],
+  location: [
+    `${EVENT_FORM_SELECTOR} #event-form-location`,
+    `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
+  ],
+  description: [`#event-form-description`],
+  // Timed events expose a start-time combobox; all-day uses the date input.
+  start: [
+    `${EVENT_FORM_SELECTOR} #startTimePicker`,
+    `${EVENT_FORM_SELECTOR} input[title="Pick Start Date"]`,
+  ],
+  end: [
+    `${EVENT_FORM_SELECTOR} #endTimePicker`,
+    `${EVENT_FORM_SELECTOR} input[title="Pick End Date"]`,
+  ],
+  recurrence: [
+    `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Edit recurrence"]`,
+    `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Repeat"]`,
+  ],
+  calendar: [`#event-form-calendar`],
+  // Prefer the selected swatch so arrow keys move from the current color.
+  color: [
+    `#event-form-color input[type="radio"]:checked`,
+    `#event-form-color input[type="radio"]`,
+  ],
+};
+
+/**
+ * The element a field jump would focus, or null if the field isn't currently
+ * rendered (e.g. the calendar picker on an edit draft). Used both to focus
+ * and to anchor hint chips to the same target.
+ */
+export const getEventFormFieldElement = (
+  field: EventFormFocusField,
+): HTMLElement | null => findFirstMatch(FIELD_SELECTORS[field]);
 
 /**
  * Focus a field inside the docked event form. The grid card and sidebar form
  * live in separate trees, so sequence shortcuts hop via the DOM.
  */
 export const focusEventFormField = (field: EventFormFocusField): boolean => {
-  switch (field) {
-    case "title":
-      return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} input[name="Event Title"]`,
-      ]);
-    case "location":
-      return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} #event-form-location`,
-        `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
-      ]);
-    case "description":
-      return focusFirstMatch([`#event-form-description`]);
-    case "start":
-      // Timed events expose a start-time combobox; all-day uses the date input.
-      return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} #startTimePicker`,
-        `${EVENT_FORM_SELECTOR} input[title="Pick Start Date"]`,
-      ]);
-    case "end":
-      return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} #endTimePicker`,
-        `${EVENT_FORM_SELECTOR} input[title="Pick End Date"]`,
-      ]);
-    case "recurrence":
-      return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Edit recurrence"]`,
-        `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Repeat"]`,
-      ]);
-    case "calendar":
-      return focusFirstMatch([`#event-form-calendar`]);
-    case "color":
-      // Prefer the selected swatch so arrow keys move from the current color.
-      return focusFirstMatch([
-        `#event-form-color input[type="radio"]:checked`,
-        `#event-form-color input[type="radio"]`,
-      ]);
-  }
+  const element = getEventFormFieldElement(field);
+  if (!element) return false;
+  element.focus();
+  return true;
 };
 
 // The grid draft card and the sidebar-docked form live in separate component

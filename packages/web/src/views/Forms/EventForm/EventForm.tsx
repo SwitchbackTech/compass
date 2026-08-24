@@ -48,6 +48,8 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
+import { FormDigitHintOverlay } from "@web/shortcuts/form-digit-jump/FormDigitHintOverlay";
+import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useFormDigitJumpShortcut";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -674,6 +676,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
       useEscapeToCloseForm(onClose);
 
+    const { areHintsVisible } = useFormDigitJumpShortcut();
+
     const titleErrorField = fieldErrors?.["content.title"]
       ? "content.title"
       : fieldErrors?.title
@@ -918,6 +922,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onCancel={onCancelConfirm}
           onDiscard={onDiscardConfirm}
         />
+        <FormDigitHintOverlay visible={areHintsVisible} />
       </>
     );
   },

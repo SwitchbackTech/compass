@@ -3,9 +3,10 @@
  *
  * Each entry pairs the runtime binding with the keycaps shown in hints so a
  * remap here propagates to the real handlers, the showcase, and its hint
- * chips in one edit. Bindings come in three shapes because the app has three
+ * chips in one edit. Bindings come in four shapes because the app has four
  * dispatch styles: tanstack hotkey strings, the bespoke `e`… sequence engine,
- * and bare-letter capture listeners (`s`, `f`, `m`).
+ * bare-letter capture listeners (`s`, `f`, `m`), and the hold-Mod + digit-chord
+ * engine (`jumpFormField`).
  *
  * Only taught bindings live here — this is not a registry of every shortcut.
  * `shortcuts.registry.ts` remains the display list for the help overlay; its
@@ -15,6 +16,11 @@
 export const KEYMAP = {
   createEvent: { hotkey: "C", keycaps: ["C"] },
   saveDraft: { hotkey: "Enter", keycaps: ["Enter"] },
+  jumpFormField: {
+    holdModifier: "Mod",
+    digits: ["1", "8"],
+    keycaps: ["Mod", "1-8"],
+  },
   moveFocus: {
     hotkeys: {
       up: "ArrowUp",

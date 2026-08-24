@@ -147,6 +147,22 @@ describe("shortcuts.registry", () => {
       expect(open).toContain("edit-field-leader-in-form");
     });
 
+    it("excludes the digit-jump row when the form is closed and includes it when open", () => {
+      const closed = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        isFormOpen: false,
+      }).map((shortcut) => shortcut.id);
+      expect(closed).not.toContain("edit-jump-field-digit");
+
+      const open = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        isFormOpen: true,
+      }).map((shortcut) => shortcut.id);
+      expect(open).toContain("edit-jump-field-digit");
+    });
+
     it("lists the digit-pick row regardless of form state, since it also applies in the context menu", () => {
       const closed = filterShortcutsByContext({
         view: "day",

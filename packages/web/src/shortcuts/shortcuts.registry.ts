@@ -241,6 +241,16 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
     when: { isFormOpen: true },
   },
+  // One row instead of eight duplicates: the digit assignment is the same
+  // table as edit-focus-* above (just numbered instead of lettered), and
+  // in-the-moment discovery is the hold-Mod hint overlay's job.
+  {
+    id: "edit-jump-field-digit",
+    keys: [...KEYMAP.jumpFormField.keycaps],
+    label: "Jump to form field (hold Mod for hints)",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
   // Not form-gated: the same digit pick also runs in the event context
   // menu's color swatch strip, independent of whether the form is open.
   {
