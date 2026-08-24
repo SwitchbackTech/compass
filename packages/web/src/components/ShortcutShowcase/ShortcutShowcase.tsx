@@ -12,6 +12,7 @@ import { track } from "@web/auth/posthog/track";
 import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
+import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
 import {
@@ -34,13 +35,6 @@ import {
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-
-const FOCUSABLE_SELECTOR =
-  'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
-
-const getFocusableElements = (root: HTMLElement) =>
-  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
@@ -146,20 +140,10 @@ const ShowcaseTakeover: FC = () => {
     (firstFocusable ?? root).focus();
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: stepId and practice.editor trigger a reseat after lesson chrome unmounts; seatFocus does not read them.
   useEffect(() => {
     seatFocus();
   }, [seatFocus, stepId, practice.editor]);
-
-  useEffect(() => {
-    const onFocusIn = (event: FocusEvent) => {
-      const root = regionRef.current;
-      if (!root || closingRef.current) return;
-      if (root.contains(event.target as Node)) return;
-      seatFocus();
-    };
-    document.addEventListener("focusin", onFocusIn);
-    return () => document.removeEventListener("focusin", onFocusIn);
-  }, [seatFocus]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
