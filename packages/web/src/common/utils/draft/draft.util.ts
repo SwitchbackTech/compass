@@ -79,7 +79,15 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   const fullStart = isCurrentWeek ? now : startOfWeek.hour(now.hour());
   const _start = fullStart.minute(nextMinuteInterval).second(0);
 
-  const _end = _start.add(1, "hour");
+  // Clamp to midnight: a default that crossed into the next day would render
+  // in the all-day row (multi-day timed display), which is a surprising place
+  // for "create an event now" to land. Ending exactly at midnight still
+  // counts as inside the day, so the draft stays in the timed grid.
+  const midnightAfterStart = _start.add(1, "day").startOf("day");
+  const oneHourEnd = _start.add(1, "hour");
+  const _end = oneHourEnd.isAfter(midnightAfterStart)
+    ? midnightAfterStart
+    : oneHourEnd;
   const startDate = _start.format();
   const endDate = _end.format();
 
