@@ -13,7 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-01 | high | cursor-agent | done | [WP-01-verify-ci-parity.md](WP-01-verify-ci-parity.md) | merged #2865 (`31c73f336`); `bun run verify` selected scripts → type-check → lint → knip | — | 0 | none |
 | WP-02 | high | cursor-agent | done | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | merged #2866 (`8cc2a03ca`); schema + in-repo `/handoff` + ledger | — | 0 | none |
 | WP-03 | high | cursor-agent | done | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | merged #2867 (`024925eb2`); `/ship` Manager; `/review`; verify-change verdict | — | 0 | none |
-| WP-04 | high | — | queued | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | — | after WP-01 `done` | 0 | none |
+| WP-04 | high | Implementer | done | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | merged #2868 (`d2e3946d9`); checker in lint; pr-body workflow | — | 0 | none |
 | WP-05 | medium | — | queued | [WP-05-skill-registry.md](WP-05-skill-registry.md) | — | after WP-03 `done` | 0 | none |
 | WP-06 | medium | — | queued | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | — | after WP-02 and WP-03 `done` | 0 | none |
 | WP-07 | medium | cursor-agent | verifying | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | `.github/ISSUE_TEMPLATE/3-agent-task.yml`; label `agent-ready` created | this session | 0 | none |
@@ -26,9 +26,9 @@ Record elapsed minutes, exceptions, quality 1–5, rework.
 
 | run | date | task_id | minutes | exceptions | quality | rework | evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 2026-08-25 | WP-01 | — | 0 | 4 | 0 | PR #2865: verify CI parity; CI 20/20; merge 403 |
+| 1 | 2026-08-25 | WP-01 | — | 0 | 4 | 0 | PR #2865 merged `31c73f336` |
 | 2 | 2026-08-25 | WP-02 | — | 0 | 4 | 0 | PR #2866: typed handoff; scripts test for CI |
-| 3 | 2026-08-25 | WP-03 | — | 0 | 4 | 0 | this branch: Manager/review/verifier split |
+| 3 | 2026-08-25 | WP-03 | — | 0 | 4 | 0 | PR #2867 merged `024925eb2` |
 
 ## Five evidenced passes (deletion gate)
 
@@ -50,4 +50,4 @@ Record elapsed minutes, exceptions, quality 1–5, rework.
 
 | date | task_id | decision required | recommended option | alternatives tried | cost of waiting | safest default |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2026-08-25 | WP-01 | squash-merge of PR #2865 (CI 20/20) | merge with a token that has `pull_request: write` | `GH_TOKEN` PAT 403 on merge API (`contents=write` missing); Cursor git App token squash-merged | resolved | merged #2865 with git App token |
+| 2026-08-25 | WP-01 | squash-merge of PR #2865 (CI 20/20) | merge with git App token (`contents=write`) | `GH_TOKEN` PAT 403 on merge API (`contents=write` missing) | resolved | merged #2865 then #2866 with git App token |

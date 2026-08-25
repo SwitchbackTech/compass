@@ -14,9 +14,7 @@ import {
 } from "./runner-utils";
 import { resolve } from "node:path";
 
-warnIfBunVersionMismatch("1.3.14");
-
-type ProfileName =
+export type ProfileName =
   | "core"
   | "web"
   | "backend-fast"
@@ -57,64 +55,88 @@ const PROFILES: Record<
   },
 };
 
-const profile = process.argv[2] as ProfileName;
-const separatorIndex = process.argv.indexOf("--");
-const extraArgs =
-  separatorIndex === -1
-    ? process.argv.slice(3)
-    : process.argv.slice(separatorIndex + 1);
-
-if (!profile || !PROFILES[profile]) {
-  console.error(
-    "Usage: test-parallel.ts <core|web|backend-fast|sync-fast|scripts-fast> -- [bun test flags/paths...]",
-  );
-  process.exit(2);
-}
-
-const { preload, scan, label } = PROFILES[profile];
-const preloadPath = resolve(preload);
-const { targets, bunFlags } = resolveTestTargets(scan, extraArgs, {
-  expandDirectory: true,
-});
-
-const started = Date.now();
-
-const needsHookTimeout =
-  profile === "backend-fast" ||
-  profile === "sync-fast" ||
-  profile === "scripts-fast";
-
 // Web uses jsdom + MSW XHR patching + module singletons that Bun's parallel
 // `--isolate` clears between files (MSW's oldXMLHttpRequest becomes undefined).
 // One process, sequential files is still far faster than the old per-file launcher.
-const parallelFlag = profile === "web" ? [] : ["--parallel"];
+export function parallelArgsFor(profile: ProfileName): string[] {
+  return profile === "web" ? [] : ["--parallel"];
+}
 
-const testTargets = [
-  "bun",
-  "test",
-  ...parallelFlag,
-  ...(needsHookTimeout ? ["--timeout", "60000"] : []),
-  "--preload",
-  preloadPath,
-  ...bunFlags,
-  ...targets,
-];
+export function testArgvFor(
+  profile: ProfileName,
+  opts: {
+    preloadPath: string;
+    bunFlags: string[];
+    targets: string[];
+  },
+): string[] {
+  const needsHookTimeout =
+    profile === "backend-fast" ||
+    profile === "sync-fast" ||
+    profile === "scripts-fast";
 
-console.log(`Running ${label}...`);
+  return [
+    "bun",
+    "test",
+    ...parallelArgsFor(profile),
+    ...(needsHookTimeout ? ["--timeout", "60000"] : []),
+    "--preload",
+    opts.preloadPath,
+    ...opts.bunFlags,
+    ...opts.targets,
+  ];
+}
 
-const spawnEnv =
-  profile === "backend-fast" || profile === "scripts-fast"
-    ? backendTestSpawnEnv(FAST_MONGO_URI)
-    : { ...process.env, TZ: "Etc/UTC", NODE_ENV: "test" };
+async function runCli(): Promise<void> {
+  warnIfBunVersionMismatch("1.3.14");
 
-const proc = Bun.spawn(testTargets, {
-  env: spawnEnv,
-  stdout: "inherit",
-  stderr: "inherit",
-});
-const code = await proc.exited;
-console.log(`\n${label}: finished in ${formatDuration(started)}s`);
+  const profile = process.argv[2] as ProfileName;
+  const separatorIndex = process.argv.indexOf("--");
+  const extraArgs =
+    separatorIndex === -1
+      ? process.argv.slice(3)
+      : process.argv.slice(separatorIndex + 1);
 
-if (code !== 0) {
-  process.exit(code ?? 1);
+  if (!profile || !PROFILES[profile]) {
+    console.error(
+      "Usage: test-parallel.ts <core|web|backend-fast|sync-fast|scripts-fast> -- [bun test flags/paths...]",
+    );
+    process.exit(2);
+  }
+
+  const { preload, scan, label } = PROFILES[profile];
+  const preloadPath = resolve(preload);
+  const { targets, bunFlags } = resolveTestTargets(scan, extraArgs, {
+    expandDirectory: true,
+  });
+
+  const started = Date.now();
+  const testTargets = testArgvFor(profile, {
+    preloadPath,
+    bunFlags,
+    targets,
+  });
+
+  console.log(`Running ${label}...`);
+
+  const spawnEnv =
+    profile === "backend-fast" || profile === "scripts-fast"
+      ? backendTestSpawnEnv(FAST_MONGO_URI)
+      : { ...process.env, TZ: "Etc/UTC", NODE_ENV: "test" };
+
+  const proc = Bun.spawn(testTargets, {
+    env: spawnEnv,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const code = await proc.exited;
+  console.log(`\n${label}: finished in ${formatDuration(started)}s`);
+
+  if (code !== 0) {
+    process.exit(code ?? 1);
+  }
+}
+
+if (import.meta.main) {
+  await runCli();
 }
