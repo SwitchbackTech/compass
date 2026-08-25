@@ -61,14 +61,16 @@ Validation defaults:
 Project workflows live in `.agents/skills` so supported agents share one source
 of truth:
 
-- `/ship`: validate, review, open, merge, and verify a delivery
+- `/ship`: Manager — route, ledger, PR/merge after specialist verdicts
+- `/review`: read-only independent diff review
 - `/simplify`: reduce complexity without changing behavior
 - `/a11y-audit`: review changed UI for accessibility regressions
 - `/qa-test-staging`: run the post-deploy staging confidence sweep
-- `/verify-change`: select and run checks from the actual diff
+- `/verify-change`: Verifier — `PASS | RETRY | ESCALATE` from the diff
 - `/local-dev-bootstrap`: prepare the lightest viable local environment
 - `/google-sync-debug`: trace OAuth, provider, job, webhook, and SSE failures
-- `/handoff`: compact work for a fresh agent session
+- `/handoff`: write a typed in-repo handoff and ledger row
+- `/chaos`: exploratory signed-in QA, then hand off to `/ship`
 
 ## Compass-Specific Rules
 

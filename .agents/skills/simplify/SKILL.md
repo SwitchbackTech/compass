@@ -6,7 +6,8 @@ description: Reviews changed Compass code for duplication, unnecessary complexit
 # Simplify Compass code
 
 Favor the smallest, clearest implementation. This is a quality pass, not a
-correctness or security review.
+correctness or security review. `/ship` invokes this skill rather than
+inlining these detectors.
 
 ## Scope
 

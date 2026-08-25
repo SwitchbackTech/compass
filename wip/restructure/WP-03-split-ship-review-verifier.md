@@ -1,8 +1,8 @@
 # WP-03 — Split `/ship`; add Reviewer and Verifier contracts
 
 **task_id:** WP-03
-**status:** queued
-**owner:** Manager (docs/skills) then Verifier
+**status:** verifying
+**owner:** cursor-agent
 **depends on:** WP-02 `done` (typed handoff must exist)
 **next owner after done:** WP-05, then WP-06; fill delivery-loop baseline in
 `TRACKING.md`
@@ -114,11 +114,11 @@ Routine launches separate agents.
 
 ```text
 ship skill now invokes: verify-change, simplify, review
-review skill path:
-verify-change verdict format present: yes/no
-AGENTS.md index updated: yes/no
-PR template Independent review requires pointer: yes/no
-baseline table rows filled: 0-3
+review skill path: .agents/skills/review/SKILL.md
+verify-change verdict format present: yes
+AGENTS.md index updated: yes
+PR template Independent review requires pointer: yes
+baseline table rows filled: 3 (dry-run of this pack’s PRs; merge still 403)
 ```
 
 ## Out of scope
