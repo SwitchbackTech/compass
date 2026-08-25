@@ -1,7 +1,7 @@
 # WP-04 — Hard constraints (environment as training data)
 
 **task_id:** WP-04
-**status:** queued
+**status:** verifying
 **owner:** Implementer (scripts/CI) then Verifier
 **depends on:** WP-01 `done` (verify is the local gate these checks should
 join where cheap)
@@ -110,12 +110,34 @@ Recurring Compass comments that are already machine-checkable:
 ## Evidence
 
 ```text
-checker path:
-CI wiring:
+checker path: packages/scripts/src/testing/check-agent-constraints.ts
+CI wiring: package.json lint runs the checker before biome (114ms, <15s);
+  bun run verify (WP-01) already runs lint, so local parity follows once WP-01
+  is on main. PR body is a separate workflow (not test-unit.yml) so markdown
+  PRs are not BLOCKED on missing unit/e2e.
 allowlist paths:
-biome a11y promotions:
-PR-body job:
-bun run <checker> on main: pass/fail excerpt:
+  barrels (existing component barrels only; routers/index.tsx is router
+  config, not a barrel; app entry excluded):
+    packages/web/src/components/AbsoluteOverflowLoader/index.ts
+    packages/web/src/components/Tooltip/index.ts
+    packages/web/src/views/Forms/EventForm/SaveSection/index.ts
+    packages/web/src/views/GoogleAuthCallback/index.ts
+    packages/web/src/views/NotFound/index.ts
+  web locators: 20 existing web test files (see WEB_LOCATOR_ALLOWLIST)
+  mongoService: 10 existing backend test files (see
+    MONGO_SERVICE_TEST_ALLOWLIST). scripts *.db.test.ts not scanned.
+    sync-mongo.service is not the banned import.
+biome a11y promotions: none. Remaining warn rules all have documented
+  biome-ignore exceptions (and one live useAriaPropsSupportedByRole hit in
+  GridTimezoneLabel.tsx). Leftovers: noNoninteractiveTabindex,
+  noRedundantRoles, noStaticElementInteractions,
+  useAriaPropsSupportedByRole, useSemanticElements.
+PR-body job: .github/workflows/pr-body.yml (job pr-body). Docs-only PRs
+  still must fill the three sections; a short docs-only note is enough.
+  Fail closed on empty/unreadable body. Task boxes rejected.
+bun run checker on this tree: exit 0 (114ms). Fixture tests: 20 pass.
+web --parallel: parallelArgsFor("web") === []; testArgvFor("web") omits
+  --parallel. CLI wrapped in import.meta.main.
 ```
 
 ## Out of scope
@@ -139,14 +161,14 @@ bun run <checker> on main: pass/fail excerpt:
 
 ```yaml
 task_id: WP-04
-from:
-to: Implementer
-status:
-artifact:
-evidence:
-assumptions:
-open_risks:
-next_deadline:
+from: Implementer
+to: Verifier
+status: verifying
+artifact: packages/scripts/src/testing/check-agent-constraints.ts; .github/workflows/pr-body.yml
+evidence: checker exit 0 in 114ms; 20 focused scripts tests pass; bun run lint exit 0
+assumptions: WP-01 still unmerged on main; lint is the shared gate
+open_risks: this PAT cannot squash-merge; pr-body is not a GitHub required check yet
+next_deadline: after CI green; human merges WP-01 then this PR
 ```
 
 ## Session prompt

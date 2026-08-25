@@ -1,0 +1,35 @@
+name: PR body
+
+# Runs on every pull_request, including markdown-only PRs that skip Test/e2e
+# via paths-ignore. Docs PRs are not blocked on unit/e2e; they still must fill
+# Automated validation, Independent review, and Test plan (a short docs-only
+# note is enough). Do not fold this job into test-unit.yml: that workflow's
+# paths-ignore would hide the check on docs PRs, and making it a required
+# check there would BLOCK markdown PRs on missing unit/e2e jobs.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-body:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Check required PR template sections
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bun packages/scripts/src/testing/check-pr-body.ts

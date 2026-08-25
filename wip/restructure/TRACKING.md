@@ -13,7 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-01 | high | — | queued | [WP-01-verify-ci-parity.md](WP-01-verify-ci-parity.md) | — | when picked up: +1 session | 0 | none |
 | WP-02 | high | — | queued | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | — | when picked up: +1 session | 0 | none |
 | WP-03 | high | — | queued | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | — | after WP-02 `done` | 0 | none |
-| WP-04 | high | — | queued | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | — | after WP-01 `done` | 0 | none |
+| WP-04 | high | Implementer | verifying | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | checker + PR-body job on `cursor/hard-constraints-72ec`; WP-01 still unmerged | after WP-01 merge | 0 | none |
 | WP-05 | medium | — | queued | [WP-05-skill-registry.md](WP-05-skill-registry.md) | — | after WP-03 `done` | 0 | none |
 | WP-06 | medium | — | queued | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | — | after WP-02 and WP-03 `done` | 0 | none |
 | WP-07 | medium | — | queued | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | — | after WP-02 `done` | 0 | none |
@@ -50,4 +50,4 @@ Record elapsed minutes, exceptions, quality 1–5, rework.
 
 | date | task_id | decision required | recommended option | alternatives tried | cost of waiting | safest default |
 | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| 2026-08-25 | PACK | squash-merge 403 for this PAT (`pull_request: write`) | human merges #2865, then #2866, then stacked PRs | `gh pr merge` and REST merge both 403 | WP-01–07 stay off main | leave PRs open and keep implementing |
