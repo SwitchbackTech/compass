@@ -54,6 +54,7 @@ Validation defaults:
 
 - Docs index: `docs/README.md`
 - Temporary agent-OS work pack (delete when done): `wip/restructure/README.md`
+- Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
 
 ## Skills
 
