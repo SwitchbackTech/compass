@@ -112,6 +112,8 @@ leave it off — the PR still exists for human review, which is a fine outcome.
 
 ## Hard rules (all modes)
 
+- At handoff boundaries, write a typed record per `.agents/handoffs/SCHEMA.md`.
+
 - Never edit any denied path — see the confidence rubric above.
 - Never force-push.
 - One PR per issue — if a PR already exists for this issue (check open PRs

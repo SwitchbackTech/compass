@@ -11,7 +11,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | PACK-WRITE | high | docs-session | done | `wip/restructure/` | this directory exists; WPs have finish lines and session prompts | — | 0 | none (docs-only pack) |
 | WP-01 | high | — | queued | [WP-01-verify-ci-parity.md](WP-01-verify-ci-parity.md) | — | when picked up: +1 session | 0 | none |
-| WP-02 | high | — | queued | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | — | when picked up: +1 session | 0 | none |
+| WP-02 | high | cursor-agent | verifying | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | schema + in-repo `/handoff` + ledger; issue-0 example valid; dry-run write/delete yes | this session | 0 | none |
 | WP-03 | high | — | queued | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | — | after WP-02 `done` | 0 | none |
 | WP-04 | high | — | queued | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | — | after WP-01 `done` | 0 | none |
 | WP-05 | medium | — | queued | [WP-05-skill-registry.md](WP-05-skill-registry.md) | — | after WP-03 `done` | 0 | none |
@@ -50,4 +50,4 @@ Record elapsed minutes, exceptions, quality 1–5, rework.
 
 | date | task_id | decision required | recommended option | alternatives tried | cost of waiting | safest default |
 | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| 2026-08-25 | WP-01 | squash-merge of PR #2865 (CI 20/20) | merge with a token that has `pull_request: write` | `gh pr merge --squash` and REST merge both 403 on this PAT | pack stays blocked before WP-04 | leave #2865 open; continue WP-02 |
