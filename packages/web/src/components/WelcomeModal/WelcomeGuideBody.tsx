@@ -95,7 +95,8 @@ export function WelcomeGuideBody() {
       >
         Hold
         <ShortcutKeys keys={["Mod"]} />
-        to see keys, then press 1–5.
+        to see keys, then press 1–5. The same hold reveals jump keys all over
+        Compass.
       </p>
     </>
   );

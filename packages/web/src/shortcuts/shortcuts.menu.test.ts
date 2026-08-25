@@ -207,12 +207,20 @@ describe("shortcut menu sections", () => {
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["s"], label: "Toggle event jump keys" },
         { keys: ["f"], label: "Focus latest notice" },
+        {
+          keys: ["Mod", "1-4"],
+          label: "Jump to a page area (hold Mod for hints)",
+        },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["s"], label: "Toggle event jump keys" },
         { keys: ["f"], label: "Focus latest notice" },
+        {
+          keys: ["Mod", "1-4"],
+          label: "Jump to a page area (hold Mod for hints)",
+        },
       ]);
     });
 

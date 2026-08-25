@@ -4,7 +4,8 @@ export type ShortcutTipId =
   | "edit-sequence"
   | "nudge"
   | "target-event"
-  | "edge-cycle";
+  | "edge-cycle"
+  | "page-jump";
 
 export type ShortcutTipPart =
   | string
@@ -63,6 +64,10 @@ export function getShortcutTips(): ShortcutTip[] {
     {
       id: "edge-cycle",
       parts: ["Press ", { key: "Tab" }, " to move between start and end"],
+    },
+    {
+      id: "page-jump",
+      parts: ["Hold ", { key: "Mod" }, " to see where you can jump next"],
     },
   ];
 }

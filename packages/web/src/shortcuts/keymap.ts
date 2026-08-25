@@ -21,6 +21,13 @@ export const KEYMAP = {
     digits: ["1", "8"],
     keycaps: ["Mod", "1-8"],
   },
+  // Same hold-Mod gesture outside the form: digits follow PAGE_JUMP_TARGETS
+  // order (page-jump.targets.ts).
+  jumpPageTarget: {
+    holdModifier: "Mod",
+    digits: ["1", "4"],
+    keycaps: ["Mod", "1-4"],
+  },
   moveFocus: {
     hotkeys: {
       up: "ArrowUp",

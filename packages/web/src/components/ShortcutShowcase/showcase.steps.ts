@@ -42,7 +42,14 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
   },
   graduation: {
     title: "You've shown great control, young cap'n.",
-    body: "That was practice. Your real calendar is next — the same two keys put a real event on it.",
+    // Seeds the one habit that reveals the rest: holding Mod shows jump keys
+    // wherever you are (form fields, page areas), so graduation teaches the
+    // gesture instead of a checklist of shortcuts.
+    body: [
+      "That was practice. Your real calendar is next — the same two keys put a real event on it. And whenever you wonder where to go, hold ",
+      { key: KEYMAP.jumpPageTarget.holdModifier },
+      " to see where you can jump.",
+    ],
   },
 };
 

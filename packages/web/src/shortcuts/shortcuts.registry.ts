@@ -182,6 +182,15 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Focus latest notice",
     section: "focus",
   },
+  // One row instead of one per target: the digit assignment lives in
+  // page-jump.targets.ts, and in-the-moment discovery is the hold-Mod hint
+  // overlay's job (mirrors edit-jump-field-digit below).
+  {
+    id: "focus-page-jump",
+    keys: [...KEYMAP.jumpPageTarget.keycaps],
+    label: "Jump to a page area (hold Mod for hints)",
+    section: "focus",
+  },
 
   // Edit
   {

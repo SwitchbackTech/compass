@@ -21,6 +21,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { TimezoneMismatchBannerGate } from "@web/timezone/TimezoneMismatchBannerGate";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
@@ -139,6 +140,7 @@ export const WeekView = () => {
         placeholder={getCommandPalettePlaceholder("week")}
       />
       <Dedication />
+      <PageJumpHints />
 
       <Shortcuts shortcutsProps={shortcutProps}>
         <div

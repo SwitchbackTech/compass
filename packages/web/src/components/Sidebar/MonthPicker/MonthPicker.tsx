@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
+import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 
 interface Props {
   monthsShown?: number;
@@ -50,6 +51,7 @@ export const MonthPicker: FC<Props> = ({
       className={`c-month-picker ${monthPickerClassName}`}
       data-testid="Month picker"
       aria-label="Date navigation"
+      {...pageJumpAttrs("month-picker")}
     >
       <DatePicker
         animationOnToggle={false}
