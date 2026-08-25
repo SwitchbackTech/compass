@@ -115,9 +115,12 @@ export function createTestNotificationPort(options?: {
     for (const listener of permissionListeners) listener();
   };
 
+  const isSupported = () => options?.supported ?? true;
+
   const port: NotificationPort = {
-    isSupported: () => options?.supported ?? true,
-    getPermission: () => permission,
+    isSupported,
+    // Matches production: with no Notification API there is nothing to grant.
+    getPermission: () => (isSupported() ? permission : "denied"),
     requestPermission,
     show,
     observePermission: (onChange) => {

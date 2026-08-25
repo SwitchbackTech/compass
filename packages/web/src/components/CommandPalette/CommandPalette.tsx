@@ -402,7 +402,6 @@ export const LifeCommandPalette = ({
   const navigate = useNavigate();
   const themeCmdItems = useThemeCmdItems();
   const timezoneCmdItems = useTimezoneCmdItems();
-  const notificationCmdItems = useNotificationCmdItems();
 
   if (!open) return null;
 
@@ -424,10 +423,13 @@ export const LifeCommandPalette = ({
           heading: "Appearance",
           items: themeCmdItems,
         },
+        // No event notifications here: the Life route sits outside the
+        // authenticated layout that mounts the notifier, so offering the
+        // toggle would promise nudges this route can never deliver.
         {
           id: "settings",
           heading: "Settings",
-          items: [...timezoneCmdItems, ...notificationCmdItems],
+          items: timezoneCmdItems,
         },
         ...getMoreCommandPaletteSections("life"),
       ]}

@@ -355,6 +355,34 @@ describe("ShortcutShowcase", () => {
       expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     });
 
+    it("lets Enter activate whichever button has focus", async () => {
+      const user = userEvent.setup();
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // Enter is the step's shortcut, but a focused button owns it first:
+      // asking to leave must not raise a permission prompt instead.
+      screen.getByRole("button", { name: /Skip to calendar/ }).focus();
+      await user.keyboard("{Enter}");
+
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    });
+
+    it("does not raise the prompt from a held Enter carried in from typing", () => {
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // Auto-repeat from the Enter that committed the practice title lands
+      // here once the editor unmounts.
+      pressKey("Enter", { repeat: true });
+
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(currentStepId()).toBe("notifications");
+    });
+
     it("'Not now' passes without ever prompting", async () => {
       const user = userEvent.setup();
       const seam = installPort({ respondWith: "granted" });

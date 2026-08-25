@@ -98,6 +98,31 @@ describe("permission revoked outside the app", () => {
   });
 });
 
+describe("notificationActions.syncPrefFromStorage", () => {
+  it("picks up an opt-out made in another tab", async () => {
+    installPort({ respondWith: "granted" });
+    await notificationActions.enable("palette");
+    expect(isOn()).toBe(true);
+
+    // What another tab's disable() leaves behind; the storage event that
+    // announces it never fires in the tab that wrote it.
+    persistentBrowserStore.remove(STORAGE_KEYS.NOTIFICATIONS_ENABLED);
+    notificationActions.syncPrefFromStorage();
+
+    expect(isOn()).toBe(false);
+  });
+
+  it("picks up an opt-in made in another tab", () => {
+    installPort({ permission: "granted" });
+    expect(isOn()).toBe(false);
+
+    persistentBrowserStore.set(STORAGE_KEYS.NOTIFICATIONS_ENABLED, "true");
+    notificationActions.syncPrefFromStorage();
+
+    expect(isOn()).toBe(true);
+  });
+});
+
 describe("store seeding", () => {
   it("re-reads a stored opt-in and the live permission on load", () => {
     persistentBrowserStore.set(STORAGE_KEYS.NOTIFICATIONS_ENABLED, "true");

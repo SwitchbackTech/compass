@@ -192,8 +192,18 @@ const ShowcaseTakeover: FC = () => {
 
       // The notifications offer: Enter allows, N passes. Both move on.
       if (currentStepId === "notifications") {
+        // Unlike graduation, this step renders several buttons, so Enter is
+        // the step's shortcut only when no button owns it - otherwise
+        // "Not now" and "Skip to calendar" would raise a permission prompt
+        // instead of doing what they say. Auto-repeat is ignored too: the
+        // Enter that committed the practice title must not carry into the
+        // offer once the input unmounts.
+        const focusedButton =
+          event.target instanceof HTMLElement && event.target.closest("button");
         if (
           event.key === "Enter" &&
+          !event.repeat &&
+          !focusedButton &&
           sideActionsRef.current.notificationsSupported
         ) {
           event.preventDefault();
@@ -264,13 +274,18 @@ const ShowcaseTakeover: FC = () => {
   // The browser prompt is up for as long as the user takes to answer it, and
   // the step does not change while they do - so guard against asking twice.
   const offerTakenRef = useRef(false);
+  // A browser prompt stays up until the user answers it, and some never get
+  // answered - so say so on the button rather than letting it look live.
+  const [offerPending, setOfferPending] = useState(false);
 
   // The offer moves on either way: a denial is explained by the toast, and
   // holding the user here would turn a one-key offer into a decision to make.
   const enableNotifications = () => {
     if (offerTakenRef.current) return;
     offerTakenRef.current = true;
+    setOfferPending(true);
     void notificationActions.enable("showcase").finally(() => {
+      setOfferPending(false);
       // Only advance if the offer is still what's on screen: passing on it or
       // leaving while the prompt was up already moved the user along, and a
       // second advance from graduation would close the showcase outright.
@@ -345,6 +360,7 @@ const ShowcaseTakeover: FC = () => {
                   <button
                     type="button"
                     className={PRIMARY_BUTTON_CLASS}
+                    disabled={offerPending}
                     onClick={enableNotifications}
                   >
                     Enable notifications <ShortcutHint>Enter</ShortcutHint>

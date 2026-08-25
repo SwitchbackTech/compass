@@ -80,6 +80,19 @@ export const notificationActions = {
     track("notifications_disabled", { source });
   },
 
+  /**
+   * Re-read the opt-in after another tab wrote it. Without this, turning
+   * notifications off in one tab would leave every other open tab still
+   * firing them until it reloaded.
+   */
+  syncPrefFromStorage: (): void => {
+    const prefEnabled = isNotificationsPrefEnabled();
+    if (prefEnabled === useNotificationStore.getState().prefEnabled) return;
+    useNotificationStore.setState({ prefEnabled }, false, {
+      type: "syncPrefFromStorage",
+    });
+  },
+
   /** Re-read the browser permission (revoking it happens outside the app). */
   syncPermission: (): void => {
     const permission = getNotificationPort().getPermission();

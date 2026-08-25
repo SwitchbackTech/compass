@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { subscribeToStorageKey } from "@web/common/utils/external-store.util";
 import { useTodayTimedEvents } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { getNotificationPort } from "@web/notifications/notification.port";
 import {
@@ -6,7 +8,10 @@ import {
   selectNotificationsEffectivelyOn,
   useNotificationStore,
 } from "@web/notifications/notification.store";
-import { announceUpcomingEvents } from "@web/notifications/upcoming-notifier.logic";
+import {
+  announceUpcomingEvents,
+  toNotifiableEvents,
+} from "@web/notifications/upcoming-notifier.logic";
 
 /**
  * Fires a browser notification NOTIFY_LEAD_MINUTES before each timed event.
@@ -32,9 +37,15 @@ export function useUpcomingEventNotifier(): void {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", sync);
+    // Turning notifications off in one tab has to stop them in every tab.
+    const unsubscribePref = subscribeToStorageKey(
+      STORAGE_KEYS.NOTIFICATIONS_ENABLED,
+      notificationActions.syncPrefFromStorage,
+    );
 
     return () => {
       unobserve();
+      unsubscribePref();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", sync);
     };
@@ -43,18 +54,10 @@ export function useUpcomingEventNotifier(): void {
   useEffect(() => {
     if (!effectivelyOn) return;
 
-    // A saved event always carries an id; an unsaved draft on the grid may
-    // not, and without one there is no stable key to de-dupe on.
-    const notifiable = allTimedEvents.flatMap((event) =>
-      event._id
-        ? [{ _id: event._id, title: event.title, startDate: event.startDate }]
-        : [],
-    );
-
     firedKeysRef.current = announceUpcomingEvents(
       getNotificationPort(),
       now,
-      notifiable,
+      toNotifiableEvents(allTimedEvents),
       firedKeysRef.current,
     );
   }, [effectivelyOn, now, allTimedEvents]);

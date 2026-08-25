@@ -7,8 +7,9 @@ import {
   notificationKey,
   pruneFiredKeys,
   selectEventsToNotify,
+  toNotifiableEvents,
 } from "@web/notifications/upcoming-notifier.logic";
-import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
+import { setEffectiveTimeZoneForTests } from "@web/timezone/effective-timezone.store";
 import { describe, expect, it } from "bun:test";
 
 const NOW = dayjs("2026-03-10T09:00:00.000Z");
@@ -86,6 +87,30 @@ describe("selectEventsToNotify", () => {
   });
 });
 
+describe("toNotifiableEvents", () => {
+  it("keeps a saved event and carries its title and start time through", () => {
+    const event = eventAt(3, "real");
+
+    expect(toNotifiableEvents([event])).toEqual([
+      { _id: "real", title: "Event real", startDate: event.startDate },
+    ]);
+  });
+
+  it("drops seeded sample events", () => {
+    // First run seeds a workday of these and offers notifications in the same
+    // breath; an OS notification for a fake meeting is worse than none.
+    const demo = { ...eventAt(3, "sample"), isDemo: true };
+
+    expect(toNotifiableEvents([demo])).toEqual([]);
+  });
+
+  it("drops an unsaved draft that has no id to de-dupe on", () => {
+    const draft = { title: "Untitled", startDate: NOW.toISOString() };
+
+    expect(toNotifiableEvents([draft])).toEqual([]);
+  });
+});
+
 describe("announceUpcomingEvents", () => {
   const seam = () => {
     const { port, mocks } = createTestNotificationPort({
@@ -96,18 +121,28 @@ describe("announceUpcomingEvents", () => {
 
   it("shows the event title and its start time", () => {
     const { port, show } = seam();
+    // Pinned, and asserted as a literal rather than rebuilding the
+    // implementation's own formatting: 09:03 UTC is 3:03 AM in Denver (MDT).
+    setEffectiveTimeZoneForTests("America/Denver");
 
     announceUpcomingEvents(port, NOW, [eventAt(3, "standup")], new Set());
 
     expect(show).toHaveBeenCalledTimes(1);
-    const [title, options] = show.mock.calls[0] as [
-      string,
-      { body: string; tag: string },
-    ];
+    const [title, options] = show.mock.calls[0] as [string, { body: string }];
     expect(title).toBe("Event standup");
-    expect(options.body).toBe(
-      `Starts at ${inEffectiveTimeZone(NOW.add(3, "minute")).format("h:mm A")}`,
-    );
+    expect(options.body).toBe("Starts at 3:03 AM");
+  });
+
+  it("states the start time in the calendar's timezone, not the browser's", () => {
+    const { port, show } = seam();
+    // The same instant, read in a different pinned zone: 09:03 UTC is
+    // 10:03 AM in Berlin (CET on this date).
+    setEffectiveTimeZoneForTests("Europe/Berlin");
+
+    announceUpcomingEvents(port, NOW, [eventAt(3)], new Set());
+
+    const [, options] = show.mock.calls[0] as [string, { body: string }];
+    expect(options.body).toBe("Starts at 10:03 AM");
   });
 
   it("tags each notification with its de-dupe key so reloads replace, not stack", () => {

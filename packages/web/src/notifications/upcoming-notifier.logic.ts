@@ -14,6 +14,33 @@ export interface NotifiableEvent {
   startDate: string;
 }
 
+/** The GridEvent fields the notifier reads before deciding to announce. */
+export interface CandidateEvent {
+  _id?: string;
+  title?: string;
+  startDate: string;
+  isDemo?: boolean;
+}
+
+/**
+ * Narrow the day's timed events to the ones worth announcing.
+ *
+ * A saved event always carries an id; an unsaved draft on the grid may not,
+ * and without one there is no stable key to de-dupe on. Seeded sample events
+ * are dropped outright: first run seeds a workday of them and offers
+ * notifications in the same breath, and an OS notification for a meeting that
+ * does not exist is worse than no notification at all.
+ */
+export function toNotifiableEvents(
+  events: readonly CandidateEvent[],
+): NotifiableEvent[] {
+  return events.flatMap((event) =>
+    event._id && !event.isDemo
+      ? [{ _id: event._id, title: event.title, startDate: event.startDate }]
+      : [],
+  );
+}
+
 /**
  * Start time is part of the key, not just the id: rescheduling an event should
  * earn a fresh notification at its new time. Recurring occurrences already
