@@ -1,7 +1,7 @@
 # WP-06 — Error autofix as a governed Routine
 
 **task_id:** WP-06
-**status:** queued
+**status:** verifying
 **owner:** On-call / Implementer (docs + drills), human for enabling modes
 **depends on:** WP-02 `done`, WP-03 `done`
 **next owner after done:** WP-07 may overlap; do not add new Routines yet
@@ -110,11 +110,11 @@ escalate; do not silently widen denied paths.
 ## Evidence
 
 ```text
-workflows.md table includes autofix: yes/no
-routine doc path:
-prompt handoff sentence: yes/no
-drills: documented | run
-modes unchanged (must be yes):
+workflows.md table includes autofix: yes
+routine doc path: docs/CI-CD/error-autofix-routine.md
+prompt handoff sentence: yes (.agents/handoffs/<issue-number>.md on the PR branch)
+drills: documented
+modes unchanged (must be yes): yes
 ```
 
 ## Out of scope
@@ -135,14 +135,14 @@ run in `TRACKING.md` if it happens.
 
 ```yaml
 task_id: WP-06
-from:
-to: Implementer
-status:
-artifact:
-evidence:
-assumptions:
-open_risks:
-next_deadline:
+from: Implementer
+to: Verifier
+status: verifying
+artifact: docs/CI-CD/error-autofix-routine.md
+evidence: packages/scripts/src/testing/error-autofix-routine.test.ts
+assumptions: ERROR_AUTOFIX_ENABLED and AUTOFIX_MODE unchanged
+open_risks: live drills not run (documented only)
+next_deadline: this PR
 ```
 
 ## Session prompt
