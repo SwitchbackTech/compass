@@ -1,7 +1,35 @@
 ---
 name: simplify
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Reviews changed Compass code for duplication, unnecessary complexity, weak boundaries, and overused React state/effects, then applies behavior-preserving improvements using repo conventions. Use when asked to simplify, clean up, make DRY, reduce complexity, or improve maintainability, and during the simplification gate in /ship.
 ---
+
+## When
+
+Asked to simplify, clean up, make DRY, or during `/ship` simplify gate.
+
+## Steps
+
+High-value detectors, then Compass conventions, then Verify.
+
+## Output
+
+Behavior-preserving diff; separate commit when files change.
+
+## Pass
+
+No behavior change; conventions from `AGENTS.md` kept.
+
+## Anti-patterns
+
+Do not “improve” by rewriting unrelated files. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+A simplification that would change public behavior or contracts.
 
 # Simplify Compass code
 

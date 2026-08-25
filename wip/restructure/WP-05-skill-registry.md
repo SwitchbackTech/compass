@@ -1,7 +1,7 @@
 # WP-05 — Skill registry, versioning, and eval stubs
 
 **task_id:** WP-05
-**status:** queued
+**status:** verifying
 **owner:** Implementer (agents docs)
 **depends on:** WP-03 `done` (`/review` exists; `/ship` is Manager)
 **next owner after done:** WP-08 gate review; WP-06 may already be in flight
@@ -97,11 +97,12 @@ version available; instructions must be executable.
 ## Evidence
 
 ```text
-skills versioned (count):
-AGENTS.md skill list:
-registry path:
-eval stub paths:
-AGENTS.md line count before/after (should not grow):
+skills versioned (count): 10
+AGENTS.md skill list: ship, review, simplify, a11y-audit, qa-test-staging,
+  verify-change, local-dev-bootstrap, google-sync-debug, handoff, chaos
+registry path: .agents/skills/README.md
+eval stub paths: .agents/skills/_evals/{README,normal,incomplete,tool-fail,policy,anti-patterns}.md
+AGENTS.md line count before/after: 168 / 167 (registry pointer replaced intro)
 ```
 
 ## Out of scope
@@ -120,14 +121,14 @@ add “remember that we always …” to AGENTS.md in this WP.
 
 ```yaml
 task_id: WP-05
-from:
-to: Implementer
-status:
-artifact:
-evidence:
-assumptions:
-open_risks:
-next_deadline:
+from: Implementer
+to: Verifier
+status: verifying
+artifact: .agents/skills/README.md
+evidence: 10 skills versioned; eval stubs; registry 1:1 with directories
+assumptions: last_verified is implementation date, not a production eval
+open_risks: WP-07 still open and also edits /ship
+next_deadline: after CI
 ```
 
 ## Session prompt
