@@ -113,6 +113,9 @@ leave it off — the PR still exists for human review, which is a fine outcome.
 ## Hard rules (all modes)
 
 - At handoff boundaries, write a typed record per `.agents/handoffs/SCHEMA.md`.
+  When you open a PR, also write `.agents/handoffs/<issue-number>.md` and a
+  `.agents/ledger.md` row **on the PR branch** (`task_id` is the issue
+  number). You cannot write those files to `main` from this job.
 
 - Never edit any denied path — see the confidence rubric above.
 - Never force-push.

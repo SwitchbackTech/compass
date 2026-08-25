@@ -14,9 +14,9 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-02 | high | cursor-agent | done | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | merged #2866 (`8cc2a03ca`); schema + in-repo `/handoff` + ledger | — | 0 | none |
 | WP-03 | high | cursor-agent | done | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | merged #2867 (`024925eb2`); `/ship` Manager; `/review`; verify-change verdict | — | 0 | none |
 | WP-04 | high | Implementer | done | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | merged #2868 (`d2e3946d9`); checker in lint; pr-body workflow | — | 0 | none |
-| WP-05 | medium | cursor-agent | verifying | [WP-05-skill-registry.md](WP-05-skill-registry.md) | registry + eval stubs; all skills versioned; PR #2872 | this session | 0 | none |
-| WP-06 | medium | — | queued | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | — | after WP-02 and WP-03 `done` | 0 | none |
-| WP-07 | medium | cursor-agent | done | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | merged #2869 (`125c3f0fd`); agent-task template; label `agent-ready` | — | 0 | none |
+| WP-05 | medium | cursor-agent | done | [WP-05-skill-registry.md](WP-05-skill-registry.md) | merged #2872 (`84902a18d`); skill versions + registry + eval stubs | — | 0 | none |
+| WP-06 | medium | cursor-agent | verifying | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | `docs/CI-CD/error-autofix-routine.md`; drills documented, not run | this session | 0 | none |
+| WP-07 | medium | cursor-agent | done | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | merged #2869 (`125c3f0fd`); `3-agent-task.yml`; label `agent-ready` | — | 0 | none |
 | WP-08 | low | — | queued | [WP-08-architecture-as-training.md](WP-08-architecture-as-training.md) | gated: only if discovery remains the bottleneck after WP-01–05 | after WP-05 `done` + scale-gate review | 0 | human: run or cancel |
 
 ## Delivery-loop baseline (fill after WP-03)

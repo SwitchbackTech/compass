@@ -41,6 +41,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 - [Performance Baselines](./development/performance-baselines.md)
 - [Types And Validation](./development/types-and-validation.md)
 - [CI/CD Workflows](./CI-CD/workflows.md)
+- [Error Autofix Routine](./CI-CD/error-autofix-routine.md)
 - [CLI And Maintenance Commands](./development/cli.md)
 - [Versioning](./CI-CD/versioning.md)
 
