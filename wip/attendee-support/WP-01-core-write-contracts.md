@@ -1,7 +1,7 @@
 # WP-01 — Core write contracts
 
 **task_id:** WP-01
-**status:** queued
+**status:** done
 **owner:** Implementer (core)
 **depends on:** none
 **next owner after done:** WP-02 (sync) and WP-03 (backend) may start, in
@@ -85,14 +85,60 @@ Key files:
 
 ## Evidence
 
-Record in this section when implementing:
+Recorded 2026-08-25 (implementer: manager-loop session):
 
 ```text
-commands run:
-test:core result:
-type-check / lint / knip result:
+commands run: bun test:core; bun run type-check; bun lint (after bun
+  lint:fix for formatter/import-order); bun knip; regression: bun
+  test:backend:fast, bun test:web, bun test:sync:fast
+test:core result: 605 pass, 0 fail (36 files) — includes new
+  event-attendance.contracts.test.ts and extended event-command /
+  sync command contract tests
+type-check / lint / knip result: all exit 0. lint: 0 errors, 10
+  pre-existing warnings (untouched files). knip: no findings (one
+  pre-existing .css configuration hint only)
+regression: test:web 2331 pass 0 fail; test:sync:fast 361 pass 0 fail;
+  test:backend:fast 282 pass / 20 fail — the same 20 failures (SSE
+  Server 11, supertokens.middleware.util 6, GET /api/config 3) fail
+  identically on the base commit 65452e3 with the work tree stashed:
+  sandbox-environment issues, unrelated to this WP
 legacy-payload snapshot proof:
+  - event-command.contracts.test.ts: "parses a legacy payload without
+    attendees or invitation to an identical output" (create + replace,
+    toStrictEqual against the input) and delete "parses a legacy payload
+    without an invitation to an identical output"
+  - sync/command.contracts.test.ts: "defaults a legacy %s input without
+    attendeesEdit to preserve" (create/update) and "parses a legacy
+    update command JSON without attendeesEdit with preserve" (JSON
+    fixture through SyncCommandSchema); pre-existing round-trip test
+    unchanged and green
 deltas from spec (if any):
+  - EditableContentSchema.attendees is z.array(AttendeeInputSchema)
+    .readonly().refine(...) — readonly mirrors the read-side lists and
+    keeps a replayed Event["content"] structurally assignable to the
+    write input (undo/redo funnels full read content through it).
+  - The browser inputs use a new undefaulted InvitationIntentValueSchema
+    (exported from event-command.contracts.ts); sync's
+    InvitationIntentSchema now derives from it via .default("none")
+    (identical semantics, no import cycle, and legacy browser payloads
+    stay snapshot-identical because no default is injected).
+  - RsvpResponseStatusSchema lives in event-attendance.contracts.ts
+    (AttendeeResponseStatusSchema.exclude(["needsAction"])) so the
+    browser input and the sync rsvp command share one enum.
+  - The sync rsvp member reuses update's exact target fields
+    (scope: RecurrenceScopeSchema, recurrenceId nullable default null)
+    and is explicitly included in the recurrence-coherence refine on
+    SyncCommandSchema / CommandSubmitRequestSchema.
+  - Type-level companion edits in web keep type-check green with zero
+    runtime behavior change: grid-event-draft.adapter.ts widens
+    detailsLocation/editableContent to accept write-input content;
+    useEventMutations.ts filters replayed read-state attendee entries
+    (responseStatus present) when building optimistic Event content —
+    replay flows behave byte-identically, a pure guest-edit input (none
+    exist yet) contributes nothing optimistic; local.event.repository.ts
+    drops the write-only attendees key (local calendars have no attendee
+    support and the wire boundary already strips it at runtime); three
+    web test stubs mirror the same key drop.
 ```
 
 ## Out of scope

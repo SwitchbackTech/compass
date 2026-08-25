@@ -11,7 +11,23 @@ import {
   EventScheduleSchema,
   EventSchema,
 } from "@core/types/event.contracts";
+import {
+  AttendeeInputSchema,
+  RsvpResponseStatusSchema,
+  uniqueAttendeeEmails,
+} from "@core/types/event-attendance.contracts";
 import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
+
+// Whether saving (or deleting) this event should have the provider email
+// attendees about it. Same vocabulary as sync's InvitationIntentSchema, which
+// derives from this, but undefaulted: on the browser API the field is truly
+// optional, so a legacy payload parses to an identical output and the backend
+// keeps deciding what "absent" means (today: none).
+export const InvitationIntentValueSchema = z.enum([
+  "all",
+  "externalOnly",
+  "none",
+]);
 
 const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
@@ -24,6 +40,18 @@ const EditableContentSchema = z.strictObject({
   // Null clears a previously set color on replace; omit leaves sync color
   // alone when the client did not touch it.
   color: OptionalNullableEventColorSchema,
+  // Guest-list edit signal: omitted means "not editing guests" (provider
+  // attendees flow through untouched — today's behavior); present, including
+  // [], means "replace membership with exactly this set". One entry per email,
+  // case-insensitive. Readonly like the read-side lists so a replayed
+  // Event["content"] stays structurally assignable to this input.
+  attendees: z
+    .array(AttendeeInputSchema)
+    .readonly()
+    .refine(uniqueAttendeeEmails, {
+      message: "Attendee emails must be unique",
+    })
+    .optional(),
 });
 
 export const RecurrenceScopeSchema = z.enum([
@@ -55,6 +83,10 @@ export const CreateEventInputSchema = z.strictObject({
   // command instead of treating the resubmission as a no-op replay. Never
   // set by a normal create or by offline-promotion retries.
   restore: z.literal(true).optional(),
+  // Whether the provider should email invitations for this save. Omitted means
+  // the backend's default (today: none). Only meaningful when the guest set
+  // changed.
+  invitation: InvitationIntentValueSchema.optional(),
 });
 export type CreateEventInput = z.infer<typeof CreateEventInputSchema>;
 
@@ -72,13 +104,29 @@ export const ReplaceEventInputSchema = z.strictObject({
   // replayed edits and redo-of-edit (both hit the same colliding-key replay
   // problem on the update side).
   restore: z.literal(true).optional(),
+  // Same save-time invitation choice as CreateEventInputSchema.invitation.
+  invitation: InvitationIntentValueSchema.optional(),
 });
 export type ReplaceEventInput = z.infer<typeof ReplaceEventInputSchema>;
 
 export const DeleteEventInputSchema = z.strictObject({
   scope: RecurrenceScopeSchema,
+  // Whether the provider should email attendees the cancellation. Omitted
+  // means the backend's default (today: none).
+  invitation: InvitationIntentValueSchema.optional(),
 });
 export type DeleteEventInput = z.infer<typeof DeleteEventInputSchema>;
+
+// RSVP to an event the user is invited to. The target rides on the request
+// URL's event id — a composite occurrence id (`eventId::recurrenceId`)
+// addresses one occurrence — and scope says whether the response covers just
+// that occurrence ("single") or the whole series ("all"). For a non-recurring
+// event the scope is always "single".
+export const RsvpEventInputSchema = z.strictObject({
+  responseStatus: RsvpResponseStatusSchema,
+  scope: z.enum(["single", "all"]),
+});
+export type RsvpEventInput = z.infer<typeof RsvpEventInputSchema>;
 
 export const EventListQuerySchema = z
   .strictObject({

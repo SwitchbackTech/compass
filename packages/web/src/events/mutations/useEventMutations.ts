@@ -15,6 +15,7 @@ import {
   type EventRecurrence,
   type EventSchedule,
 } from "@core/types/event.contracts";
+import { type Attendee } from "@core/types/event-attendance.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
@@ -200,14 +201,37 @@ function resolveRemoteReplaceSchedule(
   };
 }
 
+// Replay flows (undo/redo, snapshot restore in useUndoRedo) deliberately
+// funnel a full read-side Event["content"] through the write input type, so
+// their attendee entries really carry responseStatus as excess structure; a
+// genuine guest-edit input's entries never do. When building optimistic
+// Event content, keep only real read-state entries: a replay restores its
+// guest list without flicker exactly as before, while a plain guest-edit
+// input contributes nothing optimistic (the settle refetch owns the
+// provider-confirmed guest list).
+function readAttendees(
+  attendees: CreateEventInput["content"]["attendees"],
+): readonly Attendee[] | undefined {
+  if (attendees === undefined) return undefined;
+  const withStatus = attendees.filter(
+    (attendee): attendee is Attendee => "responseStatus" in attendee,
+  );
+  return withStatus.length === attendees.length ? withStatus : undefined;
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
 function optimisticEventFromCreate(input: CreateEventInput): Event {
+  const { attendees, ...details } = input.content;
+  const replayedAttendees = readAttendees(attendees);
   return {
     id: input.id as EventId,
     calendarId: input.calendarId,
-    content: input.content,
+    content:
+      replayedAttendees === undefined
+        ? details
+        : { ...details, attendees: replayedAttendees },
     schedule: input.schedule,
     recurrence: input.recurrence as EventRecurrence,
     createdAt: nowDateTime(),
@@ -225,15 +249,23 @@ function mergeReplaceContent(
   existing: Event["content"],
   input: ReplaceEventInput["content"],
 ): Event["content"] {
-  if (existing.kind !== "details") return input;
+  // Same replay-vs-guest-edit split as optimisticEventFromCreate: only
+  // read-state attendee entries may enter the optimistic cache.
+  const { attendees, ...details } = input;
+  const replayedAttendees = readAttendees(attendees);
+  const replayInput =
+    replayedAttendees === undefined
+      ? details
+      : { ...details, attendees: replayedAttendees };
+  if (existing.kind !== "details") return replayInput;
   // Slot writes (including null clear) supersede a provider custom hex on the
   // optimistic card. Palette resolution prefers colorHex over color, so keeping
   // the old hex would leave the prior fill until settle/refetch.
-  if (input.kind === "details" && input.color !== undefined) {
+  if (replayInput.kind === "details" && replayInput.color !== undefined) {
     const { colorHex: _cleared, ...withoutHex } = existing;
-    return { ...withoutHex, ...input };
+    return { ...withoutHex, ...replayInput };
   }
-  return { ...existing, ...input };
+  return { ...existing, ...replayInput };
 }
 
 function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {

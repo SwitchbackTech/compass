@@ -9,7 +9,10 @@ import {
   type EventColorSlot,
   withColor,
 } from "@core/types/event-color.contracts";
-import { type RecurrenceScope } from "@core/types/event-command.contracts";
+import {
+  type CreateEventInput,
+  type RecurrenceScope,
+} from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -533,15 +536,22 @@ const applyDraftFieldPatch = <
   ...(patch.color !== undefined ? { color: patch.color } : {}),
 });
 
+// Details content from either side of the wire: the read-shaped
+// Event["content"] or the stricter write-input content (whose attendee
+// entries carry no responseStatus). The helpers below only touch the fields
+// the two shapes share.
+type DetailsContentSource =
+  | Extract<Event["content"], { kind: "details" }>
+  | CreateEventInput["content"];
+
 // Event["content"].location is nullable/optional (a provider-sourced event
 // may never have set one, and older local records predate the field
 // entirely), but every editable-content consumer (draft values, replay
 // payloads sent to mutations.replace/create) needs a definite string. Shared
 // so every read of a stored event's location defaults it the same way -
 // also used by useUndoRedo.ts's replay/comparison paths.
-export const detailsLocation = (
-  content: Extract<Event["content"], { kind: "details" }>,
-): string => content.location ?? "";
+export const detailsLocation = (content: DetailsContentSource): string =>
+  content.location ?? "";
 
 // The write contracts (CreateEventInputSchema/ReplaceEventInputSchema) accept
 // only the editable subset via a strict content schema; a read-shaped
@@ -552,9 +562,7 @@ export const detailsLocation = (
 // Preserves color's absent-vs-null distinction: omitted leaves sync's color
 // alone, null clears it (see EditableContentSchema's comment) - a spread of
 // `color` would already do this correctly, this mirrors that.
-export const editableContent = (
-  content: Extract<Event["content"], { kind: "details" }>,
-) => ({
+export const editableContent = (content: DetailsContentSource) => ({
   kind: "details" as const,
   title: content.title,
   description: content.description,

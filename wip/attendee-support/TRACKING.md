@@ -16,7 +16,7 @@ timestamp.
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | PACK-WRITE | high | planning-session | done | `wip/attendee-support/` | this directory exists; WPs have finish lines and session prompts; plan approved by product owner 2026-08-25 | — | 0 | user, 2026-08-25 |
-| WP-01 | high | manager-loop | running | [WP-01-core-write-contracts.md](WP-01-core-write-contracts.md) | started_at: 2026-08-25T22:09:30Z | when picked up: +1 session | 0 | none |
+| WP-01 | high | manager-loop | done | [WP-01-core-write-contracts.md](WP-01-core-write-contracts.md) | 2026-08-25: test:core 605 pass; type-check/lint/knip exit 0 (re-run on final tree); test:web 2331 pass; test:sync:fast 361 pass; backend:fast 20 failures identical to baseline 65452e3 (pre-existing env, unrelated). Full evidence in WP file | — | 0 | none |
 | WP-02 | high | — | queued | [WP-02-sync-attendee-writes.md](WP-02-sync-attendee-writes.md) | — | after WP-01 `done` | 0 | none |
 | WP-03 | high | — | queued | [WP-03-backend-write-path.md](WP-03-backend-write-path.md) | — | after WP-01 `done` | 0 | none |
 | WP-04 | high | — | queued | [WP-04-web-attendee-editor.md](WP-04-web-attendee-editor.md) | — | after WP-02 and WP-03 `done` | 0 | none |

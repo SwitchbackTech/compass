@@ -72,6 +72,19 @@ function truncateRules(
   });
 }
 
+// Local calendars have no attendee support (a guest-edit against one is the
+// backend's typed rejection, and the wire boundary in useEventMutations
+// already strips content to the editable subset before any repository call),
+// so the write-only guest-edit field never reaches here with a value at
+// runtime. Dropping the key keeps the stored record typed to the read-side
+// Event["content"], whose attendee entries carry responseStatus.
+function detailsContent({
+  attendees: _guestEdit,
+  ...content
+}: CreateEventInput["content"]): Event["content"] {
+  return content;
+}
+
 // Shared by create/replace/replaceSeries: "preserve" keeps the existing
 // event's recurrence (not meaningful for create, which has no existing
 // event), "series"/"single" apply the input's own recurrence.
@@ -179,7 +192,7 @@ export class LocalEventRepository implements EventRepository {
     const event: Event = {
       id,
       calendarId: input.calendarId,
-      content: input.content,
+      content: detailsContent(input.content),
       schedule: input.schedule,
       recurrence: resolveRecurrence(input.recurrence, { kind: "single" }),
       createdAt: now,
@@ -219,7 +232,7 @@ export class LocalEventRepository implements EventRepository {
         input.calendarId ??
         existing?.calendarId ??
         getLocalCalendarSentinelId(),
-      content: input.content,
+      content: detailsContent(input.content),
       schedule: input.schedule,
       recurrence: resolveRecurrence(input.recurrence, recurrenceFallback),
       createdAt: existing?.createdAt ?? nowDateTime(),
@@ -271,7 +284,7 @@ export class LocalEventRepository implements EventRepository {
       const event: Event = {
         ...record.event,
         calendarId: input.calendarId ?? record.event.calendarId,
-        content: input.content,
+        content: detailsContent(input.content),
         schedule,
         recurrence,
         updatedAt: nowDateTime(),
@@ -294,7 +307,7 @@ export class LocalEventRepository implements EventRepository {
     const event: Event = {
       id,
       calendarId: input.calendarId ?? record.event.calendarId,
-      content: input.content,
+      content: detailsContent(input.content),
       schedule: input.schedule,
       recurrence,
       createdAt: nowDateTime(),
