@@ -1,7 +1,37 @@
 ---
 name: verify-change
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Verifier skill. Selects and runs the smallest reliable Compass validation set from the current diff and returns PASS, RETRY, or ESCALATE. Use when asked to verify changes, run the right tests, prepare a branch for review, or diagnose which checks apply.
 ---
+
+## When
+
+Asked to verify, choose tests, or diagnose which checks apply.
+
+## Steps
+
+Establish scope → select checks → run `bun run verify` and quote output →
+observable behavior → verdict.
+
+## Output
+
+`VERDICT: PASS | RETRY | ESCALATE` plus FAILURES and skip reasons.
+
+## Pass
+
+Executed commands. Not PASS if Playwright was skipped and the claim is
+CI-complete.
+
+## Anti-patterns
+
+Do not edit the artifact. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Missing credentials, contradictory requirements, exhausted 2-retry budget.
 
 # Verify a Compass change (Verifier)
 

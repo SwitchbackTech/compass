@@ -1,8 +1,36 @@
 ---
 name: qa-test-staging
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Runs the Compass post-deploy staging confidence sweep in a user-connected browser, verifies the expected signed-in test profile, exercises core flows, checks console/network failures, and reports evidence. Use when explicitly invoked with /qa-test-staging.
 disable-model-invocation: true
 ---
+
+## When
+
+Explicitly invoked with `/qa-test-staging` after a staging deploy.
+
+## Steps
+
+Select signed-in browser → core sweep → changed flows → anonymous sweep → report.
+
+## Output
+
+Evidence of staging confidence; console/network notes.
+
+## Pass
+
+Expected test profile verified; core flows exercised.
+
+## Anti-patterns
+
+Do not substitute an isolated browser when a signed-in profile is required.
+See [`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Wrong profile, staging down, or credentials the agent must not enter.
 
 # Test Compass staging
 

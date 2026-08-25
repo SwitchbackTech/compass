@@ -1,10 +1,38 @@
 ---
 name: a11y-audit
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Audits changed Compass UI for accessibility regressions in semantics, names, keyboard and focus behavior, ARIA, contrast, motion, and testability, then proposes minimal diff-scoped fixes. Use for UI diff reviews, accessibility audits, or flaky interaction tests.
 paths:
   - "packages/web/**/*.{ts,tsx,css}"
   - "e2e/**/*.{ts,tsx}"
 ---
+
+## When
+
+UI diff review, accessibility audit, or flaky interaction tests.
+
+## Steps
+
+Workflow, then Checklist, scoped to the diff.
+
+## Output
+
+Minimal diff-scoped findings and proposed fixes.
+
+## Pass
+
+Changed UI reviewed; no site-wide unrelated audit.
+
+## Anti-patterns
+
+Do not expand into an unrelated site-wide audit. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+A WCAG judgment that needs a human, or a contrast issue that needs design.
 
 # Accessibility change audit
 

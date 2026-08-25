@@ -58,8 +58,7 @@ Validation defaults:
 
 ## Skills
 
-Project workflows live in `.agents/skills` so supported agents share one source
-of truth:
+Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`):
 
 - `/ship`: Manager — route, ledger, PR/merge after specialist verdicts
 - `/review`: read-only independent diff review

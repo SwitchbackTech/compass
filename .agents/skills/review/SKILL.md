@@ -1,5 +1,8 @@
 ---
 name: review
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Read-only independent review of a Compass diff against AGENTS.md and .cursor/rules. Use for independent review, the /ship review gate, or when asked to review this diff.
 ---
 
@@ -50,6 +53,8 @@ Every finding has severity, path/line, impact, and evidence. Empty diff
 produced a stop, not a green review.
 
 ## Anti-patterns
+
+See [`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
 
 - Drive-by refactors
 - Implementing fixes in the same turn

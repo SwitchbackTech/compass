@@ -1,8 +1,37 @@
 ---
 name: handoff
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Compact the current conversation into a typed in-repo handoff so a fresh agent can continue the work.
 argument-hint: "What will the next session be used for?"
 ---
+
+## When
+
+The user asks to hand off, or a gate needs a typed record.
+
+## Steps
+
+Refuse if write-gate fields are missing. Write `.agents/handoffs/<task_id>.md`
+and update `.agents/ledger.md`.
+
+## Output
+
+A schema-valid handoff file. Not an OS temp path.
+
+## Pass
+
+Write-gate fields present; `task_id` is issue/PR/`WP-*`.
+
+## Anti-patterns
+
+Do not write OS-temp handoffs. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Unknown `schema_version`, or required fields cannot be filled.
 
 Write a typed handoff so a fresh agent can continue without the producer
 transcript. Follow [`.agents/handoffs/SCHEMA.md`](../../handoffs/SCHEMA.md).
