@@ -44,8 +44,11 @@ then run the package acceptance command before declaring the package green.
 
 ## 3. Use the diff helper deliberately
 
-`bun run verify` selects checks from the git diff. Run it when useful, but read
-its reported selection and add missing checks for:
+`bun run verify` runs the required-check subset for the merge-base vs
+`origin/main` plus the working tree: detected `test:<pkg>` scripts, then
+`type-check`, `lint`, and `knip`, plus `test:a11y`/`test:e2e` when web or
+`e2e/` changed. Read the printed skip list. A green run is not CI-complete if
+Playwright was skipped. Add extra checks when the subset cannot cover:
 
 - shared schemas consumed across packages
 - migrations and persistence
