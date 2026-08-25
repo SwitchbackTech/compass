@@ -852,11 +852,6 @@
   & .timepicker__indicators {
     display: none;
   }
-  & .timepicker__option--is-selected,
-  & .timepicker__option--is-focused {
-    background: hsl(0 0 100 / 10%);
-    color: var(--text);
-  }
   & .timepicker__control {
     min-height: 38px;
     border: 0;

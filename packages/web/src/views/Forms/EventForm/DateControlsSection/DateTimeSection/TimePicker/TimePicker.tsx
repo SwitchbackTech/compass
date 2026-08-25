@@ -30,8 +30,19 @@ const themeColor =
 const timePickerTextStyles = {
   singleValue: themeColor("var(--text)"),
   input: themeColor("var(--text)"),
-  option: themeColor("var(--text)"),
   placeholder: themeColor("var(--text-muted)"),
+  option: (
+    base: CSSObjectWithLabel,
+    { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean },
+  ): CSSObjectWithLabel => ({
+    ...base,
+    color: isFocused ? "var(--on-accent)" : "var(--text)",
+    backgroundColor: isFocused
+      ? "var(--accent)"
+      : isSelected
+        ? "var(--surface-raised)"
+        : "transparent",
+  }),
 };
 
 const TIMEPICKER = "timepicker";
@@ -50,9 +61,12 @@ function optionFromFocusedMenu(
   options: TimeOption[] | undefined,
   currentValue: string | undefined,
 ): TimeOption | undefined {
-  const focusedLabel = container
-    ?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0]
-    ?.textContent?.trim();
+  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
+  const activeId = combobox?.getAttribute("aria-activedescendant");
+  const focusedEl = activeId
+    ? document.getElementById(activeId)
+    : container?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0];
+  const focusedLabel = focusedEl?.textContent?.trim();
   if (!focusedLabel) return undefined;
 
   const listed = options?.find((option) => option.label === focusedLabel);
@@ -74,6 +88,7 @@ export const TimePicker = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
   const userAdjustedRef = useRef(false);
+  const remapEnterRef = useRef(false);
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
 
@@ -110,6 +125,15 @@ export const TimePicker = ({
     };
   }, []);
 
+  const focusedMenuOption = () =>
+    optionFromFocusedMenu(containerRef.current, selectOptions, value?.value);
+
+  const commitFocusedOption = () => {
+    if (!userAdjustedRef.current) return;
+    const option = focusedMenuOption();
+    if (option) _onChange(option);
+  };
+
   return (
     <div ref={containerRef} className="c-time-picker">
       <CreatableSelect
@@ -122,7 +146,17 @@ export const TimePicker = ({
         blurInputOnSelect
         menuIsOpen={isMenuOpen}
         //@ts-expect-error uses custom onChange to manage focus in parent
-        onChange={_onChange}
+        onChange={(option: SelectOption<string> | null) => {
+          if (!option) return;
+          // Enter-only: react-select can report the draft time after a
+          // filter. Pointer clicks must keep the clicked option.
+          if (remapEnterRef.current) {
+            remapEnterRef.current = false;
+            _onChange(focusedMenuOption() ?? option);
+            return;
+          }
+          _onChange(option);
+        }}
         onKeyDown={(e) => {
           const key = e.key;
 
@@ -132,6 +166,18 @@ export const TimePicker = ({
 
           if (key === "Enter" || key === "Backspace") {
             e.stopPropagation();
+          }
+
+          if (key === "Enter" && !e.nativeEvent.isComposing) {
+            // Bare Enter must not adopt the first list row (often 12 AM).
+            // After typing or arrowing, let react-select select so it
+            // clears the filter; onChange remaps to the announced row.
+            if (!userAdjustedRef.current) {
+              e.preventDefault();
+              setIsMenuOpen(false);
+            } else {
+              remapEnterRef.current = true;
+            }
           }
 
           if (key === "Shift") {
@@ -151,14 +197,7 @@ export const TimePicker = ({
             // with blurInputOnSelect, leaves focus on the document
             // instead of the next field.
             if (e.nativeEvent.isComposing) return;
-            if (!e.shiftKey && userAdjustedRef.current) {
-              const option = optionFromFocusedMenu(
-                containerRef.current,
-                selectOptions,
-                value?.value,
-              );
-              if (option) _onChange(option);
-            }
+            if (!e.shiftKey) commitFocusedOption();
             setIsMenuOpen(false);
           }
         }}
@@ -173,6 +212,7 @@ export const TimePicker = ({
           scheduleScrollToSelected();
         }}
         onMenuClose={() => {
+          remapEnterRef.current = false;
           cancelScrollToSelected();
           setIsMenuOpen(false);
         }}
