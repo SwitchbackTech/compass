@@ -1,4 +1,6 @@
 blank_issues_enabled: true
+# Templates in this directory appear in the issue chooser:
+# 1-feature-request.yml, 2-bug-report.yml, 3-agent-task.yml (agent-ready).
 contact_links:
   - name: GitHub Discussions
     url: https://github.com/SwitchbackTech/compass/discussions

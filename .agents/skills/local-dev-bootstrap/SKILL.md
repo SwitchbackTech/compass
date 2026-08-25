@@ -1,7 +1,35 @@
 ---
 name: local-dev-bootstrap
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Prepares the lightest viable Compass local development environment, choosing frontend-only or full backend/auth/Mongo/Google/SSE setup, protecting compass.yaml secrets, resolving worktree ports, and verifying service health. Use for first-time setup, local server startup, missing config, auth/backend development, or worktree port problems.
 ---
+
+## When
+
+First-time setup, missing config, or worktree port problems.
+
+## Steps
+
+Choose mode → install → protect `compass.yaml` → verify health.
+
+## Output
+
+The lightest viable environment for the task; reported URLs/ports.
+
+## Pass
+
+Frontend-only does not require Mongo. Backend health is `GET /api/health`.
+
+## Anti-patterns
+
+Do not commit `compass.yaml`. Do not invent secrets. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Need for real SuperTokens/Google that are not provisioned.
 
 # Bootstrap Compass locally
 

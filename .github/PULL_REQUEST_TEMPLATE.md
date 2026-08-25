@@ -12,7 +12,7 @@
 
 ## Independent review
 
-<!-- Final result from the fresh diff-first reviewer, including confirmed findings fixed. -->
+<!-- `/review` verdict pointer: path to `.agents/handoffs/<task_id>.md` or quoted FINDINGS. “Looks good” is not a pointer. -->
 
 ## Test plan
 

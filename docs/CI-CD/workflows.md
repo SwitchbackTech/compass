@@ -4,14 +4,23 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Test | Push / PR to `main` | Runs lint, type-check, and unit tests |
+| Test | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
+| PR body | Pull request | Fails empty template sections (including docs-only PRs) |
+| Test (e2e) | Push / PR to `main` | Playwright e2e (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
+| Performance budget | Push / PR touching web/core | Lighthouse budget (not a required merge check) |
+| Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
+| Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
 | Deploy production | Manual dispatch | Deploys a release tag to production, then runs cloud deploy health checks |
 | Deploy health check | Reusable workflow | Validates the deployed staging stack and alerts Discord on failure |
 | Sync docs to compass-docs | Push to `main` touching `docs/**` | Mirrors this `docs/` directory to docs.compasscalendar.com |
+
+Error autofix is a governed Routine. Contract, drills, and recovery packet:
+[error-autofix-routine.md](./error-autofix-routine.md). Kill switch
+(`ERROR_AUTOFIX_ENABLED`) and mode (`AUTOFIX_MODE`) stay as repo variables.
 
 ---
 

@@ -53,3 +53,13 @@ body:
       description: How has this issue affected you? What were you trying to
         accomplish?
       placeholder: Describe the context...
+
+  - type: textarea
+    id: agent_routing
+    attributes:
+      label: Agent routing (optional)
+      description: Package scope and finish line if an agent should pick this
+        up. Leave blank for a human-only issue.
+      placeholder: |
+        Package scope: web
+        Finish line: ...

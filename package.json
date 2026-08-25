@@ -25,7 +25,7 @@
     "dev:sync": "cd packages/sync && bun --watch src/app.ts",
     "dev:update": "git checkout main && git pull &&bun install",
     "dev:web": "bun run dev:ports web && cd packages/web &&bun run dev.ts",
-    "lint": "bun packages/scripts/src/testing/check-semantic-colors.ts && biome check .",
+    "lint": "bun packages/scripts/src/testing/check-semantic-colors.ts && bun packages/scripts/src/testing/check-agent-constraints.ts && biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",

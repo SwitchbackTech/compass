@@ -29,3 +29,13 @@ body:
         - User research or feedback
         - Technical considerations
         - Screenshots or mockups
+
+  - type: textarea
+    id: agent_routing
+    attributes:
+      label: Agent routing (optional)
+      description: Package scope and finish line if an agent should pick this
+        up. Leave blank for a human-only issue.
+      placeholder: |
+        Package scope: web
+        Finish line: ...
