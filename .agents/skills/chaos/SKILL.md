@@ -118,6 +118,7 @@ At handoff boundaries, write a typed record per `.agents/handoffs/SCHEMA.md`.
    code, and re-run behavior-adjacent checks.
 2. Use `/ship` to perform the repository's final review, commit, ready-PR,
    CI, merge, and post-merge verification gates. Do not bypass its safeguards.
+   Do not skip `/review`.
 3. Do not create or merge a pull request if validation is incomplete, an
    unrelated dirty change overlaps, a material finding remains unresolved, or
    the target/base branch is unclear. State the blocker instead.
