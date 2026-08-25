@@ -151,6 +151,7 @@ export async function syncCalendarList(
   // calendar, so a full list of zero is treated as a non-answer (a provider
   // hiccup that returned empty instead of throwing) rather than "all removed" —
   // retiring every calendar on an empty blip would be user-visible damage.
+  let retiredIds: string[] = [];
   if (fullList && discovery.calendars.length > 0) {
     // A full pass is the retry cadence for unwatchable calendars: clear the
     // persisted watchUnsupportedAt verdicts so each gets one fresh watch
@@ -162,7 +163,7 @@ export async function syncCalendarList(
       principalId,
       connectionId,
     );
-    const retiredIds = await deps.calendars.deactivateAbsent(
+    retiredIds = await deps.calendars.deactivateAbsent(
       tenantId,
       principalId,
       connectionId,
@@ -174,36 +175,43 @@ export async function syncCalendarList(
       deps.log?.warn(
         `Sync retired ${retiredIds.length} calendar(s) absent from a full list on connection ${connectionId}: ${retiredIds.join(", ")}`,
       );
-      // The calendar is gone at the provider, so its push channel (if any) can
-      // never be renewed there. Dispatch already drops subscriptionMaintain for
-      // an inactive calendar, which means its subscriptionExpiresAt never
-      // advances — left alone, the row would squat at the head of every
-      // renewal sweep forever (listExpiringSubscriptions sorts soonest-expiry
-      // first with no other exclusion). Clearing the local fields here, rather
-      // than calling the provider to stop the channel, is deliberate: the
-      // calendar already 404s, and Google's channels lapse on their own within
-      // 30 days regardless, so the remote channel is a harmless, self-healing
-      // wart, not something worth a provider call and a new adapter dependency.
-      const retiredIdSet = new Set<string>(retiredIds);
-      const resources = await deps.resources.listByConnection(
-        tenantId,
-        principalId,
-        connectionId,
-      );
-      const subscribedRetired = resources.filter(
-        (r) =>
-          r.calendarId &&
-          retiredIdSet.has(r.calendarId) &&
-          r.subscriptionId !== null,
-      );
-      // Independent writes to distinct resources: clear them concurrently
-      // rather than one round trip per retired calendar.
-      await Promise.all(
-        subscribedRetired.map((r) =>
-          deps.resources.clearSubscription(tenantId, principalId, r._id),
-        ),
-      );
     }
+  }
+
+  // An inactive calendar — retired above for being absent from a full list, or
+  // upserted inactive because the provider reports it deleted or hidden — can
+  // never have its push channel renewed: dispatch drops subscriptionMaintain
+  // for inactive calendars, so subscriptionExpiresAt never advances and the
+  // row would squat at the head of every renewal sweep forever
+  // (listExpiringSubscriptions sorts soonest-expiry first with no other
+  // exclusion). Clearing the local fields here, rather than calling the
+  // provider to stop the channel, is deliberate: Google's channels lapse on
+  // their own within 30 days, so the remote channel is a harmless,
+  // self-healing wart, not something worth a provider call and a new adapter
+  // dependency.
+  const inactiveIds = new Set<string>([
+    ...retiredIds,
+    ...upserted.filter((r) => !r.active).map((r) => r._id),
+  ]);
+  if (inactiveIds.size > 0) {
+    const connectionResources = await deps.resources.listByConnection(
+      tenantId,
+      principalId,
+      connectionId,
+    );
+    const subscribedInactive = connectionResources.filter(
+      (r) =>
+        r.calendarId &&
+        inactiveIds.has(r.calendarId) &&
+        r.subscriptionId !== null,
+    );
+    // Independent writes to distinct resources: clear them concurrently
+    // rather than one round trip per retired calendar.
+    await Promise.all(
+      subscribedInactive.map((r) =>
+        deps.resources.clearSubscription(tenantId, principalId, r._id),
+      ),
+    );
   }
 
   // Bootstrap events sync for each active calendar: ensure its events resource

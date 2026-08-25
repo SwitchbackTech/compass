@@ -353,6 +353,68 @@ describe("syncCalendarList", () => {
     expect(goneEventsResource?.subscriptionExpiresAt).toBeNull();
   });
 
+  it("clears the push channel when a calendar is upserted inactive on an incremental pass", async () => {
+    // A hidden or deleted calendar arrives as an active:false ENTRY (not an
+    // absence), so it never goes through deactivateAbsent — the channel
+    // cleanup must cover the upsert path too, or the resource squats at the
+    // head of every renewal sweep (dispatch drops subscriptionMaintain for
+    // inactive calendars, so subscriptionExpiresAt never advances).
+    const conn = connection();
+    // Full pass discovers "hides" active and returns a cursor, so the next
+    // pass is incremental.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [discovered("primary"), discovered("hides")],
+            cursor: "c1",
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    const hidesCalendar = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "hides",
+    );
+    const hidesEventsResourceId = (
+      await storage.db().collection(SYNC_COLLECTIONS.syncResources).findOne({
+        connectionId: conn._id,
+        resourceKind: "events",
+        calendarId: hidesCalendar?._id,
+      })
+    )?._id as string;
+    await resources.updateSubscription(
+      conn.tenantId,
+      conn.principalId,
+      hidesEventsResourceId,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
+
+    // Incremental pass (the stored cursor is "c1") reports "hides" inactive.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("hides", false)], cursor: "c2" },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const hidesEventsResource = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: hidesEventsResourceId });
+    expect(hidesEventsResource?.subscriptionId).toBeNull();
+    expect(hidesEventsResource?.subscriptionExpiresAt).toBeNull();
+  });
+
   it("logs a warning naming the calendars a full pass retired", async () => {
     const conn = connection();
     await syncCalendarList(
