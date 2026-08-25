@@ -2,11 +2,12 @@ import { type CaptureResult } from "posthog-js";
 import { isTransientBrowserNetworkMessage } from "@web/api/util/backend-unavailable-error.util";
 
 /**
- * Exact unhandledrejection signature emitted by CefSharp / embedded WebView
- * automation scanners. No app frames, not actionable.
+ * Unhandledrejection signature emitted by CefSharp / embedded WebView
+ * automation scanners. No app frames, not actionable. The numeric id varies
+ * per scan (seen Id:1, Id:2, ...), so match the shape rather than one value.
  */
-const CEFSHARP_SCANNER_MESSAGE =
-  "Object Not Found Matching Id:1, MethodName:update, ParamCount:4";
+const CEFSHARP_SCANNER_MESSAGE_PATTERN =
+  /^Object Not Found Matching Id:\d+, MethodName:update, ParamCount:4$/;
 
 /**
  * Browser-sanitized cross-origin `window.onerror` message. Same-origin app
@@ -70,7 +71,7 @@ const hasStackFrames = (entry: ExceptionEntry): boolean => {
 const isDroppableException = (entry: ExceptionEntry): boolean => {
   if (typeof entry.value !== "string") return false;
 
-  if (entry.value === CEFSHARP_SCANNER_MESSAGE) return true;
+  if (CEFSHARP_SCANNER_MESSAGE_PATTERN.test(entry.value)) return true;
 
   if (RESIZE_OBSERVER_LOOP_MESSAGES.has(entry.value)) return true;
 
