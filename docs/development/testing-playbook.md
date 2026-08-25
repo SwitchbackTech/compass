@@ -40,6 +40,19 @@ Unit workflow (`test-unit.yml`):
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
 - runs every lane with `TZ: Etc/UTC` set
+- `bun run lint` also runs `check-semantic-colors.ts` and
+  `check-agent-constraints.ts` (barrels, web-test locators, backend/sync
+  `mongoService` imports, duplicate `EventSchema`)
+
+PR template workflow (`.github/workflows/pr-body.yml`):
+
+- triggers on every pull request, including markdown-only PRs that skip
+  Test/e2e via `paths-ignore`
+- fails if `## Automated validation`, `## Independent review`, or
+  `## Test plan` is missing, empty (HTML comments only), or uses task boxes
+- fail closed when the PR body cannot be read
+- docs-only PRs still fill those three sections (a short docs-only note is
+  enough); they are not blocked on missing unit/e2e jobs
 
 Local parity commands:
 
