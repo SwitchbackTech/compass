@@ -10,7 +10,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | PACK-WRITE | high | docs-session | done | `wip/restructure/` | this directory exists; WPs have finish lines and session prompts | — | 0 | none (docs-only pack) |
-| WP-01 | high | — | queued | [WP-01-verify-ci-parity.md](WP-01-verify-ci-parity.md) | — | when picked up: +1 session | 0 | none |
+| WP-01 | high | cursor-agent | verifying | [WP-01-verify-ci-parity.md](WP-01-verify-ci-parity.md) | `bun run verify` selected scripts → type-check → lint → knip; test:scripts 45 pass; CI parity complete for this diff | this session | 0 | none |
 | WP-02 | high | — | queued | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | — | when picked up: +1 session | 0 | none |
 | WP-03 | high | — | queued | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | — | after WP-02 `done` | 0 | none |
 | WP-04 | high | — | queued | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | — | after WP-01 `done` | 0 | none |
