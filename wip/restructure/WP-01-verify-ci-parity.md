@@ -1,8 +1,8 @@
 # WP-01 — Verify / CI parity
 
 **task_id:** WP-01
-**status:** queued
-**owner:** Implementer (scripts) then Verifier
+**status:** verifying
+**owner:** cursor-agent
 **depends on:** none
 **next owner after done:** WP-04 can start; WP-02 may run in parallel
 
@@ -87,14 +87,26 @@ On a branch that differs from `origin/main` in more than one package,
 
 ## Evidence
 
-Record in this section when implementing:
-
 ```text
-merge-base used:
+merge-base used: 1dbee3ed730c0c7f8e0eaae731fc0da70bf44358 (origin/main)
 commands:
+  bun test packages/scripts/src/testing/verify.test.ts  → 12 pass
+  bun run test:scripts                                  → 45 pass, 0 fail
+  bun run type-check                                    → exit 0
+  bun run lint                                          → exit 0 (10 pre-existing warnings, unrelated)
+  bun run verify                                        → exit 0
 stdout excerpt (selection + summary):
-test:scripts result:
-CI parity claim (complete | incomplete + reason):
+  merge-base: 1dbee3ed730c0c7f8e0eaae731fc0da70bf44358 (origin/main)
+  files used for detection (6): .agents/skills/verify-change/SKILL.md, AGENTS.md, docs/development/testing-playbook.md, packages/scripts/src/testing/verify.ts, wip/restructure/TRACKING.md, wip/restructure/WP-01-verify-ci-parity.md
+  Detected changes in: scripts
+  Running: test:scripts → type-check → lint → knip
+  Selected packages: scripts
+  Checks run: test:scripts, type-check, lint, knip
+  Checks skipped: (none)
+  ✓ All checks passed
+test:scripts result: 45 pass, 0 fail
+CI parity claim (complete | incomplete + reason): complete for this scripts-only diff
+independent review: self diff review; no confirmed defects. Notes: GitHub still runs e2e on every non-docs PR; local verify selects e2e only for web/e2e paths (documented as required-check subset). Untracked files are included via git ls-files --others --exclude-standard.
 ```
 
 ## Out of scope
