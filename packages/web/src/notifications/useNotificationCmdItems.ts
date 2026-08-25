@@ -1,0 +1,39 @@
+import { BellIcon, BellSlashIcon } from "@phosphor-icons/react";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
+import { getNotificationPort } from "@web/notifications/notification.port";
+import {
+  notificationActions,
+  selectNotificationsEffectivelyOn,
+  useNotificationStore,
+} from "@web/notifications/notification.store";
+
+/**
+ * One toggle, labelled by the effective state. A grant revoked in browser
+ * settings flips the label back to "Enable", and clicking then re-asks the
+ * browser — which explains the block rather than silently doing nothing.
+ */
+export function useNotificationCmdItems(): CommandItem[] {
+  const isOn = useNotificationStore(selectNotificationsEffectivelyOn);
+
+  // Nothing to offer where the API does not exist (older Safari, some
+  // in-app browsers): hide the row rather than show a dead end.
+  if (!getNotificationPort().isSupported()) return [];
+
+  return [
+    {
+      id: "toggle-event-notifications",
+      label: isOn
+        ? "Disable event notifications"
+        : "Enable event notifications",
+      icon: isOn ? BellSlashIcon : BellIcon,
+      keywords: ["notifications", "notify", "alert", "reminder", "upcoming"],
+      onClick: () => {
+        if (isOn) {
+          notificationActions.disable("palette");
+          return;
+        }
+        void notificationActions.enable("palette");
+      },
+    },
+  ];
+}

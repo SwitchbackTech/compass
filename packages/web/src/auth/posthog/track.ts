@@ -24,7 +24,10 @@ export type ProductEvent =
   | "billing_gate_shown"
   | "billing_gate_cta_clicked"
   | "shortcut_tip_shown"
-  | "shortcut_tip_acted_on";
+  | "shortcut_tip_acted_on"
+  | "notifications_enabled"
+  | "notifications_disabled"
+  | "notifications_enable_denied";
 
 /**
  * Fire-and-forget capture for the small set of product-activation events.

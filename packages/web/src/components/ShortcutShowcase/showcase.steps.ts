@@ -14,8 +14,15 @@ import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
  * mouse. Graduation now hands off to a prompt on the real calendar, not a
  * checklist that re-teaches jump, move, stretch, place and undo on sample
  * events - "graduation" is the exit, not a lesson.
+ *
+ * "notifications" is the one deliberate exception to the one-lesson rule, and
+ * it is not a lesson: it is a single-keystroke offer (Enter to allow, N to
+ * pass) that has to sit here because a browser permission prompt only counts
+ * as a real choice while the user is deciding how Compass fits their day.
+ * Nothing is taught and nothing is gated - it adds no drop-off surface of the
+ * kind that cost the ten-lesson version its users.
  */
-const STEP_IDS = ["create", "graduation"] as const;
+const STEP_IDS = ["create", "notifications", "graduation"] as const;
 
 export type ShowcaseStepId = (typeof STEP_IDS)[number];
 
@@ -39,6 +46,10 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
     title: "Create an event",
     body: "Press C to start a new event.",
     keycaps: KEYMAP.createEvent.keycaps,
+  },
+  notifications: {
+    title: "Never miss a meeting",
+    body: "Compass can nudge you five minutes before a timed event starts, even when this tab is in the background. You can turn it off any time from the command palette.",
   },
   graduation: {
     title: "You've shown great control, young cap'n.",

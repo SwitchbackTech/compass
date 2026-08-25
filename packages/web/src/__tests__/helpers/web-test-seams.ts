@@ -20,6 +20,12 @@ import {
   type ToastApi,
   type ToastPort,
 } from "@web/common/utils/toast/toast.port";
+import {
+  type NotificationPort,
+  registerNotificationPort,
+  resetNotificationPort,
+} from "@web/notifications/notification.port";
+import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import { mock } from "bun:test";
 
 export function createDefaultTestSessionPort(): SessionApiPort {
@@ -84,6 +90,45 @@ export function createTestToastPort() {
   };
 }
 
+/**
+ * jsdom has no Notification global, so without a seam every test would see an
+ * unsupported browser and the notification UI would silently vanish. The
+ * default port is supported but ungranted — the state a first-run user is in.
+ */
+export function createTestNotificationPort(options?: {
+  permission?: NotificationPermission;
+  /** What requestPermission resolves to; defaults to the current permission. */
+  respondWith?: NotificationPermission;
+  supported?: boolean;
+}) {
+  let permission: NotificationPermission = options?.permission ?? "default";
+  const permissionListeners = new Set<() => void>();
+
+  const show = mock();
+  const requestPermission = mock(async () => {
+    permission = options?.respondWith ?? permission;
+    return permission;
+  });
+
+  const setPermission = (next: NotificationPermission) => {
+    permission = next;
+    for (const listener of permissionListeners) listener();
+  };
+
+  const port: NotificationPort = {
+    isSupported: () => options?.supported ?? true,
+    getPermission: () => permission,
+    requestPermission,
+    show,
+    observePermission: (onChange) => {
+      permissionListeners.add(onChange);
+      return () => permissionListeners.delete(onChange);
+    },
+  };
+
+  return { port, setPermission, mocks: { show, requestPermission } };
+}
+
 export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthorization {
   return () => ({
     loading: false,
@@ -110,6 +155,11 @@ export function createTestEmailPasswordPort() {
 export function installDefaultWebTestSeams(): void {
   registerSessionApiPort(createDefaultTestSessionPort());
   registerToastPort(createTestToastPort().port);
+  registerNotificationPort(createTestNotificationPort().port);
+  // Re-seed after the port is in place: store resets run in afterEach, while
+  // the previous test's port is still registered, so a test that granted
+  // permission would otherwise leak "granted" into the next one.
+  resetNotificationStoreForTests();
   registerUseStartGoogleAuthorizationForTests(
     createDefaultTestGoogleAuthorizationHook(),
   );
@@ -121,6 +171,7 @@ export function installDefaultWebTestSeams(): void {
 export function resetWebTestSeams(): void {
   resetSessionApiPort();
   resetToastPort();
+  resetNotificationPort();
   resetUseStartGoogleAuthorizationForTests();
   // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
   resetUseCompleteAuthenticationForTests();

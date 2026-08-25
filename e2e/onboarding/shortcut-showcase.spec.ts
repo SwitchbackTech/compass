@@ -41,8 +41,14 @@ test("the welcome-started practice runs the one-lesson happy path", async ({
   // The practice title editor autofocuses; Enter commits it.
   await page.keyboard.type("Practice Event");
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("young cap'n");
   await expect(showcase).toContainText("Practice Event");
+
+  // The notifications offer comes between the lesson and the exit. N passes
+  // it by, so this path never raises a browser permission prompt.
+  await expect(showcase).toContainText("Never miss a meeting");
+  await page.keyboard.press("n");
+
+  await expect(showcase).toContainText("young cap'n");
 
   await page.keyboard.press("Enter");
   await expect(showcase).toHaveCount(0);
@@ -52,6 +58,34 @@ test("the welcome-started practice runs the one-lesson happy path", async ({
   await expect(
     page.getByRole("complementary", { name: "Create your first event" }),
   ).toBeVisible();
+});
+
+test("taking the notifications offer opts in and moves on", async ({
+  page,
+  context,
+}) => {
+  // Granted up front so the offer resolves without a real browser prompt,
+  // which Playwright cannot click.
+  await context.grantPermissions(["notifications"]);
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await page.keyboard.press("c");
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+
+  await expect(showcase).toContainText("Never miss a meeting");
+  await page.keyboard.press("Enter");
+
+  await expect(showcase).toContainText("young cap'n");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        localStorage.getItem("compass.notifications.enabled"),
+      ),
+    )
+    .toBe("true");
 });
 
 test("Skip to sign up leaves the practice for the signup form on step 1", async ({

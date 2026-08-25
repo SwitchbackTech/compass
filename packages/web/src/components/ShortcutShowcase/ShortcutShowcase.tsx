@@ -34,6 +34,8 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { getNotificationPort } from "@web/notifications/notification.port";
+import { notificationActions } from "@web/notifications/notification.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
@@ -188,7 +190,28 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
-      if (isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())) {
+      // The notifications offer: Enter allows, N passes. Both move on.
+      if (currentStepId === "notifications") {
+        if (
+          event.key === "Enter" &&
+          sideActionsRef.current.notificationsSupported
+        ) {
+          event.preventDefault();
+          sideActionsRef.current.enableNotifications();
+          return;
+        }
+        if (isBareLetterKey(event, "n")) {
+          event.preventDefault();
+          shortcutShowcaseActions.advance();
+          return;
+        }
+      }
+
+      // Practice-board keys belong to the lesson that owns the board.
+      if (
+        currentStepId === "create" &&
+        isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())
+      ) {
         event.preventDefault();
         // Create never advances by itself: the lesson advances on title
         // commit, so C -> type -> Enter reads as one motion, not two steps.
@@ -197,8 +220,8 @@ const ShowcaseTakeover: FC = () => {
       }
 
       // Side actions, letter-bound so the practice screen never needs a
-      // mouse. Only outside graduation - there Enter is the single action.
-      if (currentStepId !== "graduation") {
+      // mouse. D and S mirror buttons that only the create lesson renders.
+      if (currentStepId === "create") {
         if (isBareLetterKey(event, "d")) {
           event.preventDefault();
           sideActionsRef.current.doItForMe();
@@ -212,11 +235,13 @@ const ShowcaseTakeover: FC = () => {
           sideActionsRef.current.skipToSignup();
           return;
         }
-        if (isBareLetterKey(event, "x")) {
-          event.preventDefault();
-          shortcutShowcaseActions.skip();
-          return;
-        }
+      }
+
+      // The door out stays open on every step before graduation.
+      if (currentStepId !== "graduation" && isBareLetterKey(event, "x")) {
+        event.preventDefault();
+        shortcutShowcaseActions.skip();
+        return;
       }
     };
 
@@ -234,10 +259,43 @@ const ShowcaseTakeover: FC = () => {
     advance();
   };
 
+  const notificationsSupported = getNotificationPort().isSupported();
+
+  // The browser prompt is up for as long as the user takes to answer it, and
+  // the step does not change while they do - so guard against asking twice.
+  const offerTakenRef = useRef(false);
+
+  // The offer moves on either way: a denial is explained by the toast, and
+  // holding the user here would turn a one-key offer into a decision to make.
+  const enableNotifications = () => {
+    if (offerTakenRef.current) return;
+    offerTakenRef.current = true;
+    void notificationActions.enable("showcase").finally(() => {
+      // Only advance if the offer is still what's on screen: passing on it or
+      // leaving while the prompt was up already moved the user along, and a
+      // second advance from graduation would close the showcase outright.
+      const { stepIndex: current } = useShortcutShowcaseStore.getState();
+      if (stepIdAt(current) !== "notifications") return;
+      advance();
+    });
+  };
+
   // Side-action letters for the capture listener; refs because the listener
   // mounts once (same pattern as graduateRef).
-  const sideActionsRef = useRef({ doItForMe, skipToSignup, authenticated });
-  sideActionsRef.current = { doItForMe, skipToSignup, authenticated };
+  const sideActionsRef = useRef({
+    doItForMe,
+    skipToSignup,
+    authenticated,
+    enableNotifications,
+    notificationsSupported,
+  });
+  sideActionsRef.current = {
+    doItForMe,
+    skipToSignup,
+    authenticated,
+    enableNotifications,
+    notificationsSupported,
+  };
 
   const step =
     stepId === "create"
@@ -245,7 +303,7 @@ const ShowcaseTakeover: FC = () => {
           ...getShowcaseStep("create"),
           ...getCreateLessonPhase(Boolean(practice.editor)),
         }
-      : getShowcaseStep("graduation");
+      : getShowcaseStep(stepId);
 
   return (
     <section
@@ -271,7 +329,7 @@ const ShowcaseTakeover: FC = () => {
           </p>
           {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            {stepId === "graduation" ? (
+            {stepId === "graduation" && (
               <button
                 type="button"
                 className={PRIMARY_BUTTON_CLASS}
@@ -280,7 +338,32 @@ const ShowcaseTakeover: FC = () => {
               >
                 Enter Compass <ShortcutHint>Enter</ShortcutHint>
               </button>
-            ) : (
+            )}
+            {stepId === "notifications" && (
+              <>
+                {notificationsSupported ? (
+                  <button
+                    type="button"
+                    className={PRIMARY_BUTTON_CLASS}
+                    onClick={enableNotifications}
+                  >
+                    Enable notifications <ShortcutHint>Enter</ShortcutHint>
+                  </button>
+                ) : (
+                  <span className="text-text-muted text-xs">
+                    Not supported in this browser
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={SECONDARY_BUTTON_CLASS}
+                  onClick={advance}
+                >
+                  Not now <ShortcutHint>N</ShortcutHint>
+                </button>
+              </>
+            )}
+            {stepId === "create" && (
               <>
                 <button
                   type="button"
