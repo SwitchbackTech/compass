@@ -1,7 +1,35 @@
 ---
 name: chaos
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Exercise Compass as a real signed-in user, first through the intended flow and then with focused adversarial behavior; diagnose and fix confirmed UX, security, reliability, performance, accessibility, or data-integrity defects; simplify and ship the result. Use before a production release, when asked to perform exploratory or chaos testing, or when a realistic browser pass should drive a fix through merge.
 ---
+
+## When
+
+Before a production release, or when asked for exploratory / chaos testing.
+
+## Steps
+
+Prepare → happy path → focused probes → diagnose/fix → simplify/review/ship.
+
+## Output
+
+Evidence of signed-in exercise plus shipped fixes, or a report of stops.
+
+## Pass
+
+Happy path worked; probes were focused; credentials were not entered by the agent.
+
+## Anti-patterns
+
+Do not enter credentials. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Auth/setup missing, production-only defect, or a product fork.
 
 # Chaos
 

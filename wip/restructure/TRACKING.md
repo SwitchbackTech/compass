@@ -14,7 +14,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-02 | high | cursor-agent | done | [WP-02-typed-handoff-ledger.md](WP-02-typed-handoff-ledger.md) | merged #2866 (`8cc2a03ca`); schema + in-repo `/handoff` + ledger | — | 0 | none |
 | WP-03 | high | cursor-agent | done | [WP-03-split-ship-review-verifier.md](WP-03-split-ship-review-verifier.md) | merged #2867 (`024925eb2`); `/ship` Manager; `/review`; verify-change verdict | — | 0 | none |
 | WP-04 | high | Implementer | verifying | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | checker + PR-body job; PR #2868 | this session | 0 | none |
-| WP-05 | medium | — | queued | [WP-05-skill-registry.md](WP-05-skill-registry.md) | — | after WP-03 `done` | 0 | none |
+| WP-05 | medium | cursor-agent | verifying | [WP-05-skill-registry.md](WP-05-skill-registry.md) | registry + eval stubs; all skills versioned | this session | 0 | none |
 | WP-06 | medium | — | queued | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | — | after WP-02 and WP-03 `done` | 0 | none |
 | WP-07 | medium | — | queued | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | — | after WP-02 `done` | 0 | none |
 | WP-08 | low | — | queued | [WP-08-architecture-as-training.md](WP-08-architecture-as-training.md) | gated: only if discovery remains the bottleneck after WP-01–05 | after WP-05 `done` + scale-gate review | 0 | human: run or cancel |

@@ -1,7 +1,37 @@
 ---
 name: ship
+version: 1
+owner: compass-maintainers
+last_verified: 2026-08-25
 description: Manager skill that routes a Compass change through specialists to a squash-ready PR and merge. Use when the user says "ship", "ship it", "ship this branch", or asks to take current work through merged and verified delivery.
 ---
+
+## When
+
+User says ship / ship it, or asks to take current work through merged delivery.
+
+## Steps
+
+Gates: Preflight → Validate (`/verify-change`) → Simplify → Review → PR → Merge.
+
+## Output
+
+Ledger row, typed handoff at gates, squash-ready PR, merge SHA.
+
+## Pass
+
+Exactly one current owner; every `waiting` names a dependency; completion
+points to evidence; required checks green.
+
+## Anti-patterns
+
+Do not implement as Manager. Do not inline specialist procedures. See
+[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+
+## Escalate
+
+Product ambiguity, blocked access, failed verification after two retries,
+production deploy, secrets, OAuth grant, deletion, access grants.
 
 # Ship Compass (Manager)
 
