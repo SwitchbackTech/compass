@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import {
   type CreateEventInput,
   CreateEventInputSchema,
@@ -38,6 +39,8 @@ import {
   toEventMutationError,
 } from "@backend/event/event.error";
 import eventService from "@backend/event/services/event.service";
+
+const logger = Logger("app:event.controller");
 
 const send = (res: Response, e: unknown) => {
   const { status, body } = toEventMutationError(e);
@@ -81,6 +84,13 @@ const resolveSyncCalendarIds = async (
   ]);
 
   if (!calendarsResult.ok) {
+    // The thrown error's message never reaches a log (only the generic
+    // PROVIDER_FAILURE blurb does), so record the actionable detail here.
+    logger.warn(
+      `Failed to list calendars from sync (${calendarsResult.error.kind}) ` +
+        `[status=${calendarsResult.error.status}] ` +
+        `[correlationId=${calendarsResult.error.correlationId}]`,
+    );
     throw eventMutationError(
       "PROVIDER_FAILURE",
       `Failed to list calendars from sync (${calendarsResult.error.kind})`,
@@ -127,6 +137,11 @@ const listAllFullEvents = async (
     };
     const result = await client.listFullEvents(principal, pageQuery);
     if (!result.ok) {
+      logger.warn(
+        `Failed to list events from sync (${result.error.kind}) ` +
+          `[status=${result.error.status}] ` +
+          `[correlationId=${result.error.correlationId}]`,
+      );
       throw eventMutationError(
         "PROVIDER_FAILURE",
         `Failed to list events from sync (${result.error.kind})`,

@@ -1332,6 +1332,30 @@ describe("GET /internal/events/full", () => {
     });
   });
 
+  // Express's default "extended" query parser (qs) turns 21+ repeated keys
+  // into an object (arrayLimit: 20), which made this route 400 for any user
+  // with more than 20 calendars. Guards the "simple" parser in buildSyncApp.
+  it("accepts more than 20 repeated calendarIds params", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const event = await seedEvent(tenantId, principalId, { calendarId });
+    await seedOccurrence(tenantId, principalId, {
+      eventId: event._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+    });
+    await startService();
+
+    const ids = [calendarId, ...Array.from({ length: 24 }, () => objectId())];
+    const query = ids.map((id) => `calendarIds=${id}`).join("&");
+    const res = await get(tenantId, principalId, `${query}&${wideRange()}`);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { instances: unknown[] };
+    expect(body.instances).toHaveLength(1);
+    expect(body.instances[0]).toMatchObject({ eventId: event._id });
+  });
+
   it("returns instance rows plus one back-filled series master row", async () => {
     const tenantId = objectId();
     const principalId = objectId();
