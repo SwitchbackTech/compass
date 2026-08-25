@@ -13,4 +13,3 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| WP-06 | medium | Verifier | verifying | `docs/CI-CD/error-autofix-routine.md` | `bun test packages/scripts/src/testing/error-autofix-routine.test.ts` | 2026-08-26T18:00:00Z | 0 | none |

@@ -54,7 +54,15 @@ Validation defaults:
 ## Lookups
 
 - Docs index: `docs/README.md`
-- Temporary agent-OS work pack (delete when done): `wip/restructure/README.md`
+- Skills registry: `.agents/skills/README.md`
+- Handoffs: `.agents/handoffs/SCHEMA.md`
+- Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
+- Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
+
+The `wip/restructure/` pack is deleted after WP-01–07. WP-08 was cancelled:
+discovery was not the bottleneck (failures were CI, review, evidence, and
+merge permissions, not wrong-package search). The pack’s five-pass table
+was empty; merged PRs #2865–#2869, #2872, and #2873 are the loop evidence.
 
 ## Skills
 
