@@ -1,13 +1,22 @@
 ---
 name: verify-change
-description: Selects and runs the smallest reliable Compass validation set from the current diff, then widens checks for shared contracts, persistence, browser behavior, or release risk. Use when asked to verify changes, run the right tests, prepare a branch for review, or diagnose which checks apply.
+description: Verifier skill. Selects and runs the smallest reliable Compass validation set from the current diff and returns PASS, RETRY, or ESCALATE. Use when asked to verify changes, run the right tests, prepare a branch for review, or diagnose which checks apply.
 ---
 
-# Verify a Compass change
+# Verify a Compass change (Verifier)
 
-Choose checks from evidence in the diff. Do not default to `bun run test`, and
-do not treat a green helper command as sufficient without confirming what it
-selected.
+You are now the **Verifier**. Do not edit the artifact, tests, or CI
+config to go green. Do not repair failures silently.
+
+## Role
+
+- **Owns:** acceptance against the artifact; binary
+  `PASS | RETRY | ESCALATE`
+- **Input:** request + artifact + named tests — not the producer’s
+  self-assessment
+- **Output:** verdict + enumerated failures + evidence pointers
+- **Never:** repair the artifact, weaken tests, widen timeouts, disable
+  strict MSW, or change test order to hide a failure
 
 ## 1. Establish scope
 
@@ -42,10 +51,12 @@ Use the narrowest package command that can expose the regression:
 For a single failing test, run the repo's focused launcher when one exists,
 then run the package acceptance command before declaring the package green.
 
-## 3. Use the diff helper deliberately
+## 3. Diff helper
 
-`bun run verify` selects checks from the git diff. Run it when useful, but read
-its reported selection and add missing checks for:
+Run `bun run verify` and **quote its output** (selection, skip list,
+summary). It is the required-check subset from merge-base vs `origin/main`.
+A green run is not CI-complete if Playwright was skipped. Add extra checks
+when the subset cannot cover:
 
 - shared schemas consumed across packages
 - migrations and persistence
@@ -53,38 +64,32 @@ its reported selection and add missing checks for:
 - Google sync provider/watch behavior
 - browser-only interaction or accessibility states
 
-Do not hide failures by weakening tests, widening timeouts, disabling strict
-MSW behavior, or changing test order.
-
-## 4. Validate observable behavior
+## 4. Observable behavior
 
 Tests do not replace a concrete scenario for user-visible or integration
-changes. Use available browser, API, or CLI tooling to exercise the changed
-path and edge cases derived from the diff. Check console/network output for
-browser work.
-
-Backend/auth/Mongo/Google/SSE scenarios require valid local setup; invoke
-`/local-dev-bootstrap` rather than attempting login flows against an incomplete
-environment.
+changes. Backend/auth/Mongo/Google/SSE scenarios require
+`/local-dev-bootstrap`. Do not test login without backend.
 
 ## 5. Final gate
 
-For non-docs changes, run:
+For non-docs changes, `bun run lint` is required. Add `bun run type-check`
+when inferred types are part of correctness.
 
-```bash
-bun run lint
+## Verdict
+
+Retryable: flake, missing browser with an install command, or a failed
+check the implementer can fix without a product decision. Not retryable:
+missing credentials that need a human, contradictory requirements,
+exhausted 2-retry budget.
+
+```text
+VERDICT: PASS | RETRY | ESCALATE
+FAILURES:
+- id: …
+  retryable: true|false
+  evidence: …
+CHECKS_RUN: …
+CHECKS_SKIPPED: … (reason)
 ```
 
-Add `bun run type-check` for shared contracts, package boundaries, or changes
-where inferred types are part of correctness. Widen to E2E only when the change
-crosses browser/backend/persistence boundaries or modifies critical flows.
-
-## Report
-
-State:
-
-1. scope inferred from the diff
-2. commands and scenarios actually run
-3. pass/fail counts and relevant warnings
-4. checks intentionally not run and the concrete reason
-5. whether failures are new, pre-existing, or still unclassified
+`PASS` requires executed commands. “Looks good” is not a verdict.

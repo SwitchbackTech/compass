@@ -14,3 +14,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | WP-02 | high | cursor-agent | verifying | `.agents/handoffs/SCHEMA.md` | schema-valid `issue-0.md`; dry-run write/delete yes | 2026-08-26T18:00:00Z | 0 | none |
+| WP-03 | high | cursor-agent | verifying | `.agents/skills/review/SKILL.md` | ship invokes verify/simplify/review; verdict format present | 2026-08-26T18:00:00Z | 0 | none |

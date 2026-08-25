@@ -18,4 +18,23 @@ describe("typed handoff ledger", () => {
     expect(skill).not.toContain("temporary directory of the user's OS");
     expect(skill).toContain("Do not fall");
   });
+
+  it("ships Manager /review /verify-change contracts", () => {
+    const ship = readFileSync(".agents/skills/ship/SKILL.md", "utf8");
+    expect(ship).toContain("invoke `/verify-change`");
+    expect(ship).toContain("invoke `/simplify`");
+    expect(ship).toContain("invoke `/review`");
+    expect(ship).not.toContain("Use Claude-in-Chrome");
+
+    const review = readFileSync(".agents/skills/review/SKILL.md", "utf8");
+    expect(review).toContain("Do not edit production code");
+    expect(review).toContain("name: review");
+
+    const verify = readFileSync(
+      ".agents/skills/verify-change/SKILL.md",
+      "utf8",
+    );
+    expect(verify).toContain("VERDICT: PASS | RETRY | ESCALATE");
+    expect(verify).toContain("Do not edit the artifact");
+  });
 });
