@@ -2,6 +2,7 @@ import { VideoCameraIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 import { useUpNextEvent } from "./useUpNextEvent";
 
 /**
@@ -58,7 +59,7 @@ export const UpNextCard: FC = () => {
     : undefined;
 
   return (
-    <section aria-label="Up next">
+    <section aria-label="Up next" {...pageJumpAttrs("up-next")}>
       {upNext ? (
         <div className="group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded bg-surface px-2 py-1.5 hover:brightness-110">
           {/* Covers the whole card so clicking anywhere opens the event -

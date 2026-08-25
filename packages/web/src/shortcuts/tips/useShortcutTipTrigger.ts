@@ -60,6 +60,11 @@ export function useShortcutTipTrigger() {
         shortcutTipsActions.actedOn("target-event");
       } else if (activeTipId === "edge-cycle" && event.key === "Tab") {
         shortcutTipsActions.actedOn("edge-cycle");
+      } else if (
+        activeTipId === "page-jump" &&
+        (event.key === "Meta" || event.key === "Control")
+      ) {
+        shortcutTipsActions.actedOn("page-jump");
       }
     };
 

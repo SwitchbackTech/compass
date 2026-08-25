@@ -6,6 +6,7 @@ import { SelectView } from "@web/components/SelectView/SelectView";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { SidebarToggleButton } from "@web/components/Sidebar/SidebarToggleButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 
 interface Props {
   /** Left-aligned heading text (e.g. "June 2026" or "Wednesday, July 1"). */
@@ -46,7 +47,10 @@ export const CalendarHeader: FC<Props> = ({
           positioned inside this cluster and must paint below the header. */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {showNavigation && onPrev && onNext && (
-          <>
+          <div
+            className="flex items-center gap-3"
+            {...pageJumpAttrs("navigation")}
+          >
             <TooltipWrapper shortcut="J">
               <ArrowButton
                 direction="left"
@@ -61,7 +65,7 @@ export const CalendarHeader: FC<Props> = ({
                 onClick={onNext}
               />
             </TooltipWrapper>
-          </>
+          </div>
         )}
         <SelectView label={label} onToday={onToday} />
         {isUpdateAvailable ? (

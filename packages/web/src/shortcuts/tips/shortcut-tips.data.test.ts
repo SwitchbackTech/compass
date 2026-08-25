@@ -24,6 +24,10 @@ describe("getTipPlainText", () => {
     expect(plainTextById["edge-cycle"]).toBe(
       "Press Tab to move between start and end",
     );
+    const mod = expandModInShortcutDisplay("Mod") === "Meta" ? "Cmd" : "Ctrl";
+    expect(plainTextById["page-jump"]).toBe(
+      `Hold ${mod} to see where you can jump next`,
+    );
   });
 
   it("joins a chord's keys with + and speaks Mod as Cmd or Ctrl", () => {
