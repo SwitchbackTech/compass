@@ -53,6 +53,7 @@ Validation defaults:
 ## Lookups
 
 - Docs index: `docs/README.md`
+- Temporary agent-OS work pack (delete when done): `wip/restructure/README.md`
 
 ## Skills
 
