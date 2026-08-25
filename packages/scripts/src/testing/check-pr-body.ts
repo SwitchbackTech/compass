@@ -39,10 +39,26 @@ export function checkPrBody(body: string | null | undefined): string[] {
 }
 
 export function visibleSectionText(raw: string): string {
-  return raw
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return stripHtmlComments(raw).replace(/\s+/g, " ").trim();
+}
+
+function stripHtmlComments(text: string): string {
+  let result = "";
+  let remaining = text;
+  while (remaining.length > 0) {
+    const start = remaining.indexOf("<!--");
+    if (start === -1) {
+      result += remaining;
+      break;
+    }
+    result += remaining.slice(0, start);
+    const end = remaining.indexOf("-->", start + 4);
+    if (end === -1) {
+      break;
+    }
+    remaining = remaining.slice(end + 3);
+  }
+  return result;
 }
 
 export function splitMarkdownSections(body: string): Map<string, string> {

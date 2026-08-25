@@ -42,6 +42,16 @@ describe("checkPrBody", () => {
     );
   });
 
+  it("fails when Test plan is only nested HTML comments", () => {
+    const body = FILLED.replace(
+      "bun test:scripts and bun run lint.",
+      "<!--<!-- -->-->",
+    );
+    expect(checkPrBody(body).some((issue) => issue.includes("Test plan"))).toBe(
+      true,
+    );
+  });
+
   it("fails missing required headings", () => {
     const issues = checkPrBody(
       "## Summary\n\nhello world this is long enough\n",
