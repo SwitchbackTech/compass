@@ -25,7 +25,7 @@ A valid v1 file must still include every field in the table. Use empty lists,
 | Field | Meaning |
 | --- | --- |
 | `schema_version` | Integer. Receivers accept `1` only. |
-| `task_id` | GitHub issue, PR number, or `WP-*` / branch name until WP-07. |
+| `task_id` | GitHub issue number (preferred), PR number, or `WP-*`. |
 | `from` | Role that produced this record. |
 | `to` | Role that should act next. |
 | `owner` | Exactly one current owner. |

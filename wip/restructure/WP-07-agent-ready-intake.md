@@ -1,7 +1,7 @@
 # WP-07 — Agent-ready intake
 
 **task_id:** WP-07
-**status:** queued
+**status:** verifying
 **owner:** Implementer (GitHub templates) then Manager
 **depends on:** WP-02 `done` (ledger/handoff schema)
 **next owner after done:** none required; feeds the delivery loop
@@ -79,12 +79,26 @@ a ledger.
 ## Evidence
 
 ```text
-template path:
-bug/feature optional fields: yes/no
-CONTRIBUTING or recipes pointer:
-ship routing paragraph: yes/no
-label agent-ready: created | documented-only
+template path: .github/ISSUE_TEMPLATE/3-agent-task.yml
+bug/feature optional fields: yes
+CONTRIBUTING or recipes pointer: CONTRIBUTING.md (pick up a task) and
+  docs/development/common-change-recipes.md (Start Agent Work From A GitHub Issue)
+ship routing paragraph: yes (/ship Intake)
+label agent-ready: created (#1D76DB)
 example body (issue-0): attached below
+```
+
+### Example body (fictional issue-0)
+
+```markdown
+Goal / finish line: Week event form keeps focused time on Enter.
+Acceptance: bun run test:web covers the case; typing Enter in the time
+  field does not blur the input.
+Package scope: web
+Verify commands: bun run test:web
+Approval boundary: allow
+Handoff path: .agents/handoffs/0.md
+Untrusted input: checked
 ```
 
 ## Out of scope
@@ -105,14 +119,14 @@ template failed. Each field should be answerable in one sentence.
 
 ```yaml
 task_id: WP-07
-from:
-to: Implementer
-status:
-artifact:
-evidence:
-assumptions:
-open_risks:
-next_deadline:
+from: Implementer
+to: Verifier
+status: verifying
+artifact: .github/ISSUE_TEMPLATE/3-agent-task.yml
+evidence: template required fields; label agent-ready created; ship Intake paragraph
+assumptions: WP-02 is on main (#2866)
+open_risks: WP-03 /ship rewrite may need the Intake section re-applied
+next_deadline: after CI
 ```
 
 ## Session prompt

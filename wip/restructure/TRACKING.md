@@ -16,7 +16,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-04 | high | — | queued | [WP-04-hard-constraints.md](WP-04-hard-constraints.md) | — | after WP-01 `done` | 0 | none |
 | WP-05 | medium | — | queued | [WP-05-skill-registry.md](WP-05-skill-registry.md) | — | after WP-03 `done` | 0 | none |
 | WP-06 | medium | — | queued | [WP-06-autofix-routine.md](WP-06-autofix-routine.md) | — | after WP-02 and WP-03 `done` | 0 | none |
-| WP-07 | medium | — | queued | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | — | after WP-02 `done` | 0 | none |
+| WP-07 | medium | cursor-agent | verifying | [WP-07-agent-ready-intake.md](WP-07-agent-ready-intake.md) | `.github/ISSUE_TEMPLATE/3-agent-task.yml`; label `agent-ready` created | this session | 0 | none |
 | WP-08 | low | — | queued | [WP-08-architecture-as-training.md](WP-08-architecture-as-training.md) | gated: only if discovery remains the bottleneck after WP-01–05 | after WP-05 `done` + scale-gate review | 0 | human: run or cancel |
 
 ## Delivery-loop baseline (fill after WP-03)
