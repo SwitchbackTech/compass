@@ -1,4 +1,7 @@
-import { type ProviderCalendarSourceId } from "@core/types/sync/identity.contracts";
+import {
+  type ProviderCalendarId,
+  type ProviderCalendarSourceId,
+} from "@core/types/sync/identity.contracts";
 import { discoverCalendarsWithAuthRetry } from "@sync/domain/discover-calendars-with-auth-retry";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
@@ -151,7 +154,7 @@ export async function syncCalendarList(
   // calendar, so a full list of zero is treated as a non-answer (a provider
   // hiccup that returned empty instead of throwing) rather than "all removed" —
   // retiring every calendar on an empty blip would be user-visible damage.
-  let retiredIds: string[] = [];
+  let retiredIds: ProviderCalendarId[] = [];
   if (fullList && discovery.calendars.length > 0) {
     // A full pass is the retry cadence for unwatchable calendars: clear the
     // persisted watchUnsupportedAt verdicts so each gets one fresh watch
@@ -184,33 +187,25 @@ export async function syncCalendarList(
   // for inactive calendars, so subscriptionExpiresAt never advances and the
   // row would squat at the head of every renewal sweep forever
   // (listExpiringSubscriptions sorts soonest-expiry first with no other
-  // exclusion). Clearing the local fields here, rather than calling the
-  // provider to stop the channel, is deliberate: Google's channels lapse on
-  // their own within 30 days, so the remote channel is a harmless,
-  // self-healing wart, not something worth a provider call and a new adapter
-  // dependency.
-  const inactiveIds = new Set<string>([
-    ...retiredIds,
-    ...upserted.filter((r) => !r.active).map((r) => r._id),
-  ]);
-  if (inactiveIds.size > 0) {
-    const connectionResources = await deps.resources.listByConnection(
+  // exclusion). The clear is one self-gating updateMany because hidden and
+  // deleted calendars are re-reported inactive on EVERY daily full pass, not
+  // just the transition one — steady state must cost one no-op write, not a
+  // read of the connection's resources. Clearing the local fields, rather
+  // than calling the provider to stop the channel, is deliberate: Google's
+  // channels lapse on their own within 30 days, so the remote channel is a
+  // harmless, self-healing wart, not something worth a provider call and a
+  // new adapter dependency.
+  const inactiveIds = [
+    ...new Set([
+      ...retiredIds,
+      ...upserted.filter((r) => !r.active).map((r) => r._id),
+    ]),
+  ];
+  if (inactiveIds.length > 0) {
+    await deps.resources.clearSubscriptionsByCalendarIds(
       tenantId,
       principalId,
-      connectionId,
-    );
-    const subscribedInactive = connectionResources.filter(
-      (r) =>
-        r.calendarId &&
-        inactiveIds.has(r.calendarId) &&
-        r.subscriptionId !== null,
-    );
-    // Independent writes to distinct resources: clear them concurrently
-    // rather than one round trip per retired calendar.
-    await Promise.all(
-      subscribedInactive.map((r) =>
-        deps.resources.clearSubscription(tenantId, principalId, r._id),
-      ),
+      inactiveIds,
     );
   }
 

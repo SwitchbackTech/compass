@@ -117,6 +117,37 @@ describe("syncCalendarList", () => {
       .collection(SYNC_COLLECTIONS.syncResources)
       .findOne({ connectionId: conn._id, resourceKind: "calendarList" });
 
+  // Give a discovered calendar's events resource an established push channel,
+  // as a calendar with prior sync history would hold. Returns the resource id
+  // so the test can assert on the cleared fields afterwards.
+  const seedSubscribedEventsResource = async (
+    conn: ProviderConnectionRecord,
+    providerCalendarId: string,
+  ) => {
+    const calendar = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === providerCalendarId,
+    );
+    const resourceId = (
+      await storage.db().collection(SYNC_COLLECTIONS.syncResources).findOne({
+        connectionId: conn._id,
+        resourceKind: "events",
+        calendarId: calendar?._id,
+      })
+    )?._id as string;
+    await resources.updateSubscription(
+      conn.tenantId,
+      conn.principalId,
+      resourceId,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
+    return resourceId;
+  };
+
   it("discovers calendars, persists them, and enqueues an import per active calendar", async () => {
     const conn = connection();
     const discovery = new FakeDiscovery([
@@ -310,28 +341,9 @@ describe("syncCalendarList", () => {
       conn,
       now,
     );
-    const goneCalendar = (await calendarDocs(conn)).find(
-      (d) => d.providerCalendarId === "gone",
-    );
-    const goneEventsResourceId = (
-      await storage.db().collection(SYNC_COLLECTIONS.syncResources).findOne({
-        connectionId: conn._id,
-        resourceKind: "events",
-        calendarId: goneCalendar?._id,
-      })
-    )?._id as string;
-    // Simulate an established push channel, as a calendar with prior sync
-    // history would hold.
-    await resources.updateSubscription(
-      conn.tenantId,
-      conn.principalId,
-      goneEventsResourceId,
-      {
-        subscriptionId: "channel-1",
-        subscriptionResourceId: "resource-1",
-        subscriptionToken: "token-1",
-        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
-      },
+    const goneEventsResourceId = await seedSubscribedEventsResource(
+      conn,
+      "gone",
     );
 
     // Second full pass omits "gone", retiring it.
@@ -374,26 +386,9 @@ describe("syncCalendarList", () => {
       conn,
       now,
     );
-    const hidesCalendar = (await calendarDocs(conn)).find(
-      (d) => d.providerCalendarId === "hides",
-    );
-    const hidesEventsResourceId = (
-      await storage.db().collection(SYNC_COLLECTIONS.syncResources).findOne({
-        connectionId: conn._id,
-        resourceKind: "events",
-        calendarId: hidesCalendar?._id,
-      })
-    )?._id as string;
-    await resources.updateSubscription(
-      conn.tenantId,
-      conn.principalId,
-      hidesEventsResourceId,
-      {
-        subscriptionId: "channel-1",
-        subscriptionResourceId: "resource-1",
-        subscriptionToken: "token-1",
-        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
-      },
+    const hidesEventsResourceId = await seedSubscribedEventsResource(
+      conn,
+      "hides",
     );
 
     // Incremental pass (the stored cursor is "c1") reports "hides" inactive.
