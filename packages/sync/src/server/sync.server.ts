@@ -25,6 +25,11 @@ export function buildSyncApp(deps: {
   // Caddy terminates TLS and proxies `/sync/*` with X-Forwarded-For. One hop
   // of trust keeps express-rate-limit from rejecting those public routes.
   app.set("trust proxy", 1);
+  // Every query param here is flat, but the default "extended" parser (qs)
+  // turns 21+ repeated keys into an object (arrayLimit: 20) — which broke
+  // /internal/events/full for any user with more than 20 calendars. The
+  // "simple" parser collects repeated keys into a plain array, unbounded.
+  app.set("query parser", "simple");
   app.use(express.json());
 
   registerHealthRoutes(app, deps);
