@@ -54,7 +54,9 @@ then run the package acceptance command before declaring the package green.
 ## 3. Diff helper
 
 Run `bun run verify` and **quote its output** (selection, skip list,
-summary). It is the required-check subset from merge-base vs `origin/main`.
+summary). It is the required-check subset from merge-base vs `origin/main`
+plus the working tree: detected `test:<pkg>` scripts, then `type-check`,
+`lint`, and `knip`, plus `test:a11y`/`test:e2e` when web or `e2e/` changed.
 A green run is not CI-complete if Playwright was skipped. Add extra checks
 when the subset cannot cover:
 

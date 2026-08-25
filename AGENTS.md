@@ -46,8 +46,9 @@ Validation defaults:
 - Keep regression tests that protect real behavior. Remove temporary tests,
   scripts, debug hooks, or code added only to confirm a one-time hypothesis once
   that verification is complete.
-- Use `bun run verify` when you want the repo helper to choose checks from the
-  git diff, but confirm its output before treating the task as done.
+- Use `bun run verify` when you want the repo helper to choose the
+  required-check subset from the git diff. Read the skip list before treating
+  the task as done.
 - Use `bun run lint` before pushing when the work is not docs-only.
 
 ## Lookups
