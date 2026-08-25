@@ -51,7 +51,7 @@ export function splitMarkdownSections(body: string): Map<string, string> {
   const matches = [...body.matchAll(heading)];
   for (let i = 0; i < matches.length; i++) {
     const match = matches[i];
-    if (match.index == null) continue;
+    if (match == null || match.index == null) continue;
     const title = match[1]?.trim() ?? "";
     const start = match.index + match[0].length;
     const end = matches[i + 1]?.index ?? body.length;
