@@ -41,6 +41,7 @@ import {
 } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
+  EventMutationException,
   eventMutationError,
   toEventMutationError,
 } from "@backend/event/event.error";
@@ -48,23 +49,51 @@ import eventService from "@backend/event/services/event.service";
 
 const logger = Logger("app:event.controller");
 
-const send = (res: Response, e: unknown) => {
-  const { status, body } = toEventMutationError(e);
-  res.status(status).json(body);
+// Every handler in this controller answers through `send`, which writes the
+// response directly and never reaches the global error handler — so unlike
+// the proxy routes (unwrap-sync-result), nothing downstream logs the
+// exception. This is the only place an event read OR write failure can be
+// recorded, and PostHogExceptionTransport only listens at `error`, so a
+// defect logged any quieter is never captured: that is how the 2026-08-25
+// >20-calendar outage ran for a day with no error-tracking issue.
+//
+// Below 500 stays unlogged. A missing event, invalid input, a read-only
+// calendar or revoked Google grant is a normal outcome of a user action, not
+// a defect, and filing those as exceptions would bury the real ones.
+// Exported for tests: the level decision is the part worth pinning, and the
+// module-level `logger` cannot be spied on from a test (Logger() builds a new
+// winston instance per call).
+export const logLevelForEventFailure = (
+  status: Status,
+  syncError?: SyncClientError,
+): "warn" | "error" | undefined => {
+  if (status < Status.INTERNAL_SERVER) return undefined;
+  // Prefer the Sync failure kind when there is one: the read path answers
+  // every kind with PROVIDER_FAILURE (502), so its status cannot distinguish
+  // a Sync restart from a defect. Mutations already split 503/502 by kind
+  // (throwSyncCommandSubmitFailure), so status alone is right for them.
+  if (syncError) return logLevelForSyncClientError(syncError.kind);
+  return status === Status.SERVICE_UNAVAILABLE ? "warn" : "error";
 };
 
-// Log a failed Sync read. This controller answers every error through `send`,
-// which writes the response directly and never reaches the global error
-// handler — so unlike the proxy routes (unwrap-sync-result), nothing
-// downstream logs the exception, and PostHogExceptionTransport only listens
-// at `error`. The level is therefore chosen here rather than inherited:
-// a defect logged at `warn` is silently never reported, which is how the
-// 2026-08-25 >20-calendar outage ran for a day with no error-tracking issue.
-const logSyncReadFailure = (message: string, error: SyncClientError) => {
-  logger[logLevelForSyncClientError(error.kind)](
-    `${message} (${error.kind}) [status=${error.status}] ` +
-      `[correlationId=${error.correlationId}]`,
-  );
+const send = (res: Response, e: unknown) => {
+  const { status, body } = toEventMutationError(e);
+  const syncError =
+    e instanceof EventMutationException ? e.syncError : undefined;
+  const level = logLevelForEventFailure(status, syncError);
+
+  if (level) {
+    // The correlation id goes here rather than into `body.message`: PostHog
+    // groups issues by the message, so a per-request id in it would split one
+    // defect into an issue per occurrence.
+    const detail = syncError
+      ? ` (${syncError.kind}) [status=${syncError.status}] ` +
+        `[correlationId=${syncError.correlationId}]`
+      : "";
+    logger[level](`${body.code}: ${body.message}${detail}`);
+  }
+
+  res.status(status).json(body);
 };
 
 const parseListQuery = (query: Request["query"]): EventListQuery => {
@@ -104,15 +133,10 @@ const resolveSyncCalendarIds = async (
   ]);
 
   if (!calendarsResult.ok) {
-    // The thrown error's message never reaches a log (only the generic
-    // PROVIDER_FAILURE blurb does), so record the actionable detail here.
-    logSyncReadFailure(
-      "Failed to list calendars from sync",
-      calendarsResult.error,
-    );
     throw eventMutationError(
       "PROVIDER_FAILURE",
       `Failed to list calendars from sync (${calendarsResult.error.kind})`,
+      calendarsResult.error,
     );
   }
 
@@ -156,10 +180,10 @@ const listAllFullEvents = async (
     };
     const result = await client.listFullEvents(principal, pageQuery);
     if (!result.ok) {
-      logSyncReadFailure("Failed to list events from sync", result.error);
       throw eventMutationError(
         "PROVIDER_FAILURE",
         `Failed to list events from sync (${result.error.kind})`,
+        result.error,
       );
     }
     instances.push(...result.value.instances);
