@@ -5,7 +5,11 @@ import { Status } from "@core/errors/status.codes";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import eventController from "./event.controller";
+import {
+  eventMutationError,
+  toEventMutationError,
+} from "@backend/event/event.error";
+import eventController, { logLevelForEventFailure } from "./event.controller";
 import {
   afterEach,
   beforeEach,
@@ -428,6 +432,80 @@ describe("EventController", () => {
       code: "INVALID_INPUT",
       message: "Cannot delete events for another user",
       retryable: false,
+    });
+  });
+});
+
+// This controller answers every error through `send`, which never reaches the
+// global error handler — so `send` is the only place an event failure gets
+// logged, for reads and writes alike, and PostHogExceptionTransport only
+// listens at `error`.
+describe("logLevelForEventFailure", () => {
+  // Normal outcomes of a user action. Logging these would file exceptions for
+  // everyday misses and bury the real defects.
+  it.each([
+    ["EVENT_NOT_FOUND", Status.NOT_FOUND],
+    ["INVALID_INPUT", Status.BAD_REQUEST],
+    ["CALENDAR_READ_ONLY", Status.FORBIDDEN],
+    ["GOOGLE_REVOKED", Status.GONE],
+    ["RECURRENCE_CONFLICT", Status.CONFLICT],
+  ] as const)("does not log %s (%d)", (_code, status) => {
+    expect(logLevelForEventFailure(status)).toBeUndefined();
+  });
+
+  // Mutations already split 503/502 by kind, so their status carries the
+  // operational-vs-defect distinction on its own.
+  it("keeps a mutation SYNC_UNAVAILABLE (503) at warn", () => {
+    expect(logLevelForEventFailure(Status.SERVICE_UNAVAILABLE)).toBe("warn");
+  });
+
+  it.each([
+    ["PROVIDER_FAILURE", 502 as Status],
+    ["unmapped failure", Status.INTERNAL_SERVER],
+  ] as const)("reports a mutation %s at error", (_label, status) => {
+    expect(logLevelForEventFailure(status)).toBe("error");
+  });
+
+  // The read path answers EVERY Sync kind with PROVIDER_FAILURE (502), so its
+  // status alone would report a Sync restart as a defect. The kind decides.
+  it("keeps a read failure at warn when Sync was merely unavailable", () => {
+    expect(
+      logLevelForEventFailure(502 as Status, {
+        kind: "unavailable",
+        correlationId: "corr-1",
+      }),
+    ).toBe("warn");
+  });
+
+  it("reports a read failure at error when Sync rejected the query", () => {
+    // The 2026-08-25 >20-calendar outage: badRequest behind a 502.
+    expect(
+      logLevelForEventFailure(502 as Status, {
+        kind: "badRequest",
+        status: 400,
+        correlationId: "corr-2",
+      }),
+    ).toBe("error");
+  });
+});
+
+describe("EventMutationException syncError", () => {
+  it("carries the Sync failure without leaking it to the client", () => {
+    const e = eventMutationError("PROVIDER_FAILURE", "Failed to list events", {
+      kind: "badRequest",
+      status: 400,
+      correlationId: "corr-secret",
+    });
+
+    expect(e.syncError?.kind).toBe("badRequest");
+
+    // The correlation id must stay out of the response: it is per-request, and
+    // the browser has no use for it.
+    const { body } = toEventMutationError(e);
+    expect(body).toEqual({
+      code: "PROVIDER_FAILURE",
+      message: "Failed to list events",
+      retryable: true,
     });
   });
 });

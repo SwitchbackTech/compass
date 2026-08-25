@@ -5,6 +5,7 @@ import {
   type EventMutationError,
   type EventMutationErrorCodeSchema,
 } from "@core/types/event-command.contracts";
+import { type SyncClientError } from "@backend/common/services/sync-service/sync-service.client";
 
 export type EventMutationErrorCode = z.infer<
   typeof EventMutationErrorCodeSchema
@@ -56,6 +57,13 @@ export class EventMutationException extends BaseError {
   constructor(
     public readonly mutationCode: EventMutationErrorCode,
     message: string,
+    // The Sync failure behind this error, when it came from a Sync call. Kept
+    // off the client payload (`toEventMutationError` never reads it) and used
+    // only for logging: the event read path answers every Sync failure with
+    // PROVIDER_FAILURE, so its status alone cannot tell a Sync restart from a
+    // defect, and the correlation id belongs in the log rather than in the
+    // message, which PostHog groups issues by.
+    public readonly syncError?: SyncClientError,
   ) {
     super(
       mutationCode,
@@ -70,7 +78,9 @@ export class EventMutationException extends BaseError {
 export const eventMutationError = (
   code: EventMutationErrorCode,
   message: string,
-): EventMutationException => new EventMutationException(code, message);
+  syncError?: SyncClientError,
+): EventMutationException =>
+  new EventMutationException(code, message, syncError);
 
 /**
  * Maps any thrown error into the strict EventMutationError envelope (B5).
