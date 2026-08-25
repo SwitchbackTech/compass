@@ -13,9 +13,18 @@ bun run test:web
 bun run test:backend
 bun run test:scripts
 bun run type-check
+bun run verify
 ```
 
 Avoid defaulting to `bun run test` unless you really need the full suite.
+
+`bun run verify` selects the **required-check subset** from the merge-base vs
+`origin/main` plus the working tree: `test:<pkg>` for each detected package,
+then `type-check`, `lint`, and `knip`. Web or `e2e/` changes also select
+`test:a11y` and `test:e2e`. Read the printed skip list before treating a green
+run as CI-complete — missing Playwright Chromium skips those jobs and reports
+incomplete parity instead of claiming they passed. GitHub still runs the full
+unit matrix and e2e on every non-docs PR; this helper does not.
 
 ## CI Unit Test Workflow
 

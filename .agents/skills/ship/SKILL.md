@@ -17,6 +17,8 @@ merge or release work remains.
 - Inspect live configuration rather than assuming ports, checks, or workflows.
 - Pause for ambiguous product decisions, unconfirmed correctness, unrelated
   infrastructure failures, or incomplete confidence.
+- At handoff boundaries, write a typed record per
+  `.agents/handoffs/SCHEMA.md`.
 
 ## 1. Preflight
 

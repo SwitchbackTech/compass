@@ -111,6 +111,8 @@ report from a speculative concern.
 
 ## 5. Simplify, review, and release
 
+At handoff boundaries, write a typed record per `.agents/handoffs/SCHEMA.md`.
+
 1. Invoke `/simplify` on the complete base-to-head diff after the fix. Apply
    behavior-preserving simplifications, commit them separately when they change
    code, and re-run behavior-adjacent checks.

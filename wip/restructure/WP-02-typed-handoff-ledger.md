@@ -1,8 +1,8 @@
 # WP-02 — Typed handoff and Manager ledger
 
 **task_id:** WP-02
-**status:** queued
-**owner:** Implementer (agents) then Verifier
+**status:** verifying
+**owner:** cursor-agent
 **depends on:** none (may overlap WP-01; different files)
 **next owner after done:** WP-03, WP-06, WP-07
 
@@ -121,11 +121,17 @@ example).
 ## Evidence
 
 ```text
-schema path:
-handoff skill diff summary:
-ledger path:
-dry-run file created and removed: yes/no
-ship/chaos/autofix one-line pointers: yes/no
+schema path: .agents/handoffs/SCHEMA.md
+handoff skill diff summary: writes .agents/handoffs/<task_id>.md with YAML
+  frontmatter; refuses missing task_id/owner/status/artifact/evidence; never
+  OS temp; updates .agents/ledger.md; redacts secrets
+ledger path: .agents/ledger.md
+dry-run file created and removed: yes
+ship/chaos/autofix one-line pointers: yes
+git check-ignore: .agents/handoffs/ and ledger are not ignored
+receiver from issue-0.md only: owner=Verifier,
+  artifact=.agents/handoffs/SCHEMA.md,
+  next check=test -f .agents/handoffs/SCHEMA.md
 ```
 
 ## Out of scope
