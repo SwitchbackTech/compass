@@ -12,6 +12,14 @@ optional context and is **not** required to act.
 
 `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
+## Write-gate vs full record
+
+`/handoff` **refuses to write** unless these are present: `task_id`, `owner`,
+`status`, `artifact`, `evidence`.
+
+A valid v1 file must still include every field in the table. Use empty lists,
+`0`, `none`, or `null` when there is nothing to report. Do not omit keys.
+
 ## Required fields
 
 | Field | Meaning |
@@ -32,29 +40,23 @@ optional context and is **not** required to act.
 | `waiting_on` | Dependency name when `status` is `waiting`; otherwise `null`. |
 | `escalation` | Packet when `status` is `escalated`; otherwise `null`. |
 
-Separate fact, decision, evidence, and artifact. Do not collapse them into
-one summary paragraph. Additive fields in later schema versions are OK;
+Separate fact, evidence, and artifact. Do not collapse them into one
+summary paragraph. Additive fields in later schema versions are OK;
 renaming the meaning of an existing field is not.
 
 ## Rejection rules
 
-Refuse to write (or refuse to accept) a handoff when:
+Refuse to write when `task_id`, `owner`, `status`, `artifact`, or `evidence`
+is missing. Refuse to accept a file when:
 
-1. Any required field is missing.
-2. `schema_version` is missing or not `1`.
-3. `status` is not in the enum.
-4. `owner` is empty or lists more than one owner.
-5. `artifact` has no existing `path` and no `url`.
-6. `evidence` is missing, empty, or is only a prose claim.
-7. Completion is asserted with invalid phrases instead of pointers (see
-   below).
-8. The workspace is not writable — escalate; do **not** fall back to OS
-   temp.
-
-`/handoff` prefers refuse-to-advance: if `task_id`, `owner`, `status`,
-`artifact`, or `evidence` is missing, stop and request the field. Do not
-write the file. Do not write `status: waiting` as a substitute for missing
-evidence.
+1. `schema_version` is missing or not `1`.
+2. `status` is not in the enum.
+3. `owner` is empty or names more than one owner.
+4. `artifact` has no existing `path` and no `url`.
+5. `evidence` is empty or uses an invalid completion (below).
+6. The workspace is not writable — escalate; do **not** fall back to OS temp.
+7. `waiting_on` is `null` while `status` is `waiting`, or `escalation` is
+   `null` while `status` is `escalated`.
 
 ## Invalid completions
 
@@ -67,34 +69,13 @@ These are **not** evidence and must not advance `status` to `done` or
 - "tests probably pass"
 - any claim with no command/log/path/url pointer that exists
 
-Status only advances when `artifact` and `evidence` are pointers that exist.
+Status only advances when `artifact` points at an existing path or URL and
+`evidence` has a runnable `command` plus a non-phrase `result`.
 
 ## Valid example
 
-```yaml
-schema_version: 1
-task_id: "issue-0"
-from: Implementer
-to: Verifier
-owner: Verifier
-status: verifying
-artifact:
-  - path: packages/scripts/src/testing/verify.ts
-  - url: https://github.com/KeepSoftwareSimple/compass-calendar/pull/0
-evidence:
-  - command: bun run test:scripts
-    result: pass
-    log: "45 pass, 0 fail"
-assumptions:
-  - "anonymous IndexedDB mode is enough"
-open_risks:
-  - "SSE pair not exercised"
-next_deadline: 2026-08-26T18:00:00Z
-retry: 0
-approval: none
-waiting_on: null
-escalation: null
-```
+The documented file is [issue-0.md](issue-0.md). Receivers should use that
+record, not a second copy here.
 
 ## Malformed example (must reject)
 
@@ -109,6 +90,13 @@ artifact: []
 evidence:
   - command: ""
     result: "looks good"
+assumptions: []
+open_risks: []
+next_deadline: 2026-08-26T18:00:00Z
+retry: 0
+approval: none
+waiting_on: null
+escalation: null
 ```
 
 Rejected because `artifact` is empty, `evidence` has no command, and

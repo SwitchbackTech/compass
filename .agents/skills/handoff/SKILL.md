@@ -27,9 +27,10 @@ tailor `to`, `artifact`, and `evidence` accordingly.
 5. Write `.agents/handoffs/<task_id>.md` with YAML frontmatter matching the
    schema, then an optional short body. The body is not required to act.
 6. Update [`.agents/ledger.md`](../../ledger.md) in the same turn (create
-   it if absent): one row per in-flight `task_id`. Change the row; do not
-   append a transcript.
-7. Include a "suggested skills" section in the body.
+   it if absent): one row per in-flight `task_id`. Default `priority` to
+   `medium` if unknown. Change the row; do not append a transcript.
+7. Optionally include a "suggested skills" section in the body (not required
+   to act).
 8. Do not duplicate PRDs, plans, ADRs, issues, commits, or diffs — link
    them by path or URL.
 9. Redact secrets: API keys, passwords, tokens, `compass.yaml` contents,
