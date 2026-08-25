@@ -24,7 +24,10 @@ function gitStub(options: {
   const diffs = options.diffs ?? {};
   return {
     hasRef: (ref) => refs.has(ref),
-    fetch: options.fetch ?? (() => undefined),
+    fetch: () => {
+      refs.add("origin/main");
+      options.fetch?.();
+    },
     mergeBase: (a, b) => mergeBases[`${a}:${b}`] ?? null,
     diffNameOnly: (args) => {
       const key = args.join(" ");
@@ -96,7 +99,6 @@ describe("planVerify", () => {
   it("runs type-check, lint, and knip with no invented packages", () => {
     const plan = planVerify({
       packages: [],
-      files: ["docs/README.md"],
       playwrightChromiumAvailable: false,
     });
     expect(plan.packages).toEqual([]);
@@ -114,14 +116,13 @@ describe("planVerify", () => {
       "knip",
     ]);
     expect(plan.playwrightSelected).toBe(false);
-    expect(plan.ciParityComplete).toBe(true);
+    expect(plan.skips).toEqual([]);
   });
 
   it("selects a11y and e2e for an e2e/-only diff when Chromium is present", () => {
     const files = ["e2e/calendar.spec.ts"];
     const plan = planVerify({
       packages: mapFilesToPackages(files),
-      files,
       playwrightChromiumAvailable: true,
     });
     expect(plan.packages).toEqual(["web"]);
@@ -139,7 +140,6 @@ describe("planVerify", () => {
     const files = ["packages/web/src/App.tsx"];
     const plan = planVerify({
       packages: mapFilesToPackages(files),
-      files,
       playwrightChromiumAvailable: false,
     });
     expect(plan.checks.map((check) => check.id)).not.toContain("test:e2e");
@@ -148,7 +148,7 @@ describe("planVerify", () => {
       "test:e2e",
     ]);
     expect(plan.skips[0]?.reason).toContain(PLAYWRIGHT_INSTALL_COMMAND);
-    expect(plan.ciParityComplete).toBe(false);
+    expect(plan.playwrightSelected).toBe(true);
   });
 });
 
@@ -168,11 +168,6 @@ describe("resolveMergeBase and collectChangedFiles", () => {
       },
       untracked: ["packages/web/src/App.tsx"],
     });
-    git.hasRef = (ref) => {
-      if (ref === "origin/main") return fetched;
-      return ref === "main";
-    };
-
     const mergeBase = resolveMergeBase(git);
     expect(fetched).toBe(true);
     expect(mergeBase).toEqual({ sha: "deadbeef", ref: "origin/main" });
