@@ -3,6 +3,14 @@
   "permissions": {
     "defaultMode": "bypassPermissions",
     "allow": [
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "mcp__Claude_Code_Remote",
+      "mcp__claude-code-remote",
+      "mcp__github",
+      "mcp__PostHog",
+      "mcp__Claude_Preview",
       "Bash(bun run test:*)",
       "Bash(bun run lint)",
       "Bash(bun run lint:fix)",
