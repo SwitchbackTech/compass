@@ -4,13 +4,33 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { type SyncClientErrorKind } from "@backend/common/services/sync-service/sync-service.client";
 import { eventMutationError } from "@backend/event/event.error";
 
+// The one place that decides which Sync failures are operational: our own
+// backpressure or a Sync restart the caller retries through, versus a defect
+// (a drifted internalAuthToken, a broken response contract, a query Sync
+// rejects outright). Everything below branches on this rather than repeating
+// the kind list.
+const isOperationalKind = (kind: SyncClientErrorKind) =>
+  kind === "timeout" || kind === "unavailable";
+
+// The log level a caller should use for a failed Sync call, mirroring
+// logLevelForError's operational-503 downgrade. Callers that answer their own
+// errors (the event controller writes responses directly, so the global error
+// handler never logs the exception) must choose the level themselves, and
+// PostHogExceptionTransport only listens at `error` — so a defect logged at
+// `warn` is never captured as an exception.
+export function logLevelForSyncClientError(
+  kind: SyncClientErrorKind,
+): "warn" | "error" {
+  return isOperationalKind(kind) ? "warn" : "error";
+}
+
 // Map a failed Sync HTTP call on a read/proxy route into a real HTTP status.
 // Never Status.UNSURE (600). Timeout/unavailable → 503; other failures → 502.
 export function throwSyncProxyFailure(
   kind: SyncClientErrorKind,
   userMessage: string,
 ): never {
-  if (kind === "timeout" || kind === "unavailable") {
+  if (isOperationalKind(kind)) {
     throw error(AuthError.SyncConnectionUnavailable, userMessage);
   }
   throw error(
@@ -33,7 +53,7 @@ export function throwSyncProxyFailure(
 export function throwSyncCommandSubmitFailure(
   kind: SyncClientErrorKind,
 ): never {
-  if (kind === "timeout" || kind === "unavailable") {
+  if (isOperationalKind(kind)) {
     throw eventMutationError(
       "SYNC_UNAVAILABLE",
       `Sync command ${kind}; the mutation may already be applied`,

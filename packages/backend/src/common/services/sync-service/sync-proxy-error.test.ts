@@ -1,9 +1,11 @@
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {
+  logLevelForSyncClientError,
   throwSyncCommandSubmitFailure,
   throwSyncProxyFailure,
 } from "@backend/common/services/sync-service/sync-proxy-error";
+import { type SyncClientErrorKind } from "@backend/common/services/sync-service/sync-service.client";
 import {
   EventMutationException,
   toEventMutationError,
@@ -86,6 +88,56 @@ describe("sync-proxy-error", () => {
       const mapped = toEventMutationError(e);
       expect(mapped.status).toBe(502);
       expect(mapped.body.retryable).toBe(true);
+    }
+  });
+});
+
+describe("logLevelForSyncClientError", () => {
+  // Only our own backpressure / a Sync restart stays quiet.
+  it.each([
+    "timeout",
+    "unavailable",
+  ] as const)("keeps %s at warn so a Sync restart files no exception", (kind) => {
+    expect(logLevelForSyncClientError(kind)).toBe("warn");
+  });
+
+  // These are defects, and PostHogExceptionTransport only listens at `error`:
+  // logging them at `warn` is what let the >20-calendar badRequest outage run
+  // for a day with no error-tracking issue (2026-08-25).
+  it.each([
+    "badRequest",
+    "unauthorized",
+    "notFound",
+    "conflict",
+    "invalidResponse",
+    "unexpectedStatus",
+  ] as const)("reports %s at error so it is captured as an exception", (kind) => {
+    expect(logLevelForSyncClientError(kind)).toBe("error");
+  });
+
+  // Pins the two to one rule: a new kind must not be quiet on the log side
+  // while the status side treats it as a 502 defect.
+  it("stays consistent with the status mapping for every kind", () => {
+    const kinds: SyncClientErrorKind[] = [
+      "timeout",
+      "unavailable",
+      "badRequest",
+      "unauthorized",
+      "notFound",
+      "conflict",
+      "invalidResponse",
+      "unexpectedStatus",
+    ];
+
+    for (const kind of kinds) {
+      let status: number | undefined;
+      try {
+        throwSyncProxyFailure(kind, "msg");
+      } catch (e) {
+        status = (e as BaseError).statusCode;
+      }
+      const expected = status === Status.SERVICE_UNAVAILABLE ? "warn" : "error";
+      expect(logLevelForSyncClientError(kind)).toBe(expected);
     }
   });
 });
