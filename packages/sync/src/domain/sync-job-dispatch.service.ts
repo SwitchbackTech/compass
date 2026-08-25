@@ -328,6 +328,21 @@ async function runSyncJob(
       resource._id,
       now(),
     );
+    // Same shape for the renewal sweep, which sorts on subscriptionExpiresAt
+    // alone: a channel on an inactive calendar can never be renewed (this
+    // drop is all subscriptionMaintain would do), so a lingering subscription
+    // squats at the head of every sweep. The calendar-list pass clears
+    // channels when it observes a calendar inactive, but only for calendars
+    // the provider still lists — this level-triggered clear also converges
+    // rows that went inactive before that cleanup existed and have since
+    // vanished from the provider's list entirely.
+    if (resource.subscriptionId !== null) {
+      await deps.resources.clearSubscription(
+        resource.tenantId,
+        resource.principalId,
+        resource._id,
+      );
+    }
     return {
       result: "drop",
       reason: `calendar ${calendar._id} is inactive; sync resumes if it is reactivated`,
