@@ -98,11 +98,10 @@ const PracticeBlock: FC<{
   );
 };
 
-const WEEKDAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
-
 /**
  * Static month-picker chrome so the sandbox reads like the real sidebar.
  * Not interactive: the lesson only needs a place to park a jump chip.
+ * Cells are unlabeled so they cannot collide with event jump letters.
  */
 const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
   showPageJumpHints,
@@ -119,22 +118,7 @@ const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
         <ShortcutHint className="absolute top-1 right-1 z-10">2</ShortcutHint>
       )}
       <div className="font-medium text-text-muted text-xs">{monthLabel}</div>
-      <div className="grid grid-cols-7 gap-px">
-        {WEEKDAY_INITIALS.map((label, index) => (
-          <span
-            key={`${label}-${index}`}
-            className="text-center text-[8px] text-text-muted"
-          >
-            {label}
-          </span>
-        ))}
-        {Array.from({ length: 35 }, (_, index) => (
-          <span
-            key={index}
-            className="mx-auto size-2 rounded-sm bg-surface-overlay"
-          />
-        ))}
-      </div>
+      <div className="h-20 rounded-md bg-surface-overlay" />
       <div className="rounded-md bg-surface-overlay px-2 py-1.5 text-[10px] text-text-muted">
         Up next
       </div>

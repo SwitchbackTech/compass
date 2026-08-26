@@ -496,18 +496,16 @@ const ShowcaseTakeover: FC = () => {
                 </button>
               </>
             ) : (
-              <>
-                {!authenticated && (
-                  <button
-                    type="button"
-                    className={SECONDARY_BUTTON_CLASS}
-                    onClick={skipToSignup}
-                  >
-                    Skip to sign up
-                    <ShortcutHint className="shrink-0">U</ShortcutHint>
-                  </button>
-                )}
-              </>
+              !authenticated && (
+                <button
+                  type="button"
+                  className={SECONDARY_BUTTON_CLASS}
+                  onClick={skipToSignup}
+                >
+                  Skip to sign up
+                  <ShortcutHint className="shrink-0">U</ShortcutHint>
+                </button>
+              )
             )}
             {stepId !== "graduation" && (
               <button
