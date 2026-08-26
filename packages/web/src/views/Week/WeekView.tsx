@@ -1,10 +1,4 @@
 import { useCallback, useMemo, useRef } from "react";
-import {
-  selectAvailabilityOpen,
-  useAvailabilityStore,
-} from "@web/availability/availability.store";
-import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
-import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { CalendarConnectionBannerGate } from "@web/components/CalendarConnectionBanner/CalendarConnectionBannerGate";
@@ -53,7 +47,6 @@ export const WeekView = () => {
   // even when the user keeps it collapsed; their persisted preference is
   // untouched and the panel collapses again when the form closes.
   const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
-  const isAvailabilityOpen = useAvailabilityStore(selectAvailabilityOpen);
   useSidebarShortcuts();
 
   const { today } = useToday();
@@ -61,11 +54,6 @@ export const WeekView = () => {
   const { trackRef, visibleDayCount } = useVisibleDayCount();
 
   const weekProps = useWeek(today, visibleDayCount);
-  useAvailabilityEvents(
-    weekProps.component.startOfView,
-    weekProps.component.endOfView,
-  );
-  useAvailabilityShortcuts();
   const mainRef = useRef<HTMLDivElement | null>(null);
   const weekTrackElementRef = useRef<HTMLDivElement | null>(null);
   const setTrackRef = useCallback(
@@ -118,9 +106,8 @@ export const WeekView = () => {
         view: "week",
         isViewingCurrentPeriod: isCurrentWeek,
         isFormOpen: isEventDetailsOpen,
-        isAvailabilityOpen,
       }),
-    [isAvailabilityOpen, isCurrentWeek, isEventDetailsOpen],
+    [isCurrentWeek, isEventDetailsOpen],
   );
 
   const { calendarDate, goToDateFromSidebar } = useSidebarCalendarDate({

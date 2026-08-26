@@ -194,8 +194,8 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" });
     expect(activeRowText(container)).toBe("Go to Today");
 
-    // Walk down through the Create section. The ArrowDown after Share
-    // availability skips the disabled Undo row and lands on Appearance.
+    // Walk down through the Create section. The ArrowDown after Create
+    // all-day event skips the disabled Undo row and lands on Appearance.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Life
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show shortcuts
@@ -203,8 +203,6 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
     expect(activeRowText(container)).toBe("Create all-day event");
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Share availability
-    expect(activeRowText(container)).toBe("Share availability");
     fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Undo last change
     expect(activeRowText(container)).toBe("Switch to light theme");
   });

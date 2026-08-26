@@ -35,17 +35,14 @@ interface TimezonePickerDialogProps {
   onDismiss: () => void;
   purpose?: TimezoneDialogPurpose;
   restoreFocus?: () => void;
-  onSelect?: (timeZone: string | null) => void;
 }
 
 export function TimezonePickerDialog({
   onDismiss,
   purpose = "pin",
   restoreFocus,
-  onSelect,
 }: TimezonePickerDialogProps) {
   const isTimeTravel = purpose === "time-travel";
-  const isAvailability = purpose === "availability-recipient";
   const effectiveTimeZone = useEffectiveTimeZone();
   const pinnedTimeZone = usePinnedTimeZone();
   const timeTravelZone = useTimeTravelZone();
@@ -88,9 +85,7 @@ export function TimezonePickerDialog({
   }, [currentActiveId, listId]);
 
   const commit = (timeZone: string | null) => {
-    if (isAvailability) {
-      onSelect?.(timeZone);
-    } else if (isTimeTravel) {
+    if (isTimeTravel) {
       setTimeTravelZone(timeZone);
     } else {
       setPinnedTimeZone(timeZone);
@@ -133,13 +128,7 @@ export function TimezonePickerDialog({
 
   return (
     <OverlayPanel
-      title={
-        isTimeTravel
-          ? "Time travel"
-          : isAvailability
-            ? "Add recipient timezone"
-            : "Change default timezone"
-      }
+      title={isTimeTravel ? "Time travel" : "Change default timezone"}
       onDismiss={onDismiss}
       restoreFocus={restoreFocus}
       initialFocusRef={searchRef}
@@ -196,7 +185,7 @@ export function TimezonePickerDialog({
               selected={false}
             />
           ) : null}
-          {isTimeTravel || isAvailability ? null : (
+          {isTimeTravel ? null : (
             <TimezoneOptionButton
               active={currentActiveId === AUTO_ID}
               description={`Currently ${browserAbbreviation}`}
