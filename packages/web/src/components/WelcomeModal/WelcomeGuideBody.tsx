@@ -89,11 +89,11 @@ export function WelcomeGuideBody() {
         })}
       </div>
 
-      <p id={faqHintId} className="text-text-muted text-xs">
-        <span className="whitespace-nowrap">
-          Hold <ShortcutKeys keys={["Mod"]} /> to see keys
-        </span>
-        , then press 1–5. The same hold reveals jump keys all over Compass.
+      <p id={faqHintId} className="text-text-muted text-xs leading-relaxed">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          Hold <ShortcutKeys keys={["Mod"]} /> to see keys, then press 1–5.
+        </span>{" "}
+        The same hold reveals jump keys all over Compass.
       </p>
     </>
   );

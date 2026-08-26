@@ -30,8 +30,8 @@ describe("WelcomeGuideBody", () => {
   it("explains that numbered shortcuts open the FAQ", () => {
     render(<WelcomeGuideBody />);
 
-    expect(screen.getByText(/to see keys/)).toBeTruthy();
-    expect(screen.getByText(/then press 1–5/)).toBeTruthy();
+    expect(screen.getByText(/to see keys, then press 1–5/)).toBeTruthy();
+    expect(screen.getByText(/The same hold reveals jump keys/)).toBeTruthy();
   });
 
   it("toggles a FAQ with a bare digit", async () => {
