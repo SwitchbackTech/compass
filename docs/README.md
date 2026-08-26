@@ -5,6 +5,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 ## Start Here
 
 - [Repo Architecture](./architecture/repo-architecture.md)
+- [Product Suite Boundaries](./architecture/product-suite-boundaries.md)
 - [Feature File Map](./development/feature-file-map.md)
 - [Common Change Recipes](./development/common-change-recipes.md)
 
@@ -26,6 +27,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 ## Architecture And Domain
 
 - [Repo Architecture](./architecture/repo-architecture.md)
+- [Product Suite Boundaries](./architecture/product-suite-boundaries.md)
 - [Event Domain Model](./architecture/event-domain-model.md)
 - [Multi-account Sync](./architecture/multi-account-sync.md)
 - [Glossary](./architecture/glossary.md)
