@@ -7,7 +7,11 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
-import { ID_SIDEBAR } from "@web/common/constants/web.constants";
+import {
+  ID_GRID_MAIN,
+  ID_SIDEBAR,
+  ID_WEEK_GRID_SCROLLER,
+} from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
@@ -83,14 +87,24 @@ const SPATIAL_DIRECTION = {
 const isArrowKey = (key: string): key is keyof typeof SPATIAL_DIRECTION =>
   key in SPATIAL_DIRECTION;
 
-/** First visit / returning from another tab: nothing particular is focused. */
+/**
+ * First visit / returning from another tab / calendar canvas: nothing
+ * particular is focused. The timed grid and week scroller are WCAG
+ * scrollable regions (`tabIndex=0`), not interactive controls — treating
+ * them as unspecified is what lets Arrow keys enter the event list after
+ * a click on the calendar.
+ */
 const isUnspecifiedDocumentFocus = () => {
   const active = document.activeElement;
-  return (
+  if (
     active == null ||
     active === document.body ||
     active === document.documentElement
-  );
+  ) {
+    return true;
+  }
+  if (!(active instanceof HTMLElement)) return false;
+  return active.id === ID_GRID_MAIN || active.id === ID_WEEK_GRID_SCROLLER;
 };
 
 // Week view: refuse moves that would leave the visible week window.

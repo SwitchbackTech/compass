@@ -541,6 +541,24 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(navigateToDate).not.toHaveBeenCalled();
   });
 
+  it("focuses the nearest-to-now event when the timed grid canvas is focused", () => {
+    setSystemTime(new Date("2026-05-20T09:30:00.000"));
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    earlier.blur();
+    const grid = document.createElement("section");
+    grid.id = "mainGrid";
+    grid.tabIndex = 0;
+    document.body.appendChild(grid);
+    grid.focus();
+    renderEditShortcuts({
+      timedEvents: [timedEvent, laterTimedEvent],
+    });
+
+    pressKey("ArrowRight");
+
+    expect(document.activeElement).toBe(earlier);
+  });
+
   it("does not steal ArrowRight from a focused non-event button", () => {
     focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
     const chrome = document.createElement("button");
