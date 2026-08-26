@@ -91,6 +91,11 @@ export const getTimeOptions = (): TimeOption[] => {
   return options;
 };
 
+const expandMeridiem = (mer: string) => {
+  const upper = mer.toUpperCase();
+  return upper.length === 1 ? `${upper}M` : upper;
+};
+
 export const parseUserTime = (
   input: string,
   currentValue?: string,
@@ -100,12 +105,18 @@ export const parseUserTime = (
   // Normalize: trim, uppercase, collapse whitespace
   let normalized = input.trim().toUpperCase().replace(/\s+/g, " ");
 
-  // Handle glued meridiem (e.g., "10:33pm" -> "10:33 PM")
+  // Handle glued meridiem (e.g., "10:33pm" -> "10:33 PM", "8p" -> "8 PM").
+  // Expand A/P so dayjs's AM/PM token can parse them, and skip a dangling
+  // colon when the user omitted minutes ("8pm" must not become "8: PM").
   normalized = normalized.replace(
     /^(\d{1,2}):?(\d{0,2})(AM|PM|A|P)$/i,
-    "$1:$2 $3",
+    (_match, hours: string, minutes: string, mer: string) => {
+      const meridiem = expandMeridiem(mer);
+      return minutes
+        ? `${hours}:${minutes} ${meridiem}`
+        : `${hours} ${meridiem}`;
+    },
   );
-  normalized = normalized.replace(/^(\d{1,2})(AM|PM|A|P)$/i, "$1 $2");
 
   // Digits-only preprocessing
   const digitsMatch = normalized.match(/^(\d{1,4})$/);
@@ -154,19 +165,39 @@ export const parseUserTime = (
     parsed.hour() <= 12
   ) {
     const current = getDayjsByTimeValue(currentValue);
-    const currentIsPM = current.hour() >= 12;
+    if (current.isValid()) {
+      const currentIsPM = current.hour() >= 12;
 
-    if (currentIsPM && parsed.hour() !== 12) {
-      // Current is PM (1-11 PM), so adjust parsed AM hour to PM
-      parsed = parsed.add(12, "hour");
-    } else if (!currentIsPM && parsed.hour() === 12) {
-      // Current is AM, parsed is 12 (12 AM/PM ambiguous), so 12 AM
-      parsed = parsed.subtract(12, "hour");
+      if (currentIsPM && parsed.hour() !== 12) {
+        // Current is PM (1-11 PM), so adjust parsed AM hour to PM
+        parsed = parsed.add(12, "hour");
+      } else if (!currentIsPM && parsed.hour() === 12) {
+        // Current is AM, parsed is 12 (12 AM/PM ambiguous), so 12 AM
+        parsed = parsed.subtract(12, "hour");
+      }
     }
   }
 
   // Return via getTimeOptionByValue so it normalizes like list options
   return getTimeOptionByValue(parsed);
+};
+
+export const filterTimeOption = (
+  option: { label: string; value: string },
+  input: string,
+  currentValue?: string,
+): boolean => {
+  const parsed = parseUserTime(input, currentValue);
+  if (parsed) {
+    return option.value === parsed.value || option.label === parsed.label;
+  }
+
+  const needle = input.trim().toLowerCase();
+  if (!needle) return true;
+  return (
+    option.label.toLowerCase().includes(needle) ||
+    option.value.toLowerCase().includes(needle)
+  );
 };
 
 export const getTimesLabel = (startDate: string, endDate: string) => {

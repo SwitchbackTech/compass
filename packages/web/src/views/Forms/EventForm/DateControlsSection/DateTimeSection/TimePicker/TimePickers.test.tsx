@@ -10,7 +10,7 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { getFormDates } from "../form.datetime.util";
-import { END_TIME_ORDER_ERROR, TimePickers } from "./TimePickers";
+import { TimePickers } from "./TimePickers";
 import { describe, expect, it } from "bun:test";
 
 const START_DATE = new Date("2026-04-24T14:00:00.000Z");
@@ -134,58 +134,51 @@ describe("TimePickers", () => {
     expectDraft("2026-04-24T23:00:00+00:00", "2026-04-25T22:00:00+00:00");
   });
 
-  it("shows an inline error when the mouse picks an end before start, without crashing", async () => {
+  it("shifts the end later to keep the duration when start moves past it", async () => {
     const user = userEvent.setup();
-    render(<Harness />);
-
-    await pick(user, "End time", "1 PM");
-
-    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
-    expect(screen.getByRole("combobox", { name: "End time" })).toHaveAttribute(
-      "aria-invalid",
-      "true",
+    render(
+      <Harness
+        start={new Date("2026-04-24T06:00:00.000Z")}
+        end={new Date("2026-04-24T07:00:00.000Z")}
+      />,
     );
-    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
-    expect(screen.getByText("3 PM")).toBeInTheDocument();
+
+    await pick(user, "Start time", "8 AM");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectDraft("2026-04-24T08:00:00+00:00", "2026-04-24T09:00:00+00:00");
   });
 
-  it("shows an inline error when the keyboard commits an end before start, without crashing", async () => {
+  it("shifts the start earlier to keep the duration when end moves before it", async () => {
     const user = userEvent.setup();
-    render(<Harness />);
+    render(
+      <Harness
+        start={new Date("2026-04-24T06:00:00.000Z")}
+        end={new Date("2026-04-24T07:00:00.000Z")}
+      />,
+    );
+
+    await pick(user, "End time", "5 AM");
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectDraft("2026-04-24T04:00:00+00:00", "2026-04-24T05:00:00+00:00");
+  });
+
+  it("shifts the start from a keyboard commit that would invert the times", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        start={new Date("2026-04-24T06:00:00.000Z")}
+        end={new Date("2026-04-24T07:00:00.000Z")}
+      />,
+    );
 
     const end = screen.getByRole("combobox", { name: "End time" });
     await user.click(end);
-    await user.keyboard("1 PM{Enter}");
-
-    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
-    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
-    expect(screen.getByText("3 PM")).toBeInTheDocument();
-  });
-
-  it("clears the inline error after a valid end time is chosen", async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-
-    await pick(user, "End time", "1 PM");
-    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
-
-    await pick(user, "End time", "4 PM");
+    await user.keyboard("5 AM{Enter}");
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T16:00:00+00:00");
-  });
-
-  it("clears the inline error when the current valid end time is chosen again", async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-
-    await pick(user, "End time", "1 PM");
-    expect(screen.getByRole("alert")).toHaveTextContent(END_TIME_ORDER_ERROR);
-
-    await pick(user, "End time", "3 PM");
-
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expectDraft("2026-04-24T14:00:00+00:00", "2026-04-24T15:00:00+00:00");
+    expectDraft("2026-04-24T04:00:00+00:00", "2026-04-24T05:00:00+00:00");
   });
 
   it("does not change the draft when Tabbing through the time pickers", async () => {
