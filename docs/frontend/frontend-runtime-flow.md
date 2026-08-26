@@ -79,22 +79,11 @@ Welcome → signup → first-event contract:
   returning user is not handed the practice or the first-event prompt
 - signing up (either route) defers a showcase offer via `showcase.storage.ts`;
   `offerAfterSignupIfPending()` redeems it once, right after signup completes
-- the Shortcut Showcase therefore has three entries: welcome dismiss,
-  post-signup, and the command palette's "Practice shortcuts".
-  `showcase.steps.ts` holds the order; taught keycaps come from
-  `packages/web/src/shortcuts/keymap.ts`. Six skippable levels teach create
-  (C then title then Enter), hold-Mod page jumps, `S` event jump, Shift+arrow
-  nudge, `E` then `T` to target a title, and Cmd+K on a practice-only
-  palette, then graduation hands off to the real calendar
-- every showcase step offers **Skip** (`Esc`), and **Skip to sign
-  up** (`U`) for anyone not already signed in. Escape closes the practice
-  palette or title editor first, then leaves. There is no confirm in the way
-- graduating the showcase hands off directly to `FirstEventPrompt`, a
-  non-blocking card on the real calendar (not an app-lock modal) that asks the
-  user to press `C` on a real event. It is shown once the showcase has been
-  finished or skipped, and stays hidden while the auth modal is open. It
-  completes the moment a genuine create lands (`noteFirstRealEventCreated`
-  in `useEventMutations.ts`), then celebrates briefly and retires for good.
+- the Shortcut Showcase is an always-escapable, practice-only calendar whose
+  state never reaches real calendar storage. Its ordered lesson metadata uses
+  the application's keymap; graduation hands off to `FirstEventPrompt`
+- `FirstEventPrompt` is a non-blocking real-calendar card. It stays hidden
+  while the auth modal is open and retires after the first genuine create.
   Users who finished or dismissed the retired onboarding checklist are read
   as already done via a legacy storage key, so they never see it
 - command palette can reopen practice (“Practice shortcuts”) or the welcome

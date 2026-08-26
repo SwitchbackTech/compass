@@ -12,28 +12,8 @@ import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
  * a level: it asks for a browser permission rather than teaching a key, so
  * it stays out of SHOWCASE_LEVEL_IDS and renders no "Level N/M" chip.
  */
-const STEP_IDS = [
-  "create",
-  "pageJump",
-  "eventJump",
-  "nudge",
-  "editTitle",
-  "palette",
-  "notifications",
-  "graduation",
-] as const;
-
-export type ShowcaseStepId = (typeof STEP_IDS)[number];
-
-export const SHOWCASE_STEP_IDS: readonly ShowcaseStepId[] = STEP_IDS;
-
-export const SHOWCASE_LEVEL_IDS = STEP_IDS.filter(
-  (id): id is Exclude<ShowcaseStepId, "graduation" | "notifications"> =>
-    id !== "graduation" && id !== "notifications",
-);
-
 export type ShowcaseStep = {
-  id: ShowcaseStepId;
+  id: string;
   title: string;
   /**
    * Plain copy, or the same parts model as shortcut tips so a step can put
@@ -42,15 +22,19 @@ export type ShowcaseStep = {
   body: string | readonly ShortcutTipPart[];
   /** One keycap per entry, rendered via ShortcutKeys. */
   keycaps?: readonly string[];
+  level?: number;
 };
 
-const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
-  create: {
+export const SHOWCASE_STEPS = [
+  {
+    id: "create",
     title: "Drop an event on the board",
     body: "Press C to start a new event.",
     keycaps: KEYMAP.createEvent.keycaps,
+    level: 1,
   },
-  pageJump: {
+  {
+    id: "pageJump",
     title: "See where to go: reveal the jump keys",
     body: [
       "Hold ",
@@ -58,8 +42,10 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " to see jump keys, then press 1 or 2.",
     ],
     keycaps: ["Mod", "1-2"],
+    level: 2,
   },
-  eventJump: {
+  {
+    id: "eventJump",
     title: "Pick a target",
     body: [
       "Tap ",
@@ -67,8 +53,10 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " to show event keys, then press a letter to land on one.",
     ],
     keycaps: KEYMAP.eventJump.keycaps,
+    level: 3,
   },
-  nudge: {
+  {
+    id: "nudge",
     title: "Nudge it into place",
     body: [
       "Hold ",
@@ -76,8 +64,10 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " and press an arrow to move the focused event.",
     ],
     keycaps: KEYMAP.moveEvent.keycaps,
+    level: 4,
   },
-  editTitle: {
+  {
+    id: "editTitle",
     title: "Grab the title",
     body: [
       "With an event focused, press ",
@@ -87,8 +77,10 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " to target the title.",
     ],
     keycaps: KEYMAP.editTitle.keycaps,
+    level: 5,
   },
-  palette: {
+  {
+    id: "palette",
     title: "When you forget, ask the palette",
     body: [
       "Press ",
@@ -96,12 +88,15 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " to open the command palette. Enter runs the highlighted command.",
     ],
     keycaps: KEYMAP.commandPalette.keycaps,
+    level: 6,
   },
-  notifications: {
+  {
+    id: "notifications",
     title: "Never miss a meeting",
     body: "Compass can nudge you five minutes before a timed event starts, even when this tab is in the background. You can turn it off any time from the command palette.",
   },
-  graduation: {
+  {
+    id: "graduation",
     title: "That's the practice — you've got this.",
     body: [
       "You're done practicing. Those keys work the same on your real calendar. Whenever you wonder where to go, hold ",
@@ -109,16 +104,18 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
       " to see where you can jump.",
     ],
   },
-};
+] as const satisfies readonly ShowcaseStep[];
+
+export type ShowcaseStepId = (typeof SHOWCASE_STEPS)[number]["id"];
+
+export const SHOWCASE_STEP_IDS = SHOWCASE_STEPS.map((step) => step.id);
+
+export const SHOWCASE_LEVEL_IDS = SHOWCASE_STEPS.filter(
+  (step) => "level" in step,
+).map((step) => step.id);
 
 export function getShowcaseStep(id: ShowcaseStepId): ShowcaseStep {
-  return { id, ...STEP_CONTENT[id] };
-}
-
-export function getLevelLabel(id: ShowcaseStepId): string | null {
-  if (id === "graduation" || id === "notifications") return null;
-  const number = SHOWCASE_LEVEL_IDS.indexOf(id) + 1;
-  return `Level ${number}/${SHOWCASE_LEVEL_IDS.length}`;
+  return SHOWCASE_STEPS.find((step) => step.id === id) ?? SHOWCASE_STEPS[0];
 }
 
 /**

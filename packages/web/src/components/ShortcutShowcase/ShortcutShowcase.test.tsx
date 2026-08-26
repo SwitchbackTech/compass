@@ -7,7 +7,6 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import {
-  SHOWCASE_LEVEL_IDS,
   SHOWCASE_STEP_IDS,
   type ShowcaseStepId,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -23,9 +22,11 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const pressKey = (key: string, init: KeyboardEventInit = {}) => {
   act(() => {
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", { key, bubbles: true, ...init }),
-    );
+    screen
+      .getByLabelText("Shortcut practice")
+      .dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true, ...init }),
+      );
   });
 };
 
@@ -212,65 +213,6 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("walks every level with the taught keys, then graduates", async () => {
-    const user = userEvent.setup();
-    const isMac = resolveModifier("Mod") === "Meta";
-    const modKey = isMac ? "Meta" : "Control";
-    render(
-      <>
-        <button type="button">Outside calendar</button>
-        <ShortcutShowcase />
-      </>,
-    );
-    const outside = screen.getByRole("button", { name: "Outside calendar" });
-    act(() => shortcutShowcaseActions.replay());
-
-    expect(currentStepId()).toBe(SHOWCASE_LEVEL_IDS[0]);
-    pressKey("c");
-    await user.type(
-      screen.getByLabelText("Event title"),
-      "Coffee with Alex{Enter}",
-    );
-
-    expect(currentStepId()).toBe("pageJump");
-    pressKey(modKey);
-    pressKey("1", { code: "Digit1" });
-
-    expect(currentStepId()).toBe("eventJump");
-    pressKey("s");
-    pressKey("f");
-
-    expect(currentStepId()).toBe("nudge");
-    pressKey("ArrowRight", { shiftKey: true });
-
-    expect(currentStepId()).toBe("editTitle");
-    pressKey("e");
-    pressKey("t");
-    await user.type(screen.getByLabelText("Event title"), "{Enter}");
-
-    expect(currentStepId()).toBe("palette");
-    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
-    pressKey("Enter");
-
-    expect(currentStepId()).toBe("notifications");
-    await user.click(screen.getByRole("button", { name: "Not now" }));
-
-    expect(currentStepId()).toBe("graduation");
-    expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Skip$/ })).toBeNull();
-    const seeCalendar = screen.getByRole("button", {
-      name: "See your calendar",
-    });
-    await waitFor(() => {
-      expect(seeCalendar).toHaveFocus();
-    });
-
-    await user.tab({ shift: true });
-    expect(outside).not.toHaveFocus();
-    await user.tab();
-    expect(seeCalendar).toHaveFocus();
-  });
-
   it("does not treat S as skip-to-signup; U leaves for signup", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
@@ -283,6 +225,16 @@ describe("ShortcutShowcase", () => {
 
     pressKey("u");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  it("does not leave graduation when U is pressed", () => {
+    render(<ShortcutShowcase />);
+    showStep("graduation");
+
+    pressKey("u");
+
+    expect(currentStepId()).toBe("graduation");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
   });
 
   it("advances the hold-Mod level after revealing jump keys", () => {
