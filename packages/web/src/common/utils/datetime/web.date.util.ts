@@ -183,14 +183,13 @@ export const parseUserTime = (
 };
 
 export const filterTimeOption = (
-  option: { label: string; value: string; data?: { value?: string } },
+  option: { label: string; value: string },
   input: string,
   currentValue?: string,
 ): boolean => {
   const parsed = parseUserTime(input, currentValue);
   if (parsed) {
-    const optionValue = option.data?.value ?? option.value;
-    return optionValue === parsed.value || option.label === parsed.label;
+    return option.value === parsed.value || option.label === parsed.label;
   }
 
   const needle = input.trim().toLowerCase();
