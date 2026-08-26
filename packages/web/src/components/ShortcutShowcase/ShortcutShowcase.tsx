@@ -34,7 +34,7 @@ import {
 } from "@web/components/ShortcutShowcase/practice.state";
 import {
   getCreateLessonPhase,
-  getMissionLabel,
+  getLevelLabel,
   getShowcaseStep,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
@@ -48,6 +48,7 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { getNotificationPort } from "@web/notifications/notification.port";
 import { notificationActions } from "@web/notifications/notification.store";
+import { settingsActions } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import {
   isBareLetterKey,
@@ -82,7 +83,7 @@ const arrowDirection = (key: string): PracticeNudgeDirection | null => {
  * behavior is a deliberately simplified reimplementation against ephemeral
  * practice state, so nothing here touches storage or the real grid stores.
  *
- * Missions teach create, hold-Mod jumps, event jump, nudge, the E-then-T
+ * Levels teach create, hold-Mod jumps, event jump, nudge, the E-then-T
  * edit sequence, and Cmd+K; graduation hands off to a prompt on the real
  * calendar. Skip is always offered.
  */
@@ -173,11 +174,18 @@ const ShowcaseTakeover: FC = () => {
   }, [seatFocus, stepId, practice.editor, paletteOpen]);
 
   useEffect(() => {
+    const claim = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       const store = useShortcutShowcaseStore.getState();
       if (!store.isActive) return;
       if (closingRef.current) {
         event.stopPropagation();
+        event.stopImmediatePropagation();
         return;
       }
       const currentStepId = stepIdAt(store.stepIndex);
@@ -199,8 +207,8 @@ const ShowcaseTakeover: FC = () => {
       }
 
       if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
+        claim(event);
+        settingsActions.closeCmdPalette();
         if (paletteOpenRef.current) {
           setPaletteOpen(false);
           return;
@@ -216,28 +224,26 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
+      const isModChord = event.metaKey || event.ctrlKey;
+      if (isModChord && keyboardKey(event).toLowerCase() === "k") {
+        claim(event);
+        if (currentStepId === "palette" && !paletteOpenRef.current) {
+          setPaletteOpen(true);
+        }
+        return;
+      }
+
       if (paletteOpenRef.current) {
         if (event.key === "Enter") {
-          event.preventDefault();
+          claim(event);
           setPaletteOpen(false);
           if (currentStepId === "palette") advance();
         }
         return;
       }
 
-      const isModChord = event.metaKey || event.ctrlKey;
-      if (
-        currentStepId === "palette" &&
-        isModChord &&
-        keyboardKey(event).toLowerCase() === "k"
-      ) {
-        event.preventDefault();
-        setPaletteOpen(true);
-        return;
-      }
-
       if (currentStepId === "graduation" && event.key === "Enter") {
-        event.preventDefault();
+        claim(event);
         graduateRef.current();
         return;
       }
@@ -246,7 +252,7 @@ const ShowcaseTakeover: FC = () => {
       if (currentStepId === "notifications") {
         // Unlike graduation, this step renders several buttons, so Enter is
         // the step's shortcut only when no button owns it - otherwise
-        // "Not now" and "Skip to calendar" would raise a permission prompt
+        // "Not now" and "Skip" would raise a permission prompt
         // instead of doing what they say. Auto-repeat is ignored too: the
         // Enter that committed a practice title must not carry into the
         // offer once the input unmounts.
@@ -258,12 +264,12 @@ const ShowcaseTakeover: FC = () => {
           !focusedButton &&
           sideActionsRef.current.notificationsSupported
         ) {
-          event.preventDefault();
+          claim(event);
           sideActionsRef.current.enableNotifications();
           return;
         }
         if (isBareLetterKey(event, "n")) {
-          event.preventDefault();
+          claim(event);
           shortcutShowcaseActions.advance();
           return;
         }
@@ -272,7 +278,7 @@ const ShowcaseTakeover: FC = () => {
       if (currentStepId === "pageJump") {
         const digit = /^Digit([12])$/.exec(event.code);
         if (digit && hasRevealedJumpsRef.current) {
-          event.preventDefault();
+          claim(event);
           advance();
           return;
         }
@@ -281,7 +287,7 @@ const ShowcaseTakeover: FC = () => {
       if (currentStepId === "nudge") {
         const direction = arrowDirection(event.key);
         if (event.shiftKey && direction) {
-          event.preventDefault();
+          claim(event);
           const before = practiceRef.current;
           const next = apply((state) => nudgeFocused(state, direction));
           if (next !== before) advance();
@@ -295,14 +301,14 @@ const ShowcaseTakeover: FC = () => {
         currentStepId !== "notifications" &&
         isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())
       ) {
-        event.preventDefault();
+        claim(event);
         apply(createDraft);
         return;
       }
 
       if (currentStepId === "eventJump") {
         if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
-          event.preventDefault();
+          claim(event);
           apply(toggleJumpHints);
           return;
         }
@@ -311,7 +317,7 @@ const ShowcaseTakeover: FC = () => {
           const before = practiceRef.current;
           const next = apply((state) => jumpToEvent(state, jumpKey));
           if (next !== before) {
-            event.preventDefault();
+            claim(event);
             advance();
             return;
           }
@@ -320,7 +326,7 @@ const ShowcaseTakeover: FC = () => {
 
       if (currentStepId === "editTitle") {
         if (isBareLetterKey(event, KEYMAP.editTitle.sequence.leader)) {
-          event.preventDefault();
+          claim(event);
           apply(armEdit);
           return;
         }
@@ -328,7 +334,7 @@ const ShowcaseTakeover: FC = () => {
           practiceRef.current.editArmed &&
           isBareLetterKey(event, KEYMAP.editTitle.sequence.second)
         ) {
-          event.preventDefault();
+          claim(event);
           apply(openTitleFromEdit);
           return;
         }
@@ -338,26 +344,15 @@ const ShowcaseTakeover: FC = () => {
       }
 
       if (currentStepId !== "graduation") {
-        // D and U are practice affordances: the notifications offer has no
-        // board action to perform, and no lesson to skip past. X still leaves.
-        if (currentStepId !== "notifications") {
-          if (isBareLetterKey(event, "d")) {
-            event.preventDefault();
-            sideActionsRef.current.doItForMe();
-            return;
-          }
-          if (
-            isBareLetterKey(event, "u") &&
-            !sideActionsRef.current.authenticated
-          ) {
-            event.preventDefault();
-            sideActionsRef.current.skipToSignup();
-            return;
-          }
-        }
-        if (isBareLetterKey(event, "x")) {
-          event.preventDefault();
-          shortcutShowcaseActions.skip();
+        // U is a practice affordance: the notifications offer has no
+        // board action to perform, and no lesson to skip past. Esc leaves.
+        if (
+          currentStepId !== "notifications" &&
+          isBareLetterKey(event, "u") &&
+          !sideActionsRef.current.authenticated
+        ) {
+          claim(event);
+          sideActionsRef.current.skipToSignup();
         }
       }
     };
@@ -376,32 +371,6 @@ const ShowcaseTakeover: FC = () => {
       window.removeEventListener("blur", clearMod);
     };
   }, [apply]);
-
-  const doItForMe = () => {
-    track("shortcut_showcase_assist_used", { step: stepId });
-    if (stepId === "create") {
-      apply(createDraft);
-      apply((state) => commitTitle(state, "Coffee with Alex"));
-    } else if (stepId === "eventJump") {
-      apply((state) => jumpToEvent({ ...state, jumpHintsVisible: true }, "f"));
-    } else if (stepId === "nudge") {
-      apply((state) => nudgeFocused(state, "right"));
-    } else if (stepId === "editTitle") {
-      apply((state) => {
-        const opened = openTitleFromEdit({
-          ...ensureFocused(state),
-          editArmed: true,
-        });
-        const focused = opened.events.find(
-          (event) => event.id === opened.focusedId,
-        );
-        return commitTitle(opened, focused?.title ?? "");
-      });
-    } else if (stepId === "palette") {
-      setPaletteOpen(false);
-    }
-    advance();
-  };
 
   const runPracticeCommand = () => {
     apply((state) => ({
@@ -436,14 +405,12 @@ const ShowcaseTakeover: FC = () => {
   };
 
   const sideActionsRef = useRef({
-    doItForMe,
     skipToSignup,
     authenticated,
     enableNotifications,
     notificationsSupported,
   });
   sideActionsRef.current = {
-    doItForMe,
     skipToSignup,
     authenticated,
     enableNotifications,
@@ -458,7 +425,7 @@ const ShowcaseTakeover: FC = () => {
         }
       : getShowcaseStep(stepId);
 
-  const missionLabel = getMissionLabel(stepId);
+  const levelLabel = getLevelLabel(stepId);
   const showPageJumpHints = isModHeld && stepId === "pageJump";
 
   return (
@@ -474,16 +441,10 @@ const ShowcaseTakeover: FC = () => {
       <div
         className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
       >
-        <aside
-          className="relative flex w-80 shrink-0 flex-col justify-center gap-4"
-          data-practice-jump="lesson"
-        >
-          {showPageJumpHints && (
-            <ShortcutHint className="absolute top-0 right-0">1</ShortcutHint>
-          )}
-          {missionLabel && (
+        <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
+          {levelLabel && (
             <p className="font-medium text-accent text-xs uppercase tracking-wide">
-              {missionLabel}
+              {levelLabel}
             </p>
           )}
           <h2 className="font-semibold text-lg text-text">{step.title}</h2>
@@ -504,7 +465,7 @@ const ShowcaseTakeover: FC = () => {
                   disabled={closing}
                   onClick={graduate}
                 >
-                  Enter Compass
+                  See your calendar
                 </button>
                 <ShortcutHint className="shrink-0">Enter</ShortcutHint>
               </div>
@@ -535,26 +496,16 @@ const ShowcaseTakeover: FC = () => {
                 </button>
               </>
             ) : (
-              <>
+              !authenticated && (
                 <button
                   type="button"
-                  className={PRIMARY_BUTTON_CLASS}
-                  onClick={doItForMe}
+                  className={SECONDARY_BUTTON_CLASS}
+                  onClick={skipToSignup}
                 >
-                  Do it for me
-                  <ShortcutHint className="shrink-0">D</ShortcutHint>
+                  Skip to sign up
+                  <ShortcutHint className="shrink-0">U</ShortcutHint>
                 </button>
-                {!authenticated && (
-                  <button
-                    type="button"
-                    className={SECONDARY_BUTTON_CLASS}
-                    onClick={skipToSignup}
-                  >
-                    Skip to sign up
-                    <ShortcutHint className="shrink-0">U</ShortcutHint>
-                  </button>
-                )}
-              </>
+              )
             )}
             {stepId !== "graduation" && (
               <button
@@ -562,22 +513,18 @@ const ShowcaseTakeover: FC = () => {
                 className={TEXT_BUTTON_CLASS}
                 onClick={() => shortcutShowcaseActions.skip()}
               >
-                Skip to calendar
-                <ShortcutHint className="shrink-0">X</ShortcutHint>
+                Skip
+                <ShortcutHint className="shrink-0">Esc</ShortcutHint>
               </button>
             )}
           </div>
         </aside>
         <div className="relative min-w-0 flex-1 rounded-xl border border-border bg-surface p-4 shadow-xl">
-          {showPageJumpHints && (
-            <ShortcutHint className="absolute top-3 right-3 z-10">
-              2
-            </ShortcutHint>
-          )}
           {paletteOpen && <PracticePalette onRun={runPracticeCommand} />}
           <PracticeCalendar
             state={practice}
             onTitleCommit={handleTitleCommit}
+            showPageJumpHints={showPageJumpHints}
           />
         </div>
       </div>

@@ -20,7 +20,7 @@ Use this guide to validate:
 - opening and using the command palette (Cmd+K), including undo/redo rows
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
-- focusing events with arrow keys (chronological in Day, spatial in Week)
+- focusing events with arrow keys (chronological in Day, spatial in Week), including the first arrow when nothing is focused (nearest to now)
 - toggling event-jump chips (`S`); the mouse is permanently inert (Compass is keyboard-only)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
@@ -221,7 +221,7 @@ Pressing Delete while an event is focused in the Day or Week grid deletes it —
 ### Steps
 
 1. Navigate to `/week`.
-2. Focus an event in the grid (click it or press `U` then ArrowUp/ArrowDown).
+2. Focus an event in the grid (click it, press `U`, or press any Arrow key when nothing is focused).
 3. Press Delete.
 4. Navigate to `/day` and repeat with a focused event.
 
@@ -406,7 +406,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 9. No shortcuts fire inside a focused text input except Cmd+K.
 10. Shift+ArrowLeft/Right move a focused event by one day in both Day and Week view.
 11. Arrow keys reposition an open draft in both Day and Week view.
-12. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
+12. With no event focused and no particular control focused (document body), any Arrow key focuses the timed event nearest now in the current Day/Week view (in-progress, else next upcoming, else most recently ended; today preferred in Week; all-day only if no timed events). Further arrows then follow the existing rules. `U` still focuses the first DOM-order event. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips.

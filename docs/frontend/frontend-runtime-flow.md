@@ -82,13 +82,13 @@ Welcome → signup → first-event contract:
 - the Shortcut Showcase therefore has three entries: welcome dismiss,
   post-signup, and the command palette's "Practice shortcuts".
   `showcase.steps.ts` holds the order; taught keycaps come from
-  `packages/web/src/shortcuts/keymap.ts`. Six skippable missions teach create
+  `packages/web/src/shortcuts/keymap.ts`. Six skippable levels teach create
   (C then title then Enter), hold-Mod page jumps, `S` event jump, Shift+arrow
   nudge, `E` then `T` to target a title, and Cmd+K on a practice-only
   palette, then graduation hands off to the real calendar
-- every showcase step offers **Skip to calendar** (`X`), and **Skip to sign
-  up** (`U`) for anyone not already signed in; Escape does the former. There
-  is no confirm in the way
+- every showcase step offers **Skip** (`Esc`), and **Skip to sign
+  up** (`U`) for anyone not already signed in. Escape closes the practice
+  palette or title editor first, then leaves. There is no confirm in the way
 - graduating the showcase hands off directly to `FirstEventPrompt`, a
   non-blocking card on the real calendar (not an app-lock modal) that asks the
   user to press `C` on a real event. It is shown once the showcase has been
