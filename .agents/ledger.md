@@ -15,3 +15,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2878 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2878 | bun run verify: web, type-check, lint, knip passed; bun test:a11y 7 passed | 2026-08-26T03:00:00Z | 0 | none |
 | 2879 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2879 | bun run verify PASS; review: no confirmed findings | 2026-08-26T06:00:00Z | 0 | none |
+| 2885 | high | Manager | escalated | b8b3b94 | availability 18/18 and type-check pass; required test:web red in unchanged AuthModal tests after 2 retries | 2026-08-27T12:00:00Z | 2 | human |
