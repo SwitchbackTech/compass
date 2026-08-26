@@ -44,8 +44,17 @@ test("the welcome-started practice runs create then D through graduation", async
   await expect(showcase).toContainText("Practice Event");
   await expect(showcase).toContainText("Mission 2 of 6");
 
-  for (let i = 0; i < 5; i += 1) {
-    await showcase.getByRole("button", { name: "Do it for me" }).click();
+  // Compass blocks trusted pointer clicks; D is the assist binding.
+  const remainingMissions = [
+    "Hold fast — reveal the jump keys",
+    "Pick a target",
+    "Nudge it into place",
+    "Grab the title",
+    "When you forget, ask the palette",
+  ];
+  for (const title of remainingMissions) {
+    await expect(showcase).toContainText(title);
+    await page.keyboard.press("d");
   }
 
   await expect(showcase).toContainText("young cap'n");

@@ -22,12 +22,6 @@ export type PracticeEventBlock = {
 
 export type PracticeNudgeDirection = "up" | "down" | "left" | "right";
 
-export type PracticeJumpTarget = {
-  digit: string;
-  id: "lesson" | "calendar";
-  label: string;
-};
-
 export type PracticeState = {
   events: PracticeEventBlock[];
   focusedId: string | null;
@@ -43,11 +37,6 @@ export const SHOWCASE_GRID_END_HOUR = 18;
 export const SHOWCASE_DAY_COUNT = 3;
 export const PRACTICE_NUDGE_MIN = 15;
 export const PRACTICE_TEAM_SYNC_ID = "practice-team-sync";
-
-export const PRACTICE_JUMP_TARGETS: readonly PracticeJumpTarget[] = [
-  { digit: "1", id: "lesson", label: "Lesson" },
-  { digit: "2", id: "calendar", label: "Calendar" },
-];
 
 const PRACTICE_DRAFT_ID = "practice-draft";
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
