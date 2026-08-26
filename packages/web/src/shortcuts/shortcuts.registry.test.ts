@@ -43,6 +43,56 @@ describe("shortcuts.registry", () => {
       expect(navigateIds).not.toContain("nav-shift-right");
     });
 
+    it("hides the availability section until the panel is open", () => {
+      const sections = getShortcutsBySection(
+        filterShortcutsByContext({
+          view: "week",
+          isViewingCurrentPeriod: true,
+        }),
+      );
+
+      expect(sections.map((section) => section.id)).not.toContain(
+        "availability",
+      );
+    });
+
+    it("lists the availability keys while the panel is open", () => {
+      const [availability] = getShortcutsBySection(
+        filterShortcutsByContext({
+          view: "week",
+          isViewingCurrentPeriod: true,
+          isAvailabilityOpen: true,
+        }),
+      );
+
+      expect(availability?.id).toBe("availability");
+      expect(availability?.title).toBe("Share availability");
+      const byId = Object.fromEntries(
+        availability!.shortcuts.map((shortcut) => [shortcut.id, shortcut]),
+      );
+      expect(byId["availability-move-time"]?.keys).toEqual([
+        "ArrowUp",
+        "ArrowDown",
+      ]);
+      expect(byId["availability-accept"]?.keys).toEqual(["Enter"]);
+      expect(byId["availability-add"]?.keys).toEqual(["a"]);
+      expect(byId["availability-remove"]?.keys).toEqual(["Backspace"]);
+      expect(byId["availability-zone-remove"]?.keys).toEqual(["Shift", "Z"]);
+      expect(byId["availability-copy"]?.keys).toEqual(["Mod", "C"]);
+    });
+
+    it("never lists availability keys in life view, which has no grid", () => {
+      const ids = getShortcutsBySection(
+        filterShortcutsByContext({
+          view: "life",
+          isViewingCurrentPeriod: true,
+          isAvailabilityOpen: true,
+        }),
+      ).map((section) => section.id);
+
+      expect(ids).not.toContain("availability");
+    });
+
     it("excludes form-open shortcuts when form is not open", () => {
       const shortcuts = filterShortcutsByContext({
         view: "day",

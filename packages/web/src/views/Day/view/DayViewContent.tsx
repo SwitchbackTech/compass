@@ -1,5 +1,9 @@
 import { memo, useCallback, useMemo, useRef } from "react";
-import { availabilityActions } from "@web/availability/availability.store";
+import {
+  availabilityActions,
+  selectAvailabilityOpen,
+  useAvailabilityStore,
+} from "@web/availability/availability.store";
 import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
 import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
 import { ID_MAIN } from "@web/common/constants/web.constants";
@@ -44,6 +48,7 @@ export const DayViewContent = memo(() => {
   // even when the user keeps it collapsed; their persisted preference is
   // untouched and the panel collapses again when the form closes.
   const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
+  const isAvailabilityOpen = useAvailabilityStore(selectAvailabilityOpen);
   const mainRef = useRef<HTMLDivElement | null>(null);
 
   const dateInView = useDateInView();
@@ -74,8 +79,9 @@ export const DayViewContent = memo(() => {
         view: "day",
         isViewingCurrentPeriod: isViewingToday,
         isFormOpen: isEventDetailsOpen,
+        isAvailabilityOpen,
       }),
-    [isEventDetailsOpen, isViewingToday],
+    [isAvailabilityOpen, isEventDetailsOpen, isViewingToday],
   );
 
   const handleGoToToday = useCallback(() => {
