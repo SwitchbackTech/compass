@@ -2,7 +2,7 @@ import { type FC } from "react";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 /**
- * Sandbox-only command palette for the showcase palette mission. The real
+ * Sandbox-only command palette for the showcase palette level. The real
  * palette stays locked behind the takeover's app-lock; this overlay teaches
  * Mod+K without navigating the live app.
  */
