@@ -5,6 +5,7 @@ import dayjs from "@core/util/date/dayjs";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
+  filterTimeOption,
   getCalendarHeadingLabel,
   getColorsByHour,
   getHourLabels,
@@ -439,6 +440,12 @@ describe("parseUserTime", () => {
     expect(result?.label).toBe("10:33 PM");
   });
 
+  it("parses a bare hour with a single-letter meridiem", () => {
+    expect(parseUserTime("8p")?.value).toBe("8:00 PM");
+    expect(parseUserTime("8a")?.value).toBe("8:00 AM");
+    expect(parseUserTime("8pm")?.label).toBe("8 PM");
+  });
+
   it("parses 24-hour format", () => {
     const result = parseUserTime("22:33");
     expect(result?.value).toBe("10:33 PM");
@@ -518,6 +525,35 @@ describe("parseUserTime", () => {
   it("correctly normalizes 10:00 to label '10 AM' (strips :00)", () => {
     const result = parseUserTime("10:00");
     expect(result?.label).toBe("10 AM");
+  });
+});
+
+describe("filterTimeOption", () => {
+  const twoAm = { label: "2 AM", value: "2:00 AM" };
+  const twelveAm = { label: "12 AM", value: "12:00 AM" };
+  const eightPm = { label: "8 PM", value: "8:00 PM" };
+  const twelveFortyFiveAm = { label: "12:45 AM", value: "12:45 AM" };
+  const twelveFortyFivePm = { label: "12:45 PM", value: "12:45 PM" };
+
+  it("keeps only the parsed time when input parses", () => {
+    expect(filterTimeOption(twoAm, "2", "9:45 AM")).toBe(true);
+    expect(filterTimeOption(twelveAm, "2", "9:45 AM")).toBe(false);
+  });
+
+  it("matches glued meridiem like 8p to 8 PM", () => {
+    expect(filterTimeOption(eightPm, "8p", "1:00 PM")).toBe(true);
+    expect(filterTimeOption(twoAm, "8p", "1:00 PM")).toBe(false);
+  });
+
+  it("falls back to substring when input does not parse", () => {
+    expect(filterTimeOption(twelveFortyFiveAm, "12:4")).toBe(true);
+    expect(filterTimeOption(twelveFortyFivePm, "12:4")).toBe(true);
+    expect(filterTimeOption(twoAm, "12:4")).toBe(false);
+  });
+
+  it("shows every option when the filter is empty", () => {
+    expect(filterTimeOption(twoAm, "")).toBe(true);
+    expect(filterTimeOption(twelveAm, "")).toBe(true);
   });
 });
 
