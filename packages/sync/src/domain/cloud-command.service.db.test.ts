@@ -646,6 +646,235 @@ describe("submitCloudCommand provider dispatch", () => {
     ).toBe(true);
   });
 
+  // --- rsvp routing (WP-07) --------------------------------------------------
+
+  const rsvpFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    scope = "all",
+    recurrenceId: string | null = null,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "rsvp",
+      responseStatus: "declined",
+      scope,
+      recurrenceId,
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  const selfConnection = {
+    findById: async () => ({ account: { email: "self@example.com" } }),
+  };
+
+  it("routes a provider-linked rsvp to the provider executor when active", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      content: {
+        title: "Existing",
+        description: "",
+        location: null,
+        organizer: { email: "organizer@example.com", displayName: null },
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+        conference: null,
+      },
+    });
+    const writer = new FakeWriter();
+    writer.fetched = {
+      ...(writer.fetched as ProviderEvent),
+      content: {
+        ...(writer.fetched as ProviderEvent).content,
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+      },
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
+    expect(writer.patchCalls[0].attendees).toEqual([
+      {
+        email: "self@example.com",
+        displayName: null,
+        responseStatus: "declined",
+      },
+    ]);
+    const stored = await events.findById(tenantId, principalId, eventId);
+    expect(stored?.content.attendees).toEqual([
+      {
+        email: "self@example.com",
+        displayName: null,
+        responseStatus: "declined",
+      },
+    ]);
+  });
+
+  it("fails an rsvp against a cloud-only event typed, with no provider call", async () => {
+    // Cloud-only events with attendees are not expected in v1 — there is no
+    // provider invitation to answer and Compass sends no email — so the
+    // command fails typed (unsupportedCapability) instead of being stranded
+    // pending or guessed at locally.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      content: {
+        title: "Existing",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "needsAction",
+          },
+        ],
+        conference: null,
+      },
+    });
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
+    // No attendee JSON on the failure surface the route logs from.
+    expect(findSafetyCanaryHit(command.outcome)).toBeNull();
+  });
+
+  it("fails an rsvp with scope thisAndFollowing typed", async () => {
+    // An RSVP answers "this event" or "all events"; from-here-on has no v1
+    // semantics and the browser cannot send it.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(
+        tenantId,
+        principalId,
+        eventId,
+        "thisAndFollowing",
+        "2026-07-21T15:00:00.000Z",
+      ),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
+  it("fails an rsvp against a missing event as a version conflict", async () => {
+    // The target vanished since the browser last saw it — an honest
+    // conflict, mirroring the update path.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, objectId() as EventId),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "versionConflict",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
   const updateSeriesFor = (
     tenantId: TenantId,
     principalId: PrincipalId,

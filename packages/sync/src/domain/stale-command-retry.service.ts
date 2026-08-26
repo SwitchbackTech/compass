@@ -32,6 +32,7 @@ const RETRYABLE_KINDS: readonly SyncCommandInput["kind"][] = [
   "create",
   "update",
   "delete",
+  "rsvp",
 ];
 
 // The self-heal sweep for commands stuck nonterminal (pending/applying/

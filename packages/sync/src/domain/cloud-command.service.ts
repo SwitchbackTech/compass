@@ -21,6 +21,7 @@ import {
   executeProviderDelete,
   executeProviderOccurrenceDelete,
   executeProviderOccurrenceUpdate,
+  executeProviderRsvp,
   executeProviderSeriesFollowingDelete,
   executeProviderSeriesFollowingUpdate,
   executeProviderSeriesUpdate,
@@ -158,8 +159,12 @@ export async function submitCloudCommand(
     changed: inserted || final.outcome.state !== initialOutcomeState,
   });
 
-  // update/delete apply to an existing event; move is not handled yet.
-  if (command.input.kind === "update" || command.input.kind === "delete") {
+  // update/delete/rsvp apply to an existing event; move is not handled yet.
+  if (
+    command.input.kind === "update" ||
+    command.input.kind === "delete" ||
+    command.input.kind === "rsvp"
+  ) {
     return finish(await applyCloudMutation(deps, command, now));
   }
   // A "move" command has no executor anywhere (no local apply, no provider
@@ -182,8 +187,8 @@ export async function submitCloudCommand(
   return finish(await applyCloudCreateOrProvider(deps, command, now));
 }
 
-// Re-run an already-submitted, still-nonterminal create/update/delete command
-// through the same routing the original request used (dedupe by
+// Re-run an already-submitted, still-nonterminal create/update/delete/rsvp
+// command through the same routing the original request used (dedupe by
 // idempotencyKey does not apply here — the command already exists). For the
 // stale-command retry sweep: a transient provider failure mid-execute leaves
 // the command exactly as it was (see provider-command.service.ts's per-kind
@@ -279,11 +284,12 @@ async function applyCloudCreate(
   return confirmCloud(deps, command);
 }
 
-// Apply a cloud-only update or delete to an existing event. Only single,
-// unlinked events are handled here: a provider-linked event needs the provider
-// mutation path, and a recurring series needs scope handling — both land in
-// later slices, so those commands are left pending. Delete is idempotent (an
-// already-absent event confirms), so a retry after a crash converges.
+// Apply a cloud-only update, delete, or rsvp to an existing event. Only
+// single, unlinked events are handled here: a provider-linked event needs the
+// provider mutation path, and a recurring series needs scope handling — both
+// land in later slices, so those commands are left pending. Delete is
+// idempotent (an already-absent event confirms), so a retry after a crash
+// converges.
 async function applyCloudMutation(
   deps: CloudCommandDeps,
   command: CommandRecord,
@@ -294,6 +300,43 @@ async function applyCloudMutation(
     command.principalId,
     command.eventId,
   );
+
+  // rsvp: rewrite the caller's own attendee entry at the provider. Only a
+  // provider-linked event has a real invitation to answer in v1 — a
+  // cloud-only (unlinked/local) event's attendee list has no provider
+  // counterpart and Compass sends no email — so anything else is refused
+  // typed (unsupportedCapability), never left pending and never guessed at.
+  if (command.input.kind === "rsvp") {
+    // The target vanished since the browser last saw it — an honest
+    // conflict, mirroring the update path below.
+    if (!existing) return failCloud(deps, command, "versionConflict");
+    if (existing.connectionId === null) {
+      return failCloud(deps, command, "unsupportedCapability");
+    }
+    // A bare exception addressed directly by its own id: unreachable from
+    // the browser (see the matching update/delete comments below), but not
+    // a coherent state to strand pending either.
+    if (
+      existing.recurrence.kind !== "single" &&
+      existing.recurrence.kind !== "seriesMaster"
+    ) {
+      return failCloud(deps, command, "permanentProviderError");
+    }
+    // An RSVP answers "this event" (scope "this") or the whole series
+    // (scope "all"); "from here on" has no v1 semantics — the browser
+    // cannot send it — so a command carrying it is refused typed rather
+    // than silently widened to one of the real scopes.
+    if (command.input.scope === "thisAndFollowing") {
+      return failCloud(deps, command, "unsupportedCapability");
+    }
+    return dispatchProviderMutation(
+      deps,
+      command,
+      existing,
+      now,
+      executeProviderRsvp,
+    );
+  }
 
   if (command.input.kind === "delete") {
     // Absence is the desired end state, so a delete of an already-gone (or
