@@ -101,6 +101,11 @@ export function formatAvailabilityMessage({
     const key = dateKey(new Date(interval.start), sourceTimeZone);
     groups.set(key, [...(groups.get(key) ?? []), interval]);
   }
+  // The heading already names the zone. Repeating it on every bullet only
+  // earns its space when a bullet could mean something else: two zones per
+  // line, or a selection straddling a DST change so the abbreviation varies.
+  const labelEachBullet =
+    Boolean(recipientTimeZone) || sourceAbbreviations.size > 1;
   const lines = [`Do any of these times (${headingZone}) work for you?`, ""];
   for (const group of groups.values()) {
     const first = new Date(group[0].start);
@@ -114,7 +119,10 @@ export function formatAvailabilityMessage({
     for (const interval of group) {
       const start = new Date(interval.start);
       const end = new Date(interval.end);
-      const source = `${rangeLabel(start, end, sourceTimeZone, locale, hourCycle)} (${formatTimeZoneAbbreviation(sourceTimeZone, start)})`;
+      const range = rangeLabel(start, end, sourceTimeZone, locale, hourCycle);
+      const source = labelEachBullet
+        ? `${range} (${formatTimeZoneAbbreviation(sourceTimeZone, start)})`
+        : range;
       let bullet = `- ${source}`;
       if (recipientTimeZone) {
         const recipientDatePrefix =

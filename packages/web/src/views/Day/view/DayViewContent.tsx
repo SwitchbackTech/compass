@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, useRef } from "react";
-import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
 import { availabilityActions } from "@web/availability/availability.store";
 import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
 import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
@@ -143,9 +142,6 @@ export const DayViewContent = memo(() => {
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />
-          <AvailabilityGridOverlay
-            visibleDates={[dateInView.format("YYYY-MM-DD")]}
-          />
         </div>
       </div>
 

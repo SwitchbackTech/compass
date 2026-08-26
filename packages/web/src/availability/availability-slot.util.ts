@@ -107,10 +107,16 @@ function localParts(slot: AvailabilitySlot, timeZone: string) {
   };
 }
 
+/**
+ * How many times we offer by default. Three is enough for the recipient to
+ * have a real choice while keeping the accept-each-one flow to three Enters.
+ */
+export const DEFAULT_AVAILABILITY_SLOT_COUNT = 3;
+
 export function selectDefaultAvailabilitySlots(
   slots: readonly AvailabilitySlot[],
   timeZone: string,
-  limit = 4,
+  limit = DEFAULT_AVAILABILITY_SLOT_COUNT,
 ): AvailabilitySlot[] {
   const sorted = [...slots].sort((a, b) => {
     const left = localParts(a, timeZone);
@@ -161,6 +167,89 @@ export function selectDefaultAvailabilitySlots(
     if (selected.size < limit) fill(false);
   }
   return slots.map((slot) => ({ ...slot, selected: selected.has(slot.id) }));
+}
+
+/**
+ * Repositioning walks the candidate list rather than adding or subtracting
+ * minutes, so busy time is skipped for free: `generateAvailabilitySlots` has
+ * already removed anything that overlaps a real event, and candidates another
+ * pick already occupies are stepped over so two offers can never collide.
+ */
+export interface StepAvailabilityCandidateOptions {
+  slots: readonly AvailabilitySlot[];
+  fromId: string;
+  /** Candidate ids held by the other picks. */
+  taken?: readonly string[];
+  timeZone: string;
+  now?: number;
+}
+
+const isReachable = (
+  slot: AvailabilitySlot,
+  taken: ReadonlySet<string>,
+  now: number,
+) => !taken.has(slot.id) && Date.parse(slot.start) >= now;
+
+/**
+ * Next/previous free block in chronological order. Rolling off the end of a
+ * day lands on the next day's first block, which is what the flat list
+ * already encodes - no wrap at the ends, so repositioning cannot silently
+ * jump the offer across the whole range.
+ */
+export function stepAvailabilityCandidateByTime(
+  delta: -1 | 1,
+  {
+    slots,
+    fromId,
+    taken = [],
+    now = Date.now(),
+  }: StepAvailabilityCandidateOptions,
+): AvailabilitySlot | null {
+  const takenSet = new Set(taken);
+  const index = slots.findIndex(({ id }) => id === fromId);
+  if (index < 0) return null;
+  for (
+    let next = index + delta;
+    next >= 0 && next < slots.length;
+    next += delta
+  )
+    if (isReachable(slots[next]!, takenSet, now)) return slots[next]!;
+  return null;
+}
+
+/**
+ * Same local time on the previous/next day that has any free block, falling
+ * back to that day's closest block when the exact time is busy.
+ */
+export function stepAvailabilityCandidateByDay(
+  delta: -1 | 1,
+  {
+    slots,
+    fromId,
+    taken = [],
+    timeZone,
+    now = Date.now(),
+  }: StepAvailabilityCandidateOptions,
+): AvailabilitySlot | null {
+  const takenSet = new Set(taken);
+  const from = slots.find(({ id }) => id === fromId);
+  if (!from) return null;
+  const anchor = localParts(from, timeZone);
+  const reachable = slots.filter((slot) => isReachable(slot, takenSet, now));
+  const days = [
+    ...new Set(reachable.map((slot) => localParts(slot, timeZone).date)),
+  ].sort();
+  const targetDay = days[days.indexOf(anchor.date) + delta];
+  if (!targetDay) return null;
+  return (
+    reachable
+      .filter((slot) => localParts(slot, timeZone).date === targetDay)
+      .sort(
+        (a, b) =>
+          Math.abs(localParts(a, timeZone).minutes - anchor.minutes) -
+          Math.abs(localParts(b, timeZone).minutes - anchor.minutes),
+      )[0] ?? null
+  );
 }
 
 export function normalizeAvailabilitySlots(

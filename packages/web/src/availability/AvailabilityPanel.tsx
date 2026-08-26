@@ -3,20 +3,43 @@ import { useMemo, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { Btn } from "@web/components/Button/Button";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
 import {
   availabilityActions,
+  getAvailabilityPicks,
   useAvailabilityStore,
 } from "./availability.store";
+import {
+  AVAILABILITY_ACCEPT_HINT_PARTS,
+  AVAILABILITY_COUNT_HINT_PARTS,
+  AVAILABILITY_MOVE_HINT_PARTS,
+} from "./availability-hint.parts";
 import { formatAvailabilityMessage } from "./availability-message.util";
+import { COPY_AVAILABILITY_LABEL } from "./availability-slot.focus";
 
-const EMPTY_MESSAGE = "Select times on the calendar to build your message.";
+// Shown in Week and Day alike, so it must not name a period the user is not
+// looking at.
+const EMPTY_MESSAGE = "No free times left in view. Try a later date.";
+
+const openRecipientPicker = () =>
+  timezoneDialogActions.open(
+    undefined,
+    "availability-recipient",
+    availabilityActions.setRecipientZone,
+  );
 
 export function AvailabilityPanel() {
   const state = useAvailabilityStore();
   const previewRef = useRef<HTMLDivElement>(null);
-  const selected = state.slots.filter(
-    (slot) => slot.selected && new Date(slot.start).getTime() >= Date.now(),
+  const { pickIds, slots } = state;
+  const selected = useMemo(
+    () =>
+      getAvailabilityPicks({ pickIds, slots }).filter(
+        (slot) => new Date(slot.start).getTime() >= Date.now(),
+      ),
+    [pickIds, slots],
   );
   const message = useMemo(
     () =>
@@ -78,16 +101,7 @@ export function AvailabilityPanel() {
         </div>
         {state.status === "loading" ? <p>Checking your calendars…</p> : null}
         {state.status === "error" ? (
-          <div role="alert">
-            <p>Availability couldn’t be checked. Try again.</p>
-            <button
-              className="c-focus-ring underline"
-              onClick={() => window.dispatchEvent(new Event("focus"))}
-              type="button"
-            >
-              Retry
-            </button>
-          </div>
+          <p role="alert">Availability couldn’t be checked. Try again.</p>
         ) : null}
         <section
           aria-label="Availability message preview"
@@ -98,45 +112,59 @@ export function AvailabilityPanel() {
           {message || EMPTY_MESSAGE}
         </section>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-accent-secondary px-2 py-1">
+          <span className="rounded-full border border-border bg-surface-overlay px-2 py-1 text-text">
             {state.sourceZone}
           </span>
           {state.recipientZone ? (
-            <button
-              className="c-focus-ring rounded-full bg-accent-secondary px-2 py-1"
-              onClick={() => availabilityActions.setRecipientZone(null)}
-              type="button"
-            >
-              {state.recipientZone} ×
-            </button>
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-overlay px-2 py-1 text-text">
+              {state.recipientZone}
+              <Btn
+                aria-label="Remove recipient timezone"
+                className="h-4 w-4 text-text-muted"
+                onClick={() => availabilityActions.setRecipientZone(null)}
+              >
+                <XIcon aria-hidden size={12} />
+              </Btn>
+              <ShortcutKeys keys={["Shift", "Z"]} />
+            </span>
           ) : (
             <button
-              className="c-focus-ring text-text-muted underline"
-              onClick={() =>
-                timezoneDialogActions.open(
-                  undefined,
-                  "availability-recipient",
-                  availabilityActions.setRecipientZone,
-                )
-              }
+              className="c-focus-ring inline-flex items-center gap-1.5 rounded-full px-1 text-text-muted"
+              onClick={openRecipientPicker}
               type="button"
             >
-              Add recipient timezone (Z)
+              Add recipient timezone
+              <ShortcutKeys keys={["Z"]} />
             </button>
           )}
         </div>
-        <p className="text-text-muted text-xs">
-          Arrow keys move · Enter or Space toggles · drag to add
-        </p>
+        {/*
+          ShortcutTipParts nests its chips in an aria-hidden span and aligns
+          them to the text baseline, which reads as "off-centre" next to
+          lower-case prose. Laying that inner span out as a centred flex row
+          puts the keycap and its words on a shared centre line.
+        */}
+        <div className="flex flex-col gap-2 text-text-muted text-xs [&>span>span]:flex [&>span>span]:flex-wrap [&>span>span]:items-center [&>span>span]:gap-x-1">
+          <ShortcutTipParts parts={AVAILABILITY_MOVE_HINT_PARTS} />
+          <ShortcutTipParts parts={AVAILABILITY_ACCEPT_HINT_PARTS} />
+          <ShortcutTipParts parts={AVAILABILITY_COUNT_HINT_PARTS} />
+        </div>
       </div>
       <div className="sticky bottom-0 border-border border-t bg-surface-panel p-4">
         <Btn
-          aria-label="Copy availability to clipboard"
-          className="w-full bg-accent-primary px-3 py-2 font-medium text-background text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={COPY_AVAILABILITY_LABEL}
+          className="w-full gap-2 rounded-sm bg-accent px-3 py-2 font-medium text-on-accent text-sm hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!message || state.status !== "ready"}
           onClick={() => void copy()}
         >
-          {message ? "Copy to clipboard  ·  Mod C" : "Select a time to copy"}
+          {message ? (
+            <>
+              Copy to clipboard
+              <ShortcutKeys keys={["Mod", "C"]} />
+            </>
+          ) : (
+            "Nothing to copy"
+          )}
         </Btn>
       </div>
     </section>

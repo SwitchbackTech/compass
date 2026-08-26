@@ -1,14 +1,7 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getTimeTravelZone } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
-import { AvailabilityGridOverlay } from "./AvailabilityGridOverlay";
 import { AvailabilityPanel } from "./AvailabilityPanel";
 import {
   availabilityActions,
@@ -110,24 +103,5 @@ describe("AvailabilityPanel", () => {
     act(() => useTimezoneDialogStore.getState().onSelect?.("Europe/London"));
     expect(useAvailabilityStore.getState().recipientZone).toBe("Europe/London");
     expect(getTimeTravelZone()).toBeNull();
-  });
-});
-
-describe("AvailabilityGridOverlay", () => {
-  it("toggles a cell and pointer-drags across adjacent free cells", () => {
-    availabilityActions.open([slot(9), slot(10), slot(11)]);
-    availabilityActions.setStatus("ready");
-    render(
-      <AvailabilityGridOverlay hourHeight={40} visibleDates={["2099-08-27"]} />,
-    );
-    const options = screen.getAllByRole("option");
-    fireEvent.click(options[0]!);
-    expect(useAvailabilityStore.getState().slots[0]?.selected).toBe(true);
-    fireEvent.pointerDown(options[1]!, { pointerId: 1 });
-    fireEvent.pointerEnter(options[2]!, { pointerId: 1 });
-    fireEvent.pointerUp(options[2]!, { pointerId: 1 });
-    expect(
-      useAvailabilityStore.getState().slots.map(({ selected }) => selected),
-    ).toEqual([true, true, true]);
   });
 });
