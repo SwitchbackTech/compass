@@ -373,19 +373,23 @@ PageUp and PageDown always scroll the timed grid by one viewport. Alt+ArrowUp an
 
 ### UX
 
-Bare `Z` opens the time-travel timezone picker in Day and Week view. Cmd+Z / Ctrl+Z remains undo. Escape closes the picker without dropping an existing secondary hour column.
+Bare `Z` opens the time-travel timezone picker in Day and Week view. Cmd+Z / Ctrl+Z remains undo. Escape on the picker closes it without dropping an existing secondary hour column. Escape on the grid while traveling clears the extra column. The second timezone has no click-to-dismiss control; the sidebar hint advertises Esc to exit.
 
 ### Steps
 
 1. Navigate to `/week`.
 2. Press `Z`.
-3. Choose a timezone, then press Escape from the grid.
-4. Press Cmd+Z / Ctrl+Z after an undoable action.
+3. Confirm the picker describes comparing hours in a second timezone, then choose a timezone.
+4. Press Escape from the grid.
+5. Press `Z` again, choose a timezone, then press Escape while the picker is still open.
+6. Press Cmd+Z / Ctrl+Z after an undoable action.
 
 ### Expected Results
 
-- `Z` opens the Time travel picker.
-- A second hour column appears after a zone is chosen and survives reload until removed.
+- `Z` opens the Time travel picker with a one-line description of the feature.
+- A second hour column appears after a zone is chosen and survives reload until removed. Both timezone abbreviations show in the gutter; there is no X control.
+- The sidebar hint reads that two timezones are showing and Esc exits.
+- Escape from the grid while traveling clears the extra column.
 - Escape closes the picker and leaves the extra column in place.
 - Cmd+Z undoes; it does not open time travel.
 

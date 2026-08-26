@@ -3,6 +3,22 @@ import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { draftActions } from "@web/events/stores/draft.store";
+import {
+  edgeFocusActions,
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  getTimeTravelZone,
+  resetTimeTravelStoreForTests,
+  setTimeTravelZone,
+} from "@web/timezone/time-travel.store";
+import {
   selectTimezoneDialogOpen,
   selectTimezoneDialogPurpose,
   timezoneDialogActions,
@@ -22,6 +38,10 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   document.body.innerHTML = "";
+  resetTimeTravelStoreForTests();
+  draftActions.discard();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  eventJumpActions.reset();
 });
 
 describe("useCalendarViewShortcuts", () => {
@@ -146,5 +166,64 @@ describe("useCalendarViewShortcuts", () => {
     act(() => {
       timezoneDialogActions.close();
     });
+  });
+
+  it("clears time travel on Escape", () => {
+    setTimeTravelZone("America/Denver");
+    renderHook(() => useCalendarViewShortcuts({}), { wrapper });
+
+    pressKey("Escape");
+
+    expect(getTimeTravelZone()).toBeNull();
+  });
+
+  it("does not clear time travel on Escape when no secondary zone is set", () => {
+    renderHook(() => useCalendarViewShortcuts({}), { wrapper });
+
+    pressKey("Escape");
+
+    expect(getTimeTravelZone()).toBeNull();
+  });
+
+  it("does not clear time travel on Escape while edge focus is active", () => {
+    setTimeTravelZone("America/Denver");
+    edgeFocusActions.setEdge(
+      "aaaaaaaaaaaaaaaaaaaaaaaa",
+      "startDate",
+      "Editing start time",
+    );
+    renderHook(() => useCalendarViewShortcuts({}), { wrapper });
+
+    pressKey("Escape");
+
+    expect(getTimeTravelZone()).toBe("America/Denver");
+  });
+
+  it("does not clear time travel on Escape during keyboard place", () => {
+    setTimeTravelZone("America/Denver");
+    draftActions.startGridDraft({
+      activity: "keyboardPlace",
+      draft: createGridEventDraft(
+        timedGridSchedule(
+          new Date("2026-05-20T09:00:00.000"),
+          new Date("2026-05-20T10:00:00.000"),
+        ),
+      ),
+    });
+    renderHook(() => useCalendarViewShortcuts({}), { wrapper });
+
+    pressKey("Escape");
+
+    expect(getTimeTravelZone()).toBe("America/Denver");
+  });
+
+  it("does not clear time travel on Escape while event jump is active", () => {
+    setTimeTravelZone("America/Denver");
+    eventJumpActions.setActive(true);
+    renderHook(() => useCalendarViewShortcuts({}), { wrapper });
+
+    pressKey("Escape");
+
+    expect(getTimeTravelZone()).toBe("America/Denver");
   });
 });

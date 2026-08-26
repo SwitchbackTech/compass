@@ -1,9 +1,17 @@
+import { useDraftStore } from "@web/events/stores/draft.store";
+import { useEdgeFocusStore } from "@web/grid/shortcuts/edge-focus.store";
 import { useGridScrollShortcuts } from "@web/grid/shortcuts/useGridScrollShortcuts";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   useAppShortcut,
   useAppShortcutUp,
 } from "@web/shortcuts/useAppShortcut";
+import {
+  setTimeTravelZone,
+  useTimeTravelZone,
+} from "@web/timezone/time-travel.store";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
 
 export interface CalendarViewShortcutsConfig {
@@ -31,6 +39,7 @@ export interface CalendarViewShortcutsConfig {
  * the thin key-registration boundary.
  */
 export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
+  const timeTravelZone = useTimeTravelZone();
   useGridScrollShortcuts();
 
   useAppShortcutUp("J", () => config.onPrevPeriod?.());
@@ -51,5 +60,23 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
   // match this binding the way Mod+D vs D does on keyup.
   useAppShortcut("Z", () =>
     timezoneDialogActions.open(undefined, "time-travel"),
+  );
+  useAppShortcut(
+    "Escape",
+    () => {
+      if (isHigherEscapeOwner()) return;
+      if (useEdgeFocusStore.getState().eventId) return;
+      if (isEventJumpActive()) return;
+      const { gridDraft, status } = useDraftStore.getState();
+      if (
+        status?.activity === "keyboardPlace" &&
+        !status.isFormOpen &&
+        gridDraft
+      ) {
+        return;
+      }
+      setTimeTravelZone(null);
+    },
+    { enabled: timeTravelZone !== null },
   );
 }

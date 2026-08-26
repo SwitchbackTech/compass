@@ -29,6 +29,8 @@ import {
 import { ShortcutTipIndicator } from "@web/shortcuts/tips/ShortcutTipIndicator";
 import { useShortcutHintContext } from "@web/shortcuts/tips/useShortcutHintContext";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
+import { TimeTravelIndicator } from "@web/timezone/TimeTravelIndicator";
+import { useTimeTravelZone } from "@web/timezone/time-travel.store";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
@@ -52,6 +54,7 @@ export const SidebarStatusBar: FC = () => {
   const draftActivity = useDraftStore(selectDraftActivity);
   const isDraftFormOpen = useDraftStore(selectIsEventFormOpen);
   const isKeyboardPlace = draftActivity === "keyboardPlace" && !isDraftFormOpen;
+  const isTimeTraveling = useTimeTravelZone() !== null;
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -87,7 +90,11 @@ export const SidebarStatusBar: FC = () => {
   ) : isKeyboardPlace ? (
     <KeyboardPlaceIndicator />
   ) : !status ? (
-    <ShortcutTipIndicator hint={hint} />
+    isTimeTraveling ? (
+      <TimeTravelIndicator />
+    ) : (
+      <ShortcutTipIndicator hint={hint} />
+    )
   ) : null;
 
   return (

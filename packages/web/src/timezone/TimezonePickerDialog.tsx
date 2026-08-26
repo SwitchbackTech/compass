@@ -129,6 +129,11 @@ export function TimezonePickerDialog({
   return (
     <OverlayPanel
       title={isTimeTravel ? "Time travel" : "Change default timezone"}
+      message={
+        isTimeTravel
+          ? "Compare your calendar hours in a second timezone."
+          : undefined
+      }
       onDismiss={onDismiss}
       restoreFocus={restoreFocus}
       initialFocusRef={searchRef}
