@@ -95,4 +95,55 @@ describe("MonthPicker", () => {
       "react-datepicker__day--selected",
     );
   });
+
+  it("starts weekday columns on Monday when the week view starts Monday", () => {
+    render(
+      <MonthPicker
+        onSelectDate={mock()}
+        selectedDate={dayjs("2026-05-13")}
+        viewEnd={dayjs("2026-05-17")}
+        viewStart={dayjs("2026-05-11")}
+      />,
+    );
+
+    const weekdayHeaders = screen
+      .getByRole("group", { name: "Date navigation" })
+      .querySelectorAll(".react-datepicker__day-name");
+    expect([...weekdayHeaders].map((header) => header.textContent)).toEqual([
+      "M",
+      "T",
+      "W",
+      "T",
+      "F",
+      "S",
+      "S",
+    ]);
+
+    const monday = dayNamed("Choose Monday, May 11th, 2026");
+    const sunday = dayNamed("Choose Sunday, May 17th, 2026");
+    const previousSunday = dayNamed("Choose Sunday, May 10th, 2026");
+
+    expect(monday.closest(".react-datepicker__week")).toBe(
+      sunday.closest(".react-datepicker__week"),
+    );
+    expect(previousSunday.closest(".react-datepicker__week")).not.toBe(
+      monday.closest(".react-datepicker__week"),
+    );
+  });
+
+  it("keeps Sunday-first columns for a single-day Day view window", () => {
+    render(
+      <MonthPicker
+        onSelectDate={mock()}
+        selectedDate={dayjs("2026-05-13")}
+        viewEnd={dayjs("2026-05-13")}
+        viewStart={dayjs("2026-05-13")}
+      />,
+    );
+
+    const firstHeader = screen
+      .getByRole("group", { name: "Date navigation" })
+      .querySelector(".react-datepicker__day-name");
+    expect(firstHeader?.textContent).toBe("S");
+  });
 });

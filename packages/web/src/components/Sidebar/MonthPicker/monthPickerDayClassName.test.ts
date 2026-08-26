@@ -2,8 +2,6 @@ import dayjs from "@core/util/date/dayjs";
 import {
   getMonthPickerDayClassName,
   MONTH_PICKER_IN_VIEW_CLASS,
-  MONTH_PICKER_IN_VIEW_END_CLASS,
-  MONTH_PICKER_IN_VIEW_START_CLASS,
 } from "./monthPickerDayClassName";
 import { describe, expect, it } from "bun:test";
 
@@ -18,15 +16,12 @@ const classNameFor = (date: string, viewStart: string, viewEnd: string) =>
   });
 
 describe("getMonthPickerDayClassName", () => {
-  it("marks a Sun-Sat window as in view with row start and end on the edges", () => {
+  it("marks a Sun-Sat window as in view", () => {
     expect(classNameFor("2026-05-10", "2026-05-10", "2026-05-16")).toContain(
       MONTH_PICKER_IN_VIEW_CLASS,
     );
-    expect(classNameFor("2026-05-10", "2026-05-10", "2026-05-16")).toContain(
-      MONTH_PICKER_IN_VIEW_START_CLASS,
-    );
     expect(classNameFor("2026-05-16", "2026-05-10", "2026-05-16")).toContain(
-      MONTH_PICKER_IN_VIEW_END_CLASS,
+      MONTH_PICKER_IN_VIEW_CLASS,
     );
     expect(classNameFor("2026-05-13", "2026-05-10", "2026-05-16")).toContain(
       "!font-semibold",
@@ -46,16 +41,10 @@ describe("getMonthPickerDayClassName", () => {
       classNameFor("2026-05-10", "2026-05-11", "2026-05-17"),
     ).not.toContain(MONTH_PICKER_IN_VIEW_CLASS);
     expect(classNameFor("2026-05-11", "2026-05-11", "2026-05-17")).toContain(
-      MONTH_PICKER_IN_VIEW_START_CLASS,
-    );
-    expect(classNameFor("2026-05-16", "2026-05-11", "2026-05-17")).toContain(
-      MONTH_PICKER_IN_VIEW_END_CLASS,
+      MONTH_PICKER_IN_VIEW_CLASS,
     );
     expect(classNameFor("2026-05-17", "2026-05-11", "2026-05-17")).toContain(
-      MONTH_PICKER_IN_VIEW_START_CLASS,
-    );
-    expect(classNameFor("2026-05-17", "2026-05-11", "2026-05-17")).toContain(
-      MONTH_PICKER_IN_VIEW_END_CLASS,
+      MONTH_PICKER_IN_VIEW_CLASS,
     );
     expect(shifted).toContain(MONTH_PICKER_IN_VIEW_CLASS);
     expect(shifted).toContain("!font-semibold");
