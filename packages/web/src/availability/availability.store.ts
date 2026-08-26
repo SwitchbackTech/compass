@@ -3,7 +3,7 @@ import { track } from "@web/auth/posthog/track";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { type AvailabilitySlot } from "./availability-slot.util";
 
-interface AvailabilityState {
+export interface AvailabilityState {
   isOpen: boolean;
   sourceZone: string;
   recipientZone: string | null;
@@ -14,7 +14,7 @@ interface AvailabilityState {
   announcement: string;
 }
 
-const initialState: AvailabilityState = {
+export const initialAvailabilityState: AvailabilityState = {
   isOpen: false,
   sourceZone: "UTC",
   recipientZone: null,
@@ -26,7 +26,7 @@ const initialState: AvailabilityState = {
 };
 
 export const useAvailabilityStore = create<AvailabilityState>()(
-  () => initialState,
+  () => initialAvailabilityState,
 );
 
 export const availabilityActions = {
@@ -34,7 +34,7 @@ export const availabilityActions = {
     track("availability_opened");
     const selected = slots.find((slot) => slot.selected) ?? slots[0];
     useAvailabilityStore.setState({
-      ...initialState,
+      ...initialAvailabilityState,
       isOpen: true,
       sourceZone: getEffectiveTimeZone(),
       slots,
@@ -50,7 +50,7 @@ export const availabilityActions = {
           state.slots.filter(({ selected }) => selected).length,
         ),
       });
-    useAvailabilityStore.setState(initialState);
+    useAvailabilityStore.setState(initialAvailabilityState);
   },
   setSlots(slots: AvailabilitySlot[]) {
     const current = useAvailabilityStore.getState();

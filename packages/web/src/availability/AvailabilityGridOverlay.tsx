@@ -64,7 +64,7 @@ export function AvailabilityGridOverlay({
             key={slot.id}
             onClick={() => availabilityActions.toggle(slot.id)}
             onPointerDown={(event) => {
-              event.currentTarget.setPointerCapture(event.pointerId);
+              event.currentTarget.setPointerCapture?.(event.pointerId);
               dragStart.current = slot.id;
             }}
             onPointerEnter={() => {
