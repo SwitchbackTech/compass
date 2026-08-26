@@ -6,6 +6,7 @@ to: Manager
 owner: Manager
 status: verifying
 artifact:
+  - url: https://github.com/KeepSoftwareSimple/compass-calendar/pull/2890
   - path: packages/web/src/components/ShortcutShowcase/ShortcutShowcase.tsx
   - path: packages/web/src/components/ShortcutShowcase/showcase.steps.ts
   - path: packages/web/src/components/ShortcutShowcase/ShortcutShowcase.test.tsx
@@ -30,7 +31,7 @@ evidence:
 assumptions:
   - "The latest merged showcase behavior is the contract to preserve."
 open_risks:
-  - "Two-worker datepicker timing is flaky; serial accessibility and full E2E suites pass."
+  - "Awaiting required GitHub checks before squash merge."
 next_deadline: 2026-08-26T23:00:00Z
 retry: 2
 approval: none
