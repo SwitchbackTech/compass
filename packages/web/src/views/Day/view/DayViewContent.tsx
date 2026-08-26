@@ -143,6 +143,8 @@ export const DayViewContent = memo(() => {
           onSelectDate={navigateToDate}
           shortcutSections={shortcutSections}
           shortcutsViewLabel="Day"
+          viewEnd={dateInView}
+          viewStart={dateInView}
         />
       </ResizableSidebarPanel>
     </div>
