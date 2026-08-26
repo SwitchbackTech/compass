@@ -1,5 +1,4 @@
 import { type FC, useId, useState } from "react";
-import { YMDHAM_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
@@ -16,12 +15,6 @@ import { TimePicker } from "./TimePicker";
 export const END_TIME_ORDER_ERROR = "End time must be after start time";
 
 const timeOptions = getTimeOptions();
-
-const isEndBeforeStartOnDummyDay = (startValue: string, endValue: string) => {
-  const startAt = dayjs(`2000-01-01 ${startValue}`, YMDHAM_FORMAT);
-  const endAt = dayjs(`2000-01-01 ${endValue}`, YMDHAM_FORMAT);
-  return startAt.isValid() && endAt.isValid() && endAt.isBefore(startAt);
-};
 
 interface Props {
   draft: GridEventDraft;
@@ -115,24 +108,6 @@ export const TimePickers: FC<Props> = ({
       changed,
       option.value,
     );
-
-    const userStart = changed === "start" ? option.value : startTime.value;
-    const userEnd = changed === "end" ? option.value : endTime.value;
-    const isSameCalendarDay = dayjs(selectedStartDate).isSame(
-      selectedEndDate,
-      "day",
-    );
-    // Same-day invert: duration auto-correct would hide the mistake.
-    // Overnight drafts already have end-before-start on the clock; midnight
-    // wrap (dayOffset !== 0) still shifts the compliment date.
-    if (
-      isSameCalendarDay &&
-      dayOffset === 0 &&
-      isEndBeforeStartOnDummyDay(userStart, userEnd)
-    ) {
-      rejectTimeSelection(changed);
-      return;
-    }
 
     const anchorDate =
       changed === "start" ? selectedStartDate : selectedEndDate;
