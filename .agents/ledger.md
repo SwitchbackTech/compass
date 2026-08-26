@@ -13,3 +13,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2879 | high | Verifier | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2879 | bun run verify (pending) | 2026-08-26T06:00:00Z | 0 | none |
