@@ -19,6 +19,9 @@ const TRANSIENT_MONGO_MESSAGE_PATTERNS = [
   /server monitor timeout/i,
   /no connection available/i,
   /pool.*cleared/i,
+  // Driver: "connection 15 to 35.193.60.195:27017 closed" — match even when
+  // the MongoNetworkError name is stripped by wrapping/serialization.
+  /connection \d+ to \S+ closed/i,
 ];
 
 export function isTransientMongoNetworkError(error: unknown): boolean {

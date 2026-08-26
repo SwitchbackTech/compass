@@ -65,6 +65,17 @@ import { createServer, type Server } from "node:http";
 
 const logger = Logger("sync:app");
 
+// Transient Atlas/network blips stay visible at warn so they do not open a
+// PostHog exception alert (PostHogExceptionTransport is error-level only).
+// Durable failures still page. Same split as the health-snapshot onError.
+function logSyncLoopError(message: string, error: unknown): void {
+  if (isTransientMongoNetworkError(error)) {
+    logger.warn(message, error);
+    return;
+  }
+  logger.error(message, error);
+}
+
 export interface SyncService {
   readonly identity: ReturnType<typeof buildServiceIdentity>;
   readonly readiness: ReadinessRegistry;
@@ -438,7 +449,7 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
       intervalMs: RETENTION_SWEEP_INTERVAL_MS,
       windowMs: -CONNECTION_CACHE_RETENTION_MS,
       onError: (error) =>
-        logger.error("Sync disconnect retention sweep failed", error),
+        logSyncLoopError("Sync disconnect retention sweep failed", error),
     },
   );
 }
@@ -553,10 +564,15 @@ function buildSchedulers(
       },
     );
     return new SyncScheduler(
-      { worker, jobs },
+      {
+        worker: {
+          drain: (max) => withTransientMongoRetry(() => worker.drain(max)),
+        },
+        jobs,
+      },
       {
         owner,
-        onError: (error) => logger.error("Sync job drain failed", error),
+        onError: (error) => logSyncLoopError("Sync job drain failed", error),
       },
     );
   };
@@ -800,7 +816,7 @@ function buildSchedulers(
             windowMs,
             startupJitterMs: STARTUP_SWEEP_JITTER_MS,
             onError: (error) =>
-              logger.error(`Sync ${name} sweep failed`, error),
+              logSyncLoopError(`Sync ${name} sweep failed`, error),
           },
         ),
       ] as const,
