@@ -204,7 +204,7 @@ describe("TimePicker arrow-key focus", () => {
 });
 
 describe("TimePicker Enter commit", () => {
-  it("commits the arrow-focused meridiem, not the draft time", async () => {
+  it("commits an explicit meridiem typed after the clock", async () => {
     const user = userEvent.setup();
     render(
       <Harness
@@ -216,12 +216,7 @@ describe("TimePicker Enter commit", () => {
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
-    await user.type(combobox, "12:45");
-    expect(focusedOptionName(combobox)).toHaveTextContent("12:45 AM");
-
-    await user.keyboard("{ArrowDown}");
-    expect(focusedOptionName(combobox)).toHaveTextContent("12:45 PM");
-
+    await user.type(combobox, "12:45p");
     await user.keyboard("{Enter}");
 
     expect(screen.getByText("12:45 PM")).toBeInTheDocument();
@@ -241,7 +236,7 @@ describe("TimePicker Enter commit", () => {
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
-    await user.type(combobox, "12:45");
+    await user.type(combobox, "12:4");
     expect(focusedOptionName(combobox)).toHaveTextContent("12:45 AM");
 
     await user.click(screen.getByRole("option", { name: "12:45 PM" }));
@@ -269,6 +264,39 @@ describe("TimePicker Enter commit", () => {
     expect(screen.getByText("12:45 AM")).toBeInTheDocument();
     expect(screen.queryByText("9:45 AM")).not.toBeInTheDocument();
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("commits the parsed hour on Enter instead of a substring match like 12 AM", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        initialValue={nineFortyFive}
+        options={dayOptions}
+        freshOptions
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "2");
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("2 AM")).toBeInTheDocument();
+    expect(screen.queryByText("12 AM")).not.toBeInTheDocument();
+    expect(screen.queryByText("9:45 AM")).not.toBeInTheDocument();
+  });
+
+  it("commits a glued meridiem like 8p as 8 PM", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "8p");
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByText("8 PM")).toBeInTheDocument();
+    expect(screen.queryByText("1 PM")).not.toBeInTheDocument();
   });
 
   it("keeps the original time when Enter is pressed without changing the draft", async () => {
