@@ -97,6 +97,12 @@ export type GoogleSyncConnectionSummary = {
   // sync state/reason. The browser renders per-account status and reconnect
   // from it directly, so sync's state vocabulary stays on the server.
   connectionState: GoogleConnectionState;
+  // True when this connection granted a Google contacts scope (sync's
+  // `suggestContacts` capability), so the attendee field can offer live
+  // contact suggestions. False is an ordinary state — contacts are an
+  // OPTIONAL grant — and gates the "enable contact suggestions" nudge,
+  // never an error surface.
+  canSuggestContacts: boolean;
 };
 
 // Intersection (not extends): SuperTokens JSONObject's string index signature

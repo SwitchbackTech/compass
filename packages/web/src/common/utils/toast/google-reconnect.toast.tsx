@@ -41,6 +41,9 @@ const toastScopedConnection = (
   lastHealthyAt: null,
   accountEmail: accountEmail ?? null,
   connectionState: "RECONNECT_REQUIRED",
+  // A synthetic reconnect target, not a real summary — the credential is
+  // broken, so no capability can be assumed granted.
+  canSuggestContacts: false,
 });
 
 // Shown when Google reports invalid_grant, which covers both "access expired"

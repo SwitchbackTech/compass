@@ -108,6 +108,24 @@ describe("toGoogleSyncConnectionSummary", () => {
       // This connection's own state, so the browser can render one account's
       // status without knowing sync's vocabulary. delayed maps to ATTENTION.
       connectionState: "ATTENTION",
+      // No capabilities on the record — no contacts grant to surface.
+      canSuggestContacts: false,
     });
+  });
+
+  it("surfaces suggestContacts as canSuggestContacts", () => {
+    const granted = connection("healthy", null, {
+      capabilities: ["readEvents", "writeEvents", "suggestContacts"],
+    });
+    expect(toGoogleSyncConnectionSummary(granted).canSuggestContacts).toBe(
+      true,
+    );
+
+    const notGranted = connection("healthy", null, {
+      capabilities: ["readEvents", "writeEvents"],
+    });
+    expect(toGoogleSyncConnectionSummary(notGranted).canSuggestContacts).toBe(
+      false,
+    );
   });
 });

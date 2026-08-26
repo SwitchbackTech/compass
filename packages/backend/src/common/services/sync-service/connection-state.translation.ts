@@ -108,5 +108,10 @@ export function toGoogleSyncConnectionSummary(
       connection.state,
       connection.stateReason,
     ),
+    // Sync derives this capability from the OPTIONAL contacts scopes the
+    // account actually granted; false is an ordinary state (the grant is
+    // never required) that the browser uses to offer the enable-contacts
+    // nudge instead of live suggestions.
+    canSuggestContacts: connection.capabilities.includes("suggestContacts"),
   };
 }

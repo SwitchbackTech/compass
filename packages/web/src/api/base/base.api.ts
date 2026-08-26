@@ -26,6 +26,7 @@ const request = async <T>(
     body,
     headers: config.headers,
     method,
+    signal: config.signal,
     skipSessionRecovery: config.skipSessionRecovery,
     url,
   } satisfies ApiRequestConfig;
@@ -47,6 +48,7 @@ const request = async <T>(
         ...config.headers,
       },
       method,
+      signal: config.signal,
     });
     const data = await getResponseData(response);
     const result = {

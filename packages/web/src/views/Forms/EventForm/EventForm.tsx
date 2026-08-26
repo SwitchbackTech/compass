@@ -57,6 +57,8 @@ import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
+import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
+import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -302,6 +304,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       organizesEvent &&
       (draft.kind === "create" ||
         draft.source.recurrence.kind !== "occurrence");
+    // Contact suggestions (WP-06): live when a connected account granted the
+    // optional contacts scopes; otherwise the field is a raw email input and
+    // the combobox footer may carry the occasional enable-contacts nudge.
+    const { canSuggestContacts, suggestionSource: contactSuggestionSource } =
+      useContactSuggestions();
     // Untouched drafts show the source event's guests as chips; a touched
     // draft owns its membership in values.attendees (present = replace).
     const attendeeChips: readonly AttendeeInput[] =
@@ -928,6 +935,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       id={EVENT_FORM_ATTENDEES_ID}
                       value={attendeeChips}
                       onChange={(next) => patchDraftFields({ attendees: next })}
+                      suggestionSource={contactSuggestionSource}
+                      menuFooter={
+                        canSuggestContacts ? null : (
+                          <EnableContactSuggestionsNudge />
+                        )
+                      }
                     />
                   </div>
                 </FormCard>

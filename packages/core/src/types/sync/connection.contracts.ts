@@ -187,10 +187,14 @@ export type ConnectionListResponse = z.infer<
 
 // Start an OAuth authorization flow for the caller's principal. An optional
 // connectionId means reconnect (rebind consent to that existing connection);
-// omit it for a fresh connection. Principal scope always comes from the
-// authenticated context, never the body.
+// omit it for a fresh connection. Optional `features` widen the consent
+// request with that feature's OPTIONAL scopes (e.g. "contacts" for attendee
+// suggestions); absent keeps the request — and the consent URL sync mints —
+// byte-identical to before features existed. Principal scope always comes
+// from the authenticated context, never the body.
 export const ConnectionBeginRequestSchema = z.strictObject({
   connectionId: ConnectionIdSchema.optional(),
+  features: ConnectionBeginFeaturesSchema.optional(),
 });
 export type ConnectionBeginRequest = z.infer<
   typeof ConnectionBeginRequestSchema

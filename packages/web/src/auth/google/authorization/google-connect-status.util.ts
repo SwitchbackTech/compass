@@ -1,3 +1,4 @@
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { track } from "@web/auth/posthog/track";
 import {
   GOOGLE_CONNECT_FAILED_TOAST_ID,
@@ -58,6 +59,19 @@ export function showGoogleConnectStatusToast(
   requestAnimationFrame(() => {
     requestAnimationFrame(() => fireGoogleConnectStatusToast(status));
   });
+}
+
+// A completed connect/reconnect may have widened what the connection can do
+// (e.g. the optional contacts grant behind attendee suggestions), so force
+// the freshest connection summaries into the store the moment the browser
+// lands back — the new capability goes live in this page load, no manual
+// reload. `force` chains onto any bootstrap fetch already in flight rather
+// than racing it. Called once at bootstrap alongside the status toast.
+export function refreshUserMetadataAfterGoogleConnect(
+  status: GoogleConnectStatus,
+): void {
+  if (status !== "connected") return;
+  void refreshUserMetadata({ force: true });
 }
 
 function fireGoogleConnectStatusToast(status: GoogleConnectStatus): void {

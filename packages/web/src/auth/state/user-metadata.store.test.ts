@@ -17,6 +17,7 @@ const connection = (
   lastHealthyAt: null,
   accountEmail: "ahab@pequod.com",
   connectionState: "HEALTHY",
+  canSuggestContacts: false,
   ...overrides,
 });
 
@@ -35,6 +36,7 @@ describe("selectPrimaryGoogleSyncConnection", () => {
       id: "broken",
       accountEmail: "starbuck@pequod.com",
       connectionState: "RECONNECT_REQUIRED",
+      canSuggestContacts: false,
     });
     userMetadataActions.set({
       google: {
@@ -95,6 +97,7 @@ describe("findPrimaryGoogleSyncConnectionFromMetadata", () => {
     const broken = connection({
       id: "broken",
       connectionState: "RECONNECT_REQUIRED",
+      canSuggestContacts: false,
     });
 
     expect(

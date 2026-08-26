@@ -186,4 +186,34 @@ describe("AttendeeField", () => {
     ]);
     expect(suggestionSource).toHaveBeenCalledWith("carol");
   });
+
+  it("renders the menuFooter inside the open listbox menu, and not before", async () => {
+    const user = userEvent.setup();
+    render(
+      <AttendeeField
+        value={[]}
+        onChange={() => {}}
+        menuFooter={<div>Enable contact suggestions</div>}
+      />,
+    );
+
+    // Closed menu: no footer anywhere (the affordance lives in the combobox
+    // footer only — never floating free, never a modal).
+    expect(
+      screen.queryByText("Enable contact suggestions"),
+    ).not.toBeInTheDocument();
+
+    const combobox = screen.getByRole("combobox", { name: "Guests" });
+    await user.type(combobox, "ca");
+
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(screen.getByText("Enable contact suggestions")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Menu closes -> footer goes with it.
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByText("Enable contact suggestions"),
+    ).not.toBeInTheDocument();
+  });
 });
