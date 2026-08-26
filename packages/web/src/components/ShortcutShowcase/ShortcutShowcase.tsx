@@ -2,7 +2,6 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import {
   type FC,
   type KeyboardEvent as ReactKeyboardEvent,
-  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -29,13 +28,12 @@ import {
   openTitleFromEdit,
   PRACTICE_TEAM_SYNC_ID,
   type PracticeNudgeDirection,
-  type PracticeState,
   toggleJumpHints,
 } from "@web/components/ShortcutShowcase/practice.state";
 import {
   getCreateLessonPhase,
-  getLevelLabel,
   getShowcaseStep,
+  SHOWCASE_LEVEL_IDS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   selectShowcaseActive,
@@ -91,24 +89,29 @@ const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
   const stepId = stepIdAt(stepIndex);
   const { closing, beginDismiss } = useDismissTransition(SHOWCASE_REVEAL_MS);
-  const closingRef = useRef(false);
-  closingRef.current = closing;
   const { openModal } = useAuthModal();
   const { authenticated } = useContext(SessionContext);
   const [isModHeld, setIsModHeld] = useState(false);
   const hasRevealedJumpsRef = useRef(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const paletteOpenRef = useRef(false);
-  paletteOpenRef.current = paletteOpen;
+  const [practice, setPractice] = useState(initialPracticeState);
+  const [offerPending, setOfferPending] = useState(false);
+  const offerTakenRef = useRef(false);
+  const regionRef = useRef<HTMLElement>(null);
 
   useAppLockReason("shortcutShowcase", true);
+
+  const apply = (transition: typeof createDraft) => {
+    const next = transition(practice);
+    setPractice(next);
+    return next;
+  };
+  const advance = shortcutShowcaseActions.advance;
 
   const graduate = () => {
     shortcutShowcaseActions.markSeen();
     beginDismiss(() => shortcutShowcaseActions.finish());
   };
-  const graduateRef = useRef(graduate);
-  graduateRef.current = graduate;
 
   const skipToSignup = () => {
     shortcutShowcaseActions.skip("signup");
@@ -116,261 +119,227 @@ const ShowcaseTakeover: FC = () => {
     openModal("signUp");
   };
 
-  const regionRef = useRef<HTMLElement>(null);
+  const notificationsSupported = getNotificationPort().isSupported();
+
+  // A prompt may outlive this step. Deduplicate it and only advance while the
+  // offer is still visible so a late answer cannot dismiss graduation.
+  const enableNotifications = () => {
+    if (offerTakenRef.current) return;
+    offerTakenRef.current = true;
+    setOfferPending(true);
+    void notificationActions.enable("showcase").finally(() => {
+      setOfferPending(false);
+      const { stepIndex: current } = useShortcutShowcaseStore.getState();
+      if (stepIdAt(current) === "notifications") advance();
+    });
+  };
+
+  const handleTitleCommit = (title: string) => {
+    setPractice((state) => commitTitle(state, title));
+    const id = stepIdAt(useShortcutShowcaseStore.getState().stepIndex);
+    if (id === "create" || id === "editTitle") advance();
+  };
+
+  const seatFocus = () => {
+    const root = regionRef.current;
+    if (!root || closing || root.contains(document.activeElement)) return;
+    const [firstFocusable] = getFocusableElements(root);
+    (firstFocusable ?? root).focus();
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lesson transitions reseat focus after transient controls unmount.
+  useEffect(() => {
+    seatFocus();
+  }, [stepId, practice.editor, paletteOpen]);
+
+  useEffect(() => {
+    const clearMod = () => setIsModHeld(false);
+    window.addEventListener("blur", clearMod);
+    return () => window.removeEventListener("blur", clearMod);
+  }, []);
+
+  const claim = (event: ReactKeyboardEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+  };
 
   const handleTakeoverKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (event.key !== "Tab" || !regionRef.current) return;
-    const root = regionRef.current;
-    const focusables = getFocusableElements(root);
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const active = document.activeElement;
-    if (event.shiftKey && (active === first || active === root)) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && (active === last || active === root)) {
-      event.preventDefault();
-      first.focus();
+    if (closing) {
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
+      return;
+    }
+
+    if (event.key === "Tab" && regionRef.current) {
+      const root = regionRef.current;
+      const focusables = getFocusableElements(root);
+      if (focusables.length > 0) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (event.shiftKey && (active === first || active === root)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (active === last || active === root)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
+    }
+
+    if (isPlatformModKey(event.nativeEvent)) {
+      setIsModHeld(true);
+      if (stepId === "pageJump") hasRevealedJumpsRef.current = true;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      target.closest("[data-practice-title-input]") &&
+      event.key !== "Escape"
+    ) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      claim(event);
+      settingsActions.closeCmdPalette();
+      if (paletteOpen) {
+        setPaletteOpen(false);
+      } else if (practice.editor) {
+        const input = document.querySelector<HTMLInputElement>(
+          "[data-practice-title-input]",
+        );
+        apply((state) => commitTitle(state, input?.value ?? ""));
+      } else {
+        shortcutShowcaseActions.skip();
+      }
+      return;
+    }
+
+    const isModChord = event.metaKey || event.ctrlKey;
+    if (isModChord && keyboardKey(event.nativeEvent).toLowerCase() === "k") {
+      claim(event);
+      if (stepId === "palette" && !paletteOpen) setPaletteOpen(true);
+      return;
+    }
+
+    if (paletteOpen) {
+      if (event.key === "Enter") {
+        claim(event);
+        setPaletteOpen(false);
+        if (stepId === "palette") advance();
+      }
+      return;
+    }
+
+    if (stepId === "graduation" && event.key === "Enter") {
+      claim(event);
+      graduate();
+      return;
+    }
+
+    if (stepId === "notifications") {
+      const focusedButton =
+        event.target instanceof HTMLElement && event.target.closest("button");
+      if (
+        event.key === "Enter" &&
+        !event.repeat &&
+        !focusedButton &&
+        notificationsSupported
+      ) {
+        claim(event);
+        enableNotifications();
+        return;
+      }
+      if (isBareLetterKey(event.nativeEvent, "n")) {
+        claim(event);
+        advance();
+      }
+      return;
+    }
+
+    if (stepId === "pageJump") {
+      const digit = /^Digit([12])$/.exec(event.code);
+      if (digit && hasRevealedJumpsRef.current) {
+        claim(event);
+        advance();
+        return;
+      }
+    }
+
+    if (stepId === "nudge") {
+      const direction = arrowDirection(event.key);
+      if (event.shiftKey && direction) {
+        claim(event);
+        const next = apply((state) => nudgeFocused(state, direction));
+        if (next !== practice) advance();
+        return;
+      }
+    }
+
+    if (
+      isBareLetterKey(
+        event.nativeEvent,
+        KEYMAP.createEvent.hotkey.toLowerCase(),
+      )
+    ) {
+      claim(event);
+      apply(createDraft);
+      return;
+    }
+
+    if (stepId === "eventJump") {
+      if (isBareLetterKey(event.nativeEvent, KEYMAP.eventJump.bareLetter)) {
+        claim(event);
+        apply(toggleJumpHints);
+        return;
+      }
+      const jumpKey = keyboardKey(event.nativeEvent).toLowerCase();
+      if (jumpKey.length === 1 && practice.jumpHintsVisible) {
+        const next = apply((state) => jumpToEvent(state, jumpKey));
+        if (next !== practice) {
+          claim(event);
+          advance();
+        }
+        return;
+      }
+    }
+
+    if (stepId === "editTitle") {
+      if (
+        isBareLetterKey(event.nativeEvent, KEYMAP.editTitle.sequence.leader)
+      ) {
+        claim(event);
+        apply(armEdit);
+        return;
+      }
+      if (
+        practice.editArmed &&
+        isBareLetterKey(event.nativeEvent, KEYMAP.editTitle.sequence.second)
+      ) {
+        claim(event);
+        apply(openTitleFromEdit);
+        return;
+      }
+      if (practice.editArmed && event.key.length === 1) apply(disarmEdit);
+    }
+
+    if (
+      stepId !== "graduation" &&
+      isBareLetterKey(event.nativeEvent, "u") &&
+      !authenticated
+    ) {
+      claim(event);
+      skipToSignup();
     }
   };
 
-  const [practice, setPractice] = useState(initialPracticeState);
-  const practiceRef = useRef(practice);
-  const apply = useCallback(
-    (transition: (state: PracticeState) => PracticeState): PracticeState => {
-      const next = transition(practiceRef.current);
-      practiceRef.current = next;
-      setPractice(next);
-      return next;
-    },
-    [],
-  );
-
-  const advance = shortcutShowcaseActions.advance;
-
-  const handleTitleCommit = useCallback(
-    (title: string) => {
-      apply((state) => commitTitle(state, title));
-      const id = stepIdAt(useShortcutShowcaseStore.getState().stepIndex);
-      if (id === "create" || id === "editTitle") {
-        advance();
-      }
-    },
-    [apply],
-  );
-
-  const seatFocus = useCallback(() => {
-    const root = regionRef.current;
-    if (!root || closingRef.current) return;
-    if (root.contains(document.activeElement)) return;
-    const [firstFocusable] = getFocusableElements(root);
-    (firstFocusable ?? root).focus();
-  }, []);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: stepId and practice.editor trigger a reseat after lesson chrome unmounts; seatFocus does not read them.
-  useEffect(() => {
-    seatFocus();
-  }, [seatFocus, stepId, practice.editor, paletteOpen]);
-
-  useEffect(() => {
-    const claim = (event: KeyboardEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      const store = useShortcutShowcaseStore.getState();
-      if (!store.isActive) return;
-      if (closingRef.current) {
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        return;
-      }
-      const currentStepId = stepIdAt(store.stepIndex);
-
-      if (isPlatformModKey(event)) {
-        setIsModHeld(true);
-        if (currentStepId === "pageJump") {
-          hasRevealedJumpsRef.current = true;
-        }
-      }
-
-      const target = event.target;
-      if (
-        target instanceof HTMLElement &&
-        target.closest("[data-practice-title-input]") &&
-        event.key !== "Escape"
-      ) {
-        return;
-      }
-
-      if (event.key === "Escape") {
-        claim(event);
-        settingsActions.closeCmdPalette();
-        if (paletteOpenRef.current) {
-          setPaletteOpen(false);
-          return;
-        }
-        if (practiceRef.current.editor) {
-          const input = document.querySelector<HTMLInputElement>(
-            "[data-practice-title-input]",
-          );
-          apply((state) => commitTitle(state, input?.value ?? ""));
-          return;
-        }
-        shortcutShowcaseActions.skip();
-        return;
-      }
-
-      const isModChord = event.metaKey || event.ctrlKey;
-      if (isModChord && keyboardKey(event).toLowerCase() === "k") {
-        claim(event);
-        if (currentStepId === "palette" && !paletteOpenRef.current) {
-          setPaletteOpen(true);
-        }
-        return;
-      }
-
-      if (paletteOpenRef.current) {
-        if (event.key === "Enter") {
-          claim(event);
-          setPaletteOpen(false);
-          if (currentStepId === "palette") advance();
-        }
-        return;
-      }
-
-      if (currentStepId === "graduation" && event.key === "Enter") {
-        claim(event);
-        graduateRef.current();
-        return;
-      }
-
-      // The notifications offer: Enter allows, N passes. Both move on.
-      if (currentStepId === "notifications") {
-        // Unlike graduation, this step renders several buttons, so Enter is
-        // the step's shortcut only when no button owns it - otherwise
-        // "Not now" and "Skip" would raise a permission prompt
-        // instead of doing what they say. Auto-repeat is ignored too: the
-        // Enter that committed a practice title must not carry into the
-        // offer once the input unmounts.
-        const focusedButton =
-          event.target instanceof HTMLElement && event.target.closest("button");
-        if (
-          event.key === "Enter" &&
-          !event.repeat &&
-          !focusedButton &&
-          sideActionsRef.current.notificationsSupported
-        ) {
-          claim(event);
-          sideActionsRef.current.enableNotifications();
-          return;
-        }
-        if (isBareLetterKey(event, "n")) {
-          claim(event);
-          shortcutShowcaseActions.advance();
-          return;
-        }
-      }
-
-      if (currentStepId === "pageJump") {
-        const digit = /^Digit([12])$/.exec(event.code);
-        if (digit && hasRevealedJumpsRef.current) {
-          claim(event);
-          advance();
-          return;
-        }
-      }
-
-      if (currentStepId === "nudge") {
-        const direction = arrowDirection(event.key);
-        if (event.shiftKey && direction) {
-          claim(event);
-          const before = practiceRef.current;
-          const next = apply((state) => nudgeFocused(state, direction));
-          if (next !== before) advance();
-          return;
-        }
-      }
-
-      // Every other non-graduation step teaches the board; the notifications
-      // offer does not, so C must not open a practice draft behind it.
-      if (
-        currentStepId !== "notifications" &&
-        isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())
-      ) {
-        claim(event);
-        apply(createDraft);
-        return;
-      }
-
-      if (currentStepId === "eventJump") {
-        if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
-          claim(event);
-          apply(toggleJumpHints);
-          return;
-        }
-        const jumpKey = keyboardKey(event).toLowerCase();
-        if (jumpKey.length === 1 && practiceRef.current.jumpHintsVisible) {
-          const before = practiceRef.current;
-          const next = apply((state) => jumpToEvent(state, jumpKey));
-          if (next !== before) {
-            claim(event);
-            advance();
-            return;
-          }
-        }
-      }
-
-      if (currentStepId === "editTitle") {
-        if (isBareLetterKey(event, KEYMAP.editTitle.sequence.leader)) {
-          claim(event);
-          apply(armEdit);
-          return;
-        }
-        if (
-          practiceRef.current.editArmed &&
-          isBareLetterKey(event, KEYMAP.editTitle.sequence.second)
-        ) {
-          claim(event);
-          apply(openTitleFromEdit);
-          return;
-        }
-        if (practiceRef.current.editArmed && event.key.length === 1) {
-          apply(disarmEdit);
-        }
-      }
-
-      if (currentStepId !== "graduation") {
-        // U is a practice affordance: the notifications offer has no
-        // board action to perform, and no lesson to skip past. Esc leaves.
-        if (
-          currentStepId !== "notifications" &&
-          isBareLetterKey(event, "u") &&
-          !sideActionsRef.current.authenticated
-        ) {
-          claim(event);
-          sideActionsRef.current.skipToSignup();
-        }
-      }
-    };
-
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (isPlatformModKey(event)) setIsModHeld(false);
-    };
-    const clearMod = () => setIsModHeld(false);
-
-    document.addEventListener("keydown", onKeyDown, true);
-    document.addEventListener("keyup", onKeyUp, true);
-    window.addEventListener("blur", clearMod);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
-      document.removeEventListener("keyup", onKeyUp, true);
-      window.removeEventListener("blur", clearMod);
-    };
-  }, [apply]);
+  const handleTakeoverKeyUp = (event: ReactKeyboardEvent<HTMLElement>) => {
+    if (isPlatformModKey(event.nativeEvent)) setIsModHeld(false);
+  };
 
   const runPracticeCommand = () => {
     apply((state) => ({
@@ -381,42 +350,6 @@ const ShowcaseTakeover: FC = () => {
     if (stepId === "palette") advance();
   };
 
-  const notificationsSupported = getNotificationPort().isSupported();
-  const offerTakenRef = useRef(false);
-  // A browser prompt stays up until the user answers it, and some never get
-  // answered - so say so on the button rather than letting it look live.
-  const [offerPending, setOfferPending] = useState(false);
-
-  // The offer moves on either way: a denial is explained by the toast, and
-  // holding the user here would turn a one-key offer into a decision to make.
-  const enableNotifications = () => {
-    if (offerTakenRef.current) return;
-    offerTakenRef.current = true;
-    setOfferPending(true);
-    void notificationActions.enable("showcase").finally(() => {
-      setOfferPending(false);
-      // Only advance if the offer is still what's on screen: passing on it or
-      // leaving while the prompt was up already moved the user along, and a
-      // second advance from graduation would close the showcase outright.
-      const { stepIndex: current } = useShortcutShowcaseStore.getState();
-      if (stepIdAt(current) !== "notifications") return;
-      advance();
-    });
-  };
-
-  const sideActionsRef = useRef({
-    skipToSignup,
-    authenticated,
-    enableNotifications,
-    notificationsSupported,
-  });
-  sideActionsRef.current = {
-    skipToSignup,
-    authenticated,
-    enableNotifications,
-    notificationsSupported,
-  };
-
   const step =
     stepId === "create"
       ? {
@@ -425,7 +358,8 @@ const ShowcaseTakeover: FC = () => {
         }
       : getShowcaseStep(stepId);
 
-  const levelLabel = getLevelLabel(stepId);
+  const levelLabel =
+    "level" in step ? `Level ${step.level}/${SHOWCASE_LEVEL_IDS.length}` : null;
   const showPageJumpHints = isModHeld && stepId === "pageJump";
 
   return (
@@ -434,7 +368,8 @@ const ShowcaseTakeover: FC = () => {
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
-      onKeyDown={handleTakeoverKeyDown}
+      onKeyDownCapture={handleTakeoverKeyDown}
+      onKeyUpCapture={handleTakeoverKeyUp}
       style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
     >
