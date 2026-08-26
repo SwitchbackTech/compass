@@ -21,14 +21,19 @@ export const ShortcutTipParts: FC<{
   return (
     <span>
       <span className="sr-only">{plainText}</span>
-      <span aria-hidden className="inline-flex flex-wrap items-center gap-1">
+      <span aria-hidden>
         {parts.map((part, i) =>
           typeof part === "string" ? (
             // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
             <span key={i}>{part}</span>
           ) : (
             // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
-            <ShortcutKeys key={i} keys={[...partKeycaps(part)]} />
+            <span
+              key={i}
+              className="inline-flex whitespace-nowrap align-text-bottom"
+            >
+              <ShortcutKeys keys={[...partKeycaps(part)]} />
+            </span>
           ),
         )}
       </span>

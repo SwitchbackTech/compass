@@ -98,7 +98,7 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Keyboard calendar",
+        name: "The Keyboard Calendar",
       }),
     ).toBeTruthy();
     expect(screen.getByText(/No clicks allowed/)).toBeTruthy();
@@ -214,7 +214,7 @@ describe("WelcomeModal", () => {
 
     for (const [name, key] of [
       ["Sign up", "U"],
-      ["Log in", "I"],
+      ["Log in", "i"],
       ["Explore without an account", "S"],
     ] as const) {
       const hint = within(screen.getByRole("button", { name })).getByText(key);
@@ -420,6 +420,11 @@ describe("WelcomeModal", () => {
       ).toBeTruthy();
       expect(
         screen.getByText(/Signs you up and connects your Google Calendar/),
+      ).toBeTruthy();
+      expect(
+        within(
+          screen.getByRole("button", { name: "Continue with Google" }),
+        ).getByText("G"),
       ).toBeTruthy();
       // Email signup steps aside to a clearly secondary label.
       expect(
