@@ -237,6 +237,120 @@ describe("retryStaleCommands", () => {
     expect(await events.findById(tenantId, principalId, event._id)).toBeNull();
   });
 
+  it("finishes an rsvp that failed transiently on the first attempt", async () => {
+    // WP-07: an rsvp runs inline from the HTTP request like update/delete —
+    // a transient provider blip leaves it pending, and only this sweep ever
+    // revisits it, so "rsvp" must be in RETRYABLE_KINDS.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar = await seedProviderCalendar(calendars, {
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    const eventId = objectId() as EventId;
+    const self = {
+      email: "self@example.com",
+      displayName: null,
+      responseStatus: "accepted" as const,
+    };
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Invited",
+        description: "",
+        location: null,
+        organizer: { email: "organizer@example.com", displayName: null },
+        attendees: [self],
+        conference: null,
+      },
+      schedule,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const { record: command } = await commands.submit({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: {
+        kind: "rsvp",
+        responseStatus: "declined",
+        scope: "all",
+        recurrenceId: null,
+      } as never,
+      expectedVersion: null,
+    });
+    expect(command.outcome.state).toBe("pending");
+    const patchCalls: unknown[] = [];
+    const writer: ProviderEventWriter = {
+      createEvent: async () => {
+        throw new Error("unused");
+      },
+      deleteEvent: async () => {
+        throw new Error("unused");
+      },
+      patchEvent: async (input) => {
+        patchCalls.push(input);
+        return { providerEventId: "g-evt-1", providerVersion: "etag-2" };
+      },
+      fetchEvent: async () => ({
+        kind: "event",
+        providerEventId: "g-evt-1",
+        providerVersion: "etag-1",
+        providerUpdatedAt: null,
+        content: {
+          title: "Invited",
+          description: "",
+          location: null,
+          organizer: { email: "organizer@example.com", displayName: null },
+          attendees: [self],
+          conference: null,
+        },
+        schedule,
+        busy: true,
+        recurrence: { kind: "single" },
+      }),
+      fetchInstanceAt: async () => null,
+    };
+
+    const result = await retryStaleCommands(
+      {
+        ...baseDeps(writer),
+        connections: {
+          findById: async () => ({ account: { email: self.email } }),
+        },
+      },
+      before(),
+      now,
+    );
+
+    expect(result).toEqual({ attempted: 1, stillStale: 0 });
+    expect(patchCalls).toHaveLength(1);
+    const stored = await commands.findById(tenantId, principalId, command._id);
+    expect(stored?.outcome.state).toBe("confirmed");
+    const event = await events.findById(tenantId, principalId, eventId);
+    expect(event?.content.attendees).toEqual([
+      { ...self, responseStatus: "declined" },
+    ]);
+  });
+
   it("finishes a create that failed transiently on the first attempt", async () => {
     const { tenantId, principalId, eventId, command } = await seedStuckCreate();
     expect(command.outcome.state).toBe("pending");

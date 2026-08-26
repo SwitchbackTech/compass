@@ -9,10 +9,22 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
+import {
+  type ProviderAuthAdapter,
+  type RefreshedCredential,
+} from "@sync/providers/provider-auth.port";
+import { type ProviderEvent } from "@sync/providers/provider-event.port";
+import {
+  type ProviderEventWriter,
+  type ProviderPatchInput,
+  type ProviderWriteResult,
+} from "@sync/providers/provider-event-writer.port";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
@@ -560,6 +572,217 @@ describe("POST /internal/commands", () => {
     const res = await submit(objectId(), objectId(), request);
 
     expect(res.status).toBe(400);
+  });
+
+  it("confirms a provider-linked rsvp end-to-end and appends the change-feed invalidations", async () => {
+    // WP-07: the full inline path — signed request → rsvp dispatch → self
+    // entry rewrite at the (fake) provider → confirm → invalidation outbox
+    // rows, which are what the Compass API's SSE eventsChanged derives from.
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connections = new ProviderConnectionRepository(mongo.db);
+    const connection = await connections.upsertByProviderAccount({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      provider: "google",
+      account: {
+        providerAccountId: objectId(),
+        email: "self@example.com",
+        displayName: null,
+      },
+      capabilities: ["readEvents"],
+      state: "healthy",
+      stateReason: null,
+    });
+    const calendars = new ProviderCalendarRepository(mongo.db);
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@google.com",
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "editor",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const credentials = new CredentialRepository(mongo.db);
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "stored-refresh-token",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const events = new EventRepository(mongo.db);
+    const eventId = objectId();
+    const self = {
+      email: "self@example.com",
+      displayName: null,
+      responseStatus: "needsAction" as const,
+    };
+    const schedule = {
+      kind: "timed" as const,
+      start: "2026-07-14T09:00:00-06:00",
+      end: "2026-07-14T10:00:00-06:00",
+      timeZone: "America/Denver",
+    };
+    const content = {
+      title: "Invited",
+      description: "",
+      location: null,
+      organizer: { email: "organizer@example.com", displayName: null },
+      attendees: [self],
+      conference: null,
+    };
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId: connection._id,
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-1",
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content,
+      schedule,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      confirmedAt: new Date(),
+    } as never);
+
+    const patchCalls: ProviderPatchInput[] = [];
+    const writer: ProviderEventWriter = {
+      createEvent: async () => {
+        throw new Error("unused");
+      },
+      deleteEvent: async () => {
+        throw new Error("unused");
+      },
+      patchEvent: async (
+        input: ProviderPatchInput,
+      ): Promise<ProviderWriteResult> => {
+        patchCalls.push(input);
+        return { providerEventId: "g-evt-1", providerVersion: "etag-2" };
+      },
+      fetchEvent: async (): Promise<ProviderEvent> => ({
+        kind: "event",
+        providerEventId: "g-evt-1",
+        providerVersion: "etag-1",
+        providerUpdatedAt: null,
+        content,
+        schedule,
+        busy: true,
+        recurrence: { kind: "single" },
+      }),
+      fetchInstanceAt: async () => null,
+    };
+    const authAdapter: ProviderAuthAdapter = {
+      buildAuthorizationUrl: () => {
+        throw new Error("unused");
+      },
+      exchangeAuthorizationCode: async () => {
+        throw new Error("unused");
+      },
+      refreshAccessToken: async (): Promise<RefreshedCredential> => ({
+        accessToken: "fresh-access-token",
+        expiresAt: new Date("2099-01-01T00:00:00Z"),
+        grantedScopes: [],
+      }),
+      revoke: async () => {},
+    };
+    service = createSyncService(testConfig({ EXECUTION: "active" }), {
+      mongo,
+      writer,
+      authAdapter,
+    });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+
+    const res = await submit(tenantId, principalId, {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId,
+      input: {
+        kind: "rsvp",
+        responseStatus: "accepted",
+        scope: "all",
+        recurrenceId: null,
+      },
+      expectedVersion: null,
+    });
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("confirmed");
+    // The single patch rewrote only the self entry, silently.
+    expect(patchCalls).toHaveLength(1);
+    expect(patchCalls[0]?.invitation).toBe("none");
+    expect(patchCalls[0]?.attendees).toEqual([
+      { ...self, responseStatus: "accepted" },
+    ]);
+    // The stored record reflects the answer before any Google round-trip.
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as never,
+      eventId as never,
+    );
+    expect(stored?.content.attendees).toEqual([
+      { ...self, responseStatus: "accepted" },
+    ]);
+    // The change-feed outbox got both notices — the source of the Compass
+    // API's SSE eventsChanged for this calendar.
+    const invalidations = await mongo.db
+      .collection("invalidations")
+      .find({ tenantId, principalId })
+      .toArray();
+    expect(
+      invalidations.some(
+        (row) =>
+          row["invalidation"]?.["kind"] === "event" &&
+          row["invalidation"]?.["eventId"] === eventId &&
+          row["invalidation"]?.["calendarId"] === calendar._id,
+      ),
+    ).toBe(true);
+    expect(
+      invalidations.some((row) => row["invalidation"]?.["kind"] === "command"),
+    ).toBe(true);
+  });
+
+  it("rejects an rsvp to needsAction (unrepresentable by contract)", async () => {
+    // WP-07 acceptance "Incomplete input": a user answers an invitation,
+    // they don't un-answer it — RsvpResponseStatusSchema excludes
+    // needsAction, so the request never becomes a command.
+    await startService();
+
+    const res = await submit(objectId(), objectId(), {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: objectId(),
+      input: {
+        kind: "rsvp",
+        responseStatus: "needsAction",
+        scope: "all",
+        recurrenceId: null,
+      },
+      expectedVersion: null,
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "invalid_command" });
   });
 
   it("rejects an unsigned request", async () => {

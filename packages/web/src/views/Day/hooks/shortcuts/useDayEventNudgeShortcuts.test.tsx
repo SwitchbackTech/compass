@@ -177,12 +177,17 @@ const renderEditShortcuts = ({
   const repository: EventRepository = {
     list: async () => [],
     create: async () => timedEventContract,
-    replace: async (id, input) => ({
-      ...(id === ALL_DAY_EVENT_ID ? allDayEventContract : timedEventContract),
-      id,
-      content: input.content,
-      schedule: input.schedule,
-    }),
+    replace: async (id, input) => {
+      // The write contract's guest-edit field never round-trips into the
+      // read-side Event content this stub returns.
+      const { attendees: _guestEdit, ...content } = input.content;
+      return {
+        ...(id === ALL_DAY_EVENT_ID ? allDayEventContract : timedEventContract),
+        id,
+        content,
+        schedule: input.schedule,
+      };
+    },
     delete: async () => {},
   };
   const dependencies = {

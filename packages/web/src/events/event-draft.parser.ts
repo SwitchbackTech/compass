@@ -206,6 +206,12 @@ export function parseEventDraft(draft: EventDraft): ParseEventDraftResult {
     // no-op clear on create). Omitting would preserve an existing sync color
     // on title-only saves that still carry an explicit draft color of null.
     color: draft.values.color,
+    // Only a draft that touched the guest list carries attendees; omitted
+    // means "not editing guests" and preserves the provider list (see
+    // EditableContentSchema).
+    ...(draft.values.attendees !== undefined
+      ? { attendees: draft.values.attendees }
+      : {}),
   };
 
   if (draft.mode === "create") {

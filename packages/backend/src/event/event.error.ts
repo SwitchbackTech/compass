@@ -33,6 +33,9 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   // event (e.g. deleting one occurrence of a Google birthday event) — not a
   // provider outage, so never the retryable 502 it used to surface as.
   UNSUPPORTED_OPERATION: Status.FORBIDDEN,
+  // 403 like the capability refusals above: guests can only be written to a
+  // writable Google calendar, and retrying cannot change that.
+  ATTENDEES_UNSUPPORTED: Status.FORBIDDEN,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -51,6 +54,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   INVALID_INPUT: false,
   BILLING_REQUIRED: false,
   UNSUPPORTED_OPERATION: false,
+  ATTENDEES_UNSUPPORTED: false,
 };
 
 export class EventMutationException extends BaseError {

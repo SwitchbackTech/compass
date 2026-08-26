@@ -1,6 +1,10 @@
 import { type z } from "zod/v4";
 import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
+  type ContactSuggestionsResponse,
+  ContactSuggestionsResponseSchema,
+} from "@core/types/contact.contracts";
+import {
   type BusyAvailabilityRequest,
   type BusyAvailabilityResponse,
   BusyAvailabilityResponseSchema,
@@ -59,6 +63,7 @@ const ADOPT_GOOGLE_AUTHORIZATION_PATH =
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
+const CONTACTS_SUGGESTIONS_PATH = "/internal/contacts/suggestions";
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 // Provider create/update/delete run inline inside POST /internal/commands.
@@ -370,6 +375,29 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: BusyAvailabilityResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Ranked contact suggestions for the attendee type-ahead, scoped to the
+  // signed principal. A provider-touching read: sync queries the People API
+  // per request (contacts are never cached) and answers 403 when no
+  // connection granted a contacts scope, so callers should treat any failure
+  // as "no suggestions" — the lookup is a convenience, never load-bearing.
+  // Neither the query nor the response content belongs in any log.
+  getContactSuggestions(
+    principal: SyncPrincipal,
+    query: string,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ContactSuggestionsResponse>> {
+    const params = new URLSearchParams();
+    params.set("q", query);
+    return this.#request({
+      method: "GET",
+      path: CONTACTS_SUGGESTIONS_PATH,
+      query: params,
+      principal,
+      schema: ContactSuggestionsResponseSchema,
       correlationId,
     });
   }

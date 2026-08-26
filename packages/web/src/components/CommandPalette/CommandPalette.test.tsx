@@ -319,12 +319,12 @@ describe("CommandPalette", () => {
     const repository: EventRepository = {
       list: async () => [],
       create: async () => before,
-      replace: async (id, input) => ({
-        ...before,
-        id,
-        content: input.content,
-        schedule: input.schedule,
-      }),
+      replace: async (id, input) => {
+        // The write contract's guest-edit field never round-trips into the
+        // read-side Event content this stub returns.
+        const { attendees: _guestEdit, ...content } = input.content;
+        return { ...before, id, content, schedule: input.schedule };
+      },
       delete: async () => {},
     };
     renderPalette({
@@ -365,12 +365,12 @@ describe("CommandPalette", () => {
     const repository: EventRepository = {
       list: async () => [],
       create: async () => before,
-      replace: async (id, input) => ({
-        ...before,
-        id,
-        content: input.content,
-        schedule: input.schedule,
-      }),
+      replace: async (id, input) => {
+        // The write contract's guest-edit field never round-trips into the
+        // read-side Event content this stub returns.
+        const { attendees: _guestEdit, ...content } = input.content;
+        return { ...before, id, content, schedule: input.schedule };
+      },
       delete: async () => {},
     };
     renderPalette({

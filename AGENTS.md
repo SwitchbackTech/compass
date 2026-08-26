@@ -58,6 +58,7 @@ Validation defaults:
 - Handoffs: `.agents/handoffs/SCHEMA.md`
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
 - Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
+- Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
 
 The `wip/restructure/` pack is deleted after WP-01–07. WP-08 was cancelled:
 discovery was not the bottleneck (failures were CI, review, evidence, and

@@ -3,7 +3,7 @@ import {
   useGoogleLogin as useGoogleLoginBase,
 } from "@react-oauth/google";
 import { useCallback, useMemo, useState } from "react";
-import { GOOGLE_AUTH_SCOPES_REQUIRED } from "./google-authorization.constants";
+import { GOOGLE_AUTH_SCOPES_REQUESTED } from "./google-authorization.constants";
 import {
   type GoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
@@ -35,7 +35,10 @@ export const useStartGoogleAuthorizationImpl = ({
   >(
     () => ({
       flow: "auth-code",
-      scope: GOOGLE_AUTH_SCOPES_REQUIRED.join(" "),
+      // Requested = required + optional contacts. Callback verification
+      // (complete-google-authorization) checks REQUIRED only, so leaving the
+      // contacts boxes unchecked still signs in.
+      scope: GOOGLE_AUTH_SCOPES_REQUESTED.join(" "),
       prompt,
       state,
       ux_mode: "redirect",

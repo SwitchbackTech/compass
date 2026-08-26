@@ -8,6 +8,7 @@ import {
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
 import {
+  ConnectionBeginFeaturesSchema,
   type ConnectionListResponse,
   ConnectionRefreshResponseSchema,
   ForegroundRefreshRequestSchema,
@@ -48,8 +49,10 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
+import { CONTACTS_FEATURE_SCOPES } from "@sync/providers/google/google.scopes";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ContactsPort } from "@sync/providers/provider-contacts.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
@@ -112,6 +115,10 @@ export interface ConnectionApiDeps {
   // Not used by the connection routes themselves; carried here because this is
   // the shared bag the command routes are wired from.
   writer?: ProviderEventWriter;
+  // The provider contacts port, present only when the provider is configured.
+  // Not used by the connection routes themselves; carried here because this is
+  // the shared bag the contacts routes are wired from.
+  contacts?: ContactsPort;
   // Secret the OAuth CSRF state is signed with, and the public base URL the
   // provider callback resolves against.
   stateSecret: string;
@@ -530,6 +537,24 @@ export function registerConnectionRoutes(
         connectionId = parsed.data;
       }
 
+      // Optional feature groups widen the consent request with their OPTIONAL
+      // scopes (e.g. contacts for attendee suggestions). Absent features keep
+      // the consent URL byte-identical to a plain connect; the user may still
+      // decline any feature scope on the consent screen and the flow completes
+      // (the callback derives capabilities from what was actually granted).
+      let extraScopes: string[] = [];
+      const rawFeatures = (req.body as { features?: unknown })?.features;
+      if (rawFeatures !== undefined && rawFeatures !== null) {
+        const parsed = ConnectionBeginFeaturesSchema.safeParse(rawFeatures);
+        if (!parsed.success) {
+          res.status(Status.BAD_REQUEST).json({ error: "invalid_features" });
+          return;
+        }
+        if (parsed.data.includes("contacts")) {
+          extraScopes = [...CONTACTS_FEATURE_SCOPES];
+        }
+      }
+
       // A fresh connect by a principal that already has connections is an
       // add-account: show the provider's account chooser so the user can pick
       // a different account instead of silently re-authorizing the connected
@@ -561,6 +586,10 @@ export function registerConnectionRoutes(
         state,
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
         selectAccount,
+        // Undefined (not an empty array) when no feature was asked for, so a
+        // plain begin's adapter input — and therefore its consent URL — stays
+        // byte-identical to before features existed.
+        ...(extraScopes.length > 0 ? { extraScopes } : {}),
       });
       res.status(Status.OK).json({ authorizationUrl });
     },

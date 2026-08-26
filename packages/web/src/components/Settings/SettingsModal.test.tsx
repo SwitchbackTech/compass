@@ -120,6 +120,7 @@ const connection = (
   lastHealthyAt: null,
   accountEmail: "ahab@pequod.com",
   connectionState: "HEALTHY",
+  canSuggestContacts: false,
   ...overrides,
 });
 
@@ -171,6 +172,7 @@ describe("SettingsModal", () => {
           state: "actionRequired",
           stateReason: "authorizationRevoked",
           connectionState: "RECONNECT_REQUIRED",
+          canSuggestContacts: false,
         }),
       ],
     });
@@ -216,6 +218,7 @@ describe("SettingsModal", () => {
           state: "actionRequired",
           stateReason: "authorizationRevoked",
           connectionState: "RECONNECT_REQUIRED",
+          canSuggestContacts: false,
         }),
       ],
     });

@@ -13,6 +13,10 @@ const api = {
   list: mock(),
   replace: mock(),
   delete: mock(),
+  // Not part of the repository surface — RSVP bypasses the repository (it
+  // only exists for provider-backed events), but the mock mirrors the full
+  // EventApi shape.
+  rsvpEvent: mock(),
 } satisfies Record<keyof typeof EventApi, ReturnType<typeof mock>>;
 
 const repository = new RemoteEventRepository(api as unknown as typeof EventApi);

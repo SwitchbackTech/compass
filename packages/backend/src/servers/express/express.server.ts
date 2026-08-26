@@ -17,6 +17,7 @@ import {
   supertokensCors,
 } from "@backend/common/middleware/supertokens.middleware";
 import { ConfigRoutes } from "@backend/config/config.routes.config";
+import { ContactsRoutes } from "@backend/contacts/contacts.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { HealthRoutes } from "@backend/health/health.routes.config";
 import { EventsRoutes } from "@backend/servers/sse/events-stream.routes.config";
@@ -54,6 +55,7 @@ export const initExpressServer = () => {
   routes.push(new EventRoutes(app));
   routes.push(new EventsRoutes(app));
   routes.push(new CalendarRoutes(app));
+  routes.push(new ContactsRoutes(app));
 
   app.use(supertokensErrorHandler()); // Keep this after routes
 

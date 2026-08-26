@@ -1,4 +1,5 @@
 import { type EventSchedule } from "@core/types/event.contracts";
+import { type Attendee } from "@core/types/event-attendance.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
@@ -28,6 +29,14 @@ interface ProviderWriteBody {
   readonly schedule: EventSchedule;
   readonly recurrence: ProviderWriteRecurrence;
   readonly invitation: InvitationIntent;
+  // The guest membership this write sets, already merged by the caller
+  // against freshly fetched provider state (see mergeAttendees). Present —
+  // including an empty list — replaces the provider's whole attendee array;
+  // absent leaves the provider's guest list untouched (the behavior every
+  // attendeesEdit "preserve" / legacy command keeps). content.attendees is
+  // read-reflected state and is never written; only this field reaches the
+  // provider.
+  readonly attendees?: readonly Attendee[];
 }
 
 export interface ProviderCreateInput extends ProviderWriteBody {

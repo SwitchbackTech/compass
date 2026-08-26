@@ -20,6 +20,7 @@ import {
   type ProviderPatchInput,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import { findSafetyCanaryHit } from "@sync/safety/safety-canary";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
@@ -643,6 +644,235 @@ describe("submitCloudCommand provider dispatch", () => {
       exceptions[0]?.recurrence.kind === "exception" &&
         exceptions[0]?.recurrence.cancelled,
     ).toBe(true);
+  });
+
+  // --- rsvp routing (WP-07) --------------------------------------------------
+
+  const rsvpFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    scope = "all",
+    recurrenceId: string | null = null,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "rsvp",
+      responseStatus: "declined",
+      scope,
+      recurrenceId,
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  const selfConnection = {
+    findById: async () => ({ account: { email: "self@example.com" } }),
+  };
+
+  it("routes a provider-linked rsvp to the provider executor when active", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      content: {
+        title: "Existing",
+        description: "",
+        location: null,
+        organizer: { email: "organizer@example.com", displayName: null },
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+        conference: null,
+      },
+    });
+    const writer = new FakeWriter();
+    writer.fetched = {
+      ...(writer.fetched as ProviderEvent),
+      content: {
+        ...(writer.fetched as ProviderEvent).content,
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+      },
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
+    expect(writer.patchCalls[0].attendees).toEqual([
+      {
+        email: "self@example.com",
+        displayName: null,
+        responseStatus: "declined",
+      },
+    ]);
+    const stored = await events.findById(tenantId, principalId, eventId);
+    expect(stored?.content.attendees).toEqual([
+      {
+        email: "self@example.com",
+        displayName: null,
+        responseStatus: "declined",
+      },
+    ]);
+  });
+
+  it("fails an rsvp against a cloud-only event typed, with no provider call", async () => {
+    // Cloud-only events with attendees are not expected in v1 — there is no
+    // provider invitation to answer and Compass sends no email — so the
+    // command fails typed (unsupportedCapability) instead of being stranded
+    // pending or guessed at locally.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      content: {
+        title: "Existing",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [
+          {
+            email: "self@example.com",
+            displayName: null,
+            responseStatus: "needsAction",
+          },
+        ],
+        conference: null,
+      },
+    });
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
+    // No attendee JSON on the failure surface the route logs from.
+    expect(findSafetyCanaryHit(command.outcome)).toBeNull();
+  });
+
+  it("fails an rsvp with scope thisAndFollowing typed", async () => {
+    // An RSVP answers "this event" or "all events"; from-here-on has no v1
+    // semantics and the browser cannot send it.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(
+        tenantId,
+        principalId,
+        eventId,
+        "thisAndFollowing",
+        "2026-07-21T15:00:00.000Z",
+      ),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
+  it("fails an rsvp against a missing event as a version conflict", async () => {
+    // The target vanished since the browser last saw it — an honest
+    // conflict, mirroring the update path.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const writer = new FakeWriter();
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        connections: selfConnection,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      rsvpFor(tenantId, principalId, objectId() as EventId),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "versionConflict",
+    });
+    expect(writer.patchCalls).toHaveLength(0);
   });
 
   const updateSeriesFor = (
@@ -1904,5 +2134,249 @@ describe("submitCloudCommand provider dispatch", () => {
       // update command was NOT reapplied on top of it.
       expect(stored?.content).not.toMatchObject({ title: "First title" });
     });
+  });
+});
+
+// WP-02: attendeesEdit "replace" on cloud-only records — stored membership
+// merges against the stored list (no provider copy exists), creates normalize
+// every guest to needsAction, and per-occurrence/split replaces are refused
+// typed. "preserve"/legacy stays byte-identical (covered by every pre-existing
+// test in this file, none of which set attendeesEdit).
+describe("cloud-only attendeesEdit replace", () => {
+  let mongo: SyncMongoService;
+  let commands: CommandRepository;
+  let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
+  let resources: SyncResourceRepository;
+  let calendars: ProviderCalendarRepository;
+  let markers: DeletionMarkerRepository;
+
+  const now = () => new Date("2026-07-10T00:00:00.000Z");
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    commands = new CommandRepository(mongo.db);
+    events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    resources = new SyncResourceRepository(mongo.db);
+    calendars = new ProviderCalendarRepository(mongo.db);
+    markers = new DeletionMarkerRepository(mongo.db);
+  });
+
+  const deps = () => ({
+    commands,
+    events,
+    calendars,
+    occurrences,
+    resources,
+    markers,
+    execution: "active" as const,
+  });
+
+  const attendee = (
+    email: string,
+    responseStatus = "needsAction",
+    displayName: string | null = null,
+  ) => ({ email, displayName, responseStatus });
+
+  const contentWith = (title: string, attendees: unknown[] = []) => ({
+    title,
+    description: "",
+    location: null,
+    organizer: null,
+    attendees,
+    conference: null,
+  });
+
+  const schedule = {
+    kind: "timed",
+    start: "2026-07-14T09:00:00-06:00",
+    end: "2026-07-14T10:00:00-06:00",
+    timeZone: "America/Denver",
+  };
+
+  const seedCloudEvent = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    overrides: Partial<EventRecord> = {},
+  ) =>
+    events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: objectId(),
+      clientEventId: null,
+      connectionId: null,
+      providerEventId: null,
+      providerVersion: null,
+      providerUpdatedAt: null,
+      deliveryState: null,
+      providerMetadata: null,
+      content: contentWith("Existing", [
+        attendee("kept@example.com", "accepted", "Kept"),
+        attendee("dropped@example.com", "tentative"),
+      ]),
+      schedule,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+      ...overrides,
+    } as EventRecord);
+
+  const updateFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    opts: {
+      attendees: unknown[];
+      scope?: string;
+      recurrenceId?: string | null;
+    },
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "update",
+      invitation: "none",
+      attendeesEdit: "replace",
+      content: contentWith("Existing", opts.attendees),
+      schedule,
+      recurrence: { kind: "preserve" },
+      scope: opts.scope ?? "all",
+      recurrenceId: opts.recurrenceId ?? null,
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  it("stores the merged membership on a cloud-only update", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedCloudEvent(tenantId, principalId, eventId);
+
+    const { command } = await submitCloudCommand(
+      deps(),
+      updateFor(tenantId, principalId, eventId, {
+        attendees: [
+          attendee("kept@example.com"),
+          attendee("new@example.com", "needsAction", "New"),
+        ],
+      }),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const stored = await events.findById(tenantId, principalId, eventId);
+    // Retained guests keep their stored status/name, new guests enter as
+    // needsAction, dropped guests are removed.
+    expect(stored?.content.attendees).toEqual([
+      attendee("kept@example.com", "accepted", "Kept"),
+      attendee("new@example.com", "needsAction", "New"),
+    ] as never);
+  });
+
+  it("normalizes every guest to needsAction on a cloud-only create", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+
+    const { command } = await submitCloudCommand(
+      deps(),
+      {
+        tenantId,
+        principalId,
+        idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+        eventId,
+        input: {
+          kind: "create",
+          calendarId: objectId(),
+          invitation: "none",
+          attendeesEdit: "replace",
+          content: contentWith("Kickoff", [
+            attendee("a@example.com", "accepted", "Aye"),
+            attendee("b@example.com"),
+          ]),
+          schedule,
+          recurrence: { kind: "single" },
+        } as unknown as SyncCommandInput,
+        expectedVersion: null,
+      },
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const stored = await events.findById(tenantId, principalId, eventId);
+    expect(stored?.content.attendees).toEqual([
+      attendee("a@example.com", "needsAction", "Aye"),
+      attendee("b@example.com", "needsAction"),
+    ] as never);
+  });
+
+  it("refuses a replace on a cloud occurrence edit (this scope), with a content-free failure", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedCloudEvent(tenantId, principalId, eventId, {
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+
+    const { command } = await submitCloudCommand(
+      deps(),
+      updateFor(tenantId, principalId, eventId, {
+        attendees: [attendee("a@example.com")],
+        scope: "this",
+        recurrenceId: "2026-07-21T15:00:00.000Z",
+      }),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    // No exception override was created for the refused edit.
+    expect(
+      await events.findSeriesExceptions(tenantId, principalId, eventId),
+    ).toHaveLength(0);
+    // The failure surface (what the command route logs and the SSE notices
+    // derive from) carries no attendee JSON or event content.
+    expect(findSafetyCanaryHit(command.outcome)).toBeNull();
+  });
+
+  it("refuses a replace on a cloud thisAndFollowing split", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedCloudEvent(tenantId, principalId, eventId, {
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+
+    const { command } = await submitCloudCommand(
+      deps(),
+      updateFor(tenantId, principalId, eventId, {
+        attendees: [attendee("a@example.com")],
+        scope: "thisAndFollowing",
+        recurrenceId: "2026-07-21T15:00:00.000Z",
+      }),
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+    // The master's rules were not truncated by the refused split.
+    const stored = await events.findById(tenantId, principalId, eventId);
+    expect(stored?.recurrence).toEqual({
+      kind: "seriesMaster",
+      rules: ["RRULE:FREQ=WEEKLY"],
+    } as never);
   });
 });

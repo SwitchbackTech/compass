@@ -22,6 +22,7 @@ import {
   EVENTS_FULL_PATH,
   FOREGROUND_REFRESH_PATH,
 } from "@sync/server/connection.routes";
+import { CONTACTS_SUGGESTIONS_PATH } from "@sync/server/contacts.routes";
 import { PRINCIPAL_PATH } from "@sync/server/principal.routes";
 import {
   SyncServiceClient,
@@ -308,6 +309,69 @@ describe("SyncServiceClient", () => {
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.tenantId).toBe(who.tenantId);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("fetches contact suggestions with a signed GET the real Sync verifier accepts", async () => {
+    const who = principal();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        suggestions: [{ email: "ada@example.com", displayName: "Ada" }],
+      }),
+    }));
+
+    const result = await client(fn).getContactSuggestions(who, "ad a");
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.suggestions).toEqual([
+      { email: "ada@example.com", displayName: "Ada" },
+    ]);
+
+    const sent = calls[0];
+    // Path contract with the Sync route module, query URL-encoded.
+    expect(sent?.url).toBe(`${BASE_URL}${CONTACTS_SUGGESTIONS_PATH}?q=ad+a`);
+    expect(sent?.method).toBe("GET");
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("rejects a contact-suggestions body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        // People-shaped extras must never ride through the strict contract.
+        suggestions: [
+          {
+            email: "ada@example.com",
+            displayName: "Ada",
+            phoneNumbers: ["+1"],
+          },
+        ],
+      }),
+    }));
+
+    const result = await client(fn).getContactSuggestions(principal(), "ada");
+    if (result.ok) throw new Error("expected invalidResponse");
+    expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  it("maps a 403 contacts refusal to unexpectedStatus with the status attached", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 403,
+      json: async () => ({ error: "contacts_not_granted" }),
+    }));
+
+    const result = await client(fn).getContactSuggestions(principal(), "ada");
+    if (result.ok) throw new Error("expected a failure");
+    expect(result.error.kind).toBe("unexpectedStatus");
+    expect(result.error.status).toBe(403);
   });
 
   it("polls the change feed from now and with a resume cursor", async () => {

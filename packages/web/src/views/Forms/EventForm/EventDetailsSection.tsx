@@ -7,6 +7,12 @@ type EventDetails = Extract<EventContent, { kind: "details" }>;
 
 interface EventDetailsSectionProps {
   details: Pick<EventDetails, "organizer" | "attendees" | "conference">;
+  /**
+   * Set when the editable AttendeeField owns the guest list for this event —
+   * this section then renders only the remaining read-only details (the
+   * conference link) instead of duplicating the guests below the editor.
+   */
+  hideAttendees?: boolean;
 }
 
 const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
@@ -29,10 +35,13 @@ const MAX_VISIBLE_ATTENDEES = 6;
  * least one of these - absent for a plain Compass-native event and for a
  * busy-projection event (whose content carries none of this).
  */
-export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
+export const EventDetailsSection = ({
+  details,
+  hideAttendees = false,
+}: EventDetailsSectionProps) => {
   const { organizer, attendees = [], conference } = details;
   const [showAllAttendees, setShowAllAttendees] = useState(false);
-  const hasAttendees = attendees.length > 0;
+  const hasAttendees = attendees.length > 0 && !hideAttendees;
 
   if (!conference && !hasAttendees) return null;
 

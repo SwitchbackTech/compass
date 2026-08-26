@@ -13,6 +13,9 @@ export interface ApiRequestConfig {
   body?: unknown;
   headers?: HeadersInit;
   method?: string;
+  // Abort the underlying fetch (e.g. a type-ahead query cancelled on
+  // unmount). Aborting rejects the request promise with an AbortError.
+  signal?: AbortSignal;
   skipSessionRecovery?: boolean;
   url?: string;
 }
@@ -27,7 +30,7 @@ export interface ApiResponse<T> {
 
 export type ApiMethodConfig = Pick<
   ApiRequestConfig,
-  "headers" | "skipSessionRecovery"
+  "headers" | "signal" | "skipSessionRecovery"
 >;
 
 export type SignoutStatus =

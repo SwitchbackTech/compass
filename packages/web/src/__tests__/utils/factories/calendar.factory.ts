@@ -44,6 +44,7 @@ export function createMockConnection(
     lastHealthyAt: null,
     accountEmail,
     connectionState: "HEALTHY",
+    canSuggestContacts: false,
     ...overrides,
   };
 }

@@ -133,6 +133,7 @@ describe("Sync identity contracts", () => {
       "inviteAttendees",
       "changeNotifications",
       "incrementalChanges",
+      "suggestContacts",
     ] as const)("accepts %s", (capability) => {
       expect(ProviderCapabilitySchema.safeParse(capability).success).toBe(true);
     });

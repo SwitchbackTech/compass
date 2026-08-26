@@ -7,6 +7,7 @@ import {
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { gridDraftGuestsChanged } from "@web/events/grid-event-draft.adapter";
 import { type RecurrenceScopePendingAction } from "@web/events/recurrence/useRecurrenceScopeConfirmation";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 
@@ -21,12 +22,22 @@ const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
   RecurringEventUpdateScope.ALL_EVENTS,
 ];
 
-const updateScopeOptionClassName =
+// Guest edits have no per-occurrence semantics in v1: sync refuses attendee
+// replacements at scope "this"/"thisAndFollowing", so a save that changed the
+// guest set narrows to the whole series — same narrowing mechanism as a
+// structural recurrence change above.
+const GUESTS_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
+  RecurringEventUpdateScope.ALL_EVENTS,
+];
+
+// Shared with RsvpScopeDialog so both scope dialogs render identical radio
+// rows.
+export const updateScopeOptionClassName =
   "flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-base text-text transition-colors hover:bg-surface-overlay";
 
-const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
+export const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
 
-const radioDotClassName =
+export const radioDotClassName =
   "relative flex size-[18px] flex-none rounded-full border-2 border-border-strong transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent after:transition-transform peer-checked:border-accent peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-panel";
 
 type RecurrenceScopeConfirmationDialogProps = {
@@ -75,9 +86,12 @@ export function RecurringEventUpdateScopeDialogContent({
     (draft && storeDraft
       ? DirtyParser.gridDraftRecurrenceChanged(draft, storeDraft)
       : false);
-  const options = recurrenceChanged
-    ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
-    : UPDATE_SCOPE_OPTIONS;
+  const guestsChanged = draft ? gridDraftGuestsChanged(draft) : false;
+  const options = guestsChanged
+    ? GUESTS_CHANGED_UPDATE_SCOPE_OPTIONS
+    : recurrenceChanged
+      ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
+      : UPDATE_SCOPE_OPTIONS;
   const [fallbackScope] = options;
 
   const [selectedScope, setSelectedScope] =
@@ -126,6 +140,12 @@ export function RecurringEventUpdateScopeDialogContent({
           );
         })}
       </div>
+
+      {guestsChanged && (
+        <p className="m-0 text-sm text-text-muted">
+          Guest changes apply to all events in the series.
+        </p>
+      )}
 
       <OverlayPanelActions>
         <OverlayPanelActionButton onClick={closeDialog}>

@@ -257,6 +257,7 @@ describe("CalendarListHeader", () => {
       lastHealthyAt: new Date().toISOString(),
       accountEmail: "ahab@pequod.com",
       connectionState: "IMPORTING" as const,
+      canSuggestContacts: false,
     };
     userMetadataActions.set({
       google: {
@@ -289,6 +290,7 @@ describe("CalendarListHeader", () => {
       lastHealthyAt: new Date().toISOString(),
       accountEmail: "ahab@pequod.com",
       connectionState: "HEALTHY" as const,
+      canSuggestContacts: false,
     };
     const otherAccountsBrokenConnection = {
       id: "conn-other",
@@ -298,6 +300,7 @@ describe("CalendarListHeader", () => {
       lastHealthyAt: null,
       accountEmail: "starbuck@pequod.com",
       connectionState: "RECONNECT_REQUIRED" as const,
+      canSuggestContacts: false,
     };
     userMetadataActions.set({
       google: {

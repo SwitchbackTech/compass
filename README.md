@@ -23,6 +23,7 @@ Cool things you can do with in Compass
 - Find the perfect slot for an event with your keyboard: `SHIFT` + `↑` `↓` `←` `→`
 - Do everything from the cmd palette
 - Google Calendar sync
+- Add/remove event attendees and RSVP to invites, with optional Google-contact suggestions
 
 Things you can't do in Compass (yet):
 

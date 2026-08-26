@@ -12,7 +12,7 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { GOOGLE_AUTH_SCOPES } from "@backend/auth/services/google/google.auth.scopes";
+import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import {
@@ -35,7 +35,9 @@ const createGoogleProvider = (
         clientType: "web",
         clientId,
         clientSecret,
-        scope: GOOGLE_AUTH_SCOPES,
+        // Requested (required + optional contacts) — the REQUIRED validation
+        // lives in google.auth.service.ts against GOOGLE_AUTH_SCOPES only.
+        scope: GOOGLE_AUTH_SCOPES_REQUESTED,
       },
     ],
   },

@@ -8,6 +8,10 @@ import {
 } from "@core/types/domain-primitives";
 import { type Event, EventSchema } from "@core/types/event.contracts";
 import {
+  type Attendee,
+  type AttendeeInput,
+} from "@core/types/event-attendance.contracts";
+import {
   type EventColorSlot,
   withColor,
 } from "@core/types/event-color.contracts";
@@ -16,6 +20,7 @@ import {
   type DeleteEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
+  type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import {
   type CommandSubmitRequest,
@@ -35,28 +40,73 @@ import { createHash } from "node:crypto";
 // we still need a contract-valid calendarId to round-trip the parse.
 const UNKNOWN_CALENDAR_ID = CalendarIdSchema.parse("000000000000000000000000");
 
-// Expand browser details-content into sync's fuller content shape. Browser
-// edits never touch organizer/attendees/conference — pad with nulls so the
-// strict SyncEventContent schema accepts the wire payload. On create those
-// nulls are correct (new event). On update, sync's apply path merges
-// title/description/location onto the existing record (mergeUpdateContent)
-// so a rename cannot wipe provider-sourced attendees/conference. Optional
-// color is forwarded when the browser sets one; omitted color leaves merge
-// to keep whatever Sync already stores.
-export const toSyncContent = (content: {
+// The browser names guests but never sets anyone's RSVP (AttendeeInputSchema
+// has no responseStatus), so every intended attendee enters the command — and
+// the optimistic response event — as the provider's "no answer yet" state.
+// Sync's merge-by-email keeps a retained guest's real provider responseStatus;
+// this placeholder only survives for genuinely new emails.
+const toIntendedAttendees = (attendees: readonly AttendeeInput[]): Attendee[] =>
+  attendees.map(({ email, displayName }) => ({
+    email,
+    displayName,
+    responseStatus: "needsAction" as const,
+  }));
+
+// Browser content that may carry a guest-list edit. Omitted attendees means
+// "not editing guests" (today's behavior); present, including [], means
+// "replace membership with exactly this set" — see EditableContentSchema.
+interface BrowserEditableContent {
   title: string;
   description: string;
   location: string;
   color?: EventColorSlot | null;
-}): SyncEventContent => ({
+  attendees?: readonly AttendeeInput[];
+}
+
+// Expand browser details-content into sync's fuller content shape. Browser
+// edits never touch organizer/conference — pad with nulls so the strict
+// SyncEventContent schema accepts the wire payload. On create those nulls are
+// correct (new event). On update, sync's apply path merges
+// title/description/location onto the existing record (mergeUpdateContent)
+// so a rename cannot wipe provider-sourced attendees/conference. Attendees:
+// an intended guest list maps in with the needsAction placeholder (paired
+// with attendeesEdit "replace" via toAttendeesEdit below); omitted keeps
+// today's [] pad, which sync ignores under attendeesEdit "preserve". Optional
+// color is forwarded when the browser sets one; omitted color leaves merge
+// to keep whatever Sync already stores.
+export const toSyncContent = (
+  content: BrowserEditableContent,
+): SyncEventContent => ({
   title: content.title,
   description: content.description,
   location: content.location,
   organizer: null,
-  attendees: [],
+  attendees:
+    content.attendees === undefined
+      ? []
+      : toIntendedAttendees(content.attendees),
   conference: null,
   ...withColor(content.color),
 });
+
+// Whether this write replaces guest membership. Derived from presence, not
+// emptiness: [] is a deliberate "remove everyone" and must still replace.
+const toAttendeesEdit = (
+  content: BrowserEditableContent,
+): "replace" | "preserve" =>
+  content.attendees === undefined ? "preserve" : "replace";
+
+// Synthesized response events echo the intended guest list (needsAction
+// placeholders) so the browser's optimistic cache stays coherent until the
+// provider-sourced read arrives. Content without a guest edit passes through
+// untouched — the input attendee shape has no responseStatus, so it would not
+// parse as the read-side AttendeeSchema.
+const toResponseContent = <C extends BrowserEditableContent>(
+  content: C,
+): C | (Omit<C, "attendees"> & { attendees: Attendee[] }) =>
+  content.attendees === undefined
+    ? content
+    : { ...content, attendees: toIntendedAttendees(content.attendees) };
 
 export interface CommandTarget {
   eventId: EventId;
@@ -142,7 +192,10 @@ export const toCreateSubmitRequest = (
       kind: "create",
       calendarId: input.calendarId,
       clientEventId,
-      invitation: "none",
+      // The user's save-time choice of whether the provider emails attendees;
+      // absent means the pre-attendee default of notifying no one.
+      invitation: input.invitation ?? "none",
+      attendeesEdit: toAttendeesEdit(input.content),
       content: toSyncContent(input.content),
       schedule: input.schedule,
       recurrence: input.recurrence,
@@ -154,7 +207,7 @@ export const toCreateSubmitRequest = (
   const responseEvent = EventSchema.parse({
     id: eventId,
     calendarId: input.calendarId,
-    content: input.content,
+    content: toResponseContent(input.content),
     schedule: input.schedule,
     recurrence: input.recurrence,
     createdAt: now,
@@ -175,6 +228,13 @@ export const toReplaceSubmitRequests = (
   const target = resolveCommandTarget(id, input.scope);
 
   const updateRequest = CommandSubmitRequestSchema.parse({
+    // Hashes the browser payload AS RECEIVED: a legacy payload (no attendees,
+    // no invitation) serializes byte-identically to before those fields
+    // existed, so its key — and therefore retry/replay identity across a
+    // deploy — is unchanged (pinned by the key-stability test). A guest-list
+    // edit rides inside `content`, so it naturally mints a distinct key.
+    // `invitation` stays out of the hash like `restore` does: it is
+    // per-submission delivery intent, not a different edit.
     idempotencyKey: hashedIdempotencyKey("update", {
       eventId: target.eventId,
       scope: target.scope,
@@ -187,7 +247,8 @@ export const toReplaceSubmitRequests = (
     expectedVersion: null,
     input: {
       kind: "update",
-      invitation: "none",
+      invitation: input.invitation ?? "none",
+      attendeesEdit: toAttendeesEdit(input.content),
       content: toSyncContent(input.content),
       schedule: input.schedule,
       recurrence: input.recurrence,
@@ -250,7 +311,51 @@ export const toDeleteSubmitRequest = (
     expectedVersion: null,
     input: {
       kind: "delete",
-      invitation: "none",
+      // Guest cancellation emails: the provider notifies attendees of the
+      // deletion when the user chose to. Deliberately outside the identity-
+      // only idempotency key above — it is delivery intent, not a different
+      // delete.
+      invitation: input.invitation ?? "none",
+      scope: target.scope,
+      recurrenceId: target.recurrenceId,
+    },
+  });
+};
+
+// RSVP → one rsvp command. The browser's scope vocabulary is "single" | "all"
+// (RsvpEventInputSchema): "single" answers exactly the addressed event — one
+// occurrence when the URL id is a composite occurrence id, or the event itself
+// for a plain id (resolveCommandTarget coerces that to sync's scope "all" +
+// null recurrenceId, exactly as update/delete address a non-recurring event) —
+// and "all" answers the whole series (composite ids drop their recurrenceId).
+// "thisAndFollowing" is deliberately unreachable: sync refuses it typed for
+// rsvp, so no translation may ever mint it.
+//
+// The idempotency key is derived from event + status + scope (target identity
+// plus the answer): repeating the same answer replays the same command, while
+// changing the answer — or the scope — mints a distinct command. Like
+// delete's key, it is deliberately nonce-free so a timed-out POST retried by
+// the client maps back to the original command instead of double-submitting.
+export const toRsvpSubmitRequest = (
+  id: string,
+  input: RsvpEventInput,
+): CommandSubmitRequest => {
+  const target = resolveCommandTarget(
+    id,
+    input.scope === "all" ? "all" : "this",
+  );
+  return CommandSubmitRequestSchema.parse({
+    idempotencyKey: hashedIdempotencyKey("rsvp", {
+      eventId: target.eventId,
+      scope: target.scope,
+      recurrenceId: target.recurrenceId,
+      responseStatus: input.responseStatus,
+    }),
+    eventId: target.eventId,
+    expectedVersion: null,
+    input: {
+      kind: "rsvp",
+      responseStatus: input.responseStatus,
       scope: target.scope,
       recurrenceId: target.recurrenceId,
     },
@@ -286,7 +391,7 @@ const synthesizeReplaceEvent = (
   return EventSchema.parse({
     id: responseId,
     calendarId: input.calendarId ?? UNKNOWN_CALENDAR_ID,
-    content: input.content,
+    content: toResponseContent(input.content),
     schedule: input.schedule,
     recurrence,
     createdAt: new Date().toISOString(),

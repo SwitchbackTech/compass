@@ -20,6 +20,7 @@ const connection = (
   lastHealthyAt: null,
   accountEmail: "primary@example.com",
   connectionState: "RECONNECT_REQUIRED",
+  canSuggestContacts: false,
   ...overrides,
 });
 
@@ -44,6 +45,7 @@ describe("useConnectGoogle account scoping", () => {
             stateReason: null,
             accountEmail: "second@example.com",
             connectionState: "HEALTHY",
+            canSuggestContacts: false,
           }),
         ],
       },
@@ -62,6 +64,7 @@ describe("useConnectGoogle account scoping", () => {
       stateReason: null,
       accountEmail: "second@example.com",
       connectionState: "HEALTHY",
+      canSuggestContacts: false,
     });
 
     // The aggregate is RECONNECT_REQUIRED because the other account is broken.
@@ -130,6 +133,53 @@ describe("useConnectGoogle account scoping", () => {
     await waitFor(() => {
       expect(beginSpy).toHaveBeenCalledWith({});
     });
+
+    beginSpy.mockRestore();
+  });
+
+  it("adds requested feature groups to the begin body (WP-06 contacts nudge)", async () => {
+    const beginSpy = spyOn(AuthApi, "beginGoogleConnection").mockResolvedValue({
+      authorizationUrl: "#consent",
+    });
+
+    const { wrapper } = createStoreWrapper();
+    const { result } = renderHook(
+      () => useConnectGoogle({ features: ["contacts"] }),
+      { wrapper },
+    );
+    act(() => result.current.connect());
+
+    await waitFor(() => {
+      // The aggregate here is RECONNECT_REQUIRED, so features ride along on a
+      // reconnect body too (incremental re-consent keeps the account pinned).
+      expect(beginSpy).toHaveBeenCalledWith({
+        connectionId: "connection-primary",
+        features: ["contacts"],
+      });
+    });
+
+    beginSpy.mockRestore();
+  });
+
+  it("keeps the begin body free of features when none are requested", async () => {
+    const beginSpy = spyOn(AuthApi, "beginGoogleConnection").mockResolvedValue({
+      authorizationUrl: "#consent",
+    });
+
+    const { wrapper } = createStoreWrapper();
+    const { result } = renderHook(
+      () => useConnectGoogle({ newAccount: true }),
+      {
+        wrapper,
+      },
+    );
+    act(() => result.current.connect());
+
+    await waitFor(() => {
+      expect(beginSpy).toHaveBeenCalledTimes(1);
+    });
+    // Byte-identical legacy body: no features key at all.
+    expect(Object.keys(beginSpy.mock.calls[0]?.[0] ?? {})).toEqual([]);
 
     beginSpy.mockRestore();
   });

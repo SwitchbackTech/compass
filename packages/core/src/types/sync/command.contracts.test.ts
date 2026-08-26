@@ -47,6 +47,13 @@ const updateInput = (scope: string = "this") => ({
 
 const moveInput = () => ({ kind: "move", calendarId: objectId() });
 
+const rsvpInput = (scope: string = "this") => ({
+  kind: "rsvp",
+  responseStatus: "accepted",
+  scope,
+  recurrenceId: recurrenceIdFor(scope),
+});
+
 const deleteInput = (scope: string = "this") => ({
   kind: "delete",
   scope,
@@ -181,6 +188,91 @@ describe("Sync command contracts", () => {
       expect(
         SyncCommandInputSchema.safeParse({ kind: "archive" }).success,
       ).toBe(false);
+    });
+
+    it.each([
+      "create",
+      "update",
+    ] as const)("defaults a legacy %s input without attendeesEdit to preserve", (kind) => {
+      const legacy = kind === "create" ? createInput() : updateInput();
+      const parsed = SyncCommandInputSchema.safeParse(legacy);
+      expect(parsed.success && parsed.data.kind === kind).toBe(true);
+      if (
+        parsed.success &&
+        (parsed.data.kind === "create" || parsed.data.kind === "update")
+      ) {
+        expect(parsed.data.attendeesEdit).toBe("preserve");
+      }
+    });
+
+    it("round-trips an explicit attendeesEdit replace on an update", () => {
+      const parsed = SyncCommandInputSchema.safeParse({
+        ...updateInput(),
+        attendeesEdit: "replace",
+      });
+      expect(parsed.success && parsed.data.kind === "update").toBe(true);
+      if (parsed.success && parsed.data.kind === "update") {
+        expect(parsed.data.attendeesEdit).toBe("replace");
+      }
+    });
+
+    it("rejects an unrecognized attendeesEdit value", () => {
+      const input = { ...createInput(), attendeesEdit: "merge" };
+      expect(SyncCommandInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects attendeesEdit on move and delete inputs", () => {
+      for (const input of [moveInput(), deleteInput()]) {
+        expect(
+          SyncCommandInputSchema.safeParse({
+            ...input,
+            attendeesEdit: "replace",
+          }).success,
+        ).toBe(false);
+      }
+    });
+
+    it.each([
+      "this",
+      "thisAndFollowing",
+      "all",
+    ] as const)("accepts an rsvp input with scope %s", (scope) => {
+      expect(SyncCommandInputSchema.safeParse(rsvpInput(scope)).success).toBe(
+        true,
+      );
+    });
+
+    it.each([
+      "accepted",
+      "declined",
+      "tentative",
+    ] as const)("accepts an rsvp answering %s", (responseStatus) => {
+      const input = { ...rsvpInput(), responseStatus };
+      expect(SyncCommandInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("rejects an rsvp answering needsAction", () => {
+      const input = { ...rsvpInput(), responseStatus: "needsAction" };
+      expect(SyncCommandInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("defaults an rsvp's recurrenceId to null when absent", () => {
+      const { recurrenceId: _omit, ...withoutTarget } = rsvpInput("all");
+      const parsed = SyncCommandInputSchema.safeParse(withoutTarget);
+      expect(parsed.success && parsed.data.kind === "rsvp").toBe(true);
+      if (parsed.success && parsed.data.kind === "rsvp") {
+        expect(parsed.data.recurrenceId).toBeNull();
+      }
+    });
+
+    it("rejects an rsvp input carrying content — rsvp is not an update", () => {
+      const input = { ...rsvpInput(), content: baseContent };
+      expect(SyncCommandInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects an rsvp input carrying an invitation — rsvp never emails", () => {
+      const input = { ...rsvpInput(), invitation: "all" };
+      expect(SyncCommandInputSchema.safeParse(input).success).toBe(false);
     });
   });
 
@@ -326,6 +418,56 @@ describe("Sync command contracts", () => {
     it("accepts a this-scope delete targeting one occurrence", () => {
       const command = baseCommand({ input: deleteInput("this") });
       expect(SyncCommandSchema.safeParse(command).success).toBe(true);
+    });
+
+    it("accepts an rsvp command targeting one occurrence", () => {
+      const command = baseCommand({ input: rsvpInput("this") });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(true);
+    });
+
+    it("accepts a series-scoped rsvp command", () => {
+      const command = baseCommand({ input: rsvpInput("all") });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(true);
+    });
+
+    it("rejects a this-scope rsvp command that omits a recurrenceId", () => {
+      const command = baseCommand({
+        input: { ...rsvpInput("this"), recurrenceId: null },
+      });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(false);
+    });
+
+    it("rejects an all-scope rsvp command that carries a recurrenceId", () => {
+      const command = baseCommand({
+        input: {
+          ...rsvpInput("all"),
+          recurrenceId: "2026-07-14T09:00:00-06:00",
+        },
+      });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(false);
+    });
+
+    it("round-trips an update carrying attendeesEdit replace through JSON unchanged", () => {
+      const command = baseCommand({
+        input: { ...updateInput(), attendeesEdit: "replace" },
+        expectedVersion: "etag-1",
+        outcome: confirmedLinkedOutcome,
+      });
+      const parsed = SyncCommandSchema.parse(command);
+      expect(parsed.input).toMatchObject({ attendeesEdit: "replace" });
+      expect(
+        SyncCommandSchema.parse(JSON.parse(JSON.stringify(parsed))),
+      ).toEqual(parsed);
+    });
+
+    it("parses a legacy update command JSON without attendeesEdit with preserve", () => {
+      // Fixture mirrors a stored pre-attendees command record: no
+      // attendeesEdit anywhere. It must parse, and only gain the default.
+      const legacy = JSON.parse(
+        JSON.stringify(baseCommand({ input: updateInput() })),
+      );
+      const parsed = SyncCommandSchema.parse(legacy);
+      expect(parsed.input).toMatchObject({ attendeesEdit: "preserve" });
     });
   });
 });

@@ -13,6 +13,7 @@ import {
 } from "@web/events/stores/draft.store";
 import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
 import { RecurrenceScopeConfirmationDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
+import { SendInvitationsDialog } from "@web/views/Forms/EventForm/SendInvitationsDialog";
 import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
@@ -41,6 +42,7 @@ export function SidebarEventDetails({
     saveEventForm: onSave,
     fieldErrors,
     clearFieldErrors,
+    invitationPrompt,
   } = useSaveEventForm();
   const onDelete = useDeleteEvent(_id as string);
   const onDuplicate = useDuplicateEvent(_id as string);
@@ -114,6 +116,7 @@ export function SidebarEventDetails({
             onCancel={confirmation.onCancelConvertToStandalone}
             onConfirm={confirmation.onConfirmConvertToStandalone}
           />
+          <SendInvitationsDialog prompt={invitationPrompt} />
         </>
       }
       draft={draft}

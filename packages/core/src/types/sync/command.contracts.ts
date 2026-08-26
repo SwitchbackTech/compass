@@ -4,7 +4,9 @@ import {
   EditableRecurrenceSchema,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
+import { RsvpResponseStatusSchema } from "@core/types/event-attendance.contracts";
 import {
+  InvitationIntentValueSchema,
   RecurrenceEditSchema,
   RecurrenceScopeSchema,
 } from "@core/types/event-command.contracts";
@@ -31,10 +33,16 @@ import {
 // is the user's (made in the UI when they created the event), carried on the
 // command so Sync honors it rather than deciding. Defaults to notifying no one
 // — the safe choice for a create with no attendees or no provider target.
-export const InvitationIntentSchema = z
-  .enum(["all", "externalOnly", "none"])
-  .default("none");
+export const InvitationIntentSchema =
+  InvitationIntentValueSchema.default("none");
 export type InvitationIntent = z.infer<typeof InvitationIntentSchema>;
+
+// Whether this write replaces the event's guest membership with the command
+// content's attendee set ("replace"), or leaves whatever the provider
+// currently has untouched ("preserve" — today's behavior). The default is the
+// backward-compat guarantee: every stored command and legacy caller parses
+// unchanged and keeps behaving exactly as before.
+const AttendeesEditSchema = z.enum(["replace", "preserve"]).default("preserve");
 
 // create has no calendar to move within and no prior scope to preserve, so
 // its recurrence input reuses the existing single/series edit shape.
@@ -46,6 +54,7 @@ const CreateCommandInputSchema = z.strictObject({
   calendarId: SyncEventCalendarIdSchema,
   clientEventId: ClientEventIdSchema.nullable().default(null),
   invitation: InvitationIntentSchema,
+  attendeesEdit: AttendeesEditSchema,
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,
@@ -58,6 +67,7 @@ const CreateCommandInputSchema = z.strictObject({
 const UpdateCommandInputSchema = z.strictObject({
   kind: z.literal("update"),
   invitation: InvitationIntentSchema,
+  attendeesEdit: AttendeesEditSchema,
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,
@@ -84,11 +94,28 @@ const DeleteCommandInputSchema = z.strictObject({
   recurrenceId: DateTimeSchema.nullable().default(null),
 });
 
+// rsvp rewrites only the caller's own attendee entry (matched by the
+// connection's account email), so it is its own kind rather than an overloaded
+// update: it carries no content and never emails anyone (executed with
+// sendUpdates "none"). `needsAction` is unrepresentable by design — a user
+// answers, they don't un-answer. Targeting reuses update's scope/recurrenceId
+// fields so composite occurrence ids (`eventId::recurrenceId`) resolve exactly
+// the way they do for update and delete.
+const RsvpCommandInputSchema = z.strictObject({
+  kind: z.literal("rsvp"),
+  responseStatus: RsvpResponseStatusSchema,
+  scope: RecurrenceScopeSchema,
+  // Which occurrence a this/thisAndFollowing scope targets (see update above).
+  // Null for scope "all" and for a single event.
+  recurrenceId: DateTimeSchema.nullable().default(null),
+});
+
 export const SyncCommandInputSchema = z.discriminatedUnion("kind", [
   CreateCommandInputSchema,
   UpdateCommandInputSchema,
   MoveCommandInputSchema,
   DeleteCommandInputSchema,
+  RsvpCommandInputSchema,
 ]);
 export type SyncCommandInput = z.infer<typeof SyncCommandInputSchema>;
 
@@ -96,8 +123,16 @@ export type SyncCommandInput = z.infer<typeof SyncCommandInputSchema>;
 // recurrenceId; scope "all" targets the whole series, so it must not. Enforced
 // on the request and command envelopes rather than the input union so the union
 // stays a clean discriminated union (a refined member can't discriminate).
+// rsvp opts in: it addresses occurrences with the same scope/recurrenceId
+// fields, so it obeys the same coherence rule.
 const recurrenceTargetIsCoherent = (input: SyncCommandInput): boolean => {
-  if (input.kind !== "update" && input.kind !== "delete") return true;
+  if (
+    input.kind !== "update" &&
+    input.kind !== "delete" &&
+    input.kind !== "rsvp"
+  ) {
+    return true;
+  }
   return (input.scope === "all") === (input.recurrenceId === null);
 };
 const RECURRENCE_TARGET_MESSAGE =

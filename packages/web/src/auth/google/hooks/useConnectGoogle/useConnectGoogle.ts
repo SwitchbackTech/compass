@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type ConnectionBeginFeatures } from "@core/types/sync/connection.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { AuthApi } from "@web/api/auth.api";
@@ -42,6 +43,13 @@ export interface UseConnectGoogleOptions {
    * to a reconnect.
    */
   newAccount?: boolean;
+  /**
+   * Optional feature groups to add to the consent request (e.g.
+   * `["contacts"]` for attendee suggestions). Each maps to OPTIONAL scopes
+   * the user may decline while the connect flow still completes; omitted,
+   * the begin request stays byte-identical to before features existed.
+   */
+  features?: ConnectionBeginFeatures;
 }
 
 export const useConnectGoogle = (
@@ -129,11 +137,17 @@ export const useConnectGoogle = (
       // sync service. Reconnect binds the flow to the primary connection id
       // from metadata so the wrong account cannot spawn a second.
       try {
-        const beginRequest =
-          options?.newAccount ||
+        const beginRequest = {
+          ...(options?.newAccount ||
           !(state === "RECONNECT_REQUIRED" && syncConnection?.id)
             ? {}
-            : { connectionId: syncConnection.id as ConnectionId };
+            : { connectionId: syncConnection.id as ConnectionId }),
+          // Optional feature scopes ride along on connect AND reconnect;
+          // absent, the request body is byte-identical to before.
+          ...(options?.features !== undefined
+            ? { features: options.features }
+            : {}),
+        };
         const { authorizationUrl } =
           await AuthApi.beginGoogleConnection(beginRequest);
         window.location.assign(authorizationUrl);
@@ -147,7 +161,13 @@ export const useConnectGoogle = (
     };
 
     void start();
-  }, [options?.newAccount, state, stopConnecting, syncConnection?.id]);
+  }, [
+    options?.features,
+    options?.newAccount,
+    state,
+    stopConnecting,
+    syncConnection?.id,
+  ]);
 
   const onRefreshGoogle = useCallback(
     (options?: { silent?: boolean }) => {

@@ -55,12 +55,12 @@ const setup = () => {
   const repository: EventRepository = {
     list: async () => [],
     create: async (input) => ({ ...before, id: input.id as EventId }),
-    replace: async (id: EventId, input): Promise<Event> => ({
-      ...before,
-      id,
-      content: input.content,
-      schedule: input.schedule,
-    }),
+    replace: async (id: EventId, input): Promise<Event> => {
+      // The write contract's guest-edit field never round-trips into the
+      // read-side Event content this stub returns.
+      const { attendees: _guestEdit, ...content } = input.content;
+      return { ...before, id, content, schedule: input.schedule };
+    },
     delete: async () => {},
   };
   const dependencies = {

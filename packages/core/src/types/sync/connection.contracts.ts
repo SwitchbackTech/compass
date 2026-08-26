@@ -50,6 +50,22 @@ export const ProviderAccountFactsSchema = z.strictObject({
 });
 export type ProviderAccountFacts = z.infer<typeof ProviderAccountFactsSchema>;
 
+// Optional feature groups a connect/reconnect consent flow may additionally
+// request. Each feature maps to provider scopes the user can decline without
+// affecting the connection's calendar capabilities — "contacts" asks for the
+// Google contacts scopes that back attendee suggestions. Never a required
+// scope: leaving one unchecked is a normal outcome, not an error.
+export const ConnectionFeatureSchema = z.enum(["contacts"]);
+export type ConnectionFeature = z.infer<typeof ConnectionFeatureSchema>;
+
+export const ConnectionBeginFeaturesSchema = z
+  .array(ConnectionFeatureSchema)
+  .max(8)
+  .readonly();
+export type ConnectionBeginFeatures = z.infer<
+  typeof ConnectionBeginFeaturesSchema
+>;
+
 // Opaque authenticated-encryption envelope for credentials sent between the
 // Compass API and Sync services. The browser never sees this transport type.
 export const EncryptedCredentialEnvelopeSchema = z.strictObject({
@@ -171,10 +187,14 @@ export type ConnectionListResponse = z.infer<
 
 // Start an OAuth authorization flow for the caller's principal. An optional
 // connectionId means reconnect (rebind consent to that existing connection);
-// omit it for a fresh connection. Principal scope always comes from the
-// authenticated context, never the body.
+// omit it for a fresh connection. Optional `features` widen the consent
+// request with that feature's OPTIONAL scopes (e.g. "contacts" for attendee
+// suggestions); absent keeps the request — and the consent URL sync mints —
+// byte-identical to before features existed. Principal scope always comes
+// from the authenticated context, never the body.
 export const ConnectionBeginRequestSchema = z.strictObject({
   connectionId: ConnectionIdSchema.optional(),
+  features: ConnectionBeginFeaturesSchema.optional(),
 });
 export type ConnectionBeginRequest = z.infer<
   typeof ConnectionBeginRequestSchema

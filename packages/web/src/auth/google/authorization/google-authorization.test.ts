@@ -1,5 +1,9 @@
 import { completeGoogleAuthorization } from "./complete-google-authorization";
-import { GOOGLE_AUTH_SCOPES_REQUIRED } from "./google-authorization.constants";
+import {
+  GOOGLE_AUTH_SCOPES_OPTIONAL,
+  GOOGLE_AUTH_SCOPES_REQUESTED,
+  GOOGLE_AUTH_SCOPES_REQUIRED,
+} from "./google-authorization.constants";
 import {
   consumeGoogleAuthNeedsConsentRetry,
   readGoogleAuthorizationIntent,
@@ -64,6 +68,54 @@ describe("completeGoogleAuthorization", () => {
       email: "user@example.com",
     });
     expect(readGoogleAuthorizationIntent("state-1")).toBeNull();
+  });
+
+  it("completes sign-in when the optional contacts scopes are not granted", async () => {
+    // The consent screen REQUESTS the contacts scopes but never requires
+    // them: a callback granting exactly the required list (contacts left
+    // unchecked) must complete like any other sign-in.
+    const withoutContacts = GOOGLE_AUTH_SCOPES_REQUESTED.filter(
+      (scope) => !GOOGLE_AUTH_SCOPES_OPTIONAL.includes(scope),
+    );
+    expect(withoutContacts).toEqual(GOOGLE_AUTH_SCOPES_REQUIRED);
+    const deps = makeDeps();
+    writeGoogleAuthorizationIntent("state-optional", {
+      intent: "signIn",
+      returnPath: "/week",
+      createdAt: Date.now(),
+    });
+
+    await expect(
+      completeGoogleAuthorization({
+        ...deps,
+        search: callbackSearch("state-optional", withoutContacts.join(" ")),
+      }),
+    ).resolves.toEqual({
+      status: "completed",
+      returnPath: "/week",
+      isNewUser: false,
+    });
+    expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the required scope list free of the optional contacts scopes", () => {
+    // GOOGLE_AUTH_SCOPES_REQUIRED is what verification checks — a contacts
+    // scope here would brick sign-in for every user who declines it. The
+    // literal pin guards the split: required unchanged, contacts requested
+    // only as optional additions.
+    expect(GOOGLE_AUTH_SCOPES_REQUIRED).toEqual([
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ]);
+    expect(GOOGLE_AUTH_SCOPES_REQUESTED).toEqual([
+      ...GOOGLE_AUTH_SCOPES_REQUIRED,
+      "https://www.googleapis.com/auth/contacts.readonly",
+      "https://www.googleapis.com/auth/contacts.other.readonly",
+    ]);
+    for (const scope of GOOGLE_AUTH_SCOPES_OPTIONAL) {
+      expect(GOOGLE_AUTH_SCOPES_REQUIRED).not.toContain(scope);
+    }
   });
 
   it("rejects callbacks that are missing required Google Calendar scopes", async () => {

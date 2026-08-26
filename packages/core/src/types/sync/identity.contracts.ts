@@ -80,6 +80,11 @@ export const ProviderCapabilitySchema = z.enum([
   "inviteAttendees",
   "changeNotifications",
   "incrementalChanges",
+  // The connection may serve attendee type-ahead suggestions from the
+  // provider's contacts. Derived from the OPTIONAL contacts scopes (either one
+  // suffices — partial grants are normal); its absence is an ordinary state,
+  // never an error.
+  "suggestContacts",
 ]);
 export type ProviderCapability = z.infer<typeof ProviderCapabilitySchema>;
 

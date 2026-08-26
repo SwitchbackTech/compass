@@ -7,6 +7,7 @@ import {
   EventListResponseSchema,
   EventMutationErrorSchema,
   ReplaceEventInputSchema,
+  RsvpEventInputSchema,
 } from "@core/types/event-command.contracts";
 
 const calendarId = () => faker.database.mongodbObjectId();
@@ -70,6 +71,74 @@ describe("Event Command Contracts", () => {
 
       expect(CreateEventInputSchema.safeParse(input).success).toBe(false);
     });
+
+    it("parses a legacy payload without attendees or invitation to an identical output", () => {
+      const legacy = base();
+      const parsed = CreateEventInputSchema.parse(legacy);
+
+      expect(parsed).toStrictEqual(legacy);
+    });
+
+    it("accepts content attendees alongside an invitation intent", () => {
+      const input = {
+        ...base(),
+        content: {
+          ...content,
+          attendees: [
+            { email: "ada@example.com", displayName: "Ada" },
+            { email: "grace@example.com", displayName: null },
+          ],
+        },
+        invitation: "all",
+      };
+
+      expect(CreateEventInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("accepts an empty attendee list — replace membership with none", () => {
+      const input = { ...base(), content: { ...content, attendees: [] } };
+
+      expect(CreateEventInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("rejects duplicate attendee emails differing only by case", () => {
+      const input = {
+        ...base(),
+        content: {
+          ...content,
+          attendees: [
+            { email: "ada@example.com", displayName: null },
+            { email: "Ada@Example.com", displayName: null },
+          ],
+        },
+      };
+
+      expect(CreateEventInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects an attendee carrying a responseStatus", () => {
+      const input = {
+        ...base(),
+        content: {
+          ...content,
+          attendees: [
+            {
+              email: "ada@example.com",
+              displayName: null,
+              responseStatus: "accepted",
+            },
+          ],
+        },
+      };
+
+      expect(CreateEventInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects an unrecognized invitation intent", () => {
+      const input = { ...base(), invitation: "everyone" };
+
+      expect(CreateEventInputSchema.safeParse(input).success).toBe(false);
+    });
   });
 
   describe("ReplaceEventInputSchema", () => {
@@ -112,6 +181,42 @@ describe("Event Command Contracts", () => {
 
       expect(ReplaceEventInputSchema.safeParse(input).success).toBe(false);
     });
+
+    it("parses a legacy payload without attendees or invitation to an identical output", () => {
+      const legacy = base();
+      const parsed = ReplaceEventInputSchema.parse(legacy);
+
+      expect(parsed).toStrictEqual(legacy);
+    });
+
+    it("accepts a replace with two attendees and invitation all", () => {
+      const input = base({
+        content: {
+          ...content,
+          attendees: [
+            { email: "ada@example.com", displayName: "Ada" },
+            { email: "grace@example.com", displayName: null },
+          ],
+        },
+        invitation: "all",
+      });
+
+      expect(ReplaceEventInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("rejects duplicate attendee emails", () => {
+      const input = base({
+        content: {
+          ...content,
+          attendees: [
+            { email: "ada@example.com", displayName: null },
+            { email: "ada@example.com", displayName: null },
+          ],
+        },
+      });
+
+      expect(ReplaceEventInputSchema.safeParse(input).success).toBe(false);
+    });
   });
 
   describe("DeleteEventInputSchema", () => {
@@ -134,6 +239,54 @@ describe("Event Command Contracts", () => {
       });
 
       expect(result.success).toBe(false);
+    });
+
+    it("accepts a cancellation invitation intent", () => {
+      const input = { scope: "all", invitation: "all" };
+
+      expect(DeleteEventInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("parses a legacy payload without an invitation to an identical output", () => {
+      const legacy = { scope: "all" };
+
+      expect(DeleteEventInputSchema.parse(legacy)).toStrictEqual(legacy);
+    });
+  });
+
+  describe("RsvpEventInputSchema", () => {
+    it.each([
+      ["accepted", "single"],
+      ["declined", "all"],
+      ["tentative", "single"],
+    ] as const)("accepts responseStatus %s with scope %s", (responseStatus, scope) => {
+      const input = { responseStatus, scope };
+
+      expect(RsvpEventInputSchema.safeParse(input).success).toBe(true);
+    });
+
+    it("rejects needsAction — un-answering is not an RSVP", () => {
+      const input = { responseStatus: "needsAction", scope: "single" };
+
+      expect(RsvpEventInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects a missing scope", () => {
+      const input = { responseStatus: "accepted" };
+
+      expect(RsvpEventInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects a recurrence-edit scope value", () => {
+      const input = { responseStatus: "accepted", scope: "thisAndFollowing" };
+
+      expect(RsvpEventInputSchema.safeParse(input).success).toBe(false);
+    });
+
+    it("rejects unknown keys", () => {
+      const input = { responseStatus: "accepted", scope: "single", extra: 1 };
+
+      expect(RsvpEventInputSchema.safeParse(input).success).toBe(false);
     });
   });
 

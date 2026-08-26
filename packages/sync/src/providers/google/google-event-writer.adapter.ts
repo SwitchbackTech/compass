@@ -1,6 +1,7 @@
 import { calendar, type calendar_v3 } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { type EventSchedule } from "@core/types/event.contracts";
+import { type Attendee } from "@core/types/event-attendance.contracts";
 import {
   type gCalendar,
   type gSchema$Event,
@@ -149,7 +150,12 @@ export class GoogleEventWriter implements ProviderEventWriter {
     const api = this.#makeApi(input.accessToken);
     const requestBody: gSchema$Event = {
       id: input.providerEventId,
-      ...toGoogleBody(input.content, input.schedule, input.recurrence),
+      ...toGoogleBody(
+        input.content,
+        input.schedule,
+        input.recurrence,
+        input.attendees,
+      ),
     };
 
     try {
@@ -205,6 +211,7 @@ export class GoogleEventWriter implements ProviderEventWriter {
           input.content,
           input.schedule,
           input.recurrence,
+          input.attendees,
         ),
         sendUpdates: toSendUpdates(input.invitation),
         ifMatch,
@@ -299,17 +306,23 @@ function toResult(event: gSchema$Event): ProviderWriteResult {
 // other schedule kind's keys behind makes Google reject a start holding both a
 // date and a dateTime.
 //
-// organizer, attendees, and conference are deliberately NOT written. Compass is
-// not authoritative for a provider event's guest list (organizer is fixed by
-// the provider at creation, and attendee/conference management is a separate
-// concern), so those are read-reflected only. Patch's merge-by-key semantics
-// leave the provider's own values untouched, which is the intended behavior.
-// sendUpdates still notifies existing attendees of the title/time changes we do
-// write.
+// organizer and conference are deliberately NOT written. Compass is not
+// authoritative for them (the organizer is fixed by the provider at creation,
+// and conference management is a separate concern), so those are
+// read-reflected only. Attendees are written ONLY when the write intends a
+// guest-list edit — `attendees` present, produced upstream from an
+// attendeesEdit "replace" command by merging against freshly fetched provider
+// state — because a Google write replaces the WHOLE attendees array. When
+// `attendees` is absent (every "preserve"/legacy command), the key is omitted
+// and patch's merge-by-key semantics leave the provider's own guest list
+// untouched, exactly as before. content.attendees itself is read-reflected
+// state and never reaches the body. sendUpdates still notifies existing
+// attendees of the changes we do write.
 function toGoogleBody(
   content: SyncEventContent,
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
+  attendees?: readonly Attendee[],
 ): gSchema$Event {
   return {
     summary: content.title,
@@ -318,6 +331,25 @@ function toGoogleBody(
     ...googleColorIdFields(content.color),
     ...scheduleFields(schedule),
     ...recurrenceField(recurrence),
+    ...attendeesField(attendees),
+  };
+}
+
+// Present (even empty) replaces Google's whole attendees array; absent omits
+// the key so merge-by-key leaves the provider's list alone. Retained entries
+// carry the provider's own responseStatus back, so a guest-list write never
+// resets anyone's RSVP; displayName is omitted when unknown rather than sent
+// as null.
+function attendeesField(
+  attendees: readonly Attendee[] | undefined,
+): Partial<Pick<calendar_v3.Schema$Event, "attendees">> {
+  if (!attendees) return {};
+  return {
+    attendees: attendees.map(({ email, displayName, responseStatus }) => ({
+      email,
+      responseStatus,
+      ...(displayName === null ? {} : { displayName }),
+    })),
   };
 }
 

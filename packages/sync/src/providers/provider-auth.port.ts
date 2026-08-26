@@ -40,6 +40,11 @@ export interface ProviderAuthAdapter {
     // with one signed-in session silently re-authorizes that same account, so
     // the user never gets to pick the account they meant to add.
     readonly selectAccount?: boolean;
+    // Optional feature scopes to request ON TOP of the adapter's base scopes
+    // (e.g. the contacts scopes behind attendee suggestions). Absent or empty
+    // leaves the consent request byte-identical to a plain connect; the user
+    // may decline any of them and the flow still completes.
+    readonly extraScopes?: readonly string[];
   }): string;
 
   // Exchange an authorization code for durable credentials and account

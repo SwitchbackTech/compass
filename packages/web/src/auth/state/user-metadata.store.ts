@@ -114,6 +114,17 @@ export const selectGoogleSyncConnections = (
   state.current?.google?.connections ?? NO_CONNECTIONS;
 
 /**
+ * True when ANY connected account granted the optional contacts scopes, so
+ * the attendee field can query live suggestions (the backend proxy fans out
+ * across every capable connection). `=== true` keeps a payload from an older
+ * backend (field absent) reading as "not granted" rather than crashing.
+ */
+export const selectCanSuggestContacts = (state: UserMetadataState): boolean =>
+  (state.current?.google?.connections ?? NO_CONNECTIONS).some(
+    (connection) => connection.canSuggestContacts === true,
+  );
+
+/**
  * The connection whose own state matches the aggregate `connectionState` -
  * the account most responsible for it, so an unscoped reconnect targets the
  * broken one, not a healthy sibling. Falls back to the first connection when

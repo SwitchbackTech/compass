@@ -11,6 +11,8 @@ import {
   EventListQuerySchema,
   type ReplaceEventInput,
   ReplaceEventInputSchema,
+  type RsvpEventInput,
+  RsvpEventInputSchema,
 } from "@core/types/event-command.contracts";
 import {
   type CommandSubmitRequest,
@@ -28,6 +30,7 @@ import {
   toCreateSubmitRequest,
   toDeleteSubmitRequest,
   toReplaceSubmitRequests,
+  toRsvpSubmitRequest,
 } from "@backend/common/services/sync-service/event-command.translation";
 import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -211,6 +214,48 @@ const readAllFromSync = async (userId: string, query: EventListQuery) => {
   return instances.map(syncEventInstanceToBrowser);
 };
 
+// Gate for guest-list edits (`content.attendees` present): only a writable
+// Google calendar can deliver a guest list, so anything else — the Compass
+// local calendar, a read-only Google calendar, an unknown id — is a typed
+// refusal BEFORE any command is submitted. Reuses the same sync calendar
+// lookup the read path performs (active calendars only; the local calendar is
+// never in sync's list, so it fails the membership check by construction).
+//
+// `calendarId` is the create path's exact target. A replace carries no
+// calendarId (cross-calendar moves are rejected before this), so the check
+// degrades to "the principal has at least one writable Google calendar":
+// the browser only offers the editor on the event's own writable Google
+// calendar (WP-04) and sync's organizer guard refuses per-event misuse, so
+// this coarser backstop is about local-only/read-only accounts, not routing.
+const assertAttendeesSupported = async (
+  client: SyncServiceClient,
+  userId: string,
+  calendarId?: string,
+) => {
+  const result = await client.listCalendars(toSyncPrincipal(userId), {
+    activeOnly: true,
+  });
+  if (!result.ok) {
+    throw eventMutationError(
+      "PROVIDER_FAILURE",
+      `Failed to list calendars from sync (${result.error.kind})`,
+      result.error,
+    );
+  }
+
+  const supported = result.value.calendars.some(
+    (calendar) =>
+      calendar.capabilities.canWriteEvents &&
+      (calendarId === undefined || calendar.id === calendarId),
+  );
+  if (!supported) {
+    throw eventMutationError(
+      "ATTENDEES_UNSUPPORTED",
+      "Guests can only be added to events on a writable Google calendar",
+    );
+  }
+};
+
 const mapSyncFailure = (reason: SyncCommandFailureReason) => {
   switch (reason) {
     case "readOnlyCalendar":
@@ -286,6 +331,9 @@ const submitCommandOrThrow = async (
 
 const createFromSync = async (userId: string, input: CreateEventInput) => {
   const client = getSyncServiceClient();
+  if (input.content.attendees !== undefined) {
+    await assertAttendeesSupported(client, userId, input.calendarId);
+  }
   const { request, responseEvent } = toCreateSubmitRequest(input);
   await submitCommandOrThrow(client, userId, request);
   return responseEvent;
@@ -310,11 +358,30 @@ const replaceFromSync = async (
   }
 
   const client = getSyncServiceClient();
+  if (input.content.attendees !== undefined) {
+    await assertAttendeesSupported(client, userId);
+  }
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
   for (const request of requests) {
     await submitCommandOrThrow(client, userId, request);
   }
   return responseEvent;
+};
+
+// RSVP: answer an invitation on the addressed event (or its whole series).
+// Deliberately NO assertAttendeesSupported gate: an RSVP rewrites only the
+// caller's own attendee entry and is legitimate on a viewer-access (read-only)
+// calendar — it is not a calendar write. Sync's own guards (self must be in
+// the attendee list, connection resolvable) are the enforcement; they answer
+// with a typed unsupportedCapability that maps to UNSUPPORTED_OPERATION here.
+const rsvpFromSync = async (
+  userId: string,
+  eventId: string,
+  input: RsvpEventInput,
+) => {
+  const client = getSyncServiceClient();
+  const request = toRsvpSubmitRequest(eventId, input);
+  await submitCommandOrThrow(client, userId, request);
 };
 
 const deleteFromSync = async (
@@ -369,6 +436,31 @@ class EventController {
     }
   };
 
+  // POST /api/event/:id/rsvp — auth/billing/maintenance parity with the
+  // other event writes above, minus any calendar-writability gate (finish
+  // line 5: RSVP is allowed on viewer-access calendars). The sync command
+  // result carries no event content and the sync client has no event-by-id
+  // lookup, so the response is 204: the web is optimistic and settles the
+  // provider-confirmed list via SSE, the same way it discards the
+  // synthesized bodies of create/replace.
+  rsvp = async (req: SessionRequest, res: Response) => {
+    try {
+      assertCloudMutationsAllowed();
+      const userId = req.session?.getUserId() as string;
+      await assertBillingAllowsWrites(userId);
+      const eventId = req.params["id"] as string;
+      // Strict parse: an invalid responseStatus (incl. "needsAction" — a user
+      // answers, they don't un-answer) or scope is a 400 INVALID_INPUT with
+      // no sync call.
+      const input = RsvpEventInputSchema.parse(req.body);
+      await rsvpFromSync(userId, eventId, input);
+
+      res.status(Status.NO_CONTENT).send();
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
   delete = async (req: SessionRequest, res: Response) => {
     try {
       assertCloudMutationsAllowed();
@@ -376,8 +468,15 @@ class EventController {
       await assertBillingAllowsWrites(userId);
       const eventId = req.params["id"] as string;
       const scopeParam = req.query["scope"];
+      // DELETE has no body, so the save-time invitation choice (whether
+      // Google emails attendees the cancellation) rides the query string.
+      // Absent keeps the pre-attendee default of notifying no one.
+      const invitationParam = req.query["invitation"];
       const input = DeleteEventInputSchema.parse({
         scope: typeof scopeParam === "string" ? scopeParam : "this",
+        ...(typeof invitationParam === "string"
+          ? { invitation: invitationParam }
+          : {}),
       });
 
       await deleteFromSync(userId, eventId, input);

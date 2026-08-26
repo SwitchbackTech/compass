@@ -4,6 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
 import {
   readGoogleConnectStatus,
+  refreshUserMetadataAfterGoogleConnect,
   showGoogleConnectStatusToast,
 } from "@web/auth/google/authorization/google-connect-status.util";
 import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
@@ -45,5 +46,6 @@ export async function bootstrapApp(): Promise<void> {
   }
   if (connectStatus) {
     showGoogleConnectStatusToast(connectStatus);
+    refreshUserMetadataAfterGoogleConnect(connectStatus);
   }
 }

@@ -1,7 +1,9 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import * as userMetadataUtil from "@web/auth/compass/user/util/user-metadata.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import {
   readGoogleConnectStatus,
+  refreshUserMetadataAfterGoogleConnect,
   showGoogleConnectStatusToast,
 } from "./google-connect-status.util";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
@@ -128,6 +130,34 @@ describe("google-connect-status.util", () => {
           autoClose: false,
         }),
       );
+    });
+  });
+
+  describe("refreshUserMetadataAfterGoogleConnect", () => {
+    it("force-refreshes metadata after a completed connect, so new capabilities (e.g. contacts) go live without a reload", () => {
+      const refreshSpy = spyOn(
+        userMetadataUtil,
+        "refreshUserMetadata",
+      ).mockResolvedValue(undefined);
+
+      refreshUserMetadataAfterGoogleConnect("connected");
+      expect(refreshSpy).toHaveBeenCalledWith({ force: true });
+
+      refreshSpy.mockRestore();
+    });
+
+    it("does nothing for non-connected outcomes", () => {
+      const refreshSpy = spyOn(
+        userMetadataUtil,
+        "refreshUserMetadata",
+      ).mockResolvedValue(undefined);
+
+      refreshUserMetadataAfterGoogleConnect("declined");
+      refreshUserMetadataAfterGoogleConnect("missingScopes");
+      refreshUserMetadataAfterGoogleConnect("error");
+      expect(refreshSpy).not.toHaveBeenCalled();
+
+      refreshSpy.mockRestore();
     });
   });
 });

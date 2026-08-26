@@ -410,6 +410,7 @@ describe("groupCalendarsByAccount", () => {
     lastHealthyAt: null,
     accountEmail,
     connectionState: "HEALTHY",
+    canSuggestContacts: false,
   });
 
   it("buckets by account in connection order and leaves the local calendar ungrouped", () => {

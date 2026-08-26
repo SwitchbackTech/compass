@@ -16,9 +16,15 @@ import {
   type EventSchedule,
 } from "@core/types/event.contracts";
 import {
+  type Attendee,
+  type AttendeeInput,
+  type RsvpResponseStatus,
+} from "@core/types/event-attendance.contracts";
+import {
   type CreateEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
+  type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
@@ -44,6 +50,7 @@ import {
   showRecurrenceScopeSuccessToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
 import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/first-event.store";
+import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import {
   applyEventProjectionAcrossQueries,
@@ -53,6 +60,7 @@ import {
   getEventQueryEntries,
   insertEventIntoQueries,
   isEventQueryKey,
+  patchEventInQueries,
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
@@ -200,14 +208,98 @@ function resolveRemoteReplaceSchedule(
   };
 }
 
+// Replay flows (undo/redo, snapshot restore in useUndoRedo) deliberately
+// funnel a full read-side Event["content"] through the write input type, so
+// their attendee entries really carry responseStatus as excess structure; a
+// genuine guest-edit input's entries never do. When building optimistic
+// Event content, keep only real read-state entries: a replay restores its
+// guest list without flicker exactly as before.
+function readAttendees(
+  attendees: CreateEventInput["content"]["attendees"],
+): readonly Attendee[] | undefined {
+  if (attendees === undefined) return undefined;
+  const withStatus = attendees.filter(
+    (attendee): attendee is Attendee => "responseStatus" in attendee,
+  );
+  return withStatus.length === attendees.length ? withStatus : undefined;
+}
+
+// The counterpart to readAttendees: a genuine guest edit (no entry carries
+// responseStatus — see the wire boundary in grid-event-draft.adapter.ts).
+function isGuestEditInput(
+  attendees: CreateEventInput["content"]["attendees"],
+): attendees is readonly AttendeeInput[] {
+  return (
+    attendees?.every((attendee) => !("responseStatus" in attendee)) ?? false
+  );
+}
+
+// Optimistic read-shape for an intended guest list, mirroring sync's
+// merge-by-email (WP-02) and the backend's synthesized response (WP-03):
+// retained emails keep their current responseStatus/displayName, new emails
+// enter as needsAction, dropped emails disappear. The settle refetch still
+// owns the provider-confirmed list; a failed save rolls back through the
+// snapshot restore like every other optimistic write.
+function optimisticGuestList(
+  intended: readonly AttendeeInput[],
+  existing: readonly Attendee[] | undefined,
+): readonly Attendee[] {
+  const byEmail = new Map(
+    (existing ?? []).map((attendee) => [
+      attendee.email.toLowerCase(),
+      attendee,
+    ]),
+  );
+  return intended.map(
+    (attendee) =>
+      byEmail.get(attendee.email.toLowerCase()) ?? {
+        email: attendee.email,
+        displayName: attendee.displayName,
+        responseStatus: "needsAction" as const,
+      },
+  );
+}
+
+// Optimistic RSVP: rewrite only the caller's own attendee entry (matched by
+// the calendar's account email, case-insensitively — the same self-match sync
+// applies), leaving every other guest's provider-owned status untouched.
+// Events without a matching entry pass through unchanged.
+function rsvpEventContent(
+  event: Event,
+  accountEmail: string,
+  responseStatus: RsvpResponseStatus,
+): Event {
+  if (event.content.kind !== "details" || !event.content.attendees) {
+    return event;
+  }
+  return {
+    ...event,
+    content: {
+      ...event.content,
+      attendees: event.content.attendees.map((attendee) =>
+        attendee.email.toLowerCase() === accountEmail.toLowerCase()
+          ? { ...attendee, responseStatus }
+          : attendee,
+      ),
+    },
+  };
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
 function optimisticEventFromCreate(input: CreateEventInput): Event {
+  const { attendees, ...details } = input.content;
+  const optimisticAttendees = isGuestEditInput(attendees)
+    ? optimisticGuestList(attendees, undefined)
+    : readAttendees(attendees);
   return {
     id: input.id as EventId,
     calendarId: input.calendarId,
-    content: input.content,
+    content:
+      optimisticAttendees === undefined
+        ? details
+        : { ...details, attendees: optimisticAttendees },
     schedule: input.schedule,
     recurrence: input.recurrence as EventRecurrence,
     createdAt: nowDateTime(),
@@ -216,7 +308,7 @@ function optimisticEventFromCreate(input: CreateEventInput): Event {
 }
 
 // The form only ever submits the editable subset (title/description/
-// location/color) — organizer/attendees/conference are read-only,
+// location/color/attendees) — organizer/conference stay read-only,
 // provider-sourced fields the server never asks the client to resubmit.
 // Merging input.content wholesale onto the optimistic cache entry would make
 // those fields flicker away until the settle-time refetch restores them from
@@ -225,15 +317,29 @@ function mergeReplaceContent(
   existing: Event["content"],
   input: ReplaceEventInput["content"],
 ): Event["content"] {
-  if (existing.kind !== "details") return input;
+  // Same replay-vs-guest-edit split as optimisticEventFromCreate: read-state
+  // attendee entries re-enter the optimistic cache as-is; a genuine guest
+  // edit merges optimistically against the cached list (new guests render as
+  // needsAction immediately and settle from sync).
+  const { attendees, ...details } = input;
+  const existingAttendees =
+    existing.kind === "details" ? existing.attendees : undefined;
+  const optimisticAttendees = isGuestEditInput(attendees)
+    ? optimisticGuestList(attendees, existingAttendees)
+    : readAttendees(attendees);
+  const replayInput =
+    optimisticAttendees === undefined
+      ? details
+      : { ...details, attendees: optimisticAttendees };
+  if (existing.kind !== "details") return replayInput;
   // Slot writes (including null clear) supersede a provider custom hex on the
   // optimistic card. Palette resolution prefers colorHex over color, so keeping
   // the old hex would leave the prior fill until settle/refetch.
-  if (input.kind === "details" && input.color !== undefined) {
+  if (replayInput.kind === "details" && replayInput.color !== undefined) {
     const { colorHex: _cleared, ...withoutHex } = existing;
-    return { ...withoutHex, ...input };
+    return { ...withoutHex, ...replayInput };
   }
-  return { ...existing, ...input };
+  return { ...existing, ...replayInput };
 }
 
 function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
@@ -295,6 +401,21 @@ type DeleteVariables = {
   originalOverride?: Event;
   opportunityId?: number;
 };
+type RsvpVariables = {
+  id: EventId;
+  input: RsvpEventInput;
+  // The connected account answering — the self attendee entry is matched by
+  // the calendar's account email, case-insensitively (same rule sync applies).
+  accountEmail: string;
+  writeKey: EventId;
+};
+
+export type RsvpPayload = {
+  id: EventId;
+  responseStatus: RsvpResponseStatus;
+  scope: RsvpEventInput["scope"];
+  accountEmail: string;
+};
 
 export type EventMutationCallbacks = {
   onSuccess?: () => void;
@@ -309,6 +430,7 @@ export type EventMutations = {
     callbacks?: EventMutationCallbacks,
   ) => boolean;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
+  rsvp: (payload: RsvpPayload) => void;
   promoteRecurring: (
     opportunity: RecurrenceScopeOpportunity,
     scope: "thisAndFollowing" | "all",
@@ -740,6 +862,42 @@ export function useEventMutations(
     ),
   );
 
+  // WP-08: answer an invitation. Goes straight to EventApi rather than the
+  // repository — RSVP only exists for provider-backed events (the control is
+  // hidden on local calendars), and it deliberately skips the read-only
+  // target gate below: answering is allowed on viewer-access calendars
+  // because it is not a calendar write. Rollback rides the shared snapshot
+  // restore; the settle-time invalidation converges to the provider truth
+  // (SSE eventsChanged lands on this same invalidation path).
+  const rsvpMutation = useMutation(
+    buildMutation<RsvpVariables>(
+      "rsvp",
+      (variables) => EventApi.rsvpEvent(variables.id, variables.input),
+      ({ id, input, accountEmail }) => {
+        const rewrite = (event: Event) =>
+          rsvpEventContent(event, accountEmail, input.responseStatus);
+        patchEventInQueries(queryClient, id, rewrite, { source });
+        if (input.scope !== "all") return;
+        // Series-wide answer: paint the master and every cached occurrence
+        // too, so the user's dot doesn't flicker per-instance until settle.
+        const existing = findEventInCache(queryClient, id, source);
+        const parts = decodeOccurrenceId(id);
+        const seriesId =
+          seriesIdOf(existing) ??
+          (parts ? EventIdSchema.parse(parts.eventId) : null);
+        if (!seriesId) return;
+        patchEventInQueries(queryClient, seriesId, rewrite, { source });
+        for (const sibling of findSeriesEventsInCache(
+          queryClient,
+          seriesId,
+          source,
+        )) {
+          patchEventInQueries(queryClient, sibling.id, rewrite, { source });
+        }
+      },
+    ),
+  );
+
   // Undo recording happens here at the `.mutate()` boundary: it's the one
   // place every caller funnels through and the cache still holds the
   // pre-mutation event. Replays from useUndoRedo set the restoring flag so
@@ -878,6 +1036,25 @@ export function useEventMutations(
           opportunityId,
         });
       },
+      rsvp: ({ id, responseStatus, scope, accountEmail }: RsvpPayload) => {
+        const original = findEventInCache(queryClient, id, source);
+        // No isTargetReadOnly gate on purpose (finish line 5: RSVP works on
+        // viewer-access calendars) — but a reconnect-required Google account
+        // cannot deliver any command, so that block stays.
+        if (blockReconnectRequiredCalendar(original?.calendarId)) {
+          return;
+        }
+        // A series-wide answer serializes against the series id, same as a
+        // scope-"all" replace.
+        const writeKey =
+          scope === "all" ? seriesWriteKey(original, "all", id) : id;
+        rsvpMutation.mutate({
+          id,
+          input: { responseStatus, scope },
+          accountEmail,
+          writeKey,
+        });
+      },
       promoteRecurring: (
         opportunity: RecurrenceScopeOpportunity,
         scope: "thisAndFollowing" | "all",
@@ -940,6 +1117,7 @@ export function useEventMutations(
       createMutation.mutate,
       deleteMutation.mutate,
       replaceMutation.mutate,
+      rsvpMutation.mutate,
     ],
   );
 }

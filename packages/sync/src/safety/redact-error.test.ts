@@ -51,6 +51,25 @@ describe("safety canaries", () => {
     ).toMatch(/^eventContent:/);
   });
 
+  it("detects People-API-shaped contact data (WP-05)", () => {
+    // A person payload serialized into a log or error cause is a contact leak.
+    expect(
+      findSafetyCanaryHit({
+        person: { emailAddresses: [{ value: "a@example.com" }] },
+      }),
+    ).toMatch(/^eventContent:/);
+    // So is a suggestion list.
+    expect(
+      findSafetyCanaryHit({
+        suggestions: [{ email: "a@example.com", displayName: "A" }],
+      }),
+    ).toMatch(/^eventContent:/);
+    // But an empty suggestions list (the under-min-length response) and a
+    // plain count are shape-only — no contact content to protect.
+    assertNoSafetyCanary({ suggestions: [] });
+    assertNoSafetyCanary({ suggestionCount: 3 });
+  });
+
   it("allows id-only invalidation envelopes", () => {
     assertNoSafetyCanary({
       kind: "calendar",

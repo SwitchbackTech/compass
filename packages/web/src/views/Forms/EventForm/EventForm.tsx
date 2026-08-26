@@ -1,4 +1,4 @@
-import { MapPinIcon } from "@phosphor-icons/react";
+import { MapPinIcon, UsersIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
@@ -14,11 +14,14 @@ import {
   useState,
 } from "react";
 import { type CalendarId } from "@core/types/domain-primitives";
+import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -53,6 +56,9 @@ import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useForm
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
+import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
+import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -61,6 +67,7 @@ import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardU
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -77,6 +84,7 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
 
 const EVENT_FORM_TITLE_ID = "event-form-title";
 const EVENT_FORM_LOCATION_ID = "event-form-location";
+const EVENT_FORM_ATTENDEES_ID = "event-form-attendees";
 const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
 const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
 const EVENT_FORM_COLOR_ID = "event-form-color";
@@ -266,6 +274,80 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" && draft.source.content.kind === "details"
         ? draft.source.content
         : undefined;
+    // Cache-backed view of the same source event (WP-08): an optimistic RSVP
+    // patches the query cache, and reading it live here is what makes the
+    // user's own status dot (and the segmented control's selection) update
+    // immediately — draft.source is a snapshot and never re-renders. Other
+    // attendees' RSVP changes arriving via SSE update through this same
+    // read. Falls back to the snapshot while the event is not cached.
+    const liveSource = useEventById(
+      draft.kind === "edit" ? draft.source.id : undefined,
+    );
+    const rsvpSource =
+      draft.kind === "edit" ? (liveSource ?? draft.source) : null;
+    const liveDetails =
+      rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
+    // Attendee-editor gate (WP-04): guests are editable only where the whole
+    // write path can deliver them — a writable Google calendar, an event the
+    // user organizes, and never a single occurrence of a series (sync
+    // refuses per-occurrence guest replacements; series-wide edits go
+    // through the "all"-scope path via the scope dialog's narrowing).
+    const { data: allCalendars } = useCalendarsQuery();
+    const defaultTargetCalendar = useDefaultTargetCalendar(allCalendars ?? []);
+    const attendeeCalendar =
+      draft.kind === "create"
+        ? draft.values.calendarId
+          ? calendarLookup.get(draft.values.calendarId)
+          : defaultTargetCalendar
+        : calendarLookup.get(draft.source.calendarId);
+    // Google auto-sets the organizer to the creating account, so "the user
+    // organizes this event" is organizer-email == calendar-account-email.
+    // A missing organizer means Compass created the event on this account
+    // (organizes it); a missing account email fails closed — sync refuses
+    // non-organizer guest edits anyway, so don't offer the editor.
+    const organizesEvent =
+      draft.kind === "create" ||
+      !sourceDetails?.organizer ||
+      (attendeeCalendar?.accountEmail !== undefined &&
+        sourceDetails.organizer.email.toLowerCase() ===
+          attendeeCalendar.accountEmail.toLowerCase());
+    const showAttendeeEditor =
+      !isReadOnly &&
+      attendeeCalendar?.provider === "google" &&
+      attendeeCalendar.capabilities.canWrite &&
+      organizesEvent &&
+      (draft.kind === "create" ||
+        draft.source.recurrence.kind !== "occurrence");
+    // RSVP gate (WP-08): show Going / Maybe / Decline when the calendar's
+    // connected account email appears in the attendee list (organizer
+    // included — organizers can answer their own event). Hidden when self is
+    // not an attendee or the event is local (no provider account email).
+    // Deliberately NOT gated on writability: answering an invitation is
+    // allowed on viewer-access calendars.
+    const rsvpAccountEmail =
+      attendeeCalendar?.provider === "google"
+        ? attendeeCalendar.accountEmail
+        : undefined;
+    const showRsvpControl =
+      rsvpSource !== null &&
+      rsvpAccountEmail !== undefined &&
+      (liveDetails?.attendees ?? []).some(
+        (attendee) =>
+          attendee.email.toLowerCase() === rsvpAccountEmail.toLowerCase(),
+      );
+    // Contact suggestions (WP-06): live when a connected account granted the
+    // optional contacts scopes; otherwise the field is a raw email input and
+    // the combobox footer may carry the occasional enable-contacts nudge.
+    const { canSuggestContacts, suggestionSource: contactSuggestionSource } =
+      useContactSuggestions();
+    // Untouched drafts show the source event's guests as chips; a touched
+    // draft owns its membership in values.attendees (present = replace).
+    const attendeeChips: readonly AttendeeInput[] =
+      draft.values.attendees ??
+      (sourceDetails?.attendees ?? []).map(({ email, displayName }) => ({
+        email,
+        displayName,
+      }));
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDateStrings(draft);
@@ -375,7 +457,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         patch: Partial<
           Pick<
             GridEventDraft["values"],
-            "title" | "description" | "location" | "color"
+            "title" | "description" | "location" | "color" | "attendees"
           >
         >,
       ) => {
@@ -873,6 +955,28 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 </div>
               </FormCard>
 
+              {showAttendeeEditor && (
+                <FormCard>
+                  <div className="flex items-start gap-2">
+                    <UsersIcon
+                      size={16}
+                      className="mt-2 shrink-0 text-text-muted"
+                    />
+                    <AttendeeField
+                      id={EVENT_FORM_ATTENDEES_ID}
+                      value={attendeeChips}
+                      onChange={(next) => patchDraftFields({ attendees: next })}
+                      suggestionSource={contactSuggestionSource}
+                      menuFooter={
+                        canSuggestContacts ? null : (
+                          <EnableContactSuggestionsNudge />
+                        )
+                      }
+                    />
+                  </div>
+                </FormCard>
+              )}
+
               <FormCard>
                 <DescriptionEditor
                   id={EVENT_FORM_DESCRIPTION_ID}
@@ -886,11 +990,24 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               </FormCard>
             </fieldset>
 
+            {/* Outside the fieldset (like the details section below): RSVP
+              must stay interactive on a read-only calendar. */}
+            {showRsvpControl && rsvpSource && rsvpAccountEmail && (
+              <RsvpControl event={rsvpSource} accountEmail={rsvpAccountEmail} />
+            )}
+
             {/* Outside the fieldset: read-only display, not an editable
               control, so it stays interactive (the "+N more" toggle) even
               when the event itself is read-only. Renders its own card
-              styling and returns null when the event has none of this data. */}
-            {sourceDetails && <EventDetailsSection details={sourceDetails} />}
+              styling and returns null when the event has none of this data.
+              Prefers the live cache content so other attendees' RSVP changes
+              (SSE) and the user's own optimistic answer paint immediately. */}
+            {sourceDetails && (
+              <EventDetailsSection
+                details={liveDetails ?? sourceDetails}
+                hideAttendees={showAttendeeEditor}
+              />
+            )}
 
             {isReadOnly && (
               <p role="note" className="text-text-muted text-xs">

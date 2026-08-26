@@ -2,6 +2,8 @@ import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 import {
   GOOGLE_SCOPE_CALENDAR_EVENTS as CALENDAR_EVENTS,
   GOOGLE_SCOPE_CALENDAR_READONLY as CALENDAR_READONLY,
+  GOOGLE_SCOPE_CONTACTS_OTHER_READONLY as CONTACTS_OTHER_READONLY,
+  GOOGLE_SCOPE_CONTACTS_READONLY as CONTACTS_READONLY,
 } from "@sync/providers/google/google.scopes";
 
 // Derive connection capabilities from the scopes Google actually granted (which
@@ -26,6 +28,12 @@ export function googleCapabilitiesFromScopes(
   }
   if (granted.has(CALENDAR_EVENTS)) {
     capabilities.push("writeEvents", "inviteAttendees");
+  }
+  // Contacts scopes are optional and independently declinable; either one is
+  // enough to serve suggestions from the surface it covers (the adapter only
+  // queries the People surfaces the granted scopes actually allow).
+  if (granted.has(CONTACTS_READONLY) || granted.has(CONTACTS_OTHER_READONLY)) {
+    capabilities.push("suggestContacts");
   }
 
   return capabilities;

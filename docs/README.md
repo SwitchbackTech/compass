@@ -13,6 +13,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 
 - Auth or session behavior: [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md), [Password Auth Flow](./features/password-auth-flow.md), [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - Event shape or recurrence behavior: [Event Domain Model](./architecture/event-domain-model.md), [Common Change Recipes](./development/common-change-recipes.md#change-recurring-event-behavior)
+- Attendees, contact suggestions, or RSVP: [Attendees, Contacts, And RSVP](./features/attendees.md), [Feature File Map](./development/feature-file-map.md#attendees-contacts-and-rsvp)
 - Event caching, reads, or optimistic writes: [Event Caching](./frontend/event-caching.md)
 - Dragging/resizing events on the week grid: [Week Drag Interaction](./frontend/week-drag-interaction.md)
 - Keyboard shortcuts, event jump, or pointer suppression: [Shortcuts](./acceptance/shortcuts.md), [Contextual Pointer Guidance](./frontend/contextual-pointer-guidance.md), [Feature File Map](./development/feature-file-map.md#keyboard-shortcuts)
