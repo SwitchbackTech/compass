@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import type React from "react";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 /**
  * Monochrome Google "G" logo SVG
@@ -37,11 +38,13 @@ export const GoogleButton = ({
   onClick,
   disabled,
   label = "Sign in with Google",
+  shortcutKey,
   style,
 }: {
   onClick: () => void;
   disabled?: boolean;
   label?: string;
+  shortcutKey?: string;
   style?: React.CSSProperties;
 }) => {
   return (
@@ -63,6 +66,9 @@ export const GoogleButton = ({
     >
       <GoogleGLogo size={18} />
       <span>{label}</span>
+      {shortcutKey ? (
+        <ShortcutHint className="shrink-0">{shortcutKey}</ShortcutHint>
+      ) : null}
     </button>
   );
 };

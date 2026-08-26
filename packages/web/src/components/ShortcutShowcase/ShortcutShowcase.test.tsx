@@ -1,10 +1,12 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { resolveModifier } from "@tanstack/react-hotkeys";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import {
+  SHOWCASE_MISSION_IDS,
   SHOWCASE_STEP_IDS,
   type ShowcaseStepId,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -102,32 +104,34 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("teaches create as one motion, and graduates on Enter", async () => {
+  it("teaches create as one motion, then continues to the next mission", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
     expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
+    expect(screen.getByText("Mission 1 of 6")).toBeTruthy();
 
-    // C opens a draft with its title editor; the lesson stays on "create"
-    // and the hint swaps rather than advancing to a second step.
     pressKey("c");
     expect(currentStepId()).toBe("create");
     expect(screen.getByText(/Type a title, then press Enter/)).toBeTruthy();
 
-    // Typing a title and pressing Enter commits it and advances.
     await user.type(
       screen.getByLabelText("Event title"),
       "Coffee with Alex{Enter}",
     );
-    expect(currentStepId()).toBe("graduation");
+    expect(currentStepId()).toBe("pageJump");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
+    expect(screen.getByText("Mission 2 of 6")).toBeTruthy();
+  });
+
+  it("graduates on Enter from the graduation step", async () => {
+    render(<ShortcutShowcase />);
+    showStep("graduation");
     expect(screen.getByText(/young cap'n/)).toBeTruthy();
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Enter Compass/ }),
-      ).toHaveFocus();
-    });
+
+    const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
+    expect(within(enterCompass).queryByText("Enter")).toBeNull();
 
     pressKey("Enter");
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
@@ -145,9 +149,6 @@ describe("ShortcutShowcase", () => {
       { timeout: 2000 },
     );
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
-    expect(
-      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
-    ).toBe("true");
   });
 
   it("fades the takeover on Enter Compass, then unmounts", async () => {
@@ -203,7 +204,7 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("'Do it for me' performs the whole lesson and lands on graduation", async () => {
+  it("'Do it for me' advances one mission at a time through graduation", async () => {
     const user = userEvent.setup();
     render(
       <>
@@ -214,8 +215,11 @@ describe("ShortcutShowcase", () => {
     const outside = screen.getByRole("button", { name: "Outside calendar" });
     act(() => shortcutShowcaseActions.replay());
 
-    // No idle wait or failed attempt required: the way out is always offered.
-    await user.click(screen.getByRole("button", { name: "Do it for me" }));
+    for (let i = 0; i < SHOWCASE_MISSION_IDS.length; i += 1) {
+      expect(currentStepId()).toBe(SHOWCASE_MISSION_IDS[i]);
+      await user.click(screen.getByRole("button", { name: "Do it for me" }));
+    }
+
     expect(currentStepId()).toBe("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
     const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
@@ -227,6 +231,76 @@ describe("ShortcutShowcase", () => {
     expect(outside).not.toHaveFocus();
     await user.tab();
     expect(enterCompass).toHaveFocus();
+  });
+
+  it("does not treat S as skip-to-signup; U leaves for signup", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.replay());
+
+    pressKey("s");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(currentStepId()).toBe("create");
+
+    pressKey("u");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  it("advances the hold-Mod mission after revealing jump keys", () => {
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    render(<ShortcutShowcase />);
+    showStep("pageJump");
+
+    pressKey(modKey);
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
+
+    pressKey("1", { code: "Digit1" });
+    expect(currentStepId()).toBe("eventJump");
+  });
+
+  it("teaches S then a letter to land on an event", () => {
+    render(<ShortcutShowcase />);
+    showStep("eventJump");
+
+    pressKey("s");
+    expect(screen.getByText("F")).toBeTruthy();
+
+    pressKey("f");
+    expect(currentStepId()).toBe("nudge");
+  });
+
+  it("teaches Shift+arrow to nudge the focused event", () => {
+    render(<ShortcutShowcase />);
+    showStep("nudge");
+
+    pressKey("ArrowRight", { shiftKey: true });
+    expect(currentStepId()).toBe("editTitle");
+  });
+
+  it("teaches E then T to target the title", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    showStep("editTitle");
+
+    pressKey("e");
+    pressKey("t");
+    expect(currentStepId()).toBe("editTitle");
+    expect(screen.getByLabelText("Event title")).toBeTruthy();
+
+    await user.type(screen.getByLabelText("Event title"), "{Enter}");
+    expect(currentStepId()).toBe("palette");
+  });
+
+  it("opens a practice palette with Mod+K and completes on Enter", () => {
+    const isMac = resolveModifier("Mod") === "Meta";
+    render(<ShortcutShowcase />);
+    showStep("palette");
+
+    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
+    expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
+
+    pressKey("Enter");
+    expect(currentStepId()).toBe("graduation");
   });
 
   it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {

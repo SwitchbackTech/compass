@@ -4,13 +4,16 @@ import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
   dismissErrorToast,
   SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
@@ -109,11 +112,47 @@ export const AuthModal: FC = () => {
     setView("forgotPassword");
   }, [setView]);
 
+  const showAuthSwitch = isLoginView || currentView === "signUp";
+
+  useEffect(() => {
+    if (!isOpen || !showAuthSwitch) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isEditableKeyboardTarget(event)) return;
+      const key = keyboardKey(event).toLowerCase();
+      if (key === "g" && isGoogleAvailable) {
+        event.preventDefault();
+        handleGoogleSignIn();
+        return;
+      }
+      if (key === "u" && isLoginView) {
+        event.preventDefault();
+        setView("signUp");
+        return;
+      }
+      if (key === "i" && currentView === "signUp") {
+        event.preventDefault();
+        setView("login");
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [
+    currentView,
+    handleGoogleSignIn,
+    isGoogleAvailable,
+    isLoginView,
+    isOpen,
+    setView,
+    showAuthSwitch,
+  ]);
+
   if (!isOpen) {
     return null;
   }
 
-  const showAuthSwitch = isLoginView || currentView === "signUp";
   const showGoogleAuth = currentView !== "resetPassword" && isGoogleAvailable;
   const showSubmitError =
     submitError !== null && (isLoginView || currentView === "signUp");
@@ -137,9 +176,12 @@ export const AuthModal: FC = () => {
           <button
             type="button"
             onClick={handleSwitchAuth}
-            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+            className="inline-flex shrink-0 items-center gap-2 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
           >
             {isLoginView ? "Sign up" : "Log in"}
+            <ShortcutHint className="shrink-0">
+              {isLoginView ? "U" : "i"}
+            </ShortcutHint>
           </button>
         ) : null
       }
@@ -200,6 +242,7 @@ export const AuthModal: FC = () => {
               onClick={handleGoogleSignIn}
               disabled={isGoogleAuthLoading}
               label="Continue with Google"
+              shortcutKey="G"
               style={{ width: "100%" }}
             />
           </>

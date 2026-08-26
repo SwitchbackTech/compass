@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { act, type ReactElement } from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestEmailPasswordPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
@@ -1080,6 +1080,87 @@ describe("URL Parameter Support", () => {
         screen.getByRole("heading", { name: /nice to meet you/i }),
       ).toBeInTheDocument();
     });
+  });
+});
+
+describe("Shortcut hints", () => {
+  beforeEach(() => {
+    installAuthModalTestSeams();
+  });
+
+  it("shows U, G, and Enter chips on login and switches to signup with U", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<ModalTrigger />);
+
+    await user.click(screen.getByRole("button", { name: /open modal/i }));
+    await waitForAuthModal();
+
+    expect(
+      within(screen.getByRole("button", { name: /^sign up$/i })).getByText("U"),
+    ).toBeTruthy();
+    expect(
+      within(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).getByText("G"),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole("button", { name: /^log in$/i })).getByText(
+        "Enter",
+      ),
+    ).toBeTruthy();
+
+    await user.keyboard("u");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("types letters into email instead of switching views", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<ModalTrigger />);
+    await user.click(screen.getByRole("button", { name: /open modal/i }));
+    await waitForAuthModal();
+
+    const email = screen.getByLabelText(/email/i);
+    await user.click(email);
+    await user.keyboard("user@example.com");
+
+    expect(email).toHaveValue("user@example.com");
+    expect(
+      screen.getByRole("heading", { name: /hey, welcome back/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows i on signup and switches back to login with i", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<div />, "/?auth=signup");
+    await waitForAuthModal(/nice to meet you/i);
+
+    expect(
+      within(screen.getByRole("button", { name: /^log in$/i })).getByText("i"),
+    ).toBeTruthy();
+
+    await user.keyboard("i");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /hey, welcome back/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("starts Google auth with G when focus is not in a field", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<ModalTrigger />);
+    await user.click(screen.getByRole("button", { name: /open modal/i }));
+    await waitForAuthModal();
+
+    await user.keyboard("g");
+
+    expect(mockGoogleLogin).toHaveBeenCalled();
   });
 });
 
