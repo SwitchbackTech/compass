@@ -32,6 +32,8 @@ export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
   onSelectDate: (date: Dayjs) => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
+  viewEnd: Dayjs;
+  viewStart: Dayjs;
 }
 
 export function Sidebar({
@@ -41,6 +43,8 @@ export function Sidebar({
   onSelectDate,
   shortcutSections,
   shortcutsViewLabel,
+  viewEnd,
+  viewStart,
   ...props
 }: SidebarProps) {
   const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
@@ -68,6 +72,8 @@ export function Sidebar({
               monthsShown={monthsShown}
               onSelectDate={onSelectDate}
               selectedDate={calendarDate}
+              viewEnd={viewEnd}
+              viewStart={viewStart}
             />
           </Suspense>
           <UpNextCard />

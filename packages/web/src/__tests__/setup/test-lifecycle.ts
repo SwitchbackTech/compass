@@ -40,18 +40,6 @@ function resetDocument() {
   clearAppLockReasons();
   clearFloatingLayerReasons();
   document.documentElement.removeAttribute("style");
-  for (const style of document.head.querySelectorAll("style")) {
-    if (
-      !style.textContent?.includes(":has(.react-datepicker__day--selected)")
-    ) {
-      continue;
-    }
-
-    style.textContent = style.textContent.replaceAll(
-      /[^{}]+:has\(\.react-datepicker__day--selected\)[^{]*\{[^{}]*\}/g,
-      "",
-    );
-  }
 }
 
 function resetBrowserState() {

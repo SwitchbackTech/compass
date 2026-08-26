@@ -926,20 +926,24 @@
     background: var(--date-picker-selected-bg);
     content: "";
   }
-  & .react-datepicker__week:has(.react-datepicker__day--selected) {
+  /* Band follows the visible window, not the calendar week of --selected. */
+  & .react-datepicker__day--in-view {
     position: relative;
+    isolation: isolate;
   }
-  & .react-datepicker__week:has(.react-datepicker__day--selected)::before {
+  & .react-datepicker__day--in-view::after {
     position: absolute;
     inset: 0 -3px;
-    border-radius: var(--radius-default);
+    z-index: -2;
     background: var(--date-picker-hover-bg);
     content: "";
   }
-  &
-    .react-datepicker__week:has(.react-datepicker__day--selected)
-    .react-datepicker__day {
-    position: relative;
-    z-index: 10;
+  & .react-datepicker__day--in-view-start::after {
+    border-top-left-radius: var(--radius-default);
+    border-bottom-left-radius: var(--radius-default);
+  }
+  & .react-datepicker__day--in-view-end::after {
+    border-top-right-radius: var(--radius-default);
+    border-bottom-right-radius: var(--radius-default);
   }
 }
