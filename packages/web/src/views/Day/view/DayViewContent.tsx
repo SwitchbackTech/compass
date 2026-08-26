@@ -1,4 +1,8 @@
 import { memo, useCallback, useMemo, useRef } from "react";
+import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
+import { availabilityActions } from "@web/availability/availability.store";
+import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
+import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -44,6 +48,8 @@ export const DayViewContent = memo(() => {
   const mainRef = useRef<HTMLDivElement | null>(null);
 
   const dateInView = useDateInView();
+  useAvailabilityEvents(dateInView, dateInView);
+  useAvailabilityShortcuts();
   const { today } = useToday();
   const isViewingToday = dateInView.isSame(today, "day");
 
@@ -94,6 +100,10 @@ export const DayViewContent = memo(() => {
   useCalendarViewShortcuts({
     onCreateTimedEvent: handleCreateTimedEvent,
     onCreateAllDayEvent: handleCreateAllDayEvent,
+    onShareAvailability: () => {
+      availabilityActions.open();
+      viewActions.setSidebarOpen(true);
+    },
     onFocusCalendar: focusFirstDayCalendarEvent,
     onNextPeriod: navigateToNextDay,
     onPrevPeriod: navigateToPreviousDay,
@@ -133,6 +143,7 @@ export const DayViewContent = memo(() => {
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />
+          <AvailabilityGridOverlay />
         </div>
       </div>
 

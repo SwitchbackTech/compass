@@ -1,11 +1,15 @@
 import { create } from "zustand";
 
-export type TimezoneDialogPurpose = "pin" | "time-travel";
+export type TimezoneDialogPurpose =
+  | "pin"
+  | "time-travel"
+  | "availability-recipient";
 
 interface TimezoneDialogState {
   isOpen: boolean;
   purpose: TimezoneDialogPurpose;
   restoreFocus?: () => void;
+  onSelect?: (timeZone: string | null) => void;
 }
 
 export const useTimezoneDialogStore = create<TimezoneDialogState>()(() => ({
@@ -14,13 +18,23 @@ export const useTimezoneDialogStore = create<TimezoneDialogState>()(() => ({
 }));
 
 export const timezoneDialogActions = {
-  open: (restoreFocus?: () => void, purpose: TimezoneDialogPurpose = "pin") =>
-    useTimezoneDialogStore.setState({ isOpen: true, purpose, restoreFocus }),
+  open: (
+    restoreFocus?: () => void,
+    purpose: TimezoneDialogPurpose = "pin",
+    onSelect?: (timeZone: string | null) => void,
+  ) =>
+    useTimezoneDialogStore.setState({
+      isOpen: true,
+      purpose,
+      restoreFocus,
+      onSelect,
+    }),
   close: () =>
     useTimezoneDialogStore.setState({
       isOpen: false,
       purpose: "pin",
       restoreFocus: undefined,
+      onSelect: undefined,
     }),
 };
 
@@ -32,3 +46,5 @@ export const selectTimezoneDialogPurpose = (state: TimezoneDialogState) =>
 
 export const selectTimezoneDialogRestoreFocus = (state: TimezoneDialogState) =>
   state.restoreFocus;
+export const selectTimezoneDialogOnSelect = (state: TimezoneDialogState) =>
+  state.onSelect;
