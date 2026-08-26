@@ -1,5 +1,6 @@
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import { type EventColorSlot } from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 
@@ -34,6 +35,11 @@ type SharedEventFormValues = {
   schedule: EventScheduleDraft;
   // Null means calendar-default / no event color tag.
   color: EventColorSlot | null;
+  // Guest-list edit state, mirroring EditableContentSchema.attendees: absent
+  // means the draft never touched guests (saves omit attendees — preserve
+  // semantics); present, including [], means "replace membership with exactly
+  // this set" on save.
+  attendees?: readonly AttendeeInput[];
 };
 
 // A new draft can only use "single" or "series" and has no irrelevant

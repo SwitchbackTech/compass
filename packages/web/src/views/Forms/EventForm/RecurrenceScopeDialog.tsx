@@ -7,6 +7,7 @@ import {
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { gridDraftGuestsChanged } from "@web/events/grid-event-draft.adapter";
 import { type RecurrenceScopePendingAction } from "@web/events/recurrence/useRecurrenceScopeConfirmation";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 
@@ -18,6 +19,14 @@ const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
 
 const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
   RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+  RecurringEventUpdateScope.ALL_EVENTS,
+];
+
+// Guest edits have no per-occurrence semantics in v1: sync refuses attendee
+// replacements at scope "this"/"thisAndFollowing", so a save that changed the
+// guest set narrows to the whole series — same narrowing mechanism as a
+// structural recurrence change above.
+const GUESTS_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
   RecurringEventUpdateScope.ALL_EVENTS,
 ];
 
@@ -75,9 +84,12 @@ export function RecurringEventUpdateScopeDialogContent({
     (draft && storeDraft
       ? DirtyParser.gridDraftRecurrenceChanged(draft, storeDraft)
       : false);
-  const options = recurrenceChanged
-    ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
-    : UPDATE_SCOPE_OPTIONS;
+  const guestsChanged = draft ? gridDraftGuestsChanged(draft) : false;
+  const options = guestsChanged
+    ? GUESTS_CHANGED_UPDATE_SCOPE_OPTIONS
+    : recurrenceChanged
+      ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
+      : UPDATE_SCOPE_OPTIONS;
   const [fallbackScope] = options;
 
   const [selectedScope, setSelectedScope] =
@@ -126,6 +138,12 @@ export function RecurringEventUpdateScopeDialogContent({
           );
         })}
       </div>
+
+      {guestsChanged && (
+        <p className="m-0 text-sm text-text-muted">
+          Guest changes apply to all events in the series.
+        </p>
+      )}
 
       <OverlayPanelActions>
         <OverlayPanelActionButton onClick={closeDialog}>

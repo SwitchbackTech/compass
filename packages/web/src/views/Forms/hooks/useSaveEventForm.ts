@@ -1,12 +1,31 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { type CreateEventInput } from "@core/types/event-command.contracts";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { parseGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import {
+  gridDraftGuestsChanged,
+  parseGridEventDraft,
+  withoutGuestEdit,
+} from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+
+type InvitationIntentValue = NonNullable<CreateEventInput["invitation"]>;
+
+/**
+ * Live "Send invitation emails?" decision for a save whose guest set changed:
+ * Send maps to invitation "all", Don't send to "none", Cancel abandons the
+ * save (the form stays open with the draft intact). Null when no save is
+ * waiting on the choice.
+ */
+export type EventInvitationPrompt = {
+  onSend: () => void;
+  onDontSend: () => void;
+  onCancel: () => void;
+} | null;
 
 export function useSaveEventForm() {
   const closeEventForm = useCloseEventForm();
@@ -14,21 +33,68 @@ export function useSaveEventForm() {
   const { data: calendars } = useCalendarsQuery();
   const defaultTargetCalendarId = useDefaultTargetCalendar(calendars ?? [])?.id;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [pendingInvitationSave, setPendingInvitationSave] = useState<{
+    draft: GridEventDraft;
+    applyTo: RecurringEventUpdateScope;
+  } | null>(null);
 
   const clearFieldErrors = useCallback(() => {
     setFieldErrors({});
   }, []);
 
-  const saveEventForm = useCallback(
+  // Belt behind the editor's own render gates: a guest edit that could never
+  // deliver is dropped back to preserve semantics instead of submitting a
+  // command sync/backend will refuse. The UI cannot reach these states — the
+  // editor only renders on writable Google calendars the user organizes,
+  // occurrence drafts never render it, and the scope dialog narrows a
+  // guest-changed recurring edit to "all" — so this only defends replayed or
+  // hand-built drafts.
+  const normalizeGuestEdit = useCallback(
     (
-      draft: GridEventDraft | null,
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) => {
-      if (!draft) {
-        clearFieldErrors();
-        return closeEventForm();
+      draft: GridEventDraft,
+      applyTo: RecurringEventUpdateScope,
+    ): GridEventDraft => {
+      if (draft.values.attendees === undefined) return draft;
+      // A touched-but-unchanged guest list is not an edit: omit attendees so
+      // the payload stays byte-identical to an untouched save and no
+      // invitation prompt appears.
+      if (!gridDraftGuestsChanged(draft)) return withoutGuestEdit(draft);
+
+      if (draft.kind === "edit") {
+        // Sync refuses guest replacements at scope "this"/"thisAndFollowing"
+        // (per-occurrence guest lists have no v1 semantics) — recurring
+        // guest edits are series-wide only.
+        const isRecurring = draft.source.recurrence.kind !== "single";
+        if (isRecurring && toRecurrenceScope(applyTo) !== "all") {
+          console.warn(
+            "[useSaveEventForm] dropped guest edit: recurring guest edits apply to the whole series only",
+          );
+          return withoutGuestEdit(draft);
+        }
+        return draft;
       }
 
+      // Create: guests only deliver to a writable Google calendar
+      // (ATTENDEES_UNSUPPORTED backstop server-side).
+      const calendarId = draft.values.calendarId ?? defaultTargetCalendarId;
+      const calendar = calendars?.find((entry) => entry.id === calendarId);
+      if (calendar?.provider !== "google" || !calendar.capabilities.canWrite) {
+        console.warn(
+          "[useSaveEventForm] dropped guest edit: target calendar cannot deliver a guest list",
+        );
+        return withoutGuestEdit(draft);
+      }
+      return draft;
+    },
+    [calendars, defaultTargetCalendarId],
+  );
+
+  const commitSave = useCallback(
+    (
+      draft: GridEventDraft,
+      applyTo: RecurringEventUpdateScope,
+      invitation?: InvitationIntentValue,
+    ) => {
       if (draft.kind === "create") {
         // Respects a calendar the user explicitly chose via CalendarSelect;
         // only an untouched draft (calendarId still null) falls back to the
@@ -54,7 +120,12 @@ export function useSaveEventForm() {
           // Closing via the callback (not after `create` returns) keeps the draft
           // card mounted until the optimistic insert exists, so the saved card
           // replaces it in one commit instead of flashing empty.
-          create(parsed.input, { onOptimisticApplied: closeEventForm });
+          create(
+            invitation === undefined
+              ? parsed.input
+              : { ...parsed.input, invitation },
+            { onOptimisticApplied: closeEventForm },
+          );
         }
         return;
       }
@@ -75,7 +146,13 @@ export function useSaveEventForm() {
         // Same as create: keep the draft mounted until the optimistic replace
         // exists so the grid never paints a frame with the pre-edit color.
         replace(
-          { id: parsed.eventId, input: parsed.input },
+          {
+            id: parsed.eventId,
+            input:
+              invitation === undefined
+                ? parsed.input
+                : { ...parsed.input, invitation },
+          },
           { onOptimisticApplied: closeEventForm },
         );
       }
@@ -89,5 +166,44 @@ export function useSaveEventForm() {
     ],
   );
 
-  return { saveEventForm, fieldErrors, clearFieldErrors };
+  const saveEventForm = useCallback(
+    (
+      draft: GridEventDraft | null,
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      if (!draft) {
+        clearFieldErrors();
+        return closeEventForm();
+      }
+
+      const normalized = normalizeGuestEdit(draft, applyTo);
+
+      // A membership-changing guest edit needs the save-time invitation
+      // choice first — Google emails the guests itself via sendUpdates, so
+      // this is the one moment the user decides whether it should.
+      if (gridDraftGuestsChanged(normalized)) {
+        setPendingInvitationSave({ draft: normalized, applyTo });
+        return;
+      }
+
+      commitSave(normalized, applyTo);
+    },
+    [clearFieldErrors, closeEventForm, commitSave, normalizeGuestEdit],
+  );
+
+  const invitationPrompt: EventInvitationPrompt = useMemo(() => {
+    if (!pendingInvitationSave) return null;
+    const { draft, applyTo } = pendingInvitationSave;
+    const resolve = (invitation: InvitationIntentValue) => {
+      setPendingInvitationSave(null);
+      commitSave(draft, applyTo, invitation);
+    };
+    return {
+      onSend: () => resolve("all"),
+      onDontSend: () => resolve("none"),
+      onCancel: () => setPendingInvitationSave(null),
+    };
+  }, [commitSave, pendingInvitationSave]);
+
+  return { saveEventForm, fieldErrors, clearFieldErrors, invitationPrompt };
 }

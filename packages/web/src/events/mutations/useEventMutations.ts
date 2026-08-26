@@ -15,7 +15,10 @@ import {
   type EventRecurrence,
   type EventSchedule,
 } from "@core/types/event.contracts";
-import { type Attendee } from "@core/types/event-attendance.contracts";
+import {
+  type Attendee,
+  type AttendeeInput,
+} from "@core/types/event-attendance.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
@@ -206,9 +209,7 @@ function resolveRemoteReplaceSchedule(
 // their attendee entries really carry responseStatus as excess structure; a
 // genuine guest-edit input's entries never do. When building optimistic
 // Event content, keep only real read-state entries: a replay restores its
-// guest list without flicker exactly as before, while a plain guest-edit
-// input contributes nothing optimistic (the settle refetch owns the
-// provider-confirmed guest list).
+// guest list without flicker exactly as before.
 function readAttendees(
   attendees: CreateEventInput["content"]["attendees"],
 ): readonly Attendee[] | undefined {
@@ -219,19 +220,57 @@ function readAttendees(
   return withStatus.length === attendees.length ? withStatus : undefined;
 }
 
+// The counterpart to readAttendees: a genuine guest edit (no entry carries
+// responseStatus — see the wire boundary in grid-event-draft.adapter.ts).
+function isGuestEditInput(
+  attendees: CreateEventInput["content"]["attendees"],
+): attendees is readonly AttendeeInput[] {
+  return (
+    attendees?.every((attendee) => !("responseStatus" in attendee)) ?? false
+  );
+}
+
+// Optimistic read-shape for an intended guest list, mirroring sync's
+// merge-by-email (WP-02) and the backend's synthesized response (WP-03):
+// retained emails keep their current responseStatus/displayName, new emails
+// enter as needsAction, dropped emails disappear. The settle refetch still
+// owns the provider-confirmed list; a failed save rolls back through the
+// snapshot restore like every other optimistic write.
+function optimisticGuestList(
+  intended: readonly AttendeeInput[],
+  existing: readonly Attendee[] | undefined,
+): readonly Attendee[] {
+  const byEmail = new Map(
+    (existing ?? []).map((attendee) => [
+      attendee.email.toLowerCase(),
+      attendee,
+    ]),
+  );
+  return intended.map(
+    (attendee) =>
+      byEmail.get(attendee.email.toLowerCase()) ?? {
+        email: attendee.email,
+        displayName: attendee.displayName,
+        responseStatus: "needsAction" as const,
+      },
+  );
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
 function optimisticEventFromCreate(input: CreateEventInput): Event {
   const { attendees, ...details } = input.content;
-  const replayedAttendees = readAttendees(attendees);
+  const optimisticAttendees = isGuestEditInput(attendees)
+    ? optimisticGuestList(attendees, undefined)
+    : readAttendees(attendees);
   return {
     id: input.id as EventId,
     calendarId: input.calendarId,
     content:
-      replayedAttendees === undefined
+      optimisticAttendees === undefined
         ? details
-        : { ...details, attendees: replayedAttendees },
+        : { ...details, attendees: optimisticAttendees },
     schedule: input.schedule,
     recurrence: input.recurrence as EventRecurrence,
     createdAt: nowDateTime(),
@@ -240,7 +279,7 @@ function optimisticEventFromCreate(input: CreateEventInput): Event {
 }
 
 // The form only ever submits the editable subset (title/description/
-// location/color) — organizer/attendees/conference are read-only,
+// location/color/attendees) — organizer/conference stay read-only,
 // provider-sourced fields the server never asks the client to resubmit.
 // Merging input.content wholesale onto the optimistic cache entry would make
 // those fields flicker away until the settle-time refetch restores them from
@@ -249,14 +288,20 @@ function mergeReplaceContent(
   existing: Event["content"],
   input: ReplaceEventInput["content"],
 ): Event["content"] {
-  // Same replay-vs-guest-edit split as optimisticEventFromCreate: only
-  // read-state attendee entries may enter the optimistic cache.
+  // Same replay-vs-guest-edit split as optimisticEventFromCreate: read-state
+  // attendee entries re-enter the optimistic cache as-is; a genuine guest
+  // edit merges optimistically against the cached list (new guests render as
+  // needsAction immediately and settle from sync).
   const { attendees, ...details } = input;
-  const replayedAttendees = readAttendees(attendees);
+  const existingAttendees =
+    existing.kind === "details" ? existing.attendees : undefined;
+  const optimisticAttendees = isGuestEditInput(attendees)
+    ? optimisticGuestList(attendees, existingAttendees)
+    : readAttendees(attendees);
   const replayInput =
-    replayedAttendees === undefined
+    optimisticAttendees === undefined
       ? details
-      : { ...details, attendees: replayedAttendees };
+      : { ...details, attendees: optimisticAttendees };
   if (existing.kind !== "details") return replayInput;
   // Slot writes (including null clear) supersede a provider custom hex on the
   // optimistic card. Palette resolution prefers colorHex over color, so keeping

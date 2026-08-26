@@ -89,4 +89,36 @@ describe("shouldConfirmDiscardUnsavedChanges", () => {
 
     expect(shouldConfirmDiscardUnsavedChanges(draft)).toBe(true);
   });
+
+  it("returns true when the guest set changed, false when guests were touched but restored", () => {
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+        attendees: [
+          {
+            email: "guest@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+      },
+    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+
+    draft.values.attendees = [
+      { email: "guest@example.com", displayName: null },
+      { email: "new-guest@example.com", displayName: null },
+    ];
+    expect(shouldConfirmDiscardUnsavedChanges(draft)).toBe(true);
+
+    // Adding a guest and removing them again is not an unsaved change.
+    draft.values.attendees = [
+      { email: "GUEST@example.com", displayName: null },
+    ];
+    expect(shouldConfirmDiscardUnsavedChanges(draft)).toBe(false);
+  });
 });

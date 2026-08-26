@@ -6,6 +6,10 @@ import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
+  type Attendee,
+  type AttendeeInput,
+} from "@core/types/event-attendance.contracts";
+import {
   type EventColorSlot,
   withColor,
 } from "@core/types/event-color.contracts";
@@ -495,7 +499,7 @@ export function patchGridDraftFields(
   patch: Partial<
     Pick<
       GridEventDraft["values"],
-      "title" | "description" | "location" | "color"
+      "title" | "description" | "location" | "color" | "attendees"
     >
   >,
 ): GridEventDraft {
@@ -516,14 +520,14 @@ export function patchGridDraftFields(
 const applyDraftFieldPatch = <
   T extends Pick<
     GridEventDraft["values"],
-    "title" | "description" | "location" | "color"
+    "title" | "description" | "location" | "color" | "attendees"
   >,
 >(
   values: T,
   patch: Partial<
     Pick<
       GridEventDraft["values"],
-      "title" | "description" | "location" | "color"
+      "title" | "description" | "location" | "color" | "attendees"
     >
   >,
 ): T => ({
@@ -534,7 +538,59 @@ const applyDraftFieldPatch = <
     : {}),
   ...(patch.location !== undefined ? { location: patch.location } : {}),
   ...(patch.color !== undefined ? { color: patch.color } : {}),
+  ...(patch.attendees !== undefined ? { attendees: patch.attendees } : {}),
 });
+
+// Guest membership is keyed by email and providers treat emails
+// case-insensitively (see uniqueAttendeeEmails in core), so "did the guest
+// set change" is lower-cased email-set inequality — displayName drift never
+// counts as an edit (the editor cannot change names).
+const attendeeEmailSet = (
+  attendees: ReadonlyArray<Pick<AttendeeInput, "email">>,
+): Set<string> => new Set(attendees.map(({ email }) => email.toLowerCase()));
+
+const attendeeEmailSetsEqual = (
+  a: ReadonlyArray<Pick<AttendeeInput, "email">>,
+  b: ReadonlyArray<Pick<AttendeeInput, "email">>,
+): boolean => {
+  const setA = attendeeEmailSet(a);
+  const setB = attendeeEmailSet(b);
+  return setA.size === setB.size && [...setA].every((email) => setB.has(email));
+};
+
+/**
+ * True when the draft carries a guest edit that actually changes membership:
+ * against the source event's guest list for an edit draft, against the empty
+ * set for a create draft. An untouched draft (no `attendees` key) is never a
+ * guest change.
+ */
+export function gridDraftGuestsChanged(draft: GridEventDraft): boolean {
+  const edited = draft.values.attendees;
+  if (edited === undefined) return false;
+  if (draft.kind === "create") return edited.length > 0;
+
+  const source =
+    draft.source.content.kind === "details"
+      ? (draft.source.content.attendees ?? [])
+      : [];
+  return !attendeeEmailSetsEqual(edited, source);
+}
+
+/**
+ * Drops the draft's guest edit, returning it to "not editing guests" so the
+ * save omits `content.attendees` entirely (preserve semantics).
+ */
+export function withoutGuestEdit(draft: GridEventDraft): GridEventDraft {
+  if (draft.values.attendees === undefined) return draft;
+  // Branching on kind keeps create/edit values correlated with the
+  // discriminant (see replaceGridDraftSchedule above).
+  if (draft.kind === "create") {
+    const { attendees: _dropped, ...values } = draft.values;
+    return { ...draft, values };
+  }
+  const { attendees: _dropped, ...values } = draft.values;
+  return { ...draft, values };
+}
 
 // Details content from either side of the wire: the read-shaped
 // Event["content"] or the stricter write-input content (whose attendee
@@ -553,6 +609,26 @@ type DetailsContentSource =
 export const detailsLocation = (content: DetailsContentSource): string =>
   content.location ?? "";
 
+// Wire-boundary attendee pick: only a genuine guest edit may cross. Replay
+// flows (undo/redo, snapshot restore in useUndoRedo) deliberately funnel a
+// full read-side Event["content"] through the write input type, so their
+// attendee entries carry responseStatus as excess structure — those must
+// keep today's preserve semantics (drop the key: the strict
+// AttendeeInputSchema would reject them, and a replayed non-organizer edit
+// must not start tripping sync's organizer guard). A genuine guest-edit
+// input's entries never carry responseStatus; they are re-picked to the
+// exact input shape so no excess key can leak onto the wire.
+const intendedAttendeeInputs = (
+  attendees: ReadonlyArray<Attendee | AttendeeInput> | undefined,
+): readonly AttendeeInput[] | undefined => {
+  if (attendees === undefined) return undefined;
+  const isGenuineGuestEdit = attendees.every(
+    (attendee) => !("responseStatus" in attendee),
+  );
+  if (!isGenuineGuestEdit) return undefined;
+  return attendees.map(({ email, displayName }) => ({ email, displayName }));
+};
+
 // The write contracts (CreateEventInputSchema/ReplaceEventInputSchema) accept
 // only the editable subset via a strict content schema; a read-shaped
 // Event["content"] also carries provider-sourced organizer/attendees/
@@ -562,13 +638,19 @@ export const detailsLocation = (content: DetailsContentSource): string =>
 // Preserves color's absent-vs-null distinction: omitted leaves sync's color
 // alone, null clears it (see EditableContentSchema's comment) - a spread of
 // `color` would already do this correctly, this mirrors that.
-export const editableContent = (content: DetailsContentSource) => ({
-  kind: "details" as const,
-  title: content.title,
-  description: content.description,
-  location: detailsLocation(content),
-  ...(content.color !== undefined ? { color: content.color } : {}),
-});
+// Attendees cross only for genuine guest edits (see intendedAttendeeInputs);
+// omitted means "not editing guests" and preserves the provider list.
+export const editableContent = (content: DetailsContentSource) => {
+  const attendees = intendedAttendeeInputs(content.attendees);
+  return {
+    kind: "details" as const,
+    title: content.title,
+    description: content.description,
+    location: detailsLocation(content),
+    ...(content.color !== undefined ? { color: content.color } : {}),
+    ...(attendees !== undefined ? { attendees } : {}),
+  };
+};
 
 const editableDetailsFromEvent = (
   event: Event,

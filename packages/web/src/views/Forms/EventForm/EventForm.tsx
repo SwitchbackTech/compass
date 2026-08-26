@@ -1,4 +1,4 @@
-import { MapPinIcon } from "@phosphor-icons/react";
+import { MapPinIcon, UsersIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
@@ -14,11 +14,14 @@ import {
   useState,
 } from "react";
 import { type CalendarId } from "@core/types/domain-primitives";
+import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -53,6 +56,7 @@ import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useForm
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -77,6 +81,7 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
 
 const EVENT_FORM_TITLE_ID = "event-form-title";
 const EVENT_FORM_LOCATION_ID = "event-form-location";
+const EVENT_FORM_ATTENDEES_ID = "event-form-attendees";
 const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
 const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
 const EVENT_FORM_COLOR_ID = "event-form-color";
@@ -266,6 +271,45 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" && draft.source.content.kind === "details"
         ? draft.source.content
         : undefined;
+    // Attendee-editor gate (WP-04): guests are editable only where the whole
+    // write path can deliver them — a writable Google calendar, an event the
+    // user organizes, and never a single occurrence of a series (sync
+    // refuses per-occurrence guest replacements; series-wide edits go
+    // through the "all"-scope path via the scope dialog's narrowing).
+    const { data: allCalendars } = useCalendarsQuery();
+    const defaultTargetCalendar = useDefaultTargetCalendar(allCalendars ?? []);
+    const attendeeCalendar =
+      draft.kind === "create"
+        ? draft.values.calendarId
+          ? calendarLookup.get(draft.values.calendarId)
+          : defaultTargetCalendar
+        : calendarLookup.get(draft.source.calendarId);
+    // Google auto-sets the organizer to the creating account, so "the user
+    // organizes this event" is organizer-email == calendar-account-email.
+    // A missing organizer means Compass created the event on this account
+    // (organizes it); a missing account email fails closed — sync refuses
+    // non-organizer guest edits anyway, so don't offer the editor.
+    const organizesEvent =
+      draft.kind === "create" ||
+      !sourceDetails?.organizer ||
+      (attendeeCalendar?.accountEmail !== undefined &&
+        sourceDetails.organizer.email.toLowerCase() ===
+          attendeeCalendar.accountEmail.toLowerCase());
+    const showAttendeeEditor =
+      !isReadOnly &&
+      attendeeCalendar?.provider === "google" &&
+      attendeeCalendar.capabilities.canWrite &&
+      organizesEvent &&
+      (draft.kind === "create" ||
+        draft.source.recurrence.kind !== "occurrence");
+    // Untouched drafts show the source event's guests as chips; a touched
+    // draft owns its membership in values.attendees (present = replace).
+    const attendeeChips: readonly AttendeeInput[] =
+      draft.values.attendees ??
+      (sourceDetails?.attendees ?? []).map(({ email, displayName }) => ({
+        email,
+        displayName,
+      }));
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDateStrings(draft);
@@ -375,7 +419,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         patch: Partial<
           Pick<
             GridEventDraft["values"],
-            "title" | "description" | "location" | "color"
+            "title" | "description" | "location" | "color" | "attendees"
           >
         >,
       ) => {
@@ -873,6 +917,22 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 </div>
               </FormCard>
 
+              {showAttendeeEditor && (
+                <FormCard>
+                  <div className="flex items-start gap-2">
+                    <UsersIcon
+                      size={16}
+                      className="mt-2 shrink-0 text-text-muted"
+                    />
+                    <AttendeeField
+                      id={EVENT_FORM_ATTENDEES_ID}
+                      value={attendeeChips}
+                      onChange={(next) => patchDraftFields({ attendees: next })}
+                    />
+                  </div>
+                </FormCard>
+              )}
+
               <FormCard>
                 <DescriptionEditor
                   id={EVENT_FORM_DESCRIPTION_ID}
@@ -890,7 +950,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               control, so it stays interactive (the "+N more" toggle) even
               when the event itself is read-only. Renders its own card
               styling and returns null when the event has none of this data. */}
-            {sourceDetails && <EventDetailsSection details={sourceDetails} />}
+            {sourceDetails && (
+              <EventDetailsSection
+                details={sourceDetails}
+                hideAttendees={showAttendeeEditor}
+              />
+            )}
 
             {isReadOnly && (
               <p role="note" className="text-text-muted text-xs">

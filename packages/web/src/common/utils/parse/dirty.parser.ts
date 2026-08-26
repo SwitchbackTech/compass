@@ -3,6 +3,7 @@ import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   editGridEventDraft,
+  gridDraftGuestsChanged,
   resolveDraftRecurrenceRules,
 } from "@web/events/grid-event-draft.adapter";
 
@@ -142,6 +143,10 @@ export class DirtyParser {
       return true;
     }
     if (values.recurrence.kind !== orig.recurrence.kind) return true;
+    // A pristine edit draft never carries `attendees`; a touched guest list
+    // is only dirty when it actually changes membership (adding a guest and
+    // removing them again closes without prompting, like retyping a title).
+    if (gridDraftGuestsChanged(draft)) return true;
 
     return false;
   }

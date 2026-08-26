@@ -898,6 +898,44 @@
 }
 
 /*
+ * Guest email-chip combobox (AttendeeField). Unlayered for the same reason
+ * as .c-time-picker above: it must override react-select's unlayered CSS.
+ */
+.c-attendee-field {
+  @apply relative w-full min-w-0;
+  font-size: var(--font-size-m);
+  & span[aria-live="polite"],
+  & .attendee-field__indicators {
+    display: none;
+  }
+  & .attendee-field__control {
+    min-height: 30px;
+    border: 0;
+    border-radius: var(--radius-default);
+    background: transparent;
+    box-shadow: none;
+    transition: var(--transition-default);
+  }
+  & .attendee-field__control--is-focused {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  & .attendee-field__value-container {
+    padding: 0;
+    gap: 4px;
+  }
+  & .attendee-field__menu {
+    min-width: 220px;
+    border: 1px solid var(--color-border);
+    border-radius: 2px;
+    background: var(--surface);
+  }
+  & .attendee-field__menu-list {
+    padding: 0;
+    font-size: var(--font-size-m);
+  }
+}
+
+/*
  * Unlayered (plain rule, not @utility) so it overrides react-datepicker's
  * unlayered defaults and the c-date-picker base. Being unlayered + defined
  * after c-date-picker, it wins on source order, so the !important hacks the
