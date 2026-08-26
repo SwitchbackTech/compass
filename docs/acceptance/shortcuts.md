@@ -155,17 +155,17 @@ Pressing `C` in Week view opens a new event creation form, equivalent to clickin
 
 ---
 
-## Scenario 6: Create An All-Day Event With A Keyboard Shortcut (A In Week View)
+## Scenario 6: Create An All-Day Event With A Keyboard Shortcut (Shift+C In Week View)
 
 ### UX
 
-Pressing `A` in Week view opens a new event form pre-configured as an all-day event.
+Pressing `Shift+C` in Week view opens a new event form pre-configured as an all-day event.
 
 ### Steps
 
 1. Navigate to `/week`.
 2. Ensure no input is focused.
-3. Press `A`.
+3. Press `Shift+C`.
 
 ### Expected Results
 
@@ -399,7 +399,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 2. `J` and `K` navigate days in Day view and weeks in Week view.
 3. `T` returns to today from any offset in both Day and Week view.
 4. Cmd+K opens the command palette; Escape closes it without action; Undo/Redo rows are present.
-5. `C` opens a timed event form and `A` an all-day event form, in both Day and Week view.
+5. `C` opens a timed event form and `Shift+C` an all-day event form, in both Day and Week view.
 6. `]` toggles the sidebar in both Week and Day view.
 7. Delete removes a focused event in Day and Week view and shows an undo toast.
 8. Cmd+Z / Ctrl+Z undoes the last event action; Cmd+Shift+Z / Ctrl+Shift+Z redoes it.

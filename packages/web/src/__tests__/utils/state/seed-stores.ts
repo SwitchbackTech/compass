@@ -3,10 +3,6 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
-  type AvailabilityState,
-  useAvailabilityStore,
-} from "@web/availability/availability.store";
-import {
   type State_DraftEvent,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -20,7 +16,6 @@ type ViewState = ReturnType<typeof useViewStore.getState>;
  * State shape accepted by the render helpers' `state` option.
  */
 export type TestAppState = {
-  availability?: Partial<AvailabilityState>;
   events?: { draft?: Partial<State_DraftEvent> };
   settings?: Partial<SettingsState>;
   userMetadata?: Partial<UserMetadataState>;
@@ -31,8 +26,7 @@ export type TestAppState = {
 export function seedStoresFromState(state?: TestAppState): void {
   if (!state) return;
 
-  const { availability, events, settings, userMetadata, view } = state;
-  if (availability) useAvailabilityStore.setState(availability);
+  const { events, settings, userMetadata, view } = state;
   if (events?.draft) useDraftStore.setState(events.draft);
   if (settings) useSettingsStore.setState(settings);
   if (userMetadata) useUserMetadataStore.setState(userMetadata);

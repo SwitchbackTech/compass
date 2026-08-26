@@ -1,8 +1,6 @@
 import { PlusIcon } from "@phosphor-icons/react";
-import { availabilityActions } from "@web/availability/availability.store";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
-import { viewActions } from "@web/events/stores/view.store";
 
 /**
  * View-agnostic "Common Actions" for the command palette. Emitting a view
@@ -28,17 +26,5 @@ export const eventCommandPaletteItems: CommandItem[] = [
     shortcut: "shift+c",
     keywords: ["new event", "add event", "all day"],
     onClick: () => queueMicrotask(() => emitViewCommand("CREATE_ALLDAY_DRAFT")),
-  },
-  {
-    id: "share-availability",
-    label: "Share availability",
-    icon: PlusIcon,
-    shortcut: "a",
-    keywords: ["free time", "availability", "share times"],
-    onClick: () =>
-      queueMicrotask(() => {
-        availabilityActions.open();
-        viewActions.setSidebarOpen(true);
-      }),
   },
 ];

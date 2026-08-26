@@ -5,10 +5,6 @@ import {
   SSE_DEGRADED_STATUS,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
-import {
-  selectAvailabilityOpen,
-  useAvailabilityStore,
-} from "@web/availability/availability.store";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import {
@@ -47,9 +43,6 @@ import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
  */
 export const SidebarStatusBar: FC = () => {
   const hint = useShortcutHintContext();
-  // Share availability owns the sidebar and prints its own keycap hints, so
-  // the idle "next shortcut" tip would be advice for a mode the user is not in.
-  const isAvailabilityOpen = useAvailabilityStore(selectAvailabilityOpen);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
@@ -93,7 +86,7 @@ export const SidebarStatusBar: FC = () => {
     <EdgeFocusIndicator />
   ) : isKeyboardPlace ? (
     <KeyboardPlaceIndicator />
-  ) : !status && !isAvailabilityOpen ? (
+  ) : !status ? (
     <ShortcutTipIndicator hint={hint} />
   ) : null;
 

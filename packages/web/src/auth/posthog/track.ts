@@ -24,15 +24,7 @@ export type ProductEvent =
   | "billing_gate_cta_clicked"
   | "notifications_enabled"
   | "notifications_disabled"
-  | "notifications_enable_denied"
-  | "availability_opened"
-  | "availability_slot_accepted"
-  | "availability_slot_added"
-  | "availability_slot_removed"
-  | "availability_recipient_zone_added"
-  | "availability_copied"
-  | "availability_copy_failed"
-  | "availability_closed";
+  | "notifications_enable_denied";
 
 /**
  * Fire-and-forget capture for the small set of product-activation events.

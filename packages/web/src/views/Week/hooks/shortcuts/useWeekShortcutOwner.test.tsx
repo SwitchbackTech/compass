@@ -15,7 +15,6 @@ import {
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
-import { useAvailabilityStore } from "@web/availability/availability.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -1257,16 +1256,6 @@ describe("useWeekShortcutOwner create shortcuts", () => {
       const { gridDraft, status } = useDraftStore.getState();
       expect(status?.activity).toBe("createShortcut");
       expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
-    });
-  });
-
-  it("opens Share Availability instead of an all-day draft when A is pressed", async () => {
-    renderShortcuts();
-    act(() => pressKey("A"));
-
-    await waitFor(() => {
-      expect(useAvailabilityStore.getState().isOpen).toBe(true);
-      expect(useDraftStore.getState().gridDraft).toBeNull();
     });
   });
 });
