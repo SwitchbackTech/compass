@@ -6,6 +6,7 @@ import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { terminalReplayIsStale } from "@sync/domain/command-replay";
 import {
+  mergeAttendees,
   mergeUpdateContent,
   omitNullColor,
 } from "@sync/domain/merge-update-content";
@@ -24,6 +25,7 @@ import {
   executeProviderSeriesFollowingUpdate,
   executeProviderSeriesUpdate,
   executeProviderUpdate,
+  type ProviderConnectionLookup,
   type ProviderDeleteDeps,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
@@ -75,6 +77,10 @@ export interface CloudCommandDeps {
   // Which generation reads serve per calendar, so a provider-linked create
   // projects where reads will look for it.
   resources: SyncResourceRepository;
+  // Connection facts for the provider executors' attendee organizer guard —
+  // a guest-list replace is only valid for the connection account that
+  // organizes the event.
+  connections: ProviderConnectionLookup;
   // The deletion-marker store, for the tombstone a provider delete leaves.
   markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
@@ -234,6 +240,7 @@ async function applyCloudCreateOrProvider(
           events: deps.events,
           occurrences: deps.occurrences,
           resources: deps.resources,
+          connections: deps.connections,
           writer: deps.provider.writer,
           custody: deps.provider.custody,
         },
@@ -481,6 +488,7 @@ async function dispatchProviderMutation(
       events: deps.events,
       occurrences: deps.occurrences,
       resources: deps.resources,
+      connections: deps.connections,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
       markers: deps.markers,
@@ -613,6 +621,12 @@ async function updateCloudOccurrence(
   if (command.input.kind !== "update" || command.input.recurrenceId === null) {
     return command;
   }
+  // Guest-list editing is whole-event/whole-series only in v1, matching the
+  // provider executors: refuse a per-occurrence replace typed rather than
+  // silently dropping the intent.
+  if (command.input.attendeesEdit === "replace") {
+    return failCloud(deps, command, "unsupportedCapability");
+  }
   const exception = await deps.events.upsertException(
     master,
     command.input.recurrenceId,
@@ -694,6 +708,13 @@ async function updateCloudSeriesFollowing(
   const splitAt = new Date(command.input.recurrenceId);
   if (isFollowingSplitAtSeriesStart(master.schedule, splitAt)) {
     return updateCloudSeries(deps, command, master, now);
+  }
+
+  // Same v1 rule as the provider split path: a guest-list replace has no
+  // defined semantics on a thisAndFollowing split, so refuse typed rather
+  // than silently preserving.
+  if (command.input.attendeesEdit === "replace") {
+    return failCloud(deps, command, "unsupportedCapability");
   }
 
   await deleteFollowingExceptions(deps, command, master._id, splitAt);
@@ -805,9 +826,25 @@ function applyCloudUpdate(
     throw new Error("applyCloudUpdate requires an update command");
   }
   const { input } = command;
+  const merged = mergeUpdateContent(existing.content, input.content);
+  // A cloud-only event has no provider copy to fetch, so an attendeesEdit
+  // "replace" merges the intended membership against the STORED list — the
+  // closest "current" state — keeping any recorded status for retained
+  // guests and entering new ones as needsAction. "preserve"/legacy commands
+  // keep today's byte-identical merge (attendees untouched).
+  const content =
+    input.attendeesEdit === "replace"
+      ? {
+          ...merged,
+          attendees: mergeAttendees(
+            input.content.attendees,
+            existing.content.attendees,
+          ),
+        }
+      : merged;
   return {
     ...existing,
-    content: mergeUpdateContent(existing.content, input.content),
+    content,
     schedule: input.schedule,
     recurrence:
       input.recurrence.kind === "preserve"
@@ -828,6 +865,17 @@ function buildCloudEventRecord(command: CommandRecord, now: Date): EventRecord {
     throw new Error("buildCloudEventRecord requires a create command");
   }
   const { input } = command;
+  // A create with intended guests stores them normalized through the same
+  // merge the provider path uses — against an empty list, since nothing
+  // exists yet — so every guest enters as needsAction rather than trusting
+  // the command's own responseStatus values.
+  const content =
+    input.attendeesEdit === "replace"
+      ? {
+          ...input.content,
+          attendees: mergeAttendees(input.content.attendees, []),
+        }
+      : input.content;
   return {
     _id: command.eventId,
     tenantId: command.tenantId,
@@ -843,7 +891,7 @@ function buildCloudEventRecord(command: CommandRecord, now: Date): EventRecord {
     providerUpdatedAt: null,
     deliveryState: null,
     providerMetadata: null,
-    content: omitNullColor(input.content),
+    content: omitNullColor(content),
     schedule: input.schedule,
     recurrence: toStoredRecurrence(input.recurrence),
     lifecycleState: "active",

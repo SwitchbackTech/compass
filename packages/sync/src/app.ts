@@ -719,6 +719,7 @@ function buildSchedulers(
             calendars: repos.calendars,
             occurrences: repos.eventOccurrences,
             resources: repos.syncResources,
+            connections: repos.connections,
             markers: repos.deletionMarkers,
             execution: config.EXECUTION,
             provider: {

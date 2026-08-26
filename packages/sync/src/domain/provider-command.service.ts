@@ -3,6 +3,7 @@ import {
   type EditableRecurrence,
   type EventSchedule,
 } from "@core/types/event.contracts";
+import { type Attendee } from "@core/types/event-attendance.contracts";
 import { type RecurrenceEdit } from "@core/types/event-command.contracts";
 import { type SyncCommandFailureReason } from "@core/types/sync/command.contracts";
 import {
@@ -12,9 +13,12 @@ import {
 } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
+  type PrincipalId,
   type ProviderEventId,
+  type TenantId,
 } from "@core/types/sync/identity.contracts";
 import {
+  mergeAttendees,
   mergeUpdateContent,
   omitNullColor,
 } from "@sync/domain/merge-update-content";
@@ -53,6 +57,18 @@ import { type EventRepository } from "@sync/storage/repositories/event.repositor
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
+// The single connection fact the attendee organizer guard needs, narrowed
+// from ProviderConnectionRepository so tests can fake it without a database.
+export interface ProviderConnectionLookup {
+  findById(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+  ): Promise<{
+    readonly account: { readonly email: string | null };
+  } | null>;
+}
+
 export interface ProviderMutationDeps {
   commands: CommandRepository;
   events: EventRepository;
@@ -62,6 +78,9 @@ export interface ProviderMutationDeps {
   // Reads serve a calendar's active generation, so a create has to ask which
   // generation that is rather than assume the calendar has never been repaired.
   resources: SyncResourceRepository;
+  // Which account the write acts as — a guest-list replace is only valid on
+  // an event that account organizes (see organizerGuardFailure).
+  connections: ProviderConnectionLookup;
   writer: ProviderEventWriter;
   custody: AccessTokenSource;
 }
@@ -107,6 +126,16 @@ export async function executeProviderCreate(
   }
   const { accessToken } = tokenResult;
 
+  // A create with intended guests (attendeesEdit "replace") merges against an
+  // EMPTY provider list — the event does not exist yet — so every intended
+  // guest enters as needsAction. The organizer is not synthesized: Google
+  // adds the creating account as an accepted organizer-attendee itself, so a
+  // create body must never be compared to its readback.
+  const intendedAttendees =
+    input.attendeesEdit === "replace"
+      ? mergeAttendees(input.content.attendees, [])
+      : undefined;
+
   // Transient failures are safe to retry — the deterministic id keeps the
   // eventual retry idempotent. Every other reason is terminal and maps
   // straight to a command failure class.
@@ -119,6 +148,7 @@ export async function executeProviderCreate(
       schedule: input.schedule,
       recurrence: toProviderWriteRecurrence(input.recurrence),
       invitation: input.invitation,
+      ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
     }),
   );
   if (!writeResult.ok) {
@@ -149,6 +179,7 @@ export async function executeProviderCreate(
     result,
     now(),
     generations.get(input.calendarId) ?? 0,
+    intendedAttendees,
   );
   await deps.events.put(record);
   await reprojectOccurrences(deps.occurrences, record, now);
@@ -184,6 +215,41 @@ async function failCommand(
     await deps.custody.discardRevoked(connectionId);
   }
   return failed ?? command;
+}
+
+// Gate for a guest-list replace: only the organizer's copy of an event
+// supports rewriting the attendee array, and v1 rejects non-organizer guest
+// editing outright (`guestsCanModify` is a documented follow-up). The STORED
+// organizer is compared case-insensitively against the connection's account
+// email so a non-organizer replace fails typed (unsupportedCapability) BEFORE
+// any provider call, fetch included. A null stored organizer passes — it
+// means no organizer has ever been read back (e.g. a Compass-created event
+// with no guests yet), so the connection's own account organizes it.
+// Unverifiable states (missing connection row, or a connection without an
+// account email while an organizer exists) fail closed with the same typed
+// reason rather than guessing. Returns the failed command, or null when the
+// replace may proceed.
+async function organizerGuardFailure(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  connectionId: ConnectionId,
+): Promise<CommandRecord | null> {
+  const organizerEmail = event.content.organizer?.email;
+  if (organizerEmail === undefined) return null;
+  const connection = await deps.connections.findById(
+    command.tenantId,
+    command.principalId,
+    connectionId,
+  );
+  const accountEmail = connection?.account.email;
+  if (
+    accountEmail != null &&
+    accountEmail.toLowerCase() === organizerEmail.toLowerCase()
+  ) {
+    return null;
+  }
+  return failCommand(deps, command, "unsupportedCapability", connectionId);
 }
 
 // After a failed override-align patch, continue when the instance is already
@@ -236,11 +302,18 @@ function buildLinkedEventRecord(
   result: ProviderWriteResult,
   now: Date,
   generation: number,
+  // The guest list the create actually wrote (merged, all needsAction), so
+  // the stored record reflects it before the next Google round-trip; absent
+  // for "preserve"/legacy creates, which store the command content verbatim.
+  intendedAttendees?: readonly Attendee[],
 ): EventRecord {
   if (command.input.kind !== "create") {
     throw new Error("buildLinkedEventRecord requires a create command");
   }
   const { input } = command;
+  const content = intendedAttendees
+    ? { ...input.content, attendees: intendedAttendees }
+    : input.content;
   return {
     _id: command.eventId,
     tenantId: command.tenantId,
@@ -255,7 +328,7 @@ function buildLinkedEventRecord(
     providerUpdatedAt: null,
     deliveryState: "confirmed",
     providerMetadata: result.icalUid ? { iCalUID: result.icalUid } : null,
-    content: omitNullColor(input.content),
+    content: omitNullColor(content),
     schedule: input.schedule,
     recurrence:
       input.recurrence.kind === "series"
@@ -316,6 +389,18 @@ export async function executeProviderUpdate(
   const providerEventId = event.providerEventId;
   const connectionId = event.connectionId;
 
+  // A guest-list replace is only supported for the organizer; a non-organizer
+  // replace fails typed before any provider call.
+  if (input.attendeesEdit === "replace") {
+    const guardFailure = await organizerGuardFailure(
+      deps,
+      command,
+      event,
+      connectionId,
+    );
+    if (guardFailure) return guardFailure;
+  }
+
   const tokenResult = await resolveAccessToken(deps.custody, connectionId);
   if (!tokenResult.ok) {
     if (tokenResult.stop.kind === "pending") return command;
@@ -347,7 +432,20 @@ export async function executeProviderUpdate(
   }
 
   // Merge so a title/description edit cannot wipe provider-sourced attendees.
-  const content = mergeUpdateContent(event.content, input.content);
+  let content = mergeUpdateContent(event.content, input.content);
+  // A "replace" merges the intended membership against the FRESHLY FETCHED
+  // provider list (current.content), never sync's stored record: the Google
+  // patch replaces the whole attendees array, and merging against a stale
+  // stored copy would clobber a concurrent RSVP made between syncs. The
+  // merged list also lands on the local record at commit, so reads reflect
+  // the edit before the next provider round-trip.
+  const intendedAttendees =
+    input.attendeesEdit === "replace"
+      ? mergeAttendees(input.content.attendees, current.content.attendees)
+      : undefined;
+  if (intendedAttendees) {
+    content = { ...content, attendees: intendedAttendees };
+  }
   // Almost always "single" (event.recurrence.kind is single here, so
   // "preserve" resolves to single via intendedSeriesRecurrence's own
   // fallback) — except a single→series conversion, which writes real rules.
@@ -356,7 +454,13 @@ export async function executeProviderUpdate(
   // Replay: the provider already holds this edit, so confirm at its version
   // rather than writing again.
   if (
-    matchesIntendedEdit(current, content, input.schedule, intendedRecurrence)
+    matchesIntendedEdit(
+      current,
+      content,
+      input.schedule,
+      intendedRecurrence,
+      intendedAttendees,
+    )
   ) {
     return commitProviderUpdate(
       deps,
@@ -376,6 +480,7 @@ export async function executeProviderUpdate(
       schedule: input.schedule,
       recurrence: intendedRecurrence,
       invitation: input.invitation,
+      ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
     }),
   );
   if (!patchResult.ok) {
@@ -474,6 +579,18 @@ export async function executeProviderSeriesUpdate(
   const providerEventId = master.providerEventId;
   const intendedRecurrence = intendedSeriesRecurrence(input.recurrence, master);
 
+  // Same organizer gate as the single-event path: a non-organizer guest-list
+  // replace fails typed before any provider call.
+  if (input.attendeesEdit === "replace") {
+    const guardFailure = await organizerGuardFailure(
+      deps,
+      command,
+      master,
+      connectionId,
+    );
+    if (guardFailure) return guardFailure;
+  }
+
   const tokenResult = await resolveAccessToken(deps.custody, connectionId);
   if (!tokenResult.ok) {
     if (tokenResult.stop.kind === "pending") return command;
@@ -502,18 +619,34 @@ export async function executeProviderSeriesUpdate(
     return failCommand(deps, command, "permanentProviderError", connectionId);
   }
 
-  const content = mergeUpdateContent(master.content, input.content);
+  let content = mergeUpdateContent(master.content, input.content);
+  // Guest membership merges against the freshly fetched master, mirroring the
+  // single-event path (see executeProviderUpdate).
+  const intendedAttendees =
+    input.attendeesEdit === "replace"
+      ? mergeAttendees(input.content.attendees, current.content.attendees)
+      : undefined;
+  if (intendedAttendees) {
+    content = { ...content, attendees: intendedAttendees };
+  }
 
   // Replay: the provider already holds this series edit (rules included), so
   // confirm at its version rather than writing again.
   if (
-    matchesIntendedEdit(current, content, input.schedule, intendedRecurrence)
+    matchesIntendedEdit(
+      current,
+      content,
+      input.schedule,
+      intendedRecurrence,
+      intendedAttendees,
+    )
   ) {
     return commitProviderSeriesUpdate(
       deps,
       command,
       master,
       content,
+      intendedAttendees,
       current.providerVersion,
       now,
       {
@@ -532,6 +665,7 @@ export async function executeProviderSeriesUpdate(
       schedule: input.schedule,
       recurrence: intendedRecurrence,
       invitation: input.invitation,
+      ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
     }),
   );
   if (!patchResult.ok) {
@@ -545,6 +679,7 @@ export async function executeProviderSeriesUpdate(
     command,
     master,
     content,
+    intendedAttendees,
     result.providerVersion,
     now,
     {
@@ -581,6 +716,10 @@ async function commitProviderSeriesUpdate(
   command: CommandRecord,
   master: EventRecord,
   content: SyncEventContent,
+  // Present when this edit-all replaced the guest list: the override-align
+  // patches carry the same merged membership, so a reverted override does not
+  // keep a stale guest list Google would otherwise leave on it.
+  intendedAttendees: readonly Attendee[] | undefined,
   providerVersion: string,
   now: () => Date,
   provider: {
@@ -635,6 +774,7 @@ async function commitProviderSeriesUpdate(
           ),
           recurrence: { kind: "instance" },
           invitation: input.invitation,
+          ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
         });
       });
       if (!alignResult.ok) {
@@ -753,6 +893,14 @@ export async function executeProviderOccurrenceUpdate(
   const recurrenceId = input.recurrenceId as DateTime;
   const connectionId = master.connectionId;
   const seriesProviderEventId = master.providerEventId;
+
+  // Guest-list editing is whole-event/whole-series only in v1: a replace on a
+  // "this" scope has no defined per-occurrence semantics yet, so refuse typed
+  // rather than silently preserving — dropped intent would read as a
+  // successful guest edit that never happened.
+  if (input.attendeesEdit === "replace") {
+    return failCommand(deps, command, "unsupportedCapability", connectionId);
+  }
 
   const tokenResult = await resolveAccessToken(deps.custody, connectionId);
   if (!tokenResult.ok) {
@@ -1200,6 +1348,14 @@ export async function executeProviderSeriesFollowingUpdate(
     return executeProviderSeriesUpdate(deps, command, master, calendar, now);
   }
 
+  // Same v1 rule as the occurrence path: a guest-list replace has no defined
+  // semantics on a thisAndFollowing split (which guest list would the
+  // truncated original keep?), so refuse typed rather than silently
+  // preserving.
+  if (input.attendeesEdit === "replace") {
+    return failCommand(deps, command, "unsupportedCapability", connectionId);
+  }
+
   const tokenResult = await resolveAccessToken(deps.custody, connectionId);
   if (!tokenResult.ok) {
     if (tokenResult.stop.kind === "pending") return command;
@@ -1389,21 +1545,28 @@ function storedSeriesRecurrence(
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.
 // Compares ONLY the fields a patch actually writes (title, description,
-// location, color, schedule, recurrence). organizer/attendees/conference are
-// read-reflected, not written by the provider adapter, so they drift
-// independently (e.g. an attendee RSVPs) — comparing them would turn a landed
-// edit into a false miss, then a stale-version patch, then a spurious
-// versionConflict on a write that already succeeded. Recurrence IS written (a
-// series edit-all changes the rules), so it must be compared: a rules-only edit
-// leaves content and schedule identical, and without this a false replay would
-// confirm the command without ever writing the new rules. Used only to detect a
-// replay, so a false negative on the compared fields is still safe (it falls
-// through to the conditional patch).
+// location, color, schedule, recurrence — and the guest membership, but only
+// when the command intends a guest-list replace). organizer/conference are
+// read-reflected, never written by the provider adapter, so they drift
+// independently — comparing them would turn a landed edit into a false miss,
+// then a stale-version patch, then a spurious versionConflict on a write that
+// already succeeded. Attendees are the same by default (an attendee RSVPs
+// whenever they like), so they stay out of the comparison for every
+// "preserve"/legacy command; a "replace" command DOES write them, so its
+// replay check compares membership — as email sets, order-insensitive and
+// responseStatus-ignored, because RSVP drift must never block replay (see
+// attendeesMatchIntent). Recurrence IS written (a series edit-all changes the
+// rules), so it must be compared: a rules-only edit leaves content and
+// schedule identical, and without this a false replay would confirm the
+// command without ever writing the new rules. Used only to detect a replay,
+// so a false negative on the compared fields is still safe (it falls through
+// to the conditional patch).
 function matchesIntendedEdit(
   current: ProviderEvent,
   content: SyncEventContent,
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
+  intendedAttendees?: readonly Attendee[],
 ): boolean {
   // Null on the command means "no color"; treat it like an absent color on
   // the provider read so a clear that already landed counts as a replay.
@@ -1414,7 +1577,31 @@ function matchesIntendedEdit(
     current.content.location === content.location &&
     current.content.color === intendedColor &&
     deepEqual(current.schedule, schedule) &&
-    recurrenceMatches(current.recurrence, recurrence)
+    recurrenceMatches(current.recurrence, recurrence) &&
+    attendeesMatchIntent(current.content.attendees, intendedAttendees)
+  );
+}
+
+// Membership comparison for the replay check, entered ONLY when the command
+// intends a guest-list replace (undefined = attendees are not part of this
+// write; always a match). Email sets, case-insensitive, order-insensitive,
+// responseStatus-ignored: a guest RSVPing (or Google reordering the list)
+// between a landed patch and its retry must still read as a replay — RSVP
+// drift never blocks replay.
+function attendeesMatchIntent(
+  current: readonly Attendee[],
+  intended: readonly Attendee[] | undefined,
+): boolean {
+  if (intended === undefined) return true;
+  const currentEmails = new Set(
+    current.map(({ email }) => email.toLowerCase()),
+  );
+  const intendedEmails = new Set(
+    intended.map(({ email }) => email.toLowerCase()),
+  );
+  return (
+    currentEmails.size === intendedEmails.size &&
+    [...intendedEmails].every((email) => currentEmails.has(email))
   );
 }
 

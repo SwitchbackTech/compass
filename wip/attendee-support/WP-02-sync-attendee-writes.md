@@ -1,7 +1,7 @@
 # WP-02 — Sync provider write path: attendee replace
 
 **task_id:** WP-02
-**status:** queued
+**status:** done
 **owner:** Implementer (sync)
 **depends on:** WP-01
 **next owner after done:** WP-04 unblocks (with WP-03); WP-07 unblocks
@@ -90,13 +90,75 @@ Key files:
 
 ## Evidence
 
+Recorded 2026-08-26 (implementer: manager-loop takeover session; prior worker
+lost to a spend limit with no code landed):
+
 ```text
-commands run:
-test:sync result:
-safety-canary suite: pass/fail
+commands run: bun test:sync (full, in-memory Mongo harness); bun run
+  type-check; bun lint (after bun lint:fix for formatting of new test
+  fixtures); bun knip
+test:sync result: 1017 pass, 0 fail (78 files) — includes new/extended suites:
+  merge-update-content.test.ts (mergeAttendees table, 9 cases + purity),
+  google-event-writer.adapter.test.ts (exact insert/patch bodies with and
+  without attendees, sendUpdates asserted), provider-command.service.db.test.ts
+  ("attendeesEdit replace": merge-against-fetched, empty-set replace, organizer
+  guard, fail-closed on unresolvable connection, replay by email set, patch on
+  membership drift, preserve byte-identical, transient-fetch pending, series
+  edit-all, scope-this / thisAndFollowing typed refusals, create needsAction
+  normalization, legacy create), cloud-command.service.db.test.ts ("cloud-only
+  attendeesEdit replace": stored-list merge, create normalization, occurrence/
+  split refusals)
+safety-canary tests pass: yes — safety-canary.ts untouched; full suite green
+  within test:sync and packages/sync/src/safety/ re-run standalone under the
+  harness (18 pass, 0 fail). New canary assertions: a failed non-organizer
+  replace's outcome and the command route's log-line template contain no
+  attendee JSON (findSafetyCanaryHit null), both provider-side and cloud-side.
 preserve-regression proof:
-type-check / lint / knip result:
+  - adapter: "omits the attendees key when the write does not intend a guest
+    edit" asserts the FULL insert body toEqual the pre-WP shape (no attendees
+    key) even when content.attendees is populated, and the patch body has no
+    attendees property.
+  - executor: "keeps a preserve command byte-identical" asserts no attendees
+    key on the patch input, content.attendees passed through as the stored
+    (mergeUpdateContent) list, and the stored record's list untouched even
+    when the command echoes stray attendees.
+  - every pre-existing update/create/delete test (none set attendeesEdit;
+    schema defaults to "preserve") passes unmodified.
+type-check / lint / knip result: all exit 0. lint: 0 errors, 10 pre-existing
+  warnings (untouched files). knip: no findings (pre-existing .css
+  configuration hint only).
 deltas from spec (if any):
+  - Organizer guard needs the connection's account email, which no executor
+    dep carried: ProviderMutationDeps/CloudCommandDeps gain a narrow
+    `connections: ProviderConnectionLookup` (findById -> {account:{email}}),
+    wired from syncRepositories in command.routes.ts and app.ts's
+    stale-command sweep. Guard compares the STORED organizer (case-insensitive)
+    BEFORE any provider call, fetch included; a null stored organizer passes
+    (Compass-created event, the account organizes it); unverifiable states
+    (missing connection row / no account email) fail closed with the same
+    typed unsupportedCapability.
+  - The intended membership rides the writer port as an optional
+    `attendees` field on ProviderWriteBody (absent = merge-by-key leaves
+    Google's list; present incl. [] = replace), NOT via content.attendees —
+    content stays read-reflected and never reaches the body.
+  - Beyond the spec's named executeProviderUpdate + create,
+    executeProviderSeriesUpdate (scope "all") also supports replace (same
+    fetch-merge-patch shape; the override-align patches carry the replaced
+    membership so reverted overrides don't keep a stale guest list). Replace
+    on scope "this"/"thisAndFollowing" (provider AND cloud) fails typed
+    unsupportedCapability instead of silently preserving — per-occurrence
+    guest lists have no v1 semantics, and dropped intent must not read as
+    success.
+  - Creates merge against an empty provider list, so every intended guest is
+    normalized to needsAction regardless of the command's own responseStatus
+    values; the merged list is stored on the record (finish line 6) for
+    provider creates, cloud creates, and cloud updates (cloud updates merge
+    against the STORED list — no provider copy exists).
+  - Environment note: this container's kernel has IPv6 disabled and Bun's
+    host-less listen() binds "::", so mongodb-memory-server could not boot.
+    Validation ran with a TEMPORARY, uncommitted bunfig.toml preload shim
+    forcing IPv4 binds (scratchpad-only; reverted before commit). Bun 1.3.11
+    vs pinned 1.3.14 (harness warns; behavior identical here).
 ```
 
 ## Out of scope

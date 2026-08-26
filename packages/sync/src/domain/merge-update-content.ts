@@ -1,3 +1,4 @@
+import { type Attendee } from "@core/types/event-attendance.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 
 // Browser edits only title + description + location (+ optional color). An
@@ -43,6 +44,43 @@ export function mergeUpdateContent(
     kept = { ...kept, colorHex: existingColorHex };
   }
   return kept;
+}
+
+// Merge an intended guest membership (an attendeesEdit "replace" command's
+// attendee set) against the attendee list the provider currently holds.
+// Membership is keyed by email, case-insensitively — providers treat addresses
+// that differ only in case as the same guest:
+//   - retained emails keep the provider's entry verbatim: responseStatus and
+//     displayName are provider-owned facts a Compass guest edit must not
+//     reset, so a concurrent RSVP between syncs survives;
+//   - new emails enter as needsAction — a caller never sets another person's
+//     RSVP;
+//   - emails absent from the intent are removed.
+// Provider order is preserved for retained entries and new entries append in
+// intent order. Pure on purpose: a Google patch replaces the WHOLE attendees
+// array, so a merge bug silently uninvites people — this must stay
+// table-testable in isolation.
+export function mergeAttendees(
+  intended: ReadonlyArray<Pick<Attendee, "email" | "displayName">>,
+  providerCurrent: readonly Attendee[],
+): readonly Attendee[] {
+  const intendedEmails = new Set(
+    intended.map(({ email }) => email.toLowerCase()),
+  );
+  const currentEmails = new Set(
+    providerCurrent.map(({ email }) => email.toLowerCase()),
+  );
+  const retained = providerCurrent.filter(({ email }) =>
+    intendedEmails.has(email.toLowerCase()),
+  );
+  const added = intended
+    .filter(({ email }) => !currentEmails.has(email.toLowerCase()))
+    .map(({ email, displayName }) => ({
+      email,
+      displayName,
+      responseStatus: "needsAction" as const,
+    }));
+  return [...retained, ...added];
 }
 
 // Null is a write-command "clear" signal. Stored/read rows omit the field;

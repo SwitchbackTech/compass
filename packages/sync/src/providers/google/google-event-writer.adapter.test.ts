@@ -252,6 +252,126 @@ describe("GoogleEventWriter", () => {
     );
   });
 
+  it("emits intended attendees on create, omitting a null displayName", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({
+      ...baseCreate,
+      invitation: "all",
+      attendees: [
+        {
+          email: "kept@example.com",
+          displayName: "Kept",
+          responseStatus: "accepted",
+        },
+        {
+          email: "new@example.com",
+          displayName: null,
+          responseStatus: "needsAction",
+        },
+      ],
+    });
+
+    expect(api.calls.insert[0].sendUpdates).toBe("all");
+    expect(api.calls.insert[0].requestBody.attendees).toEqual([
+      {
+        email: "kept@example.com",
+        displayName: "Kept",
+        responseStatus: "accepted",
+      },
+      { email: "new@example.com", responseStatus: "needsAction" },
+    ]);
+  });
+
+  it("replaces the whole attendees array on a patch that intends a guest edit", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      invitation: "externalOnly",
+      attendees: [
+        {
+          email: "solo@example.com",
+          displayName: null,
+          responseStatus: "tentative",
+        },
+      ],
+    });
+
+    // The exact body, sendUpdates included: retained statuses echo back, and
+    // no other attendee-adjacent key (organizer, conferenceData) appears.
+    expect(api.calls.patch[0].sendUpdates).toBe("externalOnly");
+    expect(api.calls.patch[0].requestBody).toEqual({
+      summary: "Title",
+      description: "Desc",
+      location: null,
+      start: {
+        date: null,
+        dateTime: "2025-01-15T09:00:00-05:00",
+        timeZone: "America/New_York",
+      },
+      end: {
+        date: null,
+        dateTime: "2025-01-15T10:00:00-05:00",
+        timeZone: "America/New_York",
+      },
+      recurrence: null,
+      attendees: [{ email: "solo@example.com", responseStatus: "tentative" }],
+    });
+  });
+
+  it("sends an explicit empty attendees array to remove every guest", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({ ...basePatch, attendees: [] });
+
+    expect(api.calls.patch[0].requestBody.attendees).toEqual([]);
+  });
+
+  it("omits the attendees key when the write does not intend a guest edit", async () => {
+    // The preserve/legacy regression: the body is byte-identical to before
+    // attendee writes existed, so patch merge-by-key leaves Google's own
+    // guest list untouched. content.attendees never leaks into the body.
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({
+      ...baseCreate,
+      content: content({
+        attendees: [
+          {
+            email: "read-reflected@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+      } as Partial<SyncEventContent>),
+    });
+    await writer.patchEvent(basePatch);
+
+    expect(api.calls.insert[0].requestBody).toEqual({
+      id: "abc12deadbeef00000000000",
+      summary: "Title",
+      description: "Desc",
+      location: null,
+      start: {
+        date: null,
+        dateTime: "2025-01-15T09:00:00-05:00",
+        timeZone: "America/New_York",
+      },
+      end: {
+        date: null,
+        dateTime: "2025-01-15T10:00:00-05:00",
+        timeZone: "America/New_York",
+      },
+      recurrence: null,
+    });
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("attendees");
+  });
+
   it("conditions a patch on the expected version via If-Match", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);

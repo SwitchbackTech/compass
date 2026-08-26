@@ -1,4 +1,9 @@
-import { mergeUpdateContent, omitNullColor } from "./merge-update-content";
+import { type Attendee } from "@core/types/event-attendance.contracts";
+import {
+  mergeAttendees,
+  mergeUpdateContent,
+  omitNullColor,
+} from "./merge-update-content";
 import { describe, expect, it } from "bun:test";
 
 describe("mergeUpdateContent", () => {
@@ -231,6 +236,136 @@ describe("mergeUpdateContent", () => {
       attendees: [],
       conference: null,
     });
+  });
+});
+
+describe("mergeAttendees", () => {
+  const attendee = (
+    email: string,
+    responseStatus: Attendee["responseStatus"] = "needsAction",
+    displayName: string | null = null,
+  ): Attendee => ({ email, displayName, responseStatus });
+
+  // Exhaustive table over the merge rules: retained entries keep the
+  // provider's status/displayName in provider order, new entries append as
+  // needsAction in intent order, dropped emails are removed, and email
+  // matching is case-insensitive.
+  const cases: Array<{
+    name: string;
+    intended: Array<Pick<Attendee, "email" | "displayName">>;
+    provider: Attendee[];
+    expected: Attendee[];
+  }> = [
+    {
+      name: "keeps a retained guest's provider responseStatus and displayName",
+      intended: [{ email: "a@x.com", displayName: "Renamed" }],
+      provider: [attendee("a@x.com", "accepted", "Provider Name")],
+      expected: [attendee("a@x.com", "accepted", "Provider Name")],
+    },
+    {
+      name: "adds a new guest as needsAction",
+      intended: [
+        { email: "a@x.com", displayName: null },
+        { email: "b@x.com", displayName: "B" },
+      ],
+      provider: [attendee("a@x.com", "declined")],
+      expected: [
+        attendee("a@x.com", "declined"),
+        attendee("b@x.com", "needsAction", "B"),
+      ],
+    },
+    {
+      name: "removes a dropped guest",
+      intended: [{ email: "a@x.com", displayName: null }],
+      provider: [
+        attendee("a@x.com", "accepted"),
+        attendee("b@x.com", "tentative"),
+      ],
+      expected: [attendee("a@x.com", "accepted")],
+    },
+    {
+      name: "matches emails case-insensitively in both directions",
+      intended: [
+        { email: "Alice@X.com", displayName: null },
+        { email: "bob@x.com", displayName: null },
+      ],
+      provider: [
+        attendee("alice@x.com", "accepted"),
+        attendee("BOB@x.com", "declined"),
+      ],
+      expected: [
+        attendee("alice@x.com", "accepted"),
+        attendee("BOB@x.com", "declined"),
+      ],
+    },
+    {
+      name: "preserves provider order for retained guests and appends new ones in intent order",
+      intended: [
+        { email: "new1@x.com", displayName: null },
+        { email: "c@x.com", displayName: null },
+        { email: "a@x.com", displayName: null },
+        { email: "new2@x.com", displayName: null },
+      ],
+      provider: [
+        attendee("a@x.com", "accepted"),
+        attendee("b@x.com", "tentative"),
+        attendee("c@x.com", "declined"),
+      ],
+      expected: [
+        attendee("a@x.com", "accepted"),
+        attendee("c@x.com", "declined"),
+        attendee("new1@x.com"),
+        attendee("new2@x.com"),
+      ],
+    },
+    {
+      name: "an empty intent removes everyone",
+      intended: [],
+      provider: [attendee("a@x.com", "accepted")],
+      expected: [],
+    },
+    {
+      name: "merging into an empty provider list makes every guest needsAction",
+      intended: [
+        { email: "a@x.com", displayName: "A" },
+        { email: "b@x.com", displayName: null },
+      ],
+      provider: [],
+      expected: [attendee("a@x.com", "needsAction", "A"), attendee("b@x.com")],
+    },
+    {
+      name: "an unchanged membership returns the provider list verbatim",
+      intended: [
+        { email: "b@x.com", displayName: null },
+        { email: "a@x.com", displayName: null },
+      ],
+      provider: [
+        attendee("a@x.com", "accepted", "A"),
+        attendee("b@x.com", "declined"),
+      ],
+      expected: [
+        attendee("a@x.com", "accepted", "A"),
+        attendee("b@x.com", "declined"),
+      ],
+    },
+    {
+      name: "both lists empty stays empty",
+      intended: [],
+      provider: [],
+      expected: [],
+    },
+  ];
+
+  it.each(cases)("$name", ({ intended, provider, expected }) => {
+    expect(mergeAttendees(intended, provider)).toEqual(expected);
+  });
+
+  it("does not mutate its inputs", () => {
+    const intended = [{ email: "a@x.com", displayName: null }];
+    const provider = [attendee("b@x.com", "accepted")];
+    mergeAttendees(intended, provider);
+    expect(intended).toEqual([{ email: "a@x.com", displayName: null }]);
+    expect(provider).toEqual([attendee("b@x.com", "accepted")]);
   });
 });
 
