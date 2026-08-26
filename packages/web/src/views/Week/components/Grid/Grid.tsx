@@ -7,7 +7,6 @@ import {
   isFirstImportFailed,
   isFirstImportInProgress,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
@@ -117,38 +116,21 @@ export const Grid: FC<Props> = ({
           weekProps={weekProps}
         >
           {({ timedEventsLayer }) => (
-            <div
-              style={{
-                display: "flex",
-                flex: 1,
-                flexDirection: "column",
-                minHeight: 0,
-                position: "relative",
-                width: "100%",
-              }}
-            >
-              <EventGrid
-                allDayEventsLayer={allDayEventsLayer}
-                allDayGridOffsetTopPx={GRID_Y_START}
-                allDayRowsCount={allDayRowsCount}
-                gridRefs={gridRefs}
-                isErrorEvents={showEventsLoadError}
-                isImportFailed={isImportFailed}
-                isImportingEmpty={isImportingEmpty}
-                isLoadingEvents={isLoadingEvents}
-                onRetryEvents={() => void refetch()}
-                onRetryImport={() => refresh()}
-                timedEventsLayer={timedEventsLayer}
-                today={today}
-                visibleDates={visibleDates}
-              />
-              <AvailabilityGridOverlay
-                hourHeight={measurements.hourHeight}
-                visibleDates={weekDays.map((date) =>
-                  date.format(YEAR_MONTH_DAY_FORMAT),
-                )}
-              />
-            </div>
+            <EventGrid
+              allDayEventsLayer={allDayEventsLayer}
+              allDayGridOffsetTopPx={GRID_Y_START}
+              allDayRowsCount={allDayRowsCount}
+              gridRefs={gridRefs}
+              isErrorEvents={showEventsLoadError}
+              isImportFailed={isImportFailed}
+              isImportingEmpty={isImportingEmpty}
+              isLoadingEvents={isLoadingEvents}
+              onRetryEvents={() => void refetch()}
+              onRetryImport={() => refresh()}
+              timedEventsLayer={timedEventsLayer}
+              today={today}
+              visibleDates={visibleDates}
+            />
           )}
         </MainGrid>
       )}

@@ -163,6 +163,80 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "create",
   },
 
+  // Share availability - only while the panel owns the grid. Movement,
+  // accept, Tab and add/remove are handled on the grid overlay itself
+  // (AvailabilityGridOverlay), the rest in useAvailabilityShortcuts.
+  {
+    id: "availability-move-time",
+    keys: [KEYMAP.moveFocus.hotkeys.up, KEYMAP.moveFocus.hotkeys.down],
+    label: "Move the offered time",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-move-day",
+    keys: [KEYMAP.moveFocus.hotkeys.left, KEYMAP.moveFocus.hotkeys.right],
+    label: "Same time, another day",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-accept",
+    keys: ["Enter"],
+    label: "Accept time, go to next",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-next",
+    keys: [KEYMAP.edgeFocus.hotkey],
+    label: "Next offered time",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-add",
+    keys: ["a"],
+    label: "Offer another time",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-remove",
+    keys: ["Backspace"],
+    label: "Remove the focused time",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-zone-add",
+    keys: ["z"],
+    label: "Add recipient timezone",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-zone-remove",
+    keys: ["Shift", "Z"],
+    label: "Remove recipient timezone",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-copy",
+    keys: caps("Mod+C"),
+    label: "Copy availability",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+  {
+    id: "availability-close",
+    keys: ["Escape"],
+    label: "Close share availability",
+    section: "availability",
+    when: { availabilityOpen: true },
+  },
+
   // Focus
   {
     id: "focus-sidebar",
@@ -390,6 +464,7 @@ interface FilterOptions {
   view: "day" | "week" | "life";
   isViewingCurrentPeriod: boolean;
   isFormOpen?: boolean;
+  isAvailabilityOpen?: boolean;
 }
 
 // Context-sensitive display labels, keyed by shortcut id. Each override lives
@@ -418,7 +493,7 @@ const LABEL_OVERRIDES: Record<string, (options: FilterOptions) => string> = {
 export const filterShortcutsByContext = (
   options: FilterOptions,
 ): Shortcut[] => {
-  const { view, isFormOpen } = options;
+  const { view, isFormOpen, isAvailabilityOpen } = options;
 
   return SHORTCUTS_REGISTRY.map((shortcut) => ({
     ...shortcut,
@@ -430,7 +505,8 @@ export const filterShortcutsByContext = (
       if (
         shortcut.section === "create" ||
         shortcut.section === "focus" ||
-        shortcut.section === "edit"
+        shortcut.section === "edit" ||
+        shortcut.section === "availability"
       ) {
         return false;
       }
@@ -470,12 +546,16 @@ export const filterShortcutsByContext = (
     if (shortcut.when?.isFormOpen && !isFormOpen) {
       return false;
     }
+    if (shortcut.when?.availabilityOpen && !isAvailabilityOpen) {
+      return false;
+    }
 
     return true;
   });
 };
 
 const SECTION_TITLES: Record<string, string> = {
+  availability: "Share availability",
   navigate: "Navigate",
   create: "Create",
   focus: "Focus",

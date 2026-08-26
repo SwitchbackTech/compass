@@ -5,6 +5,7 @@ import {
   isFirstImportFailed,
   isFirstImportInProgress,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -300,6 +301,10 @@ export function DayCalendarGrid() {
         <DayCalendarBusyPeriodsLayer
           calendarColumnIndexById={calendarColumnIndexById}
           dateInView={dateInView}
+          measurements={measurements}
+          visibleDates={visibleDates}
+        />
+        <AvailabilityGridOverlay
           measurements={measurements}
           visibleDates={visibleDates}
         />

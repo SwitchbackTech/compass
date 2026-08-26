@@ -60,7 +60,7 @@ describe("selection and normalization", () => {
     };
   };
 
-  it("spreads defaults across days, then maintains one-hour spacing", () => {
+  it("spreads the three defaults across days before filling within a day", () => {
     const candidates = [
       slot("2026-08-24T16:00:00.000Z"),
       slot("2026-08-24T16:30:00.000Z"),
@@ -73,9 +73,26 @@ describe("selection and normalization", () => {
     );
     expect(selected.map((value) => value.start)).toEqual([
       "2026-08-24T16:00:00.000Z",
-      "2026-08-24T17:00:00.000Z",
       "2026-08-25T20:00:00.000Z",
       "2026-08-26T15:00:00.000Z",
+    ]);
+  });
+
+  it("still honours one-hour spacing when filling beyond one per day", () => {
+    const candidates = [
+      slot("2026-08-24T16:00:00.000Z"),
+      slot("2026-08-24T16:30:00.000Z"),
+      slot("2026-08-24T17:00:00.000Z"),
+      slot("2026-08-24T17:30:00.000Z"),
+    ];
+    const selected = selectDefaultAvailabilitySlots(candidates, zone).filter(
+      (value) => value.selected,
+    );
+    // 17:30 loses to 17:00, which clears the hour from the 16:00 anchor.
+    expect(selected.map((value) => value.start)).toEqual([
+      "2026-08-24T16:00:00.000Z",
+      "2026-08-24T16:30:00.000Z",
+      "2026-08-24T17:00:00.000Z",
     ]);
   });
 
