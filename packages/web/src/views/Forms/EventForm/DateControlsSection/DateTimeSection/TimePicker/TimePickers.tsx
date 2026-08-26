@@ -91,7 +91,8 @@ export const TimePickers: FC<Props> = ({
   // One handler for both pickers: the picked side keeps its selected date and
   // the corrected compliment reduces to (picked time ± duration), so it is
   // anchored to the picked side's date and the midnight day-carry applies to
-  // the compliment. Anchoring the compliment to its own selected date instead
+  // the compliment. Same-day inverted clocks use that shift instead of an
+  // order error. Anchoring the compliment to its own selected date instead
   // would double-count the span of a draft that already crosses midnight.
   const onTimeSelected = (
     changed: "start" | "end",
