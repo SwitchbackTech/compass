@@ -17,3 +17,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2879 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2879 | bun run verify PASS; review: no confirmed findings | 2026-08-26T06:00:00Z | 0 | none |
 | 2885 | high | Manager | escalated | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2885 | stale unit coverage 93/93 and affected E2E 9/9 pass; GitHub required workflows missing on current head | 2026-08-27T12:00:00Z | 2 | human |
 | WP-shortcut-showcase-simplify | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2890 | verifier PASS; simplify no change; independent re-review no findings | 2026-08-26T23:00:00Z | 2 | none |
+| 2891 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2893 | bun run verify PASS; review: no confirmed findings | 2026-08-27T00:00:00Z | 0 | none |
