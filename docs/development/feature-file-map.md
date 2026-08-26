@@ -60,6 +60,7 @@ labels outside the registry.
 
 - Registry (source of truth for `?` legend): `packages/web/src/shortcuts/shortcuts.registry.ts`
 - Taught bindings (handlers + Shortcut Showcase keycaps): `packages/web/src/shortcuts/keymap.ts`
+- Sidebar next-shortcut selector: `packages/web/src/shortcuts/tips/selectShortcutHint.ts`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `packages/web/src/shortcuts/useGlobalShortcuts.ts`
 - Event-jump chips (`S`): `packages/web/src/shortcuts/shift-hint/`
 - Pointer suppression (mouse permanently inert; keyboard clicks pass): `packages/web/src/shortcuts/keyboard-only/`

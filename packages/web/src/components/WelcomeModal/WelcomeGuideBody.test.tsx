@@ -31,6 +31,7 @@ describe("WelcomeGuideBody", () => {
     render(<WelcomeGuideBody />);
 
     expect(screen.getByText(/to see keys, then press 1–5/)).toBeTruthy();
+    expect(screen.getByText(/The same hold reveals jump keys/)).toBeTruthy();
   });
 
   it("toggles a FAQ with a bare digit", async () => {
@@ -77,5 +78,20 @@ describe("WelcomeGuideBody", () => {
     await user.click(question);
 
     expect(question).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("explains why the mouse does not work", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeGuideBody />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Why doesn't my mouse work?" }),
+    );
+
+    expect(
+      screen.getByText(
+        /Compass is keyboard-driven to help users stay in the flow/,
+      ),
+    ).toBeTruthy();
   });
 });

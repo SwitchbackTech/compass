@@ -3,11 +3,14 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
+import { getMonthPickerDayClassName } from "./monthPickerDayClassName";
 
 interface Props {
   monthsShown?: number;
   onSelectDate: (date: Dayjs) => void;
   selectedDate: Dayjs;
+  viewEnd: Dayjs;
+  viewStart: Dayjs;
 }
 
 const monthPickerClassName =
@@ -19,6 +22,8 @@ export const MonthPicker: FC<Props> = ({
   monthsShown,
   onSelectDate,
   selectedDate,
+  viewEnd,
+  viewStart,
 }) => {
   const selectedDateKey = selectedDate.format(
     dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
@@ -37,14 +42,13 @@ export const MonthPicker: FC<Props> = ({
     );
   }, [selectedDateKey]);
 
-  const getDayClassName = (date: Date) => {
-    const dateKey = dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-
-    return dateKey ===
-      focusedDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)
-      ? "!font-semibold"
-      : "!font-light";
-  };
+  const getDayClassName = (date: Date) =>
+    getMonthPickerDayClassName({
+      date: dayjs(date),
+      selectedDate: focusedDate,
+      viewEnd,
+      viewStart,
+    });
 
   return (
     <fieldset
@@ -56,6 +60,9 @@ export const MonthPicker: FC<Props> = ({
       <DatePicker
         animationOnToggle={false}
         calendarClassName={ID_DATEPICKER_SIDEBAR}
+        calendarStartDay={
+          viewStart.isSame(viewEnd, "day") ? 0 : viewStart.day()
+        }
         dayClassName={getDayClassName}
         headerActionsClassName={headerActionsClassName}
         headerClassName="!relative !justify-start !px-0 !pb-3"

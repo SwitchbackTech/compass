@@ -277,11 +277,13 @@ describe("GoogleCalendarAdapter", () => {
     expect(active).toEqual({ live: true, gone: false, hidden: false });
   });
 
-  it("keeps a hidden calendar active when Google is still showing it", async () => {
+  it("marks a hidden calendar inactive even when selected is still true", async () => {
+    // Hiding a calendar in Google leaves the API's `selected` flag frozen at
+    // its pre-hide value, so hidden+selected must not resurrect the calendar.
     const api = new FakeCalendarListApi([
       page({
         items: [
-          entry({ id: "shown-hidden", hidden: true, selected: true }),
+          entry({ id: "hidden-but-selected", hidden: true, selected: true }),
           entry({ id: "unselected-hidden", hidden: true, selected: false }),
           entry({ id: "hidden-omitted-selected", hidden: true }),
           entry({
@@ -303,7 +305,7 @@ describe("GoogleCalendarAdapter", () => {
     );
 
     expect(active).toEqual({
-      "shown-hidden": true,
+      "hidden-but-selected": false,
       "unselected-hidden": false,
       "hidden-omitted-selected": false,
       "deleted-but-selected": false,

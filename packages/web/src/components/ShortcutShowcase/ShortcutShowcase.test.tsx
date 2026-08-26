@@ -1,10 +1,13 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { resolveModifier } from "@tanstack/react-hotkeys";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createTestNotificationPort } from "@web/__tests__/helpers/web-test-seams";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import {
+  SHOWCASE_MISSION_IDS,
   SHOWCASE_STEP_IDS,
   type ShowcaseStepId,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -13,6 +16,8 @@ import {
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { registerNotificationPort } from "@web/notifications/notification.port";
+import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import { clearAppLockReasons, isAppLocked } from "@web/shortcuts/app-lock";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
@@ -102,32 +107,34 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("teaches create as one motion, and graduates on Enter", async () => {
+  it("teaches create as one motion, then continues to the next mission", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
     expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
+    expect(screen.getByText("Mission 1 of 6")).toBeTruthy();
 
-    // C opens a draft with its title editor; the lesson stays on "create"
-    // and the hint swaps rather than advancing to a second step.
     pressKey("c");
     expect(currentStepId()).toBe("create");
     expect(screen.getByText(/Type a title, then press Enter/)).toBeTruthy();
 
-    // Typing a title and pressing Enter commits it and advances.
     await user.type(
       screen.getByLabelText("Event title"),
       "Coffee with Alex{Enter}",
     );
-    expect(currentStepId()).toBe("graduation");
+    expect(currentStepId()).toBe("pageJump");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
+    expect(screen.getByText("Mission 2 of 6")).toBeTruthy();
+  });
+
+  it("graduates on Enter from the graduation step", async () => {
+    render(<ShortcutShowcase />);
+    showStep("graduation");
     expect(screen.getByText(/young cap'n/)).toBeTruthy();
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Enter Compass/ }),
-      ).toHaveFocus();
-    });
+
+    const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
+    expect(within(enterCompass).queryByText("Enter")).toBeNull();
 
     pressKey("Enter");
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
@@ -145,9 +152,6 @@ describe("ShortcutShowcase", () => {
       { timeout: 2000 },
     );
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
-    expect(
-      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
-    ).toBe("true");
   });
 
   it("fades the takeover on Enter Compass, then unmounts", async () => {
@@ -203,7 +207,7 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("'Do it for me' performs the whole lesson and lands on graduation", async () => {
+  it("'Do it for me' advances one mission at a time through graduation", async () => {
     const user = userEvent.setup();
     render(
       <>
@@ -214,8 +218,16 @@ describe("ShortcutShowcase", () => {
     const outside = screen.getByRole("button", { name: "Outside calendar" });
     act(() => shortcutShowcaseActions.replay());
 
-    // No idle wait or failed attempt required: the way out is always offered.
-    await user.click(screen.getByRole("button", { name: "Do it for me" }));
+    for (let i = 0; i < SHOWCASE_MISSION_IDS.length; i += 1) {
+      expect(currentStepId()).toBe(SHOWCASE_MISSION_IDS[i]);
+      await user.click(screen.getByRole("button", { name: "Do it for me" }));
+    }
+
+    // The loop above is untouched by the notifications step: it is not a
+    // mission, so it sits after the last one rather than inside the count.
+    expect(currentStepId()).toBe("notifications");
+    await user.click(screen.getByRole("button", { name: "Not now" }));
+
     expect(currentStepId()).toBe("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
     const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
@@ -227,6 +239,77 @@ describe("ShortcutShowcase", () => {
     expect(outside).not.toHaveFocus();
     await user.tab();
     expect(enterCompass).toHaveFocus();
+  });
+
+  it("does not treat S as skip-to-signup; U leaves for signup", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.replay());
+
+    pressKey("s");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(currentStepId()).toBe("create");
+
+    pressKey("u");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  it("advances the hold-Mod mission after revealing jump keys", () => {
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    render(<ShortcutShowcase />);
+    showStep("pageJump");
+
+    pressKey(modKey);
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
+
+    pressKey("1", { code: "Digit1" });
+    expect(currentStepId()).toBe("eventJump");
+  });
+
+  it("teaches S then a letter to land on an event", () => {
+    render(<ShortcutShowcase />);
+    showStep("eventJump");
+
+    pressKey("s");
+    expect(screen.getByText("F")).toBeTruthy();
+
+    pressKey("f");
+    expect(currentStepId()).toBe("nudge");
+  });
+
+  it("teaches Shift+arrow to nudge the focused event", () => {
+    render(<ShortcutShowcase />);
+    showStep("nudge");
+
+    pressKey("ArrowRight", { shiftKey: true });
+    expect(currentStepId()).toBe("editTitle");
+  });
+
+  it("teaches E then T to target the title", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    showStep("editTitle");
+
+    pressKey("e");
+    pressKey("t");
+    expect(currentStepId()).toBe("editTitle");
+    expect(screen.getByLabelText("Event title")).toBeTruthy();
+
+    await user.type(screen.getByLabelText("Event title"), "{Enter}");
+    expect(currentStepId()).toBe("palette");
+  });
+
+  it("opens a practice palette with Mod+K and completes on Enter", () => {
+    const isMac = resolveModifier("Mod") === "Meta";
+    render(<ShortcutShowcase />);
+    showStep("palette");
+
+    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
+    expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
+
+    pressKey("Enter");
+    // The last mission hands off to the notifications offer, then graduation.
+    expect(currentStepId()).toBe("notifications");
   });
 
   it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {
@@ -287,5 +370,182 @@ describe("ShortcutShowcase", () => {
     pressKey("Escape");
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  describe("the notifications offer", () => {
+    const installPort = (
+      options?: Parameters<typeof createTestNotificationPort>[0],
+    ) => {
+      const seam = createTestNotificationPort(options);
+      registerNotificationPort(seam.port);
+      act(() => {
+        resetNotificationStoreForTests();
+      });
+      return seam;
+    };
+
+    it("asks the browser, then moves on once permission is granted", async () => {
+      const user = userEvent.setup();
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      await user.click(
+        screen.getByRole("button", { name: /Enable notifications/ }),
+      );
+
+      expect(seam.mocks.requestPermission).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(currentStepId()).toBe("graduation");
+      });
+    });
+
+    it("moves on even when the browser blocks the request", async () => {
+      const user = userEvent.setup();
+      installPort({ respondWith: "denied" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      await user.click(
+        screen.getByRole("button", { name: /Enable notifications/ }),
+      );
+
+      // A toast explains the block. Holding the user here would turn a
+      // one-key offer into a decision they cannot undo from this screen.
+      await waitFor(() => {
+        expect(currentStepId()).toBe("graduation");
+      });
+    });
+
+    it("takes the offer from the keyboard with Enter", async () => {
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      pressKey("Enter");
+
+      expect(seam.mocks.requestPermission).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(currentStepId()).toBe("graduation");
+      });
+    });
+
+    it("asks once, and lands on graduation, when Enter is pressed twice", async () => {
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // The step does not change until the prompt resolves, so both presses
+      // land on the offer. Advancing twice would skip graduation entirely.
+      pressKey("Enter");
+      pressKey("Enter");
+
+      await waitFor(() => {
+        expect(currentStepId()).toBe("graduation");
+      });
+      expect(seam.mocks.requestPermission).toHaveBeenCalledTimes(1);
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    });
+
+    it("does not double-advance when the offer is passed mid-prompt", async () => {
+      installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      pressKey("Enter");
+      pressKey("n");
+
+      await waitFor(() => {
+        expect(currentStepId()).toBe("graduation");
+      });
+      // Still on graduation, not finished out from under the user.
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    });
+
+    it("lets Enter activate whichever button has focus", async () => {
+      const user = userEvent.setup();
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // Enter is the step's shortcut, but a focused button owns it first:
+      // asking to leave must not raise a permission prompt instead.
+      screen.getByRole("button", { name: /Skip to calendar/ }).focus();
+      await user.keyboard("{Enter}");
+
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    });
+
+    it("does not raise the prompt from a held Enter carried in from typing", () => {
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // Auto-repeat from the Enter that committed the practice title lands
+      // here once the editor unmounts.
+      pressKey("Enter", { repeat: true });
+
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(currentStepId()).toBe("notifications");
+    });
+
+    it("'Not now' passes without ever prompting", async () => {
+      const user = userEvent.setup();
+      const seam = installPort({ respondWith: "granted" });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      await user.click(screen.getByRole("button", { name: /Not now/ }));
+
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(currentStepId()).toBe("graduation");
+    });
+
+    it("leaves the practice keys behind on the create lesson", async () => {
+      const user = userEvent.setup();
+      installPort();
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      // D and U belong to buttons this step does not render; C drives a
+      // practice board this step is not teaching.
+      await user.keyboard("d");
+      await user.keyboard("u");
+      await user.keyboard("c");
+      expect(currentStepId()).toBe("notifications");
+      expect(screen.queryByLabelText("Event title")).toBeNull();
+    });
+
+    it("says so, and still lets the user pass, where the API is missing", () => {
+      installPort({ supported: false });
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      expect(screen.getByText("Not supported in this browser")).toBeTruthy();
+      expect(
+        screen.queryByRole("button", { name: /Enable notifications/ }),
+      ).toBeNull();
+
+      pressKey("n");
+      expect(currentStepId()).toBe("graduation");
+    });
+
+    it("carries no mission chip, because it teaches no key", () => {
+      installPort();
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      expect(screen.queryByText(/^Mission \d+ of \d+$/)).toBeNull();
+    });
+
+    it("still offers the door out to the calendar", () => {
+      installPort();
+      render(<ShortcutShowcase />);
+      showStep("notifications");
+
+      pressKey("x");
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    });
   });
 });

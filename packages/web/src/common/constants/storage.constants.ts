@@ -37,7 +37,11 @@ type StorageKey =
   | "compass.timezone.time-travel"
   // Browser IANA id the pin-mismatch banner is snoozed for. Absent means the
   // banner can show. It returns when the browser zone no longer matches.
-  | "compass.timezone.mismatch-snoozed-browser";
+  | "compass.timezone.mismatch-snoozed-browser"
+  // Device-local opt-in for upcoming-event browser notifications. Only ever
+  // written "true" right after the browser grants permission, so a stale flag
+  // can never outlive a revoked grant (the permission is re-read on load).
+  | "compass.notifications.enabled";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -60,7 +64,8 @@ export const STORAGE_KEYS: Record<
   | "RECENT_COMMANDS"
   | "DEFAULT_TIMEZONE"
   | "TIME_TRAVEL_TIMEZONE"
-  | "TIMEZONE_MISMATCH_SNOOZED_BROWSER",
+  | "TIMEZONE_MISMATCH_SNOOZED_BROWSER"
+  | "NOTIFICATIONS_ENABLED",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -88,4 +93,5 @@ export const STORAGE_KEYS: Record<
   TIME_TRAVEL_TIMEZONE: "compass.timezone.time-travel",
   TIMEZONE_MISMATCH_SNOOZED_BROWSER:
     "compass.timezone.mismatch-snoozed-browser",
+  NOTIFICATIONS_ENABLED: "compass.notifications.enabled",
 } as const;

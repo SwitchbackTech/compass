@@ -203,7 +203,7 @@ export function WelcomeModal() {
               className="c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs"
             >
               Log in
-              <ShortcutHint className="ml-2">I</ShortcutHint>
+              <ShortcutHint className="ml-2">i</ShortcutHint>
             </button>
           </div>
         </div>
@@ -221,11 +221,11 @@ export function WelcomeModal() {
                 onClick={handOffToGoogle}
                 disabled={isGoogleAuthLoading}
                 label="Continue with Google"
+                shortcutKey="G"
                 style={{ width: "100%" }}
               />
               <p className="text-center text-text-muted text-xs">
                 Signs you up and connects your Google Calendar.
-                <ShortcutHint className="ml-2">G</ShortcutHint>
               </p>
             </>
           )}

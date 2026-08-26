@@ -34,6 +34,7 @@ import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showca
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
+import { useNotificationCmdItems } from "@web/notifications/useNotificationCmdItems";
 import {
   selectIsCmdPaletteOpen,
   settingsActions,
@@ -297,6 +298,7 @@ export const CommandPalette = ({
   const logoutCmdItems = useLogoutCmdItems();
   const themeCmdItems = useThemeCmdItems();
   const timezoneCmdItems = useTimezoneCmdItems();
+  const notificationCmdItems = useNotificationCmdItems();
   const { undo, redo, canUndo, canRedo } = useUndoRedo(mutationDependencies);
   const recentCommandIds = useRecentCommandIds();
 
@@ -352,6 +354,7 @@ export const CommandPalette = ({
       heading: "Settings",
       items: [
         ...timezoneCmdItems,
+        ...notificationCmdItems,
         ...authCmdItems,
         ...showAccountsCmdItems,
         ...logoutCmdItems,
@@ -420,6 +423,9 @@ export const LifeCommandPalette = ({
           heading: "Appearance",
           items: themeCmdItems,
         },
+        // No event notifications here: the Life route sits outside the
+        // authenticated layout that mounts the notifier, so offering the
+        // toggle would promise nudges this route can never deliver.
         {
           id: "settings",
           heading: "Settings",

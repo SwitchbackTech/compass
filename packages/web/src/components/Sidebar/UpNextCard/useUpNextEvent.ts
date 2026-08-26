@@ -6,7 +6,12 @@ import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 
-export function useUpNextEvent() {
+/**
+ * Today's timed events with their real start/end bounds, ticking every minute.
+ * Shared by the up-next card and the upcoming-event notifier so the multi-day
+ * bounds restoration below lives in exactly one place.
+ */
+export function useTodayTimedEvents() {
   const now = useMinuteTick();
   const { startDate, endDate } = dayEventQueryRange(now);
   const { events, timedEvents, allDayEvents } = useDayEventViewModel({
@@ -29,7 +34,12 @@ export function useUpNextEvent() {
         },
       ];
     });
-  const allTimedEvents = [...timedEvents, ...multiDayTimed];
+
+  return { now, events, allTimedEvents: [...timedEvents, ...multiDayTimed] };
+}
+
+export function useUpNextEvent() {
+  const { now, events, allTimedEvents } = useTodayTimedEvents();
 
   const nowEvents = allTimedEvents
     .filter(

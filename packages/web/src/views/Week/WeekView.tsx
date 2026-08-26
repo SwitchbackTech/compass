@@ -187,6 +187,8 @@ export const WeekView = () => {
               onSelectDate={goToDateFromSidebar}
               shortcutSections={shortcutSections}
               shortcutsViewLabel="Week"
+              viewEnd={weekProps.component.endOfView}
+              viewStart={weekProps.component.startOfView}
             />
           </ResizableSidebarPanel>
         </ContextMenuWrapper>

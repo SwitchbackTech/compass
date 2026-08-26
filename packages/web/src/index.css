@@ -926,10 +926,11 @@
     background: var(--date-picker-selected-bg);
     content: "";
   }
-  & .react-datepicker__week:has(.react-datepicker__day--selected) {
+  /* One capsule on the week row that contains the visible window. */
+  & .react-datepicker__week:has(.react-datepicker__day--in-view) {
     position: relative;
   }
-  & .react-datepicker__week:has(.react-datepicker__day--selected)::before {
+  & .react-datepicker__week:has(.react-datepicker__day--in-view)::before {
     position: absolute;
     inset: 0 -3px;
     border-radius: var(--radius-default);
@@ -937,7 +938,7 @@
     content: "";
   }
   &
-    .react-datepicker__week:has(.react-datepicker__day--selected)
+    .react-datepicker__week:has(.react-datepicker__day--in-view)
     .react-datepicker__day {
     position: relative;
     z-index: 10;
