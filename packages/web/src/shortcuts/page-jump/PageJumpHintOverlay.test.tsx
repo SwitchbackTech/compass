@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { PageJumpHintOverlay } from "@web/shortcuts/page-jump/PageJumpHintOverlay";
 import {
+  LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
   type PageJumpTargetId,
 } from "@web/shortcuts/page-jump/page-jump.targets";
@@ -120,5 +121,16 @@ describe("PageJumpHintOverlay", () => {
     expect(status.textContent).toContain("1 for view navigation");
     expect(status.textContent).toContain("2 for month picker");
     expect(chipsWrapper()?.getAttribute("aria-hidden")).not.toBeNull();
+  });
+
+  it("renders a custom target list, e.g. Life's, skipping absent targets", () => {
+    addAnchor("navigation");
+    addAnchor("life-grid");
+    // No life-variation / life-details anchors: e.g. the sidebar is collapsed.
+    render(
+      <PageJumpHintOverlay targets={LIFE_PAGE_JUMP_TARGETS} visible={true} />,
+    );
+
+    expect(chipDigits()).toEqual(["1", "2"]);
   });
 });

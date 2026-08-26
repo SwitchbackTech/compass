@@ -97,6 +97,16 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
+    it("lists the page jump shortcut in day, week, and life", () => {
+      for (const view of ["day", "week", "life"] as const) {
+        const ids = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        }).map((shortcut) => shortcut.id);
+        expect(ids).toContain("focus-page-jump");
+      }
+    });
+
     it("lists time travel in day and week but not life", () => {
       for (const view of ["day", "week"] as const) {
         const ids = filterShortcutsByContext({

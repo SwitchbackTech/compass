@@ -64,6 +64,7 @@ describe("shortcut menu sections", () => {
 
       expect(sections.map((section) => section.id)).toEqual([
         "navigate",
+        "focus",
         "other",
       ]);
       expect(stripMetadata(sections[0]?.shortcuts ?? [])).toEqual([
@@ -72,6 +73,14 @@ describe("shortcut menu sections", () => {
         { keys: ["t"], label: "Focus current week" },
         { keys: ["d"], label: "Go to Day view" },
         { keys: ["w"], label: "Go to Week view" },
+      ]);
+      // Life mounts its own hold-Mod jump targets, so the gesture stays
+      // discoverable via the same row shown on Day/Week.
+      expect(stripMetadata(sections[1]?.shortcuts ?? [])).toEqual([
+        {
+          keys: ["Mod", "1-4"],
+          label: "Jump to a page area (hold Mod for hints)",
+        },
       ]);
     });
 

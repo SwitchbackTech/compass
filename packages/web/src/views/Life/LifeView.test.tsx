@@ -1,3 +1,4 @@
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
@@ -18,6 +19,23 @@ import {
 const fixedToday = new Date(2026, 0, 1);
 let originalInnerWidth: number;
 let originalMatchMedia: typeof window.matchMedia;
+
+/** Matches what the hold-Mod hint hook resolves Mod to on this platform. */
+const isMac = resolveModifier("Mod") === "Meta";
+const MOD_INIT: KeyboardEventInit = isMac
+  ? { metaKey: true }
+  : { ctrlKey: true };
+const pressModDigit = (digit: string) => {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    code: `Digit${digit}`,
+    key: digit,
+    ...MOD_INIT,
+  });
+  document.dispatchEvent(event);
+  return event;
+};
 
 if (typeof window !== "undefined") {
   originalInnerWidth = window.innerWidth;
@@ -454,5 +472,26 @@ describe("LifeView", () => {
     fireEvent.keyUp(document, { key: "t" });
 
     expect(currentWeek).toHaveFocus();
+  });
+
+  it("jumps focus to page areas via hold-Mod digits", async () => {
+    await renderLifeViewWithSidebar();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
+      target: { value: "1990-06-15" },
+    });
+    const currentWeek = screen.getByRole("button", {
+      name: /January 1, 2026 \| week/,
+    });
+
+    const gridEvent = pressModDigit("2");
+    expect(gridEvent.defaultPrevented).toBe(true);
+    expect(currentWeek).toHaveFocus();
+
+    const detailsEvent = pressModDigit("4");
+    expect(detailsEvent.defaultPrevented).toBe(true);
+    expect(
+      screen.getByRole("textbox", { name: "Date of birth" }),
+    ).toHaveFocus();
   });
 });
