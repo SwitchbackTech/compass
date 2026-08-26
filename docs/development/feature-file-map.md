@@ -34,6 +34,23 @@ Use this document to find the first files to inspect for common Compass changes.
 - Backend event routes: `packages/backend/src/event/event.routes.config.ts`
 - Backend event controller/service: `packages/backend/src/event/controllers/event.controller.ts`, `packages/backend/src/event/services/event.service.ts`
 
+## Attendees, Contacts, And RSVP
+
+Full flow diagram, invitation-intent semantics, merge/replay rules, contacts
+consent flow, and named warts: [Attendees, Contacts, And
+RSVP](../features/attendees.md).
+
+- Attendee/RSVP write contracts: `packages/core/src/types/event-command.contracts.ts`, `packages/core/src/types/event-attendance.contracts.ts`
+- Guest-list editor: `packages/web/src/views/Forms/EventForm/AttendeeField/AttendeeField.tsx`
+- Save-time invitation prompt: `packages/web/src/views/Forms/EventForm/SendInvitationsDialog.tsx`, `packages/web/src/views/Forms/hooks/useSaveEventForm.ts`
+- RSVP control and scope dialog: `packages/web/src/views/Forms/EventForm/RsvpControl.tsx`, `packages/web/src/views/Forms/EventForm/RsvpScopeDialog.tsx`
+- Contact suggestions hook: `packages/web/src/views/Forms/EventForm/AttendeeField/useContactSuggestions.ts`
+- Backend translation (create/update/delete/rsvp commands, `ATTENDEES_UNSUPPORTED`): `packages/backend/src/common/services/sync-service/event-command.translation.ts`, `packages/backend/src/event/controllers/event.controller.ts`
+- Backend contacts proxy: `packages/backend/src/contacts/controllers/contacts.controller.ts`
+- Sync attendee merge and RSVP execution: `packages/sync/src/domain/merge-update-content.ts`, `packages/sync/src/domain/provider-command.service.ts`
+- Sync Google writer/people adapters: `packages/sync/src/providers/google/google-event-writer.adapter.ts`, `packages/sync/src/providers/google/google-people.adapter.ts`
+- E2e coverage: `e2e/attendees/`
+
 ## Day / Week Views
 
 - Day view route and content: `packages/web/src/views/Day/view`

@@ -28,10 +28,11 @@ Cool things you can do with in Compass
 - Do everything from the cmd palette
 - Edit events smoothly
 - Google Calendar sync
+- Add/remove event attendees and RSVP to invites, with optional Google-contact suggestions
 
 Things you can't do in Compass (yet):
 
-- See attendees, reminders, locations, and meeting links
+- See reminders and meeting links
 - See your Outlook events
 
 ## Tech stack
