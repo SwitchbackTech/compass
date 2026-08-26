@@ -297,11 +297,11 @@ export const openTimedEventFormWithKeyboard = async (page: Page) => {
   await titleInput.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
 };
 
-/** Opens an all-day draft via the `a` shortcut. */
+/** Opens an all-day draft via the `Shift+C` shortcut. */
 export const openAllDayEventFormWithKeyboard = async (page: Page) => {
   await blurActiveElement(page);
   await page.locator("#mainGrid").focus();
-  await page.keyboard.press("a");
+  await page.keyboard.press("Shift+C");
   await getFormTitleInput(page).waitFor({
     state: "visible",
     timeout: FORM_TIMEOUT,

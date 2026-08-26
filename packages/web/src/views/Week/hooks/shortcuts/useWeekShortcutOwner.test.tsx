@@ -15,6 +15,7 @@ import {
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { useAvailabilityStore } from "@web/availability/availability.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -1230,7 +1231,7 @@ describe("useWeekShortcutOwner sidebar focus", () => {
   });
 });
 
-// D6: "C"/"A" used to call the create functions directly *and* subscribe to
+// D6: create shortcuts used to call the create functions directly *and* subscribe to
 // the view command bus (two paths to the same result). They now only emit
 // on the bus, matching Day's convention - these presses exercise that path.
 describe("useWeekShortcutOwner create shortcuts", () => {
@@ -1245,14 +1246,27 @@ describe("useWeekShortcutOwner create shortcuts", () => {
     });
   });
 
-  it("starts an all-day createShortcut draft when A is pressed", async () => {
+  it("starts an all-day createShortcut draft when Shift+C is pressed", async () => {
     renderShortcuts();
-    pressKey("A");
+    pressKey("C", {
+      keyDownInit: { shiftKey: true },
+      keyUpInit: { shiftKey: true },
+    });
 
     await waitFor(() => {
       const { gridDraft, status } = useDraftStore.getState();
       expect(status?.activity).toBe("createShortcut");
       expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
+    });
+  });
+
+  it("opens Share Availability instead of an all-day draft when A is pressed", async () => {
+    renderShortcuts();
+    act(() => pressKey("A"));
+
+    await waitFor(() => {
+      expect(useAvailabilityStore.getState().isOpen).toBe(true);
+      expect(useDraftStore.getState().gridDraft).toBeNull();
     });
   });
 });
