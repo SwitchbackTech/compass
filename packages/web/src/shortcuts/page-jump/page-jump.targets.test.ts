@@ -1,8 +1,9 @@
 import {
+  CALENDAR_PAGE_JUMP_TARGETS,
   focusPageJumpTarget,
   getPageJumpFocusElement,
+  LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
-  PAGE_JUMP_TARGETS,
   type PageJumpTargetId,
 } from "@web/shortcuts/page-jump/page-jump.targets";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -18,11 +19,14 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("PAGE_JUMP_TARGETS", () => {
+describe.each([
+  ["CALENDAR_PAGE_JUMP_TARGETS", CALENDAR_PAGE_JUMP_TARGETS],
+  ["LIFE_PAGE_JUMP_TARGETS", LIFE_PAGE_JUMP_TARGETS],
+])("%s", (_name, targets) => {
   it("assigns sequential digits matching each target's list position", () => {
     // usePageJumpShortcut resolves a pressed digit by index, so the digit
     // shown on a chip must always equal index + 1.
-    PAGE_JUMP_TARGETS.forEach((target, index) => {
+    targets.forEach((target, index) => {
       expect(target.digit).toBe(String(index + 1));
     });
   });

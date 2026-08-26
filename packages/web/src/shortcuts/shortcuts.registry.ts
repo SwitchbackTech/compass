@@ -426,12 +426,13 @@ export const filterShortcutsByContext = (
   })).filter((shortcut) => {
     // Filter by view
     if (view === "life") {
-      // Life view shows only life-specific navigate + other shortcuts
-      if (
-        shortcut.section === "create" ||
-        shortcut.section === "focus" ||
-        shortcut.section === "edit"
-      ) {
+      // Life view shows only life-specific navigate + other shortcuts, plus
+      // the page jump row: Life mounts its own hold-Mod jump targets, so the
+      // gesture is still discoverable there.
+      if (shortcut.section === "focus") {
+        return shortcut.id === "focus-page-jump";
+      }
+      if (shortcut.section === "create" || shortcut.section === "edit") {
         return false;
       }
       // Include navigate shortcuts only if life-specific or view switchers

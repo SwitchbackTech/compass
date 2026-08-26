@@ -13,6 +13,11 @@ import {
   selectIsSidebarOpen,
   useViewStore,
 } from "@web/events/stores/view.store";
+import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
+import {
+  LIFE_PAGE_JUMP_TARGETS,
+  pageJumpAttrs,
+} from "@web/shortcuts/page-jump/page-jump.targets";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
@@ -152,6 +157,7 @@ export function LifeView({ today }: LifeViewProps) {
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       <LifeCommandPalette placeholder={getCommandPalettePlaceholder("life")} />
+      <PageJumpHints targets={LIFE_PAGE_JUMP_TARGETS} />
 
       <main
         className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
@@ -168,6 +174,7 @@ export function LifeView({ today }: LifeViewProps) {
         <section
           aria-label={`Life visualization: ${summary}`}
           className="min-h-0 flex-1 overflow-auto pr-5 pb-6"
+          {...pageJumpAttrs("life-grid")}
         >
           <LifeGrid
             currentWeekLabel={currentWeekLabel}

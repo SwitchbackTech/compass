@@ -16,7 +16,10 @@ export type PageJumpTargetId =
   | "navigation"
   | "month-picker"
   | "up-next"
-  | "calendars";
+  | "calendars"
+  | "life-grid"
+  | "life-variation"
+  | "life-details";
 
 export type PageJumpTarget = {
   digit: string;
@@ -24,11 +27,20 @@ export type PageJumpTarget = {
   label: string;
 };
 
-export const PAGE_JUMP_TARGETS: readonly PageJumpTarget[] = [
+export type PageJumpTargets = readonly PageJumpTarget[];
+
+export const CALENDAR_PAGE_JUMP_TARGETS: PageJumpTargets = [
   { digit: "1", id: "navigation", label: "View navigation" },
   { digit: "2", id: "month-picker", label: "Month picker" },
   { digit: "3", id: "up-next", label: "Up next" },
   { digit: "4", id: "calendars", label: "Calendar list" },
+];
+
+export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = [
+  { digit: "1", id: "navigation", label: "View navigation" },
+  { digit: "2", id: "life-grid", label: "Current week" },
+  { digit: "3", id: "life-variation", label: "Life variation" },
+  { digit: "4", id: "life-details", label: "Life details" },
 ];
 
 /** Spread onto a component's container element to mark it as a jump target. */

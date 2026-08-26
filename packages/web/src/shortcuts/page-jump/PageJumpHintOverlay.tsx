@@ -2,9 +2,10 @@ import { createPortal } from "react-dom";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
+  CALENDAR_PAGE_JUMP_TARGETS,
   getPageJumpAnchor,
   getPageJumpFocusElement,
-  PAGE_JUMP_TARGETS,
+  type PageJumpTargets,
 } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getVisibleHintRect } from "@web/shortcuts/shift-hint/shift-hint-visible-rect";
 import { useHintLayoutRefresh } from "@web/shortcuts/useHintLayoutRefresh";
@@ -14,7 +15,13 @@ import { useHintLayoutRefresh } from "@web/shortcuts/useHintLayoutRefresh";
  * (see usePageJumpShortcut). Portaled like FormDigitHintOverlay so scroll
  * containers cannot clip a chip on a target near their edge.
  */
-export function PageJumpHintOverlay({ visible }: { visible: boolean }) {
+export function PageJumpHintOverlay({
+  visible,
+  targets = CALENDAR_PAGE_JUMP_TARGETS,
+}: {
+  visible: boolean;
+  targets?: PageJumpTargets;
+}) {
   useHintLayoutRefresh(visible);
 
   if (!visible || typeof document === "undefined") {
@@ -24,7 +31,7 @@ export function PageJumpHintOverlay({ visible }: { visible: boolean }) {
   // Only targets that would actually take focus get announced or chipped —
   // e.g. a collapsed sidebar unmounts the month picker, and an empty Up Next
   // card has nothing focusable, so their digits would do nothing there.
-  const presentTargets = PAGE_JUMP_TARGETS.flatMap((target) => {
+  const presentTargets = targets.flatMap((target) => {
     const anchor = getPageJumpAnchor(target.id);
     if (!anchor || !getPageJumpFocusElement(target.id)) return [];
     return [{ ...target, anchor }];

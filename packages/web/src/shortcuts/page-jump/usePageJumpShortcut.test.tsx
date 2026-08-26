@@ -12,6 +12,7 @@ import {
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import { MOD_HOLD_HINT_MS } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
 import {
+  LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
   type PageJumpTargetId,
 } from "@web/shortcuts/page-jump/page-jump.targets";
@@ -130,6 +131,21 @@ describe("usePageJumpShortcut", () => {
 
       expect(event.defaultPrevented).toBe(false);
       expect(prevArrow).toHaveFocus();
+    });
+
+    it("jumps within a custom target list, e.g. Life's", () => {
+      const anchor = document.createElement("section");
+      anchor.setAttribute(PAGE_JUMP_ATTRIBUTE, "life-grid");
+      const currentWeek = document.createElement("button");
+      anchor.append(currentWeek);
+      document.body.append(anchor);
+
+      renderHook(() => usePageJumpShortcut(LIFE_PAGE_JUMP_TARGETS));
+
+      const event = pressModDigit("2");
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(currentWeek).toHaveFocus();
     });
   });
 
