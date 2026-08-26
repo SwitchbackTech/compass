@@ -337,6 +337,306 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalled();
   });
 
+  it("rejects attendees on a calendar sync does not list as writable Google, before any submit", async () => {
+    // A create targeting the Compass local calendar (never in sync's list)
+    // or any unknown id: the guest list has nowhere to be delivered, so this
+    // must be a typed 4xx with NO command submitted.
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            calendars: [
+              {
+                id: objectId(), // a different (writable) calendar
+                capabilities: { canWriteEvents: true },
+              },
+            ],
+          },
+        }),
+      ),
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    const body = sampleCreateBody();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...body,
+          content: {
+            ...body.content,
+            attendees: [{ email: "ada@example.com", displayName: null }],
+          },
+        },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.FORBIDDEN,
+    );
+    expect(json).toHaveBeenCalledWith({
+      code: "ATTENDEES_UNSUPPORTED",
+      message:
+        "Guests can only be added to events on a writable Google calendar",
+      retryable: false,
+    });
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
+  it("rejects a replace carrying attendees when the user has no writable Google calendar", async () => {
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            calendars: [
+              // Read-only Google calendar: listed, but not writable.
+              { id: objectId(), capabilities: { canWriteEvents: false } },
+            ],
+          },
+        }),
+      ),
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    await eventController.replace(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        body: {
+          content: {
+            kind: "details",
+            title: "Kickoff",
+            description: "",
+            location: "",
+            attendees: [{ email: "ada@example.com", displayName: null }],
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-14T12:00:00.000Z",
+            end: "2026-07-14T13:00:00.000Z",
+            timeZone: "UTC",
+          },
+          recurrence: { kind: "preserve" },
+          scope: "this",
+          invitation: "all",
+        },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.FORBIDDEN,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "ATTENDEES_UNSUPPORTED" }),
+    );
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
+  it("submits attendees + invitation for a writable Google calendar and echoes the guests optimistically", async () => {
+    const calendarId = objectId();
+    const submitCommand = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          command: {
+            outcome: {
+              state: "confirmed" as const,
+              providerEventId: "prov-1",
+              providerVersion: "v1",
+            },
+          },
+        },
+      }),
+    );
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            calendars: [
+              { id: calendarId, capabilities: { canWriteEvents: true } },
+            ],
+          },
+        }),
+      ),
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    const body = sampleCreateBody();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...body,
+          calendarId,
+          content: {
+            ...body.content,
+            attendees: [{ email: "ada@example.com", displayName: "Ada" }],
+          },
+          invitation: "all",
+        },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.OK);
+    const request = (
+      submitCommand.mock.calls[0] as never as [unknown, { input: unknown }]
+    )[1];
+    expect(request.input).toMatchObject({
+      kind: "create",
+      invitation: "all",
+      attendeesEdit: "replace",
+    });
+    // The optimistic response event carries the intended guests.
+    const responseBody = (
+      json.mock.calls[0] as never as [
+        { event: { content: { attendees?: unknown } } },
+      ]
+    )[0];
+    expect(responseBody.event.content.attendees).toEqual([
+      {
+        email: "ada@example.com",
+        displayName: "Ada",
+        responseStatus: "needsAction",
+      },
+    ]);
+  });
+
+  it("rejects a malformed attendee as 400 INVALID_INPUT, not a 500", async () => {
+    const { res, json } = jsonRes();
+    const body = sampleCreateBody();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...body,
+          content: {
+            ...body.content,
+            // Empty email fails AttendeeInputSchema before anything runs.
+            attendees: [{ email: "", displayName: null }],
+          },
+        },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "INVALID_INPUT", retryable: false }),
+    );
+  });
+
+  it("keeps the retryable SYNC_UNAVAILABLE behavior when the new fields are present", async () => {
+    const calendarId = objectId();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            calendars: [
+              { id: calendarId, capabilities: { canWriteEvents: true } },
+            ],
+          },
+        }),
+      ),
+      submitCommand: mock(() =>
+        Promise.resolve({
+          ok: false as const,
+          error: { kind: "unavailable" as const, correlationId: "corr-sub" },
+        }),
+      ),
+    } as never);
+
+    const { res, json } = jsonRes();
+    const body = sampleCreateBody();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...body,
+          calendarId,
+          content: {
+            ...body.content,
+            attendees: [{ email: "ada@example.com", displayName: null }],
+          },
+          invitation: "all",
+        },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.SERVICE_UNAVAILABLE,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "SYNC_UNAVAILABLE", retryable: true }),
+    );
+  });
+
+  it("threads the invitation query param onto a delete (guest cancellation emails)", async () => {
+    const submitCommand = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          command: {
+            outcome: {
+              state: "confirmed" as const,
+              providerEventId: null,
+              providerVersion: null,
+            },
+          },
+        },
+      }),
+    );
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res } = jsonRes();
+    await eventController.delete(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        query: { scope: "all", invitation: "all" },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.NO_CONTENT);
+    const request = (
+      submitCommand.mock.calls[0] as never as [unknown, { input: unknown }]
+    )[1];
+    expect(request.input).toMatchObject({ kind: "delete", invitation: "all" });
+  });
+
+  it("rejects an invalid invitation query param on delete as 400 INVALID_INPUT", async () => {
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    await eventController.delete(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        query: { scope: "all", invitation: "everyone" },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.BAD_REQUEST,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "INVALID_INPUT" }),
+    );
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
   it("maps authorizationRevoked to 410 GOOGLE_REVOKED (not retryable)", async () => {
     mockSyncCommandFailure("authorizationRevoked");
     const { res, json } = await createViaSync();

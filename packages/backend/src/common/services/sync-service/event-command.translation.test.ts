@@ -75,6 +75,49 @@ describe("toSyncContent", () => {
       toSyncContent({ title: "Standup", description: "Daily", location: "" }),
     ).not.toHaveProperty("color");
   });
+
+  it("maps intended attendees in with the needsAction placeholder", () => {
+    expect(
+      toSyncContent({
+        title: "Standup",
+        description: "Daily",
+        location: "",
+        attendees: [
+          { email: "ada@example.com", displayName: "Ada" },
+          { email: "grace@example.com", displayName: null },
+        ],
+      }),
+    ).toEqual({
+      title: "Standup",
+      description: "Daily",
+      location: "",
+      organizer: null,
+      attendees: [
+        {
+          email: "ada@example.com",
+          displayName: "Ada",
+          responseStatus: "needsAction",
+        },
+        {
+          email: "grace@example.com",
+          displayName: null,
+          responseStatus: "needsAction",
+        },
+      ],
+      conference: null,
+    });
+  });
+
+  it("keeps an explicit empty guest list as [] (remove everyone)", () => {
+    expect(
+      toSyncContent({
+        title: "Standup",
+        description: "Daily",
+        location: "",
+        attendees: [],
+      }).attendees,
+    ).toEqual([]);
+  });
 });
 
 describe("resolveCommandTarget", () => {
@@ -206,6 +249,70 @@ describe("toCreateSubmitRequest", () => {
 
     expect(request.restore).toBeUndefined();
   });
+
+  it("threads attendees and invitation into a schema-valid create command", () => {
+    const { request, responseEvent } = toCreateSubmitRequest({
+      id: objectId(),
+      calendarId: objectId(),
+      content: {
+        kind: "details",
+        title: "Kickoff",
+        description: "",
+        location: "",
+        attendees: [{ email: "ada@example.com", displayName: "Ada" }],
+      },
+      schedule: timedSchedule,
+      recurrence: { kind: "single" },
+      invitation: "all",
+    });
+
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+    expect(request.input).toMatchObject({
+      kind: "create",
+      invitation: "all",
+      attendeesEdit: "replace",
+    });
+    if (request.input.kind !== "create") return;
+    expect(request.input.content.attendees).toEqual([
+      {
+        email: "ada@example.com",
+        displayName: "Ada",
+        responseStatus: "needsAction",
+      },
+    ]);
+    // The optimistic response event carries the intended guests so the
+    // browser cache stays coherent until the provider-sourced read arrives.
+    expect(() => EventSchema.parse(responseEvent)).not.toThrow();
+    expect(
+      responseEvent.content.kind === "details" &&
+        responseEvent.content.attendees,
+    ).toEqual([
+      {
+        email: "ada@example.com",
+        displayName: "Ada",
+        responseStatus: "needsAction",
+      },
+    ]);
+  });
+
+  it("keeps a legacy create input on preserve with no notification", () => {
+    const { request, responseEvent } = toCreateSubmitRequest({
+      id: objectId(),
+      calendarId: objectId(),
+      content: { kind: "details", title: "X", description: "", location: "" },
+      schedule: timedSchedule,
+      recurrence: { kind: "single" },
+    });
+
+    expect(request.input).toMatchObject({
+      kind: "create",
+      invitation: "none",
+      attendeesEdit: "preserve",
+    });
+    if (request.input.kind !== "create") return;
+    expect(request.input.content.attendees).toEqual([]);
+    expect(responseEvent.content).not.toHaveProperty("attendees");
+  });
 });
 
 describe("toReplaceSubmitRequests", () => {
@@ -282,6 +389,196 @@ describe("toReplaceSubmitRequests", () => {
     expect(restored[0]?.idempotencyKey).toBe(plain[0]?.idempotencyKey);
   });
 
+  it("threads attendees and invitation into a schema-valid update command", () => {
+    const eventId = objectId();
+    const { requests, responseEvent } = toReplaceSubmitRequests(eventId, {
+      content: {
+        kind: "details",
+        title: "Kickoff",
+        description: "",
+        location: "",
+        attendees: [
+          { email: "ada@example.com", displayName: "Ada" },
+          { email: "grace@example.com", displayName: null },
+        ],
+      },
+      schedule: timedSchedule,
+      recurrence: { kind: "preserve" },
+      scope: "this",
+      invitation: "all",
+    });
+
+    expect(requests).toHaveLength(1);
+    const request = requests[0];
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+    expect(request?.input).toMatchObject({
+      kind: "update",
+      invitation: "all",
+      attendeesEdit: "replace",
+    });
+    if (request?.input.kind !== "update") return;
+    expect(request.input.content.attendees).toEqual([
+      {
+        email: "ada@example.com",
+        displayName: "Ada",
+        responseStatus: "needsAction",
+      },
+      {
+        email: "grace@example.com",
+        displayName: null,
+        responseStatus: "needsAction",
+      },
+    ]);
+    expect(() => EventSchema.parse(responseEvent)).not.toThrow();
+    expect(
+      responseEvent.content.kind === "details" &&
+        responseEvent.content.attendees,
+    ).toEqual([
+      {
+        email: "ada@example.com",
+        displayName: "Ada",
+        responseStatus: "needsAction",
+      },
+      {
+        email: "grace@example.com",
+        displayName: null,
+        responseStatus: "needsAction",
+      },
+    ]);
+  });
+
+  it("marks an explicit empty guest list as replace, not preserve", () => {
+    const { requests } = toReplaceSubmitRequests(objectId(), {
+      content: {
+        kind: "details",
+        title: "Solo",
+        description: "",
+        location: "",
+        attendees: [],
+      },
+      schedule: timedSchedule,
+      recurrence: { kind: "preserve" },
+      scope: "this",
+    });
+
+    expect(requests[0]?.input).toMatchObject({
+      kind: "update",
+      attendeesEdit: "replace",
+    });
+    if (requests[0]?.input.kind !== "update") return;
+    expect(requests[0].input.content.attendees).toEqual([]);
+  });
+
+  // Snapshot regression for the pack's backward-compat guarantee: a payload
+  // that predates attendee support must build the same submit request it
+  // always did (invitation none, attendeesEdit preserve, [] attendee pad).
+  it("builds a byte-identical submit request for a legacy replace payload", () => {
+    const eventId = "64b7f7f7f7f7f7f7f7f7f7f7";
+    const { requests } = toReplaceSubmitRequests(eventId, {
+      content: {
+        kind: "details",
+        title: "Standup",
+        description: "Daily",
+        location: "Room A",
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T09:00:00.000Z",
+        end: "2026-07-14T10:00:00.000Z",
+        timeZone: "UTC",
+      },
+      recurrence: { kind: "preserve" },
+      scope: "this",
+    });
+
+    expect(requests).toEqual([
+      {
+        idempotencyKey: "update:0b7c2048556d01da12ae81970f090b767bc6a6bc",
+        eventId,
+        expectedVersion: null,
+        input: {
+          kind: "update",
+          invitation: "none",
+          attendeesEdit: "preserve",
+          content: {
+            title: "Standup",
+            description: "Daily",
+            location: "Room A",
+            organizer: null,
+            attendees: [],
+            conference: null,
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-14T09:00:00.000Z",
+            end: "2026-07-14T10:00:00.000Z",
+            timeZone: "UTC",
+          },
+          recurrence: { kind: "preserve" },
+          scope: "all",
+          recurrenceId: null,
+        },
+      },
+    ] as never);
+  });
+
+  // The mandatory key-stability lock: the literal below was computed from the
+  // PRE-attendee translator for this exact payload. If it ever changes, a
+  // deployed retry of an in-flight legacy edit would mint a NEW command
+  // instead of replaying the original — double-applying the write. The hash
+  // covers the browser content AS RECEIVED, so absent attendees/invitation
+  // serialize exactly as they did before those fields existed.
+  it("keeps the legacy update idempotency key stable across the attendee rollout", () => {
+    const legacyInput = {
+      content: {
+        kind: "details" as const,
+        title: "Standup",
+        description: "Daily",
+        location: "Room A",
+      },
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-14T09:00:00.000Z",
+        end: "2026-07-14T10:00:00.000Z",
+        timeZone: "UTC",
+      },
+      recurrence: { kind: "preserve" as const },
+      scope: "this" as const,
+    };
+    const { requests } = toReplaceSubmitRequests(
+      "64b7f7f7f7f7f7f7f7f7f7f7",
+      legacyInput,
+    );
+
+    expect(requests[0]?.idempotencyKey).toBe(
+      "update:0b7c2048556d01da12ae81970f090b767bc6a6bc",
+    );
+    // invitation is per-submission delivery intent, deliberately outside the
+    // hash (like restore): the same edit resubmitted with a different email
+    // choice must reach the same command record.
+    const { requests: withInvitation } = toReplaceSubmitRequests(
+      "64b7f7f7f7f7f7f7f7f7f7f7",
+      { ...legacyInput, invitation: "all" },
+    );
+    expect(withInvitation[0]?.idempotencyKey).toBe(
+      "update:0b7c2048556d01da12ae81970f090b767bc6a6bc",
+    );
+    // A guest-list edit rides inside content, so it mints a distinct key.
+    const { requests: withGuests } = toReplaceSubmitRequests(
+      "64b7f7f7f7f7f7f7f7f7f7f7",
+      {
+        ...legacyInput,
+        content: {
+          ...legacyInput.content,
+          attendees: [{ email: "ada@example.com", displayName: null }],
+        },
+      },
+    );
+    expect(withGuests[0]?.idempotencyKey).not.toBe(
+      "update:0b7c2048556d01da12ae81970f090b767bc6a6bc",
+    );
+  });
+
   it("appends a move command when calendarId is present", () => {
     const eventId = objectId();
     const calendarId = objectId();
@@ -328,5 +625,31 @@ describe("toDeleteSubmitRequest", () => {
     const second = toDeleteSubmitRequest(eventId, { scope: "all" });
 
     expect(second.idempotencyKey).toBe(first.idempotencyKey);
+  });
+
+  // Guest cancellation emails: the user's save-time choice flows onto the
+  // delete command instead of the old hardcoded "none".
+  it("threads invitation through a delete without changing its identity key", () => {
+    const eventId = "64b7f7f7f7f7f7f7f7f7f7f7";
+    const request = toDeleteSubmitRequest(eventId, {
+      scope: "all",
+      invitation: "all",
+    });
+
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+    if (request.input.kind !== "delete") return;
+    expect(request.input.invitation).toBe("all");
+    // Identity-only key, pinned from the pre-attendee translator: a legacy
+    // delete AND one carrying an invitation both map to the same command, so
+    // a timed-out delete retried with either shape never double-submits.
+    expect(request.idempotencyKey).toBe(
+      "delete:b65cb27825e51d116acdcb198b1f11786dd971c4",
+    );
+    const legacy = toDeleteSubmitRequest(eventId, { scope: "all" });
+    expect(legacy.idempotencyKey).toBe(
+      "delete:b65cb27825e51d116acdcb198b1f11786dd971c4",
+    );
+    if (legacy.input.kind !== "delete") return;
+    expect(legacy.input.invitation).toBe("none");
   });
 });

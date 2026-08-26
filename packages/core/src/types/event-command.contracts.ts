@@ -215,6 +215,12 @@ export const EventMutationErrorCodeSchema = z.enum([
   // The request body failed contract validation (e.g. an unrecognized key on
   // a strict schema). Always a client-side mistake, never retryable.
   "INVALID_INPUT",
+  // The write carried `content.attendees` but the target calendar cannot
+  // deliver a guest list — it is not a writable Google calendar (local/
+  // anonymous calendars, read-only Google calendars). Rejected before any
+  // sync submission; never retryable. The web hides the attendee editor in
+  // these cases, so this is the backstop for hand-crafted requests.
+  "ATTENDEES_UNSUPPORTED",
   // Cloud event writes require a trial or paid subscription. 403, not 401
   // (SuperTokens retries 401 after refresh) and not 402 (Status has no
   // PAYMENT_REQUIRED). Never retryable.
