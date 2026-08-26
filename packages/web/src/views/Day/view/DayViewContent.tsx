@@ -143,7 +143,9 @@ export const DayViewContent = memo(() => {
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />
-          <AvailabilityGridOverlay />
+          <AvailabilityGridOverlay
+            visibleDates={[dateInView.format("YYYY-MM-DD")]}
+          />
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useRef } from "react";
-import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
 import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
 import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
 import { ID_MAIN } from "@web/common/constants/web.constants";
@@ -181,7 +180,6 @@ export const WeekView = () => {
                   weekProps={weekProps}
                 />
               </ContextMenuWrapper>
-              <AvailabilityGridOverlay />
             </div>
           </WeekGridScrollArea>
         </div>

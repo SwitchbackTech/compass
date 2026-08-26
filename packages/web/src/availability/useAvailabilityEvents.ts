@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
@@ -25,6 +25,16 @@ export function useAvailabilityEvents(start: Dayjs, end: Dayjs) {
       calendars.data?.filter(({ isActive }) => isActive).map(({ id }) => id),
     [calendars.data],
   );
+  const rangeKey = `${start.format("YYYY-MM-DD")}/${end.format("YYYY-MM-DD")}`;
+  const previousRange = useRef(rangeKey);
+  useEffect(() => {
+    if (
+      previousRange.current !== rangeKey &&
+      useAvailabilityStore.getState().isOpen
+    )
+      availabilityActions.close();
+    previousRange.current = rangeKey;
+  }, [rangeKey]);
   const query = useQuery({
     ...weekEventsQueryOptions({
       source,
@@ -35,7 +45,10 @@ export function useAvailabilityEvents(start: Dayjs, end: Dayjs) {
     enabled: isOpen && calendars.isSuccess,
   });
   useEffect(() => {
-    if (!isOpen || !query.data) return;
+    if (!isOpen) return;
+    if (query.isPending) availabilityActions.setStatus("loading");
+    if (query.isError) availabilityActions.setStatus("error");
+    if (!query.data) return;
     const conflicts = query.data.ids.reduce<AvailabilityConflict[]>(
       (result, id) => {
         const event = query.data?.entities[id];
@@ -56,9 +69,39 @@ export function useAvailabilityEvents(start: Dayjs, end: Dayjs) {
       timeZone: sourceZone,
       conflicts,
     });
-    availabilityActions.setSlots(
-      selectDefaultAvailabilitySlots(generated, sourceZone),
+    const existing = useAvailabilityStore.getState().slots;
+    if (!existing.length) {
+      availabilityActions.setSlots(
+        selectDefaultAvailabilitySlots(generated, sourceZone),
+      );
+      return;
+    }
+    const generatedIds = new Set(generated.map(({ id }) => id));
+    const removedSelected = existing.some(
+      (slot) => slot.selected && !generatedIds.has(slot.id),
     );
-  }, [end, isOpen, query.data, sourceZone, start]);
+    const selectedIds = new Set(
+      existing.filter(({ selected }) => selected).map(({ id }) => id),
+    );
+    availabilityActions.setSlots(
+      generated.map((slot) => ({
+        ...slot,
+        selected: selectedIds.has(slot.id),
+        origin: selectedIds.has(slot.id) ? "user" : slot.origin,
+      })),
+    );
+    if (removedSelected)
+      availabilityActions.announce(
+        "A selected time was removed because it is no longer free.",
+      );
+  }, [
+    end,
+    isOpen,
+    query.data,
+    query.isError,
+    query.isPending,
+    sourceZone,
+    start,
+  ]);
   return query;
 }

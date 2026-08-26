@@ -1,5 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useMemo, useRef } from "react";
+import { track } from "@web/auth/posthog/track";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { Btn } from "@web/components/Button/Button";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
@@ -34,8 +35,13 @@ export function AvailabilityPanel() {
     try {
       await navigator.clipboard.writeText(message);
       availabilityActions.markCopied();
+      track("availability_copied", {
+        slot_count: String(selected.length),
+        has_recipient_zone: String(Boolean(state.recipientZone)),
+      });
       showStatusToast("availability-copied", "Copied slots to clipboard.");
     } catch {
+      track("availability_copy_failed", { reason_category: "clipboard" });
       showStatusToast(
         "availability-copy-failed",
         "Couldn’t copy availability. Select the message and copy it manually.",
@@ -67,6 +73,22 @@ export function AvailabilityPanel() {
         </Btn>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
+        <div aria-live="polite" className="sr-only">
+          {state.announcement}
+        </div>
+        {state.status === "loading" ? <p>Checking your calendars…</p> : null}
+        {state.status === "error" ? (
+          <div role="alert">
+            <p>Availability couldn’t be checked. Try again.</p>
+            <button
+              className="c-focus-ring underline"
+              onClick={() => window.dispatchEvent(new Event("focus"))}
+              type="button"
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
         <section
           aria-label="Availability message preview"
           className="select-text whitespace-pre-wrap rounded border border-border bg-surface-overlay p-3 text-sm text-text"
@@ -111,7 +133,7 @@ export function AvailabilityPanel() {
         <Btn
           aria-label="Copy availability to clipboard"
           className="w-full bg-accent-primary px-3 py-2 font-medium text-background text-sm disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!message}
+          disabled={!message || state.status !== "ready"}
           onClick={() => void copy()}
         >
           {message ? "Copy to clipboard  ·  Mod C" : "Select a time to copy"}
