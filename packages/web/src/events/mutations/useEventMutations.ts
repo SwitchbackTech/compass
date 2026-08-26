@@ -18,11 +18,13 @@ import {
 import {
   type Attendee,
   type AttendeeInput,
+  type RsvpResponseStatus,
 } from "@core/types/event-attendance.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
+  type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
@@ -48,6 +50,7 @@ import {
   showRecurrenceScopeSuccessToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
 import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/first-event.store";
+import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import {
   applyEventProjectionAcrossQueries,
@@ -57,6 +60,7 @@ import {
   getEventQueryEntries,
   insertEventIntoQueries,
   isEventQueryKey,
+  patchEventInQueries,
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
@@ -256,6 +260,31 @@ function optimisticGuestList(
   );
 }
 
+// Optimistic RSVP: rewrite only the caller's own attendee entry (matched by
+// the calendar's account email, case-insensitively — the same self-match sync
+// applies), leaving every other guest's provider-owned status untouched.
+// Events without a matching entry pass through unchanged.
+function rsvpEventContent(
+  event: Event,
+  accountEmail: string,
+  responseStatus: RsvpResponseStatus,
+): Event {
+  if (event.content.kind !== "details" || !event.content.attendees) {
+    return event;
+  }
+  return {
+    ...event,
+    content: {
+      ...event.content,
+      attendees: event.content.attendees.map((attendee) =>
+        attendee.email.toLowerCase() === accountEmail.toLowerCase()
+          ? { ...attendee, responseStatus }
+          : attendee,
+      ),
+    },
+  };
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
@@ -372,6 +401,21 @@ type DeleteVariables = {
   originalOverride?: Event;
   opportunityId?: number;
 };
+type RsvpVariables = {
+  id: EventId;
+  input: RsvpEventInput;
+  // The connected account answering — the self attendee entry is matched by
+  // the calendar's account email, case-insensitively (same rule sync applies).
+  accountEmail: string;
+  writeKey: EventId;
+};
+
+export type RsvpPayload = {
+  id: EventId;
+  responseStatus: RsvpResponseStatus;
+  scope: RsvpEventInput["scope"];
+  accountEmail: string;
+};
 
 export type EventMutationCallbacks = {
   onSuccess?: () => void;
@@ -386,6 +430,7 @@ export type EventMutations = {
     callbacks?: EventMutationCallbacks,
   ) => boolean;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
+  rsvp: (payload: RsvpPayload) => void;
   promoteRecurring: (
     opportunity: RecurrenceScopeOpportunity,
     scope: "thisAndFollowing" | "all",
@@ -817,6 +862,42 @@ export function useEventMutations(
     ),
   );
 
+  // WP-08: answer an invitation. Goes straight to EventApi rather than the
+  // repository — RSVP only exists for provider-backed events (the control is
+  // hidden on local calendars), and it deliberately skips the read-only
+  // target gate below: answering is allowed on viewer-access calendars
+  // because it is not a calendar write. Rollback rides the shared snapshot
+  // restore; the settle-time invalidation converges to the provider truth
+  // (SSE eventsChanged lands on this same invalidation path).
+  const rsvpMutation = useMutation(
+    buildMutation<RsvpVariables>(
+      "rsvp",
+      (variables) => EventApi.rsvpEvent(variables.id, variables.input),
+      ({ id, input, accountEmail }) => {
+        const rewrite = (event: Event) =>
+          rsvpEventContent(event, accountEmail, input.responseStatus);
+        patchEventInQueries(queryClient, id, rewrite, { source });
+        if (input.scope !== "all") return;
+        // Series-wide answer: paint the master and every cached occurrence
+        // too, so the user's dot doesn't flicker per-instance until settle.
+        const existing = findEventInCache(queryClient, id, source);
+        const parts = decodeOccurrenceId(id);
+        const seriesId =
+          seriesIdOf(existing) ??
+          (parts ? EventIdSchema.parse(parts.eventId) : null);
+        if (!seriesId) return;
+        patchEventInQueries(queryClient, seriesId, rewrite, { source });
+        for (const sibling of findSeriesEventsInCache(
+          queryClient,
+          seriesId,
+          source,
+        )) {
+          patchEventInQueries(queryClient, sibling.id, rewrite, { source });
+        }
+      },
+    ),
+  );
+
   // Undo recording happens here at the `.mutate()` boundary: it's the one
   // place every caller funnels through and the cache still holds the
   // pre-mutation event. Replays from useUndoRedo set the restoring flag so
@@ -955,6 +1036,25 @@ export function useEventMutations(
           opportunityId,
         });
       },
+      rsvp: ({ id, responseStatus, scope, accountEmail }: RsvpPayload) => {
+        const original = findEventInCache(queryClient, id, source);
+        // No isTargetReadOnly gate on purpose (finish line 5: RSVP works on
+        // viewer-access calendars) — but a reconnect-required Google account
+        // cannot deliver any command, so that block stays.
+        if (blockReconnectRequiredCalendar(original?.calendarId)) {
+          return;
+        }
+        // A series-wide answer serializes against the series id, same as a
+        // scope-"all" replace.
+        const writeKey =
+          scope === "all" ? seriesWriteKey(original, "all", id) : id;
+        rsvpMutation.mutate({
+          id,
+          input: { responseStatus, scope },
+          accountEmail,
+          writeKey,
+        });
+      },
       promoteRecurring: (
         opportunity: RecurrenceScopeOpportunity,
         scope: "thisAndFollowing" | "all",
@@ -1017,6 +1117,7 @@ export function useEventMutations(
       createMutation.mutate,
       deleteMutation.mutate,
       replaceMutation.mutate,
+      rsvpMutation.mutate,
     ],
   );
 }

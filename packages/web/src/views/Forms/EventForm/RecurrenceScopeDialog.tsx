@@ -30,12 +30,14 @@ const GUESTS_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
   RecurringEventUpdateScope.ALL_EVENTS,
 ];
 
-const updateScopeOptionClassName =
+// Shared with RsvpScopeDialog so both scope dialogs render identical radio
+// rows.
+export const updateScopeOptionClassName =
   "flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-base text-text transition-colors hover:bg-surface-overlay";
 
-const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
+export const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
 
-const radioDotClassName =
+export const radioDotClassName =
   "relative flex size-[18px] flex-none rounded-full border-2 border-border-strong transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent after:transition-transform peer-checked:border-accent peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-panel";
 
 type RecurrenceScopeConfirmationDialogProps = {

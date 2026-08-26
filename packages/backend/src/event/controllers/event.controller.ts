@@ -11,6 +11,8 @@ import {
   EventListQuerySchema,
   type ReplaceEventInput,
   ReplaceEventInputSchema,
+  type RsvpEventInput,
+  RsvpEventInputSchema,
 } from "@core/types/event-command.contracts";
 import {
   type CommandSubmitRequest,
@@ -28,6 +30,7 @@ import {
   toCreateSubmitRequest,
   toDeleteSubmitRequest,
   toReplaceSubmitRequests,
+  toRsvpSubmitRequest,
 } from "@backend/common/services/sync-service/event-command.translation";
 import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -365,6 +368,22 @@ const replaceFromSync = async (
   return responseEvent;
 };
 
+// RSVP: answer an invitation on the addressed event (or its whole series).
+// Deliberately NO assertAttendeesSupported gate: an RSVP rewrites only the
+// caller's own attendee entry and is legitimate on a viewer-access (read-only)
+// calendar — it is not a calendar write. Sync's own guards (self must be in
+// the attendee list, connection resolvable) are the enforcement; they answer
+// with a typed unsupportedCapability that maps to UNSUPPORTED_OPERATION here.
+const rsvpFromSync = async (
+  userId: string,
+  eventId: string,
+  input: RsvpEventInput,
+) => {
+  const client = getSyncServiceClient();
+  const request = toRsvpSubmitRequest(eventId, input);
+  await submitCommandOrThrow(client, userId, request);
+};
+
 const deleteFromSync = async (
   userId: string,
   eventId: string,
@@ -412,6 +431,31 @@ class EventController {
       const event = await replaceFromSync(userId, eventId, input);
 
       res.status(Status.OK).json({ event });
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  // POST /api/event/:id/rsvp — auth/billing/maintenance parity with the
+  // other event writes above, minus any calendar-writability gate (finish
+  // line 5: RSVP is allowed on viewer-access calendars). The sync command
+  // result carries no event content and the sync client has no event-by-id
+  // lookup, so the response is 204: the web is optimistic and settles the
+  // provider-confirmed list via SSE, the same way it discards the
+  // synthesized bodies of create/replace.
+  rsvp = async (req: SessionRequest, res: Response) => {
+    try {
+      assertCloudMutationsAllowed();
+      const userId = req.session?.getUserId() as string;
+      await assertBillingAllowsWrites(userId);
+      const eventId = req.params["id"] as string;
+      // Strict parse: an invalid responseStatus (incl. "needsAction" — a user
+      // answers, they don't un-answer) or scope is a 400 INVALID_INPUT with
+      // no sync call.
+      const input = RsvpEventInputSchema.parse(req.body);
+      await rsvpFromSync(userId, eventId, input);
+
+      res.status(Status.NO_CONTENT).send();
     } catch (e) {
       send(res, e);
     }

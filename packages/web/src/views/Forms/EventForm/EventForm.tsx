@@ -67,6 +67,7 @@ import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardU
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -273,6 +274,19 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" && draft.source.content.kind === "details"
         ? draft.source.content
         : undefined;
+    // Cache-backed view of the same source event (WP-08): an optimistic RSVP
+    // patches the query cache, and reading it live here is what makes the
+    // user's own status dot (and the segmented control's selection) update
+    // immediately — draft.source is a snapshot and never re-renders. Other
+    // attendees' RSVP changes arriving via SSE update through this same
+    // read. Falls back to the snapshot while the event is not cached.
+    const liveSource = useEventById(
+      draft.kind === "edit" ? draft.source.id : undefined,
+    );
+    const rsvpSource =
+      draft.kind === "edit" ? (liveSource ?? draft.source) : null;
+    const liveDetails =
+      rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
     // Attendee-editor gate (WP-04): guests are editable only where the whole
     // write path can deliver them — a writable Google calendar, an event the
     // user organizes, and never a single occurrence of a series (sync
@@ -304,6 +318,23 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       organizesEvent &&
       (draft.kind === "create" ||
         draft.source.recurrence.kind !== "occurrence");
+    // RSVP gate (WP-08): show Going / Maybe / Decline when the calendar's
+    // connected account email appears in the attendee list (organizer
+    // included — organizers can answer their own event). Hidden when self is
+    // not an attendee or the event is local (no provider account email).
+    // Deliberately NOT gated on writability: answering an invitation is
+    // allowed on viewer-access calendars.
+    const rsvpAccountEmail =
+      attendeeCalendar?.provider === "google"
+        ? attendeeCalendar.accountEmail
+        : undefined;
+    const showRsvpControl =
+      rsvpSource !== null &&
+      rsvpAccountEmail !== undefined &&
+      (liveDetails?.attendees ?? []).some(
+        (attendee) =>
+          attendee.email.toLowerCase() === rsvpAccountEmail.toLowerCase(),
+      );
     // Contact suggestions (WP-06): live when a connected account granted the
     // optional contacts scopes; otherwise the field is a raw email input and
     // the combobox footer may carry the occasional enable-contacts nudge.
@@ -959,13 +990,21 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               </FormCard>
             </fieldset>
 
+            {/* Outside the fieldset (like the details section below): RSVP
+              must stay interactive on a read-only calendar. */}
+            {showRsvpControl && rsvpSource && rsvpAccountEmail && (
+              <RsvpControl event={rsvpSource} accountEmail={rsvpAccountEmail} />
+            )}
+
             {/* Outside the fieldset: read-only display, not an editable
               control, so it stays interactive (the "+N more" toggle) even
               when the event itself is read-only. Renders its own card
-              styling and returns null when the event has none of this data. */}
+              styling and returns null when the event has none of this data.
+              Prefers the live cache content so other attendees' RSVP changes
+              (SSE) and the user's own optimistic answer paint immediately. */}
             {sourceDetails && (
               <EventDetailsSection
-                details={sourceDetails}
+                details={liveDetails ?? sourceDetails}
                 hideAttendees={showAttendeeEditor}
               />
             )}

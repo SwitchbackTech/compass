@@ -32,6 +32,15 @@ export class EventRoutes extends CommonRoutesConfig {
       .put(eventController.replace)
       .delete(eventController.delete);
 
+    // RSVP to an invitation (WP-08). Same session gate as the other event
+    // writes; billing/maintenance parity lives in the controller, and there
+    // is deliberately no writable-calendar gate — answering an invitation is
+    // allowed on viewer-access calendars.
+    this.app
+      .route(`/api/event/:id/rsvp`)
+      .all(verifySession())
+      .post(eventController.rsvp);
+
     return this.app;
   }
 }

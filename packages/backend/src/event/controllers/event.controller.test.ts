@@ -4,6 +4,7 @@ import { type SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import { composeOccurrenceId } from "@backend/common/services/sync-service/occurrence-id";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import {
   eventMutationError,
@@ -708,6 +709,161 @@ describe("EventController", () => {
       message: "Sync command did not resolve (pending)",
       retryable: true,
     });
+  });
+
+  // WP-08: POST /api/event/:id/rsvp. No writable-calendar gate — an RSVP is
+  // not a calendar write, so it must succeed without ANY calendar lookup
+  // (viewer-access calendars included).
+  it("submits an rsvp command and answers 204 without any calendar-writability lookup", async () => {
+    const submitCommand = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          command: {
+            outcome: {
+              state: "confirmed" as const,
+              providerEventId: "prov-1",
+              providerVersion: "v2",
+            },
+          },
+        },
+      }),
+    );
+    // Deliberately NO listCalendars on the stub: if the handler consulted
+    // any writable-calendar gate, this test would throw on the missing
+    // method instead of answering 204.
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res } = jsonRes();
+    const eventId = objectId();
+    await eventController.rsvp(
+      sessionReq(objectId(), {
+        params: { id: eventId },
+        body: { responseStatus: "accepted", scope: "single" },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.NO_CONTENT);
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const request = (
+      submitCommand.mock.calls[0] as never as [
+        unknown,
+        { eventId: string; input: unknown; idempotencyKey: string },
+      ]
+    )[1];
+    expect(request.eventId).toBe(eventId);
+    expect(request.idempotencyKey).toStartWith("rsvp:");
+    // Plain id + scope "single" answers the event itself (coerced target).
+    expect(request.input).toEqual({
+      kind: "rsvp",
+      responseStatus: "accepted",
+      scope: "all",
+      recurrenceId: null,
+    });
+  });
+
+  it("posts the decoded occurrence target for a scope-single rsvp on a composite id", async () => {
+    const submitCommand = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          command: {
+            outcome: {
+              state: "confirmed" as const,
+              providerEventId: "prov-inst-1",
+              providerVersion: "v3",
+            },
+          },
+        },
+      }),
+    );
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res } = jsonRes();
+    const seriesId = objectId();
+    const recurrenceId = "2026-07-21T15:00:00.000Z";
+    await eventController.rsvp(
+      sessionReq(objectId(), {
+        params: {
+          id: composeOccurrenceId({ eventId: seriesId, recurrenceId }),
+        },
+        body: { responseStatus: "declined", scope: "single" },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.NO_CONTENT);
+    const request = (
+      submitCommand.mock.calls[0] as never as [
+        unknown,
+        { eventId: string; input: unknown },
+      ]
+    )[1];
+    // The series id + the occurrence's recurrenceId — never the whole series.
+    expect(request.eventId).toBe(seriesId);
+    expect(request.input).toEqual({
+      kind: "rsvp",
+      responseStatus: "declined",
+      scope: "this",
+      recurrenceId,
+    });
+  });
+
+  it("rejects an rsvp of needsAction as 400 INVALID_INPUT with no sync call", async () => {
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    await eventController.rsvp(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        // A user answers, they don't un-answer: needsAction is never a
+        // choosable response.
+        body: { responseStatus: "needsAction", scope: "single" },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.BAD_REQUEST,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "INVALID_INPUT", retryable: false }),
+    );
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
+  it("maps a typed rsvp refusal (unsupportedCapability) to 403 UNSUPPORTED_OPERATION", async () => {
+    // E.g. the caller is not in the event's attendee list, or the connection
+    // cannot be verified — sync fails the command typed; never a retryable
+    // 502.
+    mockSyncCommandFailure("unsupportedCapability");
+
+    const { res, json } = jsonRes();
+    await eventController.rsvp(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        body: { responseStatus: "tentative", scope: "all" },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.FORBIDDEN,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: "UNSUPPORTED_OPERATION",
+        retryable: false,
+      }),
+    );
   });
 
   it("rejects delete-all when the session user does not match :userId", async () => {

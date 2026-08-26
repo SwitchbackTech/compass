@@ -6,6 +6,7 @@ import {
   toCreateSubmitRequest,
   toDeleteSubmitRequest,
   toReplaceSubmitRequests,
+  toRsvpSubmitRequest,
   toSyncContent,
 } from "./event-command.translation";
 import { composeOccurrenceId } from "./occurrence-id";
@@ -651,5 +652,117 @@ describe("toDeleteSubmitRequest", () => {
     );
     if (legacy.input.kind !== "delete") return;
     expect(legacy.input.invitation).toBe("none");
+  });
+});
+
+describe("toRsvpSubmitRequest", () => {
+  // Occurrence-scope payload proof (WP-08): browser scope "single" on a
+  // composite occurrence id addresses exactly that occurrence — sync scope
+  // "this" with the decoded recurrenceId, never the whole series.
+  it("addresses one occurrence for scope single on a composite id", () => {
+    const eventId = objectId();
+    const recurrenceId = "2026-07-21T15:00:00.000Z";
+    const id = composeOccurrenceId({ eventId, recurrenceId });
+    const request = toRsvpSubmitRequest(id, {
+      responseStatus: "declined",
+      scope: "single",
+    });
+
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+    expect(request.eventId).toBe(eventId);
+    expect(request.expectedVersion).toBeNull();
+    expect(request.input).toEqual({
+      kind: "rsvp",
+      responseStatus: "declined",
+      scope: "this",
+      recurrenceId,
+    });
+  });
+
+  it("targets the series master for scope all on a composite id", () => {
+    const eventId = objectId();
+    const id = composeOccurrenceId({
+      eventId,
+      recurrenceId: "2026-07-21T15:00:00.000Z",
+    });
+    const request = toRsvpSubmitRequest(id, {
+      responseStatus: "accepted",
+      scope: "all",
+    });
+
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+    expect(request.eventId).toBe(eventId);
+    expect(request.input).toEqual({
+      kind: "rsvp",
+      responseStatus: "accepted",
+      scope: "all",
+      recurrenceId: null,
+    });
+  });
+
+  // A non-recurring event has no occurrence to address: scope "single" on a
+  // plain id answers the event itself, coerced to sync's coherent
+  // scope-"all" + null recurrenceId exactly like update/delete. Never
+  // "thisAndFollowing" — sync refuses that typed for rsvp.
+  it("coerces scope single on a plain id to the event itself (scope all, null recurrenceId)", () => {
+    const eventId = objectId();
+    const request = toRsvpSubmitRequest(eventId, {
+      responseStatus: "tentative",
+      scope: "single",
+    });
+
+    expect(request.eventId).toBe(eventId);
+    expect(request.input).toEqual({
+      kind: "rsvp",
+      responseStatus: "tentative",
+      scope: "all",
+      recurrenceId: null,
+    });
+  });
+
+  // Idempotency key = event + status + scope: the same answer replays the
+  // same command; a different answer, target, or scope mints a new one.
+  it("derives the idempotency key from event + status + scope", () => {
+    const eventId = objectId();
+    const id = composeOccurrenceId({
+      eventId,
+      recurrenceId: "2026-07-21T15:00:00.000Z",
+    });
+    const accept = { responseStatus: "accepted", scope: "single" } as const;
+
+    const first = toRsvpSubmitRequest(id, accept);
+    const replay = toRsvpSubmitRequest(id, accept);
+    expect(replay.idempotencyKey).toBe(first.idempotencyKey);
+    expect(first.idempotencyKey).toStartWith("rsvp:");
+
+    const changedAnswer = toRsvpSubmitRequest(id, {
+      responseStatus: "declined",
+      scope: "single",
+    });
+    expect(changedAnswer.idempotencyKey).not.toBe(first.idempotencyKey);
+
+    const changedScope = toRsvpSubmitRequest(id, {
+      responseStatus: "accepted",
+      scope: "all",
+    });
+    expect(changedScope.idempotencyKey).not.toBe(first.idempotencyKey);
+
+    const otherEvent = toRsvpSubmitRequest(
+      composeOccurrenceId({
+        eventId: objectId(),
+        recurrenceId: "2026-07-21T15:00:00.000Z",
+      }),
+      accept,
+    );
+    expect(otherEvent.idempotencyKey).not.toBe(first.idempotencyKey);
+  });
+
+  it("throws INVALID_OCCURRENCE_ID on a malformed composite id rather than widening to the series", () => {
+    expect(() =>
+      toRsvpSubmitRequest(`${objectId()}::not-a-date`, {
+        responseStatus: "accepted",
+        scope: "single",
+      }),
+    ).toThrow(/looks like an occurrence reference/);
   });
 });

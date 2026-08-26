@@ -79,12 +79,117 @@ Key files:
 
 ## Evidence
 
+Recorded 2026-08-26 (implementer: manager-loop session — TAKEOVER: the
+prior worker implemented most of this WP then hit a usage limit mid-way
+through the EventForm gating tests; its uncommitted tree was reviewed
+critically, kept, validated, and shipped — the only fixes needed were
+formatter-only, via `bun lint:fix`, on 4 new test files):
+
 ```text
-commands run:
+commands run: bun test:backend (full, via test-mongo-env with the
+  scratchpad-only IPv4 listen shim — same environment note as WP-02/03/07,
+  never committed); bun test:web; bun test:core (regression — no core
+  contract changes in this WP; RsvpEventInputSchema shipped in WP-01);
+  bunx playwright test e2e/accessibility --timeout=180000; bun run
+  type-check; bun lint (after bun lint:fix, formatting only); bun knip.
+  All re-run on the final tree.
 test:backend / test:web / test:a11y result:
+  - test:backend: 415 pass, 1 skip, 8 fail (52 files) — the 8 (GET
+    /api/config x3, UserController x5) are the IDENTICAL pre-existing
+    WP-03/WP-06 baseline (container env); this WP adds 9 new passing
+    tests (5 toRsvpSubmitRequest, 4 controller rsvp) and no failures.
+  - test:web: 2407 pass, 0 fail (319 files; +19 tests / +3 files over
+    WP-06's 2388) — new suites RsvpControl.test.tsx (8: labelled
+    radiogroup with current answer checked, unanswered = none checked,
+    hidden without self match, single event answers immediately with no
+    dialog, occurrence offers This Event / All Events and NEVER
+    this-and-following, All Events posts scope all, cancel sends
+    nothing, re-choosing the current answer sends nothing),
+    EventForm.rsvp.test.tsx (6 gating tests: shown on writable Google,
+    shown on viewer-access (reader) calendar while the rest of the form
+    stays read-only, shown for the organizer (checked Going), hidden
+    when self not an attendee, hidden on local events, hidden with no
+    attendees), useEventMutations.rsvp.test.tsx (5, MSW through the
+    real EventApi/BaseApi stack: wire bodies below; optimistic
+    self-only paint + 503 rollback; series-wide paint of master +
+    cached occurrences; settles via invalidation — the same path SSE
+    eventsChanged rides, pinned as the finish-line-4 regression test).
+  - test:a11y: all 7 pass as `bunx playwright test e2e/accessibility
+    --timeout=180000` (axe "incomplete" logged, not failures, per
+    docs/development/testing-playbook.md; the default-30s command is
+    not claimed green — same container-slowness note as WP-04/06).
+    LOUD NOTE: the axe e2e harness runs the anonymous local-mode app,
+    where no Google invitation can exist for RsvpControl to mount on,
+    so the control itself is NOT axe-swept; its accessibility contract
+    is pinned in RsvpControl.test.tsx via RTL role/name semantics
+    (aria-labelledby radiogroup "Going?", three named radios with
+    checked state, sr-only inputs with peer focus-visible rings —
+    the same pattern as the shipped RecurrenceScopeDialog).
 occurrence-scope payload proof:
-type-check / lint / knip result:
+  - Backend (event-command.translation.test.ts "addresses one
+    occurrence for scope single on a composite id"): composite id
+    `<eventId>::2026-07-21T15:00:00.000Z` + browser input
+    {responseStatus: "declined", scope: "single"} translates to
+    request.eventId = <eventId> (bare series id), expectedVersion null,
+    input {kind: "rsvp", responseStatus: "declined", scope: "this",
+    recurrenceId: "2026-07-21T15:00:00.000Z"} — the WP-07 executor's
+    per-occurrence target. Scope "all" on the same composite id drops
+    the recurrenceId (scope "all", recurrenceId null) and targets the
+    master; "thisAndFollowing" is never mintable (no code path).
+  - Web (RsvpControl.test.tsx "offers This Event / All Events …"):
+    Decline → dialog (nothing on the wire yet) → Ok posts to
+    /event/<encoded eventId::recurrenceId>/rsvp with body
+    {responseStatus: "declined", scope: "single"} — the composite id
+    rides the URL, so the backend decode addresses exactly that
+    occurrence. Controller test pins the decoded pass-through
+    end-to-end (same input shape reaches submitCommand).
+  - Idempotency: key = hash of event + status + scope (+ decoded
+    recurrenceId), nonce-free — replaying the same answer reuses the
+    key; changing answer, scope, or target mints a new one (tested).
+type-check / lint / knip result: all exit 0. lint: 0 errors, 10
+  pre-existing warnings (untouched files). knip: no findings
+  (pre-existing .css configuration hint only).
 deltas from spec (if any):
+  - Route is POST /api/event/:id/rsvp (singular), matching the existing
+    /api/event/:id write routes — the WP's "/api/events/:id/rsvp"
+    spelling followed no existing route (README: prefer the code).
+  - The endpoint answers 204 No Content, not "the updated event": the
+    sync command outcome carries no event content and the sync client
+    has no event-by-id lookup. The web is optimistic (self-entry
+    rewrite) and settles the provider-confirmed list via the SSE-backed
+    invalidation — the same way it discards create/replace's
+    synthesized bodies. Auth/billing/maintenance parity with the other
+    writes; deliberately NO writable-calendar gate (finish line 5) —
+    pinned by a controller test whose sync-client stub has no
+    listCalendars at all.
+  - Scope dialog fires only for an OCCURRENCE of a series. A series-base
+    answer submits scope "all" directly: a base id carries no
+    recurrenceId, so "this event" is not representable for it (the
+    translation would coerce it to the series anyway) and offering the
+    choice would be a lie. Single events skip the dialog (pinned).
+  - The rsvp mutation calls EventApi directly, bypassing the event
+    repository: RSVP exists only for provider-backed events (control
+    hidden on local calendars) and must skip the read-only target gate;
+    the reconnect-required block stays. Series-wide answers serialize
+    against the series write key like scope-"all" replaces and
+    optimistically paint the master + every cached occurrence.
+  - Self-identification is the calendar's accountEmail,
+    case-insensitive, in both the gate and the optimistic rewrite —
+    the same single mechanism sync uses (alias wart stands, WP-09).
+  - EventForm reads the event live from the query cache (useEventById)
+    for the RSVP control and EventDetailsSection, falling back to the
+    draft snapshot: this is what makes the optimistic answer and other
+    attendees' SSE-delivered RSVP changes paint without reopening the
+    form.
+  - needsAction is 400 INVALID_INPUT at the route (strict Zod parse, no
+    sync call — a user answers, they don't un-answer); sync's typed
+    unsupportedCapability refusals surface as 403 UNSUPPORTED_OPERATION
+    (both tested).
+  - Environment notes (unchanged from WP-02/03/07): IPv6-disabled
+    kernel → scratchpad-only IPv4 preload shim for test:backend via
+    BUN_OPTIONS (never committed); bun 1.3.11 vs pinned 1.3.14 (harness
+    warns); Playwright chromium installed via `bunx playwright install
+    chromium` for the a11y run.
 ```
 
 ## Out of scope

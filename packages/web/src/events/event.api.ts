@@ -6,6 +6,7 @@ import {
   EventListResponseSchema,
   EventResponseSchema,
   type ReplaceEventInput,
+  type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 
@@ -50,6 +51,14 @@ const EventApi = {
     return BaseApi.delete<void>(
       `/event/${encodeURIComponent(id)}?scope=${scope}`,
     );
+  },
+
+  // Answer an invitation. The id addresses the target (a composite
+  // occurrence id for one occurrence of a series); scope "single" answers
+  // just that target, "all" the whole series. The backend answers 204 — the
+  // browser is optimistic and the provider-confirmed list settles via SSE.
+  rsvpEvent: async (id: EventId, input: RsvpEventInput): Promise<void> => {
+    await BaseApi.post<void>(`/event/${encodeURIComponent(id)}/rsvp`, input);
   },
 };
 

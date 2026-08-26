@@ -20,6 +20,7 @@ import {
   type DeleteEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
+  type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import {
   type CommandSubmitRequest,
@@ -315,6 +316,46 @@ export const toDeleteSubmitRequest = (
       // only idempotency key above — it is delivery intent, not a different
       // delete.
       invitation: input.invitation ?? "none",
+      scope: target.scope,
+      recurrenceId: target.recurrenceId,
+    },
+  });
+};
+
+// RSVP → one rsvp command. The browser's scope vocabulary is "single" | "all"
+// (RsvpEventInputSchema): "single" answers exactly the addressed event — one
+// occurrence when the URL id is a composite occurrence id, or the event itself
+// for a plain id (resolveCommandTarget coerces that to sync's scope "all" +
+// null recurrenceId, exactly as update/delete address a non-recurring event) —
+// and "all" answers the whole series (composite ids drop their recurrenceId).
+// "thisAndFollowing" is deliberately unreachable: sync refuses it typed for
+// rsvp, so no translation may ever mint it.
+//
+// The idempotency key is derived from event + status + scope (target identity
+// plus the answer): repeating the same answer replays the same command, while
+// changing the answer — or the scope — mints a distinct command. Like
+// delete's key, it is deliberately nonce-free so a timed-out POST retried by
+// the client maps back to the original command instead of double-submitting.
+export const toRsvpSubmitRequest = (
+  id: string,
+  input: RsvpEventInput,
+): CommandSubmitRequest => {
+  const target = resolveCommandTarget(
+    id,
+    input.scope === "all" ? "all" : "this",
+  );
+  return CommandSubmitRequestSchema.parse({
+    idempotencyKey: hashedIdempotencyKey("rsvp", {
+      eventId: target.eventId,
+      scope: target.scope,
+      recurrenceId: target.recurrenceId,
+      responseStatus: input.responseStatus,
+    }),
+    eventId: target.eventId,
+    expectedVersion: null,
+    input: {
+      kind: "rsvp",
+      responseStatus: input.responseStatus,
       scope: target.scope,
       recurrenceId: target.recurrenceId,
     },
