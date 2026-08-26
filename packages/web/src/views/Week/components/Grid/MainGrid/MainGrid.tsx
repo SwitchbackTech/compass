@@ -1,7 +1,6 @@
 import { type FC, type ReactNode, type RefCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { AvailabilityGridOverlay } from "@web/availability/AvailabilityGridOverlay";
 import { TimedGrid } from "@web/grid/components/TimedGrid";
 import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
@@ -71,13 +70,6 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
           weekProps={weekProps}
         />
         <MainGridEvents measurements={measurements} weekProps={weekProps} />
-        <AvailabilityGridOverlay
-          measurements={measurements}
-          visibleDates={weekProps.component.weekDays.map((date) => ({
-            date,
-            key: date.format(YEAR_MONTH_DAY_FORMAT),
-          }))}
-        />
       </>
     ),
     [measurements, weekProps],
@@ -117,13 +109,6 @@ const MainGridCalendar: FC<MainGridCalendarProps> = ({
           weekProps={weekProps}
         />
         <MainGridEvents measurements={measurements} weekProps={weekProps} />
-        <AvailabilityGridOverlay
-          measurements={measurements}
-          visibleDates={weekProps.component.weekDays.map((date) => ({
-            date,
-            key: date.format(YEAR_MONTH_DAY_FORMAT),
-          }))}
-        />
       </>
     ),
     [measurements, weekProps],

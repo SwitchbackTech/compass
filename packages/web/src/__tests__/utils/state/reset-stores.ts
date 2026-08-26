@@ -9,10 +9,6 @@ import {
   initialUserMetadataState,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import {
-  initialAvailabilityState,
-  useAvailabilityStore,
-} from "@web/availability/availability.store";
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
 import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-accounts.store";
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
@@ -59,7 +55,6 @@ import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
 type StoreReset = () => void;
 
 const storeResets: StoreReset[] = [
-  () => useAvailabilityStore.setState(initialAvailabilityState, true),
   () => useSettingsStore.setState(initialSettingsState, true),
   () => useViewStore.setState(initialViewState, true),
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
