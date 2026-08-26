@@ -23,7 +23,8 @@ export interface CalendarViewShortcutsConfig {
 
 /**
  * Shared Day/Week view shortcuts: j/k navigate the period, t goes to today,
- * "c" creates a timed event, "a" an all-day event, "u" focuses the calendar;
+ * "c" creates a timed event, Shift+C creates an all-day event, "a" opens
+ * Share Availability, and "u" focuses the calendar;
  * PageUp/PageDown and Alt+ArrowUp/Down scroll the timed grid via
  * `useGridScrollShortcuts`.
  * Shift+J/K register only when the view provides a handler (Week's window

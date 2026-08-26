@@ -140,7 +140,7 @@ export const useWeekShortcutOwner = ({
   }, [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView]);
 
   // The command palette's create-event rows (event.cmd.constants.ts) can only
-  // reach this view through the bus; the "C"/"A" keys below call the create
+  // reach this view through the bus; the C/Shift+C keys below call the create
   // functions directly. Resubscribes when the create handlers change (week in
   // view or default target calendar).
   useEffect(() => {

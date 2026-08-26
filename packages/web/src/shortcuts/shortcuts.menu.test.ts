@@ -164,13 +164,23 @@ describe("shortcut menu sections", () => {
         );
 
       expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
-        keys: ["a"],
+        keys: ["Shift", "C"],
         label: "Create all-day event",
       });
       expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
         {
-          keys: ["a"],
+          keys: ["Shift", "C"],
           label: "Create all-day event",
+        },
+      );
+      expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
+        keys: ["A"],
+        label: "Share availability",
+      });
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
+        {
+          keys: ["A"],
+          label: "Share availability",
         },
       );
       expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
