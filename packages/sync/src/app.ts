@@ -39,7 +39,9 @@ import { GoogleCalendarAdapter } from "@sync/providers/google/google-calendar.ad
 import { GoogleEventReaderAdapter } from "@sync/providers/google/google-event-reader.adapter";
 import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
+import { GooglePeopleAdapter } from "@sync/providers/google/google-people.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ContactsPort } from "@sync/providers/provider-contacts.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
@@ -88,6 +90,9 @@ export function createSyncService(
     // Override the provider event writer (tests inject a fake); production
     // builds it from config.
     writer?: ProviderEventWriter;
+    // Override the provider contacts port (tests inject a fake); production
+    // builds it from config.
+    contacts?: ContactsPort;
   } = {},
 ): SyncService {
   const identity = buildServiceIdentity({
@@ -127,6 +132,9 @@ export function createSyncService(
         // The event writer is likewise db-free and gated on provider config;
         // the command routes use it for provider-targeted creates.
         writer: deps.writer ?? buildEventWriter(config),
+        // The contacts port is likewise db-free and gated on provider config;
+        // the contacts routes use it for attendee suggestions.
+        contacts: deps.contacts ?? buildContactsPort(config),
         // The OAuth CSRF state is signed with a key derived from the service
         // secret (domain-separated from internal-auth signing); the callback
         // resolves against the public base URL.
@@ -179,6 +187,16 @@ function buildEventWriter(config: SyncConfig): ProviderEventWriter | undefined {
     return undefined;
   }
   return new GoogleEventWriter();
+}
+
+// Build the provider contacts port when the provider is configured. Gated on
+// the same credentials as the auth adapter: a passive/unconfigured deployment
+// returns undefined and the suggestions route refuses.
+function buildContactsPort(config: SyncConfig): ContactsPort | undefined {
+  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+    return undefined;
+  }
+  return new GooglePeopleAdapter();
 }
 
 function closeHttpServer(httpServer: Server): Promise<void> {

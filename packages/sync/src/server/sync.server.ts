@@ -6,6 +6,7 @@ import {
   type ConnectionApiDeps,
   registerConnectionRoutes,
 } from "@sync/server/connection.routes";
+import { registerContactsRoutes } from "@sync/server/contacts.routes";
 import { registerDiagnosticRoutes } from "@sync/server/diagnostic.routes";
 import { registerHealthRoutes } from "@sync/server/health.routes";
 import { registerNotificationRoutes } from "@sync/server/notification.routes";
@@ -45,6 +46,15 @@ export function buildSyncApp(deps: {
       writer: deps.connectionApi.writer,
       authAdapter: deps.connectionApi.authAdapter,
       now: deps.connectionApi.now,
+    });
+    // Attendee contact suggestions from the provider's People surfaces, gated
+    // on the optional per-connection contacts grant (WP-05).
+    registerContactsRoutes(app, {
+      authMiddleware: deps.connectionApi.authMiddleware,
+      mongo: deps.connectionApi.mongo,
+      execution: deps.connectionApi.execution,
+      authAdapter: deps.connectionApi.authAdapter,
+      contacts: deps.connectionApi.contacts,
     });
     // Resumable invalidation outbox for Compass API → browser SSE (S40).
     registerChangeFeedRoutes(app, {

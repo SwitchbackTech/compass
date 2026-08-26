@@ -1,5 +1,8 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import { GOOGLE_SCOPES } from "@sync/providers/google/google.scopes";
+import {
+  CONTACTS_FEATURE_SCOPES,
+  GOOGLE_SCOPES,
+} from "@sync/providers/google/google.scopes";
 import {
   GoogleAuthAdapter,
   type GoogleOAuthClient,
@@ -138,6 +141,44 @@ describe("GoogleAuthAdapter", () => {
       // consent must stay so the exchange still returns a refresh token.
       expect(client.authUrlOptions[0].prompt).toBe("select_account consent");
       expect(client.authUrlOptions[0].access_type).toBe("offline");
+    });
+
+    it("appends optional feature scopes after the base scopes", () => {
+      const client = new FakeGoogleClient();
+      const { adapter } = adapterWith(client);
+
+      adapter.buildAuthorizationUrl({
+        state: "opaque-state",
+        redirectUri: "https://staging.example.com/sync/google",
+        extraScopes: CONTACTS_FEATURE_SCOPES,
+      });
+
+      expect(client.authUrlOptions[0].scope).toEqual([
+        ...GOOGLE_SCOPES,
+        "https://www.googleapis.com/auth/contacts.readonly",
+        "https://www.googleapis.com/auth/contacts.other.readonly",
+      ]);
+    });
+
+    it("builds a byte-identical consent URL when no extra scopes are asked for", () => {
+      const client = new FakeGoogleClient();
+      const { adapter } = adapterWith(client);
+
+      const withoutField = adapter.buildAuthorizationUrl({
+        state: "opaque-state",
+        redirectUri: "https://staging.example.com/sync/google",
+      });
+      const emptyList = adapter.buildAuthorizationUrl({
+        state: "opaque-state",
+        redirectUri: "https://staging.example.com/sync/google",
+        extraScopes: [],
+      });
+
+      // The optional-scope rollout must not change what a plain connect asks
+      // Google for — same URL, base scopes only.
+      expect(emptyList).toBe(withoutField);
+      expect(client.authUrlOptions[0].scope).toEqual([...GOOGLE_SCOPES]);
+      expect(client.authUrlOptions[1].scope).toEqual([...GOOGLE_SCOPES]);
     });
   });
 

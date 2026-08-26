@@ -1,0 +1,242 @@
+import { people } from "@googleapis/people";
+import { OAuth2Client } from "google-auth-library";
+import {
+  CONTACT_SUGGESTION_MAX_RESULTS,
+  type ContactSuggestion,
+} from "@core/types/contact.contracts";
+import {
+  googleErrorReasons,
+  googleFailureCause,
+  googleStatus,
+} from "@sync/providers/google/google-error";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
+import {
+  type ContactsPort,
+  ContactsSearchError,
+  type ContactsSearchInput,
+} from "@sync/providers/provider-contacts.port";
+
+// One People search match, narrowed to the two fields suggestions are allowed
+// to carry. Everything else a Person holds (photos, phones, metadata) is
+// dropped at this boundary and never enters Sync.
+export interface GooglePeoplePersonMatch {
+  readonly person?: {
+    readonly names?: ReadonlyArray<{
+      readonly displayName?: string | null;
+      readonly metadata?: { readonly primary?: boolean | null } | null;
+    }> | null;
+    readonly emailAddresses?: ReadonlyArray<{
+      readonly value?: string | null;
+      readonly metadata?: { readonly primary?: boolean | null } | null;
+    }> | null;
+  } | null;
+}
+
+export interface GooglePeopleSearchPage {
+  readonly results: readonly GooglePeoplePersonMatch[];
+}
+
+// The two People calls the adapter makes, one per contacts surface. Depending
+// on this narrow interface (not the concrete googleapis client) lets tests
+// supply scripted results without a network round-trip or module mocking.
+export interface GooglePeopleApi {
+  // Saved contacts (`people.searchContacts`, requires contacts.readonly).
+  searchContacts(params: {
+    query: string;
+    pageSize: number;
+    readMask: string;
+  }): Promise<GooglePeopleSearchPage>;
+  // Interacted-with addresses (`otherContacts.search`, requires
+  // contacts.other.readonly).
+  searchOtherContacts(params: {
+    query: string;
+    pageSize: number;
+    readMask: string;
+  }): Promise<GooglePeopleSearchPage>;
+}
+
+// Built per-request from a short-lived access token minted by credential
+// custody; the token is set as the OAuth client's credential, never logged.
+// Mirrors GoogleOAuthClientFactory / GoogleEventListApiFactory.
+export type GooglePeopleApiFactory = (accessToken: string) => GooglePeopleApi;
+
+// Only the fields the suggestion shape uses — asking for more would pull
+// contact data Sync has no business holding.
+const PEOPLE_READ_MASK = "names,emailAddresses";
+
+const defaultApiFactory: GooglePeopleApiFactory = (accessToken) => {
+  const auth = new OAuth2Client();
+  auth.setCredentials({ access_token: accessToken });
+  const client = people({
+    version: "v1",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
+  return {
+    async searchContacts({ query, pageSize, readMask }) {
+      const { data } = await client.people.searchContacts({
+        query,
+        pageSize,
+        readMask,
+      });
+      return { results: data.results ?? [] };
+    },
+    async searchOtherContacts({ query, pageSize, readMask }) {
+      const { data } = await client.otherContacts.search({
+        query,
+        pageSize,
+        readMask,
+      });
+      return { results: data.results ?? [] };
+    },
+  };
+};
+
+// Google implementation of the contacts port. Queries ONLY the People surfaces
+// the caller's granted scopes allow, merges both result sets, ranks them by
+// how directly they match the typed prefix, and de-duplicates by email. The
+// output carries email + displayName and nothing else.
+export class GooglePeopleAdapter implements ContactsPort {
+  #makeApi: GooglePeopleApiFactory;
+
+  constructor(makeApi: GooglePeopleApiFactory = defaultApiFactory) {
+    this.#makeApi = makeApi;
+  }
+
+  async searchContacts(
+    input: ContactsSearchInput,
+  ): Promise<ContactSuggestion[]> {
+    // Nothing granted, nothing to query — don't even build a client.
+    if (!input.sources.contacts && !input.sources.otherContacts) return [];
+
+    const api = this.#makeApi(input.accessToken);
+    const params = {
+      query: input.query,
+      pageSize: CONTACT_SUGGESTION_MAX_RESULTS,
+      readMask: PEOPLE_READ_MASK,
+    };
+
+    // Saved contacts first: they are the stronger signal, and rankSuggestions
+    // preserves this order among equal ranks.
+    const calls: Array<Promise<GooglePeopleSearchPage>> = [];
+    if (input.sources.contacts) calls.push(api.searchContacts(params));
+    if (input.sources.otherContacts)
+      calls.push(api.searchOtherContacts(params));
+
+    let pages: GooglePeopleSearchPage[];
+    try {
+      pages = await Promise.all(calls);
+    } catch (error) {
+      throw toContactsSearchError(error);
+    }
+
+    const candidates = pages.flatMap((page) =>
+      page.results.flatMap((match) => toSuggestions(match)),
+    );
+    return rankSuggestions(candidates, input.query).slice(
+      0,
+      CONTACT_SUGGESTION_MAX_RESULTS,
+    );
+  }
+}
+
+// Map one matched person to suggestion candidates — one per usable email
+// address, primary first, each carrying the person's primary display name.
+// Anything unusable (no email, over the contract's bounds) is dropped, not
+// erred: a malformed contact must not break the whole suggestion list.
+function toSuggestions(match: GooglePeoplePersonMatch): ContactSuggestion[] {
+  const person = match.person;
+  if (!person) return [];
+
+  const names = person.names ?? [];
+  const rawName = (
+    names.find((name) => name.metadata?.primary)?.displayName ??
+    names[0]?.displayName ??
+    ""
+  ).trim();
+  const displayName =
+    rawName.length > 0 && rawName.length <= 256 ? rawName : null;
+
+  const addresses = [...(person.emailAddresses ?? [])].sort(
+    (a, b) =>
+      Number(b.metadata?.primary ?? false) -
+      Number(a.metadata?.primary ?? false),
+  );
+  const suggestions: ContactSuggestion[] = [];
+  for (const address of addresses) {
+    const email = (address.value ?? "").trim();
+    if (email.length === 0 || email.length > 320) continue;
+    suggestions.push({ email, displayName });
+  }
+  return suggestions;
+}
+
+// Rank by how directly the suggestion matches the typed prefix: email or name
+// prefix match first, then substring match, then the provider's own relevance
+// order. The sort is stable, so equal ranks keep source order (saved contacts
+// ahead of other contacts). De-duplicates by case-insensitive email, keeping
+// the best-ranked (first) occurrence.
+function rankSuggestions(
+  candidates: readonly ContactSuggestion[],
+  query: string,
+): ContactSuggestion[] {
+  const needle = query.trim().toLowerCase();
+  const rank = (suggestion: ContactSuggestion): number => {
+    const email = suggestion.email.toLowerCase();
+    const name = suggestion.displayName?.toLowerCase() ?? "";
+    if (email.startsWith(needle) || name.startsWith(needle)) return 0;
+    if (email.includes(needle) || name.includes(needle)) return 1;
+    return 2;
+  };
+
+  const ranked = candidates
+    .map((suggestion, index) => ({ suggestion, index, rank: rank(suggestion) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index);
+
+  const seen = new Set<string>();
+  const unique: ContactSuggestion[] = [];
+  for (const { suggestion } of ranked) {
+    const key = suggestion.email.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(suggestion);
+  }
+  return unique;
+}
+
+// Google's quota refusals worth backing off on, as opposed to backendError /
+// internalError (transient server faults, classified searchFailed below).
+const RATE_LIMIT_REASONS = [
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "quotaExceeded",
+  "dailyLimitExceeded",
+];
+
+// Classify a failed People call. The cause keeps only response-derived triage
+// facts (HTTP status, Google's machine-readable reason) — never the request,
+// the query, or any contact content.
+function toContactsSearchError(error: unknown): ContactsSearchError {
+  const status = googleStatus(error);
+  const reasons = googleErrorReasons(error);
+  if (
+    status === 429 ||
+    reasons.some((reason) => RATE_LIMIT_REASONS.includes(reason))
+  ) {
+    return new ContactsSearchError(
+      "rateLimited",
+      "Google throttled the contact search",
+      { cause: googleFailureCause(error) },
+    );
+  }
+  if (status === 401 || status === 403) {
+    return new ContactsSearchError(
+      "unauthorized",
+      "Google refused the contact search credential or scope",
+      { cause: googleFailureCause(error) },
+    );
+  }
+  return new ContactsSearchError("searchFailed", "Contact search failed", {
+    cause: googleFailureCause(error),
+  });
+}

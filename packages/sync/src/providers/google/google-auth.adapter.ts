@@ -65,6 +65,7 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     state: string;
     redirectUri: string;
     selectAccount?: boolean;
+    extraScopes?: readonly string[];
   }): string {
     return this.#makeClient(input.redirectUri).generateAuthUrl({
       // offline + consent guarantees a refresh token even on re-authorization,
@@ -75,7 +76,9 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
       access_type: "offline",
       prompt: input.selectAccount ? "select_account consent" : "consent",
       include_granted_scopes: true,
-      scope: [...GOOGLE_SCOPES],
+      // Base scopes always; optional feature scopes (e.g. contacts) only when
+      // the caller asked for them, so a plain connect URL stays byte-identical.
+      scope: [...GOOGLE_SCOPES, ...(input.extraScopes ?? [])],
       state: input.state,
     });
   }

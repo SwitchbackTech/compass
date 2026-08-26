@@ -17,6 +17,10 @@ const EVENT_CONTENT_PATTERNS: readonly RegExp[] = [
   /"attendees"\s*:\s*\[/i,
   /"conferenceData"\s*:/i,
   /"hangoutLink"\s*:/i,
+  // People API shapes (WP-05 contact suggestions). A person payload or a
+  // suggestion list serialized into a log/error is a contact-data leak.
+  /"emailAddresses"\s*:/i,
+  /"suggestions"\s*:\s*\[\s*\{/i,
 ];
 
 export type SafetyCanaryKind = "secret" | "eventContent";

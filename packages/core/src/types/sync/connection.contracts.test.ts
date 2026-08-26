@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import {
   CalendarAccessRoleSchema,
   CalendarListQuerySchema,
+  ConnectionBeginFeaturesSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
   GoogleConnectionAdoptionRequestSchema,
@@ -165,6 +166,24 @@ describe("Sync connection contracts", () => {
         "actionRequired",
         "disconnected",
       ]);
+    });
+  });
+
+  describe("ConnectionBeginFeaturesSchema", () => {
+    it("accepts the contacts feature and an empty list", () => {
+      expect(
+        ConnectionBeginFeaturesSchema.safeParse(["contacts"]).success,
+      ).toBe(true);
+      expect(ConnectionBeginFeaturesSchema.safeParse([]).success).toBe(true);
+    });
+
+    it("rejects unknown features and non-array shapes", () => {
+      expect(
+        ConnectionBeginFeaturesSchema.safeParse(["telepathy"]).success,
+      ).toBe(false);
+      expect(ConnectionBeginFeaturesSchema.safeParse("contacts").success).toBe(
+        false,
+      );
     });
   });
 

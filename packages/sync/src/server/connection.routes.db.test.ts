@@ -85,11 +85,13 @@ class FakeAuthAdapter implements ProviderAuthAdapter {
     state: string;
     redirectUri: string;
     selectAccount?: boolean;
+    extraScopes?: readonly string[];
   }> = [];
   buildAuthorizationUrl(input: {
     state: string;
     redirectUri: string;
     selectAccount?: boolean;
+    extraScopes?: readonly string[];
   }): string {
     this.authorizations.push(input);
     return `https://consent.example.com/?state=${input.state}`;
@@ -608,6 +610,52 @@ describe("POST /internal/connections/begin", () => {
     expect(res.status).toBe(400);
   });
 
+  it("asks for both contacts scopes when begin carries the contacts feature", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, principalId, {
+      features: ["contacts"],
+    });
+
+    expect(res.status).toBe(200);
+    expect(adapter.authorizations[0].extraScopes).toEqual([
+      "https://www.googleapis.com/auth/contacts.readonly",
+      "https://www.googleapis.com/auth/contacts.other.readonly",
+    ]);
+  });
+
+  it("keeps a plain begin's adapter input identical to before features existed", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    // No features field, and an explicitly empty one — both must produce the
+    // pre-WP-05 adapter input: no extraScopes key at all, so the consent URL
+    // is byte-identical to a plain connect.
+    await begin(tenantId, principalId);
+    await begin(tenantId, principalId, { features: [] });
+
+    for (const authorization of adapter.authorizations) {
+      expect("extraScopes" in authorization).toBe(false);
+    }
+  });
+
+  it("rejects an unknown feature", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, principalId, {
+      features: ["telepathy"],
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "invalid_features" });
+    expect(adapter.authorizations).toHaveLength(0);
+  });
+
   it("refuses to begin in passive mode", async () => {
     const tenantId = objectId();
     const principalId = objectId();
@@ -700,6 +748,54 @@ describe("GET /sync/google", () => {
 
     const stored = await credentials.findByConnection(linked[0]._id);
     expect(stored?.refreshToken).toBe("granted-refresh-token");
+  });
+
+  it("derives suggestContacts when the callback's grant includes a contacts scope", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    // A partial contacts grant (only other-contacts) still counts.
+    adapter.exchangeResult = {
+      ...adapter.exchangeResult,
+      grantedScopes: [
+        ...adapter.exchangeResult.grantedScopes,
+        "https://www.googleapis.com/auth/contacts.other.readonly",
+      ],
+    };
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    expect(statusOf(res)).toBe("connected");
+    const [linked] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(linked.capabilities).toContain("suggestContacts");
+    // The granted scopes ride the credential for the suggestions route.
+    const stored = await credentials.findByConnection(linked._id);
+    expect(stored?.scopes).toContain(
+      "https://www.googleapis.com/auth/contacts.other.readonly",
+    );
+  });
+
+  it("derives no suggestContacts when contacts scopes were left unchecked", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    // Declining the optional scopes is a NORMAL connect, not an error.
+    expect(statusOf(res)).toBe("connected");
+    const [linked] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(linked.capabilities).not.toContain("suggestContacts");
   });
 
   it("enqueues calendar-list discovery to bootstrap the new connection", async () => {
