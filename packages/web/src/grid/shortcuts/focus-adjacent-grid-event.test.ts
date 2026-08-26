@@ -4,13 +4,19 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   getChronologicallyAdjacentTarget,
+  getNearestTargetToNow,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { describe, expect, it } from "bun:test";
 
-const event = (id: string, startDate: string, isAllDay = false): GridEvent => ({
+const event = (
+  id: string,
+  startDate: string,
+  isAllDay = false,
+  endDate?: string,
+): GridEvent => ({
   _id: id,
-  endDate: isAllDay ? "2026-05-21" : "2026-05-20T10:00:00.000",
+  endDate: endDate ?? (isAllDay ? "2026-05-21" : "2026-05-20T10:00:00.000"),
   isAllDay,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
@@ -183,5 +189,196 @@ describe("getSpatiallyAdjacentTarget", () => {
     });
 
     expect(next?.eventId).toBe("wed-noon");
+  });
+});
+
+describe("getNearestTargetToNow", () => {
+  const now = dayjs("2026-05-20T12:00:00.000");
+
+  it("returns null when nothing is visible", () => {
+    expect(
+      getNearestTargetToNow({
+        allDayEvents: [],
+        now,
+        timedEvents: [event("a", "2026-05-20T09:00:00.000")],
+        visible: [],
+      }),
+    ).toBeNull();
+  });
+
+  it("picks the overlapping timed event over earlier and later ones", () => {
+    const earlier = target("earlier", "timed");
+    const overlapping = target("now", "timed");
+    const later = target("later", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [],
+      now,
+      timedEvents: [
+        event(
+          "earlier",
+          "2026-05-20T09:00:00.000",
+          false,
+          "2026-05-20T10:00:00.000",
+        ),
+        event(
+          "now",
+          "2026-05-20T11:00:00.000",
+          false,
+          "2026-05-20T13:00:00.000",
+        ),
+        event(
+          "later",
+          "2026-05-20T15:00:00.000",
+          false,
+          "2026-05-20T16:00:00.000",
+        ),
+      ],
+      visible: [later, earlier, overlapping],
+    });
+
+    expect(picked?.eventId).toBe("now");
+  });
+
+  it("picks the overlapping event that ends soonest", () => {
+    const longer = target("longer", "timed");
+    const shorter = target("shorter", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [],
+      now,
+      timedEvents: [
+        event(
+          "longer",
+          "2026-05-20T11:00:00.000",
+          false,
+          "2026-05-20T14:00:00.000",
+        ),
+        event(
+          "shorter",
+          "2026-05-20T11:30:00.000",
+          false,
+          "2026-05-20T12:30:00.000",
+        ),
+      ],
+      visible: [longer, shorter],
+    });
+
+    expect(picked?.eventId).toBe("shorter");
+  });
+
+  it("picks the next upcoming event when nothing overlaps now", () => {
+    const morning = target("morning", "timed");
+    const afternoon = target("afternoon", "timed");
+    const evening = target("evening", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [],
+      now,
+      timedEvents: [
+        event(
+          "morning",
+          "2026-05-20T09:00:00.000",
+          false,
+          "2026-05-20T10:00:00.000",
+        ),
+        event(
+          "afternoon",
+          "2026-05-20T15:00:00.000",
+          false,
+          "2026-05-20T16:00:00.000",
+        ),
+        event(
+          "evening",
+          "2026-05-20T17:00:00.000",
+          false,
+          "2026-05-20T18:00:00.000",
+        ),
+      ],
+      visible: [evening, morning, afternoon],
+    });
+
+    expect(picked?.eventId).toBe("afternoon");
+  });
+
+  it("picks the most recently ended event when every candidate is past", () => {
+    const morning = target("morning", "timed");
+    const afternoon = target("afternoon", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [],
+      now: dayjs("2026-05-20T18:00:00.000"),
+      timedEvents: [
+        event(
+          "morning",
+          "2026-05-20T09:00:00.000",
+          false,
+          "2026-05-20T10:00:00.000",
+        ),
+        event(
+          "afternoon",
+          "2026-05-20T15:00:00.000",
+          false,
+          "2026-05-20T16:00:00.000",
+        ),
+      ],
+      visible: [morning, afternoon],
+    });
+
+    expect(picked?.eventId).toBe("afternoon");
+  });
+
+  it("restricts to today when any candidate is today", () => {
+    const wednesdayMorning = target("wed-am", "timed");
+    const thursdayAfternoon = target("thu-pm", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [],
+      now,
+      timedEvents: [
+        event(
+          "wed-am",
+          "2026-05-20T09:00:00.000",
+          false,
+          "2026-05-20T10:00:00.000",
+        ),
+        event(
+          "thu-pm",
+          "2026-05-21T15:00:00.000",
+          false,
+          "2026-05-21T16:00:00.000",
+        ),
+      ],
+      visible: [thursdayAfternoon, wednesdayMorning],
+    });
+
+    expect(picked?.eventId).toBe("wed-am");
+  });
+
+  it("prefers timed events over all-day even when all-day covers today", () => {
+    const allDay = target("all", "all-day");
+    const timed = target("timed", "timed");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [event("all", "2026-05-20", true)],
+      now,
+      timedEvents: [
+        event(
+          "timed",
+          "2026-05-20T15:00:00.000",
+          false,
+          "2026-05-20T16:00:00.000",
+        ),
+      ],
+      visible: [allDay, timed],
+    });
+
+    expect(picked?.eventId).toBe("timed");
+  });
+
+  it("falls back to all-day when no timed candidate is visible", () => {
+    const allDay = target("all", "all-day");
+    const picked = getNearestTargetToNow({
+      allDayEvents: [event("all", "2026-05-20", true)],
+      now,
+      timedEvents: [],
+      visible: [allDay],
+    });
+
+    expect(picked?.eventId).toBe("all");
   });
 });
