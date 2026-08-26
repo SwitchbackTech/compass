@@ -7,9 +7,9 @@ import { TimePicker } from "./TimePicker";
 import { describe, expect, it } from "bun:test";
 
 const intervalOptions: SelectOption<string>[] = [
-  { value: "13:00", label: "1 PM" },
-  { value: "13:15", label: "1:15 PM" },
-  { value: "13:30", label: "1:30 PM" },
+  { value: "1:00 PM", label: "1 PM" },
+  { value: "1:15 PM", label: "1:15 PM" },
+  { value: "1:30 PM", label: "1:30 PM" },
 ];
 const dayOptions = getTimeOptions();
 const onePm = { label: "1 PM", value: "1:00 PM" };

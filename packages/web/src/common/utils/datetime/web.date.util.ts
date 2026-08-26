@@ -165,14 +165,16 @@ export const parseUserTime = (
     parsed.hour() <= 12
   ) {
     const current = getDayjsByTimeValue(currentValue);
-    const currentIsPM = current.hour() >= 12;
+    if (current.isValid()) {
+      const currentIsPM = current.hour() >= 12;
 
-    if (currentIsPM && parsed.hour() !== 12) {
-      // Current is PM (1-11 PM), so adjust parsed AM hour to PM
-      parsed = parsed.add(12, "hour");
-    } else if (!currentIsPM && parsed.hour() === 12) {
-      // Current is AM, parsed is 12 (12 AM/PM ambiguous), so 12 AM
-      parsed = parsed.subtract(12, "hour");
+      if (currentIsPM && parsed.hour() !== 12) {
+        // Current is PM (1-11 PM), so adjust parsed AM hour to PM
+        parsed = parsed.add(12, "hour");
+      } else if (!currentIsPM && parsed.hour() === 12) {
+        // Current is AM, parsed is 12 (12 AM/PM ambiguous), so 12 AM
+        parsed = parsed.subtract(12, "hour");
+      }
     }
   }
 
