@@ -5,88 +5,18 @@ import {
   availabilityActions,
   useAvailabilityStore,
 } from "./availability.store";
+import { COPY_AVAILABILITY_LABEL } from "./availability-slot.focus";
 
+/**
+ * Only the keys that must work wherever focus sits - including after the last
+ * pick is accepted and focus has moved to the Copy button. Repositioning,
+ * accepting, Tab and add/remove are handled on the grid overlay itself, where
+ * DOM focus is: registering them globally as well would fire them twice and
+ * fight the focused button's native Enter/Space activation.
+ */
 export function useAvailabilityShortcuts() {
-  const state = useAvailabilityStore();
-  const enabled = state.isOpen;
-  const activeIndex = state.slots.findIndex(({ id }) => id === state.activeId);
-  const move = (delta: number) => {
-    if (!state.slots.length) return;
-    const next =
-      state.slots[
-        (activeIndex + delta + state.slots.length) % state.slots.length
-      ];
-    if (next) availabilityActions.setActive(next.id);
-  };
-  const moveHorizontal = (delta: -1 | 1) => {
-    const active = state.slots[activeIndex];
-    if (!active) return;
-    const activeDate = new Date(active.start);
-    const activeDay = activeDate.toLocaleDateString("en-CA", {
-      timeZone: state.sourceZone,
-    });
-    const activeMinutes = Number(
-      new Intl.DateTimeFormat("en-US", {
-        timeZone: state.sourceZone,
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      })
-        .format(activeDate)
-        .replace(":", ""),
-    );
-    const days = [
-      ...new Set(
-        state.slots.map((slot) =>
-          new Date(slot.start).toLocaleDateString("en-CA", {
-            timeZone: state.sourceZone,
-          }),
-        ),
-      ),
-    ];
-    const dayIndex = days.indexOf(activeDay);
-    const targetDay = days[dayIndex + delta];
-    if (!targetDay) return;
-    const nearest = state.slots
-      .filter(
-        (slot) =>
-          new Date(slot.start).toLocaleDateString("en-CA", {
-            timeZone: state.sourceZone,
-          }) === targetDay,
-      )
-      .sort((a, b) => {
-        const value = (slot: typeof a) =>
-          Number(
-            new Intl.DateTimeFormat("en-US", {
-              timeZone: state.sourceZone,
-              hour: "2-digit",
-              minute: "2-digit",
-              hourCycle: "h23",
-            })
-              .format(new Date(slot.start))
-              .replace(":", ""),
-          );
-        return (
-          Math.abs(value(a) - activeMinutes) -
-          Math.abs(value(b) - activeMinutes)
-        );
-      })[0];
-    if (nearest) availabilityActions.setActive(nearest.id);
-  };
-  useAppShortcut("ArrowUp", () => move(-1), { enabled });
-  useAppShortcut("ArrowDown", () => move(1), { enabled });
-  useAppShortcut("ArrowLeft", () => moveHorizontal(-1), { enabled });
-  useAppShortcut("ArrowRight", () => moveHorizontal(1), { enabled });
-  useAppShortcut(
-    "Enter",
-    () => state.activeId && availabilityActions.toggle(state.activeId),
-    { enabled },
-  );
-  useAppShortcut(
-    "Space",
-    () => state.activeId && availabilityActions.toggle(state.activeId),
-    { enabled },
-  );
+  const enabled = useAvailabilityStore((state) => state.isOpen);
+
   useAppShortcut(
     "Z",
     () =>
@@ -97,13 +27,16 @@ export function useAvailabilityShortcuts() {
       ),
     { enabled },
   );
+  useAppShortcut("Shift+Z", () => availabilityActions.setRecipientZone(null), {
+    enabled,
+  });
   useAppShortcut("Escape", availabilityActions.close, { enabled });
   useAppShortcut(
     "Mod+C",
     () =>
       document
         .querySelector<HTMLButtonElement>(
-          "[aria-label='Copy availability to clipboard']",
+          `[aria-label='${COPY_AVAILABILITY_LABEL}']`,
         )
         ?.click(),
     { enabled },

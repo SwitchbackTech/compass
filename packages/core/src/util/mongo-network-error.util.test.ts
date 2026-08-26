@@ -34,6 +34,22 @@ describe("isTransientMongoNetworkError", () => {
     expect(isTransientMongoNetworkError(new Error("read ECONNRESET"))).toBe(
       true,
     );
+    expect(
+      isTransientMongoNetworkError(
+        new Error("connection 15 to 35.193.60.195:27017 closed"),
+      ),
+    ).toBe(true);
+  });
+
+  it("matches a named MongoNetworkError for a closed pooled connection", () => {
+    expect(
+      isTransientMongoNetworkError(
+        namedError(
+          "MongoNetworkError",
+          "connection 15 to 35.193.60.195:27017 closed",
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("matches server selection only when the cause/message is a network blip", () => {

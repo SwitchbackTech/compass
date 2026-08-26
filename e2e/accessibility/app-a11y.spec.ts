@@ -26,6 +26,18 @@ test("week view renders with no automatically detectable accessibility violation
   await expectNoAxeViolations(page, { checkpoint: "week view" });
 });
 
+test("the share availability panel is accessible when open", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await page.keyboard.press("a");
+  await expect(
+    page.getByRole("region", { name: "Share availability" }),
+  ).toBeVisible();
+
+  await expectNoAxeViolations(page, { checkpoint: "share availability open" });
+});
+
 test("the timed event form is accessible when open", async ({ page }) => {
   await prepareCalendarPage(page);
   await openTimedEventFormWithKeyboard(page);

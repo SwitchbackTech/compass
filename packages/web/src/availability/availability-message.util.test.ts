@@ -23,7 +23,7 @@ describe("formatAvailabilityMessage", () => {
     ).toBe(EMPTY_AVAILABILITY_MESSAGE);
   });
 
-  it("merges adjacent slots and formats the exact single-zone document", () => {
+  it("merges adjacent slots and omits the redundant per-bullet zone", () => {
     expect(
       formatAvailabilityMessage({
         slots: [
@@ -36,7 +36,7 @@ describe("formatAvailabilityMessage", () => {
         hourCycle: "h12",
       }),
     ).toBe(
-      "Do any of these times (MDT) work for you?\n\nAugust 27 (Thursday):\n- 10:00am–11:00am (MDT)\n- 2:00pm–2:30pm (MDT)",
+      "Do any of these times (MDT) work for you?\n\nAugust 27 (Thursday):\n- 10:00am–11:00am\n- 2:00pm–2:30pm",
     );
   });
 
@@ -50,6 +50,18 @@ describe("formatAvailabilityMessage", () => {
         hourCycle: "h12",
       }),
     ).toContain("- 11:30pm–12:00am (MST) / Mar 7, 6:30am–7:00am (GMT)");
+  });
+
+  it("keeps the per-bullet zone when a recipient zone is present", () => {
+    expect(
+      formatAvailabilityMessage({
+        slots: [slot("2026-08-27T16:00:00.000Z", "2026-08-27T16:30:00.000Z")],
+        sourceTimeZone: "America/Denver",
+        recipientTimeZone: "Europe/London",
+        now: new Date("2026-06-01T00:00:00Z"),
+        hourCycle: "h12",
+      }),
+    ).toContain("- 10:00am–10:30am (MDT) / 5:00pm–5:30pm (");
   });
 
   it("uses compact zone labels when selected intervals span DST abbreviations", () => {

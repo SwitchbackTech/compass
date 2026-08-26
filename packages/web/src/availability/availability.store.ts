@@ -1,14 +1,28 @@
 import { create } from "zustand";
 import { track } from "@web/auth/posthog/track";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
-import { type AvailabilitySlot } from "./availability-slot.util";
+import {
+  type AvailabilitySlot,
+  stepAvailabilityCandidateByDay,
+  stepAvailabilityCandidateByTime,
+} from "./availability-slot.util";
 
 export interface AvailabilityState {
   isOpen: boolean;
   sourceZone: string;
   recipientZone: string | null;
+  /**
+   * Every free block in the visible range. This stays the single source of
+   * truth for what is offerable; `pickIds` is a view onto it, so repositioning
+   * can never land on busy time.
+   */
   slots: AvailabilitySlot[];
-  activeId: string | null;
+  /** Candidate ids currently offered, in the order they were placed. */
+  pickIds: string[];
+  /** Which pick the grid focus and the arrow keys act on. */
+  activePickIndex: number;
+  /** Picks the user pressed Enter on - styling and progress only. */
+  acceptedIds: string[];
   copied: boolean;
   status: "idle" | "loading" | "ready" | "error";
   announcement: string;
@@ -19,7 +33,9 @@ export const initialAvailabilityState: AvailabilityState = {
   sourceZone: "UTC",
   recipientZone: null,
   slots: [],
-  activeId: null,
+  pickIds: [],
+  activePickIndex: 0,
+  acceptedIds: [],
   copied: false,
   status: "idle",
   announcement: "",
@@ -29,16 +45,65 @@ export const useAvailabilityStore = create<AvailabilityState>()(
   () => initialAvailabilityState,
 );
 
+const pickIdsFrom = (slots: readonly AvailabilitySlot[]) =>
+  slots.filter(({ selected }) => selected).map(({ id }) => id);
+
+/** `selected` is derived from `pickIds` so the two can never disagree. */
+const withSelection = (
+  slots: readonly AvailabilitySlot[],
+  pickIds: readonly string[],
+): AvailabilitySlot[] => {
+  const picked = new Set(pickIds);
+  return slots.map((slot) => ({ ...slot, selected: picked.has(slot.id) }));
+};
+
+/** Picks in chronological order - the order the message reads in. */
+const sortPickIds = (
+  pickIds: readonly string[],
+  slots: readonly AvailabilitySlot[],
+) => {
+  const order = new Map(slots.map(({ id }, index) => [id, index]));
+  return [...pickIds].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+};
+
+const replaceActivePick = (
+  state: AvailabilityState,
+  next: AvailabilitySlot | null,
+) => {
+  if (!next) return state;
+  const current = state.pickIds[state.activePickIndex];
+  if (!current) return state;
+  const pickIds = sortPickIds(
+    state.pickIds.map((id) => (id === current ? next.id : id)),
+    state.slots,
+  );
+  return {
+    ...state,
+    pickIds,
+    slots: withSelection(state.slots, pickIds),
+    // A pick that moves past its neighbour keeps focus by following its id.
+    activePickIndex: pickIds.indexOf(next.id),
+    acceptedIds: state.acceptedIds.map((id) => (id === current ? next.id : id)),
+  };
+};
+
+const stepOptions = (state: AvailabilityState) => ({
+  slots: state.slots,
+  fromId: state.pickIds[state.activePickIndex] ?? "",
+  taken: state.pickIds.filter((_, index) => index !== state.activePickIndex),
+  timeZone: state.sourceZone,
+});
+
 export const availabilityActions = {
   open(slots: AvailabilitySlot[] = []) {
     track("availability_opened");
-    const selected = slots.find((slot) => slot.selected) ?? slots[0];
+    const pickIds = pickIdsFrom(slots);
     useAvailabilityStore.setState({
       ...initialAvailabilityState,
       isOpen: true,
       sourceZone: getEffectiveTimeZone(),
       slots,
-      activeId: selected?.id ?? null,
+      pickIds,
     });
   },
   close() {
@@ -46,20 +111,32 @@ export const availabilityActions = {
     if (state.isOpen)
       track("availability_closed", {
         copied: String(state.copied),
-        selected_slot_count: String(
-          state.slots.filter(({ selected }) => selected).length,
-        ),
+        selected_slot_count: String(state.pickIds.length),
       });
     useAvailabilityStore.setState(initialAvailabilityState);
   },
+  /**
+   * A refetch rebuilds the candidate list. Picks that are still free are
+   * carried over by id; the caller announces any that were dropped.
+   */
   setSlots(slots: AvailabilitySlot[]) {
-    const current = useAvailabilityStore.getState();
-    useAvailabilityStore.setState({
-      slots,
-      activeId: slots.some(({ id }) => id === current.activeId)
-        ? current.activeId
-        : ((slots.find((slot) => slot.selected) ?? slots[0])?.id ?? null),
-      status: "ready",
+    useAvailabilityStore.setState((state) => {
+      const available = new Set(slots.map(({ id }) => id));
+      const carried = state.pickIds.filter((id) => available.has(id));
+      const pickIds = sortPickIds(
+        carried.length ? carried : pickIdsFrom(slots),
+        slots,
+      );
+      return {
+        slots: withSelection(slots, pickIds),
+        pickIds,
+        activePickIndex: Math.min(
+          state.activePickIndex,
+          Math.max(0, pickIds.length - 1),
+        ),
+        acceptedIds: state.acceptedIds.filter((id) => pickIds.includes(id)),
+        status: "ready",
+      };
     });
   },
   setStatus(status: AvailabilityState["status"]) {
@@ -68,54 +145,93 @@ export const availabilityActions = {
   announce(announcement: string) {
     useAvailabilityStore.setState({ announcement });
   },
-  selectRange(startId: string, endId: string) {
+  /** Reposition the active pick to the previous/next free block. */
+  movePickByTime(delta: -1 | 1) {
+    useAvailabilityStore.setState((state) =>
+      replaceActivePick(
+        state,
+        stepAvailabilityCandidateByTime(delta, stepOptions(state)),
+      ),
+    );
+  },
+  /** Reposition the active pick to the nearest free block a day away. */
+  movePickByDay(delta: -1 | 1) {
+    useAvailabilityStore.setState((state) =>
+      replaceActivePick(
+        state,
+        stepAvailabilityCandidateByDay(delta, stepOptions(state)),
+      ),
+    );
+  },
+  /**
+   * Accept the active pick and advance. Returns true when the last pick was
+   * accepted, so the caller can move focus on to Copy.
+   */
+  acceptPick(): boolean {
+    const state = useAvailabilityStore.getState();
+    const active = state.pickIds[state.activePickIndex];
+    if (!active) return true;
+    const isLast = state.activePickIndex >= state.pickIds.length - 1;
+    useAvailabilityStore.setState({
+      acceptedIds: state.acceptedIds.includes(active)
+        ? state.acceptedIds
+        : [...state.acceptedIds, active],
+      activePickIndex: isLast
+        ? state.activePickIndex
+        : state.activePickIndex + 1,
+    });
+    track("availability_slot_accepted", {
+      accepted_count: String(state.acceptedIds.length + 1),
+    });
+    return isLast;
+  },
+  /** Tab / Shift+Tab between picks. Stops at the ends rather than wrapping. */
+  focusPick(delta: -1 | 1) {
+    useAvailabilityStore.setState((state) => ({
+      activePickIndex: Math.min(
+        Math.max(state.activePickIndex + delta, 0),
+        Math.max(0, state.pickIds.length - 1),
+      ),
+    }));
+  },
+  setActivePickIndex(activePickIndex: number) {
+    useAvailabilityStore.setState({ activePickIndex });
+  },
+  /** Offer one more time, placed on the first free block no pick holds. */
+  addPick() {
     useAvailabilityStore.setState((state) => {
-      const start = state.slots.findIndex(({ id }) => id === startId);
-      const end = state.slots.findIndex(({ id }) => id === endId);
-      if (start < 0 || end < 0) return state;
-      const low = Math.min(start, end);
-      const high = Math.max(start, end);
-      const day = new Date(state.slots[start]?.start ?? 0).toLocaleDateString(
-        "en-CA",
-        { timeZone: state.sourceZone },
+      const held = new Set(state.pickIds);
+      const now = Date.now();
+      const next = state.slots.find(
+        (slot) => !held.has(slot.id) && Date.parse(slot.start) >= now,
       );
+      if (!next) return { announcement: "No other free times are available." };
+      const pickIds = sortPickIds([...state.pickIds, next.id], state.slots);
       return {
-        slots: state.slots.map((slot, index) => ({
-          ...slot,
-          selected:
-            slot.selected ||
-            (index >= low &&
-              index <= high &&
-              new Date(slot.start).toLocaleDateString("en-CA", {
-                timeZone: state.sourceZone,
-              }) === day),
-          origin: index >= low && index <= high ? "user" : slot.origin,
-        })),
-        activeId: endId,
+        pickIds,
+        slots: withSelection(state.slots, pickIds),
+        activePickIndex: pickIds.indexOf(next.id),
+        announcement: `Added a time. Offering ${pickIds.length}.`,
       };
     });
+    track("availability_slot_added");
   },
-  toggle(id: string) {
-    const now = Date.now();
-    useAvailabilityStore.setState((state) => ({
-      slots: state.slots.map((slot) =>
-        slot.id === id && new Date(slot.start).getTime() >= now
-          ? { ...slot, selected: !slot.selected, origin: "user" }
-          : slot,
-      ),
-      activeId: id,
-    }));
-    const slot = useAvailabilityStore
-      .getState()
-      .slots.find((item) => item.id === id);
-    if (slot)
-      track("availability_slot_toggled", {
-        selected: String(slot.selected),
-        origin: slot.origin,
-      });
-  },
-  setActive(activeId: string) {
-    useAvailabilityStore.setState({ activeId });
+  /** Drop the focused pick. The last one stays - an empty offer is useless. */
+  removePick() {
+    useAvailabilityStore.setState((state) => {
+      const active = state.pickIds[state.activePickIndex];
+      if (!active || state.pickIds.length <= 1)
+        return { announcement: "Keep at least one time to share." };
+      const pickIds = state.pickIds.filter((id) => id !== active);
+      return {
+        pickIds,
+        slots: withSelection(state.slots, pickIds),
+        activePickIndex: Math.min(state.activePickIndex, pickIds.length - 1),
+        acceptedIds: state.acceptedIds.filter((id) => id !== active),
+        announcement: `Removed a time. Offering ${pickIds.length}.`,
+      };
+    });
+    track("availability_slot_removed");
   },
   setRecipientZone(recipientZone: string | null) {
     const { sourceZone } = useAvailabilityStore.getState();
@@ -132,3 +248,20 @@ export const availabilityActions = {
 
 export const selectAvailabilityOpen = (state: AvailabilityState) =>
   state.isOpen;
+
+/**
+ * Plain helper, not a hook selector: it builds a new array each call, which
+ * would re-render forever through `useAvailabilityStore(selector)` (see the
+ * useShallow note in events/stores/draft.store.ts). Callers already subscribe
+ * to the whole store, so they derive picks through `useMemo` instead.
+ */
+export const getAvailabilityPicks = (
+  state: Pick<AvailabilityState, "pickIds" | "slots">,
+): AvailabilitySlot[] =>
+  state.pickIds.flatMap(
+    (id) => state.slots.find((slot) => slot.id === id) ?? [],
+  );
+
+export const getActivePickId = (
+  state: Pick<AvailabilityState, "pickIds" | "activePickIndex">,
+): string | null => state.pickIds[state.activePickIndex] ?? null;
