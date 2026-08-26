@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { availabilityActions } from "@web/availability/availability.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -16,6 +17,7 @@ import {
   isEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { viewActions } from "@web/events/stores/view.store";
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
@@ -243,6 +245,10 @@ export const useWeekShortcutOwner = ({
     onShiftViewForward: shiftViewForward,
     onGoToToday: toToday,
     onCreateAllDayEvent: createAllDayDraftEvent,
+    onShareAvailability: () => {
+      availabilityActions.open();
+      viewActions.setSidebarOpen(true);
+    },
     onCreateTimedEvent: createTimedDraftEvent,
     onFocusCalendar: focusFirstCalendarEvent,
   });

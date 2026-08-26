@@ -30,6 +30,7 @@ describe("useCalendarViewShortcuts", () => {
     const onNextPeriod = mock();
     const onCreateTimedEvent = mock();
     const onCreateAllDayEvent = mock();
+    const onShareAvailability = mock();
 
     renderHook(
       () =>
@@ -38,6 +39,7 @@ describe("useCalendarViewShortcuts", () => {
           onNextPeriod,
           onCreateTimedEvent,
           onCreateAllDayEvent,
+          onShareAvailability,
         }),
       { wrapper },
     );
@@ -45,12 +47,17 @@ describe("useCalendarViewShortcuts", () => {
     pressKey("j");
     pressKey("k");
     pressKey("c");
+    pressKey("C", {
+      keyDownInit: { shiftKey: true },
+      keyUpInit: { shiftKey: true },
+    });
     pressKey("a");
 
     expect(onPrevPeriod).toHaveBeenCalledTimes(1);
     expect(onNextPeriod).toHaveBeenCalledTimes(1);
     expect(onCreateTimedEvent).toHaveBeenCalledTimes(1);
     expect(onCreateAllDayEvent).toHaveBeenCalledTimes(1);
+    expect(onShareAvailability).toHaveBeenCalledTimes(1);
   });
 
   it("creates a timed event with C", async () => {
@@ -75,7 +82,11 @@ describe("useCalendarViewShortcuts", () => {
     renderHook(() => useCalendarViewShortcuts({ onCreateAllDayEvent }), {
       wrapper,
     });
-    pressKey("A", {}, input);
+    pressKey(
+      "C",
+      { keyDownInit: { shiftKey: true }, keyUpInit: { shiftKey: true } },
+      input,
+    );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(onCreateAllDayEvent).not.toHaveBeenCalled();

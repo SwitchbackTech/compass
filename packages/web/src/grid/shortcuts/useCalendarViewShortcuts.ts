@@ -1,3 +1,4 @@
+import { useAvailabilityStore } from "@web/availability/availability.store";
 import { useGridScrollShortcuts } from "@web/grid/shortcuts/useGridScrollShortcuts";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
@@ -17,6 +18,7 @@ export interface CalendarViewShortcutsConfig {
   onCreateAllDayEvent?: () => void;
   onCreateTimedEvent?: () => void;
   onFocusCalendar?: () => void;
+  onShareAvailability?: () => void;
 }
 
 /**
@@ -30,6 +32,7 @@ export interface CalendarViewShortcutsConfig {
  * the thin key-registration boundary.
  */
 export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
+  const availabilityOpen = useAvailabilityStore((state) => state.isOpen);
   useGridScrollShortcuts();
 
   useAppShortcutUp("J", () => config.onPrevPeriod?.());
@@ -41,14 +44,21 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
     enabled: config.onShiftViewForward !== undefined,
   });
   useAppShortcutUp("T", () => config.onGoToToday?.());
-  useAppShortcutUp("A", () => config.onCreateAllDayEvent?.());
+  useAppShortcutUp("A", () => config.onShareAvailability?.(), {
+    enabled: !availabilityOpen,
+  });
+  useAppShortcutUp("Shift+C", () => config.onCreateAllDayEvent?.(), {
+    enabled: !availabilityOpen,
+  });
   useAppShortcutUp(KEYMAP.createEvent.hotkey, () =>
     config.onCreateTimedEvent?.(),
   );
   useAppShortcutUp("U", () => config.onFocusCalendar?.());
   // Keydown so a macOS Cmd+Z keyup-replay (meta already released) cannot
   // match this binding the way Mod+D vs D does on keyup.
-  useAppShortcut("Z", () =>
-    timezoneDialogActions.open(undefined, "time-travel"),
+  useAppShortcut(
+    "Z",
+    () => timezoneDialogActions.open(undefined, "time-travel"),
+    { enabled: !availabilityOpen },
   );
 }
