@@ -70,7 +70,7 @@ describe("practice state transitions", () => {
     expect(armed.editArmed).toBe(true);
 
     const opened = openTitleFromEdit(armed);
-    expect(opened.editor?.eventId).toBe(focused.focusedId);
+    expect(opened.editor?.eventId).toBe(focused.focusedId ?? undefined);
     expect(opened.editor?.isNew).toBe(false);
     expect(opened.editArmed).toBe(false);
   });
