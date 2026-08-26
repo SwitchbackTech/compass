@@ -12,7 +12,6 @@ export type ProductEvent =
   | "shortcut_showcase_step_completed"
   | "shortcut_showcase_skipped"
   | "shortcut_showcase_finished"
-  | "shortcut_showcase_assist_used"
   | "first_event_prompt_shown"
   | "first_event_prompt_completed"
   | "first_event_prompt_dismissed"

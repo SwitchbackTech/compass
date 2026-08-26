@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import {
-  SHOWCASE_MISSION_IDS,
+  SHOWCASE_LEVEL_IDS,
   SHOWCASE_STEP_IDS,
   type ShowcaseStepId,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -69,7 +69,7 @@ describe("ShortcutShowcase", () => {
 
     act(() => shortcutShowcaseActions.replay());
 
-    const first = screen.getByRole("button", { name: /Do it for me/ });
+    const first = screen.getByRole("button", { name: /Skip to sign up/ });
     expect(first).toHaveFocus();
 
     await user.tab({ shift: true });
@@ -107,13 +107,13 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("teaches create as one motion, then continues to the next mission", async () => {
+  it("teaches create as one motion, then continues to the next level", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
     expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
-    expect(screen.getByText("Mission 1 of 6")).toBeTruthy();
+    expect(screen.getByText("Level 1/6")).toBeTruthy();
 
     pressKey("c");
     expect(currentStepId()).toBe("create");
@@ -125,16 +125,21 @@ describe("ShortcutShowcase", () => {
     );
     expect(currentStepId()).toBe("pageJump");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
-    expect(screen.getByText("Mission 2 of 6")).toBeTruthy();
+    expect(screen.getByText("Level 2/6")).toBeTruthy();
+    expect(
+      screen.getByText("See where to go: reveal the jump keys"),
+    ).toBeTruthy();
   });
 
   it("graduates on Enter from the graduation step", async () => {
     render(<ShortcutShowcase />);
     showStep("graduation");
-    expect(screen.getByText(/young cap'n/)).toBeTruthy();
+    expect(screen.getByText(/you've got this/)).toBeTruthy();
 
-    const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
-    expect(within(enterCompass).queryByText("Enter")).toBeNull();
+    const seeCalendar = screen.getByRole("button", {
+      name: "See your calendar",
+    });
+    expect(within(seeCalendar).queryByText("Enter")).toBeNull();
 
     pressKey("Enter");
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
@@ -154,17 +159,17 @@ describe("ShortcutShowcase", () => {
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
   });
 
-  it("fades the takeover on Enter Compass, then unmounts", async () => {
+  it("fades the takeover on See your calendar, then unmounts", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     showStep("graduation");
 
-    await user.click(screen.getByRole("button", { name: "Enter Compass" }));
+    await user.click(screen.getByRole("button", { name: "See your calendar" }));
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
       "data-closing",
     );
     expect(
-      screen.getByRole("button", { name: "Enter Compass" }),
+      screen.getByRole("button", { name: "See your calendar" }),
     ).toBeDisabled();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
 
@@ -207,8 +212,10 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("'Do it for me' advances one mission at a time through graduation", async () => {
+  it("walks every level with the taught keys, then graduates", async () => {
     const user = userEvent.setup();
+    const isMac = resolveModifier("Mod") === "Meta";
+    const modKey = isMac ? "Meta" : "Control";
     render(
       <>
         <button type="button">Outside calendar</button>
@@ -218,27 +225,50 @@ describe("ShortcutShowcase", () => {
     const outside = screen.getByRole("button", { name: "Outside calendar" });
     act(() => shortcutShowcaseActions.replay());
 
-    for (let i = 0; i < SHOWCASE_MISSION_IDS.length; i += 1) {
-      expect(currentStepId()).toBe(SHOWCASE_MISSION_IDS[i]);
-      await user.click(screen.getByRole("button", { name: "Do it for me" }));
-    }
+    expect(currentStepId()).toBe(SHOWCASE_LEVEL_IDS[0]);
+    pressKey("c");
+    await user.type(
+      screen.getByLabelText("Event title"),
+      "Coffee with Alex{Enter}",
+    );
 
-    // The loop above is untouched by the notifications step: it is not a
-    // mission, so it sits after the last one rather than inside the count.
+    expect(currentStepId()).toBe("pageJump");
+    pressKey(modKey);
+    pressKey("1", { code: "Digit1" });
+
+    expect(currentStepId()).toBe("eventJump");
+    pressKey("s");
+    pressKey("f");
+
+    expect(currentStepId()).toBe("nudge");
+    pressKey("ArrowRight", { shiftKey: true });
+
+    expect(currentStepId()).toBe("editTitle");
+    pressKey("e");
+    pressKey("t");
+    await user.type(screen.getByLabelText("Event title"), "{Enter}");
+
+    expect(currentStepId()).toBe("palette");
+    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
+    pressKey("Enter");
+
     expect(currentStepId()).toBe("notifications");
     await user.click(screen.getByRole("button", { name: "Not now" }));
 
     expect(currentStepId()).toBe("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
-    const enterCompass = screen.getByRole("button", { name: "Enter Compass" });
+    expect(screen.queryByRole("button", { name: /^Skip$/ })).toBeNull();
+    const seeCalendar = screen.getByRole("button", {
+      name: "See your calendar",
+    });
     await waitFor(() => {
-      expect(enterCompass).toHaveFocus();
+      expect(seeCalendar).toHaveFocus();
     });
 
     await user.tab({ shift: true });
     expect(outside).not.toHaveFocus();
     await user.tab();
-    expect(enterCompass).toHaveFocus();
+    expect(seeCalendar).toHaveFocus();
   });
 
   it("does not treat S as skip-to-signup; U leaves for signup", () => {
@@ -246,6 +276,8 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.replay());
 
     pressKey("s");
+    pressKey("d");
+    pressKey("x");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(currentStepId()).toBe("create");
 
@@ -253,7 +285,7 @@ describe("ShortcutShowcase", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("advances the hold-Mod mission after revealing jump keys", () => {
+  it("advances the hold-Mod level after revealing jump keys", () => {
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
     render(<ShortcutShowcase />);
     showStep("pageJump");
@@ -308,8 +340,33 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
 
     pressKey("Enter");
-    // The last mission hands off to the notifications offer, then graduation.
+    // The last level hands off to the notifications offer, then graduation.
     expect(currentStepId()).toBe("notifications");
+  });
+
+  it("does not open the practice palette on Mod+K before the palette level", () => {
+    const isMac = resolveModifier("Mod") === "Meta";
+    render(<ShortcutShowcase />);
+    showStep("create");
+
+    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
+    expect(screen.queryByLabelText("Practice command palette")).toBeNull();
+    expect(currentStepId()).toBe("create");
+  });
+
+  it("Escape closes the practice palette and stays on the palette level", () => {
+    const isMac = resolveModifier("Mod") === "Meta";
+    render(<ShortcutShowcase />);
+    showStep("palette");
+
+    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
+    expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
+
+    pressKey("Escape");
+    expect(screen.queryByLabelText("Practice command palette")).toBeNull();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(currentStepId()).toBe("palette");
+    expect(screen.getByText("When you forget, ask the palette")).toBeTruthy();
   });
 
   it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {
@@ -327,12 +384,12 @@ describe("ShortcutShowcase", () => {
     ).toBe("true");
   });
 
-  it("Skip to calendar leaves straight away, without a confirm", async () => {
+  it("Skip leaves straight away, without a confirm", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
-    await user.click(screen.getByRole("button", { name: "Skip to calendar" }));
+    await user.click(screen.getByRole("button", { name: /^Skip$/ }));
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
   });
@@ -470,7 +527,7 @@ describe("ShortcutShowcase", () => {
 
       // Enter is the step's shortcut, but a focused button owns it first:
       // asking to leave must not raise a permission prompt instead.
-      screen.getByRole("button", { name: /Skip to calendar/ }).focus();
+      screen.getByRole("button", { name: /^Skip$/ }).focus();
       await user.keyboard("{Enter}");
 
       expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
@@ -508,7 +565,7 @@ describe("ShortcutShowcase", () => {
       render(<ShortcutShowcase />);
       showStep("notifications");
 
-      // D and U belong to buttons this step does not render; C drives a
+      // U belongs to a button this step does not render; C drives a
       // practice board this step is not teaching.
       await user.keyboard("d");
       await user.keyboard("u");
@@ -531,12 +588,12 @@ describe("ShortcutShowcase", () => {
       expect(currentStepId()).toBe("graduation");
     });
 
-    it("carries no mission chip, because it teaches no key", () => {
+    it("carries no level chip, because it teaches no key", () => {
       installPort();
       render(<ShortcutShowcase />);
       showStep("notifications");
 
-      expect(screen.queryByText(/^Mission \d+ of \d+$/)).toBeNull();
+      expect(screen.queryByText(/^Level \d+\/\d+$/)).toBeNull();
     });
 
     it("still offers the door out to the calendar", () => {
@@ -544,7 +601,7 @@ describe("ShortcutShowcase", () => {
       render(<ShortcutShowcase />);
       showStep("notifications");
 
-      pressKey("x");
+      pressKey("Escape");
       expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     });
   });

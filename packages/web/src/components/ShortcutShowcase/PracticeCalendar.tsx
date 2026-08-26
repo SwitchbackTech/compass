@@ -99,15 +99,44 @@ const PracticeBlock: FC<{
 };
 
 /**
- * The showcase's fake grid: day columns, hour lines, and time-positioned
- * blocks, and nothing else. Deliberately not the real TimedGrid, which drags
+ * Static month-picker chrome so the sandbox reads like the real sidebar.
+ * Not interactive: the lesson only needs a place to park a jump chip.
+ * Cells are unlabeled so they cannot collide with event jump letters.
+ */
+const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
+  showPageJumpHints,
+}) => {
+  const monthLabel = dayjs().format("MMMM");
+
+  return (
+    <div
+      aria-hidden
+      className="relative flex w-28 shrink-0 flex-col gap-3 border-border border-r pr-3"
+      data-practice-jump="sidebar"
+    >
+      {showPageJumpHints && (
+        <ShortcutHint className="absolute top-1 right-1 z-10">2</ShortcutHint>
+      )}
+      <div className="font-medium text-text-muted text-xs">{monthLabel}</div>
+      <div className="h-20 rounded-md bg-surface-overlay" />
+      <div className="rounded-md bg-surface-overlay px-2 py-1.5 text-[10px] text-text-muted">
+        Up next
+      </div>
+    </div>
+  );
+};
+
+/**
+ * The showcase's fake grid: a sidebar, day columns, hour lines, and
+ * time-positioned blocks. Deliberately not the real TimedGrid, which drags
  * in stores and scroll plumbing the lesson does not need; geometry is plain
  * percentage math off the practice state.
  */
 export const PracticeCalendar: FC<{
   state: PracticeState;
   onTitleCommit: (title: string) => void;
-}> = ({ state, onTitleCommit }) => {
+  showPageJumpHints?: boolean;
+}> = ({ state, onTitleCommit, showPageJumpHints = false }) => {
   const hours: number[] = [];
   for (let h = SHOWCASE_GRID_START_HOUR; h < SHOWCASE_GRID_END_HOUR; h += 1) {
     hours.push(h);
@@ -118,6 +147,8 @@ export const PracticeCalendar: FC<{
       className="relative flex h-full min-h-0 w-full select-none"
       data-practice-jump="calendar"
     >
+      <PracticeSidebar showPageJumpHints={showPageJumpHints} />
+
       {/* Time column */}
       <div className="flex w-14 shrink-0 flex-col border-border border-r pr-2 text-right">
         <div className="h-7" />
@@ -146,6 +177,11 @@ export const PracticeCalendar: FC<{
             {DAY_LABELS[dayIndex]}
           </div>
           <div className="relative flex-1">
+            {showPageJumpHints && dayIndex === 0 && (
+              <ShortcutHint className="absolute top-2 left-1 z-10">
+                1
+              </ShortcutHint>
+            )}
             {hours.map((hour) => (
               <div
                 key={hour}

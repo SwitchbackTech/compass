@@ -16,6 +16,46 @@ const leaveWelcome = async (page: Page) => {
   await expect(welcomeDialog).toBeHidden();
 };
 
+const holdModAndPress = async (page: Page, key: string) => {
+  // Linux CI resolves Mod to Control; macOS to Meta. Hold both so the
+  // platform-specific hold tracker and the chord check both fire.
+  await page.keyboard.down("Control");
+  await page.keyboard.down("Meta");
+  await page.keyboard.press(key);
+  await page.keyboard.up("Meta");
+  await page.keyboard.up("Control");
+};
+
+const playThroughLevels = async (page: Page) => {
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+
+  await page.keyboard.press("c");
+  await expect(showcase).toContainText("Type a title, then press Enter");
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("Practice Event");
+  await expect(showcase).toContainText("Level 2/6");
+  await expect(showcase).toContainText("See where to go: reveal the jump keys");
+
+  await holdModAndPress(page, "1");
+  await expect(showcase).toContainText("Pick a target");
+
+  await page.keyboard.press("s");
+  await page.keyboard.press("f");
+  await expect(showcase).toContainText("Nudge it into place");
+
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(showcase).toContainText("Grab the title");
+
+  await page.keyboard.press("e");
+  await page.keyboard.press("t");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("When you forget, ask the palette");
+
+  await holdModAndPress(page, "k");
+  await page.keyboard.press("Enter");
+};
+
 test("exploring without an account starts the practice", async ({ page }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
@@ -25,7 +65,7 @@ test("exploring without an account starts the practice", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("the welcome-started practice runs create then D through graduation", async ({
+test("the welcome-started practice runs the taught keys through graduation", async ({
   page,
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
@@ -34,35 +74,17 @@ test("the welcome-started practice runs create then D through graduation", async
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Drop an event on the board");
   await expect(showcase).toContainText("Press C to start a new event.");
-  await expect(showcase).toContainText("Mission 1 of 6");
+  await expect(showcase).toContainText("Level 1/6");
+  await expect(showcase.getByRole("button", { name: /^Skip$/ })).toBeVisible();
 
-  await page.keyboard.press("c");
-  await expect(showcase).toContainText("Type a title, then press Enter");
+  await playThroughLevels(page);
 
-  await page.keyboard.type("Practice Event");
-  await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Practice Event");
-  await expect(showcase).toContainText("Mission 2 of 6");
-
-  // Compass blocks trusted pointer clicks; D is the assist binding.
-  const remainingMissions = [
-    "Hold fast — reveal the jump keys",
-    "Pick a target",
-    "Nudge it into place",
-    "Grab the title",
-    "When you forget, ask the palette",
-  ];
-  for (const title of remainingMissions) {
-    await expect(showcase).toContainText(title);
-    await page.keyboard.press("d");
-  }
-
-  // Not a mission, so it carries no chip; N passes without prompting.
+  // Not a level, so it carries no chip; N passes without prompting.
   await expect(showcase).toContainText("Never miss a meeting");
-  await expect(showcase).not.toContainText("Mission 7 of");
+  await expect(showcase).not.toContainText("Level 7/");
   await page.keyboard.press("n");
 
-  await expect(showcase).toContainText("young cap'n");
+  await expect(showcase).toContainText("you've got this");
   await page.keyboard.press("Enter");
   await expect(showcase).toHaveCount(0);
 
@@ -82,19 +104,12 @@ test("taking the notifications offer opts in and moves on", async ({
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await page.keyboard.press("c");
-  await page.keyboard.type("Practice Event");
-  await page.keyboard.press("Enter");
-
-  // D assists through the remaining missions to reach the offer.
-  for (let i = 0; i < 5; i += 1) {
-    await page.keyboard.press("d");
-  }
+  await playThroughLevels(page);
 
   await expect(showcase).toContainText("Never miss a meeting");
   await page.keyboard.press("Enter");
 
-  await expect(showcase).toContainText("young cap'n");
+  await expect(showcase).toContainText("you've got this");
   await expect
     .poll(() =>
       page.evaluate(() =>

@@ -83,7 +83,7 @@ export const shortcutShowcaseActions = {
   /**
    * Leaving before graduation. There is no "are you sure?" in the way: the
    * showcase is an offer, and the flow it guards (sign up, connect a calendar)
-   * matters more than the missions.
+   * matters more than the levels.
    */
   skip: (exit: ShowcaseExit = "calendar") => {
     const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
