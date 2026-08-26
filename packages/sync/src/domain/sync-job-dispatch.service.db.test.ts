@@ -553,6 +553,45 @@ describe("dispatchSyncJob", () => {
     expect(stored?.lastAttemptAt).toEqual(now());
   });
 
+  it("clears a lingering push channel when dropping a job for an inactive calendar", async () => {
+    // The renewal sweep sorts on subscriptionExpiresAt alone, so a channel
+    // left on an inactive calendar would win the head of every sweep forever
+    // — the drop is where the invariant is enforced regardless of how the
+    // calendar became inactive.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    await resources.updateSubscription(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.providerCalendars)
+      .updateOne({ _id: calendar._id }, { $set: { active: false } });
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    const stored = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    );
+    expect(stored?.subscriptionId).toBeNull();
+    expect(stored?.subscriptionExpiresAt).toBeNull();
+  });
+
   it("hands off a pull on a never-imported resource to an initial import", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null); // no cursor

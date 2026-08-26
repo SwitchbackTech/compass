@@ -1,13 +1,10 @@
-import { type FC, useContext } from "react";
-import { SessionContext } from "@web/auth/compass/session/session.context";
+import { type FC } from "react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   getSidebarSyncStatus,
   SSE_DEGRADED_STATUS,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
-import { TrialCountdownChip } from "@web/billing/TrialCountdownChip";
-import { useAppAccess } from "@web/billing/useAppAccess";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import {
@@ -30,11 +27,7 @@ import {
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { ShortcutTipIndicator } from "@web/shortcuts/tips/ShortcutTipIndicator";
-import {
-  selectActiveShortcutTipId,
-  useShortcutTipsStore,
-} from "@web/shortcuts/tips/shortcut-tips.store";
-import { useShortcutTipTrigger } from "@web/shortcuts/tips/useShortcutTipTrigger";
+import { useShortcutHintContext } from "@web/shortcuts/tips/useShortcutHintContext";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 
 /**
@@ -44,15 +37,12 @@ import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
  * that status used to render inline under each account's heading, where it
  * pushed the calendar rows below it up and down as accounts synced.
  *
- * The whole bar is a button that opens Settings > Accounts, where the full
- * sentence fits. Sidebar copy stays short so the fixed h-6 never truncates
- * the meaning; `title` is the safety net if anything still overflows.
+ * Mode indicators and operational status temporarily own the line; otherwise
+ * the bar always shows the next shortcut. The sync-status control is a button
+ * that opens Settings > Accounts, where the full sentence fits.
  */
 export const SidebarStatusBar: FC = () => {
-  const { authenticated } = useContext(SessionContext);
-  const access = useAppAccess();
-  useShortcutTipTrigger();
-  const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
+  const hint = useShortcutHintContext();
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
@@ -88,20 +78,16 @@ export const SidebarStatusBar: FC = () => {
 
   const text = status?.text ?? "";
 
-  // Highest-priority active indicator wins the bar; the sync-status button is
-  // the fallback when none applies.
+  // Highest-priority active indicator wins the bar; the next-shortcut hint
+  // is the idle default. Operational status uses the settings button.
   const indicator = showEventJump ? (
     <EventJumpIndicator />
   ) : showEdgeFocus ? (
     <EdgeFocusIndicator />
   ) : isKeyboardPlace ? (
     <KeyboardPlaceIndicator />
-  ) : !status && activeTipId ? (
-    <ShortcutTipIndicator />
-  ) : !status &&
-    (!authenticated ||
-      (access.kind === "server" && access.status === "trialing")) ? (
-    <TrialCountdownChip />
+  ) : !status ? (
+    <ShortcutTipIndicator hint={hint} />
   ) : null;
 
   return (

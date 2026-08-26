@@ -170,3 +170,13 @@ it with a shared named type.
 2. Implement behavior in `packages/scripts/src/commands`.
 3. Reuse shared CLI utilities from `packages/scripts/src/common`.
 4. Add integration tests colocated with the command (`*.db.test.ts`).
+
+## Start Agent Work From A GitHub Issue
+
+Prefer issues opened with the **Agent task** template
+(`.github/ISSUE_TEMPLATE/3-agent-task.yml`, label `agent-ready`). That
+body names finish line, acceptance, package scope, verify commands, and
+approval boundary. Write `.agents/handoffs/<issue-number>.md` when work
+starts (`task_id` is the issue number). See `.agents/ledger.md` and
+`/ship` intake. Bug and feature templates have optional Agent routing
+fields; they are not required for human-only issues.

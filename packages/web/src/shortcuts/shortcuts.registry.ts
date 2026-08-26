@@ -350,7 +350,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "other-palette",
-    keys: ["Mod", "k"],
+    keys: [...KEYMAP.commandPalette.keycaps],
     label: "Command Palette",
     section: "other",
   },

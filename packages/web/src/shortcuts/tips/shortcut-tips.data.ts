@@ -1,10 +1,12 @@
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
 
-export type ShortcutTipId =
+export type ShortcutHintId =
+  | "first-event-save"
+  | "save-draft"
+  | "life-this-week"
   | "edit-sequence"
-  | "nudge"
-  | "target-event"
-  | "edge-cycle"
+  | "create-event"
   | "page-jump";
 
 export type ShortcutTipPart =
@@ -12,8 +14,8 @@ export type ShortcutTipPart =
   | { key: string }
   | { keys: readonly string[] };
 
-export type ShortcutTip = {
-  id: ShortcutTipId;
+export type ShortcutHint = {
+  id: ShortcutHintId;
   parts: ShortcutTipPart[];
 };
 
@@ -33,41 +35,55 @@ const partPlainText = (part: ShortcutTipPart): string => {
 export const getPartsPlainText = (parts: readonly ShortcutTipPart[]): string =>
   parts.map(partPlainText).join("");
 
-export const getTipPlainText = (tip: ShortcutTip): string =>
-  getPartsPlainText(tip.parts);
+export const getHintPlainText = (hint: ShortcutHint): string =>
+  getPartsPlainText(hint.parts);
 
-/** Small fixed rotation; content mirrors the shortcut showcase's later lessons. */
-export function getShortcutTips(): ShortcutTip[] {
-  return [
-    {
-      id: "edit-sequence",
-      parts: [
-        "Press ",
-        { key: "E" },
-        " then ",
-        { key: "T" },
-        " to jump to the title",
-      ],
-    },
-    {
-      id: "nudge",
-      parts: [
-        "Hold ",
-        { key: "Shift" },
-        " and press an arrow to move this event",
-      ],
-    },
-    {
-      id: "target-event",
-      parts: ["Tap ", { key: "S" }, " to jump to any visible event"],
-    },
-    {
-      id: "edge-cycle",
-      parts: ["Press ", { key: "Tab" }, " to move between start and end"],
-    },
-    {
-      id: "page-jump",
-      parts: ["Hold ", { key: "Mod" }, " to see where you can jump next"],
-    },
-  ];
+const [createKey] = KEYMAP.createEvent.keycaps;
+const [saveKey] = KEYMAP.saveDraft.keycaps;
+const [editLeader, editSecond] = KEYMAP.editTitle.keycaps;
+
+export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
+  "first-event-save": {
+    id: "first-event-save",
+    parts: ["Type a title, then ", { key: saveKey }],
+  },
+  "save-draft": {
+    id: "save-draft",
+    parts: [
+      { key: saveKey },
+      " to save · hold ",
+      { key: KEYMAP.jumpFormField.holdModifier },
+      " to jump fields",
+    ],
+  },
+  "life-this-week": {
+    id: "life-this-week",
+    parts: ["Press ", { key: "T" }, " to jump to this week"],
+  },
+  "edit-sequence": {
+    id: "edit-sequence",
+    parts: [
+      "Press ",
+      { key: editLeader },
+      " then ",
+      { key: editSecond },
+      " to jump to the title",
+    ],
+  },
+  "create-event": {
+    id: "create-event",
+    parts: ["Press ", { key: createKey }, " to add an event"],
+  },
+  "page-jump": {
+    id: "page-jump",
+    parts: [
+      "Hold ",
+      { key: KEYMAP.jumpPageTarget.holdModifier },
+      " to see where you can jump",
+    ],
+  },
+};
+
+export function getShortcutHint(id: ShortcutHintId): ShortcutHint {
+  return SHORTCUT_HINTS[id];
 }

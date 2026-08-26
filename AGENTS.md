@@ -46,27 +46,38 @@ Validation defaults:
 - Keep regression tests that protect real behavior. Remove temporary tests,
   scripts, debug hooks, or code added only to confirm a one-time hypothesis once
   that verification is complete.
-- Use `bun run verify` when you want the repo helper to choose checks from the
-  git diff, but confirm its output before treating the task as done.
+- Use `bun run verify` when you want the repo helper to choose the
+  required-check subset from the git diff. Read the skip list before treating
+  the task as done.
 - Use `bun run lint` before pushing when the work is not docs-only.
 
 ## Lookups
 
 - Docs index: `docs/README.md`
+- Skills registry: `.agents/skills/README.md`
+- Handoffs: `.agents/handoffs/SCHEMA.md`
+- Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
+- Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
+
+The `wip/restructure/` pack is deleted after WP-01–07. WP-08 was cancelled:
+discovery was not the bottleneck (failures were CI, review, evidence, and
+merge permissions, not wrong-package search). The pack’s five-pass table
+was empty; merged PRs #2865–#2869, #2872, and #2873 are the loop evidence.
 
 ## Skills
 
-Project workflows live in `.agents/skills` so supported agents share one source
-of truth:
+Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`):
 
-- `/ship`: validate, review, open, merge, and verify a delivery
+- `/ship`: Manager — route, ledger, PR/merge after specialist verdicts
+- `/review`: read-only independent diff review
 - `/simplify`: reduce complexity without changing behavior
 - `/a11y-audit`: review changed UI for accessibility regressions
 - `/qa-test-staging`: run the post-deploy staging confidence sweep
-- `/verify-change`: select and run checks from the actual diff
+- `/verify-change`: Verifier — `PASS | RETRY | ESCALATE` from the diff
 - `/local-dev-bootstrap`: prepare the lightest viable local environment
 - `/google-sync-debug`: trace OAuth, provider, job, webhook, and SSE failures
-- `/handoff`: compact work for a fresh agent session
+- `/handoff`: write a typed in-repo handoff and ledger row
+- `/chaos`: exploratory signed-in QA, then hand off to `/ship`
 
 ## Compass-Specific Rules
 

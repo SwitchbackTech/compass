@@ -3,6 +3,7 @@ import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
   type PrincipalId,
+  type ProviderCalendarId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -347,6 +348,35 @@ export class SyncResourceRepository {
       subscriptionToken: null,
       subscriptionExpiresAt: null,
     });
+  }
+
+  // Clear the local push-channel fields on every resource of the given
+  // calendars that still holds one. Self-gating single round trip: the filter
+  // matches nothing once cleared, which matters because the calendar-list
+  // full pass re-reports hidden/deleted calendars as inactive every day, not
+  // just on the pass where they transition.
+  async clearSubscriptionsByCalendarIds(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarIds: readonly ProviderCalendarId[],
+  ): Promise<void> {
+    await this.collection.updateMany(
+      {
+        tenantId,
+        principalId,
+        calendarId: { $in: [...calendarIds] },
+        subscriptionId: { $ne: null },
+      },
+      {
+        $set: {
+          subscriptionId: null,
+          subscriptionResourceId: null,
+          subscriptionToken: null,
+          subscriptionExpiresAt: null,
+          updatedAt: new Date(),
+        },
+      },
+    );
   }
 
   // Find the resource a provider push channel belongs to. Keyed on the channel

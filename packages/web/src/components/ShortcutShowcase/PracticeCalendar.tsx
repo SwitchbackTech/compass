@@ -13,6 +13,7 @@ import {
   SHOWCASE_GRID_END_HOUR,
   SHOWCASE_GRID_START_HOUR,
 } from "@web/components/ShortcutShowcase/practice.state";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
@@ -74,7 +75,19 @@ const PracticeBlock: FC<{
           }}
         />
       ) : (
-        <div className="truncate font-medium">{block.title || "New event"}</div>
+        <div className="flex items-start justify-between gap-1">
+          <div className="min-w-0 truncate font-medium">
+            {block.title || "New event"}
+          </div>
+          {state.jumpHintsVisible && (
+            <ShortcutHint className="shrink-0">
+              {block.jumpKey.toUpperCase()}
+            </ShortcutHint>
+          )}
+          {state.editArmed && isFocused && (
+            <ShortcutHint className="shrink-0">T</ShortcutHint>
+          )}
+        </div>
       )}
       {height > 8 && (
         <div className="truncate opacity-80">
@@ -101,7 +114,10 @@ export const PracticeCalendar: FC<{
   }
 
   return (
-    <div className="relative flex h-full min-h-0 w-full select-none">
+    <div
+      className="relative flex h-full min-h-0 w-full select-none"
+      data-practice-jump="calendar"
+    >
       {/* Time column */}
       <div className="flex w-14 shrink-0 flex-col border-border border-r pr-2 text-right">
         <div className="h-7" />

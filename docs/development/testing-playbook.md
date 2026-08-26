@@ -13,9 +13,18 @@ bun run test:web
 bun run test:backend
 bun run test:scripts
 bun run type-check
+bun run verify
 ```
 
 Avoid defaulting to `bun run test` unless you really need the full suite.
+
+`bun run verify` selects the **required-check subset** from the merge-base vs
+`origin/main` plus the working tree: `test:<pkg>` for each detected package,
+then `type-check`, `lint`, and `knip`. Web or `e2e/` changes also select
+`test:a11y` and `test:e2e`. Read the printed skip list before treating a green
+run as CI-complete — missing Playwright Chromium skips those jobs and reports
+incomplete parity instead of claiming they passed. GitHub still runs the full
+unit matrix and e2e on every non-docs PR; this helper does not.
 
 ## CI Unit Test Workflow
 
@@ -31,6 +40,19 @@ Unit workflow (`test-unit.yml`):
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
 - runs every lane with `TZ: Etc/UTC` set
+- `bun run lint` also runs `check-semantic-colors.ts` and
+  `check-agent-constraints.ts` (barrels, web-test locators, backend/sync
+  `mongoService` imports, duplicate `EventSchema`)
+
+PR template workflow (`.github/workflows/pr-body.yml`):
+
+- triggers on every pull request, including markdown-only PRs that skip
+  Test/e2e via `paths-ignore`
+- fails if `## Automated validation`, `## Independent review`, or
+  `## Test plan` is missing, empty (HTML comments only), or uses task boxes
+- fail closed when the PR body cannot be read
+- docs-only PRs still fill those three sections (a short docs-only note is
+  enough); they are not blocked on missing unit/e2e jobs
 
 Local parity commands:
 
