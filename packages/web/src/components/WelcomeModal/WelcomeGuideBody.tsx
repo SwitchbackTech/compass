@@ -39,7 +39,7 @@ export function WelcomeGuideBody() {
     <>
       <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
-          Keyboard calendar
+          The Keyboard Calendar
         </h2>
         <p className="text-text-muted">
           Rediscover the joy of shortcuts as you build your perfect schedule. No
@@ -89,14 +89,11 @@ export function WelcomeGuideBody() {
         })}
       </div>
 
-      <p
-        id={faqHintId}
-        className="flex flex-wrap items-center gap-1 text-text-muted text-xs"
-      >
-        Hold
-        <ShortcutKeys keys={["Mod"]} />
-        to see keys, then press 1–5. The same hold reveals jump keys all over
-        Compass.
+      <p id={faqHintId} className="text-text-muted text-xs">
+        <span className="whitespace-nowrap">
+          Hold <ShortcutKeys keys={["Mod"]} /> to see keys
+        </span>
+        , then press 1–5. The same hold reveals jump keys all over Compass.
       </p>
     </>
   );
