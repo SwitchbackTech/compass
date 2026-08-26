@@ -60,6 +60,9 @@ export const MonthPicker: FC<Props> = ({
       <DatePicker
         animationOnToggle={false}
         calendarClassName={ID_DATEPICKER_SIDEBAR}
+        calendarStartDay={
+          viewStart.isSame(viewEnd, "day") ? 0 : viewStart.day()
+        }
         dayClassName={getDayClassName}
         headerActionsClassName={headerActionsClassName}
         headerClassName="!relative !justify-start !px-0 !pb-3"

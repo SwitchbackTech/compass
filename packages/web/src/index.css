@@ -926,40 +926,21 @@
     background: var(--date-picker-selected-bg);
     content: "";
   }
-  /*
-   * Tile in-view days flush so the band is one pill per row, including
-   * windows that are not Sun-Sat. Day-name labels use the same flex so
-   * they stay aligned with the dates.
-   */
-  & .react-datepicker__week,
-  & .react-datepicker__day-names {
-    justify-content: stretch;
-  }
-  & .react-datepicker__day,
-  & .react-datepicker__day-name {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-  }
-  & .react-datepicker__day--in-view {
+  /* One capsule on the week row that contains the visible window. */
+  & .react-datepicker__week:has(.react-datepicker__day--in-view) {
     position: relative;
-    isolation: isolate;
   }
-  & .react-datepicker__day--in-view::after {
+  & .react-datepicker__week:has(.react-datepicker__day--in-view)::before {
     position: absolute;
-    inset: 0;
-    z-index: -1;
+    inset: 0 -3px;
+    border-radius: var(--radius-default);
     background: var(--date-picker-hover-bg);
     content: "";
-    pointer-events: none;
   }
-  & .react-datepicker__day--in-view-start::after {
-    border-top-left-radius: var(--radius-default);
-    border-bottom-left-radius: var(--radius-default);
-  }
-  & .react-datepicker__day--in-view-end::after {
-    border-top-right-radius: var(--radius-default);
-    border-bottom-right-radius: var(--radius-default);
+  &
+    .react-datepicker__week:has(.react-datepicker__day--in-view)
+    .react-datepicker__day {
+    position: relative;
+    z-index: 10;
   }
 }
