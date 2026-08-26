@@ -518,9 +518,12 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(navigateToDate).not.toHaveBeenCalled();
   });
 
-  it("does not change focus with ArrowRight when nothing is focused", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
-    focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed").blur();
+  it("focuses the nearest-to-now event with ArrowRight when nothing is focused", () => {
+    setSystemTime(new Date("2026-05-20T09:30:00.000"));
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
+    earlier.blur();
+    later.blur();
     const navigateToDate = mock(() => {});
     renderEditShortcuts({
       navigateToDate,
@@ -529,8 +532,26 @@ describe("useDayEventNudgeShortcuts", () => {
 
     pressKey("ArrowRight");
 
+    expect(document.activeElement).toBe(earlier);
     expect(navigateToDate).not.toHaveBeenCalled();
-    expect(document.activeElement).not.toBeInstanceOf(HTMLButtonElement);
+
+    pressKey("ArrowRight");
+
+    expect(document.activeElement).toBe(later);
+    expect(navigateToDate).not.toHaveBeenCalled();
+  });
+
+  it("does not steal ArrowRight from a focused non-event button", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
+    const chrome = document.createElement("button");
+    chrome.textContent = "Sidebar";
+    document.body.appendChild(chrome);
+    chrome.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterTimedEvent] });
+
+    pressKey("ArrowRight", {}, chrome);
+
+    expect(document.activeElement).toBe(chrome);
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {

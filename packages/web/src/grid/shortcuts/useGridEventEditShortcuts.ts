@@ -56,6 +56,7 @@ import {
   findCalendarEventForTarget,
   type GridEventShortcutTarget,
   getChronologicallyAdjacentTarget,
+  getNearestTargetToNow,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
@@ -81,6 +82,16 @@ const SPATIAL_DIRECTION = {
 
 const isArrowKey = (key: string): key is keyof typeof SPATIAL_DIRECTION =>
   key in SPATIAL_DIRECTION;
+
+/** First visit / returning from another tab: nothing particular is focused. */
+const isUnspecifiedDocumentFocus = () => {
+  const active = document.activeElement;
+  return (
+    active == null ||
+    active === document.body ||
+    active === document.documentElement
+  );
+};
 
 // Week view: refuse moves that would leave the visible week window.
 const isOutsideVisibleWeek = (
@@ -586,30 +597,44 @@ export function useGridEventEditShortcuts({
     if (isEventFormOpen()) return;
     if (!isArrowKey(keyboardEvent.key)) return;
 
+    const focused = targeting.getFocusedNavigable();
+    const visible = targeting.listNavigable();
+
     // Day view: all four arrows move chronological focus. Period changes stay
     // on j/k (same split as week view: arrows focus, j/k navigate). Week uses
-    // spatial adjacency across the visible days.
-    const adjacent =
-      dayBoundary.kind === "follow"
-        ? getChronologicallyAdjacentTarget({
-            allDayEvents,
-            direction:
-              keyboardEvent.key === "ArrowUp" ||
-              keyboardEvent.key === "ArrowLeft"
-                ? "previous"
-                : "next",
-            focused: targeting.getFocusedNavigable(),
-            timedEvents,
-            visible: targeting.listNavigable(),
-          })
-        : getSpatiallyAdjacentTarget({
-            allDayEvents,
-            direction: SPATIAL_DIRECTION[keyboardEvent.key],
-            focused: targeting.getFocusedNavigable(),
-            timedEvents,
-            visible: targeting.listNavigable(),
-            weekDays: dayBoundary.weekDays,
-          });
+    // spatial adjacency across the visible days. With no event focused and
+    // no particular control focused, the first arrow seeds the nearest-to-now
+    // event instead of no-op'ing.
+    let adjacent: FocusableGridEventTarget | null = null;
+    if (focused) {
+      adjacent =
+        dayBoundary.kind === "follow"
+          ? getChronologicallyAdjacentTarget({
+              allDayEvents,
+              direction:
+                keyboardEvent.key === "ArrowUp" ||
+                keyboardEvent.key === "ArrowLeft"
+                  ? "previous"
+                  : "next",
+              focused,
+              timedEvents,
+              visible,
+            })
+          : getSpatiallyAdjacentTarget({
+              allDayEvents,
+              direction: SPATIAL_DIRECTION[keyboardEvent.key],
+              focused,
+              timedEvents,
+              visible,
+              weekDays: dayBoundary.weekDays,
+            });
+    } else if (isUnspecifiedDocumentFocus()) {
+      adjacent = getNearestTargetToNow({
+        allDayEvents,
+        timedEvents,
+        visible,
+      });
+    }
     if (!adjacent) return;
 
     keyboardEvent.preventDefault();

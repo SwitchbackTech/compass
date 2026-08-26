@@ -25,6 +25,8 @@ type TargetSchedule = {
   dayKey: string;
   /** Absolute start for chronological ordering within a day. */
   startMs: number;
+  /** Absolute end; exclusive for overlap (`start <= now < end`). */
+  endMs: number;
   /**
    * Minutes from local midnight. Cross-day Left/Right pick the event whose
    * clock time is nearest the focused event (not absolute datetime distance).
@@ -47,9 +49,11 @@ const buildScheduleById = (
   const scheduleById = new Map<string, TargetSchedule>();
   for (const event of [...allDayEvents, ...timedEvents]) {
     if (!event._id || !event.startDate) continue;
+    const start = dayjs(event.startDate);
     scheduleById.set(event._id, {
       dayKey: dayKeyFromStart(event.startDate),
-      startMs: dayjs(event.startDate).valueOf(),
+      startMs: start.valueOf(),
+      endMs: event.endDate ? dayjs(event.endDate).valueOf() : start.valueOf(),
       minutesFromMidnight: minutesFromMidnight(event.startDate),
     });
   }
@@ -190,4 +194,72 @@ export function getSpatiallyAdjacentTarget({
     }
   }
   return nearest;
+}
+
+/**
+ * Seed target when nothing is focused: the most relevant event in the current
+ * Day/Week surface relative to `now`. Prefers today when any candidate is
+ * today; prefers timed over all-day; then in-progress (soonest end), else
+ * next upcoming, else most recently ended.
+ */
+export function getNearestTargetToNow({
+  allDayEvents,
+  now = dayjs(),
+  timedEvents,
+  visible,
+}: {
+  allDayEvents: GridEvent[];
+  now?: Dayjs;
+  timedEvents: GridEvent[];
+  visible: FocusableGridEventTarget[];
+}): FocusableGridEventTarget | null {
+  if (visible.length === 0) return null;
+
+  const scheduleById = buildScheduleById(allDayEvents, timedEvents);
+  const todayKey = now.format("YYYY-MM-DD");
+  const todayVisible = visible.filter(
+    (target) => scheduleById.get(target.eventId)?.dayKey === todayKey,
+  );
+  const inView = todayVisible.length > 0 ? todayVisible : visible;
+  const timed = inView.filter((target) => target.eventType === "timed");
+  const pool = timed.length > 0 ? timed : inView;
+
+  const nowMs = now.valueOf();
+  let best: FocusableGridEventTarget | null = null;
+  let bestKind = 3;
+  let bestKey = Number.POSITIVE_INFINITY;
+
+  for (const target of pool) {
+    const schedule = scheduleById.get(target.eventId);
+    if (!schedule) continue;
+
+    const { startMs, endMs } = schedule;
+    // 0 overlapping, 1 upcoming, 2 past. Lower kind always wins.
+    let kind: 0 | 1 | 2;
+    let key: number;
+    if (startMs <= nowMs && nowMs < endMs) {
+      kind = 0;
+      key = endMs;
+    } else if (startMs > nowMs) {
+      kind = 1;
+      key = startMs;
+    } else {
+      kind = 2;
+      key = -endMs;
+    }
+
+    if (kind > bestKind) continue;
+    if (kind < bestKind || key < bestKey) {
+      best = target;
+      bestKind = kind;
+      bestKey = key;
+      continue;
+    }
+    if (key > bestKey || !best) continue;
+    if (compareTargetsChronologically(target, best, scheduleById) < 0) {
+      best = target;
+    }
+  }
+
+  return best;
 }

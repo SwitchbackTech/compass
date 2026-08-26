@@ -37,7 +37,15 @@ import {
   getWeekInteractionTargetAttributes,
   weekEventRegistry,
 } from "@web/views/Week/interaction/registry/week-event.registry";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 // Fixed 24-hex-char ids so fixtures satisfy EventIdSchema (real ObjectId
 // shape) while staying stable/readable across assertions.
@@ -175,6 +183,7 @@ afterEach(() => {
   useViewStore.setState(initialViewState);
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
   draftActions.discard();
+  setSystemTime();
 });
 
 const addCalendarTarget = (
@@ -524,6 +533,74 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(later);
+  });
+
+  it("focuses the nearest-to-now event when nothing is focused, then continues with arrows", () => {
+    setSystemTime(new Date("2026-05-20T09:30:00.000Z"));
+    const sameDayLaterId = EventIdSchema.parse("ffffffffffffffffffffffff");
+    const sameDayLater = createMockEvent({
+      id: sameDayLaterId,
+      content: { kind: "details", title: "Same day later", description: "" },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const earlier = addCalendarTarget(editableEvent.id);
+    const later = addCalendarTarget(sameDayLaterId);
+    addCalendarTarget(leftmostEvent.id);
+    earlier.blur();
+    later.blur();
+    renderShortcuts({
+      includeLeftmostEvent: true,
+      extraEvents: [sameDayLater],
+    });
+
+    pressKey("ArrowRight");
+
+    expect(document.activeElement).toBe(earlier);
+
+    pressKey("ArrowDown");
+
+    expect(document.activeElement).toBe(later);
+  });
+
+  it("does not steal ArrowRight from a focused non-event button", () => {
+    setSystemTime(new Date("2026-05-20T09:30:00.000Z"));
+    addCalendarTarget(editableEvent.id).blur();
+    const chrome = document.createElement("button");
+    chrome.textContent = "Sidebar";
+    document.body.appendChild(chrome);
+    chrome.focus();
+    renderShortcuts();
+
+    pressKey("ArrowRight", {}, chrome);
+
+    expect(document.activeElement).toBe(chrome);
+  });
+
+  it("repositions an active draft with arrows instead of seeding unfocused events", () => {
+    setSystemTime(new Date("2026-05-20T09:30:00.000Z"));
+    const saved = addCalendarTarget(editableEvent.id);
+    saved.blur();
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "createShortcut", draft });
+    renderShortcuts();
+
+    pressKey("ArrowRight");
+
+    const schedule = useDraftStore.getState().gridDraft?.values.schedule;
+    expect(dayjs(schedule?.start).format()).toBe(
+      dayjs("2026-05-21T09:00:00.000").format(),
+    );
+    expect(document.activeElement).not.toBe(saved);
   });
 
   it("focuses a read-only event with ArrowDown", () => {
