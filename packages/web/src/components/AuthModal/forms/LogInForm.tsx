@@ -3,6 +3,7 @@ import {
   type LogInFormData,
   LogInSchema,
 } from "@web/auth/compass/schemas/auth.schemas";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";
@@ -75,10 +76,12 @@ export const LogInForm: FC<SignInFormProps> = ({
 
       <AuthButton
         type="submit"
+        className="inline-flex items-center justify-center gap-2"
         disabled={!form.isValid}
         isLoading={isSubmitting}
       >
         Log in
+        <ShortcutHint className="shrink-0">Enter</ShortcutHint>
       </AuthButton>
     </form>
   );

@@ -1,6 +1,7 @@
 import {
   getCommandPalettePlaceholder,
   getMoreCommandPaletteSections,
+  PERSONAL_ONBOARDING_URL,
 } from "@web/components/CommandPalette/more.cmd.constants";
 import {
   feedbackActions,
@@ -11,19 +12,29 @@ import {
   selectIsAboutOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("getMoreCommandPaletteSections", () => {
+  const originalWindowOpen = window.open;
+  const mockWindowOpen = mock();
+
   beforeEach(() => {
     feedbackActions.close();
     useSettingsStore.setState({ isAboutOpen: false });
+    mockWindowOpen.mockClear();
+    window.open = mockWindowOpen;
+  });
+
+  afterEach(() => {
+    window.open = originalWindowOpen;
   });
 
   it("omits feedback commands when PostHog is not enabled", () => {
     const [section] = getMoreCommandPaletteSections("week", false);
 
-    expect(section.items).toHaveLength(1);
-    expect(section.items[0].label).toBe("About Compass");
+    expect(section.items).toHaveLength(2);
+    expect(section.items[0].label).toBe("Book personal onboarding");
+    expect(section.items[1].label).toBe("About Compass");
     expect(getCommandPalettePlaceholder("day", false)).not.toContain("bug");
     expect(getCommandPalettePlaceholder("week", false)).not.toContain(
       "feedback",
@@ -32,7 +43,7 @@ describe("getMoreCommandPaletteSections", () => {
 
   it("opens the feedback request from the cloud command", () => {
     const [section] = getMoreCommandPaletteSections("day", true);
-    expect(section.items).toHaveLength(2);
+    expect(section.items).toHaveLength(3);
     expect(
       section.items.find((item) => item.id === "report-bug"),
     ).toBeUndefined();
@@ -67,5 +78,21 @@ describe("getMoreCommandPaletteSections", () => {
     about?.onClick?.();
 
     expect(selectIsAboutOpen(useSettingsStore.getState())).toBe(true);
+  });
+
+  it("opens the personal onboarding Calendly link in a new tab", () => {
+    const [section] = getMoreCommandPaletteSections("week", false);
+    const bookOnboarding = section.items.find(
+      (item) => item.id === "book-personal-onboarding",
+    );
+
+    bookOnboarding?.onClick?.();
+
+    expect(mockWindowOpen).toHaveBeenCalledTimes(1);
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      PERSONAL_ONBOARDING_URL,
+      "_blank",
+      "noopener,noreferrer",
+    );
   });
 });

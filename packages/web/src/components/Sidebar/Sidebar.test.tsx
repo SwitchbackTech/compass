@@ -67,6 +67,8 @@ const sidebarProps = {
   calendarDate: dayjs("2026-05-12"),
   onSelectDate: mock(),
   shortcutSections: [],
+  viewEnd: dayjs("2026-05-16"),
+  viewStart: dayjs("2026-05-10"),
 };
 
 describe("Sidebar", () => {

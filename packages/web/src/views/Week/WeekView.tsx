@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
+import { useAvailabilityEvents } from "@web/availability/useAvailabilityEvents";
+import { useAvailabilityShortcuts } from "@web/availability/useAvailabilityShortcuts";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { CalendarConnectionBannerGate } from "@web/components/CalendarConnectionBanner/CalendarConnectionBannerGate";
@@ -54,6 +56,11 @@ export const WeekView = () => {
   const { trackRef, visibleDayCount } = useVisibleDayCount();
 
   const weekProps = useWeek(today, visibleDayCount);
+  useAvailabilityEvents(
+    weekProps.component.startOfView,
+    weekProps.component.endOfView,
+  );
+  useAvailabilityShortcuts();
   const mainRef = useRef<HTMLDivElement | null>(null);
   const weekTrackElementRef = useRef<HTMLDivElement | null>(null);
   const setTrackRef = useCallback(
@@ -187,6 +194,8 @@ export const WeekView = () => {
               onSelectDate={goToDateFromSidebar}
               shortcutSections={shortcutSections}
               shortcutsViewLabel="Week"
+              viewEnd={weekProps.component.endOfView}
+              viewStart={weekProps.component.startOfView}
             />
           </ResizableSidebarPanel>
         </ContextMenuWrapper>

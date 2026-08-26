@@ -16,6 +16,46 @@ const leaveWelcome = async (page: Page) => {
   await expect(welcomeDialog).toBeHidden();
 };
 
+const holdModAndPress = async (page: Page, key: string) => {
+  // Linux CI resolves Mod to Control; macOS to Meta. Hold both so the
+  // platform-specific hold tracker and the chord check both fire.
+  await page.keyboard.down("Control");
+  await page.keyboard.down("Meta");
+  await page.keyboard.press(key);
+  await page.keyboard.up("Meta");
+  await page.keyboard.up("Control");
+};
+
+const playThroughLevels = async (page: Page) => {
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+
+  await page.keyboard.press("c");
+  await expect(showcase).toContainText("Type a title, then press Enter");
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("Practice Event");
+  await expect(showcase).toContainText("Level 2/6");
+  await expect(showcase).toContainText("See where to go: reveal the jump keys");
+
+  await holdModAndPress(page, "1");
+  await expect(showcase).toContainText("Pick a target");
+
+  await page.keyboard.press("s");
+  await page.keyboard.press("f");
+  await expect(showcase).toContainText("Nudge it into place");
+
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(showcase).toContainText("Grab the title");
+
+  await page.keyboard.press("e");
+  await page.keyboard.press("t");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("When you forget, ask the palette");
+
+  await holdModAndPress(page, "k");
+  await page.keyboard.press("Enter");
+};
+
 test("exploring without an account starts the practice", async ({ page }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
@@ -25,33 +65,58 @@ test("exploring without an account starts the practice", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("the welcome-started practice runs the one-lesson happy path", async ({
+test("the welcome-started practice runs the taught keys through graduation", async ({
   page,
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Create an event");
+  await expect(showcase).toContainText("Drop an event on the board");
   await expect(showcase).toContainText("Press C to start a new event.");
+  await expect(showcase).toContainText("Level 1/6");
+  await expect(showcase.getByRole("button", { name: /^Skip$/ })).toBeVisible();
 
-  await page.keyboard.press("c");
-  await expect(showcase).toContainText("Type a title, then press Enter");
+  await playThroughLevels(page);
 
-  // The practice title editor autofocuses; Enter commits it.
-  await page.keyboard.type("Practice Event");
-  await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("young cap'n");
-  await expect(showcase).toContainText("Practice Event");
+  // Not a level, so it carries no chip; N passes without prompting.
+  await expect(showcase).toContainText("Never miss a meeting");
+  await expect(showcase).not.toContainText("Level 7/");
+  await page.keyboard.press("n");
 
+  await expect(showcase).toContainText("you've got this");
   await page.keyboard.press("Enter");
   await expect(showcase).toHaveCount(0);
 
-  // Graduation lands on the real calendar: seeded events + the handoff to
-  // create a real one.
   await expect(
     page.getByRole("complementary", { name: "Create your first event" }),
   ).toBeVisible();
+});
+
+test("taking the notifications offer opts in and moves on", async ({
+  page,
+  context,
+}) => {
+  // Granted up front so the offer resolves without a real browser prompt,
+  // which Playwright cannot click.
+  await context.grantPermissions(["notifications"]);
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await playThroughLevels(page);
+
+  await expect(showcase).toContainText("Never miss a meeting");
+  await page.keyboard.press("Enter");
+
+  await expect(showcase).toContainText("you've got this");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        localStorage.getItem("compass.notifications.enabled"),
+      ),
+    )
+    .toBe("true");
 });
 
 test("Skip to sign up leaves the practice for the signup form on step 1", async ({
@@ -61,14 +126,12 @@ test("Skip to sign up leaves the practice for the signup form on step 1", async 
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Create an event");
+  await expect(showcase).toContainText("Drop an event on the board");
 
-  // One click, from the first step, with no lesson finished and no confirm.
-  // The advertised S letter, not a click: the side actions are key-bound.
   await expect(
     showcase.getByRole("button", { name: /Skip to sign up/ }),
   ).toBeVisible();
-  await page.keyboard.press("s");
+  await page.keyboard.press("u");
   await expect(showcase).toHaveCount(0);
   await expect(page).toHaveURL(/auth=signup/);
 });
@@ -80,7 +143,7 @@ test("Escape leaves the practice and it never auto-replays", async ({
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Create an event");
+  await expect(showcase).toContainText("Drop an event on the board");
 
   await page.keyboard.press("Escape");
   await expect(showcase).toHaveCount(0);

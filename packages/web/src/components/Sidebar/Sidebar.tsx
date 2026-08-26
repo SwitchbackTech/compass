@@ -1,6 +1,11 @@
 import { lazyRouteComponent } from "@tanstack/react-router";
 import { type HTMLAttributes, type ReactNode, Suspense } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { AvailabilityPanel } from "@web/availability/AvailabilityPanel";
+import {
+  selectAvailabilityOpen,
+  useAvailabilityStore,
+} from "@web/availability/availability.store";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -32,6 +37,8 @@ export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
   onSelectDate: (date: Dayjs) => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
+  viewEnd: Dayjs;
+  viewStart: Dayjs;
 }
 
 export function Sidebar({
@@ -41,10 +48,13 @@ export function Sidebar({
   onSelectDate,
   shortcutSections,
   shortcutsViewLabel,
+  viewEnd,
+  viewStart,
   ...props
 }: SidebarProps) {
   const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
   const showEventDetails = Boolean(eventDetails) && isEventFormOpen;
+  const isAvailabilityOpen = useAvailabilityStore(selectAvailabilityOpen);
 
   return (
     <SidebarShell
@@ -61,6 +71,8 @@ export function Sidebar({
         >
           {eventDetails}
         </section>
+      ) : isAvailabilityOpen ? (
+        <AvailabilityPanel />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
           <Suspense fallback={<div aria-hidden className="h-63" />}>
@@ -68,6 +80,8 @@ export function Sidebar({
               monthsShown={monthsShown}
               onSelectDate={onSelectDate}
               selectedDate={calendarDate}
+              viewEnd={viewEnd}
+              viewStart={viewStart}
             />
           </Suspense>
           <UpNextCard />

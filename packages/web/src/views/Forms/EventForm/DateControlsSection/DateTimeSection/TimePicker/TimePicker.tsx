@@ -4,7 +4,10 @@ import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
-import { parseUserTime } from "@web/common/utils/datetime/web.date.util";
+import {
+  filterTimeOption,
+  parseUserTime,
+} from "@web/common/utils/datetime/web.date.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
 
@@ -218,6 +221,9 @@ export const TimePicker = ({
         }}
         openMenuOnFocus={true}
         options={selectOptions}
+        filterOption={(option, inputValue) =>
+          filterTimeOption(option, inputValue, value?.value)
+        }
         tabSelectsValue={false}
         ariaLiveMessages={{
           guidance: ({

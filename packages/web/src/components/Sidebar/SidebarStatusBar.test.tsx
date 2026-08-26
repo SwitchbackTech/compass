@@ -6,10 +6,15 @@ import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
+  initialFirstEventPromptState,
+  useFirstEventPromptStore,
+} from "@web/components/FirstEventPrompt/first-event.store";
+import {
   createGridEventDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
+import { CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES } from "@web/grid/interaction/view-event-registry";
 import {
   edgeFocusActions,
   initialEdgeFocusState,
@@ -22,7 +27,11 @@ import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
-import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
+import {
+  getHintPlainText,
+  getPartsPlainText,
+  getShortcutHint,
+} from "@web/shortcuts/tips/shortcut-tips.data";
 import {
   afterAll,
   afterEach,
@@ -99,6 +108,21 @@ const seedKeyboardPlaceDraft = () => {
 };
 
 const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
+const CREATE_EVENT_HINT = getHintPlainText(getShortcutHint("create-event"));
+const FIRST_EVENT_SAVE_HINT = getHintPlainText(
+  getShortcutHint("first-event-save"),
+);
+const PAGE_JUMP_HINT = getHintPlainText(getShortcutHint("page-jump"));
+const EDIT_SEQUENCE_HINT = getHintPlainText(getShortcutHint("edit-sequence"));
+
+const focusCalendarEvent = () => {
+  const card = document.createElement("div");
+  card.setAttribute(CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES[0], "evt-1");
+  card.tabIndex = -1;
+  document.body.appendChild(card);
+  card.focus();
+  return card;
+};
 
 describe("SidebarStatusBar", () => {
   beforeEach(() => {
@@ -109,12 +133,16 @@ describe("SidebarStatusBar", () => {
     draftActions.discard();
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
+    useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    document.body.innerHTML = "";
   });
 
   afterEach(() => {
     draftActions.discard();
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
+    useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    document.body.innerHTML = "";
   });
 
   it("shows 'Saving changes…' when a mutation is pending", () => {
@@ -126,19 +154,12 @@ describe("SidebarStatusBar", () => {
     expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
-  it("reserves space for the status line when idle, showing the anonymous trial chip", async () => {
+  it("reserves space for the status line when idle, showing the next shortcut", () => {
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    // No SessionContext.Provider means these tests render as anonymous, so
-    // an idle bar falls back to the trial countdown chip rather than blank
-    // space — there is no truly empty state for an anonymous user anymore.
-    // The chip depends on the (async, MSW-stubbed) /config enforcement
-    // check, so this settles a beat after the initial render.
-    expect(
-      await screen.findByRole("button", { name: /Trial: \d+ days? left/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(CREATE_EVENT_HINT);
   });
 
   it("renders exactly one save status region, regardless of account count", () => {
@@ -181,7 +202,7 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(CREATE_EVENT_HINT);
   });
 
   it("shows Syncing in the background when catch-up is more than two minutes behind", () => {
@@ -261,13 +282,13 @@ describe("SidebarStatusBar", () => {
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
   });
 
-  it("stays empty when the aggregate Google state is healthy", () => {
+  it("shows the next shortcut when the aggregate Google state is healthy", () => {
     googleState = "HEALTHY";
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(CREATE_EVENT_HINT);
   });
 
   it("shows a live-updates warning when SSE is degraded and sync is otherwise silent", () => {
@@ -327,6 +348,35 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(FIRST_EVENT_SAVE_HINT);
+  });
+
+  it("shows hold-Mod after the first event is done and the calendar is idle", () => {
+    useFirstEventPromptStore.setState({ isDone: true }, false);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(PAGE_JUMP_HINT);
+  });
+
+  it("shows edit-sequence when a calendar event is focused", () => {
+    focusCalendarEvent();
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(EDIT_SEQUENCE_HINT);
+  });
+
+  it("yields the next-shortcut hint to event jump", () => {
+    eventJumpActions.setActive(true);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.queryByText(CREATE_EVENT_HINT)).not.toBeInTheDocument();
   });
 
   it("yields the keyboardPlace hint to event jump", () => {

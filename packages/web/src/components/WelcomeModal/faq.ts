@@ -15,11 +15,11 @@ export const FAQ_ITEMS = [
   {
     question: "Why doesn't my mouse work?",
     answer:
-      "Compass is keyboard only, on purpose. Clicks do nothing; every action has a key. That constraint is what makes the shortcuts stick, and within a day or two you'll be moving faster than any mouse allows. Scrolling still works.",
+      "Compass is keyboard-driven to help users stay in the flow. Disabling clicks forces us to deliver a first-class keyboard experience.",
   },
   {
     question: "I don't know any shortcuts yet. Will I be lost?",
     answer:
-      "No. The practice arena teaches the core motion in under a minute, hints appear right when they're useful, and ? opens the full legend. Cmd+K opens a command palette for anything you can't remember.",
+      "No. The practice arena walks you through the core shortcut patterns, hints appear right when they're useful, and ? opens the full legend. Cmd+K opens a command palette for anything you can't remember.",
   },
 ];

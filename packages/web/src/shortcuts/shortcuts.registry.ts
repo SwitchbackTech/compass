@@ -140,8 +140,14 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "create-allday",
-    keys: ["a"],
+    keys: ["Shift", "C"],
     label: "Create all-day event",
+    section: "create",
+  },
+  {
+    id: "share-availability",
+    keys: ["A"],
+    label: "Share availability",
     section: "create",
   },
   {
@@ -350,7 +356,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "other-palette",
-    keys: ["Mod", "k"],
+    keys: [...KEYMAP.commandPalette.keycaps],
     label: "Command Palette",
     section: "other",
   },
