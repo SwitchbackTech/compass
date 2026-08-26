@@ -57,6 +57,11 @@ test("the welcome-started practice runs create then D through graduation", async
     await page.keyboard.press("d");
   }
 
+  // Not a mission, so it carries no chip; N passes without prompting.
+  await expect(showcase).toContainText("Never miss a meeting");
+  await expect(showcase).not.toContainText("Mission 7 of");
+  await page.keyboard.press("n");
+
   await expect(showcase).toContainText("young cap'n");
   await page.keyboard.press("Enter");
   await expect(showcase).toHaveCount(0);
@@ -64,6 +69,39 @@ test("the welcome-started practice runs create then D through graduation", async
   await expect(
     page.getByRole("complementary", { name: "Create your first event" }),
   ).toBeVisible();
+});
+
+test("taking the notifications offer opts in and moves on", async ({
+  page,
+  context,
+}) => {
+  // Granted up front so the offer resolves without a real browser prompt,
+  // which Playwright cannot click.
+  await context.grantPermissions(["notifications"]);
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await page.keyboard.press("c");
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+
+  // D assists through the remaining missions to reach the offer.
+  for (let i = 0; i < 5; i += 1) {
+    await page.keyboard.press("d");
+  }
+
+  await expect(showcase).toContainText("Never miss a meeting");
+  await page.keyboard.press("Enter");
+
+  await expect(showcase).toContainText("young cap'n");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        localStorage.getItem("compass.notifications.enabled"),
+      ),
+    )
+    .toBe("true");
 });
 
 test("Skip to sign up leaves the practice for the signup form on step 1", async ({

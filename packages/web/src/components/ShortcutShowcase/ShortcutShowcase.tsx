@@ -46,6 +46,8 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { getNotificationPort } from "@web/notifications/notification.port";
+import { notificationActions } from "@web/notifications/notification.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import {
   isBareLetterKey,
@@ -240,6 +242,33 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
+      // The notifications offer: Enter allows, N passes. Both move on.
+      if (currentStepId === "notifications") {
+        // Unlike graduation, this step renders several buttons, so Enter is
+        // the step's shortcut only when no button owns it - otherwise
+        // "Not now" and "Skip to calendar" would raise a permission prompt
+        // instead of doing what they say. Auto-repeat is ignored too: the
+        // Enter that committed a practice title must not carry into the
+        // offer once the input unmounts.
+        const focusedButton =
+          event.target instanceof HTMLElement && event.target.closest("button");
+        if (
+          event.key === "Enter" &&
+          !event.repeat &&
+          !focusedButton &&
+          sideActionsRef.current.notificationsSupported
+        ) {
+          event.preventDefault();
+          sideActionsRef.current.enableNotifications();
+          return;
+        }
+        if (isBareLetterKey(event, "n")) {
+          event.preventDefault();
+          shortcutShowcaseActions.advance();
+          return;
+        }
+      }
+
       if (currentStepId === "pageJump") {
         const digit = /^Digit([12])$/.exec(event.code);
         if (digit && hasRevealedJumpsRef.current) {
@@ -260,7 +289,12 @@ const ShowcaseTakeover: FC = () => {
         }
       }
 
-      if (isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())) {
+      // Every other non-graduation step teaches the board; the notifications
+      // offer does not, so C must not open a practice draft behind it.
+      if (
+        currentStepId !== "notifications" &&
+        isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())
+      ) {
         event.preventDefault();
         apply(createDraft);
         return;
@@ -304,18 +338,22 @@ const ShowcaseTakeover: FC = () => {
       }
 
       if (currentStepId !== "graduation") {
-        if (isBareLetterKey(event, "d")) {
-          event.preventDefault();
-          sideActionsRef.current.doItForMe();
-          return;
-        }
-        if (
-          isBareLetterKey(event, "u") &&
-          !sideActionsRef.current.authenticated
-        ) {
-          event.preventDefault();
-          sideActionsRef.current.skipToSignup();
-          return;
+        // D and U are practice affordances: the notifications offer has no
+        // board action to perform, and no lesson to skip past. X still leaves.
+        if (currentStepId !== "notifications") {
+          if (isBareLetterKey(event, "d")) {
+            event.preventDefault();
+            sideActionsRef.current.doItForMe();
+            return;
+          }
+          if (
+            isBareLetterKey(event, "u") &&
+            !sideActionsRef.current.authenticated
+          ) {
+            event.preventDefault();
+            sideActionsRef.current.skipToSignup();
+            return;
+          }
         }
         if (isBareLetterKey(event, "x")) {
           event.preventDefault();
@@ -374,8 +412,43 @@ const ShowcaseTakeover: FC = () => {
     if (stepId === "palette") advance();
   };
 
-  const sideActionsRef = useRef({ doItForMe, skipToSignup, authenticated });
-  sideActionsRef.current = { doItForMe, skipToSignup, authenticated };
+  const notificationsSupported = getNotificationPort().isSupported();
+  const offerTakenRef = useRef(false);
+  // A browser prompt stays up until the user answers it, and some never get
+  // answered - so say so on the button rather than letting it look live.
+  const [offerPending, setOfferPending] = useState(false);
+
+  // The offer moves on either way: a denial is explained by the toast, and
+  // holding the user here would turn a one-key offer into a decision to make.
+  const enableNotifications = () => {
+    if (offerTakenRef.current) return;
+    offerTakenRef.current = true;
+    setOfferPending(true);
+    void notificationActions.enable("showcase").finally(() => {
+      setOfferPending(false);
+      // Only advance if the offer is still what's on screen: passing on it or
+      // leaving while the prompt was up already moved the user along, and a
+      // second advance from graduation would close the showcase outright.
+      const { stepIndex: current } = useShortcutShowcaseStore.getState();
+      if (stepIdAt(current) !== "notifications") return;
+      advance();
+    });
+  };
+
+  const sideActionsRef = useRef({
+    doItForMe,
+    skipToSignup,
+    authenticated,
+    enableNotifications,
+    notificationsSupported,
+  });
+  sideActionsRef.current = {
+    doItForMe,
+    skipToSignup,
+    authenticated,
+    enableNotifications,
+    notificationsSupported,
+  };
 
   const step =
     stepId === "create"
@@ -435,6 +508,32 @@ const ShowcaseTakeover: FC = () => {
                 </button>
                 <ShortcutHint className="shrink-0">Enter</ShortcutHint>
               </div>
+            ) : stepId === "notifications" ? (
+              <>
+                {notificationsSupported ? (
+                  <button
+                    type="button"
+                    className={PRIMARY_BUTTON_CLASS}
+                    disabled={offerPending}
+                    onClick={enableNotifications}
+                  >
+                    Enable notifications
+                    <ShortcutHint className="shrink-0">Enter</ShortcutHint>
+                  </button>
+                ) : (
+                  <span className="text-text-muted text-xs">
+                    Not supported in this browser
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={SECONDARY_BUTTON_CLASS}
+                  onClick={advance}
+                >
+                  Not now
+                  <ShortcutHint className="shrink-0">N</ShortcutHint>
+                </button>
+              </>
             ) : (
               <>
                 <button

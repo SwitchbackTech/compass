@@ -17,6 +17,7 @@ export const ACCOUNT_DISCONNECTED_TOAST_ID: Id = "account-disconnected";
 export const EXPORT_MY_DATA_TOAST_ID: Id = "export-my-data";
 export const LOGGED_OUT_TOAST_ID: Id = "logged-out";
 export const EVENT_SAVE_UNAVAILABLE_TOAST_ID: Id = "event-save-unavailable";
+export const NOTIFICATIONS_STATUS_TOAST_ID: Id = "notifications-status";
 
 const toastPalette: Record<
   ThemeName,

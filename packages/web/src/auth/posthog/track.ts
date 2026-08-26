@@ -22,7 +22,10 @@ export type ProductEvent =
   | "trial_gate_shown"
   | "trial_gate_cta_clicked"
   | "billing_gate_shown"
-  | "billing_gate_cta_clicked";
+  | "billing_gate_cta_clicked"
+  | "notifications_enabled"
+  | "notifications_disabled"
+  | "notifications_enable_denied";
 
 /**
  * Fire-and-forget capture for the small set of product-activation events.
