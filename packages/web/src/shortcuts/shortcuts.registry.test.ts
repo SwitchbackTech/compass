@@ -41,6 +41,8 @@ describe("shortcuts.registry", () => {
       expect(navigateIds).not.toContain("nav-next");
       expect(navigateIds).not.toContain("nav-shift-left");
       expect(navigateIds).not.toContain("nav-shift-right");
+      expect(navigateIds).not.toContain("nav-month-prev");
+      expect(navigateIds).not.toContain("nav-month-next");
     });
 
     it("excludes form-open shortcuts when form is not open", () => {
@@ -111,6 +113,24 @@ describe("shortcuts.registry", () => {
         }).map((shortcut) => shortcut.id);
         expect(ids).not.toContain("focus-week-day");
       }
+    });
+
+    it("lists month-picker navigation in day and week, not life", () => {
+      for (const view of ["day", "week"] as const) {
+        const ids = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        }).map((shortcut) => shortcut.id);
+        expect(ids).toContain("nav-month-prev");
+        expect(ids).toContain("nav-month-next");
+      }
+
+      const life = filterShortcutsByContext({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      }).map((shortcut) => shortcut.id);
+      expect(life).not.toContain("nav-month-prev");
+      expect(life).not.toContain("nav-month-next");
     });
 
     it("lists the page jump shortcut in day, week, and life", () => {

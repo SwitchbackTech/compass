@@ -37,4 +37,22 @@ describe("MonthNavButton", () => {
 
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it("shows remaining hold-Mod keys next to the chevron", () => {
+    render(
+      <MonthNavButton
+        ariaLabel="Previous month"
+        color="#fff"
+        holdHintKeys={["Shift", "J"]}
+        onClick={() => {}}
+        showHoldHints
+      >
+        <span>‹</span>
+      </MonthNavButton>,
+    );
+
+    const button = screen.getByRole("button", { name: "Previous month" });
+    expect(button.parentElement?.textContent).toContain("Shift");
+    expect(button.parentElement?.textContent).toContain("J");
+  });
 });

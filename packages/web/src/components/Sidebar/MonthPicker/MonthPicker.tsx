@@ -2,8 +2,19 @@ import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
+import {
+  selectPageJumpHintsVisible,
+  usePageJumpHintStore,
+} from "@web/shortcuts/page-jump/page-jump.store";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getMonthPickerDayClassName } from "./monthPickerDayClassName";
+import {
+  MONTH_PICKER_NEXT_HOLD_KEYCAPS,
+  MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_HOLD_KEYCAPS,
+  MONTH_PICKER_PREV_KEYCAPS,
+  useMonthPickerShortcuts,
+} from "./useMonthPickerShortcuts";
 
 interface Props {
   monthsShown?: number;
@@ -30,6 +41,15 @@ export const MonthPicker: FC<Props> = ({
   );
   const previousSelectedDateKeyRef = useRef(selectedDateKey);
   const [focusedDate, setFocusedDate] = useState(() => selectedDate);
+  const [displayedMonth, setDisplayedMonth] = useState(() =>
+    selectedDate.startOf("month"),
+  );
+  const showHoldHints = usePageJumpHintStore(selectPageJumpHintsVisible);
+
+  useMonthPickerShortcuts({
+    onPrevMonth: () => setDisplayedMonth((month) => month.subtract(1, "month")),
+    onNextMonth: () => setDisplayedMonth((month) => month.add(1, "month")),
+  });
 
   useEffect(() => {
     if (previousSelectedDateKeyRef.current === selectedDateKey) {
@@ -37,9 +57,12 @@ export const MonthPicker: FC<Props> = ({
     }
 
     previousSelectedDateKeyRef.current = selectedDateKey;
-    setFocusedDate(
-      dayjs(selectedDateKey, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+    const nextDate = dayjs(
+      selectedDateKey,
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
+    setFocusedDate(nextDate);
+    setDisplayedMonth(nextDate.startOf("month"));
   }, [selectedDateKey]);
 
   const getDayClassName = (date: Date) =>
@@ -68,6 +91,13 @@ export const MonthPicker: FC<Props> = ({
         headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}
+        monthNav={{
+          prevShortcut: MONTH_PICKER_PREV_KEYCAPS,
+          nextShortcut: MONTH_PICKER_NEXT_KEYCAPS,
+          prevHoldHint: MONTH_PICKER_PREV_HOLD_KEYCAPS,
+          nextHoldHint: MONTH_PICKER_NEXT_HOLD_KEYCAPS,
+          showHoldHints,
+        }}
         monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
@@ -76,8 +106,13 @@ export const MonthPicker: FC<Props> = ({
           const nextDate = dayjs(date);
 
           setFocusedDate(nextDate);
+          setDisplayedMonth(nextDate.startOf("month"));
           onSelectDate(nextDate);
         }}
+        onMonthChange={(date) => {
+          setDisplayedMonth(dayjs(date).startOf("month"));
+        }}
+        openToDate={displayedMonth.toDate()}
         selected={focusedDate.toDate()}
         shouldCloseOnSelect={false}
         view="sidebar"

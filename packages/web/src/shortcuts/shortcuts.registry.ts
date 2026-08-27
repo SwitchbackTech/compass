@@ -1,3 +1,7 @@
+import {
+  MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_KEYCAPS,
+} from "@web/components/Sidebar/MonthPicker/useMonthPickerShortcuts";
 import { EDIT_SEQUENCE_LETTER_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 import { KEYMAP } from "@web/shortcuts/keymap";
@@ -78,6 +82,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     id: "nav-shift-right",
     keys: ["Shift", "k"],
     label: "Shift view forward one day",
+    section: "navigate",
+  },
+  {
+    id: "nav-month-prev",
+    keys: [...MONTH_PICKER_PREV_KEYCAPS],
+    label: "Previous month in picker",
+    section: "navigate",
+  },
+  {
+    id: "nav-month-next",
+    keys: [...MONTH_PICKER_NEXT_KEYCAPS],
+    label: "Next month in picker",
     section: "navigate",
   },
   {
