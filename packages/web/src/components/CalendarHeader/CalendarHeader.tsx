@@ -1,7 +1,6 @@
-import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
-import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
+import { UpdateAvailableButton } from "@web/components/CalendarHeader/UpdateAvailableButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { SidebarToggleButton } from "@web/components/Sidebar/SidebarToggleButton";
@@ -64,20 +63,7 @@ export const CalendarHeader: FC<Props> = ({
           </div>
         )}
         <SelectView label={label} onToday={onToday} />
-        {isUpdateAvailable ? (
-          <TooltipWrapper
-            description="Get latest version"
-            onClick={reloadLocation}
-          >
-            <button
-              aria-label="Get latest version"
-              className="flex size-7 shrink-0 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              type="button"
-            >
-              <ArrowClockwiseIcon aria-hidden="true" size={16} />
-            </button>
-          </TooltipWrapper>
-        ) : null}
+        {isUpdateAvailable ? <UpdateAvailableButton /> : null}
       </div>
 
       <div className="z-2 flex shrink-0 items-center pr-5">
