@@ -65,7 +65,9 @@ describe("DayLabels", () => {
     expect(screen.queryByText("Mon")).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("Monday M");
     expect(screen.getByRole("status").textContent).toContain("Thursday R");
-    expect(screen.getByRole("status").textContent).toContain("Press H");
+    expect(screen.getByRole("status").textContent).toContain(
+      "Type the day key to focus that column.",
+    );
   });
 
   it("shows day-jump prefixes while page-jump Mod-hold hints are visible", () => {
@@ -75,5 +77,8 @@ describe("DayLabels", () => {
     expect(screen.getByText("M")).toBeTruthy();
     expect(screen.getByText("R")).toBeTruthy();
     expect(screen.queryByText("Mon")).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain(
+      "These are typed after H, not with Mod.",
+    );
   });
 });

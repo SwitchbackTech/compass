@@ -52,10 +52,13 @@ export const DayLabels: FC<Props> = ({
     !isEventFormOpen && (pageJumpHintsVisible || isEventJumpActive);
   const marginLeft = useGridMarginLeft();
   const jumpKey = KEYMAP.eventJump.keycaps[0];
+  const dayJumpHowTo = isEventJumpActive
+    ? "Type the day key to focus that column."
+    : `These are typed after ${jumpKey}, not with Mod.`;
   const dayJumpAnnouncement = showDayJumpPrefixes
     ? `Day jump keys: ${weekDays
         .map((day) => `${day.format("dddd")} ${dayJumpPrefix(day)}`)
-        .join(", ")}. Press ${jumpKey} then the day key.`
+        .join(", ")}. ${dayJumpHowTo}`
     : "";
   const getColor = (day: Dayjs) => {
     const isCurrentWeek = today.week() === week;
