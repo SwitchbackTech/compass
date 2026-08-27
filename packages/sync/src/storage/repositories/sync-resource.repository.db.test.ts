@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -469,5 +470,30 @@ describe("SyncResourceRepository", () => {
         resource._id,
       ),
     ).toBeNull();
+  });
+
+  it("lists a resource that already carries a newer writer's unknown key", async () => {
+    // GET /connections refresh-parses every resource for the principal. A
+    // strict schema turned one additive field (lastFullListAt, #2908) into a
+    // 500 for the whole calendar list, and the same throw from a job's
+    // ensure()/find reopened the Sync-job-engine catch-all.
+    const resource = await repo.ensure(
+      upsert({ resourceKind: "calendarList" }),
+    );
+    await db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateOne(
+        { _id: resource._id },
+        { $set: { addedByNewerWriter: "rolling-deploy-field" } },
+      );
+
+    const listed = await repo.listByConnection(
+      resource.tenantId,
+      resource.principalId,
+      resource.connectionId,
+    );
+    expect(listed).toHaveLength(1);
+    expect(listed[0]?._id).toBe(resource._id);
+    expect("addedByNewerWriter" in (listed[0] ?? {})).toBe(false);
   });
 });

@@ -30,7 +30,17 @@ export type ResourceBootstrapState = z.infer<
 // subscription. A calendar-list resource has no calendarId (there is one per
 // connection); an events resource is keyed to one provider calendar. Holds no
 // event content.
-export const SyncResourceRecordSchema = z.strictObject({
+//
+// `z.object` (strip unknown keys), not `z.strictObject`. Additive fields are
+// written in the same deploy that teaches the schema about them, so during a
+// rolling deploy a newer replica stamps a key an older replica cannot name.
+// Strict parse then throws on every read of that row: GET /connections
+// (listByConnection inside refreshConnectionState) 500s the whole calendar
+// list, and every job that ensure()/finds the resource throws into #runJob's
+// catch-all ("Sync job engine failed"). 2026-08-27: lastFullListAt from #2908
+// did exactly that. Missing required fields still fail — that is the
+// 2026-07-31 freeze we still want (a row silently missing watchUnsupportedAt).
+export const SyncResourceRecordSchema = z.object({
   _id: ObjectIdStringSchema,
   tenantId: TenantIdSchema,
   principalId: PrincipalIdSchema,
