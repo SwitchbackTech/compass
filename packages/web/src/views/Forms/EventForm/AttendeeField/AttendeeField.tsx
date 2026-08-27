@@ -244,10 +244,13 @@ export const AttendeeField = ({
   };
 
   return (
-    <div className="c-attendee-field">
+    // `id` belongs on this visible wrapper, not react-select's dummy input.
+    // The dummy input is often 2px wide, which fails the hold-Mod hint-chip
+    // visibility check; the wrapper is the jump-target anchor.
+    <div id={id} className="c-attendee-field">
       <AttendeeMenuFooterContext.Provider value={menuFooter}>
         <CreatableSelect<AttendeeOption, true>
-          inputId={id}
+          inputId={id ? `${id}-input` : undefined}
           aria-label="Guests"
           classNamePrefix={ATTENDEE_FIELD}
           components={attendeeFieldComponents}

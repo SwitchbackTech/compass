@@ -84,8 +84,11 @@ const buildForm = () => {
   location.id = "event-form-location";
   form.append(location);
 
-  const attendees = document.createElement("input");
+  const attendees = document.createElement("div");
   attendees.id = "event-form-attendees";
+  const attendeesInput = document.createElement("input");
+  attendeesInput.setAttribute("role", "combobox");
+  attendees.append(attendeesInput);
   form.append(attendees);
 
   // Real usage sets this id on TipTap's contenteditable root, which is what
@@ -105,7 +108,7 @@ const buildForm = () => {
     calendar,
     color: radio,
     location,
-    attendees,
+    attendees: attendeesInput,
     description,
   };
 };

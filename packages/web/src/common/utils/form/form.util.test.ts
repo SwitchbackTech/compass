@@ -2,6 +2,8 @@ import { ID_EVENT_FORM } from "../../constants/web.constants";
 import {
   focusEventFormField,
   focusEventFormTitle,
+  getEventFormFieldAnchor,
+  getEventFormFieldElement,
   isComboboxInteraction,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
@@ -175,8 +177,11 @@ describe("form.util", () => {
       colorOther.type = "radio";
       colorOther.name = "event-color";
       color.append(colorSelected, colorOther);
-      const attendees = document.createElement("input");
+      const attendees = document.createElement("div");
       attendees.id = "event-form-attendees";
+      const attendeesInput = document.createElement("input");
+      attendeesInput.setAttribute("role", "combobox");
+      attendees.append(attendeesInput);
       form.append(
         title,
         location,
@@ -199,6 +204,7 @@ describe("form.util", () => {
         calendar,
         colorSelected,
         attendees,
+        attendeesInput,
       };
     };
 
@@ -230,7 +236,37 @@ describe("form.util", () => {
       expect(document.activeElement).toBe(fields.colorSelected);
 
       expect(focusEventFormField("attendees")).toBe(true);
-      expect(document.activeElement).toBe(fields.attendees);
+      expect(document.activeElement).toBe(fields.attendeesInput);
+    });
+
+    it("anchors guests and color chips on the visible wrapper, not the inner control", () => {
+      const fields = mountForm();
+
+      expect(getEventFormFieldAnchor("attendees")).toBe(fields.attendees);
+      expect(getEventFormFieldElement("attendees")).toBe(fields.attendeesInput);
+
+      expect(getEventFormFieldAnchor("color")?.id).toBe("event-form-color");
+      expect(getEventFormFieldElement("color")).toBe(fields.colorSelected);
+    });
+
+    it("focuses the selected color swatch even when it is not first in the group", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const color = document.createElement("fieldset");
+      color.id = "event-form-color";
+      const first = document.createElement("input");
+      first.type = "radio";
+      first.name = "event-color";
+      const selected = document.createElement("input");
+      selected.type = "radio";
+      selected.name = "event-color";
+      selected.checked = true;
+      color.append(first, selected);
+      form.append(color);
+      document.body.appendChild(form);
+
+      expect(focusEventFormField("color")).toBe(true);
+      expect(document.activeElement).toBe(selected);
     });
 
     it("falls back to start/end date inputs when time pickers are absent", () => {

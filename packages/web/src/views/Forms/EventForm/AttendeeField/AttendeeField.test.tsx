@@ -237,4 +237,21 @@ describe("AttendeeField", () => {
       screen.queryByText("Enable contact suggestions"),
     ).not.toBeInTheDocument();
   });
+
+  it("puts the jump-target id on the visible wrapper, not the dummy input", () => {
+    render(
+      <AttendeeField
+        id="event-form-attendees"
+        value={[]}
+        onChange={() => {}}
+      />,
+    );
+
+    const wrapper = document.getElementById("event-form-attendees");
+    const combobox = screen.getByRole("combobox", { name: "Guests" });
+
+    expect(wrapper).not.toBeNull();
+    expect(wrapper?.contains(combobox)).toBe(true);
+    expect(combobox.id).toBe("event-form-attendees-input");
+  });
 });
