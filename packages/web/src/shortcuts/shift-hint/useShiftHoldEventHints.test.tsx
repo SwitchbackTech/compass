@@ -13,6 +13,7 @@ import {
   resetEditSequenceArm,
   useEditSequenceShortcut,
 } from "@web/shortcuts/useEditSequenceShortcut";
+import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const EVENT_A = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
@@ -65,9 +66,18 @@ describe("useShiftHoldEventHints", () => {
     document.body.innerHTML = "";
   });
 
-  const mountHints = (mode: "week" | "day" = "week") => {
+  const mountHints = (
+    mode: "week" | "day" = "week",
+    timedEvents?: GridEvent[],
+  ) => {
     const focus = mock((_target: { eventId: string }) => {});
-    const elements = [EVENT_A, EVENT_B, EVENT_C].map((id) => {
+    const events = timedEvents ?? [
+      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-05T11:00:00.000Z"),
+      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
+    ];
+    const ids = events.map((event) => event._id as string);
+    const elements = ids.map((id) => {
       const el = document.createElement("button");
       el.textContent = id;
       el.getBoundingClientRect = () =>
@@ -86,27 +96,21 @@ describe("useShiftHoldEventHints", () => {
       return el;
     });
 
-    // Wednesday / Thursday / Friday so prefixes are W / R / F.
-    const timedEvents = [
-      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
-      timedFixture(EVENT_B, "2026-08-05T11:00:00.000Z"),
-      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
-    ];
-
     const { result } = renderHook(() =>
       useShiftHoldEventHints({
         focus: (target) => focus(target),
-        listVisible: () => [
-          { eventId: EVENT_A, eventType: "timed", element: elements[0]! },
-          { eventId: EVENT_B, eventType: "timed", element: elements[1]! },
-          { eventId: EVENT_C, eventType: "timed", element: elements[2]! },
-        ],
+        listVisible: () =>
+          ids.map((id, index) => ({
+            eventId: id,
+            eventType: "timed" as const,
+            element: elements[index]!,
+          })),
         mode,
-        timedEvents,
+        timedEvents: events,
       }),
     );
 
-    return { focus, result, elements };
+    return { focus, result, elements, ids };
   };
 
   it("toggles hints on s and focuses via day prefix", () => {
@@ -142,6 +146,243 @@ describe("useShiftHoldEventHints", () => {
       expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
     );
     expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
+  it("focuses a day prefix without first pressing s", () => {
+    const { focus, result, elements } = mountHints();
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "w",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
+    expect(result.current.hints.map((hint) => hint.hint)).toEqual(["w1", "w2"]);
+  });
+
+  it("refines a leaderless day prefix with a following digit", () => {
+    const { focus, elements } = mountHints();
+
+    act(() => {
+      dispatch("keydown", "w");
+      dispatch("keydown", "2");
+    });
+
+    expect(focus).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+    expect(focus).toHaveBeenLastCalledWith(
+      expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
+    );
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
+  it("does not claim a day letter with no events that day", () => {
+    const { focus, result } = mountHints("week", [
+      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
+    ]);
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "w",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+    expect(result.current.hints).toEqual([]);
+  });
+
+  it("focuses a day-view index without first pressing s", () => {
+    const { focus, elements } = mountHints("day");
+
+    act(() => {
+      dispatch("keydown", "1");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+  });
+
+  it("does not claim t while jump is off so today still works", () => {
+    const { focus } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "t",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("does not claim m while a calendar event is focused", () => {
+    const { focus, elements } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+    ]);
+    elements[0]!.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_A);
+    elements[0]!.focus();
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "m",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("claims m when no calendar event is focused", () => {
+    const { focus, elements } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      dispatch("keydown", "m");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+  });
+
+  it("does not claim f while a notice is visible", () => {
+    const { focus } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
+    ]);
+    const notice = document.createElement("div");
+    notice.setAttribute("data-notice", "");
+    const button = document.createElement("button");
+    button.textContent = "Sign up";
+    notice.appendChild(button);
+    document.body.appendChild(notice);
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "f",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("claims f when no notice is visible", () => {
+    const { focus, elements } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      dispatch("keydown", "f");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+  });
+
+  it("does not claim a leaderless jump while typing", () => {
+    const { focus } = mountHints();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    act(() => {
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: "w",
+        }),
+      );
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("does not claim a leaderless jump while app-locked", () => {
+    setAppLockReason("test-modal", true);
+    const { focus } = mountHints();
+
+    act(() => {
+      dispatch("keydown", "w");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("does not claim a mapped e-sequence key while the sequence is armed", () => {
+    const onSequence = mock(() => {});
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+    const { focus } = mountHints();
+
+    act(() => {
+      dispatch("keydown", "e");
+      dispatch("keydown", "r");
+    });
+
+    expect(onSequence).toHaveBeenCalledWith("recurrence");
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("does not claim unmatched letters while jump is off", () => {
+    mountHints();
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "c",
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
   });
 
   it("turns a blocked event click into a directly usable event sequence", () => {
