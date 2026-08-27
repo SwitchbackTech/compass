@@ -10,9 +10,17 @@
  * empty Up Next) simply gets no chip and its digit does nothing. A closed
  * menu trigger (the view dropdown) is clicked after focus so the jump
  * reveals Day / Week / Life instead of landing on a closed heading.
+ *
+ * Day view appends writable calendar columns after the shared 1–4 page areas
+ * (`buildDayPageJumpTargets`). Those digits stay 5+ even when the sidebar is
+ * collapsed, so muscle memory for 1–4 never shifts.
  */
 
+import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
+
 export const PAGE_JUMP_ATTRIBUTE = "data-page-jump";
+
+export const DAY_COLUMN_JUMP_ID_PREFIX = "day-column:" as const;
 
 export type PageJumpTargetId =
   | "view-select"
@@ -21,7 +29,8 @@ export type PageJumpTargetId =
   | "calendars"
   | "life-grid"
   | "life-variation"
-  | "life-details";
+  | "life-details"
+  | `${typeof DAY_COLUMN_JUMP_ID_PREFIX}${string}`;
 
 export type PageJumpTarget = {
   digit: string;
@@ -44,6 +53,39 @@ export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = [
   { digit: "3", id: "life-variation", label: "Life variation" },
   { digit: "4", id: "life-details", label: "Life details" },
 ];
+
+export type DayColumnJumpCalendar = {
+  id: string;
+  name: string;
+};
+
+export const dayColumnJumpId = (
+  calendarId: string,
+): `${typeof DAY_COLUMN_JUMP_ID_PREFIX}${string}` =>
+  `${DAY_COLUMN_JUMP_ID_PREFIX}${calendarId}`;
+
+/**
+ * Day view's hold-Mod map: the shared calendar page areas, then one numbered
+ * target per writable displayed column. Extra calendars past the physical
+ * top-row keys (`PICK_KEY_LABELS`) are omitted — no chip, no binding.
+ */
+export const buildDayPageJumpTargets = (
+  calendars: readonly DayColumnJumpCalendar[],
+): PageJumpTargets => {
+  const columnTargets = calendars.flatMap((calendar, index) => {
+    const digit = PICK_KEY_LABELS[CALENDAR_PAGE_JUMP_TARGETS.length + index];
+    if (!digit) return [];
+    return [
+      {
+        digit,
+        id: dayColumnJumpId(calendar.id),
+        label: calendar.name,
+      },
+    ];
+  });
+
+  return [...CALENDAR_PAGE_JUMP_TARGETS, ...columnTargets];
+};
 
 /** Spread onto a component's container element to mark it as a jump target. */
 export const pageJumpAttrs = (

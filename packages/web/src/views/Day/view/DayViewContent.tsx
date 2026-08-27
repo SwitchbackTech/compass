@@ -23,7 +23,6 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
-import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { TimezoneMismatchBannerGate } from "@web/timezone/TimezoneMismatchBannerGate";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
@@ -119,7 +118,6 @@ export const DayViewContent = memo(() => {
         placeholder={getCommandPalettePlaceholder("day")}
       />
       <Dedication />
-      <PageJumpHints />
 
       <div
         id={ID_MAIN}

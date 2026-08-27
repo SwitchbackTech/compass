@@ -65,6 +65,37 @@ describe("TimedGrid", () => {
     );
   });
 
+  it("marks the highlighted calendar column", () => {
+    render(
+      <TimedGrid
+        eventsLayer={null}
+        highlightedColumnKey="work"
+        timedColumnsRef={() => {}}
+        timedGridRef={() => {}}
+        today={today}
+        visibleDates={[
+          {
+            date: today,
+            key: "personal",
+            surfaceLabel: "Personal column",
+          },
+          {
+            date: today,
+            key: "work",
+            surfaceLabel: "Work column",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("columnheader", { name: "Work column" }),
+    ).toHaveAttribute("data-focused-column", "true");
+    expect(
+      screen.getByRole("columnheader", { name: "Personal column" }),
+    ).not.toHaveAttribute("data-focused-column");
+  });
+
   it("uses the same hour-slot height for labels and timed grid rows", () => {
     render(
       <TimedGrid

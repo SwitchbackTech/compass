@@ -16,6 +16,8 @@ import {
   usePageJumpHintStore,
 } from "@web/shortcuts/page-jump/page-jump.store";
 import {
+  buildDayPageJumpTargets,
+  dayColumnJumpId,
   LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
   type PageJumpTargetId,
@@ -173,6 +175,27 @@ describe("usePageJumpShortcut", () => {
 
       expect(event.defaultPrevented).toBe(true);
       expect(currentWeek).toHaveFocus();
+    });
+
+    it("jumps to a Day calendar column at digit 5 without remapping 1-4", () => {
+      const { viewTrigger } = buildPage();
+      const column = document.createElement("button");
+      column.setAttribute(PAGE_JUMP_ATTRIBUTE, dayColumnJumpId("cal-work"));
+      document.body.append(column);
+
+      renderHook(() =>
+        usePageJumpShortcut(
+          buildDayPageJumpTargets([{ id: "cal-work", name: "Work" }]),
+        ),
+      );
+
+      const columnEvent = pressModDigit("5");
+      expect(columnEvent.defaultPrevented).toBe(true);
+      expect(column).toHaveFocus();
+
+      const viewEvent = pressModDigit("1");
+      expect(viewEvent.defaultPrevented).toBe(true);
+      expect(viewTrigger).toHaveFocus();
     });
   });
 

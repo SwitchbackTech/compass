@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type CalendarId,
+  CalendarIdSchema,
+} from "@core/types/domain-primitives";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -6,7 +10,11 @@ import {
   isFirstImportInProgress,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
+import { getWritableCalendars } from "@web/calendars/calendar.util";
+import {
+  useConnectedAccountEmails,
+  useDefaultTargetCalendar,
+} from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -28,6 +36,8 @@ import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
+import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
+import { buildDayPageJumpTargets } from "@web/shortcuts/page-jump/page-jump.targets";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -42,6 +52,7 @@ import {
   DayCalendarTimedEventsLayer,
 } from "./DayCalendarEventLayers";
 import { assignDayAllDayEventRows } from "./dayAllDayRows.util";
+import { getFocusedDayColumnCalendarId } from "./dayCalendarColumnFocus.util";
 import {
   addVisibleDraftEvent,
   getCalendarEventIdSet,
@@ -102,6 +113,26 @@ export function DayCalendarGrid() {
     isDisplayedEvent,
     visibleDates,
   } = useDayCalendarColumns({ allDayEvents, dateInView, timedEvents });
+  const connectedAccountEmails = useConnectedAccountEmails();
+  const writableDisplayedCalendars = useMemo(
+    () =>
+      getWritableCalendars(displayedCalendars, {
+        hasConnectedAccount: connectedAccountEmails.length > 0,
+      }),
+    [connectedAccountEmails.length, displayedCalendars],
+  );
+  const writableCalendarIds = useMemo(
+    () =>
+      new Set<string>(
+        writableDisplayedCalendars.map((calendar) => calendar.id),
+      ),
+    [writableDisplayedCalendars],
+  );
+  const pageJumpTargets = useMemo(
+    () => buildDayPageJumpTargets(writableDisplayedCalendars),
+    [writableDisplayedCalendars],
+  );
+  const [focusedColumnKey, setFocusedColumnKey] = useState<string | null>(null);
   const { gridRefs, measurements } = useGridMeasurements({
     visibleDateCount: visibleDates.length,
   });
@@ -193,6 +224,15 @@ export function DayCalendarGrid() {
     onOpenEvent: openEventFormForEvent,
   });
 
+  const resolveShortcutCalendarId = useCallback((): CalendarId | null => {
+    const focusedColumnId = getFocusedDayColumnCalendarId();
+    if (focusedColumnId && writableCalendarIds.has(focusedColumnId)) {
+      const parsed = CalendarIdSchema.safeParse(focusedColumnId);
+      if (parsed.success) return parsed.data;
+    }
+    return defaultTargetCalendarId;
+  }, [defaultTargetCalendarId, writableCalendarIds]);
+
   const openShortcutDraft = useCallback(
     (createDraft: () => void, openForm = true) => {
       if (gridDraft) {
@@ -219,10 +259,10 @@ export function DayCalendarGrid() {
           dateInView,
           dateInView,
           "createShortcut",
-          defaultTargetCalendarId,
+          resolveShortcutCalendarId(),
         ),
       ),
-    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+    [dateInView, openShortcutDraft, resolveShortcutCalendarId],
   );
 
   const createTimedDraftFromShortcut = useCallback(
@@ -232,10 +272,10 @@ export function DayCalendarGrid() {
           dateInView.isSame(today, "day"),
           dateInView,
           "createShortcut",
-          defaultTargetCalendarId,
+          resolveShortcutCalendarId(),
         ),
       ),
-    [dateInView, defaultTargetCalendarId, openShortcutDraft, today],
+    [dateInView, openShortcutDraft, resolveShortcutCalendarId, today],
   );
 
   // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
@@ -248,11 +288,11 @@ export function DayCalendarGrid() {
             dateInView.isSame(today, "day"),
             dateInView,
             "keyboardPlace",
-            defaultTargetCalendarId,
+            resolveShortcutCalendarId(),
           ),
         false,
       ),
-    [dateInView, defaultTargetCalendarId, openShortcutDraft, today],
+    [dateInView, openShortcutDraft, resolveShortcutCalendarId, today],
   );
   const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
@@ -333,11 +373,17 @@ export function DayCalendarGrid() {
       className="flex h-full min-w-xs flex-1 flex-col bg-background px-0.5 pb-0.5"
       onContextMenu={handleContextMenu}
     >
-      <DayCalendarColumnHeaders calendars={displayedCalendars} />
+      <DayCalendarColumnHeaders
+        calendars={displayedCalendars}
+        focusedColumnKey={focusedColumnKey}
+        onColumnFocusChange={setFocusedColumnKey}
+        writableCalendarIds={writableCalendarIds}
+      />
       <EventGrid
         allDayEventsLayer={allDayEventsLayer}
         allDayRowsCount={allDayRowsCount}
         gridRefs={gridRefs}
+        highlightedColumnKey={focusedColumnKey}
         isErrorEvents={showEventsLoadError}
         isImportFailed={isImportFailed}
         isImportingEmpty={isImportingEmpty}
@@ -351,6 +397,7 @@ export function DayCalendarGrid() {
       {contextMenu}
       <ShiftHintOverlay hints={shiftHints} />
       <EditSequenceMenu getAnchor={getEditSequenceAnchor} />
+      <PageJumpHints targets={pageJumpTargets} />
     </section>
   );
 }

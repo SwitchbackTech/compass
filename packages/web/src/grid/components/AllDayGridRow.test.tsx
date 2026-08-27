@@ -36,4 +36,34 @@ describe("AllDayGridRow", () => {
       `${ALL_DAY_COLUMN_TINT_PERCENT}%`,
     );
   });
+
+  it("marks the highlighted calendar column", () => {
+    render(
+      <AllDayGridRow
+        allDayColumnsRef={() => {}}
+        allDayRowRef={() => {}}
+        eventsLayer={null}
+        highlightedColumnKey="work"
+        visibleDates={[
+          {
+            date: today,
+            key: "personal",
+            surfaceLabel: "Personal all-day column",
+          },
+          {
+            date: today,
+            key: "work",
+            surfaceLabel: "Work all-day column",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("columnheader", { name: "Work all-day column" }),
+    ).toHaveAttribute("data-focused-column", "true");
+    expect(
+      screen.getByRole("columnheader", { name: "Personal all-day column" }),
+    ).not.toHaveAttribute("data-focused-column");
+  });
 });

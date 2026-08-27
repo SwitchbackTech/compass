@@ -26,6 +26,7 @@ interface AllDayRowProps {
   columnsId?: string;
   eventsLayer: ReactNode;
   gridOffsetTopPx?: number;
+  highlightedColumnKey?: string | null;
   rowsCount?: number;
   rowId?: string;
   visibleDates: GridVisibleDate[];
@@ -52,6 +53,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
   columnsId = ID_ALLDAY_COLUMNS,
   eventsLayer,
   gridOffsetTopPx = 0,
+  highlightedColumnKey = null,
   rowsCount = 0,
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
@@ -89,14 +91,16 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
                 ({ date, key, surfaceLabel, allDayTintColor }) => {
                   const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
                   const isJumpDay = activeDayKeys.includes(dayKey);
+                  const isFocusedColumn = key === highlightedColumnKey;
                   const tintStyle = allDayColumnTintStyle(
                     allDayTintColor,
-                    isJumpDay,
+                    isJumpDay || isFocusedColumn,
                   );
                   return (
                     <th
-                      className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
+                      className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[focused-column=true]:bg-accent/10 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
                       data-all-day-tint={tintStyle ? "true" : undefined}
+                      data-focused-column={isFocusedColumn ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
                       aria-label={
                         surfaceLabel ?? date.format("dddd, MMMM D, YYYY")

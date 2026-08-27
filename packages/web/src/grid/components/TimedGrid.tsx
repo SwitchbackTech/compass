@@ -30,6 +30,7 @@ import {
 interface TimedGridProps {
   columnsId?: string;
   eventsLayer: ReactNode;
+  highlightedColumnKey?: string | null;
   today: Dayjs;
   timedColumnsRef: RefCallback<HTMLDivElement>;
   timedGridId?: string;
@@ -40,6 +41,7 @@ interface TimedGridProps {
 export const TimedGrid: FC<TimedGridProps> = ({
   columnsId = ID_GRID_COLUMNS_TIMED,
   eventsLayer,
+  highlightedColumnKey = null,
   timedColumnsRef,
   timedGridId = ID_GRID_MAIN,
   timedGridRef,
@@ -94,14 +96,16 @@ export const TimedGrid: FC<TimedGridProps> = ({
                 ({ date, key, surfaceLabel, allDayTintColor }) => {
                   const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
                   const isJumpDay = activeDayKeys.includes(dayKey);
+                  const isFocusedColumn = key === highlightedColumnKey;
                   const tintStyle = allDayColumnTintStyle(
                     allDayTintColor,
-                    isJumpDay,
+                    isJumpDay || isFocusedColumn,
                   );
                   return (
                     <th
-                      className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[past=true]:data-[jump-day=true]:bg-accent/10 data-[jump-day=true]:bg-accent/10 data-[past=true]:bg-surface motion-reduce:transition-none"
+                      className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[past=true]:data-[focused-column=true]:bg-accent/10 data-[past=true]:data-[jump-day=true]:bg-accent/10 data-[focused-column=true]:bg-accent/10 data-[jump-day=true]:bg-accent/10 data-[past=true]:bg-surface motion-reduce:transition-none"
                       data-all-day-tint={tintStyle ? "true" : undefined}
+                      data-focused-column={isFocusedColumn ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
                       data-past={date.isBefore(today, "day")}
                       aria-label={
