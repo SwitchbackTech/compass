@@ -11,8 +11,8 @@ canonical-scale-utility conventions.
 
 - Preserve the established Compass visual language and responsive behavior.
 - Use native semantic elements and visible focus states for interactive UI.
-- Never use em-dashes (`—`) in user-facing copy. Use a comma, a period, or a
-  colon instead. Code comments are unaffected.
+- Never use em-dashes (`—`) in user-facing copy. See the AGENTS.md bullet for
+  the full rule and its scope.
 
 ```tsx
 // Prefer

@@ -45,11 +45,9 @@ export function useAppAccess(): AppAccess {
     return { kind: "open" };
   }
 
-  if (
-    configQuery.isError ||
-    configQuery.isPending ||
-    configQuery.data?.billing.isConfigured !== true
-  ) {
+  // A pending or errored config already returned above: isBillingEnforced
+  // reads false without data. Only the unconfigured-Stripe case is left.
+  if (configQuery.data?.billing.isConfigured !== true) {
     return { kind: "open" };
   }
 

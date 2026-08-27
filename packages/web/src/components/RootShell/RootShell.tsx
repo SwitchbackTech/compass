@@ -47,37 +47,33 @@ export function RootShell() {
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
-  const isBillingReadOnly = access.kind === "server" && access.isReadOnly;
-  const showBillingGate = isBillingReadOnly && !isPreviewing;
-  const showReadOnlyBanner = isBillingReadOnly && isPreviewing;
+  const readOnlyStatus =
+    access.kind === "server" && access.isReadOnly ? access.status : null;
+  // The look-around is an invitation to start a trial, so it only holds while
+  // one is still on offer. If the status moves on (expired, canceled) while
+  // previewing, the gate must come back rather than strand the user behind a
+  // banner pitching a trial they can no longer take.
+  const isPreviewable = readOnlyStatus === "awaiting_checkout";
+  const showReadOnlyBanner = isPreviewable && isPreviewing;
+  const gateStatus = showReadOnlyBanner ? null : readOnlyStatus;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
-  // The gate owns the whole screen. The onboarding cards sit at
-  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
-  // a gated user click straight through the gate and keep touring. Once they
-  // choose to look around, the gate unmounts and the normal tree (onboarding
-  // included) is safe to render behind the read-only banner.
-  if (showBillingGate) {
-    return (
-      <AuthModalProvider>
-        <Outlet />
-        <BillingGateModal status={access.status} />
-        <AuthModal />
-        <PointerHint />
-      </AuthModalProvider>
-    );
-  }
-
+  // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
+  // (above Z_INDEX_MODAL), so leaving them mounted would let a gated user
+  // click straight through it and keep touring. They are suppressed rather
+  // than living in a second copy of this tree, which keeps Outlet's slot
+  // stable — swapping tree shapes remounts the whole calendar.
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}
       {showReadOnlyBanner && <BillingReadOnlyBanner />}
       <Outlet />
       <AuthModal />
-      {!deferCalendarOnboarding && <WelcomeModal />}
-      {!deferCalendarOnboarding && <ShortcutShowcase />}
-      {!deferCalendarOnboarding && <FirstEventPrompt />}
-      {isWelcomeGuideOpen && <WelcomeGuideModal />}
+      {gateStatus !== null && <BillingGateModal status={gateStatus} />}
+      {gateStatus === null && !deferCalendarOnboarding && <WelcomeModal />}
+      {gateStatus === null && !deferCalendarOnboarding && <ShortcutShowcase />}
+      {gateStatus === null && !deferCalendarOnboarding && <FirstEventPrompt />}
+      {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
       <PointerHint />
     </AuthModalProvider>
   );

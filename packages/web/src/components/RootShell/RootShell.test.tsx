@@ -113,6 +113,19 @@ describe("RootShell billing gates", () => {
     );
   });
 
+  it("does not honor the look-around once the trial is spent", async () => {
+    // A status change while previewing: the banner would pitch a trial that
+    // is no longer on offer, so the gate has to reclaim the screen.
+    billingPreviewActions.enter();
+    access = { ...awaitingCheckout, status: "canceled" };
+    await renderShell();
+
+    expect(
+      screen.getByRole("dialog", { name: "Subscribe to keep using Compass" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("brings the gate back when a write is refused", async () => {
     access = awaitingCheckout;
     await renderShell();

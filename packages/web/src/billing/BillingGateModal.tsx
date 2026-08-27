@@ -5,22 +5,19 @@ import {
   useRef,
   useState,
 } from "react";
-import { BillingApi } from "@web/api/billing.api";
-import {
-  getApiErrorMessage,
-  isSessionLevelError,
-} from "@web/api/util/api.util";
 import { track } from "@web/auth/posthog/track";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
-import {
-  GATE_PANEL_CLASSNAME,
-  handleOverlayLetterShortcut,
-} from "@web/billing/gate-overlay";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+
+const PANEL_CLASSNAME =
+  "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
+const SECONDARY_BUTTON_CLASSNAME =
+  "c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2";
 
 type BillingGateModalProps = {
   status: string;
@@ -35,7 +32,7 @@ type BillingGateModalProps = {
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { isRedirecting, redirectTo } = useBillingRedirect();
   const shownRef = useRef(false);
 
   const isAwaitingCheckout = status === "awaiting_checkout";
@@ -53,49 +50,33 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     }
   }, [status]);
 
-  const redirectTo = async (kind: "checkout" | "portal") => {
-    setIsRedirecting(true);
-    track("billing_gate_cta_clicked", { cta: kind });
-    try {
-      const { url } =
-        kind === "checkout"
-          ? await BillingApi.createCheckoutSession()
-          : await BillingApi.createPortalSession();
-      window.location.assign(url);
-    } catch (error) {
-      if (!isSessionLevelError(error)) {
-        const fromApi = getApiErrorMessage(error);
-        showErrorToast(
-          fromApi && fromApi !== "Internal server error"
-            ? fromApi
-            : "Couldn't start checkout. Please try again.",
-        );
-      }
-    } finally {
-      setIsRedirecting(false);
-    }
-  };
-
-  const handleLookAround = () => {
+  const lookAround = () => {
     track("billing_gate_cta_clicked", { cta: "preview" });
     billingPreviewActions.enter();
   };
 
-  const handleShortcutKey = (e: KeyboardEvent) => {
-    if (isRedirecting) return;
-    const actions: Record<string, () => void> = {
-      s: () => {
-        void redirectTo("checkout");
-      },
-    };
-    if (isAwaitingCheckout) {
-      actions.l = handleLookAround;
-    } else {
-      actions.m = () => {
-        void redirectTo("portal");
+  // Only a trial still on offer earns the look-around; once it is spent the
+  // way forward is the billing portal.
+  const secondary = isAwaitingCheckout
+    ? { key: "L", label: "Look around first", onClick: lookAround }
+    : {
+        key: "M",
+        label: "Manage billing",
+        onClick: () => void redirectTo("portal"),
       };
-    }
-    handleOverlayLetterShortcut(e, actions);
+
+  // Welcome-style letter bindings: unmodified keys, preventDefault, then run.
+  const handleShortcutKey = (event: KeyboardEvent) => {
+    if (isRedirecting) return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const actions: Record<string, () => void> = {
+      s: () => void redirectTo("checkout"),
+      [secondary.key.toLowerCase()]: secondary.onClick,
+    };
+    const action = actions[keyboardKey(event).toLowerCase()];
+    if (!action) return;
+    event.preventDefault();
+    action();
   };
 
   return (
@@ -103,7 +84,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
       align="center"
       ariaLabel={title}
       initialFocusRef={primaryButtonRef}
-      panelClassName={GATE_PANEL_CLASSNAME}
+      panelClassName={PANEL_CLASSNAME}
       widthClassName="w-120"
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
@@ -125,27 +106,15 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             {isAwaitingCheckout ? "Start trial" : "Subscribe"}
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
-          {isAwaitingCheckout ? (
-            <button
-              className="c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2"
-              disabled={isRedirecting}
-              onClick={handleLookAround}
-              type="button"
-            >
-              Look around first
-              <ShortcutHint className="ml-2">L</ShortcutHint>
-            </button>
-          ) : (
-            <button
-              className="c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2"
-              disabled={isRedirecting}
-              onClick={() => void redirectTo("portal")}
-              type="button"
-            >
-              Manage billing
-              <ShortcutHint className="ml-2">M</ShortcutHint>
-            </button>
-          )}
+          <button
+            className={SECONDARY_BUTTON_CLASSNAME}
+            disabled={isRedirecting}
+            onClick={secondary.onClick}
+            type="button"
+          >
+            {secondary.label}
+            <ShortcutHint className="ml-2">{secondary.key}</ShortcutHint>
+          </button>
         </div>
       </div>
     </OverlayPanel>
