@@ -13,6 +13,7 @@ import {
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
+import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
 let hasShownReconnectToastThisLoad = false;
@@ -80,7 +81,7 @@ export const GoogleReconnectToast = ({
   const namedAccount = accountEmail?.trim();
 
   return (
-    <div className="flex w-full flex-col gap-2" data-notice="">
+    <ToastNotice>
       <p className="font-medium text-sm text-text">
         {namedAccount
           ? `Google Calendar disconnected (${namedAccount})`
@@ -94,7 +95,7 @@ export const GoogleReconnectToast = ({
       <ToastActionButton onClick={handleReconnect}>
         Reconnect Google Calendar
       </ToastActionButton>
-    </div>
+    </ToastNotice>
   );
 };
 

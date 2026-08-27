@@ -5,7 +5,7 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
-import { ToastCloseButton } from "@web/common/utils/toast/ToastCloseButton";
+import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
 import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
@@ -71,12 +71,12 @@ export const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-2" data-notice="">
+    <ToastNotice>
       <p className="text-sm text-text">
         Sign up to save your calendar across browsers.
       </p>
       <ToastActionButton onClick={handleSignUp}>Sign up</ToastActionButton>
-    </div>
+    </ToastNotice>
   );
 };
 
@@ -91,6 +91,5 @@ export function maybeShowAnonymousSaveToast(): void {
   showStatusToast(
     ANONYMOUS_SAVE_TOAST_ID,
     createElement(AnonymousSaveToast, { toastId: ANONYMOUS_SAVE_TOAST_ID }),
-    { closeButton: ToastCloseButton },
   );
 }

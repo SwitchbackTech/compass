@@ -7,6 +7,7 @@ import {
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
+import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
 interface GoogleDelayedToastProps {
@@ -25,7 +26,7 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-2" data-notice="">
+    <ToastNotice>
       <p className="font-medium text-sm text-text">
         Calendar updates are delayed
       </p>
@@ -36,7 +37,7 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
       <ToastActionButton onClick={handleRefresh}>
         Refresh calendar
       </ToastActionButton>
-    </div>
+    </ToastNotice>
   );
 };
 
