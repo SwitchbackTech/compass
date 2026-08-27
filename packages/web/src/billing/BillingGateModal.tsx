@@ -1,4 +1,10 @@
-import { type FC, useEffect, useRef, useState } from "react";
+import {
+  type FC,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { BillingApi } from "@web/api/billing.api";
 import {
   getApiErrorMessage,
@@ -74,7 +80,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     void logout();
   };
 
-  const handleShortcutKey = (e: React.KeyboardEvent) => {
+  const handleShortcutKey = (e: KeyboardEvent) => {
     const actions: Record<string, () => void> = {
       s: () => {
         void redirectTo("checkout");

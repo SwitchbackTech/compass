@@ -1,8 +1,8 @@
 /**
- * Trial terms. Kept in core so web copy and backend Checkout share one
- * source. The Stripe price id and amount live in Stripe (and the
- * `stripe.priceId` secret), not here, so operators can change the price
- * without a deploy.
+ * Trial length and backfill cutoff. Backend Checkout reads
+ * `TRIAL_LENGTH_DAYS`. The Stripe price id and amount live in Stripe
+ * (and the `stripe.priceId` secret), not here, so operators can change
+ * the price without a deploy.
  *
  * BACKFILL_CUTOFF bounds which rows `backfill-billing` stamps: only
  * accounts with `signedUpAt <= cutoff` (or missing `signedUpAt`) are
