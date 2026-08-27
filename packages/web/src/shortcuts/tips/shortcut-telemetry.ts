@@ -22,6 +22,14 @@ type ActiveSuggestion = Pick<
 let activeSuggestion: ActiveSuggestion | null = null;
 const lastPresentationByKey = new Map<string, number>();
 
+const suggestionProperties = (suggestion: ActiveSuggestion) => ({
+  action_id: suggestion.actionId,
+  feature_area: suggestion.featureArea,
+  rank: suggestion.rank,
+  reason_code: suggestion.reasonCode,
+  source: "sidebar_status",
+});
+
 const emptyUsage = (): ShortcutActionUsage => ({
   engagements: 0,
   invocations: 0,
@@ -52,14 +60,7 @@ export function beginShortcutSuggestionPresentation(
   suggestion: ActiveSuggestion,
   now = Date.now(),
 ): () => void {
-  const presentation: ActiveSuggestion = {
-    actionId: suggestion.actionId,
-    featureArea: suggestion.featureArea,
-    id: suggestion.id,
-    rank: suggestion.rank,
-    reasonCode: suggestion.reasonCode,
-  };
-  activeSuggestion = presentation;
+  activeSuggestion = suggestion;
 
   const dedupeKey = `${suggestion.id}:${suggestion.reasonCode}`;
   const lastPresentation = lastPresentationByKey.get(dedupeKey);
@@ -79,17 +80,13 @@ export function beginShortcutSuggestionPresentation(
       };
     });
     track("shortcut_suggestion_shown", {
-      action_id: suggestion.actionId,
-      feature_area: suggestion.featureArea,
+      ...suggestionProperties(suggestion),
       outcome: "shown",
-      rank: suggestion.rank,
-      reason_code: suggestion.reasonCode,
-      source: "sidebar_status",
     });
   }
 
   return () => {
-    if (activeSuggestion === presentation) activeSuggestion = null;
+    if (activeSuggestion === suggestion) activeSuggestion = null;
   };
 }
 
@@ -118,12 +115,8 @@ export function recordShortcutInvocation(
 
   if (engaged && activeSuggestion) {
     track("shortcut_suggestion_engaged", {
-      action_id: activeSuggestion.actionId,
-      feature_area: activeSuggestion.featureArea,
+      ...suggestionProperties(activeSuggestion),
       outcome: "invoked",
-      rank: activeSuggestion.rank,
-      reason_code: activeSuggestion.reasonCode,
-      source: "sidebar_status",
     });
   }
 }

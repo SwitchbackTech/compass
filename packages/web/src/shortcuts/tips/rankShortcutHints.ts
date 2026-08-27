@@ -11,7 +11,6 @@ export const SHORTCUT_FATIGUE_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 export const SHORTCUT_FATIGUE_IMPRESSIONS = 3;
 
 type RankedCandidate = {
-  fallbackRank: number;
   fatigued: boolean;
   id: ShortcutHintId;
   score: number;
@@ -35,7 +34,6 @@ function deterministicFallbackOrder(
 
 function scoreCandidate(
   id: ShortcutHintId,
-  fallbackRank: number,
   demonstratedIds: readonly ShortcutHintId[],
   profile: ShortcutUsageProfile,
   now: number,
@@ -62,7 +60,7 @@ function scoreCandidate(
   else if (lastInvokedAge !== null && lastInvokedAge > 30 * DAY_MS) score += 12;
   if (fatigued) score -= 64;
 
-  return { fallbackRank, fatigued, id, score, untried };
+  return { fatigued, id, score, untried };
 }
 
 function personalizedReason(
@@ -90,19 +88,16 @@ export function rankShortcutHints(
   now = Date.now(),
 ): RankedShortcutHint {
   const fallbackOrder = deterministicFallbackOrder(pool, demonstratedIds);
-  const ranked = fallbackOrder
-    .map((id, fallbackRank) =>
-      scoreCandidate(id, fallbackRank, demonstratedIds, profile, now),
-    )
-    .sort(
-      (left, right) =>
-        right.score - left.score || left.fallbackRank - right.fallbackRank,
-    );
-  const selected = ranked[0];
-  const fallback = ranked.find((candidate) => candidate.fallbackRank === 0);
-  if (!selected || !fallback) {
+  const candidates = fallbackOrder.map((id) =>
+    scoreCandidate(id, demonstratedIds, profile, now),
+  );
+  const fallback = candidates[0];
+  if (!fallback) {
     throw new Error("Shortcut hint pools must not be empty");
   }
+  const selected = candidates.reduce((winner, candidate) =>
+    candidate.score > winner.score ? candidate : winner,
+  );
 
   return {
     ...getShortcutHint(selected.id),
