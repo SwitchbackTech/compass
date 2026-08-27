@@ -181,9 +181,7 @@ export const WeekView = () => {
           <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
             <Sidebar
               calendarDate={calendarDate}
-              eventDetails={
-                <SidebarEventDetails confirmAllRecurringEdits={false} />
-              }
+              eventDetails={<SidebarEventDetails />}
               onSelectDate={goToDateFromSidebar}
               shortcutSections={shortcutSections}
               shortcutsViewLabel="Week"

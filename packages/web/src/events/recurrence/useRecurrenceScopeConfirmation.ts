@@ -6,10 +6,6 @@ import {
   resolveRecurrenceScopeDecision,
 } from "@web/events/recurrence/recurrence-scope-decision";
 
-export type RecurrenceScopePendingAction =
-  | { draft: GridEventDraft; type: "save" }
-  | { type: "delete" };
-
 export type RecurrenceScopeSaveContext = Omit<
   ResolveRecurrenceScopeSaveInput,
   "action" | "draft"
@@ -34,29 +30,8 @@ export const useRecurrenceScopeConfirmation = ({
   onDelete,
   onSave,
 }: UseRecurrenceScopeConfirmationOptions) => {
-  const [pendingAction, setPendingAction] =
-    useState<RecurrenceScopePendingAction | null>(null);
   const [standaloneDraft, setStandaloneDraft] = useState<GridEventDraft | null>(
     null,
-  );
-
-  const isRecurrenceUpdateScopeDialogOpen = pendingAction !== null;
-
-  const dismissScopeDialog = useCallback(() => {
-    setPendingAction(null);
-  }, []);
-
-  const onUpdateScopeChange = useCallback(
-    (applyTo: RecurringEventUpdateScope) => {
-      if (pendingAction?.type === "save") {
-        onSave(pendingAction.draft, applyTo);
-      } else if (pendingAction?.type === "delete") {
-        onDelete(applyTo);
-      }
-
-      setPendingAction(null);
-    },
-    [onDelete, onSave, pendingAction],
   );
 
   const onSubmit = useCallback(
@@ -68,9 +43,6 @@ export const useRecurrenceScopeConfirmation = ({
       });
 
       switch (decision.kind) {
-        case "prompt":
-          setPendingAction({ draft, type: "save" });
-          return;
         case "convertToStandalone":
           setStandaloneDraft(draft);
           return;
@@ -87,11 +59,6 @@ export const useRecurrenceScopeConfirmation = ({
       action: "delete",
       ...getDeleteContext(),
     });
-
-    if (decision.kind === "prompt") {
-      setPendingAction({ type: "delete" });
-      return;
-    }
 
     if (decision.kind === "apply") {
       onDelete(decision.scope);
@@ -111,18 +78,10 @@ export const useRecurrenceScopeConfirmation = ({
   }, []);
 
   return {
-    isRecurrenceUpdateScopeDialogOpen,
     onCancelConvertToStandalone,
     onConfirmConvertToStandalone,
     onDelete: onDeleteRequest,
     onSubmit,
-    onUpdateScopeChange,
-    pendingAction,
-    setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => {
-      if (!isOpen) {
-        dismissScopeDialog();
-      }
-    },
     standaloneDraft,
   };
 };

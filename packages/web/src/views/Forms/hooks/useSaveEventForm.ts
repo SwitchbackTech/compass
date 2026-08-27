@@ -46,8 +46,8 @@ export function useSaveEventForm() {
   // deliver is dropped back to preserve semantics instead of submitting a
   // command sync/backend will refuse. The UI cannot reach these states — the
   // editor only renders on writable Google calendars the user organizes,
-  // occurrence drafts never render it, and the scope dialog narrows a
-  // guest-changed recurring edit to "all" — so this only defends replayed or
+  // occurrence drafts never render it, and a guest-changed recurring edit
+  // is saved as "all" automatically — so this only defends replayed or
   // hand-built drafts.
   const normalizeGuestEdit = useCallback(
     (
