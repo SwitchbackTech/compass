@@ -14,8 +14,8 @@ writes stay open.
 `billing.enforcement` is a separate, independent switch — the operator's global
 kill switch for turning the whole trial/billing product on or off, regardless
 of whether Stripe is configured. It defaults to `false` (paused): every user,
-signed in or not, sees `{kind: "open"}` from `useAppAccess`, no chip, no gate
-modal, no `localStorage` clock stamp, and `assertBillingAllowsWrites` no-ops
+signed in or not, sees `{kind: "open"}` from `useAppAccess`, no trial badge, no
+gate modal, and `assertBillingAllowsWrites` no-ops
 even with valid Stripe keys present. This lets Stripe keys and Checkout/webhook
 work stay live in an environment while the product feels free to every user.
 
@@ -90,12 +90,28 @@ production.
   `BILLING_REQUIRED` branch in `useEventMutations` exits the preview, so the
   first refused save brings the gate straight back. That refusal does not
   show the catch-all "something went wrong" toast — the gate is the feedback.
-- **Trialing / active / past_due:** writable. `past_due` also shows a banner.
+- **Trialing:** writable, with a days-left badge in the sidebar month picker
+  header (`TrialBadge.tsx`, via `DatePicker`'s `headerEndContent` slot). The
+  badge carries no `tabindex`: `getPageJumpFocusElement` seats Mod+2 on the
+  first `[tabindex="0"]` inside the picker, and a tab stop here would steal
+  that jump.
+- **Active / past_due:** writable. `past_due` also shows a banner.
 - **Expired / canceled:** read-only until they subscribe again. A later
   Checkout does not grant another trial.
 
 There is no `POST /api/billing/trial/start`. A trial only begins through
 Stripe Checkout (`trial_period_days` on the first subscription).
+
+A trial can be *ended* early through `POST /api/billing/trial/end`, which calls
+`subscriptions.update(trial_end: "now")` and writes the returned Subscription
+through the webhook's own `applySubscription`, so status is fresh in the same
+response and the Stripe field mapping stays in one place. The Billing Portal
+cannot shorten a trial, which is why this endpoint exists. Three ways in, all
+gated on a running trial: the badge, a "Subscribe now" palette command, and
+bare `B`. That shortcut is registered by `UpgradeConfirmationProvider` rather
+than `useNavigationShortcuts`, which must stay usable without a QueryClient.
+A declined card lands on `past_due` (still writable), so the confirm dialog
+reports the resulting status instead of a blanket success.
 
 Existing accounts are not grandfathered. Hosted users without a Stripe
 subscription id (including missing billing, `none`, and local/backfill

@@ -156,6 +156,7 @@ the full picture.
 - Shared plan/price copy: `packages/core/src/constants/billing.constants.ts`
 - Read-only look-around: `packages/web/src/billing/billing-preview.store.ts`, `packages/web/src/billing/BillingReadOnlyBanner.tsx`
 - Server access + paid gate: `packages/web/src/billing/useAppAccess.ts`, `packages/web/src/billing/BillingGateModal.tsx`
+- Trial countdown + early upgrade: `packages/web/src/billing/TrialBadge.tsx`, `packages/web/src/billing/trialDaysLeft.ts`, `packages/web/src/billing/UpgradeConfirmation/`
 - Backend billing: `packages/backend/src/billing`
 - Overview: [Billing And Trial](../features/billing.md)
 
