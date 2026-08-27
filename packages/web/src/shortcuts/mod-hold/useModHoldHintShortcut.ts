@@ -29,13 +29,18 @@ export const MOD_HOLD_HINT_MS = 600;
 export function useModHoldHintShortcut({
   enabled = true,
   onModChord,
+  onHintsRevealed,
 }: {
   enabled?: boolean;
   onModChord: (event: KeyboardEvent) => boolean;
+  /** Fires once when hold-Mod chips actually appear, not on a bare Mod tap. */
+  onHintsRevealed?: () => void;
 }): { areHintsVisible: boolean } {
   const [areHintsVisible, setAreHintsVisible] = useState(false);
   const onModChordRef = useRef(onModChord);
   onModChordRef.current = onModChord;
+  const onHintsRevealedRef = useRef(onHintsRevealed);
+  onHintsRevealedRef.current = onHintsRevealed;
 
   useEffect(() => {
     if (!enabled) {
@@ -69,6 +74,7 @@ export function useModHoldHintShortcut({
         holdTimeoutId = null;
         hintsVisible = true;
         setAreHintsVisible(true);
+        onHintsRevealedRef.current?.();
       }, MOD_HOLD_HINT_MS);
     };
 

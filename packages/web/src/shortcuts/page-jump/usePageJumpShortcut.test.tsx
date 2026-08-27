@@ -17,6 +17,7 @@ import {
   type PageJumpTargetId,
 } from "@web/shortcuts/page-jump/page-jump.targets";
 import { usePageJumpShortcut } from "@web/shortcuts/page-jump/usePageJumpShortcut";
+import { getShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 /** Matches what the hook resolves Mod to on this platform. */
@@ -162,6 +163,7 @@ describe("usePageJumpShortcut", () => {
       await waitFor(() => {
         expect(result.current.areHintsVisible).toBe(true);
       });
+      expect(getShortcutHintProgress()).toContain("page-jump");
     });
 
     it("hides hints on Mod keyup", async () => {

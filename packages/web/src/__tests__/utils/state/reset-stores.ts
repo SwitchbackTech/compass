@@ -48,6 +48,7 @@ import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { resetShortcutHintProgressStoreForTests } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
@@ -81,6 +82,7 @@ const storeResets: StoreReset[] = [
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),
+  resetShortcutHintProgressStoreForTests,
 ];
 
 export function resetAllStores() {

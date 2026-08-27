@@ -2,11 +2,15 @@ import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
 import { viewActions } from "@web/events/stores/view.store";
-import { settingsActions } from "@web/settings/settings.store";
+import {
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import {
   LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
 } from "@web/shortcuts/shortcuts.constants";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import {
   useAppShortcut,
   useAppShortcutUp,
@@ -74,7 +78,11 @@ export function useNavigationShortcuts() {
   useAppShortcut(
     "Mod+K",
     () => {
+      const wasOpen = useSettingsStore.getState().isCmdPaletteOpen;
       settingsActions.toggleCmdPalette();
+      if (!wasOpen) {
+        shortcutHintProgressActions.demonstrate("command-palette");
+      }
     },
     {
       ignoreInputs: false,

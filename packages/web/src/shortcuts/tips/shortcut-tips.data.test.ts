@@ -30,6 +30,11 @@ describe("getHintPlainText", () => {
     expect(plainTextById["page-jump"]).toBe(
       `Hold ${mod} to see where you can jump`,
     );
+    expect(plainTextById["event-jump"]).toBe("Press S to show event keys");
+    expect(plainTextById.nudge).toBe("Hold Shift and press an arrow to move");
+    expect(plainTextById["command-palette"]).toBe(
+      `Press ${mod}+K to open the command palette`,
+    );
   });
 
   it("joins a chord's keys with + and speaks Mod as Cmd or Ctrl", () => {

@@ -20,6 +20,7 @@ import {
 } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
 /**
  * How long the leader stays silent. A second key inside this window fires with
@@ -141,6 +142,7 @@ export function useEditSequenceShortcut({
           suppressKeyUp.add(key);
           disarm();
           onSequenceRef.current(field);
+          shortcutHintProgressActions.demonstrate("edit-sequence");
           return;
         }
 

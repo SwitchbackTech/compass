@@ -5,6 +5,7 @@ import {
   FORM_FIELD_DIGITS,
 } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { useModHoldHintShortcut } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
 export { MOD_HOLD_HINT_MS } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
 
@@ -23,6 +24,8 @@ const DIGIT_ORDER = FORM_FIELD_DIGITS.map((entry) => entry.digit);
  */
 export function useFormDigitJumpShortcut(): { areHintsVisible: boolean } {
   return useModHoldHintShortcut({
+    onHintsRevealed: () =>
+      shortcutHintProgressActions.demonstrate("save-draft"),
     onModChord: (event) => {
       const index = physicalDigitIndex(event);
       const digit = index !== null ? DIGIT_ORDER[index] : undefined;

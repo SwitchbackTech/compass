@@ -9,6 +9,7 @@ import {
   focusPageJumpTarget,
   type PageJumpTargets,
 } from "@web/shortcuts/page-jump/page-jump.targets";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
 /**
  * Mod+digit jumps focus to a page area (see the `targets` list); holding Mod
@@ -25,6 +26,7 @@ export function usePageJumpShortcut(
 
   return useModHoldHintShortcut({
     enabled: !isEventFormOpen,
+    onHintsRevealed: () => shortcutHintProgressActions.demonstrate("page-jump"),
     onModChord: (event) => {
       const index = physicalDigitIndex(event);
       const target = index !== null ? targets[index] : undefined;

@@ -6,8 +6,11 @@ export type ShortcutHintId =
   | "save-draft"
   | "life-this-week"
   | "edit-sequence"
+  | "nudge"
   | "create-event"
-  | "page-jump";
+  | "page-jump"
+  | "event-jump"
+  | "command-palette";
 
 export type ShortcutTipPart =
   | string
@@ -41,6 +44,8 @@ export const getHintPlainText = (hint: ShortcutHint): string =>
 const [createKey] = KEYMAP.createEvent.keycaps;
 const [saveKey] = KEYMAP.saveDraft.keycaps;
 const [editLeader, editSecond] = KEYMAP.editTitle.keycaps;
+const [eventJumpKey] = KEYMAP.eventJump.keycaps;
+const [nudgeModifier] = KEYMAP.moveEvent.keycaps;
 
 export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
   "first-event-save": {
@@ -82,8 +87,28 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
       " to see where you can jump",
     ],
   },
+  "event-jump": {
+    id: "event-jump",
+    parts: ["Press ", { key: eventJumpKey }, " to show event keys"],
+  },
+  nudge: {
+    id: "nudge",
+    parts: ["Hold ", { key: nudgeModifier }, " and press an arrow to move"],
+  },
+  "command-palette": {
+    id: "command-palette",
+    parts: [
+      "Press ",
+      { keys: KEYMAP.commandPalette.keycaps },
+      " to open the command palette",
+    ],
+  },
 };
 
 export function getShortcutHint(id: ShortcutHintId): ShortcutHint {
   return SHORTCUT_HINTS[id];
+}
+
+export function isShortcutHintId(value: string): value is ShortcutHintId {
+  return Object.hasOwn(SHORTCUT_HINTS, value);
 }

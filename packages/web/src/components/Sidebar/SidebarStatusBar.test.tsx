@@ -32,6 +32,7 @@ import {
   getPartsPlainText,
   getShortcutHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { TIME_TRAVEL_HINT_PARTS } from "@web/timezone/TimeTravelIndicator";
 import {
   resetTimeTravelStoreForTests,
@@ -119,6 +120,7 @@ const FIRST_EVENT_SAVE_HINT = getHintPlainText(
   getShortcutHint("first-event-save"),
 );
 const PAGE_JUMP_HINT = getHintPlainText(getShortcutHint("page-jump"));
+const EVENT_JUMP_HINT = getHintPlainText(getShortcutHint("event-jump"));
 const EDIT_SEQUENCE_HINT = getHintPlainText(getShortcutHint("edit-sequence"));
 
 const focusCalendarEvent = () => {
@@ -366,6 +368,16 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status")).toHaveTextContent(PAGE_JUMP_HINT);
+  });
+
+  it("advances to the event-jump tip once hold-Mod has been demonstrated", () => {
+    useFirstEventPromptStore.setState({ isDone: true }, false);
+    shortcutHintProgressActions.demonstrate("page-jump");
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(EVENT_JUMP_HINT);
   });
 
   it("shows edit-sequence when a calendar event is focused", () => {
