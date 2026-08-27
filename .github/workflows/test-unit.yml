@@ -167,9 +167,12 @@ jobs:
         run: |
           bun run type-check
 
+  # A skipped MATRIX job collapses to one check run named `unit`, so the
+  # required `unit (core)` ... `unit (scripts)` contexts would never report and
+  # a docs-only PR would still be BLOCKED. Let the legs start and skip every
+  # step instead: each reports its own name, in a few seconds, for free.
   unit:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -179,19 +182,23 @@ jobs:
 
     steps:
       - name: Check out Git repository
+        if: needs.changes.outputs.code == 'true'
         uses: actions/checkout@v6
 
       - name: Install Node.js
+        if: needs.changes.outputs.code == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Install Bun
+        if: needs.changes.outputs.code == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
 
       - name: Cache Bun dependencies
+        if: needs.changes.outputs.code == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
@@ -200,20 +207,21 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: Install Dependencies
+        if: needs.changes.outputs.code == 'true'
         run: |
           bun install --frozen-lockfile
 
       # backend and scripts boot an in-memory MongoDB; cache the downloaded
       # mongod binary so each run doesn't re-fetch it.
       - name: Cache MongoDB binaries
-        if: matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync'
+        if: needs.changes.outputs.code == 'true' && (matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync')
         uses: actions/cache@v5
         with:
           path: ~/.cache/mongodb-binaries
           key: ${{ runner.os }}-mongodb-memory-server
 
       - name: Run web tests
-        if: matrix.project == 'web'
+        if: needs.changes.outputs.code == 'true' && (matrix.project == 'web')
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
@@ -221,7 +229,7 @@ jobs:
           bun run test:web
 
       - name: Run ${{ matrix.project }} tests
-        if: matrix.project != 'web'
+        if: needs.changes.outputs.code == 'true' && (matrix.project != 'web')
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
