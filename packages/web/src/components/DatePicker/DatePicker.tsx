@@ -11,6 +11,7 @@ import { theme } from "@web/common/styles/theme";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
@@ -202,33 +203,35 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   headerActionsClassName,
                 )}
               >
-                <div className="flex items-start gap-1">
+                <div className="flex items-center gap-1">
                   <MonthNavButton
                     ariaLabel="Previous month"
                     color={headerColor}
-                    holdHintKeys={monthNav?.prevHoldHint}
                     isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.decreaseMonth();
                     }}
                     shortcut={monthNav ? [...monthNav.prevShortcut] : undefined}
-                    showHoldHints={monthNav?.showHoldHints}
                   >
                     <ChevronLeftIcon />
                   </MonthNavButton>
                   <MonthNavButton
                     ariaLabel="Next month"
                     color={headerColor}
-                    holdHintKeys={monthNav?.nextHoldHint}
                     isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.increaseMonth();
                     }}
                     shortcut={monthNav ? [...monthNav.nextShortcut] : undefined}
-                    showHoldHints={monthNav?.showHoldHints}
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>
+                  {monthNav?.showHoldHints ? (
+                    <span className="ml-1 flex items-center gap-1.5">
+                      <ShortcutKeys keys={[...monthNav.prevHoldHint]} />
+                      <ShortcutKeys keys={[...monthNav.nextHoldHint]} />
+                    </span>
+                  ) : null}
                 </div>
                 {withTodayButton && (
                   <TooltipWrapper description={currentMonth}>

@@ -23,8 +23,12 @@ export function useMonthPickerShortcuts({
 }) {
   useAppShortcut(MONTH_PICKER_PREV_HOTKEY, onPrevMonth, {
     ignoreInputs: true,
+    preventDefault: true,
+    stopPropagation: true,
   });
   useAppShortcut(MONTH_PICKER_NEXT_HOTKEY, onNextMonth, {
     ignoreInputs: true,
+    preventDefault: true,
+    stopPropagation: true,
   });
 }

@@ -228,13 +228,10 @@ describe("MonthPicker", () => {
     usePageJumpHintStore.setState({ areHintsVisible: true });
     renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
 
-    const prev = screen.getByRole("button", { name: "Previous month" });
-    const next = screen.getByRole("button", { name: "Next month" });
-
-    expect(prev.parentElement?.textContent).toContain("Shift");
-    expect(prev.parentElement?.textContent).toContain("J");
-    expect(next.parentElement?.textContent).toContain("Shift");
-    expect(next.parentElement?.textContent).toContain("K");
+    const picker = screen.getByRole("group", { name: "Date navigation" });
+    expect(picker.textContent).toContain("Shift");
+    expect(picker.textContent).toContain("J");
+    expect(picker.textContent).toContain("K");
   });
 
   it("hides month-nav hold chips when Mod-hold hints are off", () => {

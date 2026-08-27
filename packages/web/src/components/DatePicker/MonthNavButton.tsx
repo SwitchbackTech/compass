@@ -74,7 +74,7 @@ export const MonthNavButton = ({
     showHoldHints && holdHintKeys && holdHintKeys.length > 0 ? (
       <span className="relative inline-flex">
         {button}
-        <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-0.5 -translate-x-1/2">
+        <span className="pointer-events-none absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2">
           <ShortcutKeys keys={[...holdHintKeys]} />
         </span>
       </span>
