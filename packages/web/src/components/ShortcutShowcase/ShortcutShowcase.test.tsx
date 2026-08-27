@@ -108,6 +108,32 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
+  it("starts from welcome on the intro, and Enter opens level 1", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.startFromWelcome());
+
+    expect(currentStepId()).toBe("intro");
+    expect(
+      screen.getByRole("heading", { name: "Compass is keyboard-only" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/That takes a little practice to get the muscle memory/),
+    ).toBeTruthy();
+    expect(screen.queryByText("Level 1/6")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Start practicing" }),
+    ).toBeTruthy();
+
+    pressKey("c");
+    expect(currentStepId()).toBe("intro");
+    expect(screen.queryByLabelText("Event title")).toBeNull();
+
+    pressKey("Enter");
+    expect(currentStepId()).toBe("create");
+    expect(screen.getByText("Level 1/6")).toBeTruthy();
+    expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
+  });
+
   it("teaches create as one motion, then continues to the next level", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);

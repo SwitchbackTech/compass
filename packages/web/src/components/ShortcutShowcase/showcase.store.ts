@@ -50,8 +50,12 @@ const endShowcase = () => {
 /** How the practice arena was opened, so the activation funnel can tell them apart. */
 export type ShowcaseEntry = "welcome" | "post_signup" | "palette";
 
+/** Palette replay skips the intro pep talk and opens the first lesson. */
+const PALETTE_START_INDEX = SHOWCASE_STEP_IDS.indexOf("create");
+
 const activate = (entry: ShowcaseEntry) => {
-  useShortcutShowcaseStore.setState({ isActive: true, stepIndex: 0 });
+  const stepIndex = entry === "palette" ? PALETTE_START_INDEX : 0;
+  useShortcutShowcaseStore.setState({ isActive: true, stepIndex });
   track("shortcut_showcase_started", { entry });
 };
 
@@ -60,7 +64,7 @@ export const shortcutShowcaseActions = {
   startFromWelcome: () => {
     activate("welcome");
   },
-  /** Palette re-entry: always allowed, always from the first step. */
+  /** Palette re-entry: always allowed, always from the first lesson. */
   replay: () => {
     activate("palette");
   },

@@ -5,6 +5,10 @@ import {
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import {
+  selectWelcomeSurfaceOpen,
+  useWelcomeGuideStore,
+} from "@web/components/WelcomeModal/welcome.guide.store";
+import {
   type BlockedPointerAttempt,
   POINTER_ACTIONS,
 } from "@web/shortcuts/keyboard-only/pointer-action";
@@ -53,11 +57,13 @@ const pointerHintMessage = ({
   eventJumpKey,
   isBrief,
   showcaseActive,
+  welcomeOpen,
 }: {
   attempt: BlockedPointerAttempt | null;
   eventJumpKey: string | null;
   isBrief: boolean;
   showcaseActive: boolean;
+  welcomeOpen: boolean;
 }): ReactNode => {
   if (showcaseActive) return "Keyboard only. Follow the keys on screen.";
 
@@ -92,6 +98,8 @@ const pointerHintMessage = ({
 
   if (isBrief) return "Keyboard only.";
 
+  if (welcomeOpen) return "Compass is keyboard only.";
+
   return (
     <>
       Compass is keyboard only. Press <Key>?</Key> for shortcuts.
@@ -111,6 +119,7 @@ export const PointerHint: FC = () => {
   const attempt = usePointerBlockStore(selectLatestPointerAttempt);
   const eventJumpKey = useEventJumpStore(selectEventJumpPointerHintKey);
   const showcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
+  const welcomeOpen = useWelcomeGuideStore(selectWelcomeSurfaceOpen);
   const [isVisible, setIsVisible] = useState(false);
   const [isBrief, setIsBrief] = useState(false);
 
@@ -146,6 +155,7 @@ export const PointerHint: FC = () => {
         eventJumpKey,
         isBrief,
         showcaseActive,
+        welcomeOpen,
       })}
     </div>
   );
