@@ -19,4 +19,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2891 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2893 | bun run verify PASS; review: no confirmed findings | 2026-08-27T00:00:00Z | 0 | none |
 | 2898 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2898 | focused web 62 pass; lint clean of new errors; review: no confirmed findings | 2026-08-27T06:00:00Z | 0 | none |
 | 2918 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2918 | bun run verify PASS; review finding fixed in 3fa6e4a8c | 2026-08-27T20:30:00Z | 0 | none |
-| 2922 | medium | Verifier | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun test:web BillingGateModal 8 pass; simplify c4cbe8696 | 2026-08-27T21:00:00Z | 0 | none |
+| 2922 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun run verify PASS; simplify c4cbe8696; review: no confirmed findings | 2026-08-27T21:00:00Z | 0 | none |
