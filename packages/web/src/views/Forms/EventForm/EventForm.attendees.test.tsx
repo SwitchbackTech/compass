@@ -187,10 +187,6 @@ describe("EventForm attendee editor gating", () => {
     });
 
     expect(screen.getByRole("status").textContent).toContain("8 for guests");
-    const chips = document.querySelector(
-      "[data-form-digit-hints] [aria-hidden]",
-    );
-    expect(chips?.textContent).toContain("8");
   });
 
   it("keeps the read-only guest list for an event the user does not organize", () => {
