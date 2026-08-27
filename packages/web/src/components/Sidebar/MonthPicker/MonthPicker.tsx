@@ -40,11 +40,16 @@ export const MonthPicker: FC<Props> = ({
     dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
   );
   const previousSelectedDateKeyRef = useRef(selectedDateKey);
-  const rootRef = useRef<HTMLFieldSetElement>(null);
   const [focusedDate, setFocusedDate] = useState(() => selectedDate);
+  const [displayedMonth, setDisplayedMonth] = useState(() =>
+    selectedDate.startOf("month"),
+  );
   const showHoldHints = usePageJumpHintStore(selectPageJumpHintsVisible);
 
-  useMonthPickerShortcuts(rootRef);
+  useMonthPickerShortcuts({
+    onPrevMonth: () => setDisplayedMonth((month) => month.subtract(1, "month")),
+    onNextMonth: () => setDisplayedMonth((month) => month.add(1, "month")),
+  });
 
   useEffect(() => {
     if (previousSelectedDateKeyRef.current === selectedDateKey) {
@@ -52,9 +57,12 @@ export const MonthPicker: FC<Props> = ({
     }
 
     previousSelectedDateKeyRef.current = selectedDateKey;
-    setFocusedDate(
-      dayjs(selectedDateKey, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+    const nextDate = dayjs(
+      selectedDateKey,
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
     );
+    setFocusedDate(nextDate);
+    setDisplayedMonth(nextDate.startOf("month"));
   }, [selectedDateKey]);
 
   const getDayClassName = (date: Date) =>
@@ -67,7 +75,6 @@ export const MonthPicker: FC<Props> = ({
 
   return (
     <fieldset
-      ref={rootRef}
       className={`c-month-picker ${monthPickerClassName}`}
       data-testid="Month picker"
       aria-label="Date navigation"
@@ -99,8 +106,13 @@ export const MonthPicker: FC<Props> = ({
           const nextDate = dayjs(date);
 
           setFocusedDate(nextDate);
+          setDisplayedMonth(nextDate.startOf("month"));
           onSelectDate(nextDate);
         }}
+        onMonthChange={(date) => {
+          setDisplayedMonth(dayjs(date).startOf("month"));
+        }}
+        openToDate={displayedMonth.toDate()}
         selected={focusedDate.toDate()}
         shouldCloseOnSelect={false}
         view="sidebar"

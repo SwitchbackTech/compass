@@ -3,9 +3,9 @@ import {
   HotkeysProvider,
   resolveModifier,
 } from "@tanstack/react-hotkeys";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type PropsWithChildren, type ReactElement } from "react";
+import { act, type PropsWithChildren, type ReactElement } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { MonthPicker } from "@web/components/Sidebar/MonthPicker/MonthPicker";
@@ -187,21 +187,40 @@ describe("MonthPicker", () => {
     expect(firstHeader?.textContent).toBe("S");
   });
 
-  it("steps the displayed month back and forward without selecting a date", () => {
+  it("lets the chevrons change the displayed month", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    const onSelectDate = mock();
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+
+    await user.click(screen.getByRole("button", { name: "Previous month" }));
+
+    expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+    expect(onSelectDate).not.toHaveBeenCalled();
+  });
+
+  it("steps the displayed month back and forward without selecting a date", async () => {
     const onSelectDate = mock();
     renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
 
     expect(screen.getByText("May 2026")).toBeInTheDocument();
 
-    pressMonthChord("j");
+    act(() => {
+      pressMonthChord("J");
+    });
 
-    expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+    });
     expect(screen.queryByText("May 2026")).not.toBeInTheDocument();
     expect(onSelectDate).not.toHaveBeenCalled();
 
-    pressMonthChord("k");
+    act(() => {
+      pressMonthChord("K");
+    });
 
-    expect(screen.getByText("May 2026")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("May 2026")).toBeInTheDocument();
+    });
     expect(onSelectDate).not.toHaveBeenCalled();
   });
 
