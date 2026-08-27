@@ -21,7 +21,7 @@ const startLevelOne = async (page: Page) => {
   await expect(showcase).toContainText("Compass is keyboard-only");
   await page.keyboard.press("Enter");
   await expect(showcase).toContainText("Drop an event on the board");
-  await expect(showcase).toContainText("Level 1/6");
+  await expect(showcase).toContainText("Level 1/9");
 };
 
 const holdModAndPress = async (page: Page, key: string) => {
@@ -42,7 +42,7 @@ const playThroughLevels = async (page: Page) => {
   await page.keyboard.type("Practice Event");
   await page.keyboard.press("Enter");
   await expect(showcase).toContainText("Practice Event");
-  await expect(showcase).toContainText("Level 2/6");
+  await expect(showcase).toContainText("Level 2/9");
   await expect(showcase).toContainText("See where to go: reveal the jump keys");
 
   await holdModAndPress(page, "1");
@@ -53,14 +53,26 @@ const playThroughLevels = async (page: Page) => {
   await expect(showcase).toContainText("Nudge it into place");
 
   await page.keyboard.press("Shift+ArrowRight");
+  await expect(showcase).toContainText("Change just one edge");
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+ArrowDown");
   await expect(showcase).toContainText("Grab the title");
 
   await page.keyboard.press("e");
   await page.keyboard.press("t");
   await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("Delete, then take it back");
+
+  await page.keyboard.press("Delete");
+  await holdModAndPress(page, "z");
   await expect(showcase).toContainText("When you forget, ask the palette");
 
   await holdModAndPress(page, "k");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("The rest lives in the legend");
+
+  await page.keyboard.press("?");
   await page.keyboard.press("Enter");
 };
 
@@ -91,7 +103,7 @@ test("the welcome-started practice runs the taught keys through graduation", asy
 
   // Not a level, so it carries no chip; N passes without prompting.
   await expect(showcase).toContainText("Never miss a meeting");
-  await expect(showcase).not.toContainText("Level 7/");
+  await expect(showcase).not.toContainText("Level ");
   await page.keyboard.press("n");
 
   await expect(showcase).toContainText("you've got this");

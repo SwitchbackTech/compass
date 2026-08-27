@@ -14,6 +14,7 @@ import {
   SHOWCASE_GRID_START_HOUR,
 } from "@web/components/ShortcutShowcase/practice.state";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { eventEdgeFocusShadow } from "@web/grid/components/calendar-accent.util";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
@@ -36,24 +37,38 @@ const PracticeBlock: FC<{
   const contentColor = theme.getContrastText(base);
   const isFocused = state.focusedId === block.id;
   const isEditing = state.editor?.eventId === block.id;
+  const focusedEdge = isFocused ? state.edge : null;
   const top = ((block.startMin - GRID_START_MIN) / TOTAL_MIN) * 100;
   const height = ((block.endMin - block.startMin) / TOTAL_MIN) * 100;
 
   const focusShadow = isFocused
     ? "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)"
     : "";
+  const edgeFocusShadow =
+    focusedEdge === "start"
+      ? eventEdgeFocusShadow("startDate", "vertical", "var(--text)")
+      : focusedEdge === "end"
+        ? eventEdgeFocusShadow("endDate", "vertical", "var(--text)")
+        : "";
+  const edgeFocusAttr =
+    focusedEdge === "start"
+      ? "startDate"
+      : focusedEdge === "end"
+        ? "endDate"
+        : undefined;
 
   return (
     <div
       className="absolute inset-x-1 rounded-md px-2 py-1 text-xs transition-all duration-200"
       data-practice-event-id={block.id}
       data-practice-focused={isFocused ? "" : undefined}
+      data-edge-focus={edgeFocusAttr}
       style={{
         top: `${top}%`,
         height: `${height}%`,
         backgroundColor: base,
         color: contentColor,
-        boxShadow: focusShadow,
+        boxShadow: [focusShadow, edgeFocusShadow].filter(Boolean).join(", "),
       }}
     >
       {isEditing ? (

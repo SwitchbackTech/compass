@@ -15,11 +15,14 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
+import { PracticeLegend } from "@web/components/ShortcutShowcase/PracticeLegend";
 import { PracticePalette } from "@web/components/ShortcutShowcase/PracticePalette";
 import {
   armEdit,
   commitTitle,
   createDraft,
+  cycleEdgeFocus,
+  deleteFocused,
   disarmEdit,
   ensureFocused,
   initialPracticeState,
@@ -29,9 +32,12 @@ import {
   PRACTICE_TEAM_SYNC_ID,
   type PracticeNudgeDirection,
   toggleJumpHints,
+  undoDelete,
 } from "@web/components/ShortcutShowcase/practice.state";
 import {
   getCreateLessonPhase,
+  getDeleteUndoLessonPhase,
+  getEdgeResizeLessonPhase,
   getShowcaseStep,
   SHOWCASE_LEVEL_IDS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -82,7 +88,8 @@ const arrowDirection = (key: string): PracticeNudgeDirection | null => {
  * practice state, so nothing here touches storage or the real grid stores.
  *
  * An unnumbered intro gates first-time entry, then levels teach create,
- * hold-Mod jumps, event jump, nudge, the E-then-T edit sequence, and Cmd+K.
+ * hold-Mod jumps, event jump, whole-event nudge, Tab-then-Shift+arrow edge
+ * resize, the E-then-T edit sequence, delete-then-undo, Cmd+K, and `?`.
  * Graduation hands off to a prompt on the real calendar. Skip is always
  * offered.
  */
@@ -95,6 +102,7 @@ const ShowcaseTakeover: FC = () => {
   const [isModHeld, setIsModHeld] = useState(false);
   const hasRevealedJumpsRef = useRef(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [practice, setPractice] = useState(initialPracticeState);
   const [offerPending, setOfferPending] = useState(false);
   const offerTakenRef = useRef(false);
@@ -151,7 +159,7 @@ const ShowcaseTakeover: FC = () => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: lesson transitions reseat focus after transient controls unmount.
   useEffect(() => {
     seatFocus();
-  }, [stepId, practice.editor, paletteOpen]);
+  }, [stepId, practice.editor, paletteOpen, legendOpen]);
 
   useEffect(() => {
     const clearMod = () => setIsModHeld(false);
@@ -173,6 +181,13 @@ const ShowcaseTakeover: FC = () => {
     }
 
     if (event.key === "Tab" && regionRef.current) {
+      if (stepId === "edgeResize") {
+        claim(event);
+        apply((state) =>
+          cycleEdgeFocus(state, event.shiftKey ? "backward" : "forward"),
+        );
+        return;
+      }
       const root = regionRef.current;
       const focusables = getFocusableElements(root);
       if (focusables.length > 0) {
@@ -209,6 +224,8 @@ const ShowcaseTakeover: FC = () => {
       settingsActions.closeCmdPalette();
       if (paletteOpen) {
         setPaletteOpen(false);
+      } else if (legendOpen) {
+        setLegendOpen(false);
       } else if (practice.editor) {
         const input = document.querySelector<HTMLInputElement>(
           "[data-practice-title-input]",
@@ -226,6 +243,18 @@ const ShowcaseTakeover: FC = () => {
       if (stepId === "palette" && !paletteOpen) setPaletteOpen(true);
       return;
     }
+    if (
+      isModChord &&
+      !event.shiftKey &&
+      keyboardKey(event.nativeEvent).toLowerCase() === "z"
+    ) {
+      if (stepId === "deleteUndo" && practice.lastDeleted) {
+        claim(event);
+        apply(undoDelete);
+        advance();
+      }
+      return;
+    }
 
     if (paletteOpen) {
       if (event.key === "Enter") {
@@ -233,6 +262,21 @@ const ShowcaseTakeover: FC = () => {
         setPaletteOpen(false);
         if (stepId === "palette") advance();
       }
+      return;
+    }
+
+    if (legendOpen) {
+      if (event.key === "Enter") {
+        claim(event);
+        setLegendOpen(false);
+        if (stepId === "legend") advance();
+      }
+      return;
+    }
+
+    if (stepId === "legend" && event.key === "?") {
+      claim(event);
+      setLegendOpen(true);
       return;
     }
 
@@ -292,6 +336,26 @@ const ShowcaseTakeover: FC = () => {
         if (next !== practice) advance();
         return;
       }
+    }
+
+    if (stepId === "edgeResize") {
+      const direction = arrowDirection(event.key);
+      if (
+        event.shiftKey &&
+        direction &&
+        (practice.edge === "start" || practice.edge === "end")
+      ) {
+        claim(event);
+        const next = apply((state) => nudgeFocused(state, direction));
+        if (next !== practice) advance();
+        return;
+      }
+    }
+
+    if (stepId === "deleteUndo" && event.key === "Delete") {
+      claim(event);
+      apply(deleteFocused);
+      return;
     }
 
     if (
@@ -370,7 +434,24 @@ const ShowcaseTakeover: FC = () => {
           ...getShowcaseStep("create"),
           ...getCreateLessonPhase(Boolean(practice.editor)),
         }
-      : getShowcaseStep(stepId);
+      : stepId === "edgeResize"
+        ? {
+            ...getShowcaseStep("edgeResize"),
+            ...getEdgeResizeLessonPhase(practice.edge),
+          }
+        : stepId === "deleteUndo"
+          ? {
+              ...getShowcaseStep("deleteUndo"),
+              ...getDeleteUndoLessonPhase(Boolean(practice.lastDeleted)),
+            }
+          : getShowcaseStep(stepId);
+
+  const edgeAnnouncement =
+    stepId === "edgeResize" && practice.edge === "start"
+      ? "Editing start time"
+      : stepId === "edgeResize" && practice.edge === "end"
+        ? "Editing end time"
+        : null;
 
   const levelLabel =
     "level" in step ? `Level ${step.level}/${SHOWCASE_LEVEL_IDS.length}` : null;
@@ -405,6 +486,11 @@ const ShowcaseTakeover: FC = () => {
             )}
           </p>
           {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
+          {edgeAnnouncement && (
+            <p className="text-text-muted text-xs" role="status">
+              {edgeAnnouncement}
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-2 pt-2">
             {stepId === "intro" && (
               <div className="flex items-center gap-2">
@@ -482,6 +568,7 @@ const ShowcaseTakeover: FC = () => {
         </aside>
         <div className="relative min-w-0 flex-1 rounded-xl border border-border bg-surface p-4 shadow-xl">
           {paletteOpen && <PracticePalette onRun={runPracticeCommand} />}
+          {legendOpen && <PracticeLegend />}
           <PracticeCalendar
             state={practice}
             onTitleCommit={handleTitleCommit}

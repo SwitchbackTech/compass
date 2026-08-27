@@ -125,6 +125,15 @@ describe("selectShortcutHint", () => {
     ).toBe("nudge");
   });
 
+  it("teaches edge focus after nudge once an event is focused", () => {
+    expect(
+      selectShortcutHint({ ...afterFirstEvent, eventFocused: true }, [
+        "edit-sequence",
+        "nudge",
+      ]).id,
+    ).toBe("edge-focus");
+  });
+
   it("falls through to the command palette after save-draft is demonstrated", () => {
     expect(
       selectShortcutHint({ ...afterFirstEvent, isFormOpen: true }, [
