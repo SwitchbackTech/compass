@@ -39,14 +39,46 @@ describe("error-autofix Routine contract", () => {
       ".github/scripts/autofix-merge-guard.sh",
       "utf8",
     );
-    expect(guard).toContain("DENIED_PATH_PATTERNS=(");
+    expect(guard).toContain("NO_AUTOMERGE_PATH_PATTERNS=(");
     expect(guard).toMatch(/^MAX_FILES=8$/m);
     expect(guard).toMatch(/^MAX_LINES=250$/m);
 
     const routine = readFileSync("docs/CI-CD/error-autofix-routine.md", "utf8");
     expect(routine).toContain("MAX_FILES=8");
     expect(routine).toContain("MAX_LINES=250");
-    expect(routine).toContain("DENIED_PATH_PATTERNS");
+    expect(routine).toContain("NO_AUTOMERGE_PATH_PATTERNS");
     expect(routine).toContain("do not widen from this doc");
+  });
+
+  it("still blocks the sensitive paths from auto-merging", () => {
+    const guard = readFileSync(
+      ".github/scripts/autofix-merge-guard.sh",
+      "utf8",
+    );
+    // Authoring a fix in these is allowed; merging one without a human is
+    // not. Shrinking this list is a deliberate act, not a drive-by.
+    for (const pattern of [
+      "'^\\.github/'",
+      "'^self-host/'",
+      "'^packages/backend/src/auth/'",
+      "'^packages/core/src/logger/'",
+      "'^packages/backend/src/logging/'",
+      "'^packages/sync/src/telemetry/'",
+      "'billing'",
+      "'stripe'",
+    ]) {
+      expect(guard).toContain(pattern);
+    }
+  });
+
+  it("lets the agent author a sensitive-path fix, flagged for a human", () => {
+    const prompt = readFileSync(".github/prompts/error-autofix.md", "utf8");
+    // The rule this replaced ("Never edit any denied path") turned a
+    // diagnosed one-line fix into a comment asking a human to write it.
+    expect(prompt).not.toContain("Never edit any denied path");
+    expect(prompt).toContain("Sensitive paths gate **merging**, not fixing.");
+    expect(prompt).toContain("never add `automerge-candidate`, in any mode");
+    expect(prompt).toContain("add `autofix:needs-human`");
+    expect(prompt).toContain("NO_AUTOMERGE_PATH_PATTERNS");
   });
 });

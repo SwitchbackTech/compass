@@ -11,7 +11,8 @@ you were given:
   only if) it meets every criterion in "Confidence rubric" below. A separate
   deterministic script re-checks your work before anything actually merges —
   you are not the last line of defense, so err toward leaving the label off
-  when uncertain.
+  when uncertain. A fix that touches a sensitive path is not blocked; it is
+  simply left for a human to merge.
 
 In every mode, do the investigation and triage classification below first.
 
@@ -92,7 +93,10 @@ leave it off — the PR still exists for human review, which is a fine outcome.
 - Root cause is pinned to a specific line/function, and the stack trace
   directly confirms it (not "this seems related").
 - The diff is ≤ 250 changed lines and ≤ 8 files.
-- The diff does not touch any denied path: `.github/**`, `self-host/**`,
+- The diff does not touch a **no-auto-merge path**. These are paths a machine
+  may not merge without human eyes — not paths you are forbidden to fix (the
+  first hard rule below says what to do when a fix needs one): `.github/**`,
+  `self-host/**`,
   `packages/backend/src/auth/**`, anything billing/Stripe-related (including
   `packages/core/src/config/compass.config.ts`, `packages/core/src/types/user.types.ts`,
   `packages/backend/src/common/constants/config.constants.ts` and
@@ -101,10 +105,10 @@ leave it off — the PR still exists for human review, which is a fine outcome.
   that doesn't have "billing" or "stripe" in its own path), or any telemetry
   path (`packages/core/src/logger/**`, `packages/backend/src/logging/**`,
   `packages/sync/src/telemetry/**` — you must never be able to silence your
-  own signal). A merge-guard script re-checks the full list independently
-  and will downgrade the PR if you get it wrong — see
-  `.github/scripts/autofix-merge-guard.sh`'s `DENIED_PATH_PATTERNS` for the
-  authoritative, current list rather than trusting this doc to stay in sync.
+  own signal without a human seeing it). A merge-guard script re-checks the
+  full list independently and will downgrade the PR if you get it wrong — see
+  `.github/scripts/autofix-merge-guard.sh`'s `NO_AUTOMERGE_PATH_PATTERNS` for
+  the authoritative, current list rather than trusting this doc to stay in sync.
 - A regression test was added and it fails on the pre-fix code.
 - `bun run verify` is green.
 - The change does not alter behavior beyond the specific failure path (no
@@ -117,7 +121,21 @@ leave it off — the PR still exists for human review, which is a fine outcome.
   `.agents/ledger.md` row **on the PR branch** (`task_id` is the issue
   number). You cannot write those files to `main` from this job.
 
-- Never edit any denied path — see the confidence rubric above.
+- Sensitive paths gate **merging**, not fixing. If the real fix lives in a
+  no-auto-merge path (see the rubric above), open the PR anyway — a diagnosed
+  one-line fix left as a comment is a worse outcome than a PR a human reads.
+  When your diff touches one of those paths, all three of these apply:
+  - never add `automerge-candidate`, in any mode;
+  - add `autofix:needs-human`;
+  - open the PR's Summary with one line naming the sensitive path and why the
+    fix cannot avoid it, so the reviewer sees it before the diff.
+
+  Give `.github/**` and the telemetry paths (`packages/core/src/logger/**`,
+  `packages/backend/src/logging/**`, `packages/sync/src/telemetry/**`) the most
+  explicit callout of all: those are this pipeline's own guardrails and its own
+  error signal, and a human should read a change to them with that in mind.
+  Editing them is allowed when the error genuinely lives there; hiding that you
+  did is not.
 - Never force-push.
 - One PR per issue — if a PR already exists for this issue (check open PRs
   referencing `Fixes #<issue-number>`), do not open a second one.
