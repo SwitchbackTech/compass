@@ -11,6 +11,28 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
  * track it against. Deliberately unsophisticated — clearing storage renews
  * the trial, and that's an accepted tradeoff, not a bug to fix.
  */
+/**
+ * One-time cleanup of the pre-`.v2` trial stamp.
+ *
+ * Production briefly served `billing.enforcement: true` around 2026-08-12..14,
+ * which stamped `compass.trial.started-at` in ~19 visitors' browsers before the
+ * switch went back off. Those stamps are now months stale, so the next time
+ * enforcement is enabled anywhere those visitors would be gated instantly
+ * rather than getting the trial they never actually consumed — and
+ * `useAppAccess` reaches the anonymous-trial branch before it checks whether
+ * Stripe is configured, so an unconfigured deployment would gate them with no
+ * way to pay.
+ *
+ * Versioning the key retires every stamp written under the old name. Callers
+ * must invoke this regardless of the enforcement switch: on a paused
+ * deployment `useTrialStatus` returns before it would otherwise touch storage,
+ * which is exactly the case that needs clearing.
+ */
+export function purgeLegacyTrialStamp(): void {
+  if (!persistentBrowserStore.isAvailable()) return;
+  persistentBrowserStore.remove(STORAGE_KEYS.TRIAL_STARTED_AT_LEGACY);
+}
+
 /** Returns true the one time it actually stamps the start (a fresh trial). */
 export function ensureTrialStarted(): boolean {
   if (!persistentBrowserStore.isAvailable()) return false;

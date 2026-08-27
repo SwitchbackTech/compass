@@ -5,6 +5,7 @@ import { type PropsWithChildren } from "react";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
+import { TRIAL_LENGTH_DAYS } from "@web/billing/trial.storage";
 import { useTrialStatus } from "@web/billing/useTrialStatus";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -134,5 +135,43 @@ describe("useTrialStatus", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.TRIAL_STARTED_AT),
     ).toBeNull();
+  });
+
+  it("purges a legacy trial stamp even while enforcement is paused", async () => {
+    stubConfig(false);
+    persistentBrowserStore.set(
+      STORAGE_KEYS.TRIAL_STARTED_AT_LEGACY,
+      daysAgo(300),
+    );
+
+    await renderTrialStatus();
+
+    // The paused path is the one that matters: production sat here for months
+    // holding stamps from the brief window enforcement was accidentally on.
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.TRIAL_STARTED_AT_LEGACY),
+    ).toBeNull();
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.TRIAL_STARTED_AT),
+    ).toBeNull();
+  });
+
+  it("gives a visitor holding only a stale legacy stamp a full trial, not a gate", async () => {
+    stubConfig(true);
+    persistentBrowserStore.set(
+      STORAGE_KEYS.TRIAL_STARTED_AT_LEGACY,
+      daysAgo(300),
+    );
+
+    const { result } = await renderTrialStatus();
+
+    expect(result.current.isExpired).toBe(false);
+    expect(result.current.daysLeft).toBe(TRIAL_LENGTH_DAYS);
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.TRIAL_STARTED_AT_LEGACY),
+    ).toBeNull();
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.TRIAL_STARTED_AT),
+    ).not.toBeNull();
   });
 });

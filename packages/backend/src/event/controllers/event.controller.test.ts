@@ -10,7 +10,10 @@ import {
   eventMutationError,
   toEventMutationError,
 } from "@backend/event/event.error";
-import eventController, { logLevelForEventFailure } from "./event.controller";
+import eventController, {
+  logLevelForEventFailure,
+  syncFailureLogContext,
+} from "./event.controller";
 import {
   afterEach,
   beforeEach,
@@ -942,6 +945,42 @@ describe("logLevelForEventFailure", () => {
         correlationId: "corr-2",
       }),
     ).toBe("error");
+  });
+});
+
+describe("syncFailureLogContext", () => {
+  it("adds nothing when the failure did not come from Sync", () => {
+    expect(syncFailureLogContext()).toBe("");
+  });
+
+  it("names the kind, status and correlation id", () => {
+    expect(
+      syncFailureLogContext({
+        kind: "unexpectedStatus",
+        status: 500,
+        correlationId: "corr-1",
+      }),
+    ).toBe(" (unexpectedStatus) [status=500] [correlationId=corr-1]");
+  });
+
+  // The point of the fix. Issue #2901 fired seven times reporting only that a
+  // 200 body failed the contract, never which field failed it, because this
+  // line dropped the detail #2900 had already collected.
+  it("names the field a rejected 200 body broke", () => {
+    expect(
+      syncFailureLogContext({
+        kind: "invalidResponse",
+        status: 200,
+        correlationId: "corr-2",
+        detail:
+          "issues=<root>: unrecognized_keys [addedByNewerSync]; " +
+          "keys=instances,nextCursor; content-type=application/json",
+      }),
+    ).toBe(
+      " (invalidResponse) [status=200] [correlationId=corr-2] " +
+        "issues=<root>: unrecognized_keys [addedByNewerSync]; " +
+        "keys=instances,nextCursor; content-type=application/json",
+    );
   });
 });
 

@@ -79,6 +79,31 @@ export const logLevelForEventFailure = (
   return status === Status.SERVICE_UNAVAILABLE ? "warn" : "error";
 };
 
+// The Sync-failure context appended to the logged message, never to `body`.
+// The correlation id goes here rather than into `body.message`: PostHog groups
+// issues by the message, so a per-request id in it would split one defect into
+// an issue per occurrence.
+//
+// `detail` is the log-safe SyncClientError.detail: the failing Zod field paths
+// with their issue code, the body's top-level keys, and the content-type —
+// field names and codes only, never a field value. Without it an
+// `invalidResponse` reports only that the contract broke, not which field
+// broke it, which is how issue #2901 stayed undiagnosable through seven
+// occurrences. `unwrap-sync-result` already appends it on the proxy routes;
+// this is the same line for the event routes, which reach neither
+// `unwrapSyncResult` nor `throwSyncProxyFailure`.
+//
+// Exported for tests, for the same reason logLevelForEventFailure is: the
+// module-level `logger` cannot be spied on.
+export const syncFailureLogContext = (syncError?: SyncClientError): string => {
+  if (!syncError) return "";
+  return (
+    ` (${syncError.kind}) [status=${syncError.status}] ` +
+    `[correlationId=${syncError.correlationId}]` +
+    (syncError.detail ? ` ${syncError.detail}` : "")
+  );
+};
+
 const send = (res: Response, e: unknown) => {
   const { status, body } = toEventMutationError(e);
   const syncError =
@@ -86,14 +111,9 @@ const send = (res: Response, e: unknown) => {
   const level = logLevelForEventFailure(status, syncError);
 
   if (level) {
-    // The correlation id goes here rather than into `body.message`: PostHog
-    // groups issues by the message, so a per-request id in it would split one
-    // defect into an issue per occurrence.
-    const detail = syncError
-      ? ` (${syncError.kind}) [status=${syncError.status}] ` +
-        `[correlationId=${syncError.correlationId}]`
-      : "";
-    logger[level](`${body.code}: ${body.message}${detail}`);
+    logger[level](
+      `${body.code}: ${body.message}${syncFailureLogContext(syncError)}`,
+    );
   }
 
   res.status(status).json(body);
