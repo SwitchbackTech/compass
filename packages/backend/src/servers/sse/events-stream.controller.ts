@@ -9,6 +9,7 @@ const logger = Logger("app:events.controller");
 class EventsController {
   streamEvents = async (req: Request, res: Response): Promise<void> => {
     const userId = req.session!.getUserId();
+    let unsubscribe: (() => void) | undefined;
 
     try {
       // Subscribe immediately so no events are missed during the metadata fetch.
@@ -16,7 +17,7 @@ class EventsController {
       // (a single global poller for the whole process, not one per user) and
       // fans out to whoever is subscribed, so no per-connection wiring is
       // needed here beyond the subscription itself.
-      const unsubscribe = sseServer.subscribe(userId, res);
+      unsubscribe = sseServer.subscribe(userId, res);
       req.on("close", unsubscribe);
 
       // Replay current state after subscribing — client is never stuck on reconnect.
@@ -34,7 +35,15 @@ class EventsController {
       });
     } catch (err) {
       logger.error(`Failed to open SSE stream for user ${userId}:`, err);
-      if (!res.headersSent) {
+      if (res.headersSent) {
+        // subscribe() already flushed the headers, so the client is holding an
+        // open stream that never got its initial replay. Close it instead of
+        // leaving it open: EventSource reconnects on its own when the
+        // connection ends. Unsubscribe explicitly rather than relying on
+        // req "close", which is not guaranteed to have fired by then.
+        unsubscribe?.();
+        res.end();
+      } else {
         res.status(500).end();
       }
     }
