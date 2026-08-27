@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
-import { getEventFormFieldElement } from "@web/common/utils/form/form.util";
+import { getEventFormFieldAnchor } from "@web/common/utils/form/form.util";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { FORM_FIELD_DIGITS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { getVisibleHintRect } from "@web/shortcuts/shift-hint/shift-hint-visible-rect";
@@ -18,11 +18,12 @@ export function FormDigitHintOverlay({ visible }: { visible: boolean }) {
     return null;
   }
 
-  // Only fields whose element is currently rendered get announced or
-  // chipped, e.g. the calendar picker (digit 5) isn't rendered on an edit
-  // draft, so the shortcut wouldn't do anything there.
+  // Chip the visible control, not a hidden inner input. Only fields whose
+  // anchor is currently rendered get announced or chipped, e.g. the calendar
+  // picker (digit 5) isn't rendered on an edit draft, so the shortcut
+  // wouldn't do anything there.
   const presentFields = FORM_FIELD_DIGITS.flatMap((entry) => {
-    const anchor = getEventFormFieldElement(entry.field);
+    const anchor = getEventFormFieldAnchor(entry.field);
     return anchor ? [{ ...entry, anchor }] : [];
   });
 

@@ -69,8 +69,11 @@ const buildForm = () => {
   location.id = "event-form-location";
   form.append(location);
 
-  const attendees = document.createElement("input");
+  const attendees = document.createElement("div");
   attendees.id = "event-form-attendees";
+  const attendeesInput = document.createElement("input");
+  attendeesInput.setAttribute("role", "combobox");
+  attendees.append(attendeesInput);
   form.append(attendees);
 
   const description = document.createElement("div");
@@ -82,7 +85,7 @@ const buildForm = () => {
     start,
     end,
     recurrenceButton,
-    radio,
+    color,
     location,
     attendees,
     description,
@@ -171,5 +174,19 @@ describe("FormDigitHintOverlay", () => {
     // No #event-form-calendar element was added (edit-draft state), so digit
     // 5 has neither a chip nor an announcement.
     expect(screen.getByRole("status").textContent).not.toContain("calendar");
+  });
+
+  it("chips the guests wrapper even when react-select's inner input is too small to chip", () => {
+    buildForm();
+    const attendees = document.getElementById("event-form-attendees");
+    const inner = attendees?.querySelector("input");
+    expect(attendees).not.toBeNull();
+    expect(inner).not.toBeNull();
+    stubRect(inner!, box(112, 90, 114, 92));
+
+    render(<FormDigitHintOverlay visible={true} />);
+
+    expect(chipDigits()).toContain("8");
+    expect(screen.getByRole("status").textContent).toContain("8 for guests");
   });
 });

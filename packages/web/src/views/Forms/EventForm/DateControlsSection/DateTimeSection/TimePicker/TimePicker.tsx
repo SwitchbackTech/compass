@@ -86,6 +86,8 @@ export const TimePicker = ({
   selectClassName,
   setIsMenuOpen,
   value,
+  id,
+  inputId,
   ...props
 }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,10 +139,22 @@ export const TimePicker = ({
     if (option) _onChange(option);
   };
 
+  // Jump ids live on this visible wrapper. react-select's dummy input is
+  // often 2px (hidden behind the selected value), which fails the hold-Mod
+  // hint-chip visibility check. `inputId` without a separate `id` is the
+  // jump id; the actual input then gets `${inputId}-input`.
+  const jumpId = id ?? inputId;
+  const resolvedInputId = id
+    ? inputId
+    : inputId
+      ? `${inputId}-input`
+      : undefined;
+
   return (
-    <div ref={containerRef} className="c-time-picker">
+    <div ref={containerRef} className="c-time-picker" id={jumpId}>
       <CreatableSelect
         {...props}
+        inputId={resolvedInputId}
         className={selectClassName}
         classNamePrefix={TIMEPICKER}
         styles={timePickerTextStyles}

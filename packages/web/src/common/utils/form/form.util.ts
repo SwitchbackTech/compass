@@ -30,7 +30,10 @@ const findFirstMatch = (selectors: string[]): HTMLElement | null => {
   return null;
 };
 
-/** Per-field fallback selectors, in priority order. */
+/** Per-field fallback selectors, in priority order. These target the visible
+ * control (the chip anchor), not a hidden inner input. react-select's dummy
+ * input is often 2px wide — too small for a hint chip — so combobox fields
+ * put the id on the wrapper. */
 const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
   title: [`${EVENT_FORM_SELECTOR} input[name="Event Title"]`],
   location: [
@@ -38,7 +41,7 @@ const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
     `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
   ],
   description: [`#event-form-description`],
-  // Timed events expose a start-time combobox; all-day uses the date input.
+  // Timed events expose a start-time combobox wrapper; all-day uses the date input.
   start: [
     `${EVENT_FORM_SELECTOR} #startTimePicker`,
     `${EVENT_FORM_SELECTOR} input[title="Pick Start Date"]`,
@@ -52,22 +55,65 @@ const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
     `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Repeat"]`,
   ],
   calendar: [`#event-form-calendar`],
-  // Prefer the selected swatch so arrow keys move from the current color.
-  color: [
-    `#event-form-color input[type="radio"]:checked`,
-    `#event-form-color input[type="radio"]`,
-  ],
+  color: [`#event-form-color`],
   attendees: [`#event-form-attendees`, `#event-form-guest-list`],
+};
+
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[contenteditable='true']",
+  "[contenteditable='']",
+  "[role='combobox']",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+/**
+ * Visible control to chip while Mod is held. Same element as the jump
+ * target's container; focus may land on a descendant (see
+ * `getEventFormFieldElement`).
+ */
+export const getEventFormFieldAnchor = (
+  field: EventFormFocusField,
+): HTMLElement | null => findFirstMatch(FIELD_SELECTORS[field]);
+
+const resolveFocusElement = (
+  field: EventFormFocusField,
+  anchor: HTMLElement,
+): HTMLElement => {
+  // Prefer the selected swatch so arrow keys move from the current color.
+  if (field === "color") {
+    return (
+      anchor.querySelector<HTMLElement>('input[type="radio"]:checked') ??
+      anchor.querySelector<HTMLElement>('input[type="radio"]') ??
+      anchor
+    );
+  }
+
+  if (anchor.matches(FOCUSABLE_SELECTOR)) return anchor;
+
+  return (
+    anchor.querySelector<HTMLElement>('[role="combobox"]') ??
+    anchor.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ??
+    anchor
+  );
 };
 
 /**
  * The element a field jump would focus, or null if the field isn't currently
- * rendered (e.g. the calendar picker on an edit draft). Used both to focus
- * and to anchor hint chips to the same target.
+ * rendered (e.g. the calendar picker on an edit draft). Combobox wrappers
+ * resolve to the inner input so the caret lands ready to type.
  */
 export const getEventFormFieldElement = (
   field: EventFormFocusField,
-): HTMLElement | null => findFirstMatch(FIELD_SELECTORS[field]);
+): HTMLElement | null => {
+  const anchor = getEventFormFieldAnchor(field);
+  if (!anchor) return null;
+  return resolveFocusElement(field, anchor);
+};
 
 /**
  * Focus a field inside the docked event form. The grid card and sidebar form
