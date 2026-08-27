@@ -6,35 +6,15 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError } from "@web/api/api.types";
 import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import {
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
-import {
-  afterAll,
-  afterEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
 
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
-const mockLogout = mock(() => Promise.resolve({ signedOutRemotely: true }));
-
-// mock.module is process-wide. Keep the stub only while this file runs so
-// later suites (LogoutConfirmationProvider) still exercise the real hook.
-const actualUseLogout = (await import("@web/auth/compass/hooks/useLogout"))
-  .useLogout;
-let isLogoutMocked = true;
-
-mock.module("@web/auth/compass/hooks/useLogout", () => ({
-  useLogout: (...args: Parameters<typeof actualUseLogout>) =>
-    isLogoutMocked ? mockLogout : actualUseLogout(...args),
-}));
-
-afterAll(() => {
-  isLogoutMocked = false;
-});
 
 const checkoutFailed = (): ApiError => {
   const error = new Error(
@@ -63,7 +43,7 @@ const renderGate = (status = "awaiting_checkout") =>
 describe("BillingGateModal", () => {
   afterEach(() => {
     assign.mockClear();
-    mockLogout.mockClear();
+    useBillingPreviewStore.setState(initialBillingPreviewState);
   });
 
   it("redirects to Stripe Checkout from Start trial", async () => {
@@ -112,7 +92,7 @@ describe("BillingGateModal", () => {
     expect(screen.getByRole("button", { name: "Start trial" })).toHaveFocus();
     for (const [name, key] of [
       ["Start trial", "S"],
-      ["Log out", "L"],
+      ["Look around first", "L"],
     ] as const) {
       expect(
         within(screen.getByRole("button", { name })).getByText(key),
@@ -127,7 +107,7 @@ describe("BillingGateModal", () => {
     const { unmount } = renderGate();
 
     expect(
-      screen.getByText("A card is required to start."),
+      screen.getByText("Try Compass for free for 7 days"),
     ).toBeInTheDocument();
     expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
     unmount();
@@ -160,12 +140,20 @@ describe("BillingGateModal", () => {
     createCheckoutSession.mockRestore();
   });
 
-  it("logs out with L", async () => {
+  it("enters the read-only look-around with L", async () => {
     const user = userEvent.setup();
     renderGate();
 
     await user.keyboard("l");
-    expect(mockLogout).toHaveBeenCalled();
+    expect(useBillingPreviewStore.getState().isPreviewing).toBe(true);
+  });
+
+  it("offers no look-around once the trial is spent", () => {
+    renderGate("canceled");
+
+    expect(
+      screen.queryByRole("button", { name: /Look around first/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("traps Tab within the dialog", async () => {
@@ -173,11 +161,13 @@ describe("BillingGateModal", () => {
     renderGate();
 
     const start = screen.getByRole("button", { name: "Start trial" });
-    const logout = screen.getByRole("button", { name: "Log out" });
+    const lookAround = screen.getByRole("button", {
+      name: "Look around first",
+    });
     expect(start).toHaveFocus();
 
     await user.tab({ shift: true });
-    expect(logout).toHaveFocus();
+    expect(lookAround).toHaveFocus();
 
     await user.tab();
     expect(start).toHaveFocus();

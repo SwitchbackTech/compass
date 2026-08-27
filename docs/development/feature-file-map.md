@@ -154,7 +154,7 @@ the full picture.
 ## Billing And Trial
 
 - Shared plan/price copy: `packages/core/src/constants/billing.constants.ts`
-- Anonymous trial clock: `packages/web/src/billing/trial.storage.ts`, `packages/web/src/billing/useTrialStatus.ts`
+- Read-only look-around: `packages/web/src/billing/billing-preview.store.ts`, `packages/web/src/billing/BillingReadOnlyBanner.tsx`
 - Server access + paid gate: `packages/web/src/billing/useAppAccess.ts`, `packages/web/src/billing/BillingGateModal.tsx`
 - Backend billing: `packages/backend/src/billing`
 - Overview: [Billing And Trial](../features/billing.md)

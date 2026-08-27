@@ -484,7 +484,7 @@ compose_base() {
 }
 
 start_stack() {
-  info "Starting Compass. Pulling images on first run — this may take a few minutes."
+  info "Starting Compass. Pulling images on first run. This may take a few minutes."
   STACK_TOUCHED=1
   compose_base up -d || fail "Docker Compose failed. Compass was not started."
 }

@@ -54,7 +54,7 @@ export const AuthError: AuthErrors = {
   GoogleSignInWhileAuthenticated: {
     code: "GOOGLE_SIGNIN_WHILE_AUTHENTICATED",
     description:
-      "You're already signed in — use Settings → Add account to connect this Google account.",
+      "You're already signed in. Use Settings → Add account to connect this Google account.",
     status: Status.CONFLICT,
     isOperational: true,
   },

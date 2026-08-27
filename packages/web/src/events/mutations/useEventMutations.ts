@@ -36,6 +36,7 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { billingQueryKeys } from "@web/billing/billing.query";
+import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -581,6 +582,9 @@ export function useEventMutations(
       context: EventMutationContext | undefined,
     ) => {
       if (isApiError(error) && getApiErrorCode(error) === "BILLING_REQUIRED") {
+        // The look-around ends at the moment of real intent: a refused write
+        // brings the trial ask back.
+        billingPreviewActions.exit();
         void queryClient.invalidateQueries({
           queryKey: billingQueryKeys.status,
         });

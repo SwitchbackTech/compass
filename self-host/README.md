@@ -26,7 +26,7 @@ so the app stays fully writable with no paid gate. See
 ## Files in this folder
 
 - `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/compass.yaml`, and copies the helper scripts.
-- `compass` — the helper script template. The installer copies it to `~/compass/compass`. Don't run this copy directly; run `~/compass/compass` after install.
+- `compass`: the helper script template. The installer copies it to `~/compass/compass`. Don't run this copy directly; run `~/compass/compass` after install.
 - `config.sh` — shared POSIX helper sourced by `install.sh`, `install-manual.sh`, and `compass`. Parses `compass.yaml` and derives default `COMPOSE_PROFILES` (`selfhosted` when `mongo.uri` points at the bundled `mongo` service; `sync` when `sync.mongoUri` is set). An explicit `COMPOSE_PROFILES` in the environment still wins.
 - `compose.yaml` — the Docker Compose stack used by the installed app.
 - `compose.selfhosted.yaml` — overlay applied when `COMPOSE_PROFILES` includes `selfhosted` (waits for healthy bundled Mongo before starting backend).

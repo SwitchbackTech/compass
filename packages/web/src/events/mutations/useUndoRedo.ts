@@ -53,7 +53,7 @@ const entryEventId = (entry: UndoHistoryEntry): string =>
 // covers both — unlike `refocusEventElement`, which waits for a replaced node.
 
 const showUndoDeclinedToast = () =>
-  showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo — event changed since");
+  showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo. Event changed since");
 
 // A snapshot recorded before this event was ever replayed may omit `location`
 // or `color` entirely (an older local record, a demo-seeded event built

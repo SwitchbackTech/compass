@@ -247,7 +247,7 @@ describe("handleGoogleAuth", () => {
         }),
       ).rejects.toMatchObject({
         result:
-          "You're already signed in — use Settings → Add account to connect this Google account.",
+          "You're already signed in. Use Settings → Add account to connect this Google account.",
         code: "GOOGLE_SIGNIN_WHILE_AUTHENTICATED",
       });
 

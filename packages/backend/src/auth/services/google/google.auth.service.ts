@@ -243,7 +243,7 @@ async function handleGoogleAuth(
       if (options?.hasExistingSession) {
         throw error(
           AuthError.GoogleSignInWhileAuthenticated,
-          "You're already signed in — use Settings → Add account to connect this Google account.",
+          "You're already signed in. Use Settings → Add account to connect this Google account.",
         );
       }
       const isNewUser = createdNewRecipeUser && loginMethodsLength === 1;

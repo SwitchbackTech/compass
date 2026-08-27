@@ -77,10 +77,18 @@ production.
 
 ## What users see
 
-- **Never signed up:** the existing 7-day anonymous `localStorage` trial and
-  `TrialGateModal`. Unchanged.
-- **Signed up, no card yet:** `awaiting_checkout`, read-only, `BillingGateModal`
-  with Subscribe (Stripe Checkout).
+- **Never signed up:** fully open, forever. Anonymous visitors get the seeded
+  sample events and the whole app with no clock and no gate. There is no
+  browser-local trial: a trial is only ever asked for at the moment of
+  commitment (sign up, sign in, connect an account).
+- **Signed up, no card yet:** `awaiting_checkout`, read-only,
+  `BillingGateModal` with Start trial (Stripe Checkout). The gate also offers
+  "Look around first", which unmounts it and drops the user onto the real
+  calendar behind `BillingReadOnlyBanner`. That preview lives in
+  `billing-preview.store.ts` and is deliberately in-memory, so a reload puts
+  the trial ask back. Writes still fail server-side, and the
+  `BILLING_REQUIRED` branch in `useEventMutations` exits the preview, so the
+  first refused save brings the gate straight back.
 - **Trialing / active / past_due:** writable. `past_due` also shows a banner.
 - **Expired / canceled:** read-only until they subscribe again. A later
   Checkout does not grant another trial.
@@ -138,3 +146,4 @@ calculates zero tax rather than erroring, so a missing one is silent.
 - Webhook: `packages/backend/src/billing/services/billing.webhook.service.ts`
 - Write guard: `packages/backend/src/billing/billing.guard.ts`
 - Web access: `packages/web/src/billing/useAppAccess.ts`
+- Read-only look-around: `packages/web/src/billing/billing-preview.store.ts`

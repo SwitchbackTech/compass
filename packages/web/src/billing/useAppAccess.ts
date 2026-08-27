@@ -6,14 +6,8 @@ import {
   useAppConfigQuery,
   useBillingStatusQuery,
 } from "@web/billing/billing.query";
-import { useTrialStatus } from "@web/billing/useTrialStatus";
 
 export type AppAccess =
-  | {
-      kind: "anonymous-trial";
-      isExpired: boolean;
-      daysLeft: number;
-    }
   | {
       kind: "server";
       status: BillingSubscriptionStatus;
@@ -23,22 +17,23 @@ export type AppAccess =
   | { kind: "open" };
 
 /**
- * Reconciles the anonymous localStorage trial with server billing.
+ * Resolves what a visitor is allowed to do.
  *
- * Never-signed-up visitors keep today's anonymous trial (and TrialGateModal).
- * Signed-in users read `/api/billing/status`. Fail open: a loading, error,
- * unconfigured-Stripe, or paused-enforcement state never locks a paying user
- * out of their calendar.
+ * Anonymous visitors are unconditionally open: playing with the sample events
+ * is the front door, and nothing about it is metered. A trial is only ever
+ * asked for once someone commits (signs up, signs in, connects an account),
+ * at which point `/api/billing/status` governs.
+ *
+ * Fail open: a loading, error, unconfigured-Stripe, or paused-enforcement
+ * state never locks a paying user out of their calendar.
  */
 export function useAppAccess(): AppAccess {
   const { authenticated } = useContext(SessionContext);
-  const trial = useTrialStatus();
   const configQuery = useAppConfigQuery();
   const enforced = isBillingEnforced(configQuery.data);
   const billingEnabled =
     enforced &&
     authenticated &&
-    !trial.isAnonymousTrial &&
     configQuery.data?.billing.isConfigured === true;
   const billingQuery = useBillingStatusQuery(billingEnabled);
 
@@ -46,23 +41,15 @@ export function useAppAccess(): AppAccess {
     return { kind: "open" };
   }
 
-  if (trial.isAnonymousTrial) {
-    return {
-      kind: "anonymous-trial",
-      isExpired: trial.isExpired,
-      daysLeft: trial.daysLeft,
-    };
-  }
-
   if (!authenticated) {
     return { kind: "open" };
   }
 
-  if (
-    configQuery.isError ||
-    configQuery.isPending ||
-    configQuery.data?.billing.isConfigured !== true
-  ) {
+  // isPending is already covered above (isBillingEnforced reads false with no
+  // data), but isError is not: TanStack keeps the last good `data` when a
+  // refetch fails, so an errored config can still report enforcement: true.
+  // Fail open rather than gate on a stale answer we could not confirm.
+  if (configQuery.isError || configQuery.data?.billing.isConfigured !== true) {
     return { kind: "open" };
   }
 

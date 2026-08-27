@@ -40,18 +40,13 @@ export function useAppConfigQuery() {
 
 /**
  * The operator pause switch. False (paused) whenever config is pending or
- * errored, not just when the server says so — a signed visitor with an
- * expired anonymous clock must never see a gate flash before config loads.
+ * errored, not just when the server says so, so a slow network never flashes
+ * a gate before the real value loads.
  */
 export function isBillingEnforced(
   config: { billing: { enforcement: boolean } } | undefined,
 ): boolean {
   return config?.billing.enforcement === true;
-}
-
-export function useBillingEnforced(): boolean {
-  const configQuery = useAppConfigQuery();
-  return isBillingEnforced(configQuery.data);
 }
 
 /**

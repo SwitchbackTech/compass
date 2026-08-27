@@ -1,8 +1,12 @@
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
+import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
 import { useCheckoutReturn } from "@web/billing/billing.query";
-import { TrialGateModal } from "@web/billing/TrialGateModal";
+import {
+  selectBillingPreviewing,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
@@ -35,6 +39,7 @@ export function RootShell() {
   const deferCalendarOnboarding = isLifePathname(pathname);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
+  const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
@@ -42,45 +47,33 @@ export function RootShell() {
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
-  const showTrialGate = access.kind === "anonymous-trial" && access.isExpired;
-  const showBillingGate = access.kind === "server" && access.isReadOnly;
+  const readOnlyStatus =
+    access.kind === "server" && access.isReadOnly ? access.status : null;
+  // The look-around is an invitation to start a trial, so it only holds while
+  // one is still on offer. If the status moves on (expired, canceled) while
+  // previewing, the gate must come back rather than strand the user behind a
+  // banner pitching a trial they can no longer take.
+  const isPreviewable = readOnlyStatus === "awaiting_checkout";
+  const showReadOnlyBanner = isPreviewable && isPreviewing;
+  const gateStatus = showReadOnlyBanner ? null : readOnlyStatus;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
-  // An expired trial owns the whole screen. The onboarding cards sit at
-  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
-  // a gated user click straight through the gate and keep touring. AuthModal
-  // stays because the gate's only ways forward are sign up and log in.
-  if (showTrialGate) {
-    return (
-      <AuthModalProvider>
-        <Outlet />
-        <TrialGateModal />
-        <AuthModal />
-        <PointerHint />
-      </AuthModalProvider>
-    );
-  }
-
-  if (showBillingGate) {
-    return (
-      <AuthModalProvider>
-        <Outlet />
-        <BillingGateModal status={access.status} />
-        <AuthModal />
-        <PointerHint />
-      </AuthModalProvider>
-    );
-  }
-
+  // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
+  // (above Z_INDEX_MODAL), so leaving them mounted would let a gated user
+  // click straight through it and keep touring. They are suppressed rather
+  // than living in a second copy of this tree, which keeps Outlet's slot
+  // stable — swapping tree shapes remounts the whole calendar.
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}
+      {showReadOnlyBanner && <BillingReadOnlyBanner />}
       <Outlet />
       <AuthModal />
-      {!deferCalendarOnboarding && <WelcomeModal />}
-      {!deferCalendarOnboarding && <ShortcutShowcase />}
-      {!deferCalendarOnboarding && <FirstEventPrompt />}
-      {isWelcomeGuideOpen && <WelcomeGuideModal />}
+      {gateStatus !== null && <BillingGateModal status={gateStatus} />}
+      {gateStatus === null && !deferCalendarOnboarding && <WelcomeModal />}
+      {gateStatus === null && !deferCalendarOnboarding && <ShortcutShowcase />}
+      {gateStatus === null && !deferCalendarOnboarding && <FirstEventPrompt />}
+      {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
       <PointerHint />
     </AuthModalProvider>
   );
