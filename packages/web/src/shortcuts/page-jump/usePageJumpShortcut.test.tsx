@@ -163,7 +163,7 @@ describe("usePageJumpShortcut", () => {
       await waitFor(() => {
         expect(result.current.areHintsVisible).toBe(true);
       });
-      expect(getShortcutHintProgress().demonstratedIds).toContain("page-jump");
+      expect(getShortcutHintProgress()).toContain("page-jump");
     });
 
     it("hides hints on Mod keyup", async () => {

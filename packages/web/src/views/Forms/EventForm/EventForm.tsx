@@ -591,7 +591,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       );
 
       shortcutHintProgressActions.demonstrate("save-draft");
-      shortcutHintProgressActions.demonstrate("first-event-save");
       onSubmit(withSchedule);
     };
 

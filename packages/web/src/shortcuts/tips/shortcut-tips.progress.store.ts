@@ -7,13 +7,11 @@ import {
 import { useShortcutShowcaseStore } from "@web/components/ShortcutShowcase/showcase.store";
 import { type ShortcutHintId } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
-  EMPTY_SHORTCUT_HINT_PROGRESS,
   readShortcutHintProgress,
-  type ShortcutHintProgress,
   writeShortcutHintProgress,
 } from "@web/shortcuts/tips/shortcut-tips.progress.storage";
 
-const progressStore = createExternalStore<ShortcutHintProgress>(
+const progressStore = createExternalStore<readonly ShortcutHintId[]>(
   readShortcutHintProgress(),
 );
 
@@ -34,11 +32,11 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-export function getShortcutHintProgress(): ShortcutHintProgress {
+export function getShortcutHintProgress(): readonly ShortcutHintId[] {
   return progressStore.get();
 }
 
-export function useShortcutHintProgress(): ShortcutHintProgress {
+export function useShortcutHintProgress(): readonly ShortcutHintId[] {
   return useSyncExternalStore(subscribe, progressStore.get);
 }
 
@@ -51,16 +49,9 @@ export const shortcutHintProgressActions = {
     if (useShortcutShowcaseStore.getState().isActive) return;
 
     const current = progressStore.get();
-    const demonstratedIds = current.demonstratedIds.includes(id)
-      ? current.demonstratedIds
-      : [...current.demonstratedIds, id];
-    const next: ShortcutHintProgress = { demonstratedIds, lastUsedId: id };
-    if (
-      next.lastUsedId === current.lastUsedId &&
-      next.demonstratedIds === current.demonstratedIds
-    ) {
-      return;
-    }
+    if (current[current.length - 1] === id) return;
+
+    const next = [...current.filter((existing) => existing !== id), id];
     if (writeShortcutHintProgress(next)) progressStore.set(next);
   },
 };
@@ -68,6 +59,5 @@ export const shortcutHintProgressActions = {
 /** Test-only: resyncs the in-memory store from storage. Registered in
  * reset-stores.ts for between-test cleanup. */
 export function resetShortcutHintProgressStoreForTests(): void {
-  progressStore.set(EMPTY_SHORTCUT_HINT_PROGRESS);
   refreshFromStorage();
 }

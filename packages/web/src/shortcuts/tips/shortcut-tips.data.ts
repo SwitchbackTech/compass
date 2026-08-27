@@ -12,22 +12,6 @@ export type ShortcutHintId =
   | "event-jump"
   | "command-palette";
 
-export const SHORTCUT_HINT_IDS = [
-  "first-event-save",
-  "save-draft",
-  "life-this-week",
-  "edit-sequence",
-  "nudge",
-  "create-event",
-  "page-jump",
-  "event-jump",
-  "command-palette",
-] as const satisfies readonly ShortcutHintId[];
-
-export function isShortcutHintId(value: string): value is ShortcutHintId {
-  return (SHORTCUT_HINT_IDS as readonly string[]).includes(value);
-}
-
 export type ShortcutTipPart =
   | string
   | { key: string }
@@ -123,4 +107,8 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
 
 export function getShortcutHint(id: ShortcutHintId): ShortcutHint {
   return SHORTCUT_HINTS[id];
+}
+
+export function isShortcutHintId(value: string): value is ShortcutHintId {
+  return Object.hasOwn(SHORTCUT_HINTS, value);
 }

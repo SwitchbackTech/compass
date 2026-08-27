@@ -11,11 +11,6 @@ export type ShortcutHintContext = {
   firstEventDone: boolean;
 };
 
-export type ShortcutHintSelectionProgress = {
-  demonstratedIds?: readonly ShortcutHintId[];
-  lastUsedId?: ShortcutHintId | null;
-};
-
 const IDLE_POOL = [
   "page-jump",
   "event-jump",
@@ -41,12 +36,12 @@ const LIFE_POOL = [
 
 function pickFromPool(
   pool: readonly ShortcutHintId[],
-  demonstratedIds: ReadonlySet<ShortcutHintId>,
-  lastUsedId: ShortcutHintId | null,
+  demonstratedIds: readonly ShortcutHintId[],
 ): ShortcutHintId {
-  const unused = pool.find((id) => !demonstratedIds.has(id));
+  const unused = pool.find((id) => !demonstratedIds.includes(id));
   if (unused) return unused;
 
+  const lastUsedId = demonstratedIds[demonstratedIds.length - 1];
   const lastIndex = lastUsedId ? pool.indexOf(lastUsedId) : -1;
   return pool[(lastIndex + 1) % pool.length];
 }
@@ -60,12 +55,10 @@ function pickFromPool(
  */
 export function selectShortcutHint(
   ctx: ShortcutHintContext,
-  progress: ShortcutHintSelectionProgress = {},
+  demonstratedIds: readonly ShortcutHintId[] = [],
 ): ShortcutHint {
-  const demonstratedIds = new Set(progress.demonstratedIds ?? []);
-  const lastUsedId = progress.lastUsedId ?? null;
   const pick = (pool: readonly ShortcutHintId[]) =>
-    getShortcutHint(pickFromPool(pool, demonstratedIds, lastUsedId));
+    getShortcutHint(pickFromPool(pool, demonstratedIds));
 
   if (ctx.isFormOpen && !ctx.firstEventDone) {
     return getShortcutHint("first-event-save");

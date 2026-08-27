@@ -15,34 +15,22 @@ import { describe, expect, it } from "bun:test";
 describe("shortcutHintProgress", () => {
   it("records a demonstrated primitive and notifies subscribers", () => {
     const { result } = renderHook(() => useShortcutHintProgress());
-    expect(result.current).toEqual({
-      demonstratedIds: [],
-      lastUsedId: null,
-    });
+    expect(result.current).toEqual([]);
 
     act(() => shortcutHintProgressActions.demonstrate("page-jump"));
 
-    expect(result.current).toEqual({
-      demonstratedIds: ["page-jump"],
-      lastUsedId: "page-jump",
-    });
-    expect(readShortcutHintProgress()).toEqual({
-      demonstratedIds: ["page-jump"],
-      lastUsedId: "page-jump",
-    });
+    expect(result.current).toEqual(["page-jump"]);
+    expect(readShortcutHintProgress()).toEqual(["page-jump"]);
   });
 
-  it("does not duplicate an already demonstrated id, but updates lastUsedId", () => {
+  it("moves a repeated primitive to the end instead of duplicating it", () => {
     const { result } = renderHook(() => useShortcutHintProgress());
 
     act(() => shortcutHintProgressActions.demonstrate("page-jump"));
     act(() => shortcutHintProgressActions.demonstrate("event-jump"));
     act(() => shortcutHintProgressActions.demonstrate("page-jump"));
 
-    expect(result.current).toEqual({
-      demonstratedIds: ["page-jump", "event-jump"],
-      lastUsedId: "page-jump",
-    });
+    expect(result.current).toEqual(["event-jump", "page-jump"]);
   });
 
   it("does not persist while the Shortcut Showcase is open", () => {
@@ -51,42 +39,27 @@ describe("shortcutHintProgress", () => {
 
     act(() => shortcutHintProgressActions.demonstrate("page-jump"));
 
-    expect(result.current).toEqual({
-      demonstratedIds: [],
-      lastUsedId: null,
-    });
-    expect(readShortcutHintProgress()).toEqual({
-      demonstratedIds: [],
-      lastUsedId: null,
-    });
+    expect(result.current).toEqual([]);
+    expect(readShortcutHintProgress()).toEqual([]);
 
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
   });
 
-  it("falls back to empty progress for corrupt storage", () => {
+  it("falls back to an empty list for corrupt storage", () => {
     persistentBrowserStore.set(
       STORAGE_KEYS.SHORTCUT_TIPS_DEMONSTRATED,
       "{not json",
     );
 
-    expect(readShortcutHintProgress()).toEqual({
-      demonstratedIds: [],
-      lastUsedId: null,
-    });
+    expect(readShortcutHintProgress()).toEqual([]);
   });
 
   it("skips unknown ids from storage", () => {
     persistentBrowserStore.set(
       STORAGE_KEYS.SHORTCUT_TIPS_DEMONSTRATED,
-      JSON.stringify({
-        demonstratedIds: ["page-jump", "not-a-hint"],
-        lastUsedId: "also-bad",
-      }),
+      JSON.stringify(["page-jump", "not-a-hint"]),
     );
 
-    expect(readShortcutHintProgress()).toEqual({
-      demonstratedIds: ["page-jump"],
-      lastUsedId: null,
-    });
+    expect(readShortcutHintProgress()).toEqual(["page-jump"]);
   });
 });

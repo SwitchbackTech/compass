@@ -6,50 +6,35 @@ import {
   type ShortcutHintId,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 
-export type ShortcutHintProgress = {
-  demonstratedIds: readonly ShortcutHintId[];
-  lastUsedId: ShortcutHintId | null;
-};
+// Most-recent-last list of demonstrated tip ids. Rotation uses the last
+// entry; unused picks ignore order.
+const DemonstratedIdsSchema = z.array(z.string()).readonly();
 
-export const EMPTY_SHORTCUT_HINT_PROGRESS: ShortcutHintProgress = {
-  demonstratedIds: [],
-  lastUsedId: null,
-};
-
-const ProgressSchema = z.object({
-  demonstratedIds: z.array(z.string()),
-  lastUsedId: z.string().nullable(),
-});
-
-export function readShortcutHintProgress(): ShortcutHintProgress {
+export function readShortcutHintProgress(): readonly ShortcutHintId[] {
   const raw = persistentBrowserStore.get(
     STORAGE_KEYS.SHORTCUT_TIPS_DEMONSTRATED,
   );
-  if (!raw) return EMPTY_SHORTCUT_HINT_PROGRESS;
+  if (!raw) return [];
 
   try {
-    const parsed = ProgressSchema.parse(JSON.parse(raw));
-    const demonstratedIds = parsed.demonstratedIds.filter(isShortcutHintId);
-    const lastUsedId =
-      parsed.lastUsedId && isShortcutHintId(parsed.lastUsedId)
-        ? parsed.lastUsedId
-        : null;
-    return { demonstratedIds, lastUsedId };
+    return DemonstratedIdsSchema.parse(JSON.parse(raw)).filter(
+      isShortcutHintId,
+    );
   } catch {
-    return EMPTY_SHORTCUT_HINT_PROGRESS;
+    return [];
   }
 }
 
 export function writeShortcutHintProgress(
-  progress: ShortcutHintProgress,
+  ids: readonly ShortcutHintId[],
 ): boolean {
-  if (progress.demonstratedIds.length === 0 && progress.lastUsedId === null) {
+  if (ids.length === 0) {
     return persistentBrowserStore.remove(
       STORAGE_KEYS.SHORTCUT_TIPS_DEMONSTRATED,
     );
   }
   return persistentBrowserStore.set(
     STORAGE_KEYS.SHORTCUT_TIPS_DEMONSTRATED,
-    JSON.stringify(progress),
+    JSON.stringify(ids),
   );
 }
