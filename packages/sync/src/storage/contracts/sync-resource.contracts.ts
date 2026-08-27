@@ -158,6 +158,16 @@ export const SyncResourceRecordSchema = z.strictObject({
 });
 export type SyncResourceRecord = z.infer<typeof SyncResourceRecordSchema>;
 
+// Reads parse through this LOOSE variant, not the strict schema above. A rolling
+// deploy runs the old build and the new build at the same time. The new build
+// stamps a field the old build has never heard of, the old build then reads that
+// row, and a strictObject rejects the unknown key with `unrecognized_keys` and
+// throws on the read. That broke GET /connections during the #2908 deploy
+// (2026-08-27), and the mirror-image mistake froze the sync fleet for 23h
+// (2026-07-31). Writes stay strict, so this build still cannot persist an
+// unknown key.
+export const SyncResourceReadSchema = SyncResourceRecordSchema.loose();
+
 export const SyncResourceUpsertSchema = SyncResourceRecordSchema.pick({
   tenantId: true,
   principalId: true,
