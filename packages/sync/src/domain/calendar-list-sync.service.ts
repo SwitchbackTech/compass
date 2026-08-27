@@ -15,6 +15,12 @@ import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
+// How long an unwatchable verdict must stand before a full pass gives that
+// calendar another watch attempt. Scopes the retry to the verdict rather than to
+// however often full passes run, which stopped being daily once a calendarList
+// push started forcing one.
+const WATCH_UNSUPPORTED_RETRY_AFTER_MS = 24 * 60 * 60_000;
+
 export interface CalendarListSyncDeps {
   calendars: ProviderCalendarRepository;
   resources: SyncResourceRepository;
@@ -55,6 +61,12 @@ export interface CalendarListSyncResult {
 // NOT mean removal — only a FULL pass retires calendars no longer listed. An
 // expired cursor drops to a full re-list rather than retrying a dead token; any
 // other discovery failure throws so the worker retries with backoff.
+//
+// A full pass stamps lastFullListAt, which is the ONLY clock the rediscovery
+// sweep selects on. It is not lastSuccessAt because incremental passes stamp
+// that too: the web client's focus refreshes kept it perpetually fresh for
+// active users, so they never aged into the sweep and the retirement pass never
+// ran for exactly the people with the most calendar churn (2026-08-27).
 export async function syncCalendarList(
   deps: CalendarListSyncDeps,
   connection: ProviderConnectionRecord,
@@ -147,24 +159,31 @@ export async function syncCalendarList(
   }
 
   // Only a full pass sees the complete set, so only then can a calendar's absence
-  // mean it was removed. An incremental pass reports removals as active:false
-  // entries (handled by the upsert above), so it must not retire the absent.
+  // mean it was removed. An incremental pass is BELIEVED to report a removal or a
+  // hide as an active:false entry (handled by the upsert above), so it must not
+  // retire the absent — but nothing in this repo can prove what Google actually
+  // returns for a hidden-flag flip, and the fake behind the adapter seam cannot
+  // observe it. The push path clears the cursor precisely so we re-enumerate
+  // instead of resting on that belief.
   //
   // Guard on a non-empty result: an account always has at least a primary
   // calendar, so a full list of zero is treated as a non-answer (a provider
   // hiccup that returned empty instead of throwing) rather than "all removed" —
   // retiring every calendar on an empty blip would be user-visible damage.
+  const appliedFullList = fullList && discovery.calendars.length > 0;
   let retiredIds: ProviderCalendarId[] = [];
-  if (fullList && discovery.calendars.length > 0) {
+  if (appliedFullList) {
     // A full pass is the retry cadence for unwatchable calendars: clear the
     // persisted watchUnsupportedAt verdicts so each gets one fresh watch
-    // attempt (the pull path re-marks any the provider still refuses). Runs
-    // daily via the rediscovery sweep — the pre-marker behavior was one
-    // futile watch attempt per pull, forever.
+    // attempt (the pull path re-marks any the provider still refuses). The
+    // age gate is what keeps that roughly daily now that a push also forces a
+    // full pass — without it, a user editing their calendar list repeatedly
+    // would burn a futile watch call per unwatchable calendar per edit.
     await deps.resources.clearWatchUnsupportedByConnection(
       tenantId,
       principalId,
       connectionId,
+      new Date(now().getTime() - WATCH_UNSUPPORTED_RETRY_AFTER_MS),
     );
     retiredIds = await deps.calendars.deactivateAbsent(
       tenantId,
@@ -239,6 +258,23 @@ export async function syncCalendarList(
     discovery.cursor,
     now(),
   );
+
+  // Advance the rediscovery sweep's staleness clock, but only for a pass that
+  // actually applied a complete enumeration. Stamped HERE rather than inside the
+  // appliedFullList block above so it means "a full pass persisted end to end" —
+  // stamping before the reconciliation would let a throw partway through suppress
+  // the sweep for a full day on a pass that never finished. An empty full list is
+  // deliberately left unstamped (it is a provider non-answer, see above), so the
+  // sweep retries it next tick; the lastAttemptAt-first sort is what keeps that
+  // retry from squatting.
+  if (appliedFullList) {
+    await deps.resources.markFullListCompleted(
+      tenantId,
+      principalId,
+      resource._id,
+      now(),
+    );
+  }
 
   // Retire the change this pass served — but only if nothing moved the marker
   // while the provider was being read. A failed match means a notification

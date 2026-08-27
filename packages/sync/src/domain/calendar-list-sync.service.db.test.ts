@@ -201,9 +201,13 @@ describe("syncCalendarList", () => {
     expect(job?.coalescingKey).toBe(`initialImport:${eventsResources[0]?._id}`);
   });
 
-  it("clears persisted unwatchable verdicts on a full pass so each gets one retry", async () => {
-    const conn = connection();
-    // First full pass discovers the calendar and bootstraps its events resource.
+  // Run a full pass, mark the connection's events resource unwatchable at
+  // `markedAt`, then run a second full pass. Returns the verdict as that second
+  // pass left it.
+  const watchVerdictAfterSecondFullPass = async (
+    conn: ProviderConnectionRecord,
+    markedAt: Date,
+  ) => {
     await syncCalendarList(
       deps(
         new FakeDiscovery([
@@ -221,11 +225,10 @@ describe("syncCalendarList", () => {
       conn.tenantId,
       conn.principalId,
       String(eventsResource?.["_id"]),
-      now(),
+      markedAt,
     );
 
-    // Next pass is full again (no cursor stored) - the verdict is cleared for
-    // one fresh watch attempt.
+    // Full again (no cursor stored).
     await syncCalendarList(
       deps(
         new FakeDiscovery([
@@ -240,7 +243,32 @@ describe("syncCalendarList", () => {
       .db()
       .collection(SYNC_COLLECTIONS.syncResources)
       .findOne({ connectionId: conn._id, resourceKind: "events" });
-    expect(after?.["watchUnsupportedAt"]).toBeNull();
+    return after?.["watchUnsupportedAt"];
+  };
+
+  it("clears an unwatchable verdict older than a day on a full pass so it gets one retry", async () => {
+    const verdict = await watchVerdictAfterSecondFullPass(
+      connection(),
+      new Date("2026-07-08T00:00:00.000Z"), // two days before now()
+    );
+
+    expect(verdict).toBeNull();
+  });
+
+  it("leaves a fresh unwatchable verdict alone so repeated full passes cost no watch calls", async () => {
+    // A calendarList push forces a full pass, so full passes are no longer
+    // reliably daily. Without the age gate, a user editing their calendar list
+    // N times a day would hand every unwatchable calendar N futile watch calls,
+    // each immediately re-marked — the "one futile attempt per pull, forever"
+    // wart the marker was introduced to kill.
+    const markedAt = new Date("2026-07-09T23:00:00.000Z"); // an hour before now()
+
+    const verdict = await watchVerdictAfterSecondFullPass(
+      connection(),
+      markedAt,
+    );
+
+    expect(verdict).toEqual(markedAt);
   });
 
   it("retires a calendar no longer present on a full list", async () => {
@@ -408,6 +436,79 @@ describe("syncCalendarList", () => {
       .findOne({ _id: hidesEventsResourceId });
     expect(hidesEventsResource?.subscriptionId).toBeNull();
     expect(hidesEventsResource?.subscriptionExpiresAt).toBeNull();
+    // The reason the channel is cleared at all: the calendar itself went
+    // inactive, which is what drops it out of the sidebar.
+    const hides = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "hides",
+    );
+    expect(hides?.active).toBe(false);
+  });
+
+  it("stamps lastFullListAt on a full pass", async () => {
+    const conn = connection();
+
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: "c1" },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    expect((await calendarListResource(conn))?.lastFullListAt).toEqual(now());
+  });
+
+  it("does not stamp lastFullListAt on an incremental pass", async () => {
+    // The bug this whole field exists for. An incremental pass reconciles only
+    // what changed, so it cannot answer "is this calendar still listed?" — if it
+    // advanced the rediscovery clock, an active user's focus refreshes would
+    // hold the sweep off forever and hidden calendars would never retire.
+    const conn = connection();
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: "c1" },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    const later = () => new Date("2026-07-11T00:00:00.000Z");
+
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: "c2" },
+        ]),
+      ),
+      conn,
+      later,
+    );
+
+    const resource = await calendarListResource(conn);
+    expect(resource?.lastFullListAt).toEqual(now()); // still the FULL pass's stamp
+    expect(resource?.lastSuccessAt).toEqual(later()); // which advanced regardless
+  });
+
+  it("does not stamp lastFullListAt when a full list comes back empty", async () => {
+    // An empty full list is a provider non-answer, not an enumeration. Stamping
+    // here would mark the resource satisfied for a day on the one pass that
+    // reconciled nothing; leaving it unstamped means the sweep retries next tick.
+    const conn = connection();
+
+    await syncCalendarList(
+      deps(new FakeDiscovery([{ calendars: [], cursor: null }])),
+      conn,
+      now,
+    );
+
+    // Read raw, so the key is ABSENT rather than defaulted to null — `?? null`
+    // accepts either, since both mean "never fully listed" to the sweep's filter.
+    expect(
+      (await calendarListResource(conn))?.lastFullListAt ?? null,
+    ).toBeNull();
   });
 
   it("logs a warning naming the calendars a full pass retired", async () => {
@@ -635,6 +736,9 @@ describe("syncCalendarList", () => {
       (d) => d.providerCalendarId === "stale",
     );
     expect(stale?.active).toBe(false);
+    // And it counts as a full enumeration for the rediscovery clock — the
+    // fallback re-listed everything, so the sweep has nothing left to force.
+    expect((await calendarListResource(conn))?.lastFullListAt).toEqual(now());
   });
 
   it("throws on a non-cursor discovery failure so the worker retries", async () => {

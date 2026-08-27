@@ -82,6 +82,24 @@ export function registerNotificationRoutes(
       // Only an authentic change schedules work. Coalescing on the resource
       // collapses duplicate deliveries of the same change into one job.
       if (verdict.status === "process" && resource) {
+        // A calendarList notification means the LIST itself changed, so make the
+        // resulting pass re-enumerate instead of listing incrementally from the
+        // stored cursor. Clearing the cursor is the one existing mechanism for
+        // that (syncCalendarList reads it fresh at execution time), so this works
+        // whether the pass comes from the enqueue below or from a job that
+        // already coalesced on this connection's key.
+        //
+        // Scoped to calendarList: clearing an events cursor would force a full
+        // re-import. Done first because its failure mode is the harmless one — a
+        // cleared cursor with no job just means the next pass runs full, whereas
+        // a stamped marker with no clear would strand the change on the sweep.
+        if (resource.resourceKind === "calendarList") {
+          await resources.clearSyncCursor(
+            resource.tenantId,
+            resource.principalId,
+            resource._id,
+          );
+        }
         // Stamp BEFORE enqueuing. The enqueue below no-ops whenever a job
         // already holds this coalescing key — including the CLAIMED row of a
         // job already in flight, which may have read the provider before this

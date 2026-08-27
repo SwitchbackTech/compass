@@ -217,6 +217,115 @@ describe("POST /sync/notifications/google", () => {
     expect(await jobCount(`incrementalPull:${resource._id}`)).toBe(0);
   });
 
+  it("clears the calendar-list cursor so the resulting pass re-enumerates", async () => {
+    // A calendarList notification means the LIST itself changed. Listing
+    // incrementally from the stored cursor would rest on the (untested, and
+    // untestable from in here) assumption that Google reports a hidden-flag flip
+    // as a changed entry. Clearing the cursor re-enumerates instead, which is
+    // what makes a calendar hidden in Google leave the sidebar in seconds rather
+    // than waiting on the daily sweep.
+    const resource = await seedSubscription(
+      new Date(Date.now() + 60 * 60 * 1000),
+      TOKEN,
+      "calendarList",
+    );
+    await resources.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "stored-token",
+      new Date(),
+    );
+    await startService();
+
+    await post(googHeaders());
+
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resource._id });
+    expect(stored?.["syncCursor"]).toBeNull();
+    // Only the cursor: the sweep's staleness clock must not advance on the
+    // strength of a pass that has merely been scheduled. Read raw, so the key is
+    // absent rather than defaulted to null; both mean "never fully listed".
+    expect(stored?.["lastFullListAt"] ?? null).toBeNull();
+  });
+
+  it("does not clear the cursor for an events channel", async () => {
+    // Scoping guard. An events cursor clear would force a full re-import of
+    // every event on the calendar, which is enormously more expensive than the
+    // re-enumeration this buys on the calendarList side.
+    const resource = await seedSubscription();
+    await resources.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "stored-token",
+      new Date(),
+    );
+    await startService();
+
+    await post(googHeaders());
+
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resource._id });
+    expect(stored?.["syncCursor"]).toBe("stored-token");
+  });
+
+  it("does not clear the calendar-list cursor on a spoofed notification", async () => {
+    // Otherwise anyone who could guess a channel id could force unbounded full
+    // re-enumerations (~1 provider call per calendar each).
+    const resource = await seedSubscription(
+      new Date(Date.now() + 60 * 60 * 1000),
+      TOKEN,
+      "calendarList",
+    );
+    await resources.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "stored-token",
+      new Date(),
+    );
+    await startService();
+
+    await post(googHeaders({ "x-goog-channel-token": "wrong" }));
+
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resource._id });
+    expect(stored?.["syncCursor"]).toBe("stored-token");
+  });
+
+  it("clears the calendar-list cursor even when a sync job already exists", async () => {
+    // The enqueue no-ops against an already-pending (or claimed) job on this
+    // connection's coalescing key. The cursor clear is what still lands, and
+    // whichever job ultimately runs reads it fresh — the same reasoning the
+    // rediscovery sweep relies on.
+    const resource = await seedSubscription(
+      new Date(Date.now() + 60 * 60 * 1000),
+      TOKEN,
+      "calendarList",
+    );
+    await resources.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "stored-token",
+      new Date(),
+    );
+    await startService();
+
+    await post(googHeaders());
+    await post(googHeaders()); // duplicate delivery, coalesces
+
+    expect(await jobCount(`calendarListSync:${resource.connectionId}`)).toBe(1);
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: resource._id });
+    expect(stored?.["syncCursor"]).toBeNull();
+  });
+
   it("accepts and drops notifications in passive mode", async () => {
     const { _id: resourceId } = await seedSubscription();
     await startService(testConfig({ EXECUTION: "passive" }));
