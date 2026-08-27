@@ -1,15 +1,15 @@
 import { type FC, useEffect, useRef, useState } from "react";
 import { track } from "@web/auth/posthog/track";
+import {
+  GATE_PANEL_CLASSNAME,
+  handleOverlayLetterShortcut,
+} from "@web/billing/gate-overlay";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
-
-const GATE_PANEL_CLASSNAME =
-  "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
 
 /**
  * Full app-lock overlay shown once the anonymous browser trial has expired.
@@ -54,18 +54,13 @@ export const TrialGateModal: FC = () => {
   };
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const key = keyboardKey(e).toLowerCase();
-    if (key === "u") {
-      e.preventDefault();
-      handleSignUp();
-    } else if (key === "i") {
-      e.preventDefault();
-      handleLogIn();
-    } else if (key === "e") {
-      e.preventDefault();
-      if (!isExporting) void handleExport();
-    }
+    handleOverlayLetterShortcut(e, {
+      u: handleSignUp,
+      i: handleLogIn,
+      e: () => {
+        if (!isExporting) void handleExport();
+      },
+    });
   };
 
   return (

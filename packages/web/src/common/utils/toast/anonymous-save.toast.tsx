@@ -7,7 +7,6 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { ToastCloseButton } from "@web/common/utils/toast/ToastCloseButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   selectShowcaseActive,
@@ -70,8 +69,6 @@ export const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
     void openSignUpFromOutsideRouter();
     getToast().dismiss(toastId);
   };
-
-  useToastPrimaryActionShortcut(handleSignUp);
 
   return (
     <div className="flex w-full flex-col gap-2" data-notice="">

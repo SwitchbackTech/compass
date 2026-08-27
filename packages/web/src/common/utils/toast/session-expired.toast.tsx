@@ -1,7 +1,6 @@
 import { type Id } from "react-toastify";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 import {
   type AuthView,
   VIEW_TO_PARAM,
@@ -36,8 +35,6 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
     void openAuthModalFromOutsideRouter("login");
     getToast().dismiss(toastId);
   };
-
-  useToastPrimaryActionShortcut(handleSignIn);
 
   return (
     <div className="flex w-full flex-col gap-2" data-notice="">

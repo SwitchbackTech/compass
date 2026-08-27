@@ -7,20 +7,20 @@ import {
 } from "@web/api/util/api.util";
 import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { track } from "@web/auth/posthog/track";
+import {
+  GATE_PANEL_CLASSNAME,
+  handleOverlayLetterShortcut,
+} from "@web/billing/gate-overlay";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 
 type BillingGateModalProps = {
   status: string;
 };
-
-const GATE_PANEL_CLASSNAME =
-  "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
 
 /**
  * Full app-lock overlay for signed-in users who cannot write (awaiting
@@ -50,7 +50,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   }, [status]);
 
   const redirectTo = async (kind: "checkout" | "portal") => {
-    if (isRedirecting) return;
     setIsRedirecting(true);
     track("billing_gate_cta_clicked", { cta: kind });
     try {
@@ -89,21 +88,21 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   };
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const key = keyboardKey(e).toLowerCase();
-    if (key === "s") {
-      e.preventDefault();
-      void redirectTo("checkout");
-    } else if (key === "m" && !isAwaitingCheckout) {
-      e.preventDefault();
-      void redirectTo("portal");
-    } else if (key === "e") {
-      e.preventDefault();
-      if (!isExporting) void handleExport();
-    } else if (key === "l") {
-      e.preventDefault();
-      handleLogout();
+    const actions: Record<string, () => void> = {
+      s: () => {
+        void redirectTo("checkout");
+      },
+      e: () => {
+        if (!isExporting) void handleExport();
+      },
+      l: handleLogout,
+    };
+    if (!isAwaitingCheckout) {
+      actions.m = () => {
+        void redirectTo("portal");
+      };
     }
+    handleOverlayLetterShortcut(e, actions);
   };
 
   return (

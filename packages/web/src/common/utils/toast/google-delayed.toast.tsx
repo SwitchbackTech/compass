@@ -8,7 +8,6 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 
 interface GoogleDelayedToastProps {
   toastId: Id;
@@ -24,8 +23,6 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
     getToast().dismiss(toastId);
     refresh();
   };
-
-  useToastPrimaryActionShortcut(handleRefresh);
 
   return (
     <div className="flex w-full flex-col gap-2" data-notice="">

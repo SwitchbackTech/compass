@@ -14,7 +14,6 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 
 let hasShownReconnectToastThisLoad = false;
 
@@ -77,8 +76,6 @@ export const GoogleReconnectToast = ({
     getToast().dismiss(toastId);
     connect();
   };
-
-  useToastPrimaryActionShortcut(handleReconnect);
 
   const namedAccount = accountEmail?.trim();
 
