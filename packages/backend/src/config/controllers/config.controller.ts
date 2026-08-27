@@ -23,7 +23,6 @@ class ConfigController {
         billing: {
           isConfigured: isStripeConfigured(CONFIG),
           enforcement: isBillingEnforced(CONFIG),
-          priceDisplay: BILLING_PLAN.PRICE_DISPLAY,
           trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
         },
       }),

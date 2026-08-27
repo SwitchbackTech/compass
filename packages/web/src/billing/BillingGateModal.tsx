@@ -1,5 +1,4 @@
 import { type FC, useEffect, useRef, useState } from "react";
-import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { BillingApi } from "@web/api/billing.api";
 import {
   getApiErrorMessage,
@@ -11,7 +10,6 @@ import {
   GATE_PANEL_CLASSNAME,
   handleOverlayLetterShortcut,
 } from "@web/billing/gate-overlay";
-import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
@@ -30,7 +28,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const logout = useLogout();
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
-  const [isExporting, setIsExporting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const shownRef = useRef(false);
 
@@ -39,8 +36,8 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     ? "Start your 7-day trial"
     : "Subscribe to keep using Compass";
   const body = isAwaitingCheckout
-    ? `Compass is ${BILLING_PLAN.PRICE_DISPLAY} after a ${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day trial. A card is required to start.`
-    : `Your trial has ended. Compass is ${BILLING_PLAN.PRICE_DISPLAY}.`;
+    ? "A card is required to start."
+    : "Your trial has ended.";
 
   useEffect(() => {
     if (!shownRef.current) {
@@ -72,16 +69,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     }
   };
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    track("billing_gate_cta_clicked", { cta: "export" });
-    try {
-      await runExportMyData();
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const handleLogout = () => {
     track("billing_gate_cta_clicked", { cta: "logout" });
     void logout();
@@ -91,9 +78,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     const actions: Record<string, () => void> = {
       s: () => {
         void redirectTo("checkout");
-      },
-      e: () => {
-        if (!isExporting) void handleExport();
       },
       l: handleLogout,
     };
@@ -145,16 +129,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
           )}
         </div>
         <button
-          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
-          disabled={isExporting}
-          onClick={() => void handleExport()}
-          type="button"
-        >
-          {isExporting ? "Exporting…" : "Export my data"}
-          {isExporting ? null : <ShortcutHint className="ml-2">E</ShortcutHint>}
-        </button>
-        <button
-          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
+          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline underline-offset-4"
           onClick={handleLogout}
           type="button"
         >

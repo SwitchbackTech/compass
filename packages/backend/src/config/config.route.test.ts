@@ -29,7 +29,6 @@ describe("GET /api/config", () => {
         billing: {
           isConfigured: false,
           enforcement: false,
-          priceDisplay: "$7.99/month",
           trialLengthDays: 7,
         },
       });
@@ -62,7 +61,6 @@ describe("GET /api/config", () => {
         billing: {
           isConfigured: false,
           enforcement: false,
-          priceDisplay: "$7.99/month",
           trialLengthDays: 7,
         },
       });

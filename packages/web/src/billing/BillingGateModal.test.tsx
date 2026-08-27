@@ -6,7 +6,6 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError } from "@web/api/api.types";
 import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
-import * as exportUtil from "@web/common/storage/offline-data/export-user-data.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
 import {
@@ -113,13 +112,29 @@ describe("BillingGateModal", () => {
     expect(screen.getByRole("button", { name: "Start trial" })).toHaveFocus();
     for (const [name, key] of [
       ["Start trial", "S"],
-      ["Export my data", "E"],
       ["Log out", "L"],
     ] as const) {
       expect(
         within(screen.getByRole("button", { name })).getByText(key),
       ).toBeTruthy();
     }
+    expect(
+      screen.queryByRole("button", { name: "Export my data" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not mention a price on the start-trial or subscribe copy", () => {
+    const { unmount } = renderGate();
+
+    expect(
+      screen.getByText("A card is required to start."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
+    unmount();
+
+    renderGate("canceled");
+    expect(screen.getByText("Your trial has ended.")).toBeInTheDocument();
+    expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
   });
 
   it("starts checkout with S and does not dismiss on Escape", async () => {
@@ -145,19 +160,12 @@ describe("BillingGateModal", () => {
     createCheckoutSession.mockRestore();
   });
 
-  it("exports with E and logs out with L", async () => {
-    const exportSpy = spyOn(exportUtil, "runExportMyData").mockResolvedValue();
+  it("logs out with L", async () => {
     const user = userEvent.setup();
     renderGate();
 
-    await user.keyboard("e");
-    await waitFor(() => {
-      expect(exportSpy).toHaveBeenCalled();
-    });
-
     await user.keyboard("l");
     expect(mockLogout).toHaveBeenCalled();
-    exportSpy.mockRestore();
   });
 
   it("traps Tab within the dialog", async () => {

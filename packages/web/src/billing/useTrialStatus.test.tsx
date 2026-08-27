@@ -24,7 +24,6 @@ const stubConfig = (enforcement: boolean) => {
           billing: {
             isConfigured: true,
             enforcement,
-            priceDisplay: "$7.99/month",
             trialLengthDays: 7,
           },
         }),

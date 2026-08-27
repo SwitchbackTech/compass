@@ -86,7 +86,6 @@ export const globalHandlers = [
         billing: {
           isConfigured: false,
           enforcement: true,
-          priceDisplay: "$7.99/month",
           trialLengthDays: 7,
         },
       }),
