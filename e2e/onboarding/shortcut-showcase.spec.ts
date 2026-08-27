@@ -48,7 +48,7 @@ const playThroughLevels = async (page: Page) => {
   await holdModAndPress(page, "1");
   await expect(showcase).toContainText("Pick a target");
 
-  await page.keyboard.press("s");
+  await page.keyboard.press("h");
   await page.keyboard.press("f");
   await expect(showcase).toContainText("Nudge it into place");
 

@@ -4,6 +4,7 @@ import {
 } from "@web/events/stores/draft.store";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 import { useModHoldHintShortcut } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
+import { pageJumpHintActions } from "@web/shortcuts/page-jump/page-jump.store";
 import {
   CALENDAR_PAGE_JUMP_TARGETS,
   focusPageJumpTarget,
@@ -27,6 +28,7 @@ export function usePageJumpShortcut(
   return useModHoldHintShortcut({
     enabled: !isEventFormOpen,
     onHintsRevealed: () => shortcutHintProgressActions.demonstrate("page-jump"),
+    onVisibilityChange: pageJumpHintActions.setHintsVisible,
     onModChord: (event) => {
       const index = physicalDigitIndex(event);
       const target = index !== null ? targets[index] : undefined;

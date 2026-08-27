@@ -55,7 +55,7 @@ export const SHOWCASE_STEPS = [
     title: "Pick a target",
     body: [
       "Tap ",
-      { key: "S" },
+      { key: KEYMAP.eventJump.keycaps[0] },
       " to show event keys, then press a letter to land on one.",
     ],
     keycaps: KEYMAP.eventJump.keycaps,

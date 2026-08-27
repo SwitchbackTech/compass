@@ -9,7 +9,10 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import { CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES } from "@web/grid/interaction/view-event-registry";
-import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
+import {
+  resetShortcutHintProgressStoreForTests,
+  shortcutHintProgressActions,
+} from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useShortcutHintContext } from "@web/shortcuts/tips/useShortcutHintContext";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
@@ -31,6 +34,7 @@ describe("useShortcutHintContext", () => {
   afterEach(() => {
     draftActions.discard();
     useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    resetShortcutHintProgressStoreForTests();
     document.body.innerHTML = "";
     window.history.replaceState({}, "", "/");
   });
@@ -85,5 +89,17 @@ describe("useShortcutHintContext", () => {
     act(() => shortcutHintProgressActions.demonstrate("page-jump"));
 
     expect(result.current.id).toBe("event-jump");
+  });
+
+  it("teaches week-column letters on /week after event jump is demonstrated", () => {
+    window.history.replaceState({}, "", "/week");
+    useFirstEventPromptStore.setState({ isDone: true }, false);
+    act(() => {
+      shortcutHintProgressActions.demonstrate("page-jump");
+      shortcutHintProgressActions.demonstrate("event-jump");
+    });
+
+    const { result } = renderHook(() => useShortcutHintContext());
+    expect(result.current.id).toBe("week-day-focus");
   });
 });

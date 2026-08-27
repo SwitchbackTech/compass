@@ -214,7 +214,7 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["s"], label: "Toggle event jump keys" },
+        { keys: ["h"], label: "Toggle event jump keys" },
         { keys: ["f"], label: "Focus latest notice" },
         {
           keys: ["Mod", "1-4"],
@@ -224,7 +224,8 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["s"], label: "Toggle event jump keys" },
+        { keys: ["h"], label: "Toggle event jump keys" },
+        { keys: ["m"], label: "Focus a week column (M T W R F SA SU)" },
         { keys: ["f"], label: "Focus latest notice" },
         {
           keys: ["Mod", "1-4"],
