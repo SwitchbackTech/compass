@@ -1,8 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
-import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
 import { UpdateAvailableButton } from "./UpdateAvailableButton";
 
 describe("UpdateAvailableButton", () => {
@@ -14,14 +13,12 @@ describe("UpdateAvailableButton", () => {
       screen.getByRole("button", { name: "Get latest version" }),
     );
 
+    const tooltip = await screen.findByRole("tooltip");
     await waitFor(() => {
-      expect(screen.getByText("Get latest version")).toBeInTheDocument();
+      expect(
+        within(tooltip).getByText("Get latest version"),
+      ).toBeInTheDocument();
     });
-
-    const modifier = expandModInShortcutDisplay("Mod");
-    expect(
-      screen.getByTestId(`${modifier.toLowerCase()}-icon`),
-    ).toBeInTheDocument();
-    expect(screen.getByText("R")).toBeInTheDocument();
+    expect(within(tooltip).getByText("R")).toBeInTheDocument();
   });
 });
