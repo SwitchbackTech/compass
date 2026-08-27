@@ -385,4 +385,99 @@ describe("Stripe webhook", () => {
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("canceled");
   });
+  it("drops the dedupe row when the handler throws so Stripe's retry can reprocess", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "throw@example.com",
+      name: "Throw",
+      firstName: "Throw",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "awaiting_checkout",
+        stripeSubscriptionId: "sub_1",
+        stripeCustomerId: "cus_1",
+      },
+    });
+
+    setStripeClientForTests({
+      subscriptions: {
+        retrieve: mock(() => Promise.reject(new Error("stripe unavailable"))),
+      },
+    } as unknown as Stripe);
+
+    const event = {
+      id: "evt_throw_1",
+      type: "customer.subscription.updated",
+      created: 1_775_000_100,
+      data: { object: { id: "sub_1" } },
+    } as unknown as Stripe.Event;
+
+    await expect(processStripeEvent(event)).rejects.toThrow(
+      "stripe unavailable",
+    );
+
+    // The row must be gone, otherwise the dedupe would swallow Stripe's retry
+    // and the write would be lost for good.
+    expect(
+      await mongoService.billingEvent.countDocuments({ _id: event.id }),
+    ).toBe(0);
+
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
+
+    // A retry after Stripe recovers is reprocessed rather than deduped away.
+    setStripeClientForTests({
+      subscriptions: { retrieve: mock(() => Promise.resolve(subscription())) },
+    } as unknown as Stripe);
+    await processStripeEvent(event);
+
+    const retried = await mongoService.user.findOne({ _id: userId });
+    expect(retried?.billing?.subscriptionStatus).toBe("trialing");
+  });
+
+  it("ignores an unhandled event type without touching the user", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "unhandled@example.com",
+      name: "Unhandled",
+      firstName: "Unhandled",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeSubscriptionId: "sub_1",
+        stripeCustomerId: "cus_1",
+      },
+    });
+
+    const retrieve = mock(() => Promise.resolve(subscription()));
+    setStripeClientForTests({
+      subscriptions: { retrieve },
+    } as unknown as Stripe);
+
+    await processStripeEvent({
+      id: "evt_invoice_paid_1",
+      type: "invoice.paid",
+      created: 1_775_000_100,
+      data: { object: { id: "in_1", subscription: "sub_1" } },
+    } as unknown as Stripe.Event);
+
+    expect(retrieve).not.toHaveBeenCalled();
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("active");
+    expect(stored?.billing?.lastStripeEventAt).toBeUndefined();
+
+    // The dedupe row is still written: the insert precedes the handled-type
+    // check, so an unhandled redelivery is acked without re-entering handling.
+    expect(
+      await mongoService.billingEvent.countDocuments({
+        _id: "evt_invoice_paid_1",
+      }),
+    ).toBe(1);
+  });
 });
