@@ -32,7 +32,7 @@ class BillingWebhookController {
     }
 
     try {
-      const event = getStripeClient().webhooks.constructEvent(
+      const event = await getStripeClient().webhooks.constructEventAsync(
         req.body,
         signature,
         CONFIG.STRIPE_WEBHOOK_SECRET,

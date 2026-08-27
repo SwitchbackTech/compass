@@ -9,7 +9,10 @@ import {
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import billingWebhookController from "@backend/billing/controllers/billing.webhook.controller";
 import { processStripeEvent } from "@backend/billing/services/billing.webhook.service";
-import { setStripeClientForTests } from "@backend/billing/services/stripe.client";
+import {
+  getStripeClient,
+  setStripeClientForTests,
+} from "@backend/billing/services/stripe.client";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   afterAll,
@@ -85,11 +88,10 @@ describe("Stripe webhook", () => {
     using _env = mockEnv(stripeConfigured);
     setStripeClientForTests({
       webhooks: {
-        constructEvent: () => {
-          throw new Error(
-            "No signatures found matching the expected signature",
-          );
-        },
+        constructEventAsync: () =>
+          Promise.reject(
+            new Error("No signatures found matching the expected signature"),
+          ),
       },
     } as unknown as Stripe);
 
@@ -108,6 +110,38 @@ describe("Stripe webhook", () => {
     expect(json.mock.calls[0]?.[0]).toEqual({
       error: "No signatures found matching the expected signature",
     });
+  });
+
+  it("verifies a real Stripe signature under the Bun crypto provider", async () => {
+    using _env = mockEnv(stripeConfigured);
+    setStripeClientForTests(undefined);
+
+    const payload = JSON.stringify({
+      id: "evt_real_1",
+      type: "invoice.paid",
+      created: 1_775_000_100,
+      data: { object: {} },
+    });
+    const signature =
+      await getStripeClient().webhooks.generateTestHeaderStringAsync({
+        payload,
+        secret: stripeConfigured.STRIPE_WEBHOOK_SECRET,
+      });
+
+    const { res, json } = jsonRes();
+    await billingWebhookController.handleStripe(
+      {
+        body: Buffer.from(payload),
+        headers: { "stripe-signature": signature },
+      } as unknown as Request,
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.OK,
+    );
+    expect(json).toHaveBeenCalledWith({ received: true });
+    expect(await mongoService.billingEvent.countDocuments()).toBe(1);
   });
 
   it("links customer and subscription ids from checkout.session.completed", async () => {
