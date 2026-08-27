@@ -13,7 +13,10 @@ type StorageKey =
   // "completed" | "dismissed": the first-event prompt's terminal state.
   // Absent means it is still live (or never shown).
   | "compass.onboarding.first-event-done"
+  // Superseded by the .v2 key below. Only ever read to be deleted — see
+  // purgeLegacyTrialStamp in trial.storage.ts.
   | "compass.trial.started-at"
+  | "compass.trial.started-at.v2"
   | "compass.shortcuts.tips-muted"
   // Demonstrated sidebar shortcut-tip ids (JSON). Device-local; an unknown
   // id is skipped on read, not an error.
@@ -56,6 +59,7 @@ export const STORAGE_KEYS: Record<
   | "HAS_PENDING_SHOWCASE_OFFER"
   | "FIRST_EVENT_DONE"
   | "TRIAL_STARTED_AT"
+  | "TRIAL_STARTED_AT_LEGACY"
   | "SHORTCUT_TIPS_MUTED"
   | "SHORTCUT_TIPS_DEMONSTRATED"
   | "LIFE_PREFERENCES"
@@ -83,7 +87,8 @@ export const STORAGE_KEYS: Record<
   HAS_SEEN_SHORTCUT_SHOWCASE: "compass.onboarding.has-seen-shortcut-showcase",
   HAS_PENDING_SHOWCASE_OFFER: "compass.onboarding.has-pending-showcase-offer",
   FIRST_EVENT_DONE: "compass.onboarding.first-event-done",
-  TRIAL_STARTED_AT: "compass.trial.started-at",
+  TRIAL_STARTED_AT: "compass.trial.started-at.v2",
+  TRIAL_STARTED_AT_LEGACY: "compass.trial.started-at",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   SHORTCUT_TIPS_DEMONSTRATED: "compass.shortcuts.tips-demonstrated",
   LIFE_PREFERENCES: "compass.life.preferences",
