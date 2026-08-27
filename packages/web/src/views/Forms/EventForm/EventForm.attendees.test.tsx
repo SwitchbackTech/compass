@@ -147,6 +147,52 @@ describe("EventForm attendee editor gating", () => {
     expect(screen.getByRole("combobox", { name: "Guests" })).toHaveFocus();
   });
 
+  it("reveals a hold-Mod chip on the guests field", async () => {
+    const calendar = makeCalendar();
+    const draft = editDraftOrThrow(makeMeetingEvent(calendar.id));
+
+    renderEventForm(draft, [calendar]);
+
+    const wrapper = document.getElementById("event-form-attendees");
+    expect(wrapper).not.toBeNull();
+    wrapper!.getBoundingClientRect = () =>
+      ({
+        top: 120,
+        left: 80,
+        bottom: 160,
+        right: 320,
+        width: 240,
+        height: 40,
+        x: 80,
+        y: 120,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    const isControl = resolveModifier("Mod") === "Control";
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: isControl ? "Control" : "Meta",
+          ctrlKey: isControl,
+          metaKey: !isControl,
+        }),
+      );
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 750));
+    });
+
+    expect(screen.getByRole("status").textContent).toContain("8 for guests");
+    const chips = document.querySelector(
+      "[data-form-digit-hints] [aria-hidden]",
+    );
+    expect(chips?.textContent).toContain("8");
+  });
+
   it("keeps the read-only guest list for an event the user does not organize", () => {
     const calendar = makeCalendar();
     const event = makeMeetingEvent(calendar.id, {
