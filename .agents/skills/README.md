@@ -20,7 +20,7 @@ Eval stubs: [`_evals/README.md`](_evals/README.md).
 | local-dev-bootstrap | 1 | compass-maintainers | specialist | 2026-08-25 |
 | qa-test-staging | 1 | compass-maintainers | specialist | 2026-08-25 |
 | review | 1 | compass-maintainers | reviewer | 2026-08-25 |
-| ship | 2 | compass-maintainers | Manager | 2026-08-27 |
+| ship | 2 | compass-maintainers | Manager | 2026-08-25 |
 | simplify | 1 | compass-maintainers | specialist | 2026-08-25 |
 | verify-change | 1 | compass-maintainers | verifier | 2026-08-25 |
 

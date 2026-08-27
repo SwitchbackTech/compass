@@ -2,7 +2,7 @@
 name: ship
 version: 2
 owner: compass-maintainers
-last_verified: 2026-08-27
+last_verified: 2026-08-25
 description: Manager skill that routes a Compass change through specialists to a squash-ready PR and merge. Use when the user says "ship", "ship it", "ship this branch", or asks to take current work through merged and verified delivery.
 ---
 
