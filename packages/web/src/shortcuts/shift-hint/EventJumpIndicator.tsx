@@ -5,8 +5,24 @@ import {
   selectEventJumpAnnouncement,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
+import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 
 const EXIT_ANNOUNCEMENT_LINGER_MS = 1200;
+
+export const EVENT_JUMP_IDLE_HINT_PARTS: readonly ShortcutTipPart[] = [
+  "Event jump · ",
+  { key: "Esc" },
+];
+
+export const eventJumpSelectionHintParts = (
+  announcement: string,
+): readonly ShortcutTipPart[] => [
+  "Jump · ",
+  announcement,
+  " · ",
+  { key: "Esc" },
+];
 
 /**
  * Persistent badge + live region while event-jump mode is on. Stays mounted
@@ -28,11 +44,11 @@ export const EventJumpIndicator: FC = () => {
 
   if (!isActive && !announcement) return null;
 
-  const statusText = !isActive
-    ? announcement
+  const parts: readonly ShortcutTipPart[] | null = !isActive
+    ? null
     : announcement && announcement !== "Event jump on"
-      ? `Jump · ${announcement} · Esc`
-      : "Event jump · Esc";
+      ? eventJumpSelectionHintParts(announcement)
+      : EVENT_JUMP_IDLE_HINT_PARTS;
 
   return (
     <span
@@ -41,7 +57,7 @@ export const EventJumpIndicator: FC = () => {
       data-event-jump-indicator=""
       role="status"
     >
-      {statusText}
+      {parts ? <ShortcutTipParts parts={parts} /> : announcement}
     </span>
   );
 };

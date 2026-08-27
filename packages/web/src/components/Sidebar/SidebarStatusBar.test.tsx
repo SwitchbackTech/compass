@@ -22,6 +22,7 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { KEYBOARD_PLACE_HINT_PARTS } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
+import { EVENT_JUMP_IDLE_HINT_PARTS } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
   eventJumpActions,
   initialEventJumpState,
@@ -115,6 +116,7 @@ const seedKeyboardPlaceDraft = () => {
 
 const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
 const TIME_TRAVEL_HINT = getPartsPlainText(TIME_TRAVEL_HINT_PARTS);
+const EVENT_JUMP_IDLE_HINT = getPartsPlainText(EVENT_JUMP_IDLE_HINT_PARTS);
 const CREATE_EVENT_HINT = getHintPlainText(getShortcutHint("create-event"));
 const FIRST_EVENT_SAVE_HINT = getHintPlainText(
   getShortcutHint("first-event-save"),
@@ -395,7 +397,7 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.getByRole("status")).toHaveTextContent(EVENT_JUMP_IDLE_HINT);
     expect(screen.queryByText(CREATE_EVENT_HINT)).not.toBeInTheDocument();
   });
 
@@ -406,7 +408,7 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.getByRole("status")).toHaveTextContent(EVENT_JUMP_IDLE_HINT);
     expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
   });
 
@@ -453,7 +455,7 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.getByRole("status")).toHaveTextContent(EVENT_JUMP_IDLE_HINT);
     expect(screen.queryByText(TIME_TRAVEL_HINT)).not.toBeInTheDocument();
   });
 });
