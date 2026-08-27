@@ -9,7 +9,12 @@ import mongoService from "@backend/common/services/mongo.service";
 
 const logger = Logger("app:billing.webhook");
 
-const HANDLED_TYPES = new Set<Stripe.Event.Type>([
+/**
+ * The only event types this handler acts on. Exported so
+ * `cli audit-stripe-config` can compare a live Stripe endpoint against the
+ * same source of truth the handler uses, rather than a second hand-kept list.
+ */
+export const HANDLED_TYPES = new Set<Stripe.Event.Type>([
   "checkout.session.completed",
   "customer.subscription.created",
   "customer.subscription.updated",

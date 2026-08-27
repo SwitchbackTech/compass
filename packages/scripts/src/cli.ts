@@ -1,5 +1,6 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
+import { runAuditStripeConfig } from "@scripts/commands/audit-stripe-config";
 import { runBackfillBilling } from "@scripts/commands/backfill-billing";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeUser } from "@scripts/commands/purge-user";
@@ -30,6 +31,9 @@ export default class CompassCLI {
         break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
+        break;
+      case cmd === "audit-stripe-config":
+        await runAuditStripeConfig();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -63,6 +67,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Report connected Google accounts that are another Compass user's login identity (read-only)",
+      );
+
+    program
+      .command("audit-stripe-config")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Check the live Stripe account against this build: webhook url/events/api_version, price, and Tax status (read-only, exits 1 on drift)",
       );
 
     program

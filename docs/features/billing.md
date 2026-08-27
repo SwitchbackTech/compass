@@ -89,6 +89,28 @@ register each jurisdiction under Tax > Registrations and set a product tax
 code, in test and live mode separately. Without a registration Stripe
 calculates zero tax rather than erroring, so a missing one is silent.
 
+## Checking Stripe config against the build
+
+```
+COMPASS_CONFIG_FILE=~/.compass/staging.compass.yaml bun run cli audit-stripe-config
+```
+
+Read-only; exits 1 on drift so it can gate a deploy. It compares the live
+Stripe account against `STRIPE_API_VERSION`, `HANDLED_TYPES`, and
+`STRIPE_WEBHOOK_PATH` -- the same constants the runtime reads, so there is no
+second list to keep in step.
+
+**A webhook endpoint's `api_version` is fixed at creation and cannot be
+updated.** An endpoint created in the Dashboard silently inherits whatever the
+account default is that day, which is how it drifts away from the version the
+SDK is pinned to. Realigning means creating a replacement endpoint, rotating
+`STRIPE_WEBHOOK_SECRET`, redeploying, and deleting the old one -- so let the
+audit tell you rather than finding out during a checkout.
+
+Note that Stripe Tax being inactive is a **checkout outage**, not a warning:
+`automatic_tax` is enabled on every session, and Stripe rejects session
+creation outright when Tax is not active.
+
 ## Key files
 
 - Plan/price copy: `packages/core/src/constants/billing.constants.ts`
