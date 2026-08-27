@@ -79,7 +79,7 @@ describe("PageJumpHintOverlay", () => {
   });
 
   it("renders nothing when not visible", () => {
-    addAnchor("navigation");
+    addAnchor("view-select");
     render(<PageJumpHintOverlay visible={false} />);
 
     expect(overlayRoot()).toBeNull();
@@ -92,7 +92,7 @@ describe("PageJumpHintOverlay", () => {
   });
 
   it("renders a chip for each mounted target, skipping absent ones", () => {
-    addAnchor("navigation");
+    addAnchor("view-select");
     addAnchor("month-picker");
     // No up-next / calendars anchors: e.g. the sidebar is collapsed.
     render(<PageJumpHintOverlay visible={true} />);
@@ -101,7 +101,7 @@ describe("PageJumpHintOverlay", () => {
   });
 
   it("skips a mounted target with nothing focusable", () => {
-    addAnchor("navigation");
+    addAnchor("view-select");
     // The empty Up Next card renders its section but no interactive element,
     // so its digit would do nothing and must not be advertised.
     addAnchor("up-next", { focusable: false });
@@ -112,19 +112,19 @@ describe("PageJumpHintOverlay", () => {
   });
 
   it("exposes a screen-reader summary while the visible chips stay aria-hidden", () => {
-    addAnchor("navigation");
+    addAnchor("view-select");
     addAnchor("month-picker");
     render(<PageJumpHintOverlay visible={true} />);
 
     const status = screen.getByRole("status");
     expect(status.textContent).toContain("Jump to?");
-    expect(status.textContent).toContain("1 for view navigation");
+    expect(status.textContent).toContain("1 for view dropdown");
     expect(status.textContent).toContain("2 for month picker");
     expect(chipsWrapper()?.getAttribute("aria-hidden")).not.toBeNull();
   });
 
   it("renders a custom target list, e.g. Life's, skipping absent targets", () => {
-    addAnchor("navigation");
+    addAnchor("view-select");
     addAnchor("life-grid");
     // No life-variation / life-details anchors: e.g. the sidebar is collapsed.
     render(

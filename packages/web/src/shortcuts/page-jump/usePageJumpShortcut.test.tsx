@@ -63,15 +63,15 @@ const buildPage = () => {
     return anchor;
   };
 
-  const prevArrow = document.createElement("button");
-  addAnchor("navigation").append(prevArrow);
+  const viewTrigger = document.createElement("button");
+  addAnchor("view-select").append(viewTrigger);
 
   // Roving tab stop, like react-datepicker's focused day.
   const monthDay = document.createElement("div");
   monthDay.setAttribute("tabindex", "0");
   addAnchor("month-picker").append(monthDay);
 
-  return { prevArrow, monthDay };
+  return { viewTrigger, monthDay };
 };
 
 const openEventForm = () => {
@@ -129,14 +129,35 @@ describe("usePageJumpShortcut", () => {
     });
 
     it("ignores a bare digit with no modifier held", () => {
-      const { prevArrow } = buildPage();
-      prevArrow.focus();
+      const { viewTrigger } = buildPage();
+      viewTrigger.focus();
       renderHook(() => usePageJumpShortcut());
 
       const event = dispatch("keydown", { key: "2", code: "Digit2" });
 
       expect(event.defaultPrevented).toBe(false);
-      expect(prevArrow).toHaveFocus();
+      expect(viewTrigger).toHaveFocus();
+    });
+
+    it("opens a closed view-select menu trigger", () => {
+      const trigger = document.createElement("button");
+      trigger.setAttribute("aria-haspopup", "listbox");
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.addEventListener("click", () => {
+        trigger.setAttribute("aria-expanded", "true");
+      });
+      const anchor = document.createElement("section");
+      anchor.setAttribute(PAGE_JUMP_ATTRIBUTE, "view-select");
+      anchor.append(trigger);
+      document.body.append(anchor);
+
+      renderHook(() => usePageJumpShortcut());
+
+      const event = pressModDigit("1");
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(trigger).toHaveFocus();
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
     });
 
     it("jumps within a custom target list, e.g. Life's", () => {
@@ -192,8 +213,8 @@ describe("usePageJumpShortcut", () => {
 
   describe("while the event form is open", () => {
     it("does not dispatch: the form's digit jumps own the gesture", () => {
-      const { monthDay, prevArrow } = buildPage();
-      prevArrow.focus();
+      const { monthDay, viewTrigger } = buildPage();
+      viewTrigger.focus();
       act(() => {
         openEventForm();
       });
@@ -241,8 +262,8 @@ describe("usePageJumpShortcut", () => {
   });
 
   it("does not dispatch or arm hints while the app is locked", async () => {
-    const { monthDay, prevArrow } = buildPage();
-    prevArrow.focus();
+    const { monthDay, viewTrigger } = buildPage();
+    viewTrigger.focus();
     setAppLockReason("test-lock", true);
     const { result } = renderHook(() => usePageJumpShortcut());
 
