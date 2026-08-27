@@ -57,12 +57,7 @@ const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
     `#event-form-color input[type="radio"]:checked`,
     `#event-form-color input[type="radio"]`,
   ],
-  attendees: [
-    `${EVENT_FORM_SELECTOR} #event-form-attendees`,
-    `#event-form-attendees`,
-    `${EVENT_FORM_SELECTOR} #event-form-guest-list`,
-    `#event-form-guest-list`,
-  ],
+  attendees: [`#event-form-attendees`, `#event-form-guest-list`],
 };
 
 /**

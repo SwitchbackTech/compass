@@ -7,15 +7,12 @@ import {
 import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
 import { ATTENDEE_RSVP_LABEL } from "@web/views/Forms/EventForm/attendee-rsvp";
 
-const STATUS_ICON: Record<
-  AttendeeResponseStatus,
-  typeof CheckIcon | typeof XIcon | typeof QuestionIcon | typeof MinusIcon
-> = {
+const STATUS_ICON = {
   accepted: CheckIcon,
   declined: XIcon,
   tentative: QuestionIcon,
   needsAction: MinusIcon,
-};
+} as const;
 
 const STATUS_CLASS: Record<AttendeeResponseStatus, string> = {
   accepted: "bg-success text-on-accent",

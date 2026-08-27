@@ -361,9 +361,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       attendeeChips.length === 0
         ? null
         : formatAttendeeRsvpTally(
-            attendeeChips.map((chip) => ({
-              responseStatus: statusForEmail(attendeeRsvpByEmail, chip.email),
-            })),
+            attendeeChips.map((chip) =>
+              statusForEmail(attendeeRsvpByEmail, chip.email),
+            ),
           );
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =

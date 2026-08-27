@@ -31,10 +31,10 @@ export const EDIT_SEQUENCE_FIELDS = [
   digit: string;
 }[];
 
-export const hasEditSequenceKey = (
+const hasEditSequenceKey = (
   entry: (typeof EDIT_SEQUENCE_FIELDS)[number],
 ): entry is (typeof EDIT_SEQUENCE_FIELDS)[number] & { key: string } =>
-  "key" in entry && typeof entry.key === "string";
+  "key" in entry;
 
 /** Letter-sequence rows only — Account is digit-only. */
 export const EDIT_SEQUENCE_LETTER_FIELDS =

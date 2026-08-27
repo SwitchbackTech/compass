@@ -70,7 +70,11 @@ export const EventDetailsSection = ({
         >
           <div className="flex items-center gap-2 text-text-muted">
             <UsersIcon size={16} className="shrink-0" />
-            <span>{formatAttendeeRsvpTally(attendees)}</span>
+            <span>
+              {formatAttendeeRsvpTally(
+                attendees.map((attendee) => attendee.responseStatus),
+              )}
+            </span>
           </div>
           <ul className="flex flex-col gap-1 pl-6">
             {visibleAttendees.map((attendee) => {

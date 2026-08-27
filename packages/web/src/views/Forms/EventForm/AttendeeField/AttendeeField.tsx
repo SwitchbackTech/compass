@@ -313,15 +313,9 @@ export const AttendeeField = ({
             isValidAttendeeEmail(candidate) &&
             !selectedEmails.has(candidate.trim().toLowerCase())
           }
-          getNewOptionData={(candidate) => {
-            const email = candidate.trim();
-            return {
-              value: email.toLowerCase(),
-              label: email,
-              attendee: { email, displayName: null },
-              responseStatus: "needsAction",
-            };
-          }}
+          getNewOptionData={(candidate) =>
+            toOption({ email: candidate.trim(), displayName: null })
+          }
           formatCreateLabel={(candidate) => `Add "${candidate.trim()}"`}
           noOptionsMessage={({ inputValue: query }) => {
             const email = query.trim();

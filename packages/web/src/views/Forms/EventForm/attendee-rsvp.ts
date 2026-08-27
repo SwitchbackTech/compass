@@ -31,7 +31,7 @@ export const statusForEmail = (
  * `, {n} maybe` only when those counts are greater than zero.
  */
 export const formatAttendeeRsvpTally = (
-  attendees: ReadonlyArray<{ responseStatus: AttendeeResponseStatus }>,
+  statuses: readonly AttendeeResponseStatus[],
 ): string => {
   const counts: Record<AttendeeResponseStatus, number> = {
     accepted: 0,
@@ -39,14 +39,14 @@ export const formatAttendeeRsvpTally = (
     tentative: 0,
     needsAction: 0,
   };
-  for (const attendee of attendees) {
-    counts[attendee.responseStatus] += 1;
+  for (const status of statuses) {
+    counts[status] += 1;
   }
 
-  const guestWord = attendees.length === 1 ? "guest" : "guests";
+  const guestWord = statuses.length === 1 ? "guest" : "guests";
   const parts = [`${counts.accepted} yes`, `${counts.needsAction} awaiting`];
   if (counts.declined > 0) parts.push(`${counts.declined} no`);
   if (counts.tentative > 0) parts.push(`${counts.tentative} maybe`);
 
-  return `${attendees.length} ${guestWord} (${parts.join(", ")})`;
+  return `${statuses.length} ${guestWord} (${parts.join(", ")})`;
 };
