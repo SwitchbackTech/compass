@@ -125,6 +125,34 @@ test("tap s shows day-prefix jump keys and focuses the assigned event", async ({
   await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
+test("day prefix focuses an event without first pressing s", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Leaderless Jump");
+  await createTimedEventOffsetBy(page, title, 0);
+  await blurActive(page);
+
+  const [saved] = await getSavedEventsByTitle(page, title);
+  const weekday = new Date(saved.startDate).getDay();
+  const key = weekday === 3 ? "w" : weekday === 4 ? "r" : null;
+  if (!key) {
+    test.skip(
+      true,
+      "leaderless e2e uses Wednesday/Thursday prefixes; other days are covered by unit tests",
+    );
+    return;
+  }
+
+  await page.keyboard.press(key);
+
+  await expect(
+    page.locator("#mainGrid").getByRole("button", { name: title }),
+  ).toBeFocused();
+  await expect(shiftHintOverlay(page)).toHaveCount(1);
+});
+
 test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
   await prepareCalendarPage(page);
 

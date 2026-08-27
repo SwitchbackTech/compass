@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import { EVENT_MENU_LETTER } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   isBareLetterKey,
@@ -16,9 +18,15 @@ import {
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
+  findNextNoticeTarget,
+  getVisibleNotices,
+} from "@web/shortcuts/notice-focus/notice-focus";
+import { FOCUS_NOTICE_LETTER } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
+import {
   assignDayJumpKeys,
   type DayJumpAssignment,
   type DayJumpLabelMode,
+  type DayJumpMatchResult,
   DIGIT_AMBIGUOUS_COMMIT_MS,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
@@ -51,6 +59,41 @@ const DAY_NAME_BY_PREFIX: Record<string, string> = {
   r: "Thursday",
   f: "Friday",
   sa: "Saturday",
+};
+
+/** Bare `t` stays "go to today" while jump is off. */
+const TODAY_LETTER = "t";
+
+/**
+ * Competing single-letter commands that still apply while jump is off.
+ * `t` always wins (today). `f` / `m` win only when their action has a target.
+ */
+const competingShortcutApplies = (key: string): boolean => {
+  if (key === TODAY_LETTER) return true;
+  if (key === FOCUS_NOTICE_LETTER) {
+    return (
+      findNextNoticeTarget(getVisibleNotices(), document.activeElement) !== null
+    );
+  }
+  if (key === EVENT_MENU_LETTER) {
+    const active = document.activeElement;
+    return (
+      active instanceof HTMLElement &&
+      getCalendarEventIdFromElement(active) !== null
+    );
+  }
+  return false;
+};
+
+const isUnmodifiedSingleChar = (event: KeyboardEvent) => {
+  const key = keyboardKey(event);
+  return (
+    key.length === 1 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !event.shiftKey
+  );
 };
 
 const FALLBACK_SCHEDULE = {
@@ -118,9 +161,11 @@ const buildDayJumpAssignments = (
 };
 
 /**
- * Press `s` to show day-prefix jump labels. Esc exits. Day letters (and digits
- * after a day) win over global shortcuts while active. In day view, a second
- * `s` toggles off; in week view `s` keeps Sunday/Saturday prefix meaning.
+ * Press `s` to show day-prefix jump labels, or type a jump token (`w`, `w1`,
+ * day-view `1`…) without `s` when no competing command still applies. Esc
+ * exits. Day letters (and digits after a day) win over global shortcuts while
+ * active. In day view, a second `s` toggles off; in week view `s` keeps
+ * Sunday/Saturday prefix meaning.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
@@ -257,75 +302,7 @@ export function useShiftHoldEventHints({
       }, DIGIT_AMBIGUOUS_COMMIT_MS);
     };
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented) return;
-
-      if (!isActiveRef.current) {
-        if (!isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) return;
-        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-        if (isEditSequenceArmed()) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        activate();
-        if (isActiveRef.current) {
-          suppressKeyUpRef.current.add("s");
-        }
-        return;
-      }
-
-      if (isAppLocked() || isEditableKeyboardTarget(event)) {
-        deactivate();
-        return;
-      }
-
-      if (event.key === "Escape") {
-        if (isHigherEscapeOwner()) return;
-        event.preventDefault();
-        event.stopPropagation();
-        deactivate();
-        return;
-      }
-
-      // Arrows keep mode on so letter-then-arrows can move focus.
-      if (keyboardKey(event).startsWith("Arrow")) {
-        clearAmbiguousCommitTimer();
-        stripDigitBuffer();
-        return;
-      }
-
-      if (event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-
-      const key = normalizedKeyboardKey(event);
-      if (key.length !== 1) return;
-
-      // Swallow j/k and other unmatched printable shortcuts while jump is on.
-      const match = matchDayJumpKeystroke({
-        assignments: assignmentsRef.current,
-        key,
-        buffer: bufferRef.current,
-        mode: modeRef.current,
-      });
-
-      if (!match) {
-        clearAmbiguousCommitTimer();
-        stripDigitBuffer();
-        event.preventDefault();
-        event.stopPropagation();
-        suppressKeyUpRef.current.add(key);
-        // Day view has no letter prefixes; a second `s` toggles off.
-        if (modeRef.current === "day" && key === "s") {
-          deactivate();
-        }
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      suppressKeyUpRef.current.add(key);
-
+    const applyMatch = (match: NonNullable<DayJumpMatchResult>) => {
       if (match.kind === "prefix") {
         bufferRef.current = match.buffer;
         eventJumpActions.setActiveDayKeys(
@@ -384,6 +361,99 @@ export function useShiftHoldEventHints({
       }
 
       commitFocus(match.eventId, match.dayKey, match.buffer);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+
+      if (!isActiveRef.current) {
+        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+        if (isEditSequenceArmed()) return;
+        if (!isUnmodifiedSingleChar(event)) return;
+
+        if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
+          event.preventDefault();
+          event.stopPropagation();
+          activate();
+          if (isActiveRef.current) {
+            suppressKeyUpRef.current.add("s");
+          }
+          return;
+        }
+
+        const key = normalizedKeyboardKey(event);
+        const assignments = rebuildAssignments();
+        if (assignments.length === 0) return;
+
+        const match = matchDayJumpKeystroke({
+          assignments,
+          key,
+          buffer: "",
+          mode: modeRef.current,
+        });
+        if (!match || competingShortcutApplies(key)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        activate();
+        if (!isActiveRef.current) return;
+        suppressKeyUpRef.current.add(key);
+        applyMatch(match);
+        return;
+      }
+
+      if (isAppLocked() || isEditableKeyboardTarget(event)) {
+        deactivate();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        if (isHigherEscapeOwner()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        deactivate();
+        return;
+      }
+
+      // Arrows keep mode on so letter-then-arrows can move focus.
+      if (keyboardKey(event).startsWith("Arrow")) {
+        clearAmbiguousCommitTimer();
+        stripDigitBuffer();
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const key = normalizedKeyboardKey(event);
+      if (key.length !== 1) return;
+
+      // Swallow j/k and other unmatched printable shortcuts while jump is on.
+      const match = matchDayJumpKeystroke({
+        assignments: assignmentsRef.current,
+        key,
+        buffer: bufferRef.current,
+        mode: modeRef.current,
+      });
+
+      if (!match) {
+        clearAmbiguousCommitTimer();
+        stripDigitBuffer();
+        event.preventDefault();
+        event.stopPropagation();
+        suppressKeyUpRef.current.add(key);
+        // Day view has no letter prefixes; a second `s` toggles off.
+        if (modeRef.current === "day" && key === "s") {
+          deactivate();
+        }
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressKeyUpRef.current.add(key);
+      applyMatch(match);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
