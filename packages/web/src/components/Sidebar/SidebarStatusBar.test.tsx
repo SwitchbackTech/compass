@@ -32,6 +32,11 @@ import {
   getPartsPlainText,
   getShortcutHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
+import { TIME_TRAVEL_HINT_PARTS } from "@web/timezone/TimeTravelIndicator";
+import {
+  resetTimeTravelStoreForTests,
+  setTimeTravelZone,
+} from "@web/timezone/time-travel.store";
 import {
   afterAll,
   afterEach,
@@ -108,6 +113,7 @@ const seedKeyboardPlaceDraft = () => {
 };
 
 const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
+const TIME_TRAVEL_HINT = getPartsPlainText(TIME_TRAVEL_HINT_PARTS);
 const CREATE_EVENT_HINT = getHintPlainText(getShortcutHint("create-event"));
 const FIRST_EVENT_SAVE_HINT = getHintPlainText(
   getShortcutHint("first-event-save"),
@@ -134,6 +140,7 @@ describe("SidebarStatusBar", () => {
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
     useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    resetTimeTravelStoreForTests();
     document.body.innerHTML = "";
   });
 
@@ -142,6 +149,7 @@ describe("SidebarStatusBar", () => {
     useEventJumpStore.setState(initialEventJumpState, true);
     useEdgeFocusStore.setState(initialEdgeFocusState, true);
     useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    resetTimeTravelStoreForTests();
     document.body.innerHTML = "";
   });
 
@@ -403,5 +411,37 @@ describe("SidebarStatusBar", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
     expect(screen.queryByText(KEYBOARD_PLACE_HINT)).not.toBeInTheDocument();
+  });
+
+  it("replaces the idle shortcut tip with the time travel hint", () => {
+    setTimeTravelZone("America/Denver");
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(TIME_TRAVEL_HINT);
+    expect(screen.queryByText(CREATE_EVENT_HINT)).not.toBeInTheDocument();
+  });
+
+  it("yields the time travel hint to keyboardPlace", () => {
+    setTimeTravelZone("America/Denver");
+    seedKeyboardPlaceDraft();
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(KEYBOARD_PLACE_HINT);
+    expect(screen.queryByText(TIME_TRAVEL_HINT)).not.toBeInTheDocument();
+  });
+
+  it("yields the time travel hint to event jump", () => {
+    setTimeTravelZone("America/Denver");
+    eventJumpActions.setActive(true);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Event jump · Esc");
+    expect(screen.queryByText(TIME_TRAVEL_HINT)).not.toBeInTheDocument();
   });
 });

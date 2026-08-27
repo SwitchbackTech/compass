@@ -104,7 +104,9 @@ describe("TimezonePickerDialog", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("dialog", { name: "Time travel" }),
-    ).toBeInTheDocument();
+    ).toHaveAccessibleDescription(
+      "Compare your calendar hours in a second timezone.",
+    );
 
     await user.type(
       screen.getByRole("combobox", { name: "Search timezones" }),

@@ -172,8 +172,7 @@ describe("GridTimezoneLabel", () => {
     }
   });
 
-  it("shows both abbreviations and a remove control while time traveling", async () => {
-    const user = userEvent.setup();
+  it("shows both abbreviations without a remove control while time traveling", () => {
     act(() => {
       setEffectiveTimeZoneForTests("America/New_York");
       setTimeTravelZone("America/Denver");
@@ -194,19 +193,9 @@ describe("GridTimezoneLabel", () => {
         name: `Calendar timezone: ${formatTimeZoneAbbreviation("America/New_York")}`,
       }),
     ).toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", { name: "Remove time travel timezone" }),
-    );
-
     expect(
-      screen.queryByRole("group", { name: "Time travel timezones" }),
+      screen.queryByRole("button", { name: "Remove time travel timezone" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", {
-        name: `Calendar timezone: ${formatTimeZoneAbbreviation("America/New_York")}`,
-      }),
-    ).toHaveFocus();
     act(() => {
       resetTimeTravelStoreForTests();
     });
