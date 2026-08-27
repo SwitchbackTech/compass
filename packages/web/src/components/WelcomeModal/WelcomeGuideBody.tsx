@@ -3,10 +3,8 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { FAQ_ITEMS } from "./faq";
-import {
-  useWelcomeJumpShortcuts,
-  WelcomeModHoldContext,
-} from "./useWelcomeJumpShortcuts";
+import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
+import { WelcomeLinks } from "./WelcomeLinks";
 
 export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
   const disclosureIdPrefix = useId();
@@ -40,7 +38,7 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
   const isModHeld = useWelcomeJumpShortcuts(toggleFaqAt);
 
   return (
-    <WelcomeModHoldContext.Provider value={isModHeld}>
+    <>
       <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
           The Keyboard Calendar
@@ -104,6 +102,7 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
         </span>
       </p>
       {children}
-    </WelcomeModHoldContext.Provider>
+      <WelcomeLinks isModHeld={isModHeld} />
+    </>
   );
 }

@@ -1,14 +1,10 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 import { FAQ_ITEMS } from "./faq";
 
 export const WELCOME_JUMP_ATTR = "data-welcome-jump";
-
-export const WelcomeModHoldContext = createContext(false);
-
-export const useWelcomeModHeld = () => useContext(WelcomeModHoldContext);
 
 const isPlatformModKey = (event: KeyboardEvent) =>
   resolveModifier("Mod") === "Meta"

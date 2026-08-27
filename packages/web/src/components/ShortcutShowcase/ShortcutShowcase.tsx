@@ -246,11 +246,7 @@ const ShowcaseTakeover: FC = () => {
         }
         return;
       }
-      if (isBareLetterKey(event.nativeEvent, "u") && !authenticated) {
-        claim(event);
-        skipToSignup();
-      }
-      return;
+      if (!isBareLetterKey(event.nativeEvent, "u")) return;
     }
 
     if (stepId === "graduation" && event.key === "Enter") {

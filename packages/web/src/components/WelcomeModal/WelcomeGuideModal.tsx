@@ -3,7 +3,6 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
-import { WelcomeLinks } from "./WelcomeLinks";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
@@ -34,8 +33,6 @@ export function WelcomeGuideModal() {
               Close
             </button>
           </div>
-
-          <WelcomeLinks />
         </WelcomeGuideBody>
       </div>
     </OverlayPanel>

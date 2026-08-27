@@ -13,8 +13,7 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
-import { WelcomeLinks } from "./WelcomeLinks";
-import { welcomeModalActions } from "./welcome.modal.store";
+import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
@@ -74,8 +73,8 @@ export function WelcomeModal() {
   }, [visible]);
 
   useEffect(() => {
-    welcomeModalActions.setOpen(visible);
-    return () => welcomeModalActions.setOpen(false);
+    welcomeGuideActions.setFirstVisitOpen(visible);
+    return () => welcomeGuideActions.setFirstVisitOpen(false);
   }, [visible]);
 
   if (!visible) return null;
@@ -241,8 +240,6 @@ export function WelcomeModal() {
               <ShortcutHint className="ml-2">S</ShortcutHint>
             </button>
           </div>
-
-          <WelcomeLinks />
         </WelcomeGuideBody>
       </div>
     </OverlayPanel>

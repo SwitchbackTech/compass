@@ -6,7 +6,6 @@ import {
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
-import { welcomeModalActions } from "@web/components/WelcomeModal/welcome.modal.store";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   initialPointerBlockState,
@@ -27,7 +26,7 @@ describe("PointerHint", () => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
-    welcomeModalActions.setOpen(false);
+    welcomeGuideActions.setFirstVisitOpen(false);
     welcomeGuideActions.close();
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
@@ -36,7 +35,7 @@ describe("PointerHint", () => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
-    welcomeModalActions.setOpen(false);
+    welcomeGuideActions.setFirstVisitOpen(false);
     welcomeGuideActions.close();
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
@@ -55,7 +54,7 @@ describe("PointerHint", () => {
   });
 
   it("omits the legend hint while the welcome modal is open", () => {
-    welcomeModalActions.setOpen(true);
+    welcomeGuideActions.setFirstVisitOpen(true);
     render(<PointerHint />);
 
     act(() => {

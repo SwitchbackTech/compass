@@ -2,7 +2,6 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
-import { WelcomeLinks } from "./WelcomeLinks";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
@@ -23,12 +22,7 @@ const releaseWindowKey = (init: KeyboardEventInit) => {
   });
 };
 
-const renderWelcomeGuide = () =>
-  render(
-    <WelcomeGuideBody>
-      <WelcomeLinks />
-    </WelcomeGuideBody>,
-  );
+const renderWelcomeGuide = () => render(<WelcomeGuideBody />);
 
 const captureLinkClick = (name: string) => {
   const link = screen.getByRole("link", { name });
