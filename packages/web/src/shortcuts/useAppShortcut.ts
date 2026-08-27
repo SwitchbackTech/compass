@@ -4,6 +4,8 @@ import {
   useHotkey,
 } from "@tanstack/react-hotkeys";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import { recordShortcutUnavailableAttempt } from "@web/shortcuts/tips/shortcut-telemetry";
+import { type ShortcutHintId } from "@web/shortcuts/tips/shortcut-tips.data";
 
 export interface UseAppShortcutOptions {
   enabled?: boolean;
@@ -18,6 +20,9 @@ export interface UseAppShortcutOptions {
    * Escape) so overlays remain dismissible from the keyboard.
    */
   ignoreAppLock?: boolean;
+  /** Enables privacy-safe telemetry when this registered shortcut is blocked
+   * by the app lock before its handler can run. */
+  telemetryHintId?: ShortcutHintId;
   /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
   conflictBehavior?: ConflictBehavior;
 }
@@ -35,6 +40,7 @@ export function useAppShortcut(
     preventDefault,
     stopPropagation,
     ignoreAppLock = false,
+    telemetryHintId,
     conflictBehavior = "allow",
   } = options;
 
@@ -44,6 +50,9 @@ export function useAppShortcut(
     hotkey,
     (event) => {
       if (!ignoreAppLock && isAppLocked()) {
+        if (telemetryHintId) {
+          recordShortcutUnavailableAttempt(telemetryHintId, "app_locked");
+        }
         return;
       }
 

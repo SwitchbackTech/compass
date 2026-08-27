@@ -17,6 +17,9 @@ type StorageKey =
   // Demonstrated sidebar shortcut-tip ids (JSON). Device-local; an unknown
   // id is skipped on read, not an error.
   | "compass.shortcuts.tips-demonstrated"
+  // Privacy-safe, device-local shortcut counters and timestamps used to rank
+  // eligible sidebar tips without a network read.
+  | "compass.shortcuts.personalization"
   | "compass.sidebar.width"
   | "compass.theme"
   | "compass.life.preferences"
@@ -56,6 +59,7 @@ export const STORAGE_KEYS: Record<
   | "FIRST_EVENT_DONE"
   | "SHORTCUT_TIPS_MUTED"
   | "SHORTCUT_TIPS_DEMONSTRATED"
+  | "SHORTCUT_PERSONALIZATION"
   | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
@@ -83,6 +87,7 @@ export const STORAGE_KEYS: Record<
   FIRST_EVENT_DONE: "compass.onboarding.first-event-done",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   SHORTCUT_TIPS_DEMONSTRATED: "compass.shortcuts.tips-demonstrated",
+  SHORTCUT_PERSONALIZATION: "compass.shortcuts.personalization",
   LIFE_PREFERENCES: "compass.life.preferences",
   SIDEBAR_WIDTH: "compass.sidebar.width",
   SIDEBAR_OPEN: "compass.view.sidebar-open",

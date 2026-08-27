@@ -10,6 +10,7 @@ import {
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
+import { getShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import {
   resetEditSequenceArm,
   useEditSequenceShortcut,
@@ -138,6 +139,7 @@ describe("useShiftHoldEventHints", () => {
     );
     expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
     expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(getShortcutHintProgress()).toContain("week-day-focus");
 
     act(() => {
       dispatch("keydown", "2");

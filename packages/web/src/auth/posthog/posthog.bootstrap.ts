@@ -41,6 +41,9 @@ export function initPosthog(): PostHog | undefined {
     // they become issues, then the dead clicks posthog's own mutation clock
     // mis-scores on our static onboarding overlays.
     before_send: [filterPosthogBeforeSend, filterPosthogDeadClick],
+    // Product events are queued and sent in batches by the SDK. Keyboard
+    // handlers only enqueue meaningful outcomes and never wait on transport.
+    request_batching: true,
     opt_in_site_apps: true,
     person_profiles: "always",
   });

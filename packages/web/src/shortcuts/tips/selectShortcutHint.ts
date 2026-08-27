@@ -1,6 +1,8 @@
+import { rankShortcutHints } from "@web/shortcuts/tips/rankShortcutHints";
+import { type ShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import {
   getShortcutHint,
-  type ShortcutHint,
+  type RankedShortcutHint,
   type ShortcutHintId,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 
@@ -50,16 +52,13 @@ const LIFE_POOL = [
   "command-palette",
 ] as const satisfies readonly ShortcutHintId[];
 
-function pickFromPool(
-  pool: readonly ShortcutHintId[],
-  demonstratedIds: readonly ShortcutHintId[],
-): ShortcutHintId {
-  const unused = pool.find((id) => !demonstratedIds.includes(id));
-  if (unused) return unused;
+const EMPTY_USAGE_PROFILE: ShortcutUsageProfile = { version: 1, actions: {} };
 
-  const lastUsedId = demonstratedIds[demonstratedIds.length - 1];
-  const lastIndex = lastUsedId ? pool.indexOf(lastUsedId) : -1;
-  return pool[(lastIndex + 1) % pool.length];
+function ranked(
+  id: ShortcutHintId,
+  reasonCode = getShortcutHint(id).suggestionReason,
+): RankedShortcutHint {
+  return { ...getShortcutHint(id), rank: 1, reasonCode };
 }
 
 /**
@@ -72,12 +71,14 @@ function pickFromPool(
 export function selectShortcutHint(
   ctx: ShortcutHintContext,
   demonstratedIds: readonly ShortcutHintId[] = [],
-): ShortcutHint {
+  profile: ShortcutUsageProfile = EMPTY_USAGE_PROFILE,
+  now = Date.now(),
+): RankedShortcutHint {
   const pick = (pool: readonly ShortcutHintId[]) =>
-    getShortcutHint(pickFromPool(pool, demonstratedIds));
+    rankShortcutHints(pool, demonstratedIds, profile, now);
 
   if (ctx.isFormOpen && !ctx.firstEventDone) {
-    return getShortcutHint("first-event-save");
+    return ranked("first-event-save");
   }
   if (ctx.isFormOpen) {
     return pick(FORM_POOL);
@@ -89,7 +90,7 @@ export function selectShortcutHint(
     return pick(withWeekDayFocus(FOCUSED_POOL, ctx.isWeekView));
   }
   if (!ctx.firstEventDone) {
-    return getShortcutHint("create-event");
+    return ranked("create-event", "first_event");
   }
   return pick(withWeekDayFocus(IDLE_POOL, ctx.isWeekView));
 }

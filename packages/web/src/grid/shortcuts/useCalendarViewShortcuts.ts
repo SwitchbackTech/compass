@@ -53,11 +53,15 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
   });
   useAppShortcutUp("T", () => config.onGoToToday?.());
   useAppShortcutUp("Shift+C", () => config.onCreateAllDayEvent?.());
-  useAppShortcutUp(KEYMAP.createEvent.hotkey, () => {
-    if (!config.onCreateTimedEvent) return;
-    config.onCreateTimedEvent();
-    shortcutHintProgressActions.demonstrate("create-event");
-  });
+  useAppShortcutUp(
+    KEYMAP.createEvent.hotkey,
+    () => {
+      if (!config.onCreateTimedEvent) return;
+      config.onCreateTimedEvent();
+      shortcutHintProgressActions.demonstrate("create-event");
+    },
+    { telemetryHintId: "create-event" },
+  );
   useAppShortcutUp("U", () => config.onFocusCalendar?.());
   // Keydown so a macOS Cmd+Z keyup-replay (meta already released) cannot
   // match this binding the way Mod+D vs D does on keyup.
