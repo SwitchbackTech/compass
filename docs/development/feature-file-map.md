@@ -76,6 +76,9 @@ Authoritative legend data and taught bindings live under
 `packages/web/src/shortcuts`. View owners register keys; do not duplicate
 labels outside the registry.
 
+Product rules (hold-Mod discovery, "chip the field", typing always types):
+[Shortcut Commandments](../frontend/shortcut-commandments.md).
+
 - Registry (source of truth for `?` legend): `packages/web/src/shortcuts/shortcuts.registry.ts`
 - Taught bindings (handlers + Shortcut Showcase keycaps): `packages/web/src/shortcuts/keymap.ts`
 - Sidebar next-shortcut selector: `packages/web/src/shortcuts/tips/selectShortcutHint.ts`

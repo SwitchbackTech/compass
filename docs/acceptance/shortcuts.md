@@ -2,6 +2,10 @@
 
 This runbook covers keyboard shortcut parity in Compass. The principle: anything a user can do with a mouse should also be doable with the keyboard.
 
+The product rules behind those bindings — hold-Mod discovery, targeting
+any on-screen field, hints that never lie — are
+[Shortcut Commandments](../frontend/shortcut-commandments.md).
+
 ## Source of Truth
 
 Two files matter, at different depths:
