@@ -309,8 +309,11 @@ describe("shortcut menu sections", () => {
         });
         expect(shortcuts).toContainEqual({
           keys: ["e", "a"],
-          label: "Edit account",
+          label: "Edit guests",
         });
+        expect(
+          shortcuts.some((shortcut) => shortcut.label === "Edit account"),
+        ).toBe(false);
         expect(shortcuts).toContainEqual({
           keys: ["e", "c"],
           label: "Edit color",

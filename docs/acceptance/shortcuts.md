@@ -237,7 +237,7 @@ Pressing Delete while an event is focused in the Day or Week grid deletes it —
 
 ### UX
 
-With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), account (`A`), and color (`C`).
+With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), guests (`A`), and color (`C`). Account (calendar picker) is Mod+5 only.
 
 ### Steps
 
@@ -415,7 +415,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 11. Arrow keys reposition an open draft in both Day and Week view.
 12. With no event focused and no particular control focused (document body), any Arrow key focuses the timed event nearest now in the current Day/Week view (in-progress, else next upcoming, else most recently ended; today preferred in Week; all-day only if no timed events). Further arrows then follow the existing rules. `U` still focuses the first DOM-order event. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
-14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
+14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to guests / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; the same tokens work without a prior `S` when no competing command applies; Shift+Tab does not show chips.
 16. Mouse clicks, right-clicks, and double-clicks are inert everywhere; a blocked click shows the keyboard-only hint. `M` opens the focused event's menu; `F` focuses the newest notice.
 17. PageUp / PageDown scroll the timed grid by one viewport in Day and Week view even when an event is focused; they do not fire in a text input.

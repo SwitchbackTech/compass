@@ -69,6 +69,10 @@ const buildForm = () => {
   location.id = "event-form-location";
   form.append(location);
 
+  const attendees = document.createElement("input");
+  attendees.id = "event-form-attendees";
+  form.append(attendees);
+
   const description = document.createElement("div");
   description.id = "event-form-description";
   document.body.append(description);
@@ -80,6 +84,7 @@ const buildForm = () => {
     recurrenceButton,
     radio,
     location,
+    attendees,
     description,
   ];
   for (const element of elements) {
@@ -132,7 +137,7 @@ describe("FormDigitHintOverlay", () => {
 
     // Digit 5 (calendar) has no chip: no #event-form-calendar element was added,
     // matching an edit draft where the calendar picker isn't rendered.
-    expect(chipDigits()).toEqual(["1", "2", "3", "4", "6", "7", "8"]);
+    expect(chipDigits()).toEqual(["1", "2", "3", "4", "6", "7", "8", "9"]);
   });
 
   it("renders the calendar chip once the picker is present", () => {
@@ -144,7 +149,7 @@ describe("FormDigitHintOverlay", () => {
 
     render(<FormDigitHintOverlay visible={true} />);
 
-    expect(chipDigits()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+    expect(chipDigits()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
   });
 
   it("exposes a screen-reader summary while the visible chips stay aria-hidden", () => {
@@ -154,7 +159,8 @@ describe("FormDigitHintOverlay", () => {
     const status = screen.getByRole("status");
     expect(status.textContent).toContain("Jump to field?");
     expect(status.textContent).toContain("1 for title");
-    expect(status.textContent).toContain("8 for description");
+    expect(status.textContent).toContain("8 for guests");
+    expect(status.textContent).toContain("9 for description");
     expect(chipsWrapper()?.getAttribute("aria-hidden")).not.toBeNull();
   });
 
