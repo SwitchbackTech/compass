@@ -78,7 +78,7 @@ describe("shortcut menu sections", () => {
       // discoverable via the same row shown on Day/Week.
       expect(stripMetadata(sections[1]?.shortcuts ?? [])).toEqual([
         {
-          keys: ["Mod", "1-4"],
+          keys: ["Mod", "1-9"],
           label: "Jump to a page area (hold Mod for hints)",
         },
       ]);
@@ -217,7 +217,7 @@ describe("shortcut menu sections", () => {
         { keys: ["h"], label: "Toggle event jump keys" },
         { keys: ["f"], label: "Focus latest notice" },
         {
-          keys: ["Mod", "1-4"],
+          keys: ["Mod", "1-9"],
           label: "Jump to a page area (hold Mod for hints)",
         },
       ]);
@@ -228,7 +228,7 @@ describe("shortcut menu sections", () => {
         { keys: ["m"], label: "Focus a week column (M T W R F SA SU)" },
         { keys: ["f"], label: "Focus latest notice" },
         {
-          keys: ["Mod", "1-4"],
+          keys: ["Mod", "1-9"],
           label: "Jump to a page area (hold Mod for hints)",
         },
       ]);

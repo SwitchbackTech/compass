@@ -1,5 +1,8 @@
+import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
 import {
+  buildDayPageJumpTargets,
   CALENDAR_PAGE_JUMP_TARGETS,
+  dayColumnJumpId,
   focusPageJumpTarget,
   getPageJumpFocusElement,
   LIFE_PAGE_JUMP_TARGETS,
@@ -25,10 +28,48 @@ describe.each([
 ])("%s", (_name, targets) => {
   it("assigns sequential digits matching each target's list position", () => {
     // usePageJumpShortcut resolves a pressed digit by index, so the digit
-    // shown on a chip must always equal index + 1.
+    // shown on a chip must always equal the physical top-row label.
     targets.forEach((target, index) => {
-      expect(target.digit).toBe(String(index + 1));
+      expect(target.digit).toBe(PICK_KEY_LABELS[index]);
     });
+  });
+});
+
+describe("buildDayPageJumpTargets", () => {
+  it("appends writable columns after the shared 1-4 page areas", () => {
+    const personal = { id: "cal-personal", name: "Personal" };
+    const work = { id: "cal-work", name: "Work" };
+    const targets = buildDayPageJumpTargets([personal, work]);
+
+    expect(targets.slice(0, 4)).toEqual([...CALENDAR_PAGE_JUMP_TARGETS]);
+    expect(targets[4]).toEqual({
+      digit: "5",
+      id: dayColumnJumpId(personal.id),
+      label: "Personal",
+    });
+    expect(targets[5]).toEqual({
+      digit: "6",
+      id: dayColumnJumpId(work.id),
+      label: "Work",
+    });
+  });
+
+  it("keeps column digits at 5+ when earlier page areas would be unmounted", () => {
+    const targets = buildDayPageJumpTargets([{ id: "cal-1", name: "Work" }]);
+    expect(targets[4]?.digit).toBe("5");
+  });
+
+  it("omits calendars past the physical top-row keys", () => {
+    const extraSlots =
+      PICK_KEY_LABELS.length - CALENDAR_PAGE_JUMP_TARGETS.length;
+    const calendars = Array.from({ length: extraSlots + 3 }, (_, index) => ({
+      id: `cal-${index}`,
+      name: `Calendar ${index}`,
+    }));
+    const targets = buildDayPageJumpTargets(calendars);
+
+    expect(targets).toHaveLength(PICK_KEY_LABELS.length);
+    expect(targets.at(-1)?.digit).toBe(PICK_KEY_LABELS.at(-1));
   });
 });
 

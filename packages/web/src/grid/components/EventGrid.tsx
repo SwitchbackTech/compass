@@ -34,6 +34,8 @@ export interface EventGridProps {
   timedEventsLayer: ReactNode;
   today: Dayjs;
   visibleDates: GridVisibleDate[];
+  /** Day-view calendar column currently focused via hold-Mod jump. */
+  highlightedColumnKey?: string | null;
 }
 
 export const EventGrid: FC<EventGridProps> = ({
@@ -50,6 +52,7 @@ export const EventGrid: FC<EventGridProps> = ({
   timedEventsLayer,
   today,
   visibleDates,
+  highlightedColumnKey = null,
 }) => (
   <div className="relative flex min-h-0 w-full flex-1 flex-col">
     <AllDayGridRow
@@ -57,11 +60,13 @@ export const EventGrid: FC<EventGridProps> = ({
       allDayRowRef={gridRefs.allDayRowRef}
       eventsLayer={allDayEventsLayer}
       gridOffsetTopPx={allDayGridOffsetTopPx}
+      highlightedColumnKey={highlightedColumnKey}
       rowsCount={allDayRowsCount}
       visibleDates={visibleDates}
     />
     <TimedGrid
       eventsLayer={timedEventsLayer}
+      highlightedColumnKey={highlightedColumnKey}
       timedColumnsRef={gridRefs.timedColumnsElementRef}
       timedGridRef={gridRefs.mainGridElementRef}
       today={today}

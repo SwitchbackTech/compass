@@ -15,6 +15,7 @@ import {
 } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
@@ -673,5 +674,77 @@ describe("DayCalendarGrid", () => {
         top: expect.any(Number),
       }),
     );
+  });
+
+  it("seeds a keyboardPlace draft on the focused writable column", async () => {
+    const personal = makeCalendar("Personal");
+    const work = makeCalendar("Work", { isPrimary: true });
+    renderDayCalendarGrid([personal, work]);
+
+    const personalColumn = await screen.findByRole("button", {
+      name: "Focus Personal column",
+    });
+    act(() => {
+      personalColumn.focus();
+    });
+
+    pressKey("ArrowDown", {
+      keyDownInit: { shiftKey: true },
+      keyUpInit: { shiftKey: true },
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(personal.id);
+    });
+    expect(getIsFormOpen()).toBe(false);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+  });
+
+  it("seeds CREATE_TIMED_DRAFT on the focused writable column", async () => {
+    const personal = makeCalendar("Personal");
+    const work = makeCalendar("Work", { isPrimary: true });
+    renderDayCalendarGrid([personal, work]);
+
+    const personalColumn = await screen.findByRole("button", {
+      name: "Focus Personal column",
+    });
+    act(() => {
+      personalColumn.focus();
+    });
+
+    act(() => {
+      emitViewCommand("CREATE_TIMED_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(personal.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+  });
+
+  it("highlights the focused calendar column on the timed and all-day grids", async () => {
+    const personal = makeCalendar("Personal");
+    const work = makeCalendar("Work", { isPrimary: true });
+    renderDayCalendarGrid([personal, work]);
+
+    const personalColumn = await screen.findByRole("button", {
+      name: "Focus Personal column",
+    });
+    act(() => {
+      personalColumn.focus();
+    });
+
+    await waitFor(() => {
+      expect(
+        within(getTimedGrid())
+          .getByRole("columnheader", { name: /Personal, / })
+          .getAttribute("data-focused-column"),
+      ).toBe("true");
+      expect(
+        within(getAllDayRegion())
+          .getByRole("columnheader", { name: /Personal, / })
+          .getAttribute("data-focused-column"),
+      ).toBe("true");
+    });
   });
 });

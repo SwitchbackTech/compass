@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { PageJumpHintOverlay } from "@web/shortcuts/page-jump/PageJumpHintOverlay";
 import {
+  buildDayPageJumpTargets,
+  dayColumnJumpId,
   LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
   type PageJumpTargetId,
@@ -132,5 +134,19 @@ describe("PageJumpHintOverlay", () => {
     );
 
     expect(chipDigits()).toEqual(["1", "2"]);
+  });
+
+  it("chips a Day calendar column as 5, not 1", () => {
+    addAnchor("view-select");
+    addAnchor(dayColumnJumpId("cal-work"));
+    render(
+      <PageJumpHintOverlay
+        targets={buildDayPageJumpTargets([{ id: "cal-work", name: "Work" }])}
+        visible={true}
+      />,
+    );
+
+    expect(chipDigits()).toEqual(["1", "5"]);
+    expect(screen.getByRole("status").textContent).toContain("5 for work");
   });
 });

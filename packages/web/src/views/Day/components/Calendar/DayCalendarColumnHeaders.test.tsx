@@ -1,15 +1,32 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
+import { PAGE_JUMP_ATTRIBUTE } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { DayCalendarColumnHeaders } from "@web/views/Day/components/Calendar/DayCalendarColumnHeaders";
-import { describe, expect, it } from "bun:test";
+import { CALENDAR_COLUMN_ID_ATTRIBUTE } from "@web/views/Day/components/Calendar/dayCalendarColumnFocus.util";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const calendar = createMockCalendar({ name: "Personal" });
+const personal = createMockCalendar({ name: "Personal" });
+const holidays = createMockCalendar({
+  name: "Holidays",
+  access: "reader",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: false,
+    canManage: false,
+    canWatchEvents: true,
+  },
+});
 
 describe("DayCalendarColumnHeaders", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("shows the effective timezone in the grid corner", () => {
-    render(<DayCalendarColumnHeaders calendars={[calendar]} />);
+    render(<DayCalendarColumnHeaders calendars={[personal]} />);
 
     const abbreviation = formatTimeZoneAbbreviation(getEffectiveTimeZone());
     expect(
@@ -34,5 +51,44 @@ describe("DayCalendarColumnHeaders", () => {
     expect(
       screen.queryByRole("region", { name: "Calendars" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("makes writable calendars focusable jump targets", () => {
+    render(
+      <DayCalendarColumnHeaders
+        calendars={[personal, holidays]}
+        writableCalendarIds={new Set([personal.id])}
+      />,
+    );
+
+    const column = screen.getByRole("button", {
+      name: "Focus Personal column",
+    });
+    expect(column).toHaveAttribute(
+      PAGE_JUMP_ATTRIBUTE,
+      `day-column:${personal.id}`,
+    );
+    expect(column).toHaveAttribute(CALENDAR_COLUMN_ID_ATTRIBUTE, personal.id);
+    expect(
+      screen.queryByRole("button", { name: "Focus Holidays column" }),
+    ).toBeNull();
+    expect(screen.getByRole("region", { name: "Calendars" })).toHaveTextContent(
+      "Holidays",
+    );
+  });
+
+  it("reports focus changes for full-column highlight", () => {
+    const onColumnFocusChange = mock();
+    render(
+      <DayCalendarColumnHeaders
+        calendars={[personal]}
+        onColumnFocusChange={onColumnFocusChange}
+        writableCalendarIds={new Set([personal.id])}
+      />,
+    );
+
+    screen.getByRole("button", { name: "Focus Personal column" }).focus();
+
+    expect(onColumnFocusChange).toHaveBeenCalledWith(personal.id);
   });
 });
