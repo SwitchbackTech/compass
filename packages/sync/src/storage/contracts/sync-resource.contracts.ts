@@ -58,6 +58,25 @@ export const SyncResourceRecordSchema = z.strictObject({
   activeGeneration: z.number().int().min(0).default(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),
+  // calendarList only: when a pass last applied a COMPLETE enumeration — a full
+  // list that returned at least one calendar, persisted end to end. This is the
+  // staleness clock the rediscovery sweep selects on.
+  //
+  // Deliberately NOT lastSuccessAt, which advanceCursor stamps on every pass,
+  // incremental ones included. The web client refreshes on each page load and
+  // each alt-tab-back after 30s, and every one of those enqueues an incremental
+  // calendarList pass — so an active user's lastSuccessAt never aged past the
+  // sweep's 24h threshold, they never became eligible, and the full pass that
+  // retires hidden/removed calendars never ran for them. Using the app disabled
+  // its own repair: the 64 connections that self-healed after #2876 were the
+  // IDLE ones (2026-08-27).
+  //
+  // Null (or absent — Mongo's null predicate matches missing) means "never
+  // fully listed", which sorts as maximally stale. That is what makes this
+  // field self-backfilling: every pre-existing row is eligible on deploy.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt below.
+  lastFullListAt: z.date().nullable().default(null),
   // Set when the provider durably rejects reads for this resource (a
   // non-transient 4xx retries cannot fix — see the readFailed settlement for
   // events resources and the discoveryFailed settlement for calendarList in

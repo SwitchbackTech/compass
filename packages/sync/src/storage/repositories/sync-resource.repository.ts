@@ -147,6 +147,21 @@ export class SyncResourceRepository {
     await this.#patch(tenantId, principalId, id, { lastAttemptAt: at });
   }
 
+  // Stamp the calendarList full-enumeration clock the rediscovery sweep selects
+  // on. Deliberately NOT folded into advanceCursor, which every resource kind
+  // calls on any successful pass: the whole point of this field is that it
+  // advances ONLY when a pass actually enumerated everything, so a flag
+  // threaded through advanceCursor would be hardcoded false at every other call
+  // site and one miswiring would silently restore the starvation bug.
+  async markFullListCompleted(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
+    await this.#patch(tenantId, principalId, id, { lastFullListAt: at });
+  }
+
   // Save mid-batch page progress without moving the incremental cursor.
   async setPageCheckpoint(
     tenantId: TenantId,
@@ -317,21 +332,28 @@ export class SyncResourceRepository {
   }
 
   // Give every unwatchable-marked resource on a connection one fresh watch
-  // attempt. Called from the calendar-list FULL discovery pass, which the
-  // rediscovery sweep forces daily — so a calendar the provider starts
-  // supporting is retried at that cadence rather than never (or on every
-  // pull, which was the pre-marker wart).
+  // attempt — but only where the verdict is older than `olderThan`, so a
+  // calendar gets at most one retry per that interval.
+  //
+  // The age gate makes the retry cadence a property of the VERDICT rather than
+  // of however often full passes happen to run. It used to ride on the full
+  // pass being daily, which stopped being true once a calendarList push also
+  // forces one: without this, a user editing their calendar list N times a day
+  // would burn N futile watch calls per unwatchable calendar, re-marked each
+  // time — the pre-marker "one futile attempt per pull, forever" wart, back in
+  // a new form.
   async clearWatchUnsupportedByConnection(
     tenantId: TenantId,
     principalId: PrincipalId,
     connectionId: ConnectionId,
+    olderThan: Date,
   ): Promise<void> {
     await this.collection.updateMany(
       {
         tenantId,
         principalId,
         connectionId,
-        watchUnsupportedAt: { $ne: null },
+        watchUnsupportedAt: { $ne: null, $lt: olderThan },
       },
       { $set: { watchUnsupportedAt: null, updatedAt: new Date() } },
     );
@@ -624,15 +646,28 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
-  // calendarList resources whose last successful discovery is older than
-  // `before` (or which never succeeded), rotated oldest-attempt-first, bounded.
-  // This is the calendar-list rediscovery sweep's input — the periodic re-run
-  // that catches a calendar deleted or unshared at the provider, since
-  // calendarListSync otherwise only ever runs once, at connect. Same GLOBAL
-  // scan + credential-exclusion shape as listStaleEvents, for the same reason
-  // (2026-07-29 dead-credential tie-break bias) - uses the resource_last_success
-  // / resource_last_attempt indexes, which already lead with resourceKind so no
-  // new index is needed for this kind.
+  // calendarList resources whose last FULL enumeration is older than `before`
+  // (or which never had one), rotated oldest-attempt-first, bounded. This is the
+  // calendar-list rediscovery sweep's input — the periodic re-run that catches a
+  // calendar deleted, hidden, or unshared at the provider, since calendarListSync
+  // otherwise only ever runs once, at connect.
+  //
+  // Selects on lastFullListAt, NOT lastSuccessAt: incremental passes stamp
+  // lastSuccessAt too, and an active user's focus refreshes kept it perpetually
+  // under the threshold, so they never became eligible and never got the full
+  // pass (2026-08-27 — see the field's comment).
+  //
+  // lastAttemptAt stays the PRIMARY sort key even though the filter moved.
+  // syncCalendarList stamps it before the token fetch can fail, so a connection
+  // whose full pass always throws rotates to the back after one attempt.
+  // Sorting on lastFullListAt first would leave such a row at null, re-winning
+  // the front of every cycle forever — the 2026-07-29 dead-credential tie-break
+  // bias in a new field.
+  //
+  // Same GLOBAL scan + credential-exclusion shape as listStaleEvents. Uses the
+  // resource_last_attempt index for the sort's lead key; lastFullListAt itself
+  // is filtered in memory, which is free at this collection's size and could not
+  // be index-served anyway (the sort runs after $lookup).
   async listStaleCalendarLists(
     before: Date,
     limit: number,
@@ -640,9 +675,9 @@ export class SyncResourceRepository {
     return this.#listForSweep(
       {
         resourceKind: "calendarList",
-        $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+        $or: [{ lastFullListAt: { $lt: before } }, { lastFullListAt: null }],
       },
-      { lastAttemptAt: 1, lastSuccessAt: 1 },
+      { lastAttemptAt: 1, lastFullListAt: 1 },
       limit,
     );
   }
@@ -650,10 +685,14 @@ export class SyncResourceRepository {
   // Clear the calendarList resource's incremental cursor so the next
   // calendarListSync pass — whichever job runs it, sweep-enqueued or otherwise
   // — goes full rather than incremental (syncCalendarList treats a null cursor
-  // as `fullList`). Deliberately leaves lastSuccessAt untouched: that field is
-  // the staleness key the rediscovery sweep sorts on, and touching it here
-  // would let a resource that hasn't actually re-synced yet win the front of
-  // every subsequent sweep cycle.
+  // as `fullList`). Two callers: the rediscovery sweep, and the calendarList
+  // push route (a notification means the list genuinely changed, so that pass
+  // should re-enumerate rather than trust incremental).
+  //
+  // Deliberately leaves the timing fields untouched: lastFullListAt is the
+  // staleness key the rediscovery sweep selects on, and stamping it here — before
+  // the pass it merely SCHEDULED has actually run — would mark the resource
+  // satisfied for a day on the strength of an intention.
   async clearSyncCursor(
     tenantId: TenantId,
     principalId: PrincipalId,
