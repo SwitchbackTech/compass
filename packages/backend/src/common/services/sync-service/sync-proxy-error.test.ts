@@ -44,6 +44,21 @@ describe("sync-proxy-error", () => {
     }
   });
 
+  // The invalidResponse detail must reach the thrown message, so the
+  // error-tracking issue names which field broke the contract.
+  it("appends the invalidResponse detail to the thrown message", () => {
+    try {
+      throwSyncProxyFailure(
+        "invalidResponse",
+        "Failed to list calendars from sync (invalidResponse)",
+        "issues=<root>: unrecognized_keys [addedByNewerSync]",
+      );
+      throw new Error("expected throw");
+    } catch (e) {
+      expect((e as BaseError).result).toContain("addedByNewerSync");
+    }
+  });
+
   it("maps unexpected Sync reads to 502, never 600", () => {
     try {
       throwSyncProxyFailure("unexpectedStatus", "weird status");

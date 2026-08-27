@@ -80,12 +80,14 @@ const listCalendarsFromSync = async (
     throwSyncProxyFailure(
       calendarsResult.error.kind,
       `Failed to list calendars from sync (${calendarsResult.error.kind})`,
+      calendarsResult.error.detail,
     );
   }
   if (!connectionsResult.ok) {
     throwSyncProxyFailure(
       connectionsResult.error.kind,
       `Failed to list connections from sync (${connectionsResult.error.kind})`,
+      connectionsResult.error.detail,
     );
   }
 
@@ -128,6 +130,7 @@ const getAvailabilityFromSync = async (
         throwSyncProxyFailure(
           result.error.kind,
           `Failed to query availability from sync (${result.error.kind})`,
+          result.error.detail,
         );
       }
       return result.value.intervals.map((interval) =>
