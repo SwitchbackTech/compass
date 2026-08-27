@@ -72,9 +72,9 @@ Source: `packages/core/src/types/event-command.contracts.ts`
   Google calendar, on a single event or a series base — never on one
   occurrence of a series (guest edits have no per-occurrence semantics; see
   `packages/web/src/views/Forms/EventForm/EventForm.attendees.test.tsx`).
-  A recurring series-base edit that changed the guest set narrows
-  `RecurrenceScopeDialog` to "All Events" only
-  (`RecurrenceScopeDialog.test.tsx`).
+  A recurring series-base edit that changed the guest set is saved as
+  "All Events" automatically (`resolveRecurrenceScopeDecision`) — guest
+  replacements have no per-occurrence semantics.
 - Incoming RSVP from other attendees is visible to the host without
   photos: chips and the read-only guest list show a compact status badge
   (yes / no / maybe / awaiting) looked up from the live `Attendee[]` by
@@ -321,8 +321,8 @@ repository-source flag — both must be set, or the calendar list never
 leaves the synthesized anonymous-local calendar and no fixture event ever
 appears on the grid), and every `/api/**` call is stubbed with captured
 request bodies for payload assertions. Buttons inside floating
-`OverlayPanel` dialogs (the Send/Don't send prompt, the RSVP/recurrence
-scope dialogs) are clicked via a DOM `element.click()` dispatch
+`OverlayPanel` dialogs (the Send/Don't send prompt, the RSVP
+scope dialog) are clicked via a DOM `element.click()` dispatch
 (`dispatchClick`) rather than Playwright's built-in `.click()`, because
 the panel's re-render between Playwright's actionability check and the
 actual pointer dispatch otherwise swallows the click with no error and no

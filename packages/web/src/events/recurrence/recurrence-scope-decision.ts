@@ -4,11 +4,11 @@ import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { gridDraftGuestsChanged } from "@web/events/grid-event-draft.adapter";
 
 type EditGridEventDraft = Extract<GridEventDraft, { kind: "edit" }>;
 
 export type RecurrenceScopeDecision =
-  | { kind: "prompt" }
   | { kind: "apply"; scope: RecurringEventUpdateScope }
   | { kind: "convertToStandalone" };
 
@@ -18,11 +18,6 @@ export type ResolveRecurrenceScopeSaveInput = {
   baseEvent?: Event | null;
   isRecurring: boolean;
   isInstance: boolean;
-  /**
-   * Day view always prompts before saving any edit to an existing recurring
-   * event. Week view applies occurrence-count and instance heuristics instead.
-   */
-  confirmAllRecurringEdits?: boolean;
 };
 
 export type ResolveRecurrenceScopeDeleteInput = {
@@ -56,11 +51,11 @@ export const hasMultipleRecurrenceOccurrences = (
   }
 };
 
-// Returns the recurrence rule that should decide the update-scope prompt:
-// an explicit "series"/"single" choice on the draft (the user toggled
-// recurrence in the form) always wins; otherwise ("preserve") falls back to
-// the source event's own rule, or — for an occurrence with no rule of its
-// own — the loaded series base's rule.
+// Returns the recurrence rule that should decide convert-to-standalone vs
+// a silent apply: an explicit "series"/"single" choice on the draft (the
+// user toggled recurrence in the form) always wins; otherwise ("preserve")
+// falls back to the source event's own rule, or — for an occurrence with
+// no rule of its own — the loaded series base's rule.
 export const getScopeDecisionRecurrenceRule = (
   draft: EditGridEventDraft,
   baseEvent: Event | null | undefined,
@@ -90,22 +85,14 @@ export const resolveRecurrenceScopeDecision = (
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
-  const {
-    draft,
-    baseEvent,
-    isRecurring,
-    isInstance,
-    confirmAllRecurringEdits = false,
-  } = input;
+  const { draft, baseEvent, isRecurring, isInstance } = input;
 
   if (draft.kind !== "edit") {
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
-  // Ordinary occurrence changes stay in flow: apply to this instance now and
-  // let the live toast promote the exact mutation to following/all. An
-  // explicit recurrence edit remains structural, so it keeps the existing
-  // scope chooser below — "this" is not a valid rule-change operation.
+  // Ordinary occurrence changes stay in flow: apply to this instance now
+  // and let the live toast promote the exact mutation to following/all.
   if (
     isRecurring &&
     isInstance &&
@@ -114,26 +101,35 @@ export const resolveRecurrenceScopeDecision = (
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
-  if (confirmAllRecurringEdits && isRecurring) return { kind: "prompt" };
-
   const rule = getScopeDecisionRecurrenceRule(draft, baseEvent);
   const toStandAlone = isInstance && rule === null;
+
+  if (toStandAlone) {
+    return { kind: "convertToStandalone" };
+  }
+
+  // Guest replacements have no per-occurrence semantics; sync refuses
+  // attendees at "this" / "thisAndFollowing".
+  if (isRecurring && gridDraftGuestsChanged(draft)) {
+    return { kind: "apply", scope: RecurringEventUpdateScope.ALL_EVENTS };
+  }
+
+  // Changing the RRULE itself is not a valid "this" operation, and the
+  // toast cannot promote a preserve mutation. Apply this-and-following
+  // immediately (the previous dialog default).
+  if (isRecurring && draft.values.recurrence.kind !== "preserve") {
+    return {
+      kind: "apply",
+      scope: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+    };
+  }
+
   const hasMultipleOccurrences = hasMultipleRecurrenceOccurrences(
     draft.values.schedule,
     rule,
   );
   const isSingleOccurrenceInstance =
     isRecurring && isInstance && !hasMultipleOccurrences;
-  const shouldAskForUpdateScope =
-    !toStandAlone && isRecurring && (hasMultipleOccurrences || !isInstance);
-
-  if (shouldAskForUpdateScope) {
-    return { kind: "prompt" };
-  }
-
-  if (toStandAlone) {
-    return { kind: "convertToStandalone" };
-  }
 
   const scope = isSingleOccurrenceInstance
     ? RecurringEventUpdateScope.ALL_EVENTS

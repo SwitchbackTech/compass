@@ -349,7 +349,7 @@ export const prepareSignedInGooglePage = async (
 /**
  * Dispatches a real DOM click instead of Playwright's `.click()`. Buttons
  * inside OverlayPanel (the Send/Don't send invitation dialog,
- * RecurrenceScopeDialog's scope choices) sit in floating UI that re-renders
+ * RsvpScopeDialog's scope choices) sit in floating UI that re-renders
  * between Playwright's pointer-actionability check and the actual dispatch,
  * so a normal `.click()` silently lands on nothing and no handler runs — no
  * error, no request, no state change. Mirrors the Save-button workaround in
@@ -359,7 +359,7 @@ export const dispatchClick = async (
   locator: import("@playwright/test").Locator,
 ) => {
   // Some targets (the sr-only radio inputs behind RsvpControl/
-  // RecurrenceScopeDialog labels) are intentionally invisible, so wait for
+  // RsvpScopeDialog labels) are intentionally invisible, so wait for
   // DOM attachment rather than requiring toBeVisible.
   await locator.waitFor({ state: "attached", timeout: 10000 });
   await locator.evaluate((el) => {

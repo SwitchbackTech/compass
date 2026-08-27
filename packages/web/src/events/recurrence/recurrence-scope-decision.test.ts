@@ -266,10 +266,59 @@ describe("resolveRecurrenceScopeDecision", () => {
         }),
       ).toEqual({ kind: "convertToStandalone" });
     });
-  });
 
-  describe("save (day confirm-all-recurring-edits)", () => {
-    it("prompts for any existing recurring edit", () => {
+    it("applies ALL_EVENTS when a recurring series-base guest set changes", () => {
+      const draft = buildEditDraft({
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=4"] },
+      });
+      if (draft.kind !== "edit") throw new Error("Expected an edit draft");
+      draft.values.attendees = [
+        { email: "guest@example.com", displayName: null },
+      ];
+
+      expect(
+        resolveRecurrenceScopeDecision({
+          action: "save",
+          draft,
+          isInstance: false,
+          isRecurring: true,
+        }),
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.ALL_EVENTS,
+      });
+    });
+
+    it("applies THIS_AND_FOLLOWING when the recurrence rule changes", () => {
+      const baseEventId = new ObjectId().toString();
+      const baseEvent = createMockEvent({
+        id: EventIdSchema.parse(baseEventId),
+        recurrence: { kind: "series", rules: ["FREQ=WEEKLY;COUNT=4"] },
+        schedule: SCHEDULE,
+      });
+      const draft = buildEditDraft({
+        recurrence: {
+          kind: "occurrence",
+          seriesId: EventIdSchema.parse(baseEventId),
+        },
+        liveRecurrence: { kind: "series", rules: ["FREQ=DAILY;COUNT=8"] },
+      });
+
+      expect(
+        resolveRecurrenceScopeDecision({
+          action: "save",
+          baseEvent,
+          draft,
+          isInstance: true,
+          isRecurring: true,
+        }),
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+      });
+    });
+
+    it("applies THIS_EVENT for a series-base edit that preserves recurrence", () => {
       const draft = buildEditDraft({
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=4"] },
       });
@@ -277,50 +326,14 @@ describe("resolveRecurrenceScopeDecision", () => {
       expect(
         resolveRecurrenceScopeDecision({
           action: "save",
-          confirmAllRecurringEdits: true,
           draft,
           isInstance: false,
           isRecurring: true,
-        }),
-      ).toEqual({ kind: "prompt" });
-    });
-
-    it("applies THIS_EVENT for non-recurring edits", () => {
-      const draft = buildEditDraft({ recurrence: { kind: "single" } });
-
-      expect(
-        resolveRecurrenceScopeDecision({
-          action: "save",
-          confirmAllRecurringEdits: true,
-          draft,
-          isInstance: false,
-          isRecurring: false,
         }),
       ).toEqual({
         kind: "apply",
         scope: RecurringEventUpdateScope.THIS_EVENT,
       });
-    });
-
-    it("still prompts when clearing recurrence on a day recurring instance", () => {
-      const baseEventId = new ObjectId().toString();
-      const draft = buildEditDraft({
-        recurrence: {
-          kind: "occurrence",
-          seriesId: EventIdSchema.parse(baseEventId),
-        },
-        liveRecurrence: { kind: "single" },
-      });
-
-      expect(
-        resolveRecurrenceScopeDecision({
-          action: "save",
-          confirmAllRecurringEdits: true,
-          draft,
-          isInstance: true,
-          isRecurring: true,
-        }),
-      ).toEqual({ kind: "prompt" });
     });
   });
 });

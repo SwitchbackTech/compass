@@ -11,8 +11,7 @@ import { RsvpScopeDialog } from "@web/views/Forms/EventForm/RsvpScopeDialog";
 // calendar write), so this control lives outside the form's read-only
 // fieldset. Choosing a response on a single event submits immediately; on an
 // occurrence of a series it opens the "This Event" / "All Events" choice
-// (RecurrenceScopeDialog pattern — never this-and-following); a series base
-// answers the whole series.
+// (never this-and-following); a series base answers the whole series.
 const RSVP_OPTIONS: ReadonlyArray<{
   status: RsvpResponseStatus;
   label: string;

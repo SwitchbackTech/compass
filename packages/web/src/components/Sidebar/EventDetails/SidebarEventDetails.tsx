@@ -12,7 +12,6 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
-import { RecurrenceScopeConfirmationDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { SendInvitationsDialog } from "@web/views/Forms/EventForm/SendInvitationsDialog";
 import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
@@ -20,21 +19,11 @@ import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
-type SidebarEventDetailsProps = {
-  /**
-   * Day view always prompts before saving recurring edits. Week view applies
-   * occurrence-count and instance heuristics instead.
-   */
-  confirmAllRecurringEdits?: boolean;
-};
-
 /**
  * Store-driven event-details panel for Day and Week sidebars. Renders the
  * current grid draft whenever the draft store says the form is open.
  */
-export function SidebarEventDetails({
-  confirmAllRecurringEdits = true,
-}: SidebarEventDetailsProps = {}) {
+export function SidebarEventDetails() {
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
@@ -58,14 +47,6 @@ export function SidebarEventDetails({
 
   const getSaveContext = useCallback(
     (editDraft: NonNullable<typeof draft>) => {
-      if (confirmAllRecurringEdits) {
-        return {
-          confirmAllRecurringEdits: true as const,
-          isInstance: false,
-          isRecurring,
-        };
-      }
-
       const isEditDraft = editDraft.kind === "edit";
       const draftIsInstance =
         isEditDraft && editDraft.source.recurrence.kind === "occurrence";
@@ -78,7 +59,7 @@ export function SidebarEventDetails({
           (isExistingEventRecurring(existingEvent) || draftIsInstance),
       };
     },
-    [confirmAllRecurringEdits, existingEvent, isRecurring, seriesBaseEvent],
+    [existingEvent, seriesBaseEvent],
   );
 
   const getDeleteContext = useCallback(() => ({ isRecurring }), [isRecurring]);
@@ -90,11 +71,6 @@ export function SidebarEventDetails({
     onSave,
   });
 
-  const scopeDialogDraft =
-    confirmation.pendingAction?.type === "save"
-      ? confirmation.pendingAction.draft
-      : draft;
-
   return (
     <EventFormPanel
       confirmation={{
@@ -103,14 +79,6 @@ export function SidebarEventDetails({
       }}
       confirmationUi={
         <>
-          <RecurrenceScopeConfirmationDialog
-            draft={scopeDialogDraft}
-            pendingAction={confirmation.pendingAction}
-            setRecurrenceUpdateScopeDialogOpen={
-              confirmation.setRecurrenceUpdateScopeDialogOpen
-            }
-            onUpdateScopeChange={confirmation.onUpdateScopeChange}
-          />
           <ConvertToStandaloneDialog
             draft={confirmation.standaloneDraft}
             onCancel={confirmation.onCancelConvertToStandalone}

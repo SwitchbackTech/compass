@@ -27,7 +27,7 @@ Helpful notes:
 
 - Editing or deleting an occurrence applies to **This Event** immediately. A live toast offers **1 This and Following** and **2 All**; both options are clickable.
 - The scope keys work only while that toast is visible and never while typing in a form field.
-- Changing the recurrence rule itself (for example removing recurrence entirely) remains an explicit scope choice. "This Event" is not offered for that structural change.
+- Changing the recurrence rule itself (frequency, weekdays, until) applies to This and Following immediately — "This Event" is not a valid rule-change operation. Turning Repeat off on an instance asks to convert that occurrence to a standalone event.
 - Recurring events synced with Google Calendar will push scope changes back to Google automatically.
 
 ---
@@ -148,11 +148,11 @@ Selecting "All Events" updates the base event, which propagates the change to ev
 
 ---
 
-## Scenario 6: Edit A Recurring Event — Removing Recurrence (Rule Change)
+## Scenario 6: Edit A Recurring Event — Removing Recurrence
 
 ### UX
 
-When the recurrence rule itself is changed (for example, turning off the Repeat toggle to make an event standalone), the "This Event" scope option is removed from the dialog. Only "This and Following Events" and "All Events" are available.
+Turning off Repeat on an occurrence asks to convert that instance to a standalone event. There is no apply-scope chooser. Changing the recurrence rule itself (frequency, weekdays, until) applies to This and Following immediately.
 
 ### Steps
 
@@ -160,14 +160,13 @@ When the recurrence rule itself is changed (for example, turning off the Repeat 
 2. Right-click an instance and select Edit.
 3. Disable the Repeat toggle to remove recurrence.
 4. Submit the form.
-5. Observe the scope dialog.
+5. Confirm Convert to standalone.
 
 ### Expected Results
 
-- The scope dialog does not include a "This Event" option.
-- Only "This and Following Events" and "All Events" are shown.
-- Selecting "This and Following Events" converts the selected instance and future instances to standalone events.
-- Selecting "All Events" converts the entire series to a standalone event.
+- The Convert to standalone dialog appears.
+- Confirming converts the selected instance to a standalone event.
+- Other instances in the series remain.
 
 ---
 
@@ -259,7 +258,7 @@ If time is limited, run these checks before shipping recurring event changes:
 3. The immediate change updates only the selected instance.
 4. `1` splits the series at the selected instance.
 5. `2` propagates the change to every instance.
-6. Disabling the Repeat toggle removes the "This Event" option from the scope dialog.
+6. Disabling the Repeat toggle on an instance opens Convert to standalone, not a scope chooser.
 7. Deleting "This Event" removes only that instance; the rest of the series persists.
 8. Deleting "This and Following Events" truncates the series at the selected instance.
 9. Deleting "All Events" removes every instance of the series.
