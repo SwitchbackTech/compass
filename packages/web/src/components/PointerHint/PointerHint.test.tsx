@@ -5,6 +5,8 @@ import {
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
+import { welcomeModalActions } from "@web/components/WelcomeModal/welcome.modal.store";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   initialPointerBlockState,
@@ -25,6 +27,8 @@ describe("PointerHint", () => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
+    welcomeModalActions.setOpen(false);
+    welcomeGuideActions.close();
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
@@ -32,6 +36,8 @@ describe("PointerHint", () => {
     usePointerBlockStore.setState(initialPointerBlockState, true);
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
+    welcomeModalActions.setOpen(false);
+    welcomeGuideActions.close();
     sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
@@ -46,6 +52,34 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Compass is keyboard only. Press ? for shortcuts.",
     );
+  });
+
+  it("omits the legend hint while the welcome modal is open", () => {
+    welcomeModalActions.setOpen(true);
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick();
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Compass is keyboard only.",
+    );
+    expect(screen.getByRole("status")).not.toHaveTextContent("Press");
+  });
+
+  it("omits the legend hint while the welcome guide is open", () => {
+    welcomeGuideActions.open();
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick();
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Compass is keyboard only.",
+    );
+    expect(screen.getByRole("status")).not.toHaveTextContent("Press");
   });
 
   it("points at the on-screen keys while the showcase is active", () => {

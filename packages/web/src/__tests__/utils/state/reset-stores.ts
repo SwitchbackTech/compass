@@ -23,6 +23,7 @@ import {
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
+import { useWelcomeModalStore } from "@web/components/WelcomeModal/welcome.modal.store";
 import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
 import {
@@ -79,6 +80,8 @@ const storeResets: StoreReset[] = [
   () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
+  () =>
+    useWelcomeModalStore.setState(useWelcomeModalStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),

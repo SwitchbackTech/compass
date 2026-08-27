@@ -1,15 +1,9 @@
-import {
-  GithubLogoIcon,
-  LinkedinLogoIcon,
-  XLogoIcon,
-} from "@phosphor-icons/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import { track } from "@web/auth/posthog/track";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
-import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
@@ -19,13 +13,9 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
+import { WelcomeLinks } from "./WelcomeLinks";
+import { welcomeModalActions } from "./welcome.modal.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
-
-const SOCIAL_ICONS = {
-  x: XLogoIcon,
-  linkedin: LinkedinLogoIcon,
-  github: GithubLogoIcon,
-} as const;
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -81,6 +71,11 @@ export function WelcomeModal() {
         track("welcome_modal_shown");
       }
     }
+  }, [visible]);
+
+  useEffect(() => {
+    welcomeModalActions.setOpen(visible);
+    return () => welcomeModalActions.setOpen(false);
   }, [visible]);
 
   if (!visible) return null;
@@ -208,84 +203,47 @@ export function WelcomeModal() {
           </div>
         </div>
 
-        <WelcomeGuideBody />
-
-        {/* CTA: connecting a calendar is the moment Compass starts being
-            useful, so the Google round trip - which signs up and grants
-            calendar access at once - leads, and everything else is a fallback
-            from it. */}
-        <div className="flex w-full flex-col items-center gap-3">
-          {isGoogleAvailable && (
-            <>
-              <GoogleButton
-                onClick={handOffToGoogle}
-                disabled={isGoogleAuthLoading}
-                label="Continue with Google"
-                shortcutKey="G"
-                style={{ width: "100%" }}
-              />
-              <p className="text-center text-text-muted text-xs">
-                Signs you up and connects your Google Calendar.
-              </p>
-            </>
-          )}
-          <button
-            type="button"
-            ref={signUpButtonRef}
-            onClick={() => handOffToAuth("sign_up")}
-            className="c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full"
-          >
-            {isGoogleAvailable ? "Sign up with email" : "Sign up"}
-            <ShortcutHint className="ml-2">U</ShortcutHint>
-          </button>
-          <button
-            type="button"
-            onClick={() => dismiss("explore")}
-            className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
-          >
-            Explore without an account
-            <ShortcutHint className="ml-2">S</ShortcutHint>
-          </button>
-        </div>
-
-        {/* Footer: social + legal */}
-        <div className="flex items-center justify-between border-border border-t pt-4">
-          <div className="flex items-center gap-3">
-            {SOCIAL_LINKS.map(({ id, label, href }) => {
-              const SocialIcon = SOCIAL_ICONS[id];
-              return (
-                <a
-                  key={id}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="c-focus-ring text-text-muted transition-colors hover:text-text"
-                >
-                  <SocialIcon size={18} weight="bold" />
-                </a>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-4 text-text-muted text-xs">
-            <a
-              href="https://compasscalendar.com/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="c-focus-ring underline-offset-4 hover:text-text hover:underline"
+        <WelcomeGuideBody>
+          {/* CTA: connecting a calendar is the moment Compass starts being
+              useful, so the Google round trip - which signs up and grants
+              calendar access at once - leads, and everything else is a fallback
+              from it. */}
+          <div className="flex w-full flex-col items-center gap-3">
+            {isGoogleAvailable && (
+              <>
+                <GoogleButton
+                  onClick={handOffToGoogle}
+                  disabled={isGoogleAuthLoading}
+                  label="Continue with Google"
+                  shortcutKey="G"
+                  style={{ width: "100%" }}
+                />
+                <p className="text-center text-text-muted text-xs">
+                  Signs you up and connects your Google Calendar.
+                </p>
+              </>
+            )}
+            <button
+              type="button"
+              ref={signUpButtonRef}
+              onClick={() => handOffToAuth("sign_up")}
+              className="c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full"
             >
-              Privacy
-            </a>
-            <a
-              href="https://compasscalendar.com/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="c-focus-ring underline-offset-4 hover:text-text hover:underline"
+              {isGoogleAvailable ? "Sign up with email" : "Sign up"}
+              <ShortcutHint className="ml-2">U</ShortcutHint>
+            </button>
+            <button
+              type="button"
+              onClick={() => dismiss("explore")}
+              className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
             >
-              Terms
-            </a>
+              Explore without an account
+              <ShortcutHint className="ml-2">S</ShortcutHint>
+            </button>
           </div>
-        </div>
+
+          <WelcomeLinks />
+        </WelcomeGuideBody>
       </div>
     </OverlayPanel>
   );

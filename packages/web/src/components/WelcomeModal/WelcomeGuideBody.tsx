@@ -1,10 +1,14 @@
-import { useCallback, useId, useState } from "react";
+import { type ReactNode, useCallback, useId, useState } from "react";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { FAQ_ITEMS } from "./faq";
-import { useWelcomeFaqShortcuts } from "./useWelcomeFaqShortcuts";
+import {
+  useWelcomeJumpShortcuts,
+  WelcomeModHoldContext,
+} from "./useWelcomeJumpShortcuts";
 
-export function WelcomeGuideBody() {
+export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
   const disclosureIdPrefix = useId();
   const faqHintId = `${disclosureIdPrefix}-faq-hint`;
   const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
@@ -33,10 +37,10 @@ export function WelcomeGuideBody() {
     [toggleFaq],
   );
 
-  const isModHeld = useWelcomeFaqShortcuts(toggleFaqAt);
+  const isModHeld = useWelcomeJumpShortcuts(toggleFaqAt);
 
   return (
-    <>
+    <WelcomeModHoldContext.Provider value={isModHeld}>
       <div className="flex w-full flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
           The Keyboard Calendar
@@ -80,7 +84,11 @@ export function WelcomeGuideBody() {
               >
                 <div>
                   <div className="mt-2 text-sm text-text-muted leading-relaxed">
-                    {item.answer}
+                    {typeof item.answer === "string" ? (
+                      item.answer
+                    ) : (
+                      <ShortcutTipParts parts={item.answer} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -91,10 +99,11 @@ export function WelcomeGuideBody() {
 
       <p id={faqHintId} className="text-text-muted text-xs leading-relaxed">
         <span className="inline-flex items-center gap-1 whitespace-nowrap">
-          Hold <ShortcutKeys keys={["Mod"]} /> to see keys, then press 1–5.
-        </span>{" "}
-        The same hold reveals jump keys all over Compass.
+          Tip: Hold <ShortcutKeys keys={["Mod"]} /> to see keys, then press a
+          number.
+        </span>
       </p>
-    </>
+      {children}
+    </WelcomeModHoldContext.Provider>
   );
 }

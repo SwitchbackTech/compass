@@ -81,9 +81,10 @@ const arrowDirection = (key: string): PracticeNudgeDirection | null => {
  * behavior is a deliberately simplified reimplementation against ephemeral
  * practice state, so nothing here touches storage or the real grid stores.
  *
- * Levels teach create, hold-Mod jumps, event jump, nudge, the E-then-T
- * edit sequence, and Cmd+K; graduation hands off to a prompt on the real
- * calendar. Skip is always offered.
+ * An unnumbered intro gates first-time entry, then levels teach create,
+ * hold-Mod jumps, event jump, nudge, the E-then-T edit sequence, and Cmd+K.
+ * Graduation hands off to a prompt on the real calendar. Skip is always
+ * offered.
  */
 const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
@@ -231,6 +232,23 @@ const ShowcaseTakeover: FC = () => {
         claim(event);
         setPaletteOpen(false);
         if (stepId === "palette") advance();
+      }
+      return;
+    }
+
+    if (stepId === "intro") {
+      if (event.key === "Enter" && !event.repeat) {
+        const focusedButton =
+          event.target instanceof HTMLElement && event.target.closest("button");
+        if (!focusedButton) {
+          claim(event);
+          advance();
+        }
+        return;
+      }
+      if (isBareLetterKey(event.nativeEvent, "u") && !authenticated) {
+        claim(event);
+        skipToSignup();
       }
       return;
     }
@@ -392,6 +410,18 @@ const ShowcaseTakeover: FC = () => {
           </p>
           {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
           <div className="flex flex-wrap items-center gap-2 pt-2">
+            {stepId === "intro" && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className={PRIMARY_BUTTON_CLASS}
+                  onClick={advance}
+                >
+                  Start practicing
+                </button>
+                <ShortcutHint className="shrink-0">Enter</ShortcutHint>
+              </div>
+            )}
             {stepId === "graduation" ? (
               <div className="flex items-center gap-2">
                 <button

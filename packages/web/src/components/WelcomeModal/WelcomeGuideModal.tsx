@@ -3,6 +3,7 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
+import { WelcomeLinks } from "./WelcomeLinks";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
@@ -23,17 +24,19 @@ export function WelcomeGuideModal() {
     >
       <div className="flex w-full flex-col gap-6">
         <PixelPirate className="h-14 w-14 shrink-0" />
-        <WelcomeGuideBody />
+        <WelcomeGuideBody>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={dismiss}
+              className="c-button c-button-primary c-button-elevated rounded-full px-10"
+            >
+              Close
+            </button>
+          </div>
 
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="c-button c-button-primary c-button-elevated rounded-full px-10"
-          >
-            Close
-          </button>
-        </div>
+          <WelcomeLinks />
+        </WelcomeGuideBody>
       </div>
     </OverlayPanel>
   );
