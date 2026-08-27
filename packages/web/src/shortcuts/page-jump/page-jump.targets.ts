@@ -7,13 +7,15 @@
  * Components opt in by spreading `pageJumpAttrs(id)` on their container;
  * digits come from this list's order, so it is the single place to add,
  * remove, or renumber a target. An unmounted anchor (collapsed sidebar,
- * empty Up Next) simply gets no chip and its digit does nothing.
+ * empty Up Next) simply gets no chip and its digit does nothing. A closed
+ * menu trigger (the view dropdown) is clicked after focus so the jump
+ * reveals Day / Week / Life instead of landing on a closed heading.
  */
 
 export const PAGE_JUMP_ATTRIBUTE = "data-page-jump";
 
 export type PageJumpTargetId =
-  | "navigation"
+  | "view-select"
   | "month-picker"
   | "up-next"
   | "calendars"
@@ -30,14 +32,14 @@ export type PageJumpTarget = {
 export type PageJumpTargets = readonly PageJumpTarget[];
 
 export const CALENDAR_PAGE_JUMP_TARGETS: PageJumpTargets = [
-  { digit: "1", id: "navigation", label: "View navigation" },
+  { digit: "1", id: "view-select", label: "View dropdown" },
   { digit: "2", id: "month-picker", label: "Month picker" },
   { digit: "3", id: "up-next", label: "Up next" },
   { digit: "4", id: "calendars", label: "Calendar list" },
 ];
 
 export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = [
-  { digit: "1", id: "navigation", label: "View navigation" },
+  { digit: "1", id: "view-select", label: "View dropdown" },
   { digit: "2", id: "life-grid", label: "Current week" },
   { digit: "3", id: "life-variation", label: "Life variation" },
   { digit: "4", id: "life-details", label: "Life details" },
@@ -75,10 +77,22 @@ export const getPageJumpFocusElement = (
   );
 };
 
-/** Focus a page jump target; returns whether a focusable element was found. */
+const shouldOpenOnJump = (element: HTMLElement): boolean =>
+  Boolean(element.getAttribute("aria-haspopup")) &&
+  element.getAttribute("aria-expanded") !== "true";
+
+/**
+ * Focus a page jump target; returns whether a focusable element was found.
+ * Menu/listbox triggers are clicked after focus so the dropdown opens —
+ * that's what makes hold-Mod on the view switcher a discovery path for
+ * Day / Week / Life, instead of landing on a closed heading.
+ */
 export const focusPageJumpTarget = (id: PageJumpTargetId): boolean => {
   const element = getPageJumpFocusElement(id);
   if (!element) return false;
   element.focus();
+  if (shouldOpenOnJump(element)) {
+    element.click();
+  }
   return true;
 };

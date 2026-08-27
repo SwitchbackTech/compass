@@ -59,14 +59,14 @@ describe("getPageJumpFocusElement", () => {
   });
 
   it("falls back to the first interactive element", () => {
-    const anchor = addAnchor("navigation");
+    const anchor = addAnchor("view-select");
     const disabled = document.createElement("button");
     disabled.disabled = true;
     anchor.append(disabled);
-    const arrow = document.createElement("button");
-    anchor.append(arrow);
+    const trigger = document.createElement("button");
+    anchor.append(trigger);
 
-    expect(getPageJumpFocusElement("navigation")).toBe(arrow);
+    expect(getPageJumpFocusElement("view-select")).toBe(trigger);
   });
 });
 
@@ -82,5 +82,48 @@ describe("focusPageJumpTarget", () => {
 
   it("reports failure when the target cannot take focus", () => {
     expect(focusPageJumpTarget("calendars")).toBe(false);
+  });
+
+  it("clicks a closed menu trigger so the dropdown opens", () => {
+    const anchor = addAnchor("view-select");
+    const trigger = document.createElement("button");
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.addEventListener("click", () => {
+      trigger.setAttribute("aria-expanded", "true");
+    });
+    anchor.append(trigger);
+
+    expect(focusPageJumpTarget("view-select")).toBe(true);
+    expect(document.activeElement).toBe(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("does not click an already-open menu trigger", () => {
+    const anchor = addAnchor("view-select");
+    const trigger = document.createElement("button");
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "true");
+    let clicks = 0;
+    trigger.addEventListener("click", () => {
+      clicks += 1;
+    });
+    anchor.append(trigger);
+
+    expect(focusPageJumpTarget("view-select")).toBe(true);
+    expect(clicks).toBe(0);
+  });
+
+  it("does not click a plain focusable control", () => {
+    const anchor = addAnchor("calendars");
+    const toggle = document.createElement("button");
+    let clicks = 0;
+    toggle.addEventListener("click", () => {
+      clicks += 1;
+    });
+    anchor.append(toggle);
+
+    expect(focusPageJumpTarget("calendars")).toBe(true);
+    expect(clicks).toBe(0);
   });
 });

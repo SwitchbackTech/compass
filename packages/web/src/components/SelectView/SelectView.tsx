@@ -14,6 +14,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 import {
   LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
@@ -121,7 +122,7 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
   const dropdownId = "view-select-dropdown";
 
   return (
-    <div className="relative">
+    <div className="relative" {...pageJumpAttrs("view-select")}>
       <h1 className="text-text" aria-live="polite">
         <button
           ref={refs.setReference}

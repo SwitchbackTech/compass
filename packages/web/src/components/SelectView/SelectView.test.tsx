@@ -1,10 +1,14 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  focusPageJumpTarget,
+  PAGE_JUMP_ATTRIBUTE,
+} from "@web/shortcuts/page-jump/page-jump.targets";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -504,6 +508,41 @@ describe("SelectView", () => {
         expect(todayOption).toHaveAttribute("tabindex", "0");
         expect(dayOption).toHaveAttribute("tabindex", "-1");
       });
+    });
+  });
+
+  describe("Page jump", () => {
+    it("marks the heading as the view-select jump target", async () => {
+      await renderWithRouter("July 2026");
+
+      const button = screen.getByRole("button");
+      expect(button.closest(`[${PAGE_JUMP_ATTRIBUTE}]`)).toHaveAttribute(
+        PAGE_JUMP_ATTRIBUTE,
+        "view-select",
+      );
+    });
+
+    it("opens the dropdown when the page-jump target is activated", async () => {
+      await renderWithRouter("July 2026");
+
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("aria-expanded", "false");
+
+      act(() => {
+        focusPageJumpTarget("view-select");
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("view-select-dropdown")).toBeInTheDocument();
+        expect(button).toHaveAttribute("aria-expanded", "true");
+      });
+      expect(screen.getByRole("option", { name: /^day/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("option", { name: /^week/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("option", { name: /^life/i }),
+      ).toBeInTheDocument();
     });
   });
 });
