@@ -1,7 +1,10 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import {
+  OverlayPanel,
+  OverlayPanelActionButton,
+} from "@web/components/OverlayPanel/OverlayPanel";
 import { describe, expect, it } from "bun:test";
 
 describe("OverlayPanel", () => {
@@ -203,5 +206,43 @@ describe("OverlayPanel", () => {
     await user.keyboard("{Shift>}{Escape}{/Shift}");
     expect(shifted).toBe(1);
     expect(dismissed).toBe(1);
+  });
+
+  it("does not dismiss on Escape when onDismiss is omitted", async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayPanel title="Locked">
+        <button type="button">Stay</button>
+      </OverlayPanel>,
+    );
+
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "Locked" })).toBeInTheDocument();
+  });
+
+  it("applies panelClassName on the dialog", () => {
+    render(
+      <OverlayPanel panelClassName="border border-border" title="Styled">
+        <button type="button">Ok</button>
+      </OverlayPanel>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Styled" })).toHaveClass(
+      "border",
+    );
+  });
+
+  it("renders an action shortcut keycap", () => {
+    render(
+      <OverlayPanel title="Confirm" onDismiss={() => {}}>
+        <OverlayPanelActionButton shortcut="Esc">
+          Cancel
+        </OverlayPanelActionButton>
+      </OverlayPanel>,
+    );
+
+    expect(
+      within(screen.getByRole("button", { name: "Cancel" })).getByText("Esc"),
+    ).toBeTruthy();
   });
 });

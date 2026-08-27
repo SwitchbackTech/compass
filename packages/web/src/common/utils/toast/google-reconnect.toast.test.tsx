@@ -1,10 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
   GoogleReconnectToast,
   showGoogleReconnectToast,
 } from "@web/common/utils/toast/google-reconnect.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockConnect = mock();
@@ -24,6 +27,9 @@ describe("GoogleReconnectToast", () => {
   const { port, mocks } = createTestToastPort();
 
   beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+    eventJumpActions.reset();
     mockConnect.mockClear();
     mockUseConnectGoogle.mockClear();
     mocks.error.mockClear();
@@ -34,11 +40,13 @@ describe("GoogleReconnectToast", () => {
 
   const renderToast = (accountEmail?: string) =>
     render(
-      <GoogleReconnectToast
-        accountEmail={accountEmail}
-        connectionId="conn-1"
-        toastId="google-revoked-api"
-      />,
+      <HotkeysProvider>
+        <GoogleReconnectToast
+          accountEmail={accountEmail}
+          connectionId="conn-1"
+          toastId="google-revoked-api"
+        />
+      </HotkeysProvider>,
     );
 
   it("names the affected account when provided", () => {
@@ -76,6 +84,30 @@ describe("GoogleReconnectToast", () => {
 
     expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
     expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a 1 keycap and reconnects when 1 is pressed", () => {
+    renderToast("lance@example.com");
+
+    expect(
+      within(
+        screen.getByRole("button", { name: "Reconnect Google Calendar" }),
+      ).getByText("1"),
+    ).toBeTruthy();
+
+    pressKey("1");
+
+    expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reconnect with 1 while event jump is active", () => {
+    eventJumpActions.setActive(true);
+    renderToast();
+
+    pressKey("1");
+
+    expect(mockConnect).not.toHaveBeenCalled();
   });
 });
 
