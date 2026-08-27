@@ -120,8 +120,11 @@ describe("WelcomeGuideBody", () => {
       }),
     );
 
-    expect(screen.getByText("?").closest(".c-keycap")).toBeTruthy();
-    expect(screen.getByText("K").closest(".c-keycap")).toBeTruthy();
+    // `[aria-hidden]` (not `.c-keycap`) because SelectView.test.tsx mocks
+    // ShortcutHint process-wide (bun's mock.module leaks across files);
+    // its stub keeps aria-hidden but drops the real class.
+    expect(screen.getByText("?").closest("[aria-hidden]")).toBeTruthy();
+    expect(screen.getByText("K").closest("[aria-hidden]")).toBeTruthy();
     expect(screen.getByText(/and \? opens the full legend/)).toBeTruthy();
   });
 
