@@ -27,6 +27,14 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   inputColor?: string;
   isOpen?: boolean;
   monthTextClassName?: string;
+  /** Sidebar-only: hover keycaps and hold-Mod chips on the month chevrons. */
+  monthNav?: {
+    prevShortcut: readonly string[];
+    nextShortcut: readonly string[];
+    prevHoldHint: readonly string[];
+    nextHoldHint: readonly string[];
+    showHoldHints: boolean;
+  };
   withUnderline?: boolean;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
@@ -55,6 +63,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     inputColor,
     isOpen = true,
     monthTextClassName,
+    monthNav,
     withUnderline = true,
     portalId = "root",
     view,
@@ -197,20 +206,26 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   <MonthNavButton
                     ariaLabel="Previous month"
                     color={headerColor}
+                    holdHintKeys={monthNav?.prevHoldHint}
                     isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.decreaseMonth();
                     }}
+                    shortcut={monthNav ? [...monthNav.prevShortcut] : undefined}
+                    showHoldHints={monthNav?.showHoldHints}
                   >
                     <ChevronLeftIcon />
                   </MonthNavButton>
                   <MonthNavButton
                     ariaLabel="Next month"
                     color={headerColor}
+                    holdHintKeys={monthNav?.nextHoldHint}
                     isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.increaseMonth();
                     }}
+                    shortcut={monthNav ? [...monthNav.nextShortcut] : undefined}
+                    showHoldHints={monthNav?.showHoldHints}
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>

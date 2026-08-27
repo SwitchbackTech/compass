@@ -2,8 +2,19 @@ import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
+import {
+  selectPageJumpHintsVisible,
+  usePageJumpHintStore,
+} from "@web/shortcuts/page-jump/page-jump.store";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getMonthPickerDayClassName } from "./monthPickerDayClassName";
+import {
+  MONTH_PICKER_NEXT_HOLD_KEYCAPS,
+  MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_HOLD_KEYCAPS,
+  MONTH_PICKER_PREV_KEYCAPS,
+  useMonthPickerShortcuts,
+} from "./useMonthPickerShortcuts";
 
 interface Props {
   monthsShown?: number;
@@ -29,7 +40,11 @@ export const MonthPicker: FC<Props> = ({
     dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
   );
   const previousSelectedDateKeyRef = useRef(selectedDateKey);
+  const rootRef = useRef<HTMLFieldSetElement>(null);
   const [focusedDate, setFocusedDate] = useState(() => selectedDate);
+  const showHoldHints = usePageJumpHintStore(selectPageJumpHintsVisible);
+
+  useMonthPickerShortcuts(rootRef);
 
   useEffect(() => {
     if (previousSelectedDateKeyRef.current === selectedDateKey) {
@@ -52,6 +67,7 @@ export const MonthPicker: FC<Props> = ({
 
   return (
     <fieldset
+      ref={rootRef}
       className={`c-month-picker ${monthPickerClassName}`}
       data-testid="Month picker"
       aria-label="Date navigation"
@@ -68,6 +84,13 @@ export const MonthPicker: FC<Props> = ({
         headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}
+        monthNav={{
+          prevShortcut: MONTH_PICKER_PREV_KEYCAPS,
+          nextShortcut: MONTH_PICKER_NEXT_KEYCAPS,
+          prevHoldHint: MONTH_PICKER_PREV_HOLD_KEYCAPS,
+          nextHoldHint: MONTH_PICKER_NEXT_HOLD_KEYCAPS,
+          showHoldHints,
+        }}
         monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
