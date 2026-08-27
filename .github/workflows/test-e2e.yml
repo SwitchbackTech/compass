@@ -4,10 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - ".gitignore"
-      - "**/*.md"
-      - "docs/**"
   # Merge commits are never tested as merged, and nothing re-runs afterward,
   # so a red e2e used to land on main and hide until the next PR opened.
   # Scoped to main on purpose: a full Playwright run per feature-branch
@@ -22,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: e2e-${{ github.event.pull_request.number || github.ref }}
@@ -31,7 +28,51 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Required status checks cannot come from a workflow that path filtering
+  # skipped: GitHub never creates the check run, so the context sits Pending
+  # and a docs-only PR can never merge. A job skipped by an `if:` conditional
+  # does report, and reports Success. So for pull_request the filter lives
+  # here, as a job gate, not in `on:`. The push trigger keeps its
+  # paths-ignore: push runs block nothing.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Detect non-docs changes
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api --paginate \
+            "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --jq '.[].filename')
+          # Keep these patterns in step with the push trigger's paths-ignore
+          # above. Deliberately not `grep -q`: it exits on the first match, so
+          # printf takes a SIGPIPE that `pipefail` would turn into a non-zero
+          # pipeline on a large PR, reading as "docs only" and skipping the
+          # suite on real code. Draining into a variable cannot do that.
+          code_files=$(printf '%s\n' "$files" |
+            grep -vE '(\.md$|^docs/|^\.gitignore$)' || true)
+          # Fail open: an empty or unreadable list runs the suite rather than
+          # waving an unverified change through.
+          if [ -z "$files" ] || [ -n "$code_files" ]; then
+            code=true
+          else
+            code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Non-docs changes: $code"
+
   e2e:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
