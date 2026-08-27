@@ -111,7 +111,7 @@ const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
   return (
     <div
       aria-hidden
-      className="relative flex w-28 shrink-0 flex-col gap-3 border-border border-l pl-3"
+      className="relative flex w-28 shrink-0 flex-col gap-3 pl-3"
       data-practice-jump="sidebar"
     >
       {showPageJumpHints && (
@@ -148,63 +148,61 @@ export const PracticeCalendar: FC<{
       className="relative flex h-full min-h-0 w-full select-none"
       data-practice-jump="calendar"
     >
-      <div className="flex min-w-0 flex-1">
-        {/* Time column */}
-        <div className="flex w-14 shrink-0 flex-col border-border border-r pr-2 text-right">
-          <div className="h-7" />
+      {/* Time column */}
+      <div className="flex w-14 shrink-0 flex-col border-border border-r pr-2 text-right">
+        <div className="h-7" />
+        <div className="relative flex-1">
+          {hours.map((hour) => (
+            <span
+              key={hour}
+              className="absolute right-2 -translate-y-1/2 text-[10px] text-text-muted"
+              style={{
+                top: `${(((hour - SHOWCASE_GRID_START_HOUR) * 60) / TOTAL_MIN) * 100}%`,
+              }}
+            >
+              {formatHour(hour)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Day columns */}
+      {Array.from({ length: SHOWCASE_DAY_COUNT }, (_, dayIndex) => (
+        <div
+          key={DAY_LABELS[dayIndex]}
+          className="flex min-w-0 flex-1 flex-col border-border border-r"
+        >
+          <div className="flex h-7 items-center justify-center font-medium text-text-muted text-xs">
+            {DAY_LABELS[dayIndex]}
+          </div>
           <div className="relative flex-1">
+            {showPageJumpHints && dayIndex === 0 && (
+              <ShortcutHint className="absolute top-2 left-1 z-10">
+                1
+              </ShortcutHint>
+            )}
             {hours.map((hour) => (
-              <span
+              <div
                 key={hour}
-                className="absolute right-2 -translate-y-1/2 text-[10px] text-text-muted"
+                className="absolute inset-x-0 border-border/60 border-t"
                 style={{
                   top: `${(((hour - SHOWCASE_GRID_START_HOUR) * 60) / TOTAL_MIN) * 100}%`,
                 }}
-              >
-                {formatHour(hour)}
-              </span>
+              />
             ))}
-          </div>
-        </div>
-
-        {/* Day columns */}
-        {Array.from({ length: SHOWCASE_DAY_COUNT }, (_, dayIndex) => (
-          <div
-            key={DAY_LABELS[dayIndex]}
-            className="flex min-w-0 flex-1 flex-col border-border border-r last:border-r-0"
-          >
-            <div className="flex h-7 items-center justify-center font-medium text-text-muted text-xs">
-              {DAY_LABELS[dayIndex]}
-            </div>
-            <div className="relative flex-1">
-              {showPageJumpHints && dayIndex === 0 && (
-                <ShortcutHint className="absolute top-2 left-1 z-10">
-                  1
-                </ShortcutHint>
-              )}
-              {hours.map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute inset-x-0 border-border/60 border-t"
-                  style={{
-                    top: `${(((hour - SHOWCASE_GRID_START_HOUR) * 60) / TOTAL_MIN) * 100}%`,
-                  }}
+            {state.events
+              .filter((block) => block.dayIndex === dayIndex)
+              .map((block) => (
+                <PracticeBlock
+                  key={block.id}
+                  block={block}
+                  state={state}
+                  onTitleCommit={onTitleCommit}
                 />
               ))}
-              {state.events
-                .filter((block) => block.dayIndex === dayIndex)
-                .map((block) => (
-                  <PracticeBlock
-                    key={block.id}
-                    block={block}
-                    state={state}
-                    onTitleCommit={onTitleCommit}
-                  />
-                ))}
-            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
       <PracticeSidebar showPageJumpHints={showPageJumpHints} />
     </div>
