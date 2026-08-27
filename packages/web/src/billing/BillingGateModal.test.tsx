@@ -9,14 +9,33 @@ import { SessionContext } from "@web/auth/compass/session/session.context";
 import * as exportUtil from "@web/common/storage/offline-data/export-user-data.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
 const mockLogout = mock(() => Promise.resolve({ signedOutRemotely: true }));
 
+// mock.module is process-wide. Keep the stub only while this file runs so
+// later suites (LogoutConfirmationProvider) still exercise the real hook.
+const actualUseLogout = (await import("@web/auth/compass/hooks/useLogout"))
+  .useLogout;
+let isLogoutMocked = true;
+
 mock.module("@web/auth/compass/hooks/useLogout", () => ({
-  useLogout: () => mockLogout,
+  useLogout: (...args: Parameters<typeof actualUseLogout>) =>
+    isLogoutMocked ? mockLogout : actualUseLogout(...args),
 }));
+
+afterAll(() => {
+  isLogoutMocked = false;
+});
 
 const checkoutFailed = (): ApiError => {
   const error = new Error(
