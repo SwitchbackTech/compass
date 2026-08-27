@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
@@ -14,11 +14,7 @@ describe("UpdateAvailableButton", () => {
     );
 
     const tooltip = await screen.findByRole("tooltip");
-    await waitFor(() => {
-      expect(
-        within(tooltip).getByText("Get latest version"),
-      ).toBeInTheDocument();
-    });
+    expect(within(tooltip).getByText("Get latest version")).toBeInTheDocument();
     expect(within(tooltip).getByText("R")).toBeInTheDocument();
   });
 });
