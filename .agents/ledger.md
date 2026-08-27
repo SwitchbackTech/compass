@@ -18,3 +18,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | WP-shortcut-showcase-simplify | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2890 | verifier PASS; simplify no change; independent re-review no findings | 2026-08-26T23:00:00Z | 2 | none |
 | 2891 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2893 | bun run verify PASS; review: no confirmed findings | 2026-08-27T00:00:00Z | 0 | none |
 | 2898 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2898 | focused web 62 pass; lint clean of new errors; review: no confirmed findings | 2026-08-27T06:00:00Z | 0 | none |
+| 2912 | high | Verifier | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2916 | bun run verify PASS (test:sync, type-check, lint, knip); unknown-key strip tests 25 pass | 2026-08-28T00:00:00Z | 0 | none |
