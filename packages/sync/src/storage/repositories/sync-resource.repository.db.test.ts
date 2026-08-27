@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -469,5 +470,34 @@ describe("SyncResourceRepository", () => {
         resource._id,
       ),
     ).toBeNull();
+  });
+
+  it("reads a row a newer build stamped with an unknown field", async () => {
+    // A rolling deploy runs the old and new builds together: the new build
+    // adds a field and stamps it on a row, then the old build reads that row.
+    // A strict read schema rejected the unknown key and broke GET
+    // /connections plus every job that re-parsed the resource (2026-08-27).
+    const resource = await repo.ensure(upsert());
+    await db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateOne(
+        { _id: resource._id as never },
+        { $set: { fieldFromNewerBuild: "value the old build never heard of" } },
+      );
+
+    const byId = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(byId?._id).toBe(resource._id);
+
+    const byConnection = await repo.listByConnection(
+      resource.tenantId,
+      resource.principalId,
+      resource.connectionId,
+    );
+    expect(byConnection).toHaveLength(1);
+    expect(byConnection[0]?._id).toBe(resource._id);
   });
 });
