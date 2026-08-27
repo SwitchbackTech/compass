@@ -37,6 +37,7 @@ export function SendInvitationsDialog({ prompt }: SendInvitationsDialogProps) {
         <OverlayPanelActionButton
           ref={sendButtonRef}
           variant="primary"
+          shortcut="Enter"
           onClick={prompt.onSend}
         >
           Send

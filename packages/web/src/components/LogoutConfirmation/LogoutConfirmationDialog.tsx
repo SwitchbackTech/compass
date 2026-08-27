@@ -26,10 +26,14 @@ export function LogoutConfirmationDialog({
       variant="modal"
     >
       <OverlayPanelActions align="start">
-        <OverlayPanelActionButton variant="primary" onClick={onConfirm}>
+        <OverlayPanelActionButton
+          variant="primary"
+          shortcut="Enter"
+          onClick={onConfirm}
+        >
           Log out
         </OverlayPanelActionButton>
-        <OverlayPanelActionButton onClick={onCancel}>
+        <OverlayPanelActionButton shortcut="Esc" onClick={onCancel}>
           Cancel
         </OverlayPanelActionButton>
       </OverlayPanelActions>

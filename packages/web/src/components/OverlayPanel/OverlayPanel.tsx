@@ -10,6 +10,7 @@ import {
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { getFocusableElements } from "@web/common/utils/focusable-elements";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 interface Props {
@@ -48,6 +49,11 @@ interface Props {
   widthClassName?: string;
   /** Extra classes for the backdrop (e.g. overflow for tall dialogs) */
   backdropClassName?: string;
+  /**
+   * Replaces the modal variant's default gap/background/shadow so callers can
+   * keep a surface-specific look without fighting those utilities.
+   */
+  panelClassName?: string;
   /** When true, applies dismiss-transition `data-closing` styles before unmount */
   closing?: boolean;
 }
@@ -69,6 +75,7 @@ export const OverlayPanel = ({
   variant = "modal",
   widthClassName = "w-[400px]",
   backdropClassName,
+  panelClassName,
   closing = false,
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,11 +116,14 @@ export const OverlayPanel = ({
     align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
       widthClassName,
-      "max-w-[90vw] gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
+      "max-w-[90vw] rounded-xl p-8",
       "transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none",
+      panelClassName ??
+        "gap-6 bg-surface-panel shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
     ],
     variant === "status" &&
       "max-w-sm gap-3 rounded-lg border border-border bg-surface/90 px-6 py-5 shadow-lg",
+    variant === "status" && panelClassName,
   );
 
   const titleClasses = classNames(
@@ -232,6 +242,8 @@ export const OverlayPanelActions = ({
 interface OverlayPanelActionButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "destructive";
+  /** Visible keycap; OverlayPanel already binds Escape / focused Enter. */
+  shortcut?: string;
 }
 
 export const OverlayPanelActionButton = forwardRef<
@@ -241,6 +253,7 @@ export const OverlayPanelActionButton = forwardRef<
   {
     children,
     className,
+    shortcut,
     type = "button",
     variant = "secondary",
     ...buttonProps
@@ -251,7 +264,7 @@ export const OverlayPanelActionButton = forwardRef<
     <button
       ref={ref}
       className={classNames(
-        "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-11 items-center justify-center rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
         variant === "primary" &&
           "bg-accent text-on-accent transition hover:brightness-110",
         variant === "destructive" &&
@@ -264,6 +277,9 @@ export const OverlayPanelActionButton = forwardRef<
       {...buttonProps}
     >
       {children}
+      {shortcut ? (
+        <ShortcutHint className="ml-2">{shortcut}</ShortcutHint>
+      ) : null}
     </button>
   );
 });

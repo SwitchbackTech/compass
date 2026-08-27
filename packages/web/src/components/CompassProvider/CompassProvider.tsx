@@ -9,6 +9,7 @@ import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { ToastCloseButton } from "@web/common/utils/toast/ToastCloseButton";
 import { useEscapeToDismissToast } from "@web/common/utils/toast/useEscapeToDismissToast";
 import { AboutModal } from "@web/components/About/AboutModal";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
@@ -40,6 +41,7 @@ function ThemeAwareToastContainer() {
       autoClose={5000}
       hideProgressBar={false}
       newestOnTop={false}
+      closeButton={ToastCloseButton}
       closeOnClick
       rtl={false}
       pauseOnFocusLoss

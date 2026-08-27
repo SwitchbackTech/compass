@@ -4,6 +4,8 @@ import { track } from "@web/auth/posthog/track";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
+import { ToastCloseButton } from "@web/common/utils/toast/ToastCloseButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
 import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
@@ -61,7 +63,7 @@ async function openSignUpFromOutsideRouter(): Promise<void> {
   });
 }
 
-const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
+export const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
   const handleSignUp = () => {
     track("signup_started", { source: "anon_nudge" });
     void openSignUpFromOutsideRouter();
@@ -73,13 +75,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
       <p className="text-sm text-text">
         Sign up to save your calendar across browsers.
       </p>
-      <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={handleSignUp}
-        type="button"
-      >
-        Sign up
-      </button>
+      <ToastActionButton onClick={handleSignUp}>Sign up</ToastActionButton>
     </div>
   );
 };
@@ -95,5 +91,6 @@ export function maybeShowAnonymousSaveToast(): void {
   showStatusToast(
     ANONYMOUS_SAVE_TOAST_ID,
     createElement(AnonymousSaveToast, { toastId: ANONYMOUS_SAVE_TOAST_ID }),
+    { closeButton: ToastCloseButton },
   );
 }

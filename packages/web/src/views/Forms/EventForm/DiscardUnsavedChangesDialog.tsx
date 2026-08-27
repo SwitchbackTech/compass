@@ -41,10 +41,18 @@ export function DiscardUnsavedChangesDialog({
       variant="modal"
     >
       <OverlayPanelActions align="end">
-        <OverlayPanelActionButton ref={cancelButtonRef} onClick={onCancel}>
+        <OverlayPanelActionButton
+          ref={cancelButtonRef}
+          shortcut="Esc"
+          onClick={onCancel}
+        >
           Cancel
         </OverlayPanelActionButton>
-        <OverlayPanelActionButton variant="primary" onClick={onDiscard}>
+        <OverlayPanelActionButton
+          variant="primary"
+          shortcut="Enter"
+          onClick={onDiscard}
+        >
           Discard
         </OverlayPanelActionButton>
       </OverlayPanelActions>
