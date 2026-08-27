@@ -20,12 +20,13 @@ Eval stubs: [`_evals/README.md`](_evals/README.md).
 | local-dev-bootstrap | 1 | compass-maintainers | specialist | 2026-08-25 |
 | qa-test-staging | 1 | compass-maintainers | specialist | 2026-08-25 |
 | review | 1 | compass-maintainers | reviewer | 2026-08-25 |
-| ship | 1 | compass-maintainers | Manager | 2026-08-25 |
+| ship | 2 | compass-maintainers | Manager | 2026-08-27 |
 | simplify | 1 | compass-maintainers | specialist | 2026-08-25 |
 | verify-change | 1 | compass-maintainers | verifier | 2026-08-25 |
 
 ## Change log
 
+- 2026-08-27: `/ship` v2 — merge after verify without waiting for a human.
 - 2026-08-25: WP-05 — add `version` / `owner` / `last_verified` to all skills.
 
 `last_verified` on this date is the registry implementation date, not a

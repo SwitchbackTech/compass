@@ -109,6 +109,12 @@ Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`
 - Branches: `type/action[-issue-number]`, for example `feature/add-form`.
 - Commits: conventional, lower-case, present tense, for example
   `fix(web): handle disconnected google state`.
+- Merge after verification. When `bun run verify` is PASS and required GitHub
+  checks are green, squash-merge with `gh pr merge --squash --delete-branch`.
+  Do not wait for a human to re-check the UI, approve the PR, or click merge.
+  Mark the PR ready (not draft) once local verify passes. Human approval is
+  only for production deploy, secrets, OAuth grants, deletion, and access
+  grants.
 
 ## Claude Code worktree specific instructions
 
@@ -174,3 +180,9 @@ everything runs through Bun, so that mismatch is not a blocker.
   `compass.yaml`. Without them the backend still runs and serves
   anonymous/health traffic, but do not attempt login flows (see the AGENTS.md
   rule) until those are configured.
+- After verification, merge yourself. A PASS from `bun run verify` plus green
+  required checks is the approval. Squash-merge with
+  `gh pr merge --squash --delete-branch`. Do not leave the PR as a draft
+  waiting for a human to review screenshots, click approve, or merge. Still
+  escalate without merging for production deploy, secrets, OAuth grants,
+  deletion, and access grants.
