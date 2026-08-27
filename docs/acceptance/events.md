@@ -320,7 +320,7 @@ action is unavailable.
 ### Expected Results
 
 - Pressing `M` opens the event in a read-only form: fields are disabled,
-  no Save button appears, and a note reads "Read-only — you don't have
+  no Save button appears, and a note reads "Read-only. You don't have
   permission to edit this event."
 - The right-click context menu shows "View" (not "Edit"), "Duplicate", and
   no Delete option.

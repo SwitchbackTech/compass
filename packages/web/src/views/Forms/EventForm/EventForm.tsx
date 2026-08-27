@@ -1039,7 +1039,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
             {isReadOnly && (
               <p role="note" className="text-text-muted text-xs">
-                Read-only — you don't have permission to edit this event.
+                Read-only. You don't have permission to edit this event.
               </p>
             )}
           </div>

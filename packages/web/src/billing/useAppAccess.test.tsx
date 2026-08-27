@@ -4,16 +4,10 @@ import { rest } from "msw";
 import { type PropsWithChildren } from "react";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { SessionContext } from "@web/auth/compass/session/session.context";
-import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
-
-const daysAgo = (days: number) =>
-  new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const createWrapper = (authenticated = false, client?: QueryClient) => {
   const queryClient =
@@ -64,34 +58,14 @@ describe("useAppAccess", () => {
     localStorage.clear();
   });
 
-  it("uses the anonymous trial for a fresh visitor", async () => {
+  it("leaves an anonymous visitor open, with no clock to expire", async () => {
     stubConfig(true);
     const { result } = renderHook(() => useAppAccess(), {
       wrapper: createWrapper(),
     });
 
     await waitFor(() => {
-      expect(result.current.kind).toBe("anonymous-trial");
-    });
-    if (result.current.kind !== "anonymous-trial") {
-      throw new Error("unreachable");
-    }
-    expect(result.current.isExpired).toBe(false);
-    expect(result.current.daysLeft).toBe(7);
-  });
-
-  it("expires the anonymous trial after the window", async () => {
-    persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(8));
-    stubConfig(true);
-    const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => {
-      expect(result.current).toMatchObject({
-        kind: "anonymous-trial",
-        isExpired: true,
-      });
+      expect(result.current).toEqual({ kind: "open" });
     });
   });
 
@@ -184,11 +158,7 @@ describe("useAppAccess", () => {
     });
   });
 
-  it("does not fetch billing status after sign-out when hasAuthenticated is still set", () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
+  it("does not fetch billing status once the session is gone", () => {
     stubConfig(true);
     let billingHits = 0;
     server.use(
@@ -203,11 +173,9 @@ describe("useAppAccess", () => {
     });
     expect(result.current).toEqual({ kind: "open" });
     expect(billingHits).toBe(0);
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 
-  it("returns open when enforcement is paused, even with an expired trial stamp", async () => {
-    persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(8));
+  it("returns open for an anonymous visitor when enforcement is paused", async () => {
     stubConfig(true, false);
 
     const { result } = renderHook(() => useAppAccess(), {
@@ -234,8 +202,7 @@ describe("useAppAccess", () => {
     });
   });
 
-  it("fails open while config is pending, even with an expired trial stamp", () => {
-    persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(8));
+  it("fails open while config is pending", () => {
     server.use(
       rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) =>
         res(
@@ -259,10 +226,6 @@ describe("useAppAccess", () => {
   });
 
   it("does not keep a cached read-only billing gate after the session is gone", () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(true);
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -285,6 +248,5 @@ describe("useAppAccess", () => {
     });
     expect(result.current).toEqual({ kind: "open" });
     expect(billingHits).toBe(0);
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 });

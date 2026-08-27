@@ -1,8 +1,14 @@
 import "@testing-library/jest-dom";
-import { type ReactElement } from "react";
+import userEvent from "@testing-library/user-event";
+import { act, type ReactElement } from "react";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import {
+  billingPreviewActions,
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -54,30 +60,30 @@ afterAll(() => {
   isAppAccessMocked = false;
 });
 
+const awaitingCheckout: AppAccess = {
+  kind: "server",
+  status: "awaiting_checkout",
+  isReadOnly: true,
+  trialEndsAt: null,
+};
+
 describe("RootShell billing gates", () => {
   afterEach(() => {
     access = { kind: "open" };
+    useBillingPreviewStore.setState(initialBillingPreviewState);
   });
 
-  it("shows the anonymous trial gate without the billing gate", async () => {
-    access = { kind: "anonymous-trial", isExpired: true, daysLeft: 0 };
-    await renderShell();
+  it("never gates an anonymous visitor", async () => {
+    await renderShell("/", { anonymous: true });
 
     expect(
-      screen.getByRole("dialog", { name: "Your free trial has ended" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Manage billing" }),
+      screen.queryByRole("dialog", { name: "Start your 7-day trial" }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the billing gate without the anonymous trial gate", async () => {
-    access = {
-      kind: "server",
-      status: "awaiting_checkout",
-      isReadOnly: true,
-      trialEndsAt: null,
-    };
+  it("shows the billing gate when the account cannot write", async () => {
+    access = awaitingCheckout;
     await renderShell();
 
     expect(
@@ -87,8 +93,40 @@ describe("RootShell billing gates", () => {
       screen.queryByRole("button", { name: "Manage billing" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("dialog", { name: "Your free trial has ended" }),
+      screen.queryByRole("button", { name: /Log out/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it("swaps the gate for the read-only banner after Look around first", async () => {
+    access = awaitingCheckout;
+    await renderShell();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Look around first/ }),
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Start your 7-day trial" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "You're looking around in read-only mode.",
+    );
+  });
+
+  it("brings the gate back when a write is refused", async () => {
+    access = awaitingCheckout;
+    await renderShell();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Look around first/ }),
+    );
+    act(() => {
+      billingPreviewActions.exit();
+    });
+
+    expect(
+      screen.getByRole("dialog", { name: "Start your 7-day trial" }),
+    ).toBeInTheDocument();
   });
 });
 

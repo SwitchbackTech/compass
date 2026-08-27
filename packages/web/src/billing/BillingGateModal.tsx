@@ -10,8 +10,8 @@ import {
   getApiErrorMessage,
   isSessionLevelError,
 } from "@web/api/util/api.util";
-import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { track } from "@web/auth/posthog/track";
+import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import {
   GATE_PANEL_CLASSNAME,
   handleOverlayLetterShortcut,
@@ -27,12 +27,13 @@ type BillingGateModalProps = {
 };
 
 /**
- * Full app-lock overlay for signed-in users who cannot write (awaiting
- * checkout, expired, canceled). Intentionally not dismissible.
+ * App-lock overlay for signed-in users who cannot write (awaiting checkout,
+ * expired, canceled). Escape and the backdrop do nothing, but a user who has
+ * not started a trial yet can step past it into a read-only look around the
+ * real calendar; the first refused write brings it straight back.
  */
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
-  const logout = useLogout();
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const shownRef = useRef(false);
@@ -42,7 +43,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     ? "Start your 7-day trial"
     : "Subscribe to keep using Compass";
   const body = isAwaitingCheckout
-    ? "A card is required to start."
+    ? "Try Compass for free for 7 days"
     : "Your trial has ended.";
 
   useEffect(() => {
@@ -75,19 +76,21 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     }
   };
 
-  const handleLogout = () => {
-    track("billing_gate_cta_clicked", { cta: "logout" });
-    void logout();
+  const handleLookAround = () => {
+    track("billing_gate_cta_clicked", { cta: "preview" });
+    billingPreviewActions.enter();
   };
 
   const handleShortcutKey = (e: KeyboardEvent) => {
+    if (isRedirecting) return;
     const actions: Record<string, () => void> = {
       s: () => {
         void redirectTo("checkout");
       },
-      l: handleLogout,
     };
-    if (!isAwaitingCheckout) {
+    if (isAwaitingCheckout) {
+      actions.l = handleLookAround;
+    } else {
       actions.m = () => {
         void redirectTo("portal");
       };
@@ -122,7 +125,17 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             {isAwaitingCheckout ? "Start trial" : "Subscribe"}
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
-          {isAwaitingCheckout ? null : (
+          {isAwaitingCheckout ? (
+            <button
+              className="c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2"
+              disabled={isRedirecting}
+              onClick={handleLookAround}
+              type="button"
+            >
+              Look around first
+              <ShortcutHint className="ml-2">L</ShortcutHint>
+            </button>
+          ) : (
             <button
               className="c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2"
               disabled={isRedirecting}
@@ -134,14 +147,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             </button>
           )}
         </div>
-        <button
-          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline underline-offset-4"
-          onClick={handleLogout}
-          type="button"
-        >
-          Log out
-          <ShortcutHint className="ml-2">L</ShortcutHint>
-        </button>
       </div>
     </OverlayPanel>
   );

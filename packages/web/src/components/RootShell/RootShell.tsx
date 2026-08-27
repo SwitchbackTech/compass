@@ -1,8 +1,12 @@
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
+import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
 import { useCheckoutReturn } from "@web/billing/billing.query";
-import { TrialGateModal } from "@web/billing/TrialGateModal";
+import {
+  selectBillingPreviewing,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
@@ -35,6 +39,7 @@ export function RootShell() {
   const deferCalendarOnboarding = isLifePathname(pathname);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
+  const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
@@ -42,25 +47,16 @@ export function RootShell() {
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
-  const showTrialGate = access.kind === "anonymous-trial" && access.isExpired;
-  const showBillingGate = access.kind === "server" && access.isReadOnly;
+  const isBillingReadOnly = access.kind === "server" && access.isReadOnly;
+  const showBillingGate = isBillingReadOnly && !isPreviewing;
+  const showReadOnlyBanner = isBillingReadOnly && isPreviewing;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
-  // An expired trial owns the whole screen. The onboarding cards sit at
+  // The gate owns the whole screen. The onboarding cards sit at
   // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
-  // a gated user click straight through the gate and keep touring. AuthModal
-  // stays because the gate's only ways forward are sign up and log in.
-  if (showTrialGate) {
-    return (
-      <AuthModalProvider>
-        <Outlet />
-        <TrialGateModal />
-        <AuthModal />
-        <PointerHint />
-      </AuthModalProvider>
-    );
-  }
-
+  // a gated user click straight through the gate and keep touring. Once they
+  // choose to look around, the gate unmounts and the normal tree (onboarding
+  // included) is safe to render behind the read-only banner.
   if (showBillingGate) {
     return (
       <AuthModalProvider>
@@ -75,6 +71,7 @@ export function RootShell() {
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}
+      {showReadOnlyBanner && <BillingReadOnlyBanner />}
       <Outlet />
       <AuthModal />
       {!deferCalendarOnboarding && <WelcomeModal />}

@@ -99,6 +99,10 @@ Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`
   `suggestCanonicalClasses` warnings as actionable cleanup before finishing
   changes.
 - Do not test login flows without the required backend setup.
+- Never use em-dashes (`—`) in user-facing copy: UI strings, toasts, error
+  messages, meta tags, and installer output. Use a comma, a period, or a colon
+  instead. Prose in `docs/` and code comments are unaffected. Fix any
+  pre-existing ones you touch in passing.
 - Keep React components in their own files.
 - Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from
   the concrete source file instead, and remove nearby barrel files when it is

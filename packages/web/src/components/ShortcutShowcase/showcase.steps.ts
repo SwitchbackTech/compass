@@ -30,7 +30,7 @@ export const SHOWCASE_STEPS = [
   {
     id: "intro",
     title: "Compass is keyboard-only",
-    body: "No clicks — just shortcuts. That takes a little practice to get the muscle memory down. This sandbox is that practice, and nothing here is saved.",
+    body: "No clicks, just shortcuts. That takes a little practice to get the muscle memory down. This sandbox is that practice, and nothing here is saved.",
   },
   {
     id: "create",
@@ -103,7 +103,7 @@ export const SHOWCASE_STEPS = [
   },
   {
     id: "graduation",
-    title: "That's the practice — you've got this.",
+    title: "That's the practice, and you've got this.",
     body: [
       "You're done practicing. Those keys work the same on your real calendar. Whenever you wonder where to go, hold ",
       { key: KEYMAP.jumpPageTarget.holdModifier },
