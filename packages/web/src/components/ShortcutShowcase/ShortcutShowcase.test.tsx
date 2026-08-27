@@ -242,7 +242,7 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.replay());
 
     const monday = screen.getByText("Mon");
-    const upNext = screen.getByText("Up next", { hidden: true });
+    const upNext = screen.getByText("Up next");
     expect(
       monday.compareDocumentPosition(upNext) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0);
