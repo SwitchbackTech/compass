@@ -65,18 +65,30 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
-    it("lists f, m, and Shift+F10 in the legend", () => {
-      const shortcuts = filterShortcutsByContext({
+    it("lists f and m, and never advertises F10, in the legend", () => {
+      const week = filterShortcutsByContext({
         view: "week",
         isViewingCurrentPeriod: true,
       });
       const byId = Object.fromEntries(
-        shortcuts.map((shortcut) => [shortcut.id, shortcut]),
+        week.map((shortcut) => [shortcut.id, shortcut]),
       );
 
       expect(byId["focus-notice"]?.keys).toEqual(["f"]);
       expect(byId["edit-menu"]?.keys).toEqual(["m"]);
-      expect(byId["edit-menu-shift-f10"]?.keys).toEqual(["Shift", "F10"]);
+      expect(byId["edit-menu"]?.label).toBe("Open event menu");
+
+      // Shift+F10 still opens the menu where the OS has that key; it is just
+      // not advertised, since it would duplicate the m row's label.
+      for (const view of ["day", "week", "life"] as const) {
+        const shortcuts = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        });
+        expect(
+          shortcuts.filter((shortcut) => shortcut.keys.includes("F10")),
+        ).toEqual([]);
+      }
     });
 
     it("lists h event jump toggle in day and week focus sections", () => {

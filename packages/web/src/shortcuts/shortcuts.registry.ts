@@ -230,14 +230,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
   },
   {
+    // Shift+F10 also opens this menu on platforms that have a context-menu key
+    // (the browser turns it into a contextmenu event, which pointer-block lets
+    // through). It is deliberately not listed here: it would be a second row
+    // with this exact label, and m already teaches the capability.
     id: "edit-menu",
     keys: ["m"],
-    label: "Open event menu",
-    section: "edit",
-  },
-  {
-    id: "edit-menu-shift-f10",
-    keys: ["Shift", "F10"],
     label: "Open event menu",
     section: "edit",
   },
