@@ -30,9 +30,49 @@ network never flashes a gate at a user before the real value loads.
 below) — flipping `enforcement: true` while Stripe is configured immediately
 puts any hosted user without a Stripe subscription id into `awaiting_checkout`
 and shows them `BillingGateModal`. Neither `backfill-billing` nor
-`BACKFILL_CUTOFF` changes that — see below. Sparing existing users would take
+`BACKFILL_CUTOFF` changes that — see below. Sparing a whole cohort would take
 a real code change, so treat the flip as the moment every hosted account
-without a Stripe subscription goes read-only.
+without a Stripe subscription goes read-only. Individual accounts can be
+exempted, though — see the next section.
+
+## Bypassing enforcement for specific accounts
+
+`billing.bypassEmails` is a narrower escape hatch than the global pause: a list
+of email addresses that skip the gate while enforcement stays genuinely on for
+everyone else. It exists for test accounts that cannot complete a real Stripe
+Checkout — staging smoke checks, QA sweeps, automated sessions verifying a
+change against a deployed environment.
+
+```yaml
+billing:
+  enforcement: true
+  bypassEmails: ["qa@example.com"]
+```
+
+Hosted deploys set the `BILLING_BYPASS_EMAILS` GitHub Environment var to a
+comma-separated list; the deploy workflow writes it into the remote yaml. Like
+`enforcement`, it is read once at backend startup — the backend logs
+`Billing bypass: N account(s)` on boot so a redeploy can be confirmed.
+
+Two places consult the list, both after the enforcement and Stripe-configured
+checks, so it can only ever narrow access:
+
+- `assertBillingAllowsWrites` returns early, so event writes succeed.
+- `GET /api/billing/status` reports `active` / `isReadOnly: false`, so
+  `useAppAccess` resolves to a writable server session and `RootShell` renders
+  the app instead of `BillingGateModal`.
+
+Matching is case- and whitespace-insensitive. Nothing is written to the user
+document — the account's stored `billing` is untouched, so removing an address
+from the list restores the real gate on the next restart.
+
+The roster is deliberately **not** exposed through `/api/config`: that payload
+is public and unauthenticated, and putting addresses in it would leak the list.
+Only the signed-in account learns it is bypassed.
+
+**This is a real payment bypass.** It is operator config only, never
+user-supplied, and empty by default. Set it on staging; leave it unset in
+production.
 
 ## What users see
 

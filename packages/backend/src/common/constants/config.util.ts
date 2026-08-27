@@ -28,3 +28,21 @@ export const isStripeConfigured = (
 export const isBillingEnforced = (
   env: Pick<Config, "BILLING_ENFORCEMENT">,
 ): boolean => env.BILLING_ENFORCEMENT;
+
+/**
+ * Whether this account is exempt from billing gates. Operator-set allowlist,
+ * for accounts that cannot complete a real Stripe Checkout (e.g. staging test
+ * accounts). Both sides are trimmed and lowercased so a stray space or
+ * capitalized address in a deploy variable still matches.
+ */
+export const isBillingBypassed = (
+  env: Pick<Config, "BILLING_BYPASS_EMAILS">,
+  email: string | undefined,
+): boolean => {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized) return false;
+
+  return env.BILLING_BYPASS_EMAILS.some(
+    (allowed) => allowed.trim().toLowerCase() === normalized,
+  );
+};
