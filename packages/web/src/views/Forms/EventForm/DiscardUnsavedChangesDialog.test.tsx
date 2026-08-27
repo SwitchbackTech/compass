@@ -1,5 +1,6 @@
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { render, screen, within } from "@web/__tests__/__mocks__/mock.render";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -86,5 +87,47 @@ describe("DiscardUnsavedChangesDialog", () => {
     await user.keyboard("{Shift>}{Escape}{/Shift}");
     expect(onDiscard).toHaveBeenCalledTimes(1);
     expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels on Enter while Cancel is focused", async () => {
+    const user = userEvent.setup();
+    renderDialog(true);
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onDiscard).not.toHaveBeenCalled();
+  });
+
+  it("discards on Mod+Enter while Cancel is focused", async () => {
+    const user = userEvent.setup();
+    renderDialog(true);
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+    const chord =
+      resolveModifier("Mod") === "Control"
+        ? "{Control>}{Enter}{/Control}"
+        : "{Meta>}{Enter}{/Meta}";
+    await user.keyboard(chord);
+
+    expect(onDiscard).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("shows Mod+Enter on Discard instead of Enter", () => {
+    renderDialog(true);
+
+    const discard = screen.getByRole("button", { name: "Discard" });
+    expect(discard).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Meta+Enter Control+Enter",
+    );
+    expect(within(discard).getByText("Enter")).toBeInTheDocument();
+    expect(
+      within(discard).queryByTestId("meta-icon") ??
+        within(discard).queryByTestId("control-icon"),
+    ).toBeInTheDocument();
   });
 });

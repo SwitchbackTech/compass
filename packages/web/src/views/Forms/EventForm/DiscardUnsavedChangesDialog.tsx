@@ -36,6 +36,7 @@ export function DiscardUnsavedChangesDialog({
       }
       onDismiss={onCancel}
       onShiftEscape={onDiscard}
+      onModEnter={onDiscard}
       initialFocusRef={cancelButtonRef}
       align="start"
       variant="modal"
@@ -50,7 +51,8 @@ export function DiscardUnsavedChangesDialog({
         </OverlayPanelActionButton>
         <OverlayPanelActionButton
           variant="primary"
-          shortcut="Enter"
+          shortcut={["Mod", "Enter"]}
+          aria-keyshortcuts="Meta+Enter Control+Enter"
           onClick={onDiscard}
         >
           Discard
