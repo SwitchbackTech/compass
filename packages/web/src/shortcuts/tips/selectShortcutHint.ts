@@ -19,25 +19,25 @@ const IDLE_POOL = [
   "create-event",
 ] as const satisfies readonly ShortcutHintId[];
 
-const WEEK_IDLE_POOL = [
-  "page-jump",
-  "event-jump",
-  "week-day-focus",
-  "command-palette",
-  "create-event",
-] as const satisfies readonly ShortcutHintId[];
-
 const FOCUSED_POOL = [
   "edit-sequence",
   "nudge",
   ...IDLE_POOL,
 ] as const satisfies readonly ShortcutHintId[];
 
-const WEEK_FOCUSED_POOL = [
-  "edit-sequence",
-  "nudge",
-  ...WEEK_IDLE_POOL,
-] as const satisfies readonly ShortcutHintId[];
+/** Week view inserts the column-letter tip after event-jump. */
+function withWeekDayFocus(
+  pool: readonly ShortcutHintId[],
+  isWeekView?: boolean,
+): readonly ShortcutHintId[] {
+  if (!isWeekView) return pool;
+  const insertAt = pool.indexOf("event-jump") + 1;
+  return [
+    ...pool.slice(0, insertAt),
+    "week-day-focus",
+    ...pool.slice(insertAt),
+  ];
+}
 
 const FORM_POOL = [
   "save-draft",
@@ -85,10 +85,10 @@ export function selectShortcutHint(
     return pick(LIFE_POOL);
   }
   if (ctx.eventFocused) {
-    return pick(ctx.isWeekView ? WEEK_FOCUSED_POOL : FOCUSED_POOL);
+    return pick(withWeekDayFocus(FOCUSED_POOL, ctx.isWeekView));
   }
   if (!ctx.firstEventDone) {
     return getShortcutHint("create-event");
   }
-  return pick(ctx.isWeekView ? WEEK_IDLE_POOL : IDLE_POOL);
+  return pick(withWeekDayFocus(IDLE_POOL, ctx.isWeekView));
 }

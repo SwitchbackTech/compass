@@ -30,21 +30,31 @@ export function useModHoldHintShortcut({
   enabled = true,
   onModChord,
   onHintsRevealed,
+  onVisibilityChange,
 }: {
   enabled?: boolean;
   onModChord: (event: KeyboardEvent) => boolean;
   /** Fires once when hold-Mod chips actually appear, not on a bare Mod tap. */
   onHintsRevealed?: () => void;
+  /** Fires whenever hint visibility flips, including disable and unmount. */
+  onVisibilityChange?: (visible: boolean) => void;
 }): { areHintsVisible: boolean } {
   const [areHintsVisible, setAreHintsVisible] = useState(false);
   const onModChordRef = useRef(onModChord);
   onModChordRef.current = onModChord;
   const onHintsRevealedRef = useRef(onHintsRevealed);
   onHintsRevealedRef.current = onHintsRevealed;
+  const onVisibilityChangeRef = useRef(onVisibilityChange);
+  onVisibilityChangeRef.current = onVisibilityChange;
 
   useEffect(() => {
+    const publishVisibility = (visible: boolean) => {
+      setAreHintsVisible(visible);
+      onVisibilityChangeRef.current?.(visible);
+    };
+
     if (!enabled) {
-      setAreHintsVisible(false);
+      publishVisibility(false);
       return;
     }
 
@@ -65,7 +75,7 @@ export function useModHoldHintShortcut({
       clearHoldTimer();
       if (hintsVisible) {
         hintsVisible = false;
-        setAreHintsVisible(false);
+        publishVisibility(false);
       }
     };
 
@@ -73,7 +83,7 @@ export function useModHoldHintShortcut({
       holdTimeoutId = setTimeout(() => {
         holdTimeoutId = null;
         hintsVisible = true;
-        setAreHintsVisible(true);
+        publishVisibility(true);
         onHintsRevealedRef.current?.();
       }, MOD_HOLD_HINT_MS);
     };

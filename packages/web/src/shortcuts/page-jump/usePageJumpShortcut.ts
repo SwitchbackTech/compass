@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -26,9 +25,10 @@ export function usePageJumpShortcut(
 ): { areHintsVisible: boolean } {
   const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
 
-  const result = useModHoldHintShortcut({
+  return useModHoldHintShortcut({
     enabled: !isEventFormOpen,
     onHintsRevealed: () => shortcutHintProgressActions.demonstrate("page-jump"),
+    onVisibilityChange: pageJumpHintActions.setHintsVisible,
     onModChord: (event) => {
       const index = physicalDigitIndex(event);
       const target = index !== null ? targets[index] : undefined;
@@ -36,11 +36,4 @@ export function usePageJumpShortcut(
       return focusPageJumpTarget(target.id);
     },
   });
-
-  useEffect(() => {
-    pageJumpHintActions.setHintsVisible(result.areHintsVisible);
-    return () => pageJumpHintActions.setHintsVisible(false);
-  }, [result.areHintsVisible]);
-
-  return result;
 }
