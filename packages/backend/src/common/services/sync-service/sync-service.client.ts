@@ -105,6 +105,13 @@ export interface SyncClientError {
   kind: SyncClientErrorKind;
   status?: number;
   correlationId: string;
+  // Present only for `invalidResponse`: a log-safe reason the 200 body failed
+  // the contract — the failing field paths with their Zod issue code, the
+  // body's top-level keys, and the content-type header. Field names, issue
+  // codes, and a header only; never a field value. Lets a reader tell a real
+  // contract drift (which field broke) from HTML the reverse proxy returned
+  // with a 200.
+  detail?: string;
 }
 
 export type SyncClientResult<T> =
@@ -119,7 +126,16 @@ type FetchFn = (
     body?: string;
     signal?: AbortSignal;
   },
-) => Promise<{ status: number; json: () => Promise<unknown> }>;
+) => Promise<SyncFetchResponse>;
+
+interface SyncFetchResponse {
+  status: number;
+  json: () => Promise<unknown>;
+  // Optional so a test double can omit it; the real fetch Response always
+  // provides it. Read only to record the content-type of a body that failed
+  // the contract.
+  headers?: { get: (name: string) => string | null };
+}
 
 export interface SyncServiceClientOptions {
   // Base URL of the Sync service (no trailing slash), e.g. http://localhost:3010.
@@ -545,7 +561,7 @@ export class SyncServiceClient {
     const controller = new AbortController();
     const deadlineMs = input.timeoutMs ?? this.#timeoutMs;
     const timer = setTimeout(() => controller.abort(), deadlineMs);
-    let response: { status: number; json: () => Promise<unknown> };
+    let response: SyncFetchResponse;
     try {
       response = await this.#fetch(url, {
         method: input.method,
@@ -578,15 +594,30 @@ export class SyncServiceClient {
     }
 
     if (response.status === 200) {
+      const contentType = response.headers?.get("content-type") ?? undefined;
       let body: unknown;
       try {
         body = await response.json();
       } catch {
-        return errorResult("invalidResponse", correlationId, 200);
+        // The body was not JSON at all — HTML the reverse proxy returned in
+        // front of Sync. The content-type is what tells the two apart.
+        return errorResult(
+          "invalidResponse",
+          correlationId,
+          200,
+          contentType
+            ? `body is not JSON; content-type=${contentType}`
+            : "body is not JSON",
+        );
       }
       const parsed = input.schema.safeParse(body);
       if (!parsed.success) {
-        return errorResult("invalidResponse", correlationId, 200);
+        return errorResult(
+          "invalidResponse",
+          correlationId,
+          200,
+          describeContractMismatch(parsed.error, body, contentType),
+        );
       }
       return { ok: true, value: parsed.data, correlationId };
     }
@@ -617,6 +648,54 @@ function errorResult<T>(
   kind: SyncClientErrorKind,
   correlationId: string,
   status?: number,
+  detail?: string,
 ): SyncClientResult<T> {
-  return { ok: false, error: { kind, status, correlationId } };
+  return { ok: false, error: { kind, status, correlationId, detail } };
+}
+
+// The most an `invalidResponse` detail ever carries — a guard against a huge
+// Zod error (one issue per element of a large array) blowing up the log line.
+const MAX_ISSUES = 5;
+const MAX_BODY_KEYS = 20;
+
+// A log-safe reason a 200 body failed the schema: the first failing field
+// paths with their Zod issue code, the body's top-level keys, and the
+// content-type. Field names, issue codes, and a header only — never a field
+// value, so it stays safe to log and to return to the caller.
+function describeContractMismatch(
+  error: z.ZodError,
+  body: unknown,
+  contentType: string | undefined,
+): string {
+  const issues = error.issues.slice(0, MAX_ISSUES).map(summarizeIssue);
+  if (error.issues.length > MAX_ISSUES) {
+    issues.push(`+${error.issues.length - MAX_ISSUES} more`);
+  }
+  const parts = [`issues=${issues.join(", ")}`];
+  const keys = topLevelKeys(body);
+  if (keys) parts.push(`keys=${keys}`);
+  if (contentType) parts.push(`content-type=${contentType}`);
+  return parts.join("; ");
+}
+
+// A single Zod issue as `path: code`. For an unrecognized-key issue — the
+// rolling-deploy case where Sync added a field a strict schema rejects — the
+// offending key names are the whole point, so they ride along.
+function summarizeIssue(issue: z.core.$ZodIssue): string {
+  const location = issue.path.length > 0 ? issue.path.join(".") : "<root>";
+  if (issue.code === "unrecognized_keys") {
+    return `${location}: unrecognized_keys [${issue.keys.join(", ")}]`;
+  }
+  return `${location}: ${issue.code}`;
+}
+
+// The body's own top-level field names (not values), so a reader sees the
+// shape Sync actually sent alongside the fields the schema rejected.
+function topLevelKeys(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return undefined;
+  }
+  const keys = Object.keys(body);
+  const shown = keys.slice(0, MAX_BODY_KEYS).join(",");
+  return keys.length > MAX_BODY_KEYS ? `${shown},…` : shown || undefined;
 }

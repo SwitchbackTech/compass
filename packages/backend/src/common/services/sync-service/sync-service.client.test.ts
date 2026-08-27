@@ -47,6 +47,7 @@ const fakeFetch = (
   responder: (captured: Captured) => Promise<{
     status: number;
     json: () => Promise<unknown>;
+    headers?: { get: (name: string) => string | null };
   }>,
 ) => {
   const calls: Captured[] = [];
@@ -74,6 +75,11 @@ const client = (fetchFn: SyncServiceClientOptions["fetch"]) =>
   });
 
 const principal = () => ({ tenantId: objectId(), principalId: objectId() });
+
+// A minimal Headers stand-in that answers the one header the client reads.
+const contentType = (value: string) => ({
+  get: (name: string) => (name.toLowerCase() === "content-type" ? value : null),
+});
 
 const request = (calendarIds: string[]): BusyAvailabilityRequest => ({
   calendarIds: calendarIds as BusyAvailabilityRequest["calendarIds"],
@@ -497,6 +503,43 @@ describe("SyncServiceClient", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  // The whole point of the invalidResponse fix: a reader must be able to see
+  // which field broke the contract, not just that it broke.
+  it("names the field a rejected 200 body broke, plus the body shape", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      headers: contentType("application/json"),
+      // A field Sync adds during a rolling deploy that the strict schema rejects.
+      json: async () => ({ connections: [], addedByNewerSync: true }),
+    }));
+
+    const result = await client(fn).listConnections(principal());
+
+    if (result.ok) throw new Error("expected invalidResponse");
+    expect(result.error.detail).toContain("unrecognized_keys");
+    expect(result.error.detail).toContain("addedByNewerSync");
+    expect(result.error.detail).toContain("content-type=application/json");
+  });
+
+  // A 200 whose body is not JSON at all — HTML the reverse proxy returned in
+  // front of Sync. The content-type is what tells the two apart.
+  it("reports the content-type when a 200 body is not JSON", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      headers: contentType("text/html"),
+      json: async () => {
+        throw new Error("not json");
+      },
+    }));
+
+    const result = await client(fn).listConnections(principal());
+
+    if (result.ok) throw new Error("expected invalidResponse");
+    expect(result.error.kind).toBe("invalidResponse");
+    expect(result.error.detail).toContain("body is not JSON");
+    expect(result.error.detail).toContain("content-type=text/html");
   });
 
   it("lists full events with a signed GET the real Sync verifier accepts", async () => {

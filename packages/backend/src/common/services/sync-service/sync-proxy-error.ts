@@ -26,12 +26,19 @@ export function logLevelForSyncClientError(
 
 // Map a failed Sync HTTP call on a read/proxy route into a real HTTP status.
 // Never Status.UNSURE (600). Timeout/unavailable → 503; other failures → 502.
+// `detail` is the log-safe SyncClientError.detail (present only for an
+// invalidResponse): appended to the message so the error-tracking issue names
+// which field broke the contract instead of just that it broke. It carries
+// field names, Zod issue codes, and a content-type header only — never a field
+// value — so it is safe in the message the handler logs and returns.
 export function throwSyncProxyFailure(
   kind: SyncClientErrorKind,
   userMessage: string,
+  detail?: string,
 ): never {
+  const message = detail ? `${userMessage}: ${detail}` : userMessage;
   if (isOperationalKind(kind)) {
-    throw error(AuthError.SyncConnectionUnavailable, userMessage);
+    throw error(AuthError.SyncConnectionUnavailable, message);
   }
   throw error(
     {
@@ -40,7 +47,7 @@ export function throwSyncProxyFailure(
       isOperational: true,
       code: "SYNC_PROXY_FAILURE",
     },
-    userMessage,
+    message,
   );
 }
 

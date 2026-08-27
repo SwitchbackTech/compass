@@ -25,9 +25,10 @@ export function unwrapSyncResult<T>(
 ): T {
   if (result.ok) return result.value;
 
+  const { kind, correlationId, detail } = result.error;
   deps.logger.warn(
-    `${deps.logMessage} (${result.error.kind}) ` +
-      `[correlationId=${result.error.correlationId}]`,
+    `${deps.logMessage} (${kind}) [correlationId=${correlationId}]` +
+      (detail ? ` ${detail}` : ""),
   );
-  throwSyncProxyFailure(result.error.kind, deps.userMessage);
+  throwSyncProxyFailure(kind, deps.userMessage, detail);
 }
