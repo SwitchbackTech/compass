@@ -59,6 +59,9 @@ const ConfigSchema = z
     // Operator pause switch: when false, trial/billing gates stay off for
     // everyone regardless of Stripe configuration.
     BILLING_ENFORCEMENT: BooleanFromInput.default(false),
+    // Accounts exempt from billing gates while enforcement is on. Operator
+    // config only -- never user-supplied. Empty by default.
+    BILLING_BYPASS_EMAILS: z.array(z.string()).default([]),
   })
   .strict()
   .superRefine((env, context) => {
@@ -106,6 +109,13 @@ const nonEmpty = (value: string | null | undefined): string | undefined => {
   return trimmed ? trimmed : undefined;
 };
 
+// Blank entries (a trailing comma in a deploy var, a stray "" in yaml) can
+// never match an email, but they would inflate the roster count the backend
+// logs at startup -- the operator's only confirmation that a redeploy picked
+// up a change. Drop them at the boundary.
+const toEmailList = (values: string[] | undefined): string[] =>
+  (values ?? []).filter((value) => value.trim() !== "");
+
 export function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
@@ -134,6 +144,7 @@ export function parseRawConfig(config: CompassConfig): Config {
     STRIPE_WEBHOOK_SECRET: nonEmpty(config.stripe?.webhookSecret),
     STRIPE_PRICE_ID: nonEmpty(config.stripe?.priceId),
     BILLING_ENFORCEMENT: config.billing?.enforcement,
+    BILLING_BYPASS_EMAILS: toEmailList(config.billing?.bypassEmails),
   });
 }
 
@@ -170,6 +181,9 @@ export function parseConfigFromEnv(
     STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
     STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
     BILLING_ENFORCEMENT: nonEmpty(rawEnv["BILLING_ENFORCEMENT"]),
+    BILLING_BYPASS_EMAILS: toEmailList(
+      rawEnv["BILLING_BYPASS_EMAILS"]?.split(","),
+    ),
   });
 }
 
