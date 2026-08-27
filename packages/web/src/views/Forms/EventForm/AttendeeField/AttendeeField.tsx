@@ -12,11 +12,21 @@ import {
   type GroupBase,
   type MenuProps,
   type MultiValue,
+  type MultiValueGenericProps,
+  type MultiValueProps,
   components as selectComponents,
 } from "react-select";
 import CreatableSelect from "react-select/creatable";
-import { type AttendeeInput } from "@core/types/event-attendance.contracts";
+import {
+  type AttendeeInput,
+  type AttendeeResponseStatus,
+} from "@core/types/event-attendance.contracts";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import { AttendeeRsvpStatus } from "@web/views/Forms/EventForm/AttendeeRsvpStatus";
+import {
+  ATTENDEE_RSVP_LABEL,
+  statusForEmail,
+} from "@web/views/Forms/EventForm/attendee-rsvp";
 
 /**
  * Pluggable suggestion source for the guest combobox. WP-06 plugs the
@@ -35,12 +45,18 @@ interface AttendeeOption {
   value: string;
   label: string;
   attendee: AttendeeInput;
+  /** Display-only. Never round-trips into the write-input attendee. */
+  responseStatus: AttendeeResponseStatus;
 }
 
-const toOption = (attendee: AttendeeInput): AttendeeOption => ({
+const toOption = (
+  attendee: AttendeeInput,
+  responseStatus: AttendeeResponseStatus = "needsAction",
+): AttendeeOption => ({
   value: attendee.email.toLowerCase(),
   label: attendee.displayName ?? attendee.email,
   attendee,
+  responseStatus,
 });
 
 // Pragmatic shape check, not RFC 5322: something@something.tld with no
@@ -76,7 +92,32 @@ const AttendeeMenu = (
   );
 };
 
-const attendeeFieldComponents = { Menu: AttendeeMenu };
+const AttendeeMultiValueLabel = (
+  props: MultiValueGenericProps<AttendeeOption, true>,
+) => (
+  <selectComponents.MultiValueLabel {...props}>
+    <span className="inline-flex items-center gap-1">
+      <AttendeeRsvpStatus status={props.data.responseStatus} />
+      {props.children}
+    </span>
+  </selectComponents.MultiValueLabel>
+);
+
+const AttendeeMultiValue = (props: MultiValueProps<AttendeeOption, true>) => (
+  <selectComponents.MultiValue
+    {...props}
+    innerProps={{
+      ...props.innerProps,
+      "aria-label": `${props.data.label}, ${ATTENDEE_RSVP_LABEL[props.data.responseStatus]}`,
+    }}
+  />
+);
+
+const attendeeFieldComponents = {
+  Menu: AttendeeMenu,
+  MultiValue: AttendeeMultiValue,
+  MultiValueLabel: AttendeeMultiValueLabel,
+};
 
 // react-select's emotion style objects beat class-based CSS for these text
 // roles — same recipe as TimePicker/FreqSelect.
@@ -104,7 +145,12 @@ const attendeeFieldStyles = {
     backgroundColor: "var(--surface-raised)",
     borderRadius: "var(--radius-default)",
   }),
-  multiValueLabel: themeColor("var(--text)"),
+  multiValueLabel: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    color: "var(--text)",
+    display: "flex",
+    alignItems: "center",
+  }),
   multiValueRemove: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
     ...base,
     color: "var(--text-muted)",
@@ -121,6 +167,11 @@ export interface AttendeeFieldProps {
   value: readonly AttendeeInput[];
   onChange: (next: readonly AttendeeInput[]) => void;
   suggestionSource?: AttendeeSuggestionSource;
+  /**
+   * Live provider RSVP keyed by lower-cased email. Display-only: chips stay
+   * AttendeeInput onChange. Missing / newly typed emails paint as awaiting.
+   */
+  statusByEmail?: ReadonlyMap<string, AttendeeResponseStatus>;
   /**
    * Rendered at the bottom of the open listbox (non-scrolling) — the slot
    * the "Enable contact suggestions" nudge lives in when the contacts
@@ -143,6 +194,7 @@ export const AttendeeField = ({
   value,
   onChange,
   suggestionSource = emptySuggestionSource,
+  statusByEmail,
   menuFooter = null,
 }: AttendeeFieldProps) => {
   const [inputValue, setInputValue] = useState("");
@@ -154,7 +206,13 @@ export const AttendeeField = ({
   const layerId = useId();
   useFloatingLayer(`attendeeField:${layerId}`, isMenuOpen);
 
-  const selectedOptions = useMemo(() => value.map(toOption), [value]);
+  const selectedOptions = useMemo(
+    () =>
+      value.map((attendee) =>
+        toOption(attendee, statusForEmail(statusByEmail, attendee.email)),
+      ),
+    [statusByEmail, value],
+  );
   const selectedEmails = useMemo(
     () => new Set(value.map((attendee) => attendee.email.toLowerCase())),
     [value],
@@ -163,7 +221,7 @@ export const AttendeeField = ({
     () =>
       suggestions
         .filter((entry) => !selectedEmails.has(entry.email.toLowerCase()))
-        .map(toOption),
+        .map((entry) => toOption(entry)),
     [selectedEmails, suggestions],
   );
 
@@ -255,14 +313,9 @@ export const AttendeeField = ({
             isValidAttendeeEmail(candidate) &&
             !selectedEmails.has(candidate.trim().toLowerCase())
           }
-          getNewOptionData={(candidate) => {
-            const email = candidate.trim();
-            return {
-              value: email.toLowerCase(),
-              label: email,
-              attendee: { email, displayName: null },
-            };
-          }}
+          getNewOptionData={(candidate) =>
+            toOption({ email: candidate.trim(), displayName: null })
+          }
           formatCreateLabel={(candidate) => `Add "${candidate.trim()}"`}
           noOptionsMessage={({ inputValue: query }) => {
             const email = query.trim();

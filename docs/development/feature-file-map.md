@@ -42,6 +42,7 @@ RSVP](../features/attendees.md).
 
 - Attendee/RSVP write contracts: `packages/core/src/types/event-command.contracts.ts`, `packages/core/src/types/event-attendance.contracts.ts`
 - Guest-list editor: `packages/web/src/views/Forms/EventForm/AttendeeField/AttendeeField.tsx`
+- RSVP status badge and tally: `packages/web/src/views/Forms/EventForm/AttendeeRsvpStatus.tsx`, `packages/web/src/views/Forms/EventForm/attendee-rsvp.ts`, `packages/web/src/views/Forms/EventForm/EventDetailsSection.tsx`
 - Save-time invitation prompt: `packages/web/src/views/Forms/EventForm/SendInvitationsDialog.tsx`, `packages/web/src/views/Forms/hooks/useSaveEventForm.ts`
 - RSVP control and scope dialog: `packages/web/src/views/Forms/EventForm/RsvpControl.tsx`, `packages/web/src/views/Forms/EventForm/RsvpScopeDialog.tsx`
 - Contact suggestions hook: `packages/web/src/views/Forms/EventForm/AttendeeField/useContactSuggestions.ts`

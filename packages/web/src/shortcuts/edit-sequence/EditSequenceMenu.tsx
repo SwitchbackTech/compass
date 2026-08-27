@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
-import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
+import { EDIT_SEQUENCE_LETTER_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import {
   selectEditSequenceMenuVisible,
   useEditSequenceStore,
@@ -19,7 +19,7 @@ const MENU_WIDTH = 260;
 const GAP = 8;
 
 /** Screen-reader copy, so the visible chips can stay aria-hidden. */
-const SR_TEXT = `Edit which field? ${EDIT_SEQUENCE_FIELDS.map(
+const SR_TEXT = `Edit which field? ${EDIT_SEQUENCE_LETTER_FIELDS.map(
   (option) => `${option.key.toUpperCase()} for ${option.label.toLowerCase()}`,
 ).join(", ")}. Escape to cancel.`;
 
@@ -111,7 +111,7 @@ export function EditSequenceMenu({
             Edit which field?
           </span>
           <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-            {EDIT_SEQUENCE_FIELDS.map((option) => (
+            {EDIT_SEQUENCE_LETTER_FIELDS.map((option) => (
               <span
                 key={option.key}
                 className="flex items-center gap-1.5 text-text text-xs"

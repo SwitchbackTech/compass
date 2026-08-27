@@ -80,10 +80,13 @@ const buildForm = () => {
   color.append(radio);
   document.body.append(color);
 
-  // A real input, like the Location Focusable in EventForm.tsx.
   const location = document.createElement("input");
   location.id = "event-form-location";
   form.append(location);
+
+  const attendees = document.createElement("input");
+  attendees.id = "event-form-attendees";
+  form.append(attendees);
 
   // Real usage sets this id on TipTap's contenteditable root, which is what
   // makes it focusable; jsdom doesn't treat contenteditable as focusable on
@@ -102,6 +105,7 @@ const buildForm = () => {
     calendar,
     color: radio,
     location,
+    attendees,
     description,
   };
 };
@@ -128,7 +132,7 @@ describe("useFormDigitJumpShortcut", () => {
       expect(fields.end).toHaveFocus();
     });
 
-    it("maps every digit 1-8 to its field, in DOM order", () => {
+    it("maps every digit 1-9 to its field, in DOM order", () => {
       const fields = buildForm();
       renderHook(() => useFormDigitJumpShortcut());
 
@@ -140,7 +144,8 @@ describe("useFormDigitJumpShortcut", () => {
         ["5", fields.calendar],
         ["6", fields.color],
         ["7", fields.location],
-        ["8", fields.description],
+        ["8", fields.attendees],
+        ["9", fields.description],
       ] as const;
 
       for (const [digit, element] of cases) {

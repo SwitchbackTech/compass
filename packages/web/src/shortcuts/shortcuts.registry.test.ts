@@ -137,7 +137,8 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-focus-start");
       expect(ids).toContain("edit-focus-end");
       expect(ids).toContain("edit-focus-recurrence");
-      expect(ids).toContain("edit-focus-calendar");
+      expect(ids).toContain("edit-focus-attendees");
+      expect(ids).not.toContain("edit-focus-calendar");
       expect(ids).toContain("edit-focus-color");
     });
 

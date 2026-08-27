@@ -175,6 +175,8 @@ describe("form.util", () => {
       colorOther.type = "radio";
       colorOther.name = "event-color";
       color.append(colorSelected, colorOther);
+      const attendees = document.createElement("input");
+      attendees.id = "event-form-attendees";
       form.append(
         title,
         location,
@@ -184,6 +186,7 @@ describe("form.util", () => {
         recurrence,
         calendar,
         color,
+        attendees,
       );
       document.body.appendChild(form);
       return {
@@ -195,6 +198,7 @@ describe("form.util", () => {
         repeat,
         calendar,
         colorSelected,
+        attendees,
       };
     };
 
@@ -224,6 +228,9 @@ describe("form.util", () => {
 
       expect(focusEventFormField("color")).toBe(true);
       expect(document.activeElement).toBe(fields.colorSelected);
+
+      expect(focusEventFormField("attendees")).toBe(true);
+      expect(document.activeElement).toBe(fields.attendees);
     });
 
     it("falls back to start/end date inputs when time pickers are absent", () => {
@@ -260,6 +267,19 @@ describe("form.util", () => {
       document.body.appendChild(form);
 
       expect(focusEventFormField("location")).toBe(false);
+    });
+
+    it("falls back to the read-only guest list when the combobox is absent", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const guestList = document.createElement("div");
+      guestList.id = "event-form-guest-list";
+      guestList.tabIndex = -1;
+      form.append(guestList);
+      document.body.appendChild(form);
+
+      expect(focusEventFormField("attendees")).toBe(true);
+      expect(document.activeElement).toBe(guestList);
     });
 
     it("keeps focusEventFormTitle as a title helper", () => {

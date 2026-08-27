@@ -1,4 +1,4 @@
-import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
+import { EDIT_SEQUENCE_LETTER_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
@@ -204,7 +204,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   // reference, and gating these on live DOM focus made them vanish the moment
   // the legend took focus to open. In-the-moment discovery is the which-key
   // menu's job instead.
-  ...EDIT_SEQUENCE_FIELDS.map(({ field, key, label }) => ({
+  ...EDIT_SEQUENCE_LETTER_FIELDS.map(({ field, key, label }) => ({
     id: `edit-focus-${field}`,
     keys: ["e", key],
     label: `Edit ${label.toLowerCase()}`,

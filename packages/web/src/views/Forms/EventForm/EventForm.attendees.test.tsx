@@ -1,5 +1,5 @@
-import { HotkeyManager } from "@tanstack/react-hotkeys";
-import { render, screen } from "@testing-library/react";
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
@@ -97,6 +97,22 @@ const editDraftOrThrow = (event: Event): GridEventDraft => {
   return draft;
 };
 
+function dispatchModDigitKey(target: HTMLElement, code: string, key: string) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    code,
+    ctrlKey: isControl,
+    key,
+    metaKey: !isControl,
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 describe("EventForm attendee editor gating", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
@@ -110,10 +126,25 @@ describe("EventForm attendee editor gating", () => {
     renderEventForm(draft, [calendar]);
 
     expect(screen.getByRole("combobox", { name: "Guests" })).toBeEnabled();
-    // The editor owns the guest list; the legacy read-only list stands down.
-    expect(screen.queryByText(/1 guest/)).not.toBeInTheDocument();
+    // The editor owns the guest list; the read-only list stands down, but
+    // the same tally copy sits with the chips so the host still sees RSVPs.
+    expect(screen.getByText("1 guest (1 yes, 0 awaiting)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Guest One, yes")).toBeInTheDocument();
     // Existing guests appear as chips (displayName preferred).
     expect(screen.getByText("Guest One")).toBeInTheDocument();
+  });
+
+  it("jumps focus to the guest combobox with Mod+8", () => {
+    const calendar = makeCalendar();
+    const draft = editDraftOrThrow(makeMeetingEvent(calendar.id));
+
+    renderEventForm(draft, [calendar]);
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+    dispatchModDigitKey(titleField, "Digit8", "8");
+
+    expect(screen.getByRole("combobox", { name: "Guests" })).toHaveFocus();
   });
 
   it("keeps the read-only guest list for an event the user does not organize", () => {

@@ -64,6 +64,8 @@ test("answering a single event posts immediately with scope single and no dialog
 
   await openEventForm(page, "Team Offsite");
 
+  await expect(page.getByText("2 guests (1 yes, 1 awaiting)")).toBeVisible();
+
   const group = getRsvpGroup(page);
   await expect(group).toBeVisible();
   // Unanswered (needsAction): no radio is checked yet.

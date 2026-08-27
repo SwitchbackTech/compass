@@ -66,6 +66,9 @@ describe("AttendeeField", () => {
 
     expect(onValueChange).toHaveBeenCalledWith([alice]);
     expect(screen.getByText("alice@example.com")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("alice@example.com, awaiting"),
+    ).toBeInTheDocument();
     expect(onFormSubmit).not.toHaveBeenCalled();
   });
 
@@ -114,9 +117,27 @@ describe("AttendeeField", () => {
     );
 
     expect(screen.getByText("Bob B")).toBeInTheDocument();
+    expect(screen.getByLabelText("Bob B, awaiting")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Remove Bob B" }));
 
     expect(onValueChange).toHaveBeenCalledWith([alice]);
+  });
+
+  it("paints provider RSVP on chips from the display-only status map", () => {
+    const statusByEmail = new Map([
+      ["alice@example.com", "accepted" as const],
+      ["bob@example.com", "declined" as const],
+    ]);
+    render(
+      <AttendeeField
+        value={[alice, bob]}
+        onChange={() => {}}
+        statusByEmail={statusByEmail}
+      />,
+    );
+
+    expect(screen.getByLabelText("alice@example.com, yes")).toBeInTheDocument();
+    expect(screen.getByLabelText("Bob B, no")).toBeInTheDocument();
   });
 
   it("removes the last chip with Backspace on an empty input", async () => {

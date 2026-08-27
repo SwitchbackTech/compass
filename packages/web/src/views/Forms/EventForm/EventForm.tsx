@@ -60,6 +60,11 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
 import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
+import {
+  attendeeStatusByEmail,
+  formatAttendeeRsvpTally,
+  statusForEmail,
+} from "@web/views/Forms/EventForm/attendee-rsvp";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -349,6 +354,17 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         email,
         displayName,
       }));
+    const attendeeRsvpByEmail = attendeeStatusByEmail(
+      liveDetails?.attendees ?? sourceDetails?.attendees,
+    );
+    const attendeeChipTally =
+      attendeeChips.length === 0
+        ? null
+        : formatAttendeeRsvpTally(
+            attendeeChips.map((chip) =>
+              statusForEmail(attendeeRsvpByEmail, chip.email),
+            ),
+          );
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDateStrings(draft);
@@ -962,19 +978,29 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   <div className="flex items-start gap-2">
                     <UsersIcon
                       size={16}
-                      className="mt-2 shrink-0 text-text-muted"
+                      className="mt-1 shrink-0 text-text-muted"
                     />
-                    <AttendeeField
-                      id={EVENT_FORM_ATTENDEES_ID}
-                      value={attendeeChips}
-                      onChange={(next) => patchDraftFields({ attendees: next })}
-                      suggestionSource={contactSuggestionSource}
-                      menuFooter={
-                        canSuggestContacts ? null : (
-                          <EnableContactSuggestionsNudge />
-                        )
-                      }
-                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      {attendeeChipTally && (
+                        <p className="text-text-muted text-xs">
+                          {attendeeChipTally}
+                        </p>
+                      )}
+                      <AttendeeField
+                        id={EVENT_FORM_ATTENDEES_ID}
+                        value={attendeeChips}
+                        onChange={(next) =>
+                          patchDraftFields({ attendees: next })
+                        }
+                        statusByEmail={attendeeRsvpByEmail}
+                        suggestionSource={contactSuggestionSource}
+                        menuFooter={
+                          canSuggestContacts ? null : (
+                            <EnableContactSuggestionsNudge />
+                          )
+                        }
+                      />
+                    </div>
                   </div>
                 </FormCard>
               )}
