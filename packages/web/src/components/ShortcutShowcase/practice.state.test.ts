@@ -105,6 +105,7 @@ describe("practice state transitions", () => {
     const focused = ensureFocused(initialPracticeState);
     const deletedId = focused.focusedId;
     expect(deletedId).toBeTruthy();
+    if (!deletedId) throw new Error("expected a focused event");
 
     const afterDelete = deleteFocused(focused);
     expect(afterDelete.events.some((event) => event.id === deletedId)).toBe(
