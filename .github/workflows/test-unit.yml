@@ -4,10 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - ".gitignore"
-      - "**/*.md"
-      - "docs/**"
   push:
     paths-ignore:
       - ".gitignore"
@@ -16,9 +12,54 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  # Required status checks cannot come from a workflow that path filtering
+  # skipped: GitHub never creates the check run, so the context sits Pending
+  # and a docs-only PR can never merge. A job skipped by an `if:` conditional
+  # does report, and reports Success. So for pull_request the filter lives
+  # here, as a job gate, not in `on:`. The push trigger keeps its
+  # paths-ignore: push runs block nothing.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Detect non-docs changes
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api --paginate \
+            "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --jq '.[].filename')
+          # Keep these patterns in step with the push trigger's paths-ignore
+          # above. Deliberately not `grep -q`: it exits on the first match, so
+          # printf takes a SIGPIPE that `pipefail` would turn into a non-zero
+          # pipeline on a large PR, reading as "docs only" and skipping the
+          # suite on real code. Draining into a variable cannot do that.
+          code_files=$(printf '%s\n' "$files" |
+            grep -vE '(\.md$|^docs/|^\.gitignore$)' || true)
+          # Fail open: an empty or unreadable list runs the suite rather than
+          # waving an unverified change through.
+          if [ -z "$files" ] || [ -n "$code_files" ]; then
+            code=true
+          else
+            code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Non-docs changes: $code"
+
   lint:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -53,6 +94,8 @@ jobs:
           bun run lint
 
   knip:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -89,6 +132,8 @@ jobs:
           bun run knip
 
   type-check:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -122,7 +167,12 @@ jobs:
         run: |
           bun run type-check
 
+  # A skipped MATRIX job collapses to one check run named `unit`, so the
+  # required `unit (core)` ... `unit (scripts)` contexts would never report and
+  # a docs-only PR would still be BLOCKED. Let the legs start and skip every
+  # step instead: each reports its own name, in a few seconds, for free.
   unit:
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -132,19 +182,23 @@ jobs:
 
     steps:
       - name: Check out Git repository
+        if: needs.changes.outputs.code == 'true'
         uses: actions/checkout@v6
 
       - name: Install Node.js
+        if: needs.changes.outputs.code == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Install Bun
+        if: needs.changes.outputs.code == 'true'
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
 
       - name: Cache Bun dependencies
+        if: needs.changes.outputs.code == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
@@ -153,20 +207,21 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: Install Dependencies
+        if: needs.changes.outputs.code == 'true'
         run: |
           bun install --frozen-lockfile
 
       # backend and scripts boot an in-memory MongoDB; cache the downloaded
       # mongod binary so each run doesn't re-fetch it.
       - name: Cache MongoDB binaries
-        if: matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync'
+        if: needs.changes.outputs.code == 'true' && (matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync')
         uses: actions/cache@v5
         with:
           path: ~/.cache/mongodb-binaries
           key: ${{ runner.os }}-mongodb-memory-server
 
       - name: Run web tests
-        if: matrix.project == 'web'
+        if: needs.changes.outputs.code == 'true' && (matrix.project == 'web')
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
@@ -174,7 +229,7 @@ jobs:
           bun run test:web
 
       - name: Run ${{ matrix.project }} tests
-        if: matrix.project != 'web'
+        if: needs.changes.outputs.code == 'true' && (matrix.project != 'web')
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
