@@ -12,16 +12,18 @@ set -uo pipefail
 ISSUE_NUMBER=${1:?usage: autofix-merge-guard.sh <issue-number>}
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autofix-lib.sh"
 
-# Paths an autofix PR must never touch, even if the agent judged itself
-# confident. Mirrors the rubric in error-autofix.md; kept here as the
-# authoritative, non-LLM-bypassable copy.
+# Paths an autofix PR may not AUTO-MERGE past, even if the agent judged
+# itself confident. This is a merge gate, not a rule about what the agent may
+# author: a fix that genuinely needs one of these paths should still be opened
+# as a PR (see error-autofix.md), it just always waits for a human. Kept here
+# as the authoritative, non-LLM-bypassable copy.
 #
 # The bare 'billing'/'stripe' substrings only catch files whose PATH mentions
 # them (e.g. packages/*/src/billing/**). Several files carry real Stripe
 # wiring — env validation, webhook signature verification — without either
-# word in their path; those are denied explicitly below rather than trying
+# word in their path; those are listed explicitly below rather than trying
 # to keep a substring pattern in sync with every such file forever.
-DENIED_PATH_PATTERNS=(
+NO_AUTOMERGE_PATH_PATTERNS=(
   '^\.github/'
   '^self-host/'
   '^packages/backend/src/auth/'
@@ -77,9 +79,9 @@ main() {
   fi
   changed_files=$(printf '%s\n' "$changed_files_list" | grep -c . || true)
 
-  for pattern in "${DENIED_PATH_PATTERNS[@]}"; do
+  for pattern in "${NO_AUTOMERGE_PATH_PATTERNS[@]}"; do
     if printf '%s\n' "$changed_files_list" | grep -Eiq "$pattern"; then
-      downgrade "$pr_number" "touches a denied path (matches ${pattern})"
+      downgrade "$pr_number" "touches a path that may not auto-merge (matches ${pattern})"
       return 0
     fi
   done

@@ -26,7 +26,7 @@ Sources of truth:
 | Post-deploy Discord/GitHub follow-up | `.github/workflows/error-autofix-postdeploy.yml` |
 | Agent instructions | `.github/prompts/error-autofix.md` |
 | Preflight (cheap stop before the LLM) | `.github/scripts/autofix-preflight.sh` |
-| Merge-guard Verifier (denied paths, size) | `.github/scripts/autofix-merge-guard.sh` |
+| Merge-guard Verifier (no-auto-merge paths, size) | `.github/scripts/autofix-merge-guard.sh` |
 | Shared notify helpers | `.github/scripts/autofix-lib.sh` |
 
 ## Stop switch and mode
@@ -39,6 +39,12 @@ Sources of truth:
   - `pr` — may open a PR; a human merges
   - `merge` — may open a PR and label `automerge-candidate`; merge-guard
     is the Verifier and may strip that label / add `autofix:needs-human`
+- Sensitive paths (billing/Stripe, auth, `self-host/**`, `.github/**`,
+  telemetry, config wiring) gate **merging**, not authoring. The agent may
+  open a fix PR that touches them; it must self-label `autofix:needs-human`
+  and never `automerge-candidate`, and the merge-guard enforces that
+  independently. A diagnosed fix should arrive as a reviewable PR, not as a
+  comment saying someone ought to write it.
 - Production deploy is never automatic. Staging-only PostHog errors must
   never receive `automerge-candidate`.
 
@@ -76,7 +82,7 @@ staging drill.
 | Duplicate open for the same issue | Preflight skip and/or prompt “one PR per issue”; **no second PR** |
 | Second issue while a run is in flight | Queued behind `concurrency.group: error-autofix`; first run not cancelled |
 | Staging-only error | No `automerge-candidate` |
-| Denied-path diff | Merge-guard downgrades `automerge-candidate`, adds `autofix:needs-human`. Authoritative list: `DENIED_PATH_PATTERNS` in `.github/scripts/autofix-merge-guard.sh` (do not widen from this doc) |
+| No-auto-merge-path diff | PR still exists; merge-guard downgrades `automerge-candidate`, adds `autofix:needs-human`, and it does not auto-merge. Authoritative list: `NO_AUTOMERGE_PATH_PATTERNS` in `.github/scripts/autofix-merge-guard.sh` (do not widen from this doc) |
 | Merge-guard size fail | Same downgrade if files &gt; `MAX_FILES=8` or lines &gt; `MAX_LINES=250` in that script |
 | `workflow_dispatch` triage on a safe issue | Comment only; mode unchanged |
 
