@@ -1,3 +1,4 @@
+import { type PracticeEdge } from "@web/components/ShortcutShowcase/practice.state";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 
@@ -73,6 +74,17 @@ export const SHOWCASE_STEPS = [
     level: 4,
   },
   {
+    id: "edgeResize",
+    title: "Change just one edge",
+    body: [
+      "Tab to the start or end of the focused event, then hold ",
+      { key: "Shift" },
+      " and press an arrow to change just that edge.",
+    ],
+    keycaps: [KEYMAP.edgeFocus.hotkey, ...KEYMAP.moveEvent.keycaps],
+    level: 5,
+  },
+  {
     id: "editTitle",
     title: "Grab the title",
     body: [
@@ -83,7 +95,20 @@ export const SHOWCASE_STEPS = [
       " to target the title.",
     ],
     keycaps: KEYMAP.editTitle.keycaps,
-    level: 5,
+    level: 6,
+  },
+  {
+    id: "deleteUndo",
+    title: "Delete, then take it back",
+    body: [
+      "Press ",
+      { key: "Delete" },
+      " to remove the focused event, then ",
+      { keys: KEYMAP.undo.keycaps },
+      " to undo.",
+    ],
+    keycaps: ["Delete", ...KEYMAP.undo.keycaps],
+    level: 7,
   },
   {
     id: "palette",
@@ -94,7 +119,18 @@ export const SHOWCASE_STEPS = [
       " to open the command palette. Enter runs the highlighted command.",
     ],
     keycaps: KEYMAP.commandPalette.keycaps,
-    level: 6,
+    level: 8,
+  },
+  {
+    id: "legend",
+    title: "The rest lives in the legend",
+    body: [
+      "Press ",
+      { key: "?" },
+      " to open the shortcut legend. Enter closes it.",
+    ],
+    keycaps: ["?"],
+    level: 9,
   },
   {
     id: "notifications",
@@ -136,5 +172,35 @@ export function getCreateLessonPhase(
   return {
     body: "Type a title, then press Enter to save.",
     keycaps: KEYMAP.saveDraft.keycaps,
+  };
+}
+
+/** After Tab lands on an edge, the hint swaps to the Shift+arrow beat. */
+export function getEdgeResizeLessonPhase(
+  edge: PracticeEdge,
+): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+  if (!edge) return {};
+  return {
+    body: [
+      "Hold ",
+      { key: "Shift" },
+      " and press an arrow to change just that edge.",
+    ],
+    keycaps: KEYMAP.moveEvent.keycaps,
+  };
+}
+
+/** After Delete, the hint swaps to the undo beat. */
+export function getDeleteUndoLessonPhase(
+  hasDeleted: boolean,
+): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+  if (!hasDeleted) return {};
+  return {
+    body: [
+      "Press ",
+      { keys: KEYMAP.undo.keycaps },
+      " to bring the event back.",
+    ],
+    keycaps: KEYMAP.undo.keycaps,
   };
 }

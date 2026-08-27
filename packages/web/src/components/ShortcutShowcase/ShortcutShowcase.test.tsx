@@ -119,7 +119,7 @@ describe("ShortcutShowcase", () => {
     expect(
       screen.getByText(/That takes a little practice to get the muscle memory/),
     ).toBeTruthy();
-    expect(screen.queryByText("Level 1/6")).toBeNull();
+    expect(screen.queryByText("Level 1/9")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Start practicing" }),
     ).toBeTruthy();
@@ -130,7 +130,7 @@ describe("ShortcutShowcase", () => {
 
     pressKey("Enter");
     expect(currentStepId()).toBe("create");
-    expect(screen.getByText("Level 1/6")).toBeTruthy();
+    expect(screen.getByText("Level 1/9")).toBeTruthy();
     expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
   });
 
@@ -140,7 +140,7 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
     expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
-    expect(screen.getByText("Level 1/6")).toBeTruthy();
+    expect(screen.getByText("Level 1/9")).toBeTruthy();
 
     pressKey("c");
     expect(currentStepId()).toBe("create");
@@ -152,7 +152,7 @@ describe("ShortcutShowcase", () => {
     );
     expect(currentStepId()).toBe("pageJump");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
-    expect(screen.getByText("Level 2/6")).toBeTruthy();
+    expect(screen.getByText("Level 2/9")).toBeTruthy();
     expect(
       screen.getByText("See where to go: reveal the jump keys"),
     ).toBeTruthy();
@@ -303,7 +303,33 @@ describe("ShortcutShowcase", () => {
     showStep("nudge");
 
     pressKey("ArrowRight", { shiftKey: true });
+    expect(currentStepId()).toBe("edgeResize");
+  });
+
+  it("teaches Tab then Shift+arrow to resize one edge", () => {
+    render(<ShortcutShowcase />);
+    showStep("edgeResize");
+
+    pressKey("ArrowDown", { shiftKey: true });
+    expect(currentStepId()).toBe("edgeResize");
+
+    pressKey("Tab");
+    expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
+
+    pressKey("ArrowDown", { shiftKey: true });
     expect(currentStepId()).toBe("editTitle");
+  });
+
+  it("keeps Tab on the focused event during the edge-resize lesson", () => {
+    render(<ShortcutShowcase />);
+    showStep("edgeResize");
+
+    pressKey("Tab");
+    expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
+    pressKey("Tab");
+    expect(screen.getByRole("status")).toHaveTextContent("Editing end time");
+    pressKey("Tab");
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("teaches E then T to target the title", async () => {
@@ -317,6 +343,21 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Event title")).toBeTruthy();
 
     await user.type(screen.getByLabelText("Event title"), "{Enter}");
+    expect(currentStepId()).toBe("deleteUndo");
+  });
+
+  it("teaches Delete then undo", () => {
+    const isMac = resolveModifier("Mod") === "Meta";
+    render(<ShortcutShowcase />);
+    showStep("deleteUndo");
+
+    expect(screen.getByText("Team sync")).toBeTruthy();
+    pressKey("Delete");
+    expect(screen.queryByText("Team sync")).toBeNull();
+    expect(currentStepId()).toBe("deleteUndo");
+
+    pressKey("z", isMac ? { metaKey: true } : { ctrlKey: true });
+    expect(screen.getByText("Team sync")).toBeTruthy();
     expect(currentStepId()).toBe("palette");
   });
 
@@ -329,8 +370,31 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
 
     pressKey("Enter");
-    // The last level hands off to the notifications offer, then graduation.
+    expect(currentStepId()).toBe("legend");
+  });
+
+  it("opens a practice legend with ? and completes on Enter", () => {
+    render(<ShortcutShowcase />);
+    showStep("legend");
+
+    pressKey("?");
+    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+
+    pressKey("Enter");
     expect(currentStepId()).toBe("notifications");
+  });
+
+  it("Escape closes the practice legend and stays on the legend level", () => {
+    render(<ShortcutShowcase />);
+    showStep("legend");
+
+    pressKey("?");
+    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+
+    pressKey("Escape");
+    expect(screen.queryByLabelText("Practice shortcut legend")).toBeNull();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(currentStepId()).toBe("legend");
   });
 
   it("does not open the practice palette on Mod+K before the palette level", () => {

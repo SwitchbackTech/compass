@@ -357,6 +357,7 @@ export function useGridEventEditShortcuts({
       event,
       keyboardEvent,
       onNudge: (nudgedEvent, nextEdge) => {
+        shortcutHintProgressActions.demonstrate("edge-focus");
         commit(nudgedEvent);
         edgeFocusActions.setEdge(
           event._id!,

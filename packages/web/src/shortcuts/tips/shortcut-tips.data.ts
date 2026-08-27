@@ -7,6 +7,7 @@ export type ShortcutHintId =
   | "life-this-week"
   | "edit-sequence"
   | "nudge"
+  | "edge-focus"
   | "create-event"
   | "page-jump"
   | "event-jump"
@@ -109,6 +110,16 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
   nudge: {
     id: "nudge",
     parts: ["Hold ", { key: nudgeModifier }, " and press an arrow to move"],
+  },
+  "edge-focus": {
+    id: "edge-focus",
+    parts: [
+      "Press ",
+      { key: KEYMAP.edgeFocus.hotkey },
+      " to the start or end, then hold ",
+      { key: nudgeModifier },
+      " and press an arrow",
+    ],
   },
   "command-palette": {
     id: "command-palette",

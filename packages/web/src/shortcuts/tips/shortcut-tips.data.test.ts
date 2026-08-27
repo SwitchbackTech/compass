@@ -37,6 +37,9 @@ describe("getHintPlainText", () => {
       "On week view, press H then M to focus Monday",
     );
     expect(plainTextById.nudge).toBe("Hold Shift and press an arrow to move");
+    expect(plainTextById["edge-focus"]).toBe(
+      "Press Tab to the start or end, then hold Shift and press an arrow",
+    );
     expect(plainTextById["command-palette"]).toBe(
       `Press ${mod}+K to open the command palette`,
     );

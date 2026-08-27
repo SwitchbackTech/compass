@@ -2,13 +2,17 @@ import {
   armEdit,
   commitTitle,
   createDraft,
+  cycleEdgeFocus,
+  deleteFocused,
   ensureFocused,
   initialPracticeState,
   jumpToEvent,
   nudgeFocused,
   openTitleFromEdit,
+  PRACTICE_NUDGE_MIN,
   PRACTICE_TEAM_SYNC_ID,
   toggleJumpHints,
+  undoDelete,
 } from "@web/components/ShortcutShowcase/practice.state";
 import { describe, expect, it } from "bun:test";
 
@@ -62,6 +66,57 @@ describe("practice state transitions", () => {
     const moved = nudgeFocused(focused, "right");
     const next = moved.events.find((event) => event.id === focused.focusedId);
     expect(next?.dayIndex).toBe((team?.dayIndex ?? 0) + 1);
+  });
+
+  it("cycles edge focus and resizes only the focused edge", () => {
+    const focused = ensureFocused(initialPracticeState);
+    const team = focused.events.find((event) => event.id === focused.focusedId);
+    expect(team).toBeTruthy();
+
+    const startEdge = cycleEdgeFocus(focused, "forward");
+    expect(startEdge.edge).toBe("start");
+
+    const laterStart = nudgeFocused(startEdge, "down");
+    const resized = laterStart.events.find(
+      (event) => event.id === focused.focusedId,
+    );
+    expect(resized?.startMin).toBe((team?.startMin ?? 0) + PRACTICE_NUDGE_MIN);
+    expect(resized?.endMin).toBe(team?.endMin);
+
+    const wholeMove = nudgeFocused(focused, "down");
+    const translated = wholeMove.events.find(
+      (event) => event.id === focused.focusedId,
+    );
+    expect(translated?.startMin).toBe(
+      (team?.startMin ?? 0) + PRACTICE_NUDGE_MIN,
+    );
+    expect(translated?.endMin).toBe((team?.endMin ?? 0) + PRACTICE_NUDGE_MIN);
+  });
+
+  it("ignores left/right while an edge is focused", () => {
+    const startEdge = cycleEdgeFocus(
+      ensureFocused(initialPracticeState),
+      "forward",
+    );
+    expect(nudgeFocused(startEdge, "right")).toBe(startEdge);
+  });
+
+  it("deletes the focused event and restores it on undo", () => {
+    const focused = ensureFocused(initialPracticeState);
+    const deletedId = focused.focusedId;
+    expect(deletedId).toBeTruthy();
+    if (!deletedId) throw new Error("expected a focused event");
+
+    const afterDelete = deleteFocused(focused);
+    expect(afterDelete.events.some((event) => event.id === deletedId)).toBe(
+      false,
+    );
+    expect(afterDelete.lastDeleted?.id).toBe(deletedId);
+
+    const restored = undoDelete(afterDelete);
+    expect(restored.events.some((event) => event.id === deletedId)).toBe(true);
+    expect(restored.focusedId).toBe(deletedId);
+    expect(restored.lastDeleted).toBeNull();
   });
 
   it("opens the title field from an armed edit sequence", () => {
