@@ -8,9 +8,10 @@ import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
  * graduation hands off to a prompt on the real calendar. Skip is always
  * offered: the practice is a game, not a gate.
  *
- * "notifications" rides in this list to get the step plumbing, but it is not
- * a level: it asks for a browser permission rather than teaching a key, so
- * it stays out of SHOWCASE_LEVEL_IDS and renders no "Level N/M" chip.
+ * "intro" and "notifications" ride in this list to get the step plumbing, but
+ * they are not levels: intro is the intentional start gate, and notifications
+ * asks for a browser permission rather than teaching a key. Both stay out of
+ * SHOWCASE_LEVEL_IDS and render no "Level N/M" chip.
  */
 export type ShowcaseStep = {
   id: string;
@@ -26,6 +27,11 @@ export type ShowcaseStep = {
 };
 
 export const SHOWCASE_STEPS = [
+  {
+    id: "intro",
+    title: "Compass is keyboard-only",
+    body: "No clicks — just shortcuts. That takes a little practice to get the muscle memory down. This sandbox is that practice, and nothing here is saved.",
+  },
   {
     id: "create",
     title: "Drop an event on the board",
@@ -49,7 +55,7 @@ export const SHOWCASE_STEPS = [
     title: "Pick a target",
     body: [
       "Tap ",
-      { key: "S" },
+      { key: KEYMAP.eventJump.keycaps[0] },
       " to show event keys, then press a letter to land on one.",
     ],
     keycaps: KEYMAP.eventJump.keycaps,

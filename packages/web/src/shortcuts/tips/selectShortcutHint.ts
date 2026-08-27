@@ -7,6 +7,7 @@ import {
 export type ShortcutHintContext = {
   isFormOpen: boolean;
   isLifeView: boolean;
+  isWeekView?: boolean;
   eventFocused: boolean;
   firstEventDone: boolean;
 };
@@ -23,6 +24,20 @@ const FOCUSED_POOL = [
   "nudge",
   ...IDLE_POOL,
 ] as const satisfies readonly ShortcutHintId[];
+
+/** Week view inserts the column-letter tip after event-jump. */
+function withWeekDayFocus(
+  pool: readonly ShortcutHintId[],
+  isWeekView?: boolean,
+): readonly ShortcutHintId[] {
+  if (!isWeekView) return pool;
+  const insertAt = pool.indexOf("event-jump") + 1;
+  return [
+    ...pool.slice(0, insertAt),
+    "week-day-focus",
+    ...pool.slice(insertAt),
+  ];
+}
 
 const FORM_POOL = [
   "save-draft",
@@ -70,10 +85,10 @@ export function selectShortcutHint(
     return pick(LIFE_POOL);
   }
   if (ctx.eventFocused) {
-    return pick(FOCUSED_POOL);
+    return pick(withWeekDayFocus(FOCUSED_POOL, ctx.isWeekView));
   }
   if (!ctx.firstEventDone) {
     return getShortcutHint("create-event");
   }
-  return pick(IDLE_POOL);
+  return pick(withWeekDayFocus(IDLE_POOL, ctx.isWeekView));
 }

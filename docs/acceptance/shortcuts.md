@@ -21,7 +21,7 @@ Use this guide to validate:
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
 - focusing events with arrow keys (chronological in Day, spatial in Week), including the first arrow when nothing is focused (nearest to now)
-- toggling event-jump chips (`S`); the mouse is permanently inert (Compass is keyboard-only)
+- toggling event-jump chips (`H`); the mouse is permanently inert (Compass is keyboard-only)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
 - confirming that shortcuts do not fire while typing in inputs
@@ -279,26 +279,26 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. Memorized tokens (`W`, `W2`, day-view `1`) also work without first pressing `S`, except where a competing command still applies: bare `T` stays “go to today”, focused `M` stays “open event menu”, and `F` stays “focus latest notice” while a notice is visible. `Esc` exits (in day view a second `S` also toggles off). Bare Shift and Shift+Tab do not show jump chips.
+Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. Memorized tokens (`SA`, `SU`, `W`, `W2`, day-view `1`) also work without first pressing `H`, except where a competing command still applies: bare `T` stays “go to today”, focused `M` stays “open event menu”, and `F` stays “focus latest notice” while a notice is visible. `Esc` exits (a second `H` also toggles off). Holding Mod reveals the same day prefixes on week column headers. Bare Shift and Shift+Tab do not show jump chips.
 
 ### Steps
 
 1. Navigate to `/week` with timed events on at least two different days.
-2. Press `S` once; chips should appear.
+2. Press `H` once; chips should appear.
 3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
 4. Press `Esc` to exit.
-5. Without pressing `S`, type a claimable day token (for example `W` or `W2`) and confirm the matching event is focused.
+5. Without pressing `H`, type a claimable day token (for example `SA`, `W`, or `W2`) and confirm the matching event is focused.
 6. Press Shift alone or Shift+Tab and confirm jump mode does not activate.
 
 ### Expected Results
 
-- Chips appear on events currently visible in the grid when `S` is pressed and stay until Esc. Scrolled-off events keep their jump keys but hide their chips.
+- Chips appear on events currently visible in the grid when `H` is pressed and stay until Esc. Scrolled-off events keep their jump keys but hide their chips.
 - A day letter highlights that column and focuses the first event; digits refine to `Wn`.
-- The same day letter / digit tokens work without a prior `S` when no competing command applies; `S` remains available to reveal every chip.
+- The same day letter / digit tokens work without a prior `H` when no competing command applies; `H` remains available to reveal every chip. Weekend columns use `SA` / `SU` from idle.
 - Bare `T` still goes to today while jump is off. With an event focused, `M` still opens the event menu. With a visible notice, `F` still focuses that notice.
 - Arrow keys keep jump mode on so letter-then-arrows works.
 - Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
-- While a modal holds the app lock, or focus is in an editable field, `S` and leaderless jump tokens do not activate jump mode.
+- While a modal holds the app lock, or focus is in an editable field, `H` and leaderless jump tokens do not activate jump mode.
 
 ---
 
@@ -306,7 +306,7 @@ Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 
 ### UX
 
-Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do not perform the clicked action (scroll and hover still work). A blocked click on a known action shows a transient, contextual hint with the keyboard path for that action. Clicking an event also activates its jump assignments and selects that event, so the displayed token plus Enter works immediately without first pressing `S`. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
+Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do not perform the clicked action (scroll and hover still work). A blocked click on a known action shows a transient, contextual hint with the keyboard path for that action. Clicking an event also activates its jump assignments and selects that event, so the displayed token plus Enter works immediately without first pressing `H`. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
 
 ### Steps
 
@@ -318,7 +318,7 @@ Compass is the keyboard calendar: pointer clicks, right-clicks, and double-click
 
 ### Expected Results
 
-- Clicking an event does not open it, but jump chips appear, the event is selected, and the hint identifies that event's exact token plus `Enter`; the shown sequence opens the event without an initial `S`.
+- Clicking an event does not open it, but jump chips appear, the event is selected, and the hint identifies that event's exact token plus `Enter`; the shown sequence opens the event without an initial `H`.
 - Clicking either sidebar control does not toggle the sidebar; the hint says to press `]` and uses open/close language matching the current state.
 - Unannotated controls retain the generic keyboard-only fallback while contextual coverage is expanded.
 - Right-click does not open the context menu; `M` (or Shift+F10) on a focused event does.
@@ -416,7 +416,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 12. With no event focused and no particular control focused (document body), any Arrow key focuses the timed event nearest now in the current Day/Week view (in-progress, else next upcoming, else most recently ended; today preferred in Week; all-day only if no timed events). Further arrows then follow the existing rules. `U` still focuses the first DOM-order event. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to guests / color; bare `E` alone does nothing.
-15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; the same tokens work without a prior `S` when no competing command applies; Shift+Tab does not show chips.
+15. Pressing `H` shows event jump chips; a day letter + digit focuses that event; the same tokens work without a prior `H` when no competing command applies; Shift+Tab does not show chips.
 16. Mouse clicks, right-clicks, and double-clicks are inert everywhere; a blocked click shows the keyboard-only hint. `M` opens the focused event's menu; `F` focuses the newest notice.
 17. PageUp / PageDown scroll the timed grid by one viewport in Day and Week view even when an event is focused; they do not fire in a text input.
 18. Alt+ArrowUp / Alt+ArrowDown pan the timed grid by one hour in Day and Week view even when an event is focused; they do not fire in a text input.

@@ -1,4 +1,12 @@
-export const FAQ_ITEMS = [
+import { KEYMAP } from "@web/shortcuts/keymap";
+import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
+
+export type FaqItem = {
+  question: string;
+  answer: string | readonly ShortcutTipPart[];
+};
+
+export const FAQ_ITEMS: readonly FaqItem[] = [
   {
     question: "Who is Compass for?",
     answer: "Compass is for busy professionals who live at their keyboard.",
@@ -19,7 +27,12 @@ export const FAQ_ITEMS = [
   },
   {
     question: "I don't know any shortcuts yet. Will I be lost?",
-    answer:
-      "No. The practice arena walks you through the core shortcut patterns, hints appear right when they're useful, and ? opens the full legend. Cmd+K opens a command palette for anything you can't remember.",
+    answer: [
+      "No. The practice arena walks you through the core shortcut patterns, hints appear right when they're useful, and ",
+      { key: "?" },
+      " opens the full legend. ",
+      { keys: KEYMAP.commandPalette.keycaps },
+      " opens a command palette for anything you can't remember.",
+    ],
   },
 ];

@@ -76,6 +76,15 @@ describe("selectShortcutHint", () => {
     );
   });
 
+  it("teaches week-column letters after event jump on week view", () => {
+    expect(
+      selectShortcutHint({ ...afterFirstEvent, isWeekView: true }, [
+        "page-jump",
+        "event-jump",
+      ]).id,
+    ).toBe("week-day-focus");
+  });
+
   it("walks the idle pool in showcase order as primitives are demonstrated", () => {
     expect(
       selectShortcutHint(afterFirstEvent, ["page-jump", "event-jump"]).id,

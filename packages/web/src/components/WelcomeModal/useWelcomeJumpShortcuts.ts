@@ -1,27 +1,24 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { useEffect, useState } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 import { FAQ_ITEMS } from "./faq";
+
+export const WELCOME_JUMP_ATTR = "data-welcome-jump";
 
 const isPlatformModKey = (event: KeyboardEvent) =>
   resolveModifier("Mod") === "Meta"
     ? event.key === "Meta"
     : event.key === "Control";
 
-const faqIndexFromEvent = (event: KeyboardEvent): number | null => {
-  const match = /^Digit([1-9])$/.exec(event.code);
-  if (!match) return null;
-  const index = Number(match[1]) - 1;
-  if (index < 0 || index >= FAQ_ITEMS.length) return null;
-  return index;
-};
-
 /**
- * Hold Mod to reveal numbered FAQ keycaps; press 1–5 (with or without Mod)
- * to toggle that question. Bare digits work because browsers steal
- * Cmd/Ctrl+1–8 for tab switching.
+ * Hold Mod to reveal numbered keycaps; press a number (with or without Mod)
+ * to toggle that FAQ or open a footer link. Bare digits work because
+ * browsers steal Cmd/Ctrl+1–8 for tab switching.
+ *
+ * 1–5 toggle FAQ items. 6–0 activate matching `[data-welcome-jump]` links.
  */
-export function useWelcomeFaqShortcuts(toggleFaqAt: (index: number) => void) {
+export function useWelcomeJumpShortcuts(toggleFaqAt: (index: number) => void) {
   const [isModHeld, setIsModHeld] = useState(false);
 
   useEffect(() => {
@@ -32,11 +29,23 @@ export function useWelcomeFaqShortcuts(toggleFaqAt: (index: number) => void) {
 
       if (isEditableKeyboardTarget(event)) return;
 
-      const index = faqIndexFromEvent(event);
+      const index = physicalDigitIndex(event);
       if (index === null) return;
 
+      if (index < FAQ_ITEMS.length) {
+        event.preventDefault();
+        toggleFaqAt(index);
+        return;
+      }
+
+      const footerIndex = index - FAQ_ITEMS.length;
+      const el = document.querySelector<HTMLElement>(
+        `[${WELCOME_JUMP_ATTR}="${footerIndex}"]`,
+      );
+      if (!el) return;
+
       event.preventDefault();
-      toggleFaqAt(index);
+      el.click();
     };
 
     const onKeyUp = (event: KeyboardEvent) => {

@@ -81,7 +81,7 @@ labels outside the registry.
 - Sidebar next-shortcut selector: `packages/web/src/shortcuts/tips/selectShortcutHint.ts`
 - Sidebar tip progress (demonstrated primitives): `packages/web/src/shortcuts/tips/shortcut-tips.progress.store.ts`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `packages/web/src/shortcuts/useGlobalShortcuts.ts`
-- Event-jump chips (`S`): `packages/web/src/shortcuts/shift-hint/`
+- Event-jump chips (`H`): `packages/web/src/shortcuts/shift-hint/`
 - Pointer suppression (mouse permanently inert; keyboard clicks pass): `packages/web/src/shortcuts/keyboard-only/`
 - Escape ownership (modals/form before lower handlers): `packages/web/src/shortcuts/escape-ownership.ts`
 - App lock (suppress shortcuts while a modal owns the UI): `packages/web/src/shortcuts/app-lock.ts`

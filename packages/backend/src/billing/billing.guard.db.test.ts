@@ -24,11 +24,11 @@ const stripeConfigured = {
   BILLING_ENFORCEMENT: true,
 };
 
-const insertUser = async (billing?: Schema_UserBilling) => {
+const insertUser = async (billing?: Schema_UserBilling, email?: string) => {
   const userId = mongoService.objectId();
   await mongoService.user.insertOne({
     _id: userId,
-    email: `${userId.toString()}@example.com`,
+    email: email ?? `${userId.toString()}@example.com`,
     name: "Guard User",
     firstName: "Guard",
     lastName: "User",
@@ -109,5 +109,64 @@ describe("assertBillingAllowsWrites", () => {
     await expect(assertBillingAllowsWrites(localTrial)).rejects.toMatchObject({
       mutationCode: "BILLING_REQUIRED",
     });
+  });
+
+  it("allows a bypassed account that would otherwise be gated", async () => {
+    using _env = mockEnv({
+      ...stripeConfigured,
+      BILLING_BYPASS_EMAILS: ["qa@example.com"],
+    });
+    const bypassed = await insertUser(
+      { subscriptionStatus: "awaiting_checkout" },
+      "qa@example.com",
+    );
+
+    await expect(assertBillingAllowsWrites(bypassed)).resolves.toBeUndefined();
+  });
+
+  it("still rejects an account that is not on the bypass list", async () => {
+    using _env = mockEnv({
+      ...stripeConfigured,
+      BILLING_BYPASS_EMAILS: ["qa@example.com"],
+    });
+    const other = await insertUser(
+      { subscriptionStatus: "awaiting_checkout" },
+      "someone-else@example.com",
+    );
+
+    await expect(assertBillingAllowsWrites(other)).rejects.toMatchObject({
+      mutationCode: "BILLING_REQUIRED",
+    });
+  });
+
+  it("matches bypass emails ignoring case and surrounding whitespace", async () => {
+    using _env = mockEnv({
+      ...stripeConfigured,
+      BILLING_BYPASS_EMAILS: ["  QA@Example.com "],
+    });
+    const bypassed = await insertUser(
+      { subscriptionStatus: "expired" },
+      "qa@example.com",
+    );
+
+    await expect(assertBillingAllowsWrites(bypassed)).resolves.toBeUndefined();
+  });
+
+  it("leaves the stored billing state untouched for a bypassed account", async () => {
+    using _env = mockEnv({
+      ...stripeConfigured,
+      BILLING_BYPASS_EMAILS: ["qa@example.com"],
+    });
+    const bypassed = await insertUser(
+      { subscriptionStatus: "awaiting_checkout" },
+      "qa@example.com",
+    );
+
+    await assertBillingAllowsWrites(bypassed);
+
+    const stored = await mongoService.user.findOne({
+      _id: mongoService.objectId(bypassed),
+    });
+    expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
   });
 });

@@ -4,6 +4,7 @@ import { SHOWCASE_STEP_IDS } from "@web/components/ShortcutShowcase/showcase.ste
 import {
   initialShortcutShowcaseState,
   shortcutShowcaseActions,
+  stepIdAt,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -25,9 +26,10 @@ describe("shortcutShowcaseActions", () => {
   });
 
   it("starts and advances through every step, finishing at the end", () => {
-    shortcutShowcaseActions.replay();
+    shortcutShowcaseActions.startFromWelcome();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
+    expect(stepIdAt(0)).toBe("intro");
 
     for (let i = 1; i < SHOWCASE_STEP_IDS.length; i += 1) {
       shortcutShowcaseActions.advance();
@@ -42,6 +44,14 @@ describe("shortcutShowcaseActions", () => {
     ).toBe("true");
   });
 
+  it("replay skips the intro and opens the first lesson", () => {
+    shortcutShowcaseActions.replay();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
+      "create",
+    );
+  });
+
   it("never offers itself twice after signup, but replay always works", () => {
     shortcutShowcaseActions.deferUntilSignup();
     shortcutShowcaseActions.replay();
@@ -54,7 +64,9 @@ describe("shortcutShowcaseActions", () => {
 
     shortcutShowcaseActions.replay();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
+    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
+      "create",
+    );
   });
 
   it("treats legacy tour finishers as having seen the showcase", () => {
@@ -92,9 +104,12 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("starts from welcome without marking the practice seen", () => {
+  it("starts from welcome on the intro without marking the practice seen", () => {
     shortcutShowcaseActions.startFromWelcome();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
+      "intro",
+    );
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");

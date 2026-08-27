@@ -21,6 +21,14 @@ async function start() {
     await new Promise((resolve) =>
       httpServer.listen(CONFIG.PORT, () => {
         logger.info(`Server running on port: ${CONFIG.PORT}`);
+        // Config is read once at startup, so this line is the only way to
+        // confirm a redeploy actually picked up an allowlist change. Count
+        // only -- the addresses stay out of the logs.
+        if (CONFIG.BILLING_BYPASS_EMAILS.length > 0) {
+          logger.info(
+            `Billing bypass: ${CONFIG.BILLING_BYPASS_EMAILS.length} account(s)`,
+          );
+        }
         resolve(undefined);
       }),
     );

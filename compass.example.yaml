@@ -49,9 +49,15 @@ supertokens:
 
 # billing:
 #   enforcement: false # operator pause switch — keep the app free for everyone
+#   bypassEmails: [] # accounts exempt from the gate, even with enforcement on
 # Independent of `stripe:` above: you can keep Stripe keys configured while
 # enforcement stays false, so Checkout/webhook work can continue without
 # gating any user. Defaults to false when omitted.
+#
+# `bypassEmails` is a narrower escape hatch for test accounts that cannot
+# complete a real Stripe Checkout. Listed accounts skip payment entirely and
+# are reported as subscribed, so keep this to staging and leave it empty in
+# production. Matched case-insensitively; empty when omitted.
 
 # Compass Sync service — required. The backend exits at startup without
 # serviceUrl/internalAuthToken, and self-host runs Sync by default. mongoUri

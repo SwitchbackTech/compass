@@ -161,11 +161,11 @@ const buildDayJumpAssignments = (
 };
 
 /**
- * Press `s` to show day-prefix jump labels, or type a jump token (`w`, `w1`,
- * day-view `1`…) without `s` when no competing command still applies. Esc
- * exits. Day letters (and digits after a day) win over global shortcuts while
- * active. In day view, a second `s` toggles off; in week view `s` keeps
- * Sunday/Saturday prefix meaning.
+ * Press `h` to show day-prefix jump labels, or type a jump token (`sa`,
+ * `w`, `w1`, day-view `1`…) without `h` when no competing command still
+ * applies. Esc exits. Day letters (and digits after a day) win over global
+ * shortcuts while active. A second `h` toggles off. In week view `s` is only
+ * the Sunday/Saturday prefix.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
@@ -376,7 +376,7 @@ export function useShiftHoldEventHints({
           event.stopPropagation();
           activate();
           if (isActiveRef.current) {
-            suppressKeyUpRef.current.add("s");
+            suppressKeyUpRef.current.add(KEYMAP.eventJump.bareLetter);
           }
           return;
         }
@@ -443,8 +443,7 @@ export function useShiftHoldEventHints({
         event.preventDefault();
         event.stopPropagation();
         suppressKeyUpRef.current.add(key);
-        // Day view has no letter prefixes; a second `s` toggles off.
-        if (modeRef.current === "day" && key === "s") {
+        if (key === KEYMAP.eventJump.bareLetter) {
           deactivate();
         }
         return;

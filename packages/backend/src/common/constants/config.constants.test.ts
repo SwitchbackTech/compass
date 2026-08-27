@@ -4,6 +4,7 @@ import {
   parseRawConfig,
 } from "@backend/common/constants/config.constants";
 import {
+  isBillingBypassed,
   isGoogleConfigured,
   isStripeConfigured,
 } from "@backend/common/constants/config.util";
@@ -213,5 +214,59 @@ describe("config.constants", () => {
 
     expect(env.SYNC_EXECUTION).toBe("active");
     expect(env.SYNC_CLOUD_MUTATION_MODE).toBe("enabled");
+  });
+});
+
+describe("billing bypass allowlist", () => {
+  it("defaults to empty from yaml and from env", () => {
+    expect(parseRawConfig(baseRawConfig).BILLING_BYPASS_EMAILS).toEqual([]);
+    expect(parseConfigFromEnv(validEnv).BILLING_BYPASS_EMAILS).toEqual([]);
+  });
+
+  it("reads a yaml list and a comma-separated env var", () => {
+    const fromYaml = parseRawConfig({
+      ...baseRawConfig,
+      billing: { enforcement: true, bypassEmails: ["a@x.com", "b@y.com"] },
+    });
+    expect(fromYaml.BILLING_BYPASS_EMAILS).toEqual(["a@x.com", "b@y.com"]);
+
+    const fromEnv = parseConfigFromEnv({
+      ...validEnv,
+      BILLING_BYPASS_EMAILS: "a@x.com,b@y.com",
+    });
+    expect(fromEnv.BILLING_BYPASS_EMAILS).toEqual(["a@x.com", "b@y.com"]);
+  });
+
+  it("drops blank entries so the startup roster count stays honest", () => {
+    expect(
+      parseConfigFromEnv({
+        ...validEnv,
+        BILLING_BYPASS_EMAILS: "qa@example.com,",
+      }).BILLING_BYPASS_EMAILS,
+    ).toEqual(["qa@example.com"]);
+
+    expect(
+      parseRawConfig({
+        ...baseRawConfig,
+        billing: { bypassEmails: ["", "  ", "qa@example.com"] },
+      }).BILLING_BYPASS_EMAILS,
+    ).toEqual(["qa@example.com"]);
+  });
+
+  it("matches ignoring case and surrounding whitespace", () => {
+    const env = { BILLING_BYPASS_EMAILS: [" QA@Example.com ", "b@y.com"] };
+    expect(isBillingBypassed(env, "qa@example.com")).toBe(true);
+    expect(isBillingBypassed(env, "  QA@EXAMPLE.COM ")).toBe(true);
+    expect(isBillingBypassed(env, "b@y.com")).toBe(true);
+  });
+
+  it("does not match an absent, empty, or unlisted email", () => {
+    const env = { BILLING_BYPASS_EMAILS: ["qa@example.com"] };
+    expect(isBillingBypassed(env, undefined)).toBe(false);
+    expect(isBillingBypassed(env, "   ")).toBe(false);
+    expect(isBillingBypassed(env, "other@example.com")).toBe(false);
+    expect(
+      isBillingBypassed({ BILLING_BYPASS_EMAILS: [] }, "qa@example.com"),
+    ).toBe(false);
   });
 });

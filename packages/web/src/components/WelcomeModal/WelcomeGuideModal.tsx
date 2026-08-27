@@ -24,18 +24,18 @@ export function WelcomeGuideModal() {
     >
       <div className="flex w-full flex-col gap-6">
         <PixelPirate className="h-14 w-14 shrink-0" />
-        <WelcomeGuideBody />
-
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-10"
-          >
-            Close
-            <ShortcutHint className="ml-2">Esc</ShortcutHint>
-          </button>
-        </div>
+        <WelcomeGuideBody>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={dismiss}
+              className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-10"
+            >
+              Close
+              <ShortcutHint className="ml-2">Esc</ShortcutHint>
+            </button>
+          </div>
+        </WelcomeGuideBody>
       </div>
     </OverlayPanel>
   );

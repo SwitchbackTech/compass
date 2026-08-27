@@ -16,6 +16,14 @@ const leaveWelcome = async (page: Page) => {
   await expect(welcomeDialog).toBeHidden();
 };
 
+const startLevelOne = async (page: Page) => {
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(showcase).toContainText("Compass is keyboard-only");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("Drop an event on the board");
+  await expect(showcase).toContainText("Level 1/6");
+};
+
 const holdModAndPress = async (page: Page, key: string) => {
   // Linux CI resolves Mod to Control; macOS to Meta. Hold both so the
   // platform-specific hold tracker and the chord check both fire.
@@ -40,7 +48,7 @@ const playThroughLevels = async (page: Page) => {
   await holdModAndPress(page, "1");
   await expect(showcase).toContainText("Pick a target");
 
-  await page.keyboard.press("s");
+  await page.keyboard.press("h");
   await page.keyboard.press("f");
   await expect(showcase).toContainText("Nudge it into place");
 
@@ -63,6 +71,9 @@ test("exploring without an account starts the practice", async ({ page }) => {
   await expect(
     page.getByRole("region", { name: "Shortcut practice" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Shortcut practice" }),
+  ).toContainText("Compass is keyboard-only");
 });
 
 test("the welcome-started practice runs the taught keys through graduation", async ({
@@ -70,11 +81,10 @@ test("the welcome-started practice runs the taught keys through graduation", asy
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
+  await startLevelOne(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Drop an event on the board");
   await expect(showcase).toContainText("Press C to start a new event.");
-  await expect(showcase).toContainText("Level 1/6");
   await expect(showcase.getByRole("button", { name: /^Skip$/ })).toBeVisible();
 
   await playThroughLevels(page);
@@ -102,6 +112,7 @@ test("taking the notifications offer opts in and moves on", async ({
   await context.grantPermissions(["notifications"]);
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
+  await startLevelOne(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await playThroughLevels(page);
@@ -119,14 +130,14 @@ test("taking the notifications offer opts in and moves on", async ({
     .toBe("true");
 });
 
-test("Skip to sign up leaves the practice for the signup form on step 1", async ({
+test("Skip to sign up leaves the practice for the signup form on the intro", async ({
   page,
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Drop an event on the board");
+  await expect(showcase).toContainText("Compass is keyboard-only");
 
   await expect(
     showcase.getByRole("button", { name: /Skip to sign up/ }),
@@ -143,7 +154,7 @@ test("Escape leaves the practice and it never auto-replays", async ({
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Drop an event on the board");
+  await expect(showcase).toContainText("Compass is keyboard-only");
 
   await page.keyboard.press("Escape");
   await expect(showcase).toHaveCount(0);

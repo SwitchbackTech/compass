@@ -75,6 +75,11 @@ const CompassConfigSchema = z
     billing: z
       .object({
         enforcement: z.union([z.boolean(), z.string()]).optional(),
+        // Operator escape hatch: accounts listed here are treated as fully
+        // subscribed even while enforcement is on. Intended for staging test
+        // accounts that cannot complete a real Stripe Checkout. Matched
+        // case-insensitively against the user's email.
+        bypassEmails: z.array(z.string()).optional(),
       })
       .nullish(),
     // Compass Sync service configuration. Every deployment runs Sync (self-host

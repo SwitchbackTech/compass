@@ -2,7 +2,7 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
 
@@ -22,20 +22,32 @@ const releaseWindowKey = (init: KeyboardEventInit) => {
   });
 };
 
+const renderWelcomeGuide = () => render(<WelcomeGuideBody />);
+
+const captureLinkClick = (name: string) => {
+  const link = screen.getByRole("link", { name });
+  const onClick = mock((event: Event) => {
+    event.preventDefault();
+  });
+  link.addEventListener("click", onClick);
+  return onClick;
+};
+
 describe("WelcomeGuideBody", () => {
   afterEach(() => {
     releaseWindowKey({ key: modKey });
   });
 
   it("explains that numbered shortcuts open the FAQ", () => {
-    render(<WelcomeGuideBody />);
+    renderWelcomeGuide();
 
-    expect(screen.getByText(/to see keys, then press 1–5/)).toBeTruthy();
-    expect(screen.getByText(/The same hold reveals jump keys/)).toBeTruthy();
+    expect(screen.getByText(/Tip:/)).toBeTruthy();
+    expect(screen.getByText(/to see keys, then press a number/)).toBeTruthy();
+    expect(screen.queryByText(/The same hold reveals jump keys/)).toBeNull();
   });
 
   it("toggles a FAQ with a bare digit", async () => {
-    render(<WelcomeGuideBody />);
+    renderWelcomeGuide();
 
     const question = screen.getByRole("button", {
       name: "Who is Compass for?",
@@ -54,7 +66,7 @@ describe("WelcomeGuideBody", () => {
   });
 
   it("reveals numbered keycaps while Mod is held", async () => {
-    render(<WelcomeGuideBody />);
+    renderWelcomeGuide();
 
     expect(screen.queryByText("1")).toBeNull();
 
@@ -62,15 +74,18 @@ describe("WelcomeGuideBody", () => {
 
     expect(screen.getByText("1")).toBeTruthy();
     expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("6")).toBeTruthy();
+    expect(screen.getByText("0")).toBeTruthy();
 
     releaseWindowKey({ key: modKey });
 
     expect(screen.queryByText("1")).toBeNull();
+    expect(screen.queryByText("6")).toBeNull();
   });
 
   it("still lets a click expand a question", async () => {
     const user = userEvent.setup();
-    render(<WelcomeGuideBody />);
+    renderWelcomeGuide();
 
     const question = screen.getByRole("button", {
       name: "How is Compass different?",
@@ -82,7 +97,7 @@ describe("WelcomeGuideBody", () => {
 
   it("explains why the mouse does not work", async () => {
     const user = userEvent.setup();
-    render(<WelcomeGuideBody />);
+    renderWelcomeGuide();
 
     await user.click(
       screen.getByRole("button", { name: "Why doesn't my mouse work?" }),
@@ -93,5 +108,45 @@ describe("WelcomeGuideBody", () => {
         /Compass is keyboard-driven to help users stay in the flow/,
       ),
     ).toBeTruthy();
+  });
+
+  it("styles the legend and palette shortcuts in the lost FAQ", async () => {
+    const user = userEvent.setup();
+    renderWelcomeGuide();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "I don't know any shortcuts yet. Will I be lost?",
+      }),
+    );
+
+    // `[aria-hidden]` (not `.c-keycap`) because SelectView.test.tsx mocks
+    // ShortcutHint process-wide (bun's mock.module leaks across files);
+    // its stub keeps aria-hidden but drops the real class.
+    expect(screen.getByText("?").closest("[aria-hidden]")).toBeTruthy();
+    expect(screen.getByText("K").closest("[aria-hidden]")).toBeTruthy();
+    expect(screen.getByText(/and \? opens the full legend/)).toBeTruthy();
+  });
+
+  it("opens footer links with digits 6 through 0", () => {
+    renderWelcomeGuide();
+
+    const x = captureLinkClick("X (Twitter)");
+    const linkedin = captureLinkClick("LinkedIn");
+    const github = captureLinkClick("GitHub");
+    const privacy = captureLinkClick("Privacy");
+    const terms = captureLinkClick("Terms");
+
+    pressWindowKey({ key: "6", code: "Digit6" });
+    pressWindowKey({ key: "7", code: "Digit7" });
+    pressWindowKey({ key: "8", code: "Digit8" });
+    pressWindowKey({ key: "9", code: "Digit9" });
+    pressWindowKey({ key: "0", code: "Digit0" });
+
+    expect(x).toHaveBeenCalledTimes(1);
+    expect(linkedin).toHaveBeenCalledTimes(1);
+    expect(github).toHaveBeenCalledTimes(1);
+    expect(privacy).toHaveBeenCalledTimes(1);
+    expect(terms).toHaveBeenCalledTimes(1);
   });
 });

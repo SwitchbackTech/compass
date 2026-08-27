@@ -82,6 +82,9 @@ jobs:
           SYNC_EXECUTION: ${{ vars.SYNC_EXECUTION }}
           # Billing operator pause switch (optional; omit → false/paused).
           BILLING_ENFORCEMENT: ${{ vars.BILLING_ENFORCEMENT }}
+          # Comma-separated accounts exempt from billing gates. Staging test
+          # accounts only; leave unset in production.
+          BILLING_BYPASS_EMAILS: ${{ vars.BILLING_BYPASS_EMAILS }}
           WEB_IMAGE: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
           # Sensitive
           COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
@@ -204,11 +207,23 @@ jobs:
             else
               echo "Stripe config: omitting stripe block (environment=${{ inputs.environment }}; secretKey=$([ -n "$STRIPE_SECRET_KEY" ] && echo present || echo empty); webhookSecret=$([ -n "$STRIPE_WEBHOOK_SECRET" ] && echo present || echo empty); priceId=$([ -n "$STRIPE_PRICE_ID" ] && echo present || echo empty))" >&2
             fi
-            # Billing operator pause switch (optional; omit → schema default false).
-            if [ -n "$BILLING_ENFORCEMENT" ]; then
-              printf '%s\n' \
-                'billing:' \
-                "  enforcement: ${BILLING_ENFORCEMENT}"
+            # Billing operator knobs (both optional; omit → schema defaults of
+            # enforcement false + empty bypass list). The block header is
+            # written when either var is set.
+            if [ -n "$BILLING_ENFORCEMENT" ] || [ -n "$BILLING_BYPASS_EMAILS" ]; then
+              printf '%s\n' 'billing:'
+              if [ -n "$BILLING_ENFORCEMENT" ]; then
+                printf '%s\n' "  enforcement: ${BILLING_ENFORCEMENT}"
+              fi
+              if [ -n "$BILLING_BYPASS_EMAILS" ]; then
+                # Comma-separated var → yaml flow sequence of quoted strings.
+                bypass_seq=$(printf '%s' "$BILLING_BYPASS_EMAILS" |
+                  tr ',' '\n' |
+                  sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e '/^$/d' -e 's/.*/"&"/' |
+                  paste -sd, -)
+                printf '%s\n' "  bypassEmails: [${bypass_seq}]"
+                echo "Billing config: ${BILLING_BYPASS_EMAILS} on the bypass allowlist" >&2
+              fi
             fi
             printf '%s\n' \
               'sync:' \

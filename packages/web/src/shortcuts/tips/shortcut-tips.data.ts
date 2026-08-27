@@ -10,6 +10,7 @@ export type ShortcutHintId =
   | "create-event"
   | "page-jump"
   | "event-jump"
+  | "week-day-focus"
   | "command-palette";
 
 export type ShortcutTipPart =
@@ -93,6 +94,16 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
       "Press ",
       { key: eventJumpKey },
       " to show event keys, or a day key to jump",
+    ],
+  },
+  "week-day-focus": {
+    id: "week-day-focus",
+    parts: [
+      "On week view, press ",
+      { key: eventJumpKey },
+      " then ",
+      { key: "M" },
+      " to focus Monday",
     ],
   },
   nudge: {

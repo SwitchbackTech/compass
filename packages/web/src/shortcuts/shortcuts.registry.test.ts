@@ -79,7 +79,7 @@ describe("shortcuts.registry", () => {
       expect(byId["edit-menu-shift-f10"]?.keys).toEqual(["Shift", "F10"]);
     });
 
-    it("lists s event jump toggle in day and week focus sections", () => {
+    it("lists h event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
           view,
@@ -95,6 +95,22 @@ describe("shortcuts.registry", () => {
         isViewingCurrentPeriod: true,
       }).map((shortcut) => shortcut.id);
       expect(life).not.toContain("focus-shift-hold");
+    });
+
+    it("lists week-column focus only in week view", () => {
+      const week = filterShortcutsByContext({
+        view: "week",
+        isViewingCurrentPeriod: true,
+      }).map((shortcut) => shortcut.id);
+      expect(week).toContain("focus-week-day");
+
+      for (const view of ["day", "life"] as const) {
+        const ids = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        }).map((shortcut) => shortcut.id);
+        expect(ids).not.toContain("focus-week-day");
+      }
     });
 
     it("lists the page jump shortcut in day, week, and life", () => {

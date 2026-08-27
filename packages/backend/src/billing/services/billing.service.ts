@@ -4,6 +4,12 @@ import {
   BILLING_PLAN,
   WRITE_ACCESS_BY_STATUS,
 } from "@backend/billing/billing.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import {
+  isBillingBypassed,
+  isBillingEnforced,
+  isStripeConfigured,
+} from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
@@ -92,12 +98,31 @@ class BillingService {
     return deriveBillingStatus(user.billing, now);
   };
 
+  /**
+   * Bypassed accounts report as `active` so the web gate stands down, matching
+   * the write guard's early return -- including its ordering, so the list is
+   * consulted only in a deployment that actually gates. Reported through this
+   * authenticated route rather than the public `/api/config` payload, which
+   * would leak the roster.
+   */
   getStatus = async (userId: string): Promise<BillingStatusResponse> => {
     const user = await mongoService.user.findOne({
       _id: mongoService.objectId(userId),
     });
     if (!user) {
       throw new Error("User not found");
+    }
+
+    if (
+      isBillingEnforced(CONFIG) &&
+      isStripeConfigured(CONFIG) &&
+      isBillingBypassed(CONFIG, user.email)
+    ) {
+      return {
+        subscriptionStatus: "active",
+        trialEndsAt: null,
+        isReadOnly: false,
+      };
     }
 
     return deriveBillingStatus(user.billing, new Date());

@@ -4,6 +4,7 @@ import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import { requestPointerEventJump } from "@web/shortcuts/keyboard-only/pointer-action";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -37,9 +38,9 @@ const dispatch = (
   );
 };
 
-const pressS = () => {
-  dispatch("keydown", "s");
-  dispatch("keyup", "s");
+const pressEventJump = () => {
+  dispatch("keydown", KEYMAP.eventJump.bareLetter);
+  dispatch("keyup", KEYMAP.eventJump.bareLetter);
 };
 
 const timedFixture = (id: string, startDate: string): GridEvent =>
@@ -113,11 +114,11 @@ describe("useShiftHoldEventHints", () => {
     return { focus, result, elements, ids };
   };
 
-  it("toggles hints on s and focuses via day prefix", () => {
+  it("toggles hints on h and focuses via day prefix", () => {
     const { focus, result, elements } = mountHints();
 
     act(() => {
-      pressS();
+      pressEventJump();
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(true);
@@ -148,7 +149,7 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
-  it("focuses a day prefix without first pressing s", () => {
+  it("focuses a day prefix without first pressing h", () => {
     const { focus, result, elements } = mountHints();
 
     const event = new KeyboardEvent("keydown", {
@@ -209,7 +210,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("focuses a day-view index without first pressing s", () => {
+  it("focuses a day-view index without first pressing h", () => {
     const { focus, elements } = mountHints("day");
 
     act(() => {
@@ -625,7 +626,7 @@ describe("useShiftHoldEventHints", () => {
     const { result } = mountHints();
 
     act(() => {
-      pressS();
+      pressEventJump();
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
@@ -636,7 +637,7 @@ describe("useShiftHoldEventHints", () => {
     const { result } = mountHints();
 
     act(() => {
-      pressS();
+      pressEventJump();
     });
     expect(result.current.hints).toHaveLength(3);
 
@@ -647,27 +648,61 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("toggles off with a second s in day view", () => {
+  it("toggles off with a second h in day view", () => {
     const { result } = mountHints("day");
 
     act(() => {
-      pressS();
+      pressEventJump();
     });
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints).toHaveLength(3);
 
     act(() => {
-      pressS();
+      pressEventJump();
     });
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
+  });
+
+  it("toggles off with a second h in week view", () => {
+    const { result } = mountHints();
+
+    act(() => {
+      pressEventJump();
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints).toHaveLength(3);
+
+    act(() => {
+      pressEventJump();
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+  });
+
+  it("focuses Saturday from idle with sa", () => {
+    const { focus, elements } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-02T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
+    ]);
+
+    act(() => {
+      dispatch("keydown", "s");
+      dispatch("keydown", "a");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
+    );
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-08"]);
   });
 
   it("keeps mode on when arrows are pressed after selecting a day", () => {
     const { focus, result } = mountHints();
 
     act(() => {
-      pressS();
+      pressEventJump();
       dispatch("keydown", "w");
     });
     expect(focus).toHaveBeenCalled();
