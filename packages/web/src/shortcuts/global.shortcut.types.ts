@@ -1,6 +1,7 @@
 export interface ShortcutContext {
   isFormOpen?: boolean;
   lifeView?: boolean;
+  weekView?: boolean;
 }
 
 export interface Shortcut {

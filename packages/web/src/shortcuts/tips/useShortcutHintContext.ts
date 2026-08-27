@@ -1,3 +1,4 @@
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   selectFirstEventCelebrating,
   selectFirstEventDone,
@@ -22,13 +23,18 @@ export function useShortcutHintContext() {
   const isCelebrating = useFirstEventPromptStore(selectFirstEventCelebrating);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const eventFocused = useIsAnyCalendarEventFocused();
-  const isLifeView = isLifePathname(window.location.pathname);
+  const pathname = window.location.pathname;
+  const isLifeView = isLifePathname(pathname);
+  const isWeekView =
+    pathname === ROOT_ROUTES.WEEK ||
+    pathname.startsWith(`${ROOT_ROUTES.WEEK}/`);
   const progress = useShortcutHintProgress();
 
   return selectShortcutHint(
     {
       isFormOpen,
       isLifeView,
+      isWeekView,
       eventFocused,
       firstEventDone: firstEventDone || isCelebrating,
     },

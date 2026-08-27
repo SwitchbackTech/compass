@@ -261,11 +261,11 @@ describe("ShortcutShowcase", () => {
     expect(currentStepId()).toBe("eventJump");
   });
 
-  it("teaches S then a letter to land on an event", () => {
+  it("teaches H then a letter to land on an event", () => {
     render(<ShortcutShowcase />);
     showStep("eventJump");
 
-    pressKey("s");
+    pressKey("h");
     expect(screen.getByText("F")).toBeTruthy();
 
     pressKey("f");

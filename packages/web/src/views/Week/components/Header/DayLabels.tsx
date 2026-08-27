@@ -3,13 +3,33 @@ import { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import {
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
+  selectPageJumpHintsVisible,
+  usePageJumpHintStore,
+} from "@web/shortcuts/page-jump/page-jump.store";
+import {
+  DAY_JUMP_PREFIX_BY_WEEKDAY,
+  type DayJumpWeekday,
+} from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
+import {
+  selectEventJumpActive,
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { GridTimezoneLabel } from "@web/timezone/GridTimezoneLabel";
+
+const dayJumpPrefix = (day: Dayjs) => {
+  const weekday = day.day() as DayJumpWeekday;
+  return DAY_JUMP_PREFIX_BY_WEEKDAY[weekday].toUpperCase();
+};
 
 interface Props {
   today: Dayjs;
@@ -25,7 +45,18 @@ export const DayLabels: FC<Props> = ({
   weekDays,
 }) => {
   const activeDayKeys = useEventJumpStore(selectEventJumpActiveDayKeys);
+  const isEventJumpActive = useEventJumpStore(selectEventJumpActive);
+  const pageJumpHintsVisible = usePageJumpHintStore(selectPageJumpHintsVisible);
+  const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
+  const showDayJumpPrefixes =
+    !isEventFormOpen && (pageJumpHintsVisible || isEventJumpActive);
   const marginLeft = useGridMarginLeft();
+  const jumpKey = KEYMAP.eventJump.keycaps[0];
+  const dayJumpAnnouncement = showDayJumpPrefixes
+    ? `Day jump keys: ${weekDays
+        .map((day) => `${day.format("dddd")} ${dayJumpPrefix(day)}`)
+        .join(", ")}. Press ${jumpKey} then the day key.`
+    : "";
   const getColor = (day: Dayjs) => {
     const isCurrentWeek = today.week() === week;
     const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
@@ -70,6 +101,7 @@ export const DayLabels: FC<Props> = ({
           const { isToday, color } = getColor(day);
           const dayKey = day.format(YEAR_MONTH_DAY_FORMAT);
           const isJumpDay = activeDayKeys.includes(dayKey);
+          const prefix = dayJumpPrefix(day);
 
           return (
             <div
@@ -90,13 +122,22 @@ export const DayLabels: FC<Props> = ({
               >
                 {dayNumber}
               </span>
-              <span className="relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
-                {day.format("ddd")}
-              </span>
+              {showDayJumpPrefixes ? (
+                <ShortcutHint>{prefix}</ShortcutHint>
+              ) : (
+                <span className="relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
+                  {day.format("ddd")}
+                </span>
+              )}
             </div>
           );
         })}
       </div>
+      {dayJumpAnnouncement ? (
+        <span aria-live="polite" className="sr-only" role="status">
+          {dayJumpAnnouncement}
+        </span>
+      ) : null}
     </div>
   );
 };

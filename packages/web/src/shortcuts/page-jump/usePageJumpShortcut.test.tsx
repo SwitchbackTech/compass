@@ -12,6 +12,10 @@ import {
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import { MOD_HOLD_HINT_MS } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
 import {
+  pageJumpHintActions,
+  usePageJumpHintStore,
+} from "@web/shortcuts/page-jump/page-jump.store";
+import {
   LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
   type PageJumpTargetId,
@@ -90,6 +94,7 @@ describe("usePageJumpShortcut", () => {
   afterEach(() => {
     clearAppLockReasons();
     useDraftStore.setState(initialDraftState, true);
+    pageJumpHintActions.reset();
     document.body.innerHTML = "";
   });
 
@@ -163,6 +168,7 @@ describe("usePageJumpShortcut", () => {
       await waitFor(() => {
         expect(result.current.areHintsVisible).toBe(true);
       });
+      expect(usePageJumpHintStore.getState().areHintsVisible).toBe(true);
       expect(getShortcutHintProgress()).toContain("page-jump");
     });
 

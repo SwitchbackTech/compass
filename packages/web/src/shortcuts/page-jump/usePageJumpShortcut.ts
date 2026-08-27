@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 import { useModHoldHintShortcut } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
+import { pageJumpHintActions } from "@web/shortcuts/page-jump/page-jump.store";
 import {
   CALENDAR_PAGE_JUMP_TARGETS,
   focusPageJumpTarget,
@@ -24,7 +26,7 @@ export function usePageJumpShortcut(
 ): { areHintsVisible: boolean } {
   const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
 
-  return useModHoldHintShortcut({
+  const result = useModHoldHintShortcut({
     enabled: !isEventFormOpen,
     onHintsRevealed: () => shortcutHintProgressActions.demonstrate("page-jump"),
     onModChord: (event) => {
@@ -34,4 +36,11 @@ export function usePageJumpShortcut(
       return focusPageJumpTarget(target.id);
     },
   });
+
+  useEffect(() => {
+    pageJumpHintActions.setHintsVisible(result.areHintsVisible);
+    return () => pageJumpHintActions.setHintsVisible(false);
+  }, [result.areHintsVisible]);
+
+  return result;
 }

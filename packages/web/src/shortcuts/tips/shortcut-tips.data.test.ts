@@ -31,7 +31,10 @@ describe("getHintPlainText", () => {
       `Hold ${mod} to see where you can jump`,
     );
     expect(plainTextById["event-jump"]).toBe(
-      "Press S to show event keys, or a day key to jump",
+      "Press H to show event keys, or a day key to jump",
+    );
+    expect(plainTextById["week-day-focus"]).toBe(
+      "On week view, press H then M to focus Monday",
     );
     expect(plainTextById.nudge).toBe("Hold Shift and press an arrow to move");
     expect(plainTextById["command-palette"]).toBe(

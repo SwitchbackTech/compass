@@ -7,6 +7,7 @@ import {
 export type ShortcutHintContext = {
   isFormOpen: boolean;
   isLifeView: boolean;
+  isWeekView?: boolean;
   eventFocused: boolean;
   firstEventDone: boolean;
 };
@@ -18,10 +19,24 @@ const IDLE_POOL = [
   "create-event",
 ] as const satisfies readonly ShortcutHintId[];
 
+const WEEK_IDLE_POOL = [
+  "page-jump",
+  "event-jump",
+  "week-day-focus",
+  "command-palette",
+  "create-event",
+] as const satisfies readonly ShortcutHintId[];
+
 const FOCUSED_POOL = [
   "edit-sequence",
   "nudge",
   ...IDLE_POOL,
+] as const satisfies readonly ShortcutHintId[];
+
+const WEEK_FOCUSED_POOL = [
+  "edit-sequence",
+  "nudge",
+  ...WEEK_IDLE_POOL,
 ] as const satisfies readonly ShortcutHintId[];
 
 const FORM_POOL = [
@@ -70,10 +85,10 @@ export function selectShortcutHint(
     return pick(LIFE_POOL);
   }
   if (ctx.eventFocused) {
-    return pick(FOCUSED_POOL);
+    return pick(ctx.isWeekView ? WEEK_FOCUSED_POOL : FOCUSED_POOL);
   }
   if (!ctx.firstEventDone) {
     return getShortcutHint("create-event");
   }
-  return pick(IDLE_POOL);
+  return pick(ctx.isWeekView ? WEEK_IDLE_POOL : IDLE_POOL);
 }

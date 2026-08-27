@@ -177,6 +177,13 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "focus",
   },
   {
+    id: "focus-week-day",
+    keys: ["m"],
+    label: "Focus a week column (M T W R F SA SU)",
+    section: "focus",
+    when: { weekView: true },
+  },
+  {
     id: "focus-notice",
     keys: ["f"],
     label: "Focus latest notice",
@@ -443,6 +450,9 @@ export const filterShortcutsByContext = (
     } else {
       // Day/week view excludes life-specific shortcuts
       if (shortcut.when?.lifeView === true) {
+        return false;
+      }
+      if (shortcut.when?.weekView === true && view !== "week") {
         return false;
       }
       // Exclude current view switcher (show only alternate view)

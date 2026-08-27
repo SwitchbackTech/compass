@@ -5,7 +5,7 @@
  * remap here propagates to the real handlers, the showcase, and its hint
  * chips in one edit. Bindings come in four shapes because the app has four
  * dispatch styles: tanstack hotkey strings, the bespoke `e`… sequence engine,
- * bare-letter capture listeners (`s`, `f`, `m`), and the hold-Mod + digit-chord
+ * bare-letter capture listeners (`h`, `f`, `m`), and the hold-Mod + digit-chord
  * engine (`jumpFormField`).
  *
  * Only taught bindings live here — this is not a registry of every shortcut.
@@ -38,7 +38,7 @@ export const KEYMAP = {
     keycaps: ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
   },
   editTitle: { sequence: { leader: "e", second: "t" }, keycaps: ["E", "T"] },
-  eventJump: { bareLetter: "s", keycaps: ["S"] },
+  eventJump: { bareLetter: "h", keycaps: ["H"] },
   moveEvent: {
     hotkeys: {
       up: "Shift+ArrowUp",

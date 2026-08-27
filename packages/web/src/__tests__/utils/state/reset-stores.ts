@@ -45,6 +45,10 @@ import {
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
 import {
+  initialPageJumpHintState,
+  usePageJumpHintStore,
+} from "@web/shortcuts/page-jump/page-jump.store";
+import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
@@ -82,6 +86,7 @@ const storeResets: StoreReset[] = [
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),
+  () => usePageJumpHintStore.setState(initialPageJumpHintState, true),
   resetShortcutHintProgressStoreForTests,
 ];
 
