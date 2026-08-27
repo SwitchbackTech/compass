@@ -6,6 +6,7 @@ import { useBillingEnforced } from "@web/billing/billing.query";
 import {
   ensureTrialStarted,
   getTrialDaysLeft,
+  purgeLegacyTrialStamp,
   TRIAL_LENGTH_DAYS,
 } from "@web/billing/trial.storage";
 
@@ -44,6 +45,9 @@ export function useTrialStatus(): TrialStatus {
   const [daysLeft, setDaysLeft] = useState(() => getTrialDaysLeft());
 
   useEffect(() => {
+    // Before the enforcement gate: a paused deployment is precisely where a
+    // stale pre-.v2 stamp would sit undisturbed until someone flips the switch.
+    purgeLegacyTrialStamp();
     if (!enforced) return;
     if (ensureTrialStarted()) {
       track("trial_started");
