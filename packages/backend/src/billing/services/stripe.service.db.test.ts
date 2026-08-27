@@ -79,6 +79,19 @@ describe("StripeService", () => {
     expect(
       (sessionArgs as { payment_method_types?: unknown }).payment_method_types,
     ).toBeUndefined();
+    // Stripe Tax needs all three together with an existing customer: drop
+    // one and tax silently calculates as zero instead of erroring.
+    expect(
+      sessionArgs as {
+        automatic_tax?: unknown;
+        customer_update?: unknown;
+        billing_address_collection?: unknown;
+      },
+    ).toMatchObject({
+      automatic_tax: { enabled: true },
+      customer_update: { address: "auto" },
+      billing_address_collection: "required",
+    });
     expect(sessionsCreate.mock.calls[0]?.[1]).toEqual({
       idempotencyKey: `compass-checkout-v2-${userId.toString()}`,
     });
