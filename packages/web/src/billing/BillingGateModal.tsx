@@ -7,15 +7,20 @@ import {
 } from "@web/api/util/api.util";
 import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { track } from "@web/auth/posthog/track";
-import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 
 type BillingGateModalProps = {
   status: string;
 };
+
+const GATE_PANEL_CLASSNAME =
+  "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
 
 /**
  * Full app-lock overlay for signed-in users who cannot write (awaiting
@@ -24,7 +29,7 @@ type BillingGateModalProps = {
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const logout = useLogout();
-  const panelRef = useRef<HTMLDivElement>(null);
+  const primaryButtonRef = useRef<HTMLButtonElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const shownRef = useRef(false);
@@ -38,7 +43,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     : `Your trial has ended. Compass is ${BILLING_PLAN.PRICE_DISPLAY}.`;
 
   useEffect(() => {
-    panelRef.current?.focus();
     if (!shownRef.current) {
       shownRef.current = true;
       track("billing_gate_shown", { status });
@@ -46,6 +50,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   }, [status]);
 
   const redirectTo = async (kind: "checkout" | "portal") => {
+    if (isRedirecting) return;
     setIsRedirecting(true);
     track("billing_gate_cta_clicked", { cta: kind });
     try {
@@ -78,61 +83,86 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     }
   };
 
+  const handleLogout = () => {
+    track("billing_gate_cta_clicked", { cta: "logout" });
+    void logout();
+  };
+
+  const handleShortcutKey = (e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = keyboardKey(e).toLowerCase();
+    if (key === "s") {
+      e.preventDefault();
+      void redirectTo("checkout");
+    } else if (key === "m" && !isAwaitingCheckout) {
+      e.preventDefault();
+      void redirectTo("portal");
+    } else if (key === "e") {
+      e.preventDefault();
+      if (!isExporting) void handleExport();
+    } else if (key === "l") {
+      e.preventDefault();
+      handleLogout();
+    }
+  };
+
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
-      style={{ zIndex: Z_INDEX_MODAL }}
+    <OverlayPanel
+      align="center"
+      ariaLabel={title}
+      initialFocusRef={primaryButtonRef}
+      panelClassName={GATE_PANEL_CLASSNAME}
+      widthClassName="w-120"
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
       <div
-        ref={panelRef}
-        aria-label={title}
-        aria-modal="true"
-        className="flex w-120 max-w-full flex-col items-center gap-4 rounded-xl border border-border bg-surface p-8 text-center text-text shadow-xl"
-        role="dialog"
-        tabIndex={-1}
+        className="flex w-full flex-col items-center gap-4"
+        onKeyDown={handleShortcutKey}
       >
         <PixelPirateScouting className="h-14 w-14" />
         <h1 className="font-medium text-xl">{title}</h1>
         <p className="text-sm text-text-muted">{body}</p>
         <div className="mt-2 flex w-full flex-col gap-2">
           <button
-            className="c-button c-button-primary c-button-elevated rounded-full px-6 py-2"
+            ref={primaryButtonRef}
+            className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-6 py-2"
             disabled={isRedirecting}
             onClick={() => void redirectTo("checkout")}
             type="button"
           >
             {isAwaitingCheckout ? "Start trial" : "Subscribe"}
+            <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
           {isAwaitingCheckout ? null : (
             <button
-              className="c-button c-button-secondary rounded-full px-6 py-2"
+              className="c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2"
               disabled={isRedirecting}
               onClick={() => void redirectTo("portal")}
               type="button"
             >
               Manage billing
+              <ShortcutHint className="ml-2">M</ShortcutHint>
             </button>
           )}
         </div>
         <button
-          className="c-focus-ring text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
+          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
           disabled={isExporting}
           onClick={() => void handleExport()}
           type="button"
         >
           {isExporting ? "Exporting…" : "Export my data"}
+          {isExporting ? null : <ShortcutHint className="ml-2">E</ShortcutHint>}
         </button>
         <button
-          className="c-focus-ring text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
-          onClick={() => {
-            track("billing_gate_cta_clicked", { cta: "logout" });
-            void logout();
-          }}
+          className="c-focus-ring inline-flex items-center text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"
+          onClick={handleLogout}
           type="button"
         >
           Log out
+          <ShortcutHint className="ml-2">L</ShortcutHint>
         </button>
       </div>
-    </div>
+    </OverlayPanel>
   );
 };

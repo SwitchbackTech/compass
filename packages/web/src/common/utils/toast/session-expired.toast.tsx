@@ -1,5 +1,7 @@
 import { type Id } from "react-toastify";
+import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
+import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 import {
   type AuthView,
   VIEW_TO_PARAM,
@@ -35,18 +37,14 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
     getToast().dismiss(toastId);
   };
 
+  useToastPrimaryActionShortcut(handleSignIn);
+
   return (
     <div className="flex w-full flex-col gap-2" data-notice="">
       <p className="text-sm text-text">
         You've been signed out. Please sign in again.
       </p>
-      <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={handleSignIn}
-        type="button"
-      >
-        Sign in
-      </button>
+      <ToastActionButton onClick={handleSignIn}>Sign in</ToastActionButton>
     </div>
   );
 };

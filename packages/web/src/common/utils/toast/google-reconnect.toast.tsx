@@ -12,7 +12,9 @@ import {
   ErrorToastSeverity,
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
+import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
+import { useToastPrimaryActionShortcut } from "@web/common/utils/toast/useToastPrimaryActionShortcut";
 
 let hasShownReconnectToastThisLoad = false;
 
@@ -76,6 +78,8 @@ export const GoogleReconnectToast = ({
     connect();
   };
 
+  useToastPrimaryActionShortcut(handleReconnect);
+
   const namedAccount = accountEmail?.trim();
 
   return (
@@ -90,13 +94,9 @@ export const GoogleReconnectToast = ({
           ? `Access for ${namedAccount} expired or was revoked. Your events are still safe in Google. Reconnect and Compass will re-import them.`
           : "This happens when access expires or is revoked. Your events are still safe in Google. Reconnect and Compass will re-import them."}
       </p>
-      <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={handleReconnect}
-        type="button"
-      >
+      <ToastActionButton onClick={handleReconnect}>
         Reconnect Google Calendar
-      </button>
+      </ToastActionButton>
     </div>
   );
 };
