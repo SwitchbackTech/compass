@@ -39,7 +39,6 @@ const stubConfig = (isConfigured: boolean, enforcement = true) => {
           billing: {
             isConfigured,
             enforcement,
-            priceDisplay: "$7.99/month",
             trialLengthDays: 7,
           },
         }),
@@ -246,7 +245,6 @@ describe("useAppAccess", () => {
             billing: {
               isConfigured: true,
               enforcement: true,
-              priceDisplay: "$7.99/month",
               trialLengthDays: 7,
             },
           }),

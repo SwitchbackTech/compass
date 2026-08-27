@@ -1,7 +1,8 @@
 /**
- * Trial and pricing terms. Kept in core so web copy and backend Checkout
- * share one source. The Stripe price id is a deployment secret and lives
- * in config, not here.
+ * Trial length and backfill cutoff. Backend Checkout reads
+ * `TRIAL_LENGTH_DAYS`. The Stripe price id and amount live in Stripe
+ * (and the `stripe.priceId` secret), not here, so operators can change
+ * the price without a deploy.
  *
  * BACKFILL_CUTOFF bounds which rows `backfill-billing` stamps: only
  * accounts with `signedUpAt <= cutoff` (or missing `signedUpAt`) are
@@ -12,9 +13,5 @@
  */
 export const BILLING_PLAN = {
   TRIAL_LENGTH_DAYS: 7,
-  PLAN_NAME: "Compass",
-  PRICE_AMOUNT_CENTS: 799,
-  PRICE_CURRENCY: "usd",
-  PRICE_DISPLAY: "$7.99/month",
   BACKFILL_CUTOFF: "2099-12-31T23:59:59.000Z",
 } as const;

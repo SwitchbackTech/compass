@@ -1,8 +1,9 @@
 # Billing And Trial
 
-Hosted Compass uses Stripe Checkout (subscription mode, 7-day trial, $7.99/month)
-and the Stripe Billing Portal. There is no Stripe.js and no publishable key in
-the web bundle.
+Hosted Compass uses Stripe Checkout (subscription mode, 7-day trial)
+and the Stripe Billing Portal. The subscription amount lives on the Stripe
+Price behind `stripe.priceId`, so operators can change it in Stripe without
+a web deploy. There is no Stripe.js and no publishable key in the web bundle.
 
 Self-host installs omit the `stripe:` config block. `/api/config` then reports
 `billing.isConfigured: false`, the web never shows a paid gate, and event
@@ -131,7 +132,7 @@ calculates zero tax rather than erroring, so a missing one is silent.
 
 ## Key files
 
-- Plan/price copy: `packages/core/src/constants/billing.constants.ts`
+- Trial length: `packages/core/src/constants/billing.constants.ts`
 - Status derivation: `packages/backend/src/billing/services/billing.service.ts`
 - Checkout / portal: `packages/backend/src/billing/services/stripe.service.ts`
 - Webhook: `packages/backend/src/billing/services/billing.webhook.service.ts`

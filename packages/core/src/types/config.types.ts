@@ -30,13 +30,11 @@ export const AppConfigSchema = z.object({
     .object({
       isConfigured: z.boolean(),
       enforcement: z.boolean().default(false),
-      priceDisplay: z.string(),
       trialLengthDays: z.number(),
     })
     .default({
       isConfigured: false,
       enforcement: false,
-      priceDisplay: BILLING_PLAN.PRICE_DISPLAY,
       trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
     }),
 });
