@@ -9,8 +9,8 @@ import {
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type ResourceBootstrapState,
+  SyncResourceReadSchema,
   type SyncResourceRecord,
-  SyncResourceRecordSchema,
   type SyncResourceUpsert,
   SyncResourceUpsertSchema,
 } from "@sync/storage/contracts/sync-resource.contracts";
@@ -94,7 +94,7 @@ export class SyncResourceRepository {
         { $limit: limit },
       ])
       .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return records.map((r) => SyncResourceReadSchema.parse(r));
   }
 
   async ensure(input: SyncResourceUpsert): Promise<SyncResourceRecord> {
@@ -135,7 +135,7 @@ export class SyncResourceRepository {
       { upsert: true, returnDocument: "after" },
     );
     if (!result) throw new Error("Ensure did not return a sync resource");
-    return SyncResourceRecordSchema.parse(result);
+    return SyncResourceReadSchema.parse(result);
   }
 
   async markAttempt(
@@ -409,7 +409,7 @@ export class SyncResourceRepository {
     subscriptionId: string,
   ): Promise<SyncResourceRecord | null> {
     const record = await this.collection.findOne({ subscriptionId });
-    return record ? SyncResourceRecordSchema.parse(record) : null;
+    return record ? SyncResourceReadSchema.parse(record) : null;
   }
 
   // Begin a fresh import generation for a non-destructive repair. The old
@@ -425,7 +425,7 @@ export class SyncResourceRepository {
       { returnDocument: "after" },
     );
     if (!result) throw new Error("startNewGeneration: resource not found");
-    return SyncResourceRecordSchema.parse(result).importGeneration;
+    return SyncResourceReadSchema.parse(result).importGeneration;
   }
 
   // Serve reads from the generation a repair just finished building. The flip is
@@ -519,7 +519,7 @@ export class SyncResourceRepository {
       tenantId,
       principalId,
     });
-    return record ? SyncResourceRecordSchema.parse(record) : null;
+    return record ? SyncResourceReadSchema.parse(record) : null;
   }
 
   async listByConnection(
@@ -530,7 +530,7 @@ export class SyncResourceRepository {
     const records = await this.collection
       .find({ tenantId, principalId, connectionId })
       .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return records.map((r) => SyncResourceReadSchema.parse(r));
   }
 
   // Events resources owned by the signed principal — input for a user-
@@ -545,7 +545,7 @@ export class SyncResourceRepository {
       .find({ tenantId, principalId, resourceKind: "events" })
       .limit(limit)
       .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return records.map((r) => SyncResourceReadSchema.parse(r));
   }
 
   // Foreground freshness fallback: resources for one currently-connected
@@ -569,7 +569,7 @@ export class SyncResourceRepository {
       .sort({ lastAttemptAt: 1 })
       .limit(limit)
       .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return records.map((r) => SyncResourceReadSchema.parse(r));
   }
 
   // Events resources whose last successful sync is older than `before` (or which
@@ -643,7 +643,7 @@ export class SyncResourceRepository {
       .sort({ subscriptionExpiresAt: 1 })
       .limit(limit)
       .toArray();
-    return records.map((r) => SyncResourceRecordSchema.parse(r));
+    return records.map((r) => SyncResourceReadSchema.parse(r));
   }
 
   // calendarList resources whose last FULL enumeration is older than `before`

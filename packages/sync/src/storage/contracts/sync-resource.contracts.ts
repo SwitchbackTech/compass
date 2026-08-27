@@ -158,6 +158,19 @@ export const SyncResourceRecordSchema = z.strictObject({
 });
 export type SyncResourceRecord = z.infer<typeof SyncResourceRecordSchema>;
 
+// Reads parse through this stripped variant, not the strict schema above.
+// A rolling deploy runs the old build and the new build together: the new
+// build stamps a field the old build has never heard of, the old build then
+// reads that row, and a strictObject rejects the unknown key
+// (`unrecognized_keys`) and throws. That broke GET /connections and the sync
+// job worker during the #2908 `lastFullListAt` deploy (2026-08-27). The
+// mirror-image mistake (a required field with no default) froze the fleet
+// for 23h (2026-07-31). Unknown keys are dropped from the in-memory record
+// and left untouched in Mongo — writes are field-level `$set`, so the newer
+// build's field survives. Writes stay strict, so this build still cannot
+// persist an unknown or misspelled key.
+export const SyncResourceReadSchema = SyncResourceRecordSchema.strip();
+
 export const SyncResourceUpsertSchema = SyncResourceRecordSchema.pick({
   tenantId: true,
   principalId: true,
