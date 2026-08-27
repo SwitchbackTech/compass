@@ -69,6 +69,8 @@ describe("AnonymousSaveToast", () => {
     expect(
       within(screen.getByRole("button", { name: "Sign up" })).getByText("1"),
     ).toBeTruthy();
+    expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
     pressKey("1");
 

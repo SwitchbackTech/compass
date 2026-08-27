@@ -94,6 +94,8 @@ describe("GoogleReconnectToast", () => {
         screen.getByRole("button", { name: "Reconnect Google Calendar" }),
       ).getByText("1"),
     ).toBeTruthy();
+    expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
     pressKey("1");
 

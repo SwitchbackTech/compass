@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { type Id, type ToastOptions } from "react-toastify";
+import { type Id } from "react-toastify";
 import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
@@ -11,17 +11,13 @@ import { getToast } from "@web/common/utils/toast/toast.port";
  * Branching on `toast.isActive` instead would race: it stays false for
  * toasts created earlier in the same tick.
  */
-export function showStatusToast(
-  toastId: Id,
-  message: ReactNode,
-  extras?: Pick<ToastOptions, "closeButton">,
-): void {
+export function showStatusToast(toastId: Id, message: ReactNode): void {
   const toast = getToast();
   const options = getToastDefaultOptions();
   toast(message, {
     ...options,
     toastId,
-    closeButton: extras?.closeButton ?? false,
+    closeButton: false,
     hideProgressBar: true,
   });
   toast.update(toastId, {
