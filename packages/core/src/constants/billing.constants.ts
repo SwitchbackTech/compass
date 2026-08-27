@@ -3,10 +3,12 @@
  * share one source. The Stripe price id is a deployment secret and lives
  * in config, not here.
  *
- * BACKFILL_CUTOFF is the single dated switch for grandfathering: only
+ * BACKFILL_CUTOFF bounds which rows `backfill-billing` stamps: only
  * accounts with `signedUpAt <= cutoff` (or missing `signedUpAt`) are
- * placed on a trial. A far-future default means nobody is grandfathered.
- * Reverting to grandfathering is a one-line change to this value.
+ * stamped `awaiting_checkout`. It is NOT a grandfathering switch --
+ * `deriveBillingStatus` gates a missing `billing` object through the same
+ * read-only branch, so skipping a row here changes nothing about its
+ * access. Grandfathering would need a real code change.
  */
 export const BILLING_PLAN = {
   TRIAL_LENGTH_DAYS: 7,
