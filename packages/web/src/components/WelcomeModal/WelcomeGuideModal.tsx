@@ -1,6 +1,7 @@
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
@@ -28,9 +29,10 @@ export function WelcomeGuideModal() {
             <button
               type="button"
               onClick={dismiss}
-              className="c-button c-button-primary c-button-elevated rounded-full px-10"
+              className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-10"
             >
               Close
+              <ShortcutHint className="ml-2">Esc</ShortcutHint>
             </button>
           </div>
         </WelcomeGuideBody>

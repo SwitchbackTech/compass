@@ -58,6 +58,25 @@ export const SyncResourceRecordSchema = z.strictObject({
   activeGeneration: z.number().int().min(0).default(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),
+  // calendarList only: when a pass last applied a COMPLETE enumeration — a full
+  // list that returned at least one calendar, persisted end to end. This is the
+  // staleness clock the rediscovery sweep selects on.
+  //
+  // Deliberately NOT lastSuccessAt, which advanceCursor stamps on every pass,
+  // incremental ones included. The web client refreshes on each page load and
+  // each alt-tab-back after 30s, and every one of those enqueues an incremental
+  // calendarList pass — so an active user's lastSuccessAt never aged past the
+  // sweep's 24h threshold, they never became eligible, and the full pass that
+  // retires hidden/removed calendars never ran for them. Using the app disabled
+  // its own repair: the 64 connections that self-healed after #2876 were the
+  // IDLE ones (2026-08-27).
+  //
+  // Null (or absent — Mongo's null predicate matches missing) means "never
+  // fully listed", which sorts as maximally stale. That is what makes this
+  // field self-backfilling: every pre-existing row is eligible on deploy.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt below.
+  lastFullListAt: z.date().nullable().default(null),
   // Set when the provider durably rejects reads for this resource (a
   // non-transient 4xx retries cannot fix — see the readFailed settlement for
   // events resources and the discoveryFailed settlement for calendarList in
@@ -138,6 +157,19 @@ export const SyncResourceRecordSchema = z.strictObject({
   updatedAt: z.date(),
 });
 export type SyncResourceRecord = z.infer<typeof SyncResourceRecordSchema>;
+
+// Reads parse through this stripped variant, not the strict schema above.
+// A rolling deploy runs the old build and the new build together: the new
+// build stamps a field the old build has never heard of, the old build then
+// reads that row, and a strictObject rejects the unknown key
+// (`unrecognized_keys`) and throws. That broke GET /connections and the sync
+// job worker during the #2908 `lastFullListAt` deploy (2026-08-27). The
+// mirror-image mistake (a required field with no default) froze the fleet
+// for 23h (2026-07-31). Unknown keys are dropped from the in-memory record
+// and left untouched in Mongo — writes are field-level `$set`, so the newer
+// build's field survives. Writes stay strict, so this build still cannot
+// persist an unknown or misspelled key.
+export const SyncResourceReadSchema = SyncResourceRecordSchema.strip();
 
 export const SyncResourceUpsertSchema = SyncResourceRecordSchema.pick({
   tenantId: true,

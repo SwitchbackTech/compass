@@ -18,8 +18,8 @@ export const KEYMAP = {
   saveDraft: { hotkey: "Enter", keycaps: ["Enter"] },
   jumpFormField: {
     holdModifier: "Mod",
-    digits: ["1", "8"],
-    keycaps: ["Mod", "1-8"],
+    digits: ["1", "9"],
+    keycaps: ["Mod", "1-9"],
   },
   // Same hold-Mod gesture outside the form: digits follow the active view's
   // target list order (page-jump.targets.ts).

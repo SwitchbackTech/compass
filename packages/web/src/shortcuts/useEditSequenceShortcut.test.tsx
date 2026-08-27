@@ -76,7 +76,7 @@ describe("useEditSequenceShortcut", () => {
         ["s", "start"],
         ["e", "end"],
         ["r", "recurrence"],
-        ["a", "calendar"],
+        ["a", "attendees"],
         ["c", "color"],
       ] as const;
 

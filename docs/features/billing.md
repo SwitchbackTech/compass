@@ -29,8 +29,10 @@ network never flashes a gate at a user before the real value loads.
 **Enable-day caveat:** existing signed-in accounts are not grandfathered (see
 below) — flipping `enforcement: true` while Stripe is configured immediately
 puts any hosted user without a Stripe subscription id into `awaiting_checkout`
-and shows them `BillingGateModal`. Run `bun run cli backfill-billing` (or set
-`BACKFILL_CUTOFF`) first if that's not the intended effect for existing users.
+and shows them `BillingGateModal`. Neither `backfill-billing` nor
+`BACKFILL_CUTOFF` changes that — see below. Sparing existing users would take
+a real code change, so treat the flip as the moment every hosted account
+without a Stripe subscription goes read-only.
 
 ## What users see
 
@@ -51,7 +53,14 @@ subscription id (including missing billing, `none`, and local/backfill
 `bun run cli backfill-billing` stamps `awaiting_checkout` on rows that still
 lack `billing.subscriptionStatus`. The default `BACKFILL_CUTOFF` is far in
 the future so every such row is included; set it to a past instant to skip
-newer signups. A trial only begins through Stripe Checkout.
+newer signups.
+
+`BACKFILL_CUTOFF` is **not** a grandfathering switch. It only decides which
+rows get *stamped*, and `deriveBillingStatus` already gates a missing
+`billing` object through the same `awaiting_checkout` branch — so stamped and
+unstamped rows are equally read-only. Running the backfill makes the state
+explicit for reporting; it grants nobody access. A trial only begins through
+Stripe Checkout.
 
 ## Staging
 
@@ -72,8 +81,13 @@ must subscribe to Checkout and Subscriptions snapshot events, not Accounts v2:
 `staging-selfhosted` must not get those secrets — it is the live regression
 that self-host stays writable.
 
-Sales tax (`automatic_tax`) is a Stripe Dashboard decision, not a code one,
-and should be settled before production keys.
+Sales tax is enabled in code: the Checkout Session passes
+`automatic_tax`, `customer_update.address`, and `billing_address_collection`
+together (all three are required when an existing `customer` is passed). The
+Dashboard half is the part that must be settled before production keys —
+register each jurisdiction under Tax > Registrations and set a product tax
+code, in test and live mode separately. Without a registration Stripe
+calculates zero tax rather than erroring, so a missing one is silent.
 
 ## Key files
 

@@ -75,6 +75,16 @@ Source: `packages/core/src/types/event-command.contracts.ts`
   A recurring series-base edit that changed the guest set narrows
   `RecurrenceScopeDialog` to "All Events" only
   (`RecurrenceScopeDialog.test.tsx`).
+- Incoming RSVP from other attendees is visible to the host without
+  photos: chips and the read-only guest list show a compact status badge
+  (yes / no / maybe / awaiting) looked up from the live `Attendee[]` by
+  email. The write path stays `{email, displayName}` — `responseStatus`
+  never rides `AttendeeInput`. The guest summary uses the same observer
+  labels (`1 guest (0 yes, 1 awaiting)`), distinct from the user's own
+  Going / Maybe / Decline control. Jump to the guest field with `e` then
+  `a`, or Mod+8 while the form is open (Mod+9 is notes; Account keeps
+  Mod+5 with no letter). When the combobox is hidden (invitee / read-only
+  / occurrence), the same shortcuts focus the read-only guest list.
 - Typing an invalid string never creates a chip — `AttendeeField`'s
   `isValidAttendeeEmail` gate rejects it inline ("Enter a valid email
   address") and nothing reaches `onChange`

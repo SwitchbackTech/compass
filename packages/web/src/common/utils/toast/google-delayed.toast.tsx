@@ -6,6 +6,7 @@ import {
   ErrorToastSeverity,
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
+import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
 interface GoogleDelayedToastProps {
@@ -32,13 +33,9 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
         Updates are taking longer than expected. Try Refresh, or reconnect if
         this continues.
       </p>
-      <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={handleRefresh}
-        type="button"
-      >
+      <ToastActionButton onClick={handleRefresh}>
         Refresh calendar
-      </button>
+      </ToastActionButton>
     </div>
   );
 };

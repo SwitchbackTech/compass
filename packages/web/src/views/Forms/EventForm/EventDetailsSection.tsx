@@ -1,9 +1,15 @@
 import { UsersIcon, VideoCameraIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { type EventContent } from "@core/types/event.contracts";
-import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
+import { AttendeeRsvpStatus } from "@web/views/Forms/EventForm/AttendeeRsvpStatus";
+import {
+  ATTENDEE_RSVP_LABEL,
+  formatAttendeeRsvpTally,
+} from "@web/views/Forms/EventForm/attendee-rsvp";
 
 type EventDetails = Extract<EventContent, { kind: "details" }>;
+
+const EVENT_FORM_GUEST_LIST_ID = "event-form-guest-list";
 
 interface EventDetailsSectionProps {
   details: Pick<EventDetails, "organizer" | "attendees" | "conference">;
@@ -14,16 +20,6 @@ interface EventDetailsSectionProps {
    */
   hideAttendees?: boolean;
 }
-
-const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
-  accepted: "bg-success",
-  declined: "bg-error",
-  tentative: "bg-warning",
-  needsAction: "bg-text-subtle",
-};
-
-const attendeeStatusLabel = (status: AttendeeResponseStatus): string =>
-  status === "needsAction" ? "hasn't responded" : status;
 
 const MAX_VISIBLE_ATTENDEES = 6;
 
@@ -67,33 +63,34 @@ export const EventDetailsSection = ({
       )}
 
       {hasAttendees && (
-        <div className="flex flex-col gap-1.5">
+        <div
+          id={EVENT_FORM_GUEST_LIST_ID}
+          tabIndex={-1}
+          className="c-focus-ring flex flex-col gap-1.5 rounded-xs"
+        >
           <div className="flex items-center gap-2 text-text-muted">
             <UsersIcon size={16} className="shrink-0" />
             <span>
-              {attendees.length} {attendees.length === 1 ? "guest" : "guests"}
+              {formatAttendeeRsvpTally(
+                attendees.map((attendee) => attendee.responseStatus),
+              )}
             </span>
           </div>
           <ul className="flex flex-col gap-1 pl-6">
             {visibleAttendees.map((attendee) => {
               const name = attendee.displayName ?? attendee.email;
               const isOrganizer = organizer?.email === attendee.email;
-              // The dot alone is a color-only signal (bg-success vs
-              // bg-error), invisible to colorblind users and unannounced by
-              // screen readers - title is a mouse-only tooltip, so the row's
-              // aria-label carries the same info as accessible text.
-              const statusText = attendeeStatusLabel(attendee.responseStatus);
+              // The badge is a color+icon signal; title is a mouse-only
+              // tooltip, so the row's aria-label carries the same info as
+              // accessible text.
+              const statusText = ATTENDEE_RSVP_LABEL[attendee.responseStatus];
               return (
                 <li
                   key={attendee.email}
                   className="flex items-center gap-2"
                   aria-label={`${name}, ${statusText}${isOrganizer ? ", organizer" : ""}`}
                 >
-                  <span
-                    aria-hidden
-                    title={statusText}
-                    className={`size-2.5 shrink-0 rounded-full ${ATTENDEE_STATUS_DOT[attendee.responseStatus]}`}
-                  />
+                  <AttendeeRsvpStatus status={attendee.responseStatus} />
                   <span className="min-w-0 flex-1 truncate">
                     {name}
                     {isOrganizer && " (organizer)"}

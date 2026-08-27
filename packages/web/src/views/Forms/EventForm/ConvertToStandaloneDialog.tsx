@@ -28,10 +28,14 @@ export function ConvertToStandaloneDialog({
       variant="modal"
     >
       <OverlayPanelActions>
-        <OverlayPanelActionButton onClick={onCancel}>
+        <OverlayPanelActionButton shortcut="Esc" onClick={onCancel}>
           Cancel
         </OverlayPanelActionButton>
-        <OverlayPanelActionButton variant="primary" onClick={onConfirm}>
+        <OverlayPanelActionButton
+          variant="primary"
+          shortcut="Enter"
+          onClick={onConfirm}
+        >
           Convert
         </OverlayPanelActionButton>
       </OverlayPanelActions>

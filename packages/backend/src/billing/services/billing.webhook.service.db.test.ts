@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import type Stripe from "stripe";
+import Stripe from "stripe";
 import { Status } from "@core/errors/status.codes";
 import {
   cleanupCollections,
@@ -9,7 +9,10 @@ import {
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import billingWebhookController from "@backend/billing/controllers/billing.webhook.controller";
 import { processStripeEvent } from "@backend/billing/services/billing.webhook.service";
-import { setStripeClientForTests } from "@backend/billing/services/stripe.client";
+import {
+  STRIPE_API_VERSION,
+  setStripeClientForTests,
+} from "@backend/billing/services/stripe.client";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   afterAll,
@@ -85,7 +88,7 @@ describe("Stripe webhook", () => {
     using _env = mockEnv(stripeConfigured);
     setStripeClientForTests({
       webhooks: {
-        constructEvent: () => {
+        constructEventAsync: () => {
           throw new Error(
             "No signatures found matching the expected signature",
           );
@@ -108,6 +111,121 @@ describe("Stripe webhook", () => {
     expect(json.mock.calls[0]?.[0]).toEqual({
       error: "No signatures found matching the expected signature",
     });
+  });
+
+  /**
+   * The other webhook tests stub the Stripe client wholesale, so the SDK's
+   * own signature verification never runs. These two use the real
+   * `webhooks` object and stub only the API call, which is the difference
+   * between testing our dispatch and testing that Stripe events can get in
+   * at all. Under Bun the SDK picks an async-only crypto provider, so a
+   * synchronous constructEvent() fails here no matter how valid the
+   * signature is.
+   */
+  const realStripe = () =>
+    new Stripe(stripeConfigured.STRIPE_SECRET_KEY, {
+      apiVersion: STRIPE_API_VERSION,
+    });
+
+  const checkoutPayload = (userId: string) =>
+    JSON.stringify({
+      id: "evt_signed_1",
+      type: "checkout.session.completed",
+      created: 1_775_000_100,
+      data: {
+        object: {
+          id: "cs_signed_1",
+          client_reference_id: userId,
+          customer: "cus_1",
+          subscription: "sub_1",
+        },
+      },
+    });
+
+  const seedAwaitingUser = async (email: string) => {
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email,
+      name: "Signed",
+      firstName: "Signed",
+      lastName: "User",
+      locale: "en",
+      billing: { subscriptionStatus: "awaiting_checkout" },
+    });
+    return userId;
+  };
+
+  it("accepts an event carrying a genuine Stripe signature", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = await seedAwaitingUser("signed@example.com");
+    const stripe = realStripe();
+    setStripeClientForTests({
+      webhooks: stripe.webhooks,
+      subscriptions: {
+        retrieve: mock(() =>
+          Promise.resolve(
+            subscription({ metadata: { compassUserId: userId.toString() } }),
+          ),
+        ),
+      },
+    } as unknown as Stripe);
+
+    const payload = checkoutPayload(userId.toString());
+    const signature = await stripe.webhooks.generateTestHeaderStringAsync({
+      payload,
+      secret: stripeConfigured.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const { res, json } = jsonRes();
+    await billingWebhookController.handleStripe(
+      {
+        body: Buffer.from(payload),
+        headers: { "stripe-signature": signature },
+      } as unknown as Request,
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.OK,
+    );
+    expect(json).toHaveBeenCalledWith({ received: true });
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("trialing");
+    expect(stored?.billing?.stripeSubscriptionId).toBe("sub_1");
+    expect(await mongoService.billingEvent.countDocuments()).toBe(1);
+  });
+
+  it("rejects a payload edited after it was signed", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = await seedAwaitingUser("tampered@example.com");
+    const stripe = realStripe();
+    setStripeClientForTests({
+      webhooks: stripe.webhooks,
+      subscriptions: { retrieve: mock() },
+    } as unknown as Stripe);
+
+    const payload = checkoutPayload(userId.toString());
+    const signature = await stripe.webhooks.generateTestHeaderStringAsync({
+      payload,
+      secret: stripeConfigured.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const { res } = jsonRes();
+    await billingWebhookController.handleStripe(
+      {
+        body: Buffer.from(payload.replace("cus_1", "cus_evil")),
+        headers: { "stripe-signature": signature },
+      } as unknown as Request,
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.BAD_REQUEST,
+    );
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.stripeSubscriptionId).toBeUndefined();
+    expect(await mongoService.billingEvent.countDocuments()).toBe(0);
   });
 
   it("links customer and subscription ids from checkout.session.completed", async () => {
@@ -266,5 +384,100 @@ describe("Stripe webhook", () => {
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("canceled");
+  });
+  it("drops the dedupe row when the handler throws so Stripe's retry can reprocess", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "throw@example.com",
+      name: "Throw",
+      firstName: "Throw",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "awaiting_checkout",
+        stripeSubscriptionId: "sub_1",
+        stripeCustomerId: "cus_1",
+      },
+    });
+
+    setStripeClientForTests({
+      subscriptions: {
+        retrieve: mock(() => Promise.reject(new Error("stripe unavailable"))),
+      },
+    } as unknown as Stripe);
+
+    const event = {
+      id: "evt_throw_1",
+      type: "customer.subscription.updated",
+      created: 1_775_000_100,
+      data: { object: { id: "sub_1" } },
+    } as unknown as Stripe.Event;
+
+    await expect(processStripeEvent(event)).rejects.toThrow(
+      "stripe unavailable",
+    );
+
+    // The row must be gone, otherwise the dedupe would swallow Stripe's retry
+    // and the write would be lost for good.
+    expect(
+      await mongoService.billingEvent.countDocuments({ _id: event.id }),
+    ).toBe(0);
+
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
+
+    // A retry after Stripe recovers is reprocessed rather than deduped away.
+    setStripeClientForTests({
+      subscriptions: { retrieve: mock(() => Promise.resolve(subscription())) },
+    } as unknown as Stripe);
+    await processStripeEvent(event);
+
+    const retried = await mongoService.user.findOne({ _id: userId });
+    expect(retried?.billing?.subscriptionStatus).toBe("trialing");
+  });
+
+  it("ignores an unhandled event type without touching the user", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "unhandled@example.com",
+      name: "Unhandled",
+      firstName: "Unhandled",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeSubscriptionId: "sub_1",
+        stripeCustomerId: "cus_1",
+      },
+    });
+
+    const retrieve = mock(() => Promise.resolve(subscription()));
+    setStripeClientForTests({
+      subscriptions: { retrieve },
+    } as unknown as Stripe);
+
+    await processStripeEvent({
+      id: "evt_invoice_paid_1",
+      type: "invoice.paid",
+      created: 1_775_000_100,
+      data: { object: { id: "in_1", subscription: "sub_1" } },
+    } as unknown as Stripe.Event);
+
+    expect(retrieve).not.toHaveBeenCalled();
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("active");
+    expect(stored?.billing?.lastStripeEventAt).toBeUndefined();
+
+    // The dedupe row is still written: the insert precedes the handled-type
+    // check, so an unhandled redelivery is acked without re-entering handling.
+    expect(
+      await mongoService.billingEvent.countDocuments({
+        _id: "evt_invoice_paid_1",
+      }),
+    ).toBe(1);
   });
 });

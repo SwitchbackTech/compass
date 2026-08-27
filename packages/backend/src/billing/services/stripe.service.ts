@@ -83,6 +83,13 @@ class StripeService {
           // Card is required to start the trial. Default is `always`, but pin
           // it so a Dashboard setting cannot silently skip collection.
           payment_method_collection: "always",
+          // Stripe Tax is a create-param, not a Dashboard toggle. Because we
+          // always pass an existing `customer`, these three go together: the
+          // billing address has to be collected and written back to the
+          // Customer or there is no address to calculate tax from.
+          automatic_tax: { enabled: true },
+          customer_update: { address: "auto" },
+          billing_address_collection: "required",
           subscription_data: {
             ...(grantTrial
               ? {

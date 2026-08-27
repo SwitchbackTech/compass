@@ -32,7 +32,10 @@ class BillingWebhookController {
     }
 
     try {
-      const event = getStripeClient().webhooks.constructEvent(
+      // Must be the async variant: under Bun the SDK selects
+      // SubtleCryptoProvider, whose synchronous HMAC path throws
+      // unconditionally, so constructEvent() rejects every signature.
+      const event = await getStripeClient().webhooks.constructEventAsync(
         req.body,
         signature,
         CONFIG.STRIPE_WEBHOOK_SECRET,

@@ -1,4 +1,5 @@
 import { type Id } from "react-toastify";
+import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { getToast } from "@web/common/utils/toast/toast.port";
 import {
   type AuthView,
@@ -40,13 +41,7 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
       <p className="text-sm text-text">
         You've been signed out. Please sign in again.
       </p>
-      <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={handleSignIn}
-        type="button"
-      >
-        Sign in
-      </button>
+      <ToastActionButton onClick={handleSignIn}>Sign in</ToastActionButton>
     </div>
   );
 };

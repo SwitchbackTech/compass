@@ -640,7 +640,7 @@ describe("EventForm", () => {
     ).toHaveFocus();
   });
 
-  it("jumps focus to the description field with Mod+8 from the title field", () => {
+  it("jumps focus to the description field with Mod+9 from the title field", () => {
     renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
@@ -657,7 +657,7 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    dispatchModDigitKey(titleField, "Digit8", "8");
+    dispatchModDigitKey(titleField, "Digit9", "9");
 
     expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
   });
@@ -1682,17 +1682,19 @@ describe("EventForm", () => {
         />,
       );
 
-      expect(screen.getByText("2 guests")).toBeInTheDocument();
+      expect(
+        screen.getByText("2 guests (1 yes, 0 awaiting, 1 no)"),
+      ).toBeInTheDocument();
       expect(screen.getByText("Team Lead (organizer)")).toBeInTheDocument();
       expect(screen.getByText("guest@example.com")).toBeInTheDocument();
 
-      // RSVP status is otherwise a color-only dot - each row needs an
+      // RSVP status is otherwise a color+icon badge - each row needs an
       // accessible name carrying the same status text for screen readers.
       expect(
-        screen.getByLabelText("Team Lead, accepted, organizer"),
+        screen.getByLabelText("Team Lead, yes, organizer"),
       ).toBeInTheDocument();
       expect(
-        screen.getByLabelText("guest@example.com, declined"),
+        screen.getByLabelText("guest@example.com, no"),
       ).toBeInTheDocument();
     });
 

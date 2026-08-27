@@ -36,6 +36,9 @@ test("adding a guest prompts to send invitations and puts the replaced guest set
 
   await openEventForm(page, "Design Review");
 
+  await expect(page.getByText("2 guests (2 yes, 0 awaiting)")).toBeVisible();
+  await expect(page.getByLabel("Bob B, yes")).toBeVisible();
+
   const combobox = getGuestCombobox(page);
   await combobox.fill("dana@example.com");
   await page.keyboard.press("Enter");

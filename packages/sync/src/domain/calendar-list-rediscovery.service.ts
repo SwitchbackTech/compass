@@ -12,11 +12,16 @@ export interface CalendarListRediscoveryDeps {
   onError?: (error: unknown, resourceId: string) => void;
 }
 
-// Force a FULL calendar-list re-discovery for every connection whose last
-// discovery is older than `before`, so a calendar deleted or unshared at the
+// Force a FULL calendar-list re-discovery for every connection whose last full
+// enumeration (lastFullListAt, NOT lastSuccessAt — see listStaleCalendarLists)
+// is older than `before`, so a calendar deleted, hidden, or unshared at the
 // provider eventually gets retired even though calendarListSync otherwise only
-// ever runs once, at connect (connection.routes.ts's registerConnection is the
-// only other enqueue site).
+// ever runs incrementally.
+//
+// This is the guaranteed floor. The calendarList push route also clears the
+// cursor, which converges within seconds — but only for connections that hold a
+// live channel AND whose user actually changed something, so it cannot be the
+// only mechanism.
 //
 // syncCalendarList decides full-vs-incremental purely from whether the stored
 // cursor is null (`fullList = resource.syncCursor === null`), so clearing the

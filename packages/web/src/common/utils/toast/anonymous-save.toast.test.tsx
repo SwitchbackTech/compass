@@ -1,6 +1,12 @@
+import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import { render, screen, within } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { maybeShowAnonymousSaveToast } from "@web/common/utils/toast/anonymous-save.toast";
+import {
+  AnonymousSaveToast,
+  maybeShowAnonymousSaveToast,
+} from "@web/common/utils/toast/anonymous-save.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import {
   initialShortcutShowcaseState,
@@ -40,5 +46,32 @@ describe("maybeShowAnonymousSaveToast", () => {
     expect(
       localStorage.getItem(STORAGE_KEYS.HAS_SEEN_ANONYMOUS_SAVE_TOAST),
     ).toBeNull();
+  });
+});
+
+describe("AnonymousSaveToast", () => {
+  const { port, mocks } = createTestToastPort();
+
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+    mocks.dismiss.mockClear();
+    registerToastPort(port);
+  });
+
+  it("shows a 1 keycap and signs up when 1 is pressed", () => {
+    render(
+      <HotkeysProvider>
+        <AnonymousSaveToast toastId="anonymous-save-toast" />
+      </HotkeysProvider>,
+    );
+
+    expect(
+      within(screen.getByRole("button", { name: "Sign up" })).getByText("1"),
+    ).toBeTruthy();
+
+    pressKey("1");
+
+    expect(mocks.dismiss).toHaveBeenCalledWith("anonymous-save-toast");
   });
 });

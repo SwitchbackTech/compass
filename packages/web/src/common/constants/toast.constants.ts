@@ -1,5 +1,6 @@
 import { type Id, type ToastOptions } from "react-toastify";
 import { colors, lightColors } from "@web/common/styles/colors";
+import { ToastCloseButton } from "@web/common/utils/toast/ToastCloseButton";
 import { type ThemeName } from "@web/settings/theme/theme.constants";
 import { useThemeStore } from "@web/settings/theme/theme.store";
 
@@ -46,6 +47,7 @@ export function getToastDefaultOptions(
   return {
     autoClose: 5000,
     position: "bottom-left",
+    closeButton: ToastCloseButton,
     closeOnClick: true,
     theme: theme === "dark-abyss" ? "dark" : "light",
     style: {

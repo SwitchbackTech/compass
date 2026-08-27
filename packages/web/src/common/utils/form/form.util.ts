@@ -10,7 +10,8 @@ export type EventFormFocusField =
   | "end"
   | "recurrence"
   | "calendar"
-  | "color";
+  | "color"
+  | "attendees";
 
 const queryEventFormElement = <T extends Element>(selector: string): T | null =>
   document.querySelector<T>(selector);
@@ -56,6 +57,7 @@ const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
     `#event-form-color input[type="radio"]:checked`,
     `#event-form-color input[type="radio"]`,
   ],
+  attendees: [`#event-form-attendees`, `#event-form-guest-list`],
 };
 
 /**

@@ -89,7 +89,11 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
   },
   "event-jump": {
     id: "event-jump",
-    parts: ["Press ", { key: eventJumpKey }, " to show event keys"],
+    parts: [
+      "Press ",
+      { key: eventJumpKey },
+      " to show event keys, or a day key to jump",
+    ],
   },
   nudge: {
     id: "nudge",

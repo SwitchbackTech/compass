@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -347,6 +348,119 @@ describe("SyncResourceRepository", () => {
     expect(read?.syncCursor).toBeNull();
   });
 
+  it("stamps lastFullListAt without disturbing the other timing fields", async () => {
+    const resource = await repo.ensure(
+      upsert({ resourceKind: "calendarList" }),
+    );
+    const at = new Date("2026-08-27T12:00:00.000Z");
+
+    await repo.markFullListCompleted(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      at,
+    );
+
+    const read = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(read?.lastFullListAt).toEqual(at);
+    expect(read?.lastSuccessAt).toBeNull();
+    expect(read?.syncCursor).toBeNull();
+  });
+
+  it("does not stamp lastFullListAt when advancing the cursor", async () => {
+    // The regression guard for the whole starvation bug. advanceCursor runs on
+    // EVERY successful pass, incremental ones included; if it also moved the
+    // full-list clock, an active user's focus refreshes would keep that clock
+    // fresh and the rediscovery sweep could never select them (2026-08-27).
+    const resource = await repo.ensure(
+      upsert({ resourceKind: "calendarList" }),
+    );
+    const at = new Date("2026-08-27T12:00:00.000Z");
+
+    await repo.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "incremental-token",
+      at,
+    );
+
+    const read = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(read?.lastSuccessAt).toEqual(at);
+    expect(read?.lastFullListAt).toBeNull();
+  });
+
+  it("does not let another principal stamp lastFullListAt (tenant isolation)", async () => {
+    const resource = await repo.ensure(
+      upsert({ resourceKind: "calendarList" }),
+    );
+
+    await repo.markFullListCompleted(
+      resource.tenantId,
+      objectId() as SyncResourceUpsert["principalId"],
+      resource._id,
+      new Date("2026-08-27T12:00:00.000Z"),
+    );
+
+    const read = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(read?.lastFullListAt).toBeNull();
+  });
+
+  it("clears an unwatchable verdict older than the retry window but leaves a fresh one", async () => {
+    // The age gate exists because a calendarList push now also forces a full
+    // pass: without it, every push would hand each unwatchable calendar another
+    // futile watch call, which is the pre-marker wart in a new costume.
+    const tenantId = objectId() as SyncResourceUpsert["tenantId"];
+    const principalId = objectId() as SyncResourceUpsert["principalId"];
+    const connectionId = objectId() as SyncResourceUpsert["connectionId"];
+    const stale = await repo.ensure(
+      upsert({ tenantId, principalId, connectionId }),
+    );
+    const fresh = await repo.ensure(
+      upsert({ tenantId, principalId, connectionId }),
+    );
+    await repo.markWatchUnsupported(
+      tenantId,
+      principalId,
+      stale._id,
+      new Date("2026-08-25T00:00:00.000Z"),
+    );
+    await repo.markWatchUnsupported(
+      tenantId,
+      principalId,
+      fresh._id,
+      new Date("2026-08-27T11:00:00.000Z"),
+    );
+
+    await repo.clearWatchUnsupportedByConnection(
+      tenantId,
+      principalId,
+      connectionId,
+      new Date("2026-08-26T12:00:00.000Z"),
+    );
+
+    expect(
+      (await repo.findById(tenantId, principalId, stale._id))
+        ?.watchUnsupportedAt,
+    ).toBeNull();
+    expect(
+      (await repo.findById(tenantId, principalId, fresh._id))
+        ?.watchUnsupportedAt,
+    ).toEqual(new Date("2026-08-27T11:00:00.000Z"));
+  });
+
   it("scopes findById to the owning principal", async () => {
     const resource = await repo.ensure(upsert());
     expect(
@@ -356,5 +470,34 @@ describe("SyncResourceRepository", () => {
         resource._id,
       ),
     ).toBeNull();
+  });
+
+  it("reads a row a newer build stamped with an unknown field", async () => {
+    // A rolling deploy runs the old and new builds together: the new build
+    // adds a field and stamps it on a row, then the old build reads that row.
+    // A strict read schema rejected the unknown key and broke GET
+    // /connections plus every job that re-parsed the resource (2026-08-27).
+    const resource = await repo.ensure(upsert());
+    await db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateOne(
+        { _id: resource._id as never },
+        { $set: { fieldFromNewerBuild: "value the old build never heard of" } },
+      );
+
+    const byId = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(byId?._id).toBe(resource._id);
+
+    const byConnection = await repo.listByConnection(
+      resource.tenantId,
+      resource.principalId,
+      resource.connectionId,
+    );
+    expect(byConnection).toHaveLength(1);
+    expect(byConnection[0]?._id).toBe(resource._id);
   });
 });

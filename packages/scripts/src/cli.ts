@@ -54,7 +54,7 @@ export default class CompassCLI {
       .helpOption(false)
       .allowUnknownOption(true)
       .description(
-        "place existing accounts without billing status onto a 7-day trial (--apply to write)",
+        "stamp awaiting_checkout on accounts with no billing status (--apply to write)",
       );
 
     program

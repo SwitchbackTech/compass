@@ -6,7 +6,7 @@ import {
 import { describe, expect, it } from "bun:test";
 
 describe("edit-sequence.fields", () => {
-  it("assigns a unique digit 1-8 to every field", () => {
+  it("assigns a unique digit 1-9 to every field", () => {
     const digits = EDIT_SEQUENCE_FIELDS.map((entry) => entry.digit);
     expect([...digits].sort()).toEqual([
       "1",
@@ -17,6 +17,7 @@ describe("edit-sequence.fields", () => {
       "6",
       "7",
       "8",
+      "9",
     ]);
     expect(new Set(digits).size).toBe(digits.length);
   });
@@ -30,6 +31,7 @@ describe("edit-sequence.fields", () => {
       "calendar",
       "color",
       "location",
+      "attendees",
       "description",
     ]);
   });

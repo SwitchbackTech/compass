@@ -42,11 +42,11 @@ describe("EditSequenceMenu", () => {
       screen.getByRole("status", { hidden: true }).textContent,
     ).toStrictEqual(
       "Edit which field? T for title, L for location, D for description, " +
-        "S for start time, E for end time, R for recurrence, A for account, " +
-        "C for color. " +
+        "S for start time, E for end time, R for recurrence, C for color, " +
+        "A for guests. " +
         "Escape to cancel." +
         "Edit which field?TTitleLLocationDDescriptionSStart timeEEnd time" +
-        "RRecurrenceAAccountCColorEsc to cancel",
+        "RRecurrenceCColorAGuestsEsc to cancel",
     );
   });
 
@@ -62,11 +62,12 @@ describe("EditSequenceMenu", () => {
       "Start time",
       "End time",
       "Recurrence",
-      "Account",
       "Color",
+      "Guests",
     ]) {
       expect(menu?.textContent).toContain(label);
     }
+    expect(menu?.textContent).not.toContain("Account");
   });
 
   it("still renders when the anchor is gone, using the viewport fallback", () => {
