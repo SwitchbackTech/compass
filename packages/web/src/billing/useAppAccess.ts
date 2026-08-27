@@ -45,9 +45,11 @@ export function useAppAccess(): AppAccess {
     return { kind: "open" };
   }
 
-  // A pending or errored config already returned above: isBillingEnforced
-  // reads false without data. Only the unconfigured-Stripe case is left.
-  if (configQuery.data?.billing.isConfigured !== true) {
+  // isPending is already covered above (isBillingEnforced reads false with no
+  // data), but isError is not: TanStack keeps the last good `data` when a
+  // refetch fails, so an errored config can still report enforcement: true.
+  // Fail open rather than gate on a stale answer we could not confirm.
+  if (configQuery.isError || configQuery.data?.billing.isConfigured !== true) {
     return { kind: "open" };
   }
 
