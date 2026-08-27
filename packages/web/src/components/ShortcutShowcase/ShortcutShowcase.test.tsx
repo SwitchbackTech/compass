@@ -237,6 +237,17 @@ describe("ShortcutShowcase", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
   });
 
+  it("places the practice sidebar after the grid, matching the real calendar", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.replay());
+
+    const monday = screen.getByText("Mon");
+    const upNext = screen.getByText("Up next", { hidden: true });
+    expect(
+      monday.compareDocumentPosition(upNext) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+  });
+
   it("advances the hold-Mod level after revealing jump keys", () => {
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
     render(<ShortcutShowcase />);
