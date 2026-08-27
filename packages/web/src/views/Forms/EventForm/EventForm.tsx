@@ -55,6 +55,7 @@ import { FormDigitHintOverlay } from "@web/shortcuts/form-digit-jump/FormDigitHi
 import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useFormDigitJumpShortcut";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
@@ -589,6 +590,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           : { kind: "timed", start, end, timeZone: schedule.timeZone },
       );
 
+      shortcutHintProgressActions.demonstrate("save-draft");
+      shortcutHintProgressActions.demonstrate("first-event-save");
       onSubmit(withSchedule);
     };
 

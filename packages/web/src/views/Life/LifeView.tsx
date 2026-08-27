@@ -19,6 +19,7 @@ import {
   pageJumpAttrs,
 } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";
@@ -123,6 +124,7 @@ export function LifeView({ today }: LifeViewProps) {
 
     currentWeek.scrollIntoView({ behavior: "smooth", block: "center" });
     currentWeek.focus();
+    shortcutHintProgressActions.demonstrate("life-this-week");
   }, []);
   const cycleVariation = useCallback(
     (direction: -1 | 1) => {

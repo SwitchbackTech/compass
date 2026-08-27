@@ -8,6 +8,11 @@ const calendarIdle = {
   firstEventDone: false,
 };
 
+const afterFirstEvent = {
+  ...calendarIdle,
+  firstEventDone: true,
+};
+
 describe("selectShortcutHint", () => {
   it("teaches title then Enter while the first-event form is open", () => {
     expect(
@@ -51,12 +56,7 @@ describe("selectShortcutHint", () => {
   });
 
   it("teaches hold-Mod on an idle calendar after the first event", () => {
-    expect(
-      selectShortcutHint({
-        ...calendarIdle,
-        firstEventDone: true,
-      }).id,
-    ).toBe("page-jump");
+    expect(selectShortcutHint(afterFirstEvent).id).toBe("page-jump");
   });
 
   it("keeps form hints ahead of Life, focus, and first-event create", () => {
@@ -68,5 +68,88 @@ describe("selectShortcutHint", () => {
         firstEventDone: true,
       }).id,
     ).toBe("save-draft");
+  });
+
+  it("skips hold-Mod on an idle calendar once the user has demonstrated it", () => {
+    expect(
+      selectShortcutHint(afterFirstEvent, {
+        demonstratedIds: ["page-jump"],
+        lastUsedId: "page-jump",
+      }).id,
+    ).toBe("event-jump");
+  });
+
+  it("walks the idle pool in showcase order as primitives are demonstrated", () => {
+    expect(
+      selectShortcutHint(afterFirstEvent, {
+        demonstratedIds: ["page-jump", "event-jump"],
+      }).id,
+    ).toBe("command-palette");
+    expect(
+      selectShortcutHint(afterFirstEvent, {
+        demonstratedIds: ["page-jump", "event-jump", "command-palette"],
+      }).id,
+    ).toBe("create-event");
+  });
+
+  it("rotates the idle pool after every primitive has been demonstrated", () => {
+    const allIdle = [
+      "page-jump",
+      "event-jump",
+      "command-palette",
+      "create-event",
+    ] as const;
+
+    expect(
+      selectShortcutHint(afterFirstEvent, {
+        demonstratedIds: allIdle,
+        lastUsedId: "page-jump",
+      }).id,
+    ).toBe("event-jump");
+    expect(
+      selectShortcutHint(afterFirstEvent, {
+        demonstratedIds: allIdle,
+        lastUsedId: "create-event",
+      }).id,
+    ).toBe("page-jump");
+  });
+
+  it("teaches nudge after the edit sequence once an event is focused", () => {
+    expect(
+      selectShortcutHint(
+        { ...afterFirstEvent, eventFocused: true },
+        { demonstratedIds: ["edit-sequence"], lastUsedId: "edit-sequence" },
+      ).id,
+    ).toBe("nudge");
+  });
+
+  it("falls through to the command palette after save-draft is demonstrated", () => {
+    expect(
+      selectShortcutHint(
+        { ...afterFirstEvent, isFormOpen: true },
+        { demonstratedIds: ["save-draft"], lastUsedId: "save-draft" },
+      ).id,
+    ).toBe("command-palette");
+  });
+
+  it("falls through to the command palette after Life T is demonstrated", () => {
+    expect(
+      selectShortcutHint(
+        { ...calendarIdle, isLifeView: true },
+        { demonstratedIds: ["life-this-week"], lastUsedId: "life-this-week" },
+      ).id,
+    ).toBe("command-palette");
+  });
+
+  it("keeps the first-event save funnel sticky even after Enter is demonstrated", () => {
+    expect(
+      selectShortcutHint(
+        { ...calendarIdle, isFormOpen: true },
+        {
+          demonstratedIds: ["first-event-save"],
+          lastUsedId: "first-event-save",
+        },
+      ).id,
+    ).toBe("first-event-save");
   });
 });

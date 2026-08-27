@@ -65,6 +65,7 @@ import {
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 
@@ -450,6 +451,7 @@ export function useGridEventEditShortcuts({
         event,
         keyboardEvent,
         onNudge: (nudgedEvent) => {
+          shortcutHintProgressActions.demonstrate("nudge");
           updateEvent({ event: nudgedEvent }, true, {
             onOptimisticApplied: () => draftActions.discard(),
           });

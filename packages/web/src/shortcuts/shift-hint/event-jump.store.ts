@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IS_DEV } from "@web/common/constants/env.constants";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
 export type EventJumpState = {
   isActive: boolean;
@@ -30,7 +31,8 @@ export const useEventJumpStore = create<EventJumpState>()(
 );
 
 export const eventJumpActions = {
-  setActive: (isActive: boolean) =>
+  setActive: (isActive: boolean) => {
+    if (isActive) shortcutHintProgressActions.demonstrate("event-jump");
     useEventJumpStore.setState(
       {
         isActive,
@@ -44,7 +46,8 @@ export const eventJumpActions = {
       },
       false,
       { type: "setActive" },
-    ),
+    );
+  },
   /** Clear a lingering exit announcement after the live region has spoken. */
   clearAnnouncement: () =>
     useEventJumpStore.setState({ announcement: "" }, false, {

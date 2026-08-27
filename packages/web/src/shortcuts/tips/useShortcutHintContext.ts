@@ -9,6 +9,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { selectShortcutHint } from "@web/shortcuts/tips/selectShortcutHint";
+import { useShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useIsAnyCalendarEventFocused } from "@web/shortcuts/tips/useIsAnyCalendarEventFocused";
 
 /**
@@ -22,11 +23,15 @@ export function useShortcutHintContext() {
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const eventFocused = useIsAnyCalendarEventFocused();
   const isLifeView = isLifePathname(window.location.pathname);
+  const progress = useShortcutHintProgress();
 
-  return selectShortcutHint({
-    isFormOpen,
-    isLifeView,
-    eventFocused,
-    firstEventDone: firstEventDone || isCelebrating,
-  });
+  return selectShortcutHint(
+    {
+      isFormOpen,
+      isLifeView,
+      eventFocused,
+      firstEventDone: firstEventDone || isCelebrating,
+    },
+    progress,
+  );
 }
