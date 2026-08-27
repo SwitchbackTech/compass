@@ -175,6 +175,43 @@ describe("OverlayPanel", () => {
     expect(screen.getByRole("button", { name: "Preferred" })).toHaveFocus();
   });
 
+  it("calls onModEnter for Mod+Enter without activating the focused button", async () => {
+    const user = userEvent.setup();
+    let confirmed = 0;
+    let cancelled = 0;
+    const onModEnter = () => {
+      confirmed += 1;
+    };
+
+    render(
+      <OverlayPanel
+        title="Confirm"
+        onDismiss={() => {
+          cancelled += 1;
+        }}
+        onModEnter={onModEnter}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            cancelled += 1;
+          }}
+        >
+          Cancel
+        </button>
+        <button type="button">Discard</button>
+      </OverlayPanel>,
+    );
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+    await user.keyboard("{Meta>}{Enter}{/Meta}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
+
+    expect(confirmed).toBe(2);
+    expect(cancelled).toBe(0);
+  });
+
   it("calls onShiftEscape for Shift+Escape and onDismiss for Escape", async () => {
     const user = userEvent.setup();
     let dismissed = 0;
@@ -243,6 +280,23 @@ describe("OverlayPanel", () => {
 
     expect(
       within(screen.getByRole("button", { name: "Cancel" })).getByText("Esc"),
+    ).toBeTruthy();
+  });
+
+  it("renders combo shortcuts as separate keycaps", () => {
+    render(
+      <OverlayPanel title="Confirm" onDismiss={() => {}}>
+        <OverlayPanelActionButton shortcut={["Mod", "Enter"]}>
+          Discard
+        </OverlayPanelActionButton>
+      </OverlayPanel>,
+    );
+
+    const discard = screen.getByRole("button", { name: "Discard" });
+    expect(within(discard).getByText("Enter")).toBeTruthy();
+    expect(
+      within(discard).queryByTestId("meta-icon") ??
+        within(discard).queryByTestId("control-icon"),
     ).toBeTruthy();
   });
 });

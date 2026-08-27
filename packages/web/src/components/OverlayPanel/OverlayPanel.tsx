@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { getFocusableElements } from "@web/common/utils/focusable-elements";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 interface Props {
@@ -30,6 +30,8 @@ interface Props {
   onDismiss?: () => void;
   /** Called when pressing Shift+Escape; falls back to onDismiss when omitted. */
   onShiftEscape?: () => void;
+  /** Called when pressing Mod+Enter (Cmd/Ctrl+Enter). */
+  onModEnter?: () => void;
   /** Focus this element on open instead of the first focusable in the panel. */
   initialFocusRef?: RefObject<HTMLElement | null>;
   /** Overrides the element that receives focus when the dialog closes. */
@@ -67,6 +69,7 @@ export const OverlayPanel = ({
   children,
   onDismiss,
   onShiftEscape,
+  onModEnter,
   initialFocusRef,
   restoreFocus,
   skipFocusRestoreRef,
@@ -155,6 +158,13 @@ export const OverlayPanel = ({
         return;
       }
     }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && onModEnter) {
+      // Prevent the focused button (often Cancel) from activating on Enter.
+      e.preventDefault();
+      e.stopPropagation();
+      onModEnter();
+      return;
+    }
     if (e.key !== "Tab" || !panelRef.current) return;
     const focusables = getFocusableElements(panelRef.current);
     if (focusables.length === 0) return;
@@ -242,8 +252,8 @@ export const OverlayPanelActions = ({
 interface OverlayPanelActionButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "destructive";
-  /** Visible keycap; OverlayPanel already binds Escape / focused Enter. */
-  shortcut?: string;
+  /** Visible keycap(s) for the action. */
+  shortcut?: string | string[];
 }
 
 export const OverlayPanelActionButton = forwardRef<
@@ -277,9 +287,7 @@ export const OverlayPanelActionButton = forwardRef<
       {...buttonProps}
     >
       {children}
-      {shortcut ? (
-        <ShortcutHint className="ml-2">{shortcut}</ShortcutHint>
-      ) : null}
+      {shortcut ? <ShortcutKeys className="ml-2" keys={shortcut} /> : null}
     </button>
   );
 });
