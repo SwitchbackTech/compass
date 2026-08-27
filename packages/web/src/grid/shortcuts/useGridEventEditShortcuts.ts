@@ -686,15 +686,22 @@ export function useGridEventEditShortcuts({
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppShortcut(KEYMAP.moveEvent.hotkeys.up, moveFocusedCalendarEvent);
-  useAppShortcut(KEYMAP.moveEvent.hotkeys.down, moveFocusedCalendarEvent);
-  useAppShortcut(KEYMAP.moveEvent.hotkeys.left, moveFocusedCalendarEvent);
-  useAppShortcut(KEYMAP.moveEvent.hotkeys.right, moveFocusedCalendarEvent);
-  useAppShortcut(
-    KEYMAP.edgeFocus.hotkey,
-    cycleEdgeFocus,
-    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
-  );
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.up, moveFocusedCalendarEvent, {
+    telemetryHintId: "nudge",
+  });
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.down, moveFocusedCalendarEvent, {
+    telemetryHintId: "nudge",
+  });
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.left, moveFocusedCalendarEvent, {
+    telemetryHintId: "nudge",
+  });
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.right, moveFocusedCalendarEvent, {
+    telemetryHintId: "nudge",
+  });
+  useAppShortcut(KEYMAP.edgeFocus.hotkey, cycleEdgeFocus, {
+    ...DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+    telemetryHintId: "edge-focus",
+  });
   useAppShortcut("Shift+Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
   useAppShortcut("Escape", onEscape, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
 }

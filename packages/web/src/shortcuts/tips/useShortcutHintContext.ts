@@ -10,6 +10,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { selectShortcutHint } from "@web/shortcuts/tips/selectShortcutHint";
+import { readShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { useShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useIsAnyCalendarEventFocused } from "@web/shortcuts/tips/useIsAnyCalendarEventFocused";
 
@@ -39,5 +40,6 @@ export function useShortcutHintContext() {
       firstEventDone: firstEventDone || isCelebrating,
     },
     progress,
+    readShortcutUsageProfile(),
   );
 }

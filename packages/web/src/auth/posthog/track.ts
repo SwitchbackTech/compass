@@ -20,7 +20,13 @@ export type ProductEvent =
   | "billing_gate_cta_clicked"
   | "notifications_enabled"
   | "notifications_disabled"
-  | "notifications_enable_denied";
+  | "notifications_enable_denied"
+  | "shortcut_suggestion_shown"
+  | "shortcut_invoked"
+  | "shortcut_suggestion_engaged"
+  | "shortcut_unavailable_attempt";
+
+export type ProductEventProperties = Record<string, boolean | number | string>;
 
 /**
  * Fire-and-forget capture for the small set of product-activation events.
@@ -28,7 +34,12 @@ export type ProductEvent =
  */
 export function track(
   event: ProductEvent,
-  properties?: Record<string, string>,
+  properties?: ProductEventProperties,
 ): void {
-  getPosthogClient()?.capture(event, properties);
+  try {
+    getPosthogClient()?.capture(event, properties);
+  } catch {
+    // Analytics must never interrupt the product action it observes. The SDK
+    // owns transport retries and unload flushing for successfully queued data.
+  }
 }

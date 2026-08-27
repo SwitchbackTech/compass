@@ -5,6 +5,7 @@ import {
   subscribeToStorageKey,
 } from "@web/common/utils/external-store.util";
 import { useShortcutShowcaseStore } from "@web/components/ShortcutShowcase/showcase.store";
+import { recordShortcutInvocation } from "@web/shortcuts/tips/shortcut-telemetry";
 import { type ShortcutHintId } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
   readShortcutHintProgress,
@@ -47,6 +48,8 @@ export const shortcutHintProgressActions = {
    */
   demonstrate: (id: ShortcutHintId): void => {
     if (useShortcutShowcaseStore.getState().isActive) return;
+
+    recordShortcutInvocation(id);
 
     const current = progressStore.get();
     if (current[current.length - 1] === id) return;

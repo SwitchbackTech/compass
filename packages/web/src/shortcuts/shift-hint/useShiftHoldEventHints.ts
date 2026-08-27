@@ -35,6 +35,7 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 export type ShiftHintFocusTarget = {
@@ -338,6 +339,7 @@ export function useShiftHoldEventHints({
       if (match.kind === "selectDay") {
         clearAmbiguousCommitTimer();
         bufferRef.current = match.buffer;
+        shortcutHintProgressActions.demonstrate("week-day-focus");
         const dayName = DAY_NAME_BY_PREFIX[match.dayPrefix] ?? match.dayPrefix;
         eventJumpActions.setActiveDayKeys(
           [match.dayKey],
