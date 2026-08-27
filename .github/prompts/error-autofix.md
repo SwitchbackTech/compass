@@ -23,13 +23,33 @@ like `.../error_tracking/fingerprint/<hash>?timestamp=...`). Use the PostHog
 MCP tools to pull the actual signal before doing anything else:
 
 - Stack trace and exception type/message
-- Event properties: `environment`, `service`, `version`, `result`, `errorType`
-  (these were added in a recent prep change — some historical issues predate
-  them and will be generic)
 - Occurrence count, affected users, first/last seen
+- Event properties: `environment`, `service`, `version`, `namespace`,
+  `result`, `errorType` (some historical issues predate these and will be
+  generic)
 - Whether this is `staging` or `production` (staging and prod currently
   share one PostHog project — a staging-only error is not urgent and should
   never justify an `automerge-candidate` label)
+
+The backend and sync services set `environment`/`service`/`version` as custom
+event properties, so PostHog's `environment` and `release` context groups do
+not return them — `query-error-tracking-issue-events` will look like the
+event carries nothing but `$exception_*` and `$lib`. Read them with SQL
+instead, substituting the issue's UUID:
+
+```sql
+SELECT timestamp, properties.environment, properties.service,
+       properties.version, properties.namespace, properties.errorType,
+       properties.result
+FROM events
+WHERE event = '$exception'
+  AND properties.$exception_issue_id = '<issue-uuid>'
+ORDER BY timestamp DESC
+LIMIT 10
+```
+
+An issue can span both environments, so check every row rather than the
+first one: `staging` on one occurrence does not make the issue staging-only.
 
 If the PostHog MCP cannot resolve the fingerprint, fall back to searching
 PostHog error tracking issues by the exception message/type from the GitHub
