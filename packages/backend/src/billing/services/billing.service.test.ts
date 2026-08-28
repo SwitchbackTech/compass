@@ -7,10 +7,8 @@ import { deriveBillingStatus } from "./billing.service";
 import { describe, expect, it } from "bun:test";
 
 describe("deriveBillingStatus", () => {
-  const now = new Date("2026-08-10T00:00:00.000Z");
-
   it("treats a missing billing record as awaiting_checkout", () => {
-    expect(deriveBillingStatus(undefined, now)).toEqual({
+    expect(deriveBillingStatus(undefined)).toEqual({
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
@@ -18,7 +16,7 @@ describe("deriveBillingStatus", () => {
   });
 
   it("treats none as awaiting_checkout", () => {
-    expect(deriveBillingStatus({ subscriptionStatus: "none" }, now)).toEqual({
+    expect(deriveBillingStatus({ subscriptionStatus: "none" })).toEqual({
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
@@ -27,10 +25,9 @@ describe("deriveBillingStatus", () => {
 
   it("treats a billing object with a customer id but no status as awaiting_checkout", () => {
     expect(
-      deriveBillingStatus(
-        { stripeCustomerId: "cus_partial" } as Schema_UserBilling,
-        now,
-      ),
+      deriveBillingStatus({
+        stripeCustomerId: "cus_partial",
+      } as Schema_UserBilling),
     ).toEqual({
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
@@ -40,14 +37,11 @@ describe("deriveBillingStatus", () => {
 
   it("treats a local trialing record with no Stripe subscription as awaiting_checkout", () => {
     const trialEndsAt = new Date("2026-08-20T00:00:00.000Z");
-    const status = deriveBillingStatus(
-      {
-        subscriptionStatus: "trialing",
-        trialStartedAt: new Date("2026-08-06T00:00:00.000Z"),
-        trialEndsAt,
-      },
-      now,
-    );
+    const status = deriveBillingStatus({
+      subscriptionStatus: "trialing",
+      trialStartedAt: new Date("2026-08-06T00:00:00.000Z"),
+      trialEndsAt,
+    });
 
     expect(status).toEqual({
       subscriptionStatus: "awaiting_checkout",
@@ -58,14 +52,11 @@ describe("deriveBillingStatus", () => {
 
   it("treats an expired local trialing record as awaiting_checkout, not expired", () => {
     const trialEndsAt = new Date("2026-08-01T00:00:00.000Z");
-    const status = deriveBillingStatus(
-      {
-        subscriptionStatus: "trialing",
-        trialStartedAt: new Date("2026-07-18T00:00:00.000Z"),
-        trialEndsAt,
-      },
-      now,
-    );
+    const status = deriveBillingStatus({
+      subscriptionStatus: "trialing",
+      trialStartedAt: new Date("2026-07-18T00:00:00.000Z"),
+      trialEndsAt,
+    });
 
     expect(status).toEqual({
       subscriptionStatus: "awaiting_checkout",
@@ -76,14 +67,11 @@ describe("deriveBillingStatus", () => {
 
   it("does not self-expire a Stripe-backed trialing record past trialEndsAt", () => {
     const trialEndsAt = new Date("2026-08-01T00:00:00.000Z");
-    const status = deriveBillingStatus(
-      {
-        subscriptionStatus: "trialing",
-        trialEndsAt,
-        stripeSubscriptionId: "sub_123",
-      },
-      now,
-    );
+    const status = deriveBillingStatus({
+      subscriptionStatus: "trialing",
+      trialEndsAt,
+      stripeSubscriptionId: "sub_123",
+    });
 
     expect(status.subscriptionStatus).toBe("trialing");
     expect(status.isReadOnly).toBe(false);
@@ -105,16 +93,13 @@ describe("deriveBillingStatus", () => {
 
   for (const { status, isReadOnly } of cases) {
     it(`maps ${status} writability from WRITE_ACCESS_BY_STATUS`, () => {
-      const derived = deriveBillingStatus(
-        {
-          subscriptionStatus: status,
-          trialEndsAt: new Date("2026-09-01T00:00:00.000Z"),
-          ...(status === "trialing"
-            ? { stripeSubscriptionId: "sub_keep_open" }
-            : {}),
-        },
-        now,
-      );
+      const derived = deriveBillingStatus({
+        subscriptionStatus: status,
+        trialEndsAt: new Date("2026-09-01T00:00:00.000Z"),
+        ...(status === "trialing"
+          ? { stripeSubscriptionId: "sub_keep_open" }
+          : {}),
+      });
 
       expect(derived.subscriptionStatus).toBe(status);
       expect(derived.isReadOnly).toBe(isReadOnly);

@@ -25,7 +25,7 @@ export async function assertBillingAllowsWrites(userId: string): Promise<void> {
   );
   if (isBillingBypassed(CONFIG, user?.email)) return;
 
-  const status = deriveBillingStatus(user?.billing, new Date());
+  const status = deriveBillingStatus(user?.billing);
   if (!status.isReadOnly) return;
 
   throw eventMutationError(
