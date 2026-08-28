@@ -21,3 +21,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2918 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2918 | bun run verify PASS; review finding fixed in 3fa6e4a8c | 2026-08-27T20:30:00Z | 0 | none |
 | 2922 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun run verify PASS; simplify c4cbe8696; review: no confirmed findings | 2026-08-27T21:00:00Z | 0 | none |
 | 2934 | medium | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2934 | 13/13 CI checks pass; squash-merged 9f18125c3; simplify 4ed72dbd1; review finding fixed in f5b8349dc | null | 0 | none |
+| simplify-recent-2943 | medium | Manager | verifying | .agents/handoffs/simplify-recent-2943.md | bun run verify PASS: web, backend, type-check, lint, knip | 2026-08-28T06:00:00Z | 0 | none |

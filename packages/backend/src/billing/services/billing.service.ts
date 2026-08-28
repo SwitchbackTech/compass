@@ -1,9 +1,6 @@
 import { type BillingStatusResponse } from "@core/types/billing.types";
 import { type Schema_UserBilling } from "@core/types/user.types";
-import {
-  BILLING_PLAN,
-  WRITE_ACCESS_BY_STATUS,
-} from "@backend/billing/billing.constants";
+import { WRITE_ACCESS_BY_STATUS } from "@backend/billing/billing.constants";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   isBillingBypassed,
@@ -27,7 +24,6 @@ import mongoService from "@backend/common/services/mongo.service";
  */
 export const deriveBillingStatus = (
   billing: Schema_UserBilling | undefined,
-  _now: Date,
 ): BillingStatusResponse => {
   const storedStatus = billing?.subscriptionStatus;
   if (!billing || !storedStatus || storedStatus === "none") {
@@ -58,47 +54,6 @@ export const deriveBillingStatus = (
 
 class BillingService {
   /**
-   * Field-level `$set` so existing Stripe ids are never clobbered.
-   * Not exposed over HTTP — a trial starts only via Stripe Checkout.
-   */
-  startTrial = async (userId: string): Promise<BillingStatusResponse> => {
-    const _id = mongoService.objectId(userId);
-    const now = new Date();
-
-    const trialEndsAt = new Date(now);
-    trialEndsAt.setDate(trialEndsAt.getDate() + BILLING_PLAN.TRIAL_LENGTH_DAYS);
-
-    const result = await mongoService.user.findOneAndUpdate(
-      {
-        _id,
-        $or: [
-          { "billing.trialStartedAt": { $exists: false } },
-          { "billing.trialStartedAt": null },
-        ],
-      },
-      {
-        $set: {
-          "billing.subscriptionStatus": "trialing",
-          "billing.trialStartedAt": now,
-          "billing.trialEndsAt": trialEndsAt,
-        },
-      },
-      { returnDocument: "after" },
-    );
-
-    if (result) {
-      return deriveBillingStatus(result.billing, now);
-    }
-
-    const user = await mongoService.user.findOne({ _id });
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    return deriveBillingStatus(user.billing, now);
-  };
-
-  /**
    * Bypassed accounts report as `active` so the web gate stands down, matching
    * the write guard's early return -- including its ordering, so the list is
    * consulted only in a deployment that actually gates. Reported through this
@@ -125,7 +80,7 @@ class BillingService {
       };
     }
 
-    return deriveBillingStatus(user.billing, new Date());
+    return deriveBillingStatus(user.billing);
   };
 }
 

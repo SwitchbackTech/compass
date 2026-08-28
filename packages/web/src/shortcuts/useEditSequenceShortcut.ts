@@ -20,6 +20,7 @@ import {
 } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
+import { createKeyupSwallow } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
 /**
@@ -75,7 +76,7 @@ export function useEditSequenceShortcut({
   useEffect(() => {
     const isMac = resolveModifier("Mod") === "Meta";
     let menuTimeoutId: ReturnType<typeof setTimeout> | null = null;
-    const suppressKeyUp = new Set<string>();
+    const keyupSwallow = createKeyupSwallow();
 
     const disarm = () => {
       if (menuTimeoutId !== null) {
@@ -139,7 +140,7 @@ export function useEditSequenceShortcut({
         if (field) {
           event.preventDefault();
           event.stopPropagation();
-          suppressKeyUp.add(key);
+          keyupSwallow.add(key);
           disarm();
           onSequenceRef.current(field);
           shortcutHintProgressActions.demonstrate("edit-sequence");
@@ -174,12 +175,7 @@ export function useEditSequenceShortcut({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = normalizedKeyboardKey(event);
-      if (!suppressKeyUp.has(key)) return;
-
-      suppressKeyUp.delete(key);
-      event.preventDefault();
-      event.stopPropagation();
+      keyupSwallow.consume(event);
     };
 
     // Clicking or tabbing away abandons the sequence rather than leaving a
@@ -194,7 +190,7 @@ export function useEditSequenceShortcut({
 
     return () => {
       disarm();
-      suppressKeyUp.clear();
+      keyupSwallow.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       document.removeEventListener("pointerdown", onPointerDown, true);

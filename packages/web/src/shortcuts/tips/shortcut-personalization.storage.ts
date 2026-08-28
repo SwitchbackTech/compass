@@ -7,7 +7,6 @@ import {
 } from "@web/shortcuts/tips/shortcut-tips.data";
 
 export type ShortcutActionUsage = {
-  engagements: number;
   invocations: number;
   lastInvokedAt?: number;
   lastShownAt?: number;
@@ -20,7 +19,6 @@ export type ShortcutUsageProfile = {
 };
 
 const ActionUsageSchema = z.object({
-  engagements: z.number().int().nonnegative(),
   invocations: z.number().int().nonnegative(),
   lastInvokedAt: z.number().int().nonnegative().optional(),
   lastShownAt: z.number().int().nonnegative().optional(),

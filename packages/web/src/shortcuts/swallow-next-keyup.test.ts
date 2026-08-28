@@ -1,4 +1,7 @@
-import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
+import {
+  createKeyupSwallow,
+  swallowNextKeyup,
+} from "@web/shortcuts/swallow-next-keyup";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const dispatchKeyup = (
@@ -51,5 +54,23 @@ describe("swallowNextKeyup", () => {
 
     const second = dispatchKeyup("l");
     expect(second.defaultPrevented).toBe(false);
+  });
+});
+
+describe("createKeyupSwallow", () => {
+  it("consumes only a recorded key and ignores others", () => {
+    const swallow = createKeyupSwallow();
+    swallow.add("h");
+
+    const other = dispatchKeyup("s");
+    expect(swallow.consume(other)).toBe(false);
+    expect(other.defaultPrevented).toBe(false);
+
+    const target = dispatchKeyup("h");
+    expect(swallow.consume(target)).toBe(true);
+    expect(target.defaultPrevented).toBe(true);
+
+    const second = dispatchKeyup("h");
+    expect(swallow.consume(second)).toBe(false);
   });
 });

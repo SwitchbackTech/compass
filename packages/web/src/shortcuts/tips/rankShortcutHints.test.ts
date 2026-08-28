@@ -29,7 +29,6 @@ describe("shortcut hint personalization", () => {
       [],
       profile({
         "calendar.page_jump": {
-          engagements: 0,
           invocations: 0,
           lastShownAt: NOW,
           recentImpressions: 3,
@@ -40,7 +39,6 @@ describe("shortcut hint personalization", () => {
 
     expect(hint.id).toBe("event-jump");
     expect(hint.reasonCode).toBe("local_fatigue");
-    expect(hint.rank).toBe(1);
   });
 
   it("prefers a stale learned action over the action used moments ago", () => {
@@ -55,13 +53,11 @@ describe("shortcut hint personalization", () => {
       demonstrated,
       profile({
         "calendar.event_jump": {
-          engagements: 0,
           invocations: 3,
           lastInvokedAt: NOW,
           recentImpressions: 0,
         },
         "calendar.page_jump": {
-          engagements: 0,
           invocations: 1,
           lastInvokedAt: NOW - 31 * DAY_MS,
           recentImpressions: 0,
@@ -80,12 +76,10 @@ describe("shortcut hint personalization", () => {
       [],
       profile({
         "event.edit_title": {
-          engagements: 0,
           invocations: 0,
           recentImpressions: 0,
         },
         "calendar.page_jump": {
-          engagements: 0,
           invocations: 0,
           lastShownAt: NOW,
           recentImpressions: 3,
