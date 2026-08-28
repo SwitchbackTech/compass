@@ -51,7 +51,13 @@ const customerIdOf = (value: unknown): string | undefined => {
   return undefined;
 };
 
-async function applySubscription(
+/**
+ * The single place Stripe subscription fields are mapped onto `billing.*`.
+ * Exported because ending a trial early applies the Subscription that
+ * `subscriptions.update` returns through this same path, so the caller sees
+ * the new status immediately instead of waiting for the webhook to land.
+ */
+export async function applySubscription(
   userId: string,
   subscription: Stripe.Subscription,
   eventCreatedAt: Date,

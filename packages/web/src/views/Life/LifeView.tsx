@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
@@ -107,10 +108,15 @@ export function LifeView({ today }: LifeViewProps) {
   }, [navigate, preferences.lifespan, preferences.variation]);
 
   useSidebarShortcuts();
+  const isTrialing = useIsTrialing();
   const shortcutSections = useMemo(
     () =>
-      getShortcutMenuSections({ view: "life", isViewingCurrentPeriod: true }),
-    [],
+      getShortcutMenuSections({
+        view: "life",
+        isViewingCurrentPeriod: true,
+        isTrialing,
+      }),
+    [isTrialing],
   );
   const onPreferencesChange = useCallback(
     (update: (current: LifePreferences) => LifePreferences) => {

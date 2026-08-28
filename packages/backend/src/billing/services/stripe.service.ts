@@ -1,9 +1,18 @@
-import { type BillingCheckoutResponse } from "@core/types/billing.types";
+import { Status } from "@core/errors/status.codes";
+import {
+  type BillingCheckoutResponse,
+  type BillingStatusResponse,
+} from "@core/types/billing.types";
 import {
   BILLING_PLAN,
   getStripePriceId,
 } from "@backend/billing/billing.constants";
-import { wrapStripeFailure } from "@backend/billing/billing.errors";
+import {
+  BillingHttpError,
+  wrapStripeFailure,
+} from "@backend/billing/billing.errors";
+import billingService from "@backend/billing/services/billing.service";
+import { applySubscription } from "@backend/billing/services/billing.webhook.service";
 import { getStripeClient } from "@backend/billing/services/stripe.client";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { isStripeConfigured } from "@backend/common/constants/config.util";
@@ -115,6 +124,50 @@ class StripeService {
     }
 
     return { url: session.url };
+  };
+
+  /**
+   * Ends a Stripe trial immediately, billing the card on file today. This is
+   * the only way to convert early: the Billing Portal cannot shorten a trial.
+   *
+   * The updated Subscription is written back through the webhook's
+   * `applySubscription`, so the caller's next status read is already correct
+   * and the trial badge clears without waiting for the webhook round trip.
+   * The webhook still arrives and is a no-op by way of the
+   * `lastStripeEventAt` guard.
+   *
+   * If the charge fails Stripe moves the subscription to `past_due`, which
+   * stays writable and raises the dunning banner. The caller is told the
+   * resulting status rather than a blanket success.
+   */
+  endTrialNow = async (userId: string): Promise<BillingStatusResponse> => {
+    if (!isStripeConfigured(CONFIG)) {
+      throw new Error("Stripe is not configured");
+    }
+
+    const _id = mongoService.objectId(userId);
+    const user = await mongoService.user.findOne({ _id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const subscriptionId = user.billing?.stripeSubscriptionId;
+    if (!subscriptionId || user.billing?.subscriptionStatus !== "trialing") {
+      throw new BillingHttpError(Status.CONFLICT, "No active trial to end.");
+    }
+
+    const stripe = getStripeClient();
+    const subscription = await stripe.subscriptions
+      .update(
+        subscriptionId,
+        { trial_end: "now", proration_behavior: "none" },
+        { idempotencyKey: `compass-end-trial-${subscriptionId}` },
+      )
+      .catch(wrapStripeFailure);
+
+    await applySubscription(userId, subscription, new Date());
+
+    return billingService.getStatus(userId);
   };
 
   createPortalSession = async (

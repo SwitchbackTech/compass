@@ -21,8 +21,8 @@ const stripeWebhookLimiter = rateLimit({
 });
 
 /**
- * Billing routes: trial status, Stripe Checkout, Billing Portal, and the
- * unauthenticated Stripe webhook.
+ * Billing routes: trial status, Stripe Checkout, ending a trial early,
+ * Billing Portal, and the unauthenticated Stripe webhook.
  */
 export class BillingRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -39,6 +39,11 @@ export class BillingRoutes extends CommonRoutesConfig {
       .route(`/api/billing/checkout/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createCheckoutSession);
+
+    this.app
+      .route(`/api/billing/trial/end`)
+      .all(verifySession())
+      .post(sessionWriteLimiter, billingController.endTrial);
 
     this.app
       .route(`/api/billing/portal/session`)

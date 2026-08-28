@@ -16,6 +16,7 @@ export type ProductEvent =
   | "first_event_prompt_completed"
   | "first_event_prompt_dismissed"
   | "trial_converted"
+  | "trial_celebration_shown"
   | "billing_gate_shown"
   | "billing_gate_cta_clicked"
   | "notifications_enabled"

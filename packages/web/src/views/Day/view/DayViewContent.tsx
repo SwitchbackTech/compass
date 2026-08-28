@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from "react";
+import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -62,14 +63,16 @@ export const DayViewContent = memo(() => {
   useFocusSidebarShortcut();
   useSidebarShortcuts();
 
+  const isTrialing = useIsTrialing();
   const shortcutSections = useMemo(
     () =>
       getShortcutMenuSections({
         view: "day",
         isViewingCurrentPeriod: isViewingToday,
         isFormOpen: isEventDetailsOpen,
+        isTrialing,
       }),
-    [isEventDetailsOpen, isViewingToday],
+    [isEventDetailsOpen, isTrialing, isViewingToday],
   );
 
   const handleGoToToday = useCallback(() => {

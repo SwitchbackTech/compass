@@ -2,15 +2,18 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import dayjs from "@core/util/date/dayjs";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
+import { BillingApi } from "@web/api/billing.api";
 import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
 } from "@web/auth/google/state/google.reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import { type AppAccess } from "@web/billing/useAppAccess";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
@@ -90,16 +93,27 @@ mock.module("@web/sse/hooks/useSseDegraded", () => ({
     isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
 }));
 
+let access: AppAccess = { kind: "open" };
+let isAppAccessMocked = true;
+const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
+  .useAppAccess;
+mock.module("@web/billing/useAppAccess", () => ({
+  useAppAccess: (...args: Parameters<typeof actualUseAppAccess>) =>
+    isAppAccessMocked ? access : actualUseAppAccess(...args),
+}));
+
 afterAll(() => {
   isLogoutConfirmationMocked = false;
   isSessionMocked = false;
   isSseDegradedMocked = false;
+  isAppAccessMocked = false;
 });
 
 afterEach(() => {
   mockOpenLogoutConfirmation.mockClear();
   resetGoogleReconnectRequiredForTests();
   isSseDegraded = false;
+  access = { kind: "open" };
 });
 
 const settingsModalUrl = new URL(
@@ -565,5 +579,71 @@ describe("SettingsModal", () => {
     renderSettings({ authenticated: false });
 
     expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
+  });
+
+  it("says nothing about a plan on an install without billing", () => {
+    renderSettings({ authenticated: true });
+
+    expect(screen.queryByText("Plan")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Manage billing" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tells a subscriber they are on Premium", () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true });
+
+    expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.getByText("Premium")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Manage billing" }),
+    ).toBeInTheDocument();
+  });
+
+  it("counts down the trial and points at the early-upgrade shortcut", () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+    };
+    renderSettings({ authenticated: true });
+
+    expect(screen.getByText("Trial \u00b7 3d")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Press\s+B to subscribe now\./),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the billing portal from Manage billing", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const assign = spyOn(window.location, "assign").mockImplementation(
+      () => {},
+    );
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup();
+    renderSettings({ authenticated: true });
+
+    await user.click(screen.getByRole("button", { name: "Manage billing" }));
+
+    await waitFor(() => {
+      expect(assign).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    createPortalSession.mockRestore();
+    assign.mockRestore();
   });
 });

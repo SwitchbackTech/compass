@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { CalendarConnectionBannerGate } from "@web/components/CalendarConnectionBanner/CalendarConnectionBannerGate";
@@ -100,14 +101,16 @@ export const WeekView = () => {
     });
   }, [scrollUtil, util]);
 
+  const isTrialing = useIsTrialing();
   const shortcutSections = useMemo(
     () =>
       getShortcutMenuSections({
         view: "week",
         isViewingCurrentPeriod: isCurrentWeek,
         isFormOpen: isEventDetailsOpen,
+        isTrialing,
       }),
-    [isCurrentWeek, isEventDetailsOpen],
+    [isCurrentWeek, isEventDetailsOpen, isTrialing],
   );
 
   const { calendarDate, goToDateFromSidebar } = useSidebarCalendarDate({

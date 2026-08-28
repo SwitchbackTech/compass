@@ -16,6 +16,7 @@ import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import { PlanSection } from "@web/billing/PlanSection";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -143,6 +144,7 @@ export const SettingsModal: FC = () => {
           </button>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <PlanSection />
           <DefaultTimezonePicker />
           <DefaultCalendarPicker
             calendars={writableCalendars}

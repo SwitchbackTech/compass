@@ -1,5 +1,6 @@
 import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { TrialBadge } from "@web/billing/TrialBadge";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
@@ -82,6 +83,7 @@ export const MonthPicker: FC<Props> = ({
         dayClassName={getDayClassName}
         headerActionsClassName={headerActionsClassName}
         headerClassName="!relative !justify-start !px-0 !pb-3"
+        headerEndContent={<TrialBadge />}
         inline
         isOpen={true}
         monthNav={{

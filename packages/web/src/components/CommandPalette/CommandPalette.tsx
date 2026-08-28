@@ -21,6 +21,7 @@ import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useD
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
+import { useUpgradeCmdItems } from "@web/components/CommandPalette/hooks/useUpgradeCmdItems";
 import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
 import {
   getNavigationCommandItems,
@@ -222,9 +223,14 @@ const CommandPaletteContent = ({
                             item.label
                           )}
                         </span>
+                        {item.badge && (
+                          <span className="ml-auto shrink-0 rounded border border-border px-1.5 text-text-muted text-xs">
+                            {item.badge}
+                          </span>
+                        )}
                         {item.shortcut && (
                           <ShortcutKeys
-                            className="ml-auto shrink-0"
+                            className={`shrink-0 ${item.badge ? "" : "ml-auto"}`}
                             keys={item.shortcut}
                           />
                         )}
@@ -297,6 +303,7 @@ export const CommandPalette = ({
   const showAccountsCmdItems = useShowAccountsCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const themeCmdItems = useThemeCmdItems();
+  const upgradeCmdItems = useUpgradeCmdItems();
   const timezoneCmdItems = useTimezoneCmdItems();
   const notificationCmdItems = useNotificationCmdItems();
   const { undo, redo, canUndo, canRedo } = useUndoRedo(mutationDependencies);
@@ -353,6 +360,7 @@ export const CommandPalette = ({
       id: "settings",
       heading: "Settings",
       items: [
+        ...upgradeCmdItems,
         ...timezoneCmdItems,
         ...notificationCmdItems,
         ...authCmdItems,

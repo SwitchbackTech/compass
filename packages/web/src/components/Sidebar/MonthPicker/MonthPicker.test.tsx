@@ -3,6 +3,7 @@ import {
   HotkeysProvider,
   resolveModifier,
 } from "@tanstack/react-hotkeys";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act, type PropsWithChildren, type ReactElement } from "react";
@@ -21,8 +22,15 @@ const getSelectedDay = () =>
 
 const dayNamed = (label: string) => screen.getByLabelText(label);
 
+// The header's TrialBadge reads billing status through react-query, so the
+// picker needs a client the way it does in the real app, on top of the
+// hotkeys provider the month chords already required.
 const wrapper = ({ children }: PropsWithChildren) => (
-  <HotkeysProvider>{children}</HotkeysProvider>
+  <QueryClientProvider
+    client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+  >
+    <HotkeysProvider>{children}</HotkeysProvider>
+  </QueryClientProvider>
 );
 
 const renderPicker = (ui: ReactElement) => render(ui, { wrapper });

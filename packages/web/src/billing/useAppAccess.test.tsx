@@ -69,6 +69,27 @@ describe("useAppAccess", () => {
     });
   });
 
+  it("returns server trialing status with the trial end date", async () => {
+    stubConfig(true);
+    stubBilling({
+      subscriptionStatus: "trialing",
+      trialEndsAt: "2026-09-03T00:00:00.000Z",
+      isReadOnly: false,
+    });
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(true),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({
+        kind: "server",
+        status: "trialing",
+        isReadOnly: false,
+        trialEndsAt: "2026-09-03T00:00:00.000Z",
+      });
+    });
+  });
+
   it("fails open while authenticated billing status is loading", () => {
     stubConfig(true);
     server.use(

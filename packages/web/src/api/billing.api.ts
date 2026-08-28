@@ -22,6 +22,13 @@ const BillingApi = {
     return BillingCheckoutResponseSchema.parse(response.data);
   },
 
+  /** Ends the Stripe trial now, charging the card on file today. */
+  async endTrial(): Promise<BillingStatusResponse> {
+    const response =
+      await BaseApi.post<BillingStatusResponse>(`/billing/trial/end`);
+    return BillingStatusResponseSchema.parse(response.data);
+  },
+
   async createPortalSession(): Promise<BillingPortalResponse> {
     const response = await BaseApi.post<BillingPortalResponse>(
       `/billing/portal/session`,

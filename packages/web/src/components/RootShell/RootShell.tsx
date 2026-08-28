@@ -7,6 +7,11 @@ import {
   selectBillingPreviewing,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
+import { CheckoutCelebrationModal } from "@web/billing/CheckoutCelebrationModal";
+import {
+  selectIsCelebrating,
+  useCheckoutCelebrationStore,
+} from "@web/billing/checkout-celebration.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
@@ -40,6 +45,7 @@ export function RootShell() {
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
+  const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
   useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
@@ -55,7 +61,12 @@ export function RootShell() {
   // banner pitching a trial they can no longer take.
   const isPreviewable = readOnlyStatus === "awaiting_checkout";
   const showReadOnlyBanner = isPreviewable && isPreviewing;
-  const gateStatus = showReadOnlyBanner ? null : readOnlyStatus;
+  // The gate must yield to the celebration. Between the Checkout return and
+  // the webhook landing, status can still read awaiting_checkout, and the gate
+  // is a full app-lock overlay -- it would take the screen at exactly the
+  // moment the user has just paid.
+  const gateStatus =
+    showReadOnlyBanner || isCelebrating ? null : readOnlyStatus;
   const showCalendarOnboarding =
     gateStatus === null && !deferCalendarOnboarding;
   const showPastDue = access.kind === "server" && access.status === "past_due";
@@ -72,6 +83,7 @@ export function RootShell() {
       <Outlet />
       <AuthModal />
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
+      <CheckoutCelebrationModal />
       {showCalendarOnboarding && <WelcomeModal />}
       {showCalendarOnboarding && <ShortcutShowcase />}
       {showCalendarOnboarding && <FirstEventPrompt />}

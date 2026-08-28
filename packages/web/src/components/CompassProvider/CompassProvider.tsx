@@ -8,6 +8,7 @@ import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
+import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useEscapeToDismissToast } from "@web/common/utils/toast/useEscapeToDismissToast";
 import { AboutModal } from "@web/components/About/AboutModal";
@@ -70,10 +71,12 @@ export const CompassRequiredProviders = ({
           <IconProvider>
             <LogoutConfirmationProvider>
               <DeleteAccountConfirmationProvider>
-                {children}
-                <SettingsModal />
-                <TimezoneDialogHost />
-                <AboutModal />
+                <UpgradeConfirmationProvider>
+                  {children}
+                  <SettingsModal />
+                  <TimezoneDialogHost />
+                  <AboutModal />
+                </UpgradeConfirmationProvider>
               </DeleteAccountConfirmationProvider>
               <ThemeAwareToastContainer />
             </LogoutConfirmationProvider>
