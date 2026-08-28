@@ -375,6 +375,10 @@ test("day view separates visible calendars into distinct columns", async ({
   });
   const primaryHeader = calendarHeaders.getByText(CALENDAR_A_NAME);
   const readerHeader = calendarHeaders.getByText(CALENDAR_B_NAME);
+  // Column cells, not the inner label/button — a writable header is a
+  // shrink-wrapped focus control, so its parent is narrower than the event.
+  const primaryColumn = calendarHeaders.locator(":scope > div").nth(0);
+  const readerColumn = calendarHeaders.locator(":scope > div").nth(1);
   const primaryEvent = dayAgenda.getByRole("button", {
     name: new RegExp(`${EVENT_A_TITLE}.*${CALENDAR_A_NAME} calendar`),
   });
@@ -391,8 +395,8 @@ test("day view separates visible calendars into distinct columns", async ({
 
   const [primaryHeaderBox, readerHeaderBox, primaryEventBox, readerEventBox] =
     await Promise.all([
-      primaryHeader.locator("..").boundingBox(),
-      readerHeader.locator("..").boundingBox(),
+      primaryColumn.boundingBox(),
+      readerColumn.boundingBox(),
       primaryEvent.boundingBox(),
       readerEvent.boundingBox(),
     ]);
