@@ -82,6 +82,37 @@ describe("CheckoutCelebrationModal", () => {
     ).toBeInTheDocument();
   });
 
+  // The button advertises an Enter hint, and Escape is the app's universal
+  // step-back; both must really close it, not just the click.
+  it("closes on Enter from the button it seats focus on", async () => {
+    access = server("trialing", "2026-09-03T00:00:00.000Z");
+    checkoutCelebrationActions.celebrate();
+    const user = userEvent.setup();
+    render(<CheckoutCelebrationModal />);
+
+    expect(
+      screen.getByRole("button", { name: /Start planning/ }),
+    ).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(useCheckoutCelebrationStore.getState().isCelebrating).toBe(false);
+    });
+  });
+
+  it("closes on Escape", async () => {
+    access = server("trialing", "2026-09-03T00:00:00.000Z");
+    checkoutCelebrationActions.celebrate();
+    const user = userEvent.setup();
+    render(<CheckoutCelebrationModal />);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(useCheckoutCelebrationStore.getState().isCelebrating).toBe(false);
+    });
+  });
+
   it("clears the celebration when dismissed", async () => {
     access = server("trialing", "2026-09-03T00:00:00.000Z");
     checkoutCelebrationActions.celebrate();

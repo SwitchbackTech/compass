@@ -7,8 +7,10 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { type AppAccess } from "@web/billing/useAppAccess";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
@@ -44,8 +46,32 @@ mock.module("@tanstack/react-router", () => ({
         actualTanstackRouter.useNavigate(...(args as [])),
 }));
 
+// Defaults to false so every pre-existing test in this file keeps the
+// signed-out palette it was written against; only the plan-pill tests flip it.
+let authenticated = false;
+let isSessionMocked = true;
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked
+      ? { authenticated, setAuthenticated: mock() }
+      : actualUseSession(...args),
+}));
+
+let access: AppAccess = { kind: "open" };
+let isAppAccessMocked = true;
+const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
+  .useAppAccess;
+mock.module("@web/billing/useAppAccess", () => ({
+  useAppAccess: (...args: Parameters<typeof actualUseAppAccess>) =>
+    isAppAccessMocked ? access : actualUseAppAccess(...args),
+}));
+
 afterAll(() => {
   isNavigateMocked = false;
+  isAppAccessMocked = false;
+  isSessionMocked = false;
 });
 
 const { CommandPalette, LifeCommandPalette } = await import("./CommandPalette");
@@ -98,6 +124,35 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
+    access = { kind: "open" };
+    authenticated = false;
+  });
+
+  // The plan pill shares the row's end slot with the shortcut chips, so both
+  // have to survive together.
+  it("shows the plan beside the account row without dropping its shortcut", () => {
+    authenticated = true;
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(5, "day").toISOString(),
+    };
+    renderPalette();
+
+    const row = rowLabel("Manage Accounts").closest("button") as HTMLElement;
+
+    expect(within(row).getByText("Trial \u00b7 5d")).toBeInTheDocument();
+    expect(within(row).getByText(",")).toBeInTheDocument();
+  });
+
+  it("leaves the account row bare when there is no plan to report", () => {
+    authenticated = true;
+    renderPalette();
+
+    const row = rowLabel("Manage Accounts").closest("button") as HTMLElement;
+
+    expect(within(row).queryByText(/Trial|Premium|Free/)).toBeNull();
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
