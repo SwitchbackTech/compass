@@ -79,9 +79,9 @@ export const SHOWCASE_STEPS = [
     body: [
       "Tab to the start or end of the focused event, then hold ",
       { key: "Shift" },
-      " and press an arrow to change just that edge.",
+      " and press up or down to change just that edge.",
     ],
-    keycaps: [KEYMAP.edgeFocus.hotkey, ...KEYMAP.moveEvent.keycaps],
+    keycaps: [KEYMAP.edgeFocus.hotkey, ...KEYMAP.moveEvent.timedEdgeKeycaps],
     level: 5,
   },
   {
@@ -175,7 +175,7 @@ export function getCreateLessonPhase(
   };
 }
 
-/** After Tab lands on an edge, the hint swaps to the Shift+arrow beat. */
+/** After Tab lands on an edge, the hint swaps to the Shift+up/down beat. */
 export function getEdgeResizeLessonPhase(
   edge: PracticeEdge,
 ): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
@@ -184,9 +184,9 @@ export function getEdgeResizeLessonPhase(
     body: [
       "Hold ",
       { key: "Shift" },
-      " and press an arrow to change just that edge.",
+      " and press up or down to change just that edge.",
     ],
-    keycaps: KEYMAP.moveEvent.keycaps,
+    keycaps: KEYMAP.moveEvent.timedEdgeKeycaps,
   };
 }
 

@@ -48,6 +48,9 @@ export const KEYMAP = {
       right: "Shift+ArrowRight",
     },
     keycaps: ["Shift", "ArrowRight"],
+    // Timed start/end edges only move in time. Left/right stay whole-event
+    // day shifts; the practice and edge-focus tip teach the vertical axis.
+    timedEdgeKeycaps: ["Shift", "ArrowUp", "ArrowDown"],
   },
   edgeFocus: { hotkey: "Tab", keycaps: ["Tab"] },
   undo: { hotkey: "Mod+Z", keycaps: ["Mod", "Z"] },

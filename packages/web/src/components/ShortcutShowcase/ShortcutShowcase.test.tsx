@@ -306,15 +306,29 @@ describe("ShortcutShowcase", () => {
     expect(currentStepId()).toBe("edgeResize");
   });
 
-  it("teaches Tab then Shift+arrow to resize one edge", () => {
+  it("teaches Tab then Shift+up/down to resize one edge", () => {
     render(<ShortcutShowcase />);
     showStep("edgeResize");
+
+    expect(
+      screen.getByText(/press up or down to change just that edge/),
+    ).toBeTruthy();
+    expect(screen.getByTestId("arrowup-icon")).toBeTruthy();
+    expect(screen.getByTestId("arrowdown-icon")).toBeTruthy();
+    expect(screen.queryByTestId("arrowleft-icon")).toBeNull();
+    expect(screen.queryByTestId("arrowright-icon")).toBeNull();
 
     pressKey("ArrowDown", { shiftKey: true });
     expect(currentStepId()).toBe("edgeResize");
 
     pressKey("Tab");
     expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
+    expect(
+      screen.getByText(/press up or down to change just that edge/),
+    ).toBeTruthy();
+
+    pressKey("ArrowLeft", { shiftKey: true });
+    expect(currentStepId()).toBe("edgeResize");
 
     pressKey("ArrowDown", { shiftKey: true });
     expect(currentStepId()).toBe("editTitle");
