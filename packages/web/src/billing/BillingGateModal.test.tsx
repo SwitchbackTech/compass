@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Status } from "@core/errors/status.codes";
@@ -12,7 +13,7 @@ import {
 } from "@web/billing/billing-preview.store";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
-import { afterEach, describe, expect, it, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
 
@@ -33,14 +34,21 @@ const checkoutFailed = (): ApiError => {
 
 const renderGate = (status = "awaiting_checkout") =>
   render(
-    <SessionContext.Provider
-      value={{ authenticated: true, setAuthenticated: () => {} }}
-    >
-      <BillingGateModal status={status} />
-    </SessionContext.Provider>,
+    <HotkeysProvider>
+      <SessionContext.Provider
+        value={{ authenticated: true, setAuthenticated: () => {} }}
+      >
+        <BillingGateModal status={status} />
+      </SessionContext.Provider>
+    </HotkeysProvider>,
   );
 
 describe("BillingGateModal", () => {
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+  });
+
   afterEach(() => {
     assign.mockClear();
     useBillingPreviewStore.setState(initialBillingPreviewState);
