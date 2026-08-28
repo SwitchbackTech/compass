@@ -227,13 +227,19 @@ describe("useGlobalShortcuts", () => {
   it("does not open the command palette while first-visit welcome is open", () => {
     welcomeGuideActions.setFirstVisitOpen(true);
     const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+    const keepFocus = document.createElement("button");
+    keepFocus.textContent = "Keep focus";
+    document.body.appendChild(keepFocus);
+    keepFocus.focus();
 
     act(() => {
       pressModK();
     });
 
     expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(false);
+    expect(document.activeElement).toBe(keepFocus);
 
+    keepFocus.remove();
     act(() => {
       unmount();
     });
