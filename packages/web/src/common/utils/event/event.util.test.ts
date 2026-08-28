@@ -211,6 +211,24 @@ describe("handleError", () => {
       "Something went wrong behind the scenes. Please try again later.",
     );
   });
+
+  it("does not toast a BILLING_REQUIRED refusal — the gate is the feedback", () => {
+    const error = createServerError(Status.FORBIDDEN);
+    error.response = {
+      status: Status.FORBIDDEN,
+      data: {
+        code: "BILLING_REQUIRED",
+        message: "A trial or subscription is required to change events",
+        retryable: false,
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(mockCaptureException).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe("isEventInRange", () => {

@@ -22,8 +22,8 @@ export const KEYMAP = {
     keycaps: ["Mod", "1-9"],
   },
   // Same hold-Mod gesture outside the form: digits follow the active view's
-  // target list order (page-jump.targets.ts). Day view appends calendar
-  // columns after the shared 1–4 page areas, up to the physical top row.
+  // target list order (page-jump.targets.ts). Day view numbers left to right
+  // (view, columns, sidebar), up to the physical top row.
   jumpPageTarget: {
     holdModifier: "Mod",
     digits: ["1", "9"],
@@ -48,6 +48,9 @@ export const KEYMAP = {
       right: "Shift+ArrowRight",
     },
     keycaps: ["Shift", "ArrowRight"],
+    // Timed start/end edges only move in time. Left/right stay whole-event
+    // day shifts; the practice and edge-focus tip teach the vertical axis.
+    timedEdgeKeycaps: ["Shift", "ArrowUp", "ArrowDown"],
   },
   edgeFocus: { hotkey: "Tab", keycaps: ["Tab"] },
   undo: { hotkey: "Mod+Z", keycaps: ["Mod", "Z"] },

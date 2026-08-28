@@ -177,7 +177,7 @@ describe("usePageJumpShortcut", () => {
       expect(currentWeek).toHaveFocus();
     });
 
-    it("jumps to a Day calendar column at digit 5 without remapping 1-4", () => {
+    it("jumps to a Day calendar column at digit 2 after the view dropdown", () => {
       const { viewTrigger } = buildPage();
       const column = document.createElement("button");
       column.setAttribute(PAGE_JUMP_ATTRIBUTE, dayColumnJumpId("cal-work"));
@@ -189,7 +189,7 @@ describe("usePageJumpShortcut", () => {
         ),
       );
 
-      const columnEvent = pressModDigit("5");
+      const columnEvent = pressModDigit("2");
       expect(columnEvent.defaultPrevented).toBe(true);
       expect(column).toHaveFocus();
 

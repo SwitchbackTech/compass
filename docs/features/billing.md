@@ -88,7 +88,8 @@ production.
   `billing-preview.store.ts` and is deliberately in-memory, so a reload puts
   the trial ask back. Writes still fail server-side, and the
   `BILLING_REQUIRED` branch in `useEventMutations` exits the preview, so the
-  first refused save brings the gate straight back.
+  first refused save brings the gate straight back. That refusal does not
+  show the catch-all "something went wrong" toast — the gate is the feedback.
 - **Trialing / active / past_due:** writable. `past_due` also shows a banner.
 - **Expired / canceled:** read-only until they subscribe again. A later
   Checkout does not grant another trial.

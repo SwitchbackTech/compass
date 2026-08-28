@@ -11,7 +11,6 @@ import { theme } from "@web/common/styles/theme";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
@@ -28,13 +27,10 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   inputColor?: string;
   isOpen?: boolean;
   monthTextClassName?: string;
-  /** Sidebar-only: hover keycaps and hold-Mod chips on the month chevrons. */
+  /** Sidebar-only: hover keycaps on the month chevrons. */
   monthNav?: {
     prevShortcut: readonly string[];
     nextShortcut: readonly string[];
-    prevHoldHint: readonly string[];
-    nextHoldHint: readonly string[];
-    showHoldHints: boolean;
   };
   withUnderline?: boolean;
   view: "sidebar" | "grid";
@@ -226,12 +222,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>
-                  {monthNav?.showHoldHints ? (
-                    <span className="ml-1 flex items-center gap-1.5">
-                      <ShortcutKeys keys={[...monthNav.prevHoldHint]} />
-                      <ShortcutKeys keys={[...monthNav.nextHoldHint]} />
-                    </span>
-                  ) : null}
                 </div>
                 {withTodayButton && (
                   <TooltipWrapper description={currentMonth}>

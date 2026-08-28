@@ -227,7 +227,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
       { key: KEYMAP.edgeFocus.hotkey },
       " to the start or end, then hold ",
       { key: nudgeModifier },
-      " and press an arrow",
+      " and press up or down",
     ],
     suggestionReason: "event_focused",
   },

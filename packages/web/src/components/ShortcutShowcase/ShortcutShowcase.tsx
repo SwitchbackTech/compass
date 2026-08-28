@@ -88,7 +88,7 @@ const arrowDirection = (key: string): PracticeNudgeDirection | null => {
  * practice state, so nothing here touches storage or the real grid stores.
  *
  * An unnumbered intro gates first-time entry, then levels teach create,
- * hold-Mod jumps, event jump, whole-event nudge, Tab-then-Shift+arrow edge
+ * hold-Mod jumps, event jump, whole-event nudge, Tab-then-Shift+up/down edge
  * resize, the E-then-T edit sequence, delete-then-undo, Cmd+K, and `?`.
  * Graduation hands off to a prompt on the real calendar. Skip is always
  * offered.
@@ -342,7 +342,7 @@ const ShowcaseTakeover: FC = () => {
       const direction = arrowDirection(event.key);
       if (
         event.shiftKey &&
-        direction &&
+        (direction === "up" || direction === "down") &&
         (practice.edge === "start" || practice.edge === "end")
       ) {
         claim(event);

@@ -69,6 +69,7 @@ describe("DayCalendarColumnHeaders", () => {
       `day-column:${personal.id}`,
     );
     expect(column).toHaveAttribute(CALENDAR_COLUMN_ID_ATTRIBUTE, personal.id);
+    expect(column).toHaveClass("w-full");
     expect(
       screen.queryByRole("button", { name: "Focus Holidays column" }),
     ).toBeNull();

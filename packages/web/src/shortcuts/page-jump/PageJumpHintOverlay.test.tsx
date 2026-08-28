@@ -136,7 +136,7 @@ describe("PageJumpHintOverlay", () => {
     expect(chipDigits()).toEqual(["1", "2"]);
   });
 
-  it("chips a Day calendar column as 5, not 1", () => {
+  it("chips a Day calendar column as 2, after the view dropdown", () => {
     addAnchor("view-select");
     addAnchor(dayColumnJumpId("cal-work"));
     render(
@@ -146,7 +146,7 @@ describe("PageJumpHintOverlay", () => {
       />,
     );
 
-    expect(chipDigits()).toEqual(["1", "5"]);
-    expect(screen.getByRole("status").textContent).toContain("5 for work");
+    expect(chipDigits()).toEqual(["1", "2"]);
+    expect(screen.getByRole("status").textContent).toContain("2 for work");
   });
 });

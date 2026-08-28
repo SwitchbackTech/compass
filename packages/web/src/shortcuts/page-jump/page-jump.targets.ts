@@ -11,9 +11,10 @@
  * menu trigger (the view dropdown) is clicked after focus so the jump
  * reveals Day / Week / Life instead of landing on a closed heading.
  *
- * Day view appends writable calendar columns after the shared 1–4 page areas
- * (`buildDayPageJumpTargets`). Those digits stay 5+ even when the sidebar is
- * collapsed, so muscle memory for 1–4 never shifts.
+ * Day view numbers left to right (`buildDayPageJumpTargets`): view dropdown,
+ * then writable calendar columns, then the sidebar (month picker, Up next,
+ * calendars). Extra columns that would overflow the physical top-row keys
+ * are omitted so the three sidebar slots still get chips when mounted.
  */
 
 import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
@@ -65,26 +66,29 @@ export const dayColumnJumpId = (
   `${DAY_COLUMN_JUMP_ID_PREFIX}${calendarId}`;
 
 /**
- * Day view's hold-Mod map: the shared calendar page areas, then one numbered
- * target per writable displayed column. Extra calendars past the physical
- * top-row keys (`PICK_KEY_LABELS`) are omitted — no chip, no binding.
+ * Day view's hold-Mod map in visual left-to-right order: the view dropdown,
+ * then one numbered target per writable displayed column, then the sidebar
+ * page areas. Extra calendars that would crowd out the reserved sidebar
+ * slots are omitted — no chip, no binding.
  */
 export const buildDayPageJumpTargets = (
   calendars: readonly DayColumnJumpCalendar[],
 ): PageJumpTargets => {
-  const columnTargets = calendars.flatMap((calendar, index) => {
-    const digit = PICK_KEY_LABELS[CALENDAR_PAGE_JUMP_TARGETS.length + index];
-    if (!digit) return [];
-    return [
-      {
-        digit,
-        id: dayColumnJumpId(calendar.id),
-        label: calendar.name,
-      },
-    ];
-  });
+  const [viewSelect, ...sidebarTargets] = CALENDAR_PAGE_JUMP_TARGETS;
+  const maxColumns = PICK_KEY_LABELS.length - 1 - sidebarTargets.length;
+  const columnTargets = calendars
+    .slice(0, Math.max(0, maxColumns))
+    .map((calendar) => ({
+      id: dayColumnJumpId(calendar.id),
+      label: calendar.name,
+    }));
 
-  return [...CALENDAR_PAGE_JUMP_TARGETS, ...columnTargets];
+  return [viewSelect, ...columnTargets, ...sidebarTargets].map(
+    (target, index) => ({
+      ...target,
+      digit: PICK_KEY_LABELS[index] ?? "",
+    }),
+  );
 };
 
 /** Spread onto a component's container element to mark it as a jump target. */

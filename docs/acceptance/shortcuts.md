@@ -310,7 +310,7 @@ Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 
 ### UX
 
-On Day view, holding Mod reveals numbered chips on each **writable** calendar column (5, 6, … after the shared page-area digits 1–4). Pressing that digit focuses the column header. Shift+Arrow then places a timed draft on that calendar; `C` / `Shift+C` honor the same focused column. Idle create (no column focused) still uses the default target calendar.
+On Day view, holding Mod reveals numbered chips left to right: `1` on the view dropdown, then each **writable** calendar column (`2`, `3`, …), then the sidebar (month picker, Up next, calendars). Pressing that digit focuses the column header. Shift+Arrow then places a timed draft on that calendar; `C` / `Shift+C` honor the same focused column. Idle create (no column focused) still uses the default target calendar.
 
 ### Steps
 
@@ -322,7 +322,7 @@ On Day view, holding Mod reveals numbered chips on each **writable** calendar co
 
 ### Expected Results
 
-- Hold-Mod chips on columns are numbers starting at 5, not 1. Digits 1–4 still jump to view / month picker / Up next / calendars list.
+- Hold-Mod chips on columns follow the view dropdown (`1`, then `2`…). Sidebar chips continue after the last column. Week view still uses 1–4 for view / month picker / Up next / calendars.
 - Read-only columns (for example holidays) have no chip and are not focusable via Mod+digit.
 - After focusing a column, Shift+Arrow places a form-closed timed draft in that column.
 - `C` and `Shift+C` seed the focused column's calendar. With no column focused, they still use the default create target.
@@ -448,4 +448,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 17. PageUp / PageDown scroll the timed grid by one viewport in Day and Week view even when an event is focused; they do not fire in a text input.
 18. Alt+ArrowUp / Alt+ArrowDown pan the timed grid by one hour in Day and Week view even when an event is focused; they do not fire in a text input.
 19. `Z` opens time travel in Day and Week view; Cmd+Z / Ctrl+Z still undoes and does not open the picker.
-20. On Day view, hold Mod then a column digit (5+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
+20. On Day view, hold Mod then a column digit (2+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
