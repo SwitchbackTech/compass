@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   selectFirstEventCelebrating,
@@ -9,10 +11,19 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import {
+  selectJumpableDayPrefixes,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { selectShortcutHint } from "@web/shortcuts/tips/selectShortcutHint";
 import { readShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { useShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useIsAnyCalendarEventFocused } from "@web/shortcuts/tips/useIsAnyCalendarEventFocused";
+
+/** Re-rank this often so a tip that nothing else disturbs still gives way.
+ * Impressions are only recorded when the rendered tip changes, so without a
+ * tick one tip can hold the bar for a whole session and never fatigue. */
+export const SHORTCUT_HINT_ROTATION_MS = 90 * 1000;
 
 /**
  * Reads onboarding + current-doing stores and returns the sidebar's next
@@ -30,6 +41,16 @@ export function useShortcutHintContext() {
     pathname === ROOT_ROUTES.WEEK ||
     pathname.startsWith(`${ROOT_ROUTES.WEEK}/`);
   const progress = useShortcutHintProgress();
+  const jumpableDayPrefixes = useEventJumpStore(selectJumpableDayPrefixes);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = setInterval(
+      () => setNow(Date.now()),
+      SHORTCUT_HINT_ROTATION_MS,
+    );
+    return () => clearInterval(tick);
+  }, []);
 
   return selectShortcutHint(
     {
@@ -38,8 +59,11 @@ export function useShortcutHintContext() {
       isWeekView,
       eventFocused,
       firstEventDone: firstEventDone || isCelebrating,
+      jumpableDayPrefixes,
+      todayWeekday: dayjs().day(),
     },
     progress,
     readShortcutUsageProfile(),
+    now,
   );
 }

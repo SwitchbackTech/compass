@@ -86,6 +86,45 @@ const [editLeader, editSecond] = KEYMAP.editTitle.keycaps;
 const [eventJumpKey] = KEYMAP.eventJump.keycaps;
 const [nudgeModifier] = KEYMAP.moveEvent.keycaps;
 
+/** Day-column jump prefixes, in weekday order. */
+export const DAY_JUMP_PREFIXES = ["su", "m", "t", "w", "r", "f", "sa"] as const;
+
+export type DayJumpPrefix = (typeof DAY_JUMP_PREFIXES)[number];
+
+const DAY_NAME_BY_PREFIX: Record<DayJumpPrefix, string> = {
+  su: "Sunday",
+  m: "Monday",
+  t: "Tuesday",
+  w: "Wednesday",
+  r: "Thursday",
+  f: "Friday",
+  sa: "Saturday",
+};
+
+/** Weekend prefixes are a two-key chord: Shift+S selects the pair, then the
+ * second letter picks the day. */
+function weekDayFocusParts(prefix: DayJumpPrefix): readonly ShortcutTipPart[] {
+  const dayName = DAY_NAME_BY_PREFIX[prefix];
+  const [first, second] = prefix;
+  const shifted = { keys: ["Shift", first.toUpperCase()] } as const;
+  if (!second) return [shifted, ` jumps to ${dayName}`];
+  return [
+    shifted,
+    " then ",
+    { key: second.toUpperCase() },
+    ` jumps to ${dayName}`,
+  ];
+}
+
+/** The weekday tip names whichever column the sidebar picked, so it teaches the
+ * whole week over time instead of Monday forever. */
+export function weekDayFocusHint(prefix: DayJumpPrefix): ShortcutHint {
+  return {
+    ...SHORTCUT_HINTS["week-day-focus"],
+    parts: weekDayFocusParts(prefix),
+  };
+}
+
 export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
   "first-event-save": {
     id: "first-event-save",
@@ -100,7 +139,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     featureArea: "event_editing",
     parts: [
       { key: saveKey },
-      " to save · hold ",
+      " saves · hold ",
       { key: KEYMAP.jumpFormField.holdModifier },
       " to jump fields",
     ],
@@ -110,7 +149,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     id: "life-this-week",
     actionId: "life.focus_current_week",
     featureArea: "life_navigation",
-    parts: ["Press ", { key: "T" }, " to jump to this week"],
+    parts: [{ key: "T" }, " jumps to this week"],
     suggestionReason: "life_view",
   },
   "edit-sequence": {
@@ -118,11 +157,10 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     actionId: "event.edit_title",
     featureArea: "event_editing",
     parts: [
-      "Press ",
       { key: editLeader },
       " then ",
       { key: editSecond },
-      " to jump to the title",
+      " edits the title",
     ],
     suggestionReason: "event_focused",
   },
@@ -130,7 +168,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     id: "create-event",
     actionId: "calendar.create_timed_event",
     featureArea: "event_creation",
-    parts: ["Press ", { key: createKey }, " to add an event"],
+    parts: [{ key: createKey }, " creates an event"],
     suggestionReason: "calendar_idle",
   },
   "page-jump": {
@@ -140,7 +178,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     parts: [
       "Hold ",
       { key: KEYMAP.jumpPageTarget.holdModifier },
-      " to see where you can jump",
+      " to see jump targets",
     ],
     suggestionReason: "calendar_idle",
   },
@@ -148,31 +186,21 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     id: "event-jump",
     actionId: "calendar.event_jump",
     featureArea: "calendar_navigation",
-    parts: [
-      "Press ",
-      { key: eventJumpKey },
-      " to show event keys, or a day key to jump",
-    ],
+    parts: [{ key: eventJumpKey }, " labels events to jump to"],
     suggestionReason: "calendar_idle",
   },
   "week-day-focus": {
     id: "week-day-focus",
     actionId: "calendar.focus_week_day",
     featureArea: "calendar_navigation",
-    parts: [
-      "On week view, press ",
-      { key: eventJumpKey },
-      " then ",
-      { key: "M" },
-      " to focus Monday",
-    ],
+    parts: weekDayFocusParts("m"),
     suggestionReason: "week_view",
   },
   nudge: {
     id: "nudge",
     actionId: "event.move",
     featureArea: "event_editing",
-    parts: ["Hold ", { key: nudgeModifier }, " and press an arrow to move"],
+    parts: [{ key: nudgeModifier }, " and an arrow moves the event"],
     suggestionReason: "event_focused",
   },
   "edge-focus": {
@@ -180,11 +208,10 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     actionId: "event.edge_focus",
     featureArea: "event_editing",
     parts: [
-      "Press ",
       { key: KEYMAP.edgeFocus.hotkey },
-      " to the start or end, then hold ",
+      " picks an edge, then ",
       { key: nudgeModifier },
-      " and press up or down",
+      " and up or down",
     ],
     suggestionReason: "event_focused",
   },
@@ -193,9 +220,8 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     actionId: "command_palette.open",
     featureArea: "command_palette",
     parts: [
-      "Press ",
       { keys: KEYMAP.commandPalette.keycaps },
-      " to open the command palette",
+      " opens the command palette",
     ],
     suggestionReason: "calendar_idle",
   },

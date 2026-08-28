@@ -25,7 +25,7 @@ export const ShortcutTipIndicator: FC<{ hint: RankedShortcutHint }> = ({
   return (
     <span
       aria-live="polite"
-      className="truncate text-text-muted text-xs opacity-80"
+      className="block w-full text-pretty break-words text-center text-text-muted text-xs leading-5 opacity-80"
       role="status"
     >
       <ShortcutTipParts parts={hint.parts} />

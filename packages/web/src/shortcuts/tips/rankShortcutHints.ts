@@ -8,7 +8,11 @@ import {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const SHORTCUT_FATIGUE_COOLDOWN_MS = 6 * 60 * 60 * 1000;
-export const SHORTCUT_FATIGUE_IMPRESSIONS = 3;
+export const SHORTCUT_FATIGUE_IMPRESSIONS = 2;
+/** Invocations after which a shortcut counts as learned and stops being
+ * taught, so the bar spends its one line on something the user has not
+ * adopted yet. */
+export const SHORTCUT_MASTERED_INVOCATIONS = 5;
 
 type RankedCandidate = {
   fatigued: boolean;
@@ -54,7 +58,7 @@ function scoreCandidate(
     lastShownAge < SHORTCUT_FATIGUE_COOLDOWN_MS;
 
   let score = untried ? 80 : 0;
-  score += Math.max(0, 20 - invocations * 4);
+  score += Math.max(-24, 20 - invocations * 8);
   if (lastInvokedAge !== null && lastInvokedAge < DAY_MS) score -= 24;
   else if (lastInvokedAge !== null && lastInvokedAge < 7 * DAY_MS) score -= 12;
   else if (lastInvokedAge !== null && lastInvokedAge > 30 * DAY_MS) score += 12;
@@ -77,9 +81,10 @@ function personalizedReason(
 
 /**
  * Ranks only the deterministic context pool. With no local history, the first
- * item is exactly the legacy deterministic pick. History adds three small,
- * explainable signals: untried actions, invocation recency, and repeated-tip
- * fatigue. The deterministic order remains the tie-breaker.
+ * item is exactly the legacy deterministic pick. History adds four small,
+ * explainable signals: mastered actions drop out of the pool entirely, and
+ * untried actions, invocation recency, and repeated-tip fatigue score the
+ * rest. The deterministic order remains the tie-breaker.
  */
 export function rankShortcutHints(
   pool: readonly ShortcutHintId[],
@@ -87,7 +92,14 @@ export function rankShortcutHints(
   profile: ShortcutUsageProfile,
   now = Date.now(),
 ): RankedShortcutHint {
-  const fallbackOrder = deterministicFallbackOrder(pool, demonstratedIds);
+  const unmastered = pool.filter((id) => {
+    const usage = profile.actions[getShortcutHint(id).actionId];
+    return (usage?.invocations ?? 0) < SHORTCUT_MASTERED_INVOCATIONS;
+  });
+  const fallbackOrder = deterministicFallbackOrder(
+    unmastered.length > 0 ? unmastered : pool,
+    demonstratedIds,
+  );
   const candidates = fallbackOrder.map((id) =>
     scoreCandidate(id, demonstratedIds, profile, now),
   );

@@ -16,7 +16,7 @@ export const EdgeFocusIndicator: FC = () => {
   return (
     <span
       aria-live="polite"
-      className="truncate text-text-muted text-xs opacity-80"
+      className="block w-full text-pretty break-words text-center text-text-muted text-xs leading-5 opacity-80"
       data-edge-focus-indicator=""
       role="status"
     >

@@ -30,7 +30,7 @@ export const ShortcutTipParts: FC<{
             // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
             <span
               key={i}
-              className="inline-flex whitespace-nowrap align-text-bottom"
+              className="inline-flex whitespace-nowrap align-middle"
             >
               <ShortcutKeys keys={[...partKeycaps(part)]} />
             </span>

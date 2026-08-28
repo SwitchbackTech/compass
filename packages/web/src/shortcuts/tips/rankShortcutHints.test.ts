@@ -70,6 +70,56 @@ describe("shortcut hint personalization", () => {
     expect(hint.reasonCode).toBe("local_recency");
   });
 
+  it("cools down after two impressions in the window", () => {
+    const hint = selectShortcutHint(
+      calendarIdle,
+      [],
+      profile({
+        "calendar.page_jump": {
+          invocations: 0,
+          lastShownAt: NOW,
+          recentImpressions: 2,
+        },
+      }),
+      NOW,
+    );
+
+    expect(hint.id).toBe("event-jump");
+    expect(hint.reasonCode).toBe("local_fatigue");
+  });
+
+  it("stops teaching a shortcut the user has clearly learned", () => {
+    const hint = selectShortcutHint(
+      calendarIdle,
+      [],
+      profile({
+        "calendar.page_jump": { invocations: 5, recentImpressions: 0 },
+      }),
+      NOW,
+    );
+
+    expect(hint.id).toBe("event-jump");
+  });
+
+  it("keeps teaching the pool once every shortcut in it is learned", () => {
+    const hint = selectShortcutHint(
+      calendarIdle,
+      [],
+      profile({
+        "calendar.page_jump": { invocations: 9, recentImpressions: 0 },
+        "calendar.event_jump": { invocations: 9, recentImpressions: 0 },
+        "command_palette.open": { invocations: 9, recentImpressions: 0 },
+        "calendar.create_timed_event": {
+          invocations: 9,
+          recentImpressions: 0,
+        },
+      }),
+      NOW,
+    );
+
+    expect(hint.id).toBe("page-jump");
+  });
+
   it("never promotes an ineligible focused-event action into an idle calendar", () => {
     const hint = selectShortcutHint(
       calendarIdle,

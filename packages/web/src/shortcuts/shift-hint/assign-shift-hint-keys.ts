@@ -41,6 +41,21 @@ export type DayJumpAssignment = {
 
 export type DayJumpLabelMode = "week" | "day";
 
+/**
+ * Day prefixes that currently have somewhere to land, in weekday order. Day
+ * view labels events numerically, so no letter is live there.
+ */
+export function dayJumpPrefixesForWeekdays(
+  weekdays: readonly number[],
+  mode: DayJumpLabelMode = "week",
+): string[] {
+  if (mode === "day") return [];
+  const present = new Set(weekdays);
+  return Object.entries(DAY_JUMP_PREFIX_BY_WEEKDAY)
+    .filter(([weekday]) => present.has(Number(weekday)))
+    .map(([, prefix]) => prefix);
+}
+
 /** Wait before committing a digit that could still grow (F1 vs F10). */
 export const DIGIT_AMBIGUOUS_COMMIT_MS = 400;
 

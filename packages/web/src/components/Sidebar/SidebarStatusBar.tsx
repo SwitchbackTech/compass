@@ -34,7 +34,7 @@ import { useTimeTravelZone } from "@web/timezone/time-travel.store";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
- * Always occupies a fixed height so nothing in the sidebar can shift when a
+ * Always occupies at least one line so nothing in the sidebar can shift when a
  * mutation goes in/out of flight, or an account's Google sync status changes -
  * that status used to render inline under each account's heading, where it
  * pushed the calendar rows below it up and down as accounts synced.
@@ -98,9 +98,9 @@ export const SidebarStatusBar: FC = () => {
   ) : null;
 
   return (
-    <div className="flex h-6 shrink-0 items-center px-4">
+    <div className="flex min-h-6 shrink-0 items-center justify-center px-4 py-0.5">
       {indicator ? (
-        <div className="flex h-full min-w-0 flex-1 items-center">
+        <div className="flex min-w-0 flex-1 items-center justify-center">
           {indicator}
         </div>
       ) : (
@@ -108,14 +108,14 @@ export const SidebarStatusBar: FC = () => {
           aria-label={
             text ? `${text}. Open account settings` : "Open account settings"
           }
-          className="c-focus-ring flex h-full min-w-0 flex-1 items-center rounded-xs text-left"
+          className="c-focus-ring flex min-w-0 flex-1 items-center justify-center self-stretch rounded-xs"
           onClick={settingsActions.openSettings}
           title={text || undefined}
           type="button"
         >
           <span
             aria-live="polite"
-            className={`truncate text-xs ${status ? SYNC_STATUS_VARIANT_CLASSNAME[status.variant] : ""}`}
+            className={`break-words text-center text-xs leading-5 ${status ? SYNC_STATUS_VARIANT_CLASSNAME[status.variant] : ""}`}
             role="status"
           >
             {text}

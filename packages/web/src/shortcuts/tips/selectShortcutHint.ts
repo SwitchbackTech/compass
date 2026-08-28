@@ -1,9 +1,12 @@
 import { rankShortcutHints } from "@web/shortcuts/tips/rankShortcutHints";
 import { type ShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import {
+  DAY_JUMP_PREFIXES,
+  type DayJumpPrefix,
   getShortcutHint,
   type RankedShortcutHint,
   type ShortcutHintId,
+  weekDayFocusHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 
 export type ShortcutHintContext = {
@@ -12,6 +15,10 @@ export type ShortcutHintContext = {
   isWeekView?: boolean;
   eventFocused: boolean;
   firstEventDone: boolean;
+  /** Day prefixes the jump engine can currently land on. */
+  jumpableDayPrefixes?: readonly string[];
+  /** 0=Sunday … 6=Saturday, used to teach the week forward from today. */
+  todayWeekday?: number;
 };
 
 const IDLE_POOL = [
@@ -27,6 +34,22 @@ const FOCUSED_POOL = [
   "edge-focus",
   ...IDLE_POOL,
 ] as const satisfies readonly ShortcutHintId[];
+
+/**
+ * The day column to teach next: the first jumpable one at or after tomorrow,
+ * wrapping through the week. Days with no events have no jump key, so teaching
+ * them would advertise a dead keystroke.
+ */
+function pickWeekDayPrefix(ctx: ShortcutHintContext): DayJumpPrefix | null {
+  const jumpable = new Set(ctx.jumpableDayPrefixes ?? []);
+  if (jumpable.size === 0) return null;
+  const start = ((ctx.todayWeekday ?? 0) + 1) % DAY_JUMP_PREFIXES.length;
+  const ordered = [
+    ...DAY_JUMP_PREFIXES.slice(start),
+    ...DAY_JUMP_PREFIXES.slice(0, start),
+  ];
+  return ordered.find((prefix) => jumpable.has(prefix)) ?? null;
+}
 
 /** Week view inserts the column-letter tip after event-jump. */
 function withWeekDayFocus(
@@ -74,8 +97,13 @@ export function selectShortcutHint(
   profile: ShortcutUsageProfile = EMPTY_USAGE_PROFILE,
   now = Date.now(),
 ): RankedShortcutHint {
-  const pick = (pool: readonly ShortcutHintId[]) =>
-    rankShortcutHints(pool, demonstratedIds, profile, now);
+  const dayPrefix = pickWeekDayPrefix(ctx);
+  const showWeekDay = Boolean(ctx.isWeekView) && dayPrefix !== null;
+  const pick = (pool: readonly ShortcutHintId[]) => {
+    const winner = rankShortcutHints(pool, demonstratedIds, profile, now);
+    if (winner.id !== "week-day-focus" || !dayPrefix) return winner;
+    return { ...weekDayFocusHint(dayPrefix), reasonCode: winner.reasonCode };
+  };
 
   if (ctx.isFormOpen && !ctx.firstEventDone) {
     return ranked("first-event-save");
@@ -87,10 +115,10 @@ export function selectShortcutHint(
     return pick(LIFE_POOL);
   }
   if (ctx.eventFocused) {
-    return pick(withWeekDayFocus(FOCUSED_POOL, ctx.isWeekView));
+    return pick(withWeekDayFocus(FOCUSED_POOL, showWeekDay));
   }
   if (!ctx.firstEventDone) {
     return ranked("create-event", "first_event");
   }
-  return pick(withWeekDayFocus(IDLE_POOL, ctx.isWeekView));
+  return pick(withWeekDayFocus(IDLE_POOL, showWeekDay));
 }

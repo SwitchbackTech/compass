@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
-import { EVENT_MENU_LETTER } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   isBareLetterKey,
@@ -18,16 +16,12 @@ import {
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
-  findNextNoticeTarget,
-  getVisibleNotices,
-} from "@web/shortcuts/notice-focus/notice-focus";
-import { FOCUS_NOTICE_LETTER } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
-import {
   assignDayJumpKeys,
   type DayJumpAssignment,
   type DayJumpLabelMode,
   type DayJumpMatchResult,
   DIGIT_AMBIGUOUS_COMMIT_MS,
+  dayJumpPrefixesForWeekdays,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
@@ -63,30 +57,6 @@ const DAY_NAME_BY_PREFIX: Record<string, string> = {
   sa: "Saturday",
 };
 
-/** Bare `t` stays "go to today" while jump is off. */
-const TODAY_LETTER = "t";
-
-/**
- * Competing single-letter commands that still apply while jump is off.
- * `t` always wins (today). `f` / `m` win only when their action has a target.
- */
-const competingShortcutApplies = (key: string): boolean => {
-  if (key === TODAY_LETTER) return true;
-  if (key === FOCUS_NOTICE_LETTER) {
-    return (
-      findNextNoticeTarget(getVisibleNotices(), document.activeElement) !== null
-    );
-  }
-  if (key === EVENT_MENU_LETTER) {
-    const active = document.activeElement;
-    return (
-      active instanceof HTMLElement &&
-      getCalendarEventIdFromElement(active) !== null
-    );
-  }
-  return false;
-};
-
 const isUnmodifiedSingleChar = (event: KeyboardEvent) => {
   const key = keyboardKey(event);
   return (
@@ -95,6 +65,21 @@ const isUnmodifiedSingleChar = (event: KeyboardEvent) => {
     !event.ctrlKey &&
     !event.altKey &&
     !event.shiftKey
+  );
+};
+
+/**
+ * Day columns are entered with Shift so they never race the bare-letter
+ * commands they used to lose to (`t` today, `f` notice focus, `m` event menu).
+ */
+const isShiftedSingleChar = (event: KeyboardEvent) => {
+  const key = keyboardKey(event);
+  return (
+    key.length === 1 &&
+    event.shiftKey &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey
   );
 };
 
@@ -163,11 +148,13 @@ const buildDayJumpAssignments = (
 };
 
 /**
- * Press `h` to show day-prefix jump labels, or type a jump token (`sa`,
- * `w`, `w1`, day-view `1`…) without `h` when no competing command still
- * applies. Esc exits. Day letters (and digits after a day) win over global
- * shortcuts while active. A second `h` toggles off. In week view `s` is only
- * the Sunday/Saturday prefix.
+ * Press `h` to show day-prefix jump labels, or Shift+<day letter> to enter
+ * jump mode straight onto that column (`Shift+W`, `Shift+S` then `u`/`a`).
+ * Shift is what makes the day columns always available: bare `t`, `f`, and
+ * `m` keep their own commands. Once jump mode is on, the labels are typed
+ * bare (`w`, `w1`, day-view `1`…) and win over global shortcuts. Esc exits,
+ * a second `h` toggles off. In week view `s` is only the Sunday/Saturday
+ * prefix.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
@@ -197,6 +184,7 @@ export function useShiftHoldEventHints({
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
   const modeRef = useRef(mode);
+  const publishedPrefixesRef = useRef<string[]>([]);
 
   focusRef.current = focus;
   listVisibleRef.current = listVisible;
@@ -373,7 +361,6 @@ export function useShiftHoldEventHints({
       if (!isActiveRef.current) {
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
         if (isEditSequenceArmed()) return;
-        if (!isUnmodifiedSingleChar(event)) return;
 
         if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
           event.preventDefault();
@@ -385,7 +372,17 @@ export function useShiftHoldEventHints({
           return;
         }
 
+        // Shift+day enters jump mode straight onto that column. Any other
+        // shifted letter (Shift+J, Shift+C) falls through to its own handler.
+        // Day view is numbered, and Shift+1 is "!", so its digits stay bare.
         const key = normalizedKeyboardKey(event);
+        const isDigit = /^\d$/.test(key);
+        if (
+          isDigit ? !isUnmodifiedSingleChar(event) : !isShiftedSingleChar(event)
+        ) {
+          return;
+        }
+
         const assignments = rebuildAssignments();
         if (assignments.length === 0) return;
 
@@ -395,7 +392,7 @@ export function useShiftHoldEventHints({
           buffer: "",
           mode: modeRef.current,
         });
-        if (!match || competingShortcutApplies(key)) return;
+        if (!match) return;
 
         event.preventDefault();
         event.stopPropagation();
@@ -561,6 +558,36 @@ export function useShiftHoldEventHints({
       : assignments;
     setHints(toActiveHints(source, visibleById));
   }, [eventIdsKey, isActive]);
+
+  // Publish the day columns that have a live jump key, so the sidebar tip only
+  // teaches a keystroke that would actually land somewhere. Derived from the
+  // event props rather than the DOM registry so it is current before any
+  // keypress. Events without a start date would otherwise advertise the
+  // FALLBACK_SCHEDULE's phantom Sunday.
+  useEffect(() => {
+    void eventIdsKey;
+    const weekdays = [...allDayEventsRef.current, ...timedEventsRef.current]
+      .filter((event) => Boolean(event.startDate))
+      .map((event) => scheduleMeta(event).weekday);
+    const next = dayJumpPrefixesForWeekdays(weekdays, mode);
+    publishedPrefixesRef.current = next;
+    eventJumpActions.setJumpableDayPrefixes(next);
+  }, [eventIdsKey, mode]);
+
+  // Only clear what this grid published: switching Day -> Week can mount the
+  // new grid before the old one unmounts, and a blind clear there would blank
+  // the incoming view's columns for the rest of the session.
+  useEffect(
+    () => () => {
+      const published = publishedPrefixesRef.current;
+      const current = useEventJumpStore.getState().jumpableDayPrefixes;
+      const isOurs =
+        current.length === published.length &&
+        current.every((prefix, i) => prefix === published[i]);
+      if (isOurs) eventJumpActions.setJumpableDayPrefixes([]);
+    },
+    [],
+  );
 
   return { hints };
 }
