@@ -81,6 +81,7 @@ const navButtonClassName = (current: boolean) =>
 export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);
   const page = useSettingsStore(selectSettingsPage);
+  const initialFocusRef = useRef<HTMLButtonElement>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
@@ -102,11 +103,14 @@ export const SettingsModal: FC = () => {
     if (!isOpen) setConfirmingId(null);
   }, [isOpen]);
 
+  // Fail-open and in-flight status both look like `kind: "open"` (no badge).
+  // Bounce only once the server says there is no plan; otherwise a portal
+  // return (`?settings=billing`) would snap to Accounts before status lands.
   useEffect(() => {
-    if (page === "billing" && !hasBilling) {
+    if (page === "billing" && access.kind === "server" && !hasBilling) {
       settingsActions.setSettingsPage("accounts");
     }
-  }, [hasBilling, page]);
+  }, [access.kind, hasBilling, page]);
 
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
@@ -155,6 +159,7 @@ export const SettingsModal: FC = () => {
   return (
     <OverlayPanel
       align="start"
+      initialFocusRef={initialFocusRef}
       onDismiss={handleDismiss}
       title="Settings"
       variant="modal"
@@ -167,18 +172,20 @@ export const SettingsModal: FC = () => {
             className={navButtonClassName(page === "accounts")}
             onClick={() => settingsActions.setSettingsPage("accounts")}
             onPointerEnter={focusOnPointerEnter}
+            ref={page === "accounts" ? initialFocusRef : undefined}
             type="button"
             {...settingsShortcutAttrs("nav-accounts")}
           >
             Accounts
             {areHintsVisible ? <ShortcutKeys keys="1" /> : null}
           </button>
-          {hasBilling ? (
+          {hasBilling || page === "billing" ? (
             <button
               aria-current={page === "billing" ? "true" : undefined}
               className={navButtonClassName(page === "billing")}
               onClick={() => settingsActions.setSettingsPage("billing")}
               onPointerEnter={focusOnPointerEnter}
+              ref={page === "billing" ? initialFocusRef : undefined}
               type="button"
               {...settingsShortcutAttrs("nav-billing")}
             >

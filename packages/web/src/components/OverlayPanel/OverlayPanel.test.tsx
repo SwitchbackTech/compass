@@ -299,6 +299,30 @@ describe("OverlayPanel", () => {
     ).toBeNull();
   });
 
+  it("does not steal focus from a text field when hovering an action", async () => {
+    const onCancel = mock();
+    const user = userEvent.setup({ delay: null });
+    render(
+      <OverlayPanel title="Share feedback" onDismiss={() => {}}>
+        <textarea aria-label="What would you like to share?" />
+        <OverlayPanelActionButton onClick={onCancel}>
+          Cancel
+        </OverlayPanelActionButton>
+      </OverlayPanel>,
+    );
+
+    const notes = screen.getByRole("textbox", {
+      name: "What would you like to share?",
+    });
+    expect(notes).toHaveFocus();
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "Cancel" }), {
+      pointerType: "mouse",
+    });
+    expect(notes).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   it("focuses a hovered action so Enter activates that button", async () => {
     const onPrimary = mock();
     const onSecondary = mock();

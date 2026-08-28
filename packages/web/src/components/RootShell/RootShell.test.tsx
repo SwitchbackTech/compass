@@ -216,6 +216,14 @@ describe("RootShell billing gates", () => {
     expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
   });
 
+  it("keeps Billing open when portal return lands before plan data", async () => {
+    access = { kind: "open" };
+    await renderShell("/week?settings=billing");
+
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+  });
+
   it("toasts and strips a canceled checkout", async () => {
     const { port, mocks } = createTestToastPort();
     registerToastPort(port);

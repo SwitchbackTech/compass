@@ -34,7 +34,11 @@ import {
   registerToastPort,
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
-import { settingsActions } from "@web/settings/settings.store";
+import {
+  selectSettingsPage,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import {
   afterAll,
   afterEach,
@@ -610,6 +614,42 @@ describe("SettingsModal", () => {
     expect(
       screen.queryByRole("button", { name: "Manage billing" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("stays on Billing while plan data is still fail-open", () => {
+    access = { kind: "open" };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
+  it("leaves Billing when the server reports no plan", () => {
+    access = {
+      kind: "server",
+      status: "none",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("accounts");
+    expect(screen.queryByRole("button", { name: "Billing" })).toBeNull();
+  });
+
+  it("seats focus on Billing when Settings opens on that page", () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
   });
 
   it("keeps timezone and accounts off the Billing page", () => {
