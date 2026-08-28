@@ -46,7 +46,7 @@ const openDialog = async () => {
   renderProvider();
   await userEvent.click(screen.getByRole("button", { name: "open upgrade" }));
   return screen.getByRole("dialog", {
-    name: "End your trial and subscribe?",
+    name: "Start Premium now?",
   });
 };
 
@@ -77,7 +77,7 @@ describe("UpgradeConfirmationProvider", () => {
     await openDialog();
 
     await userEvent.click(
-      screen.getByRole("button", { name: /Subscribe now/ }),
+      screen.getByRole("button", { name: /Start Premium/ }),
     );
 
     await waitFor(() => {
@@ -91,7 +91,7 @@ describe("UpgradeConfirmationProvider", () => {
     });
     expect(toastMocks.error).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole("dialog", { name: "End your trial and subscribe?" }),
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
     ).not.toBeInTheDocument();
     endTrial.mockRestore();
   });
@@ -105,7 +105,7 @@ describe("UpgradeConfirmationProvider", () => {
     await openDialog();
 
     await userEvent.click(
-      screen.getByRole("button", { name: /Subscribe now/ }),
+      screen.getByRole("button", { name: /Start Premium/ }),
     );
 
     await waitFor(() => {
@@ -125,7 +125,7 @@ describe("UpgradeConfirmationProvider", () => {
     await openDialog();
 
     await userEvent.click(
-      screen.getByRole("button", { name: /Subscribe now/ }),
+      screen.getByRole("button", { name: /Start Premium/ }),
     );
 
     await waitFor(() => {
@@ -144,7 +144,7 @@ describe("UpgradeConfirmationProvider", () => {
     await userEvent.click(screen.getByRole("button", { name: /Cancel/ }));
 
     expect(
-      screen.queryByRole("dialog", { name: "End your trial and subscribe?" }),
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
     ).not.toBeInTheDocument();
     expect(endTrial).not.toHaveBeenCalled();
     endTrial.mockRestore();
