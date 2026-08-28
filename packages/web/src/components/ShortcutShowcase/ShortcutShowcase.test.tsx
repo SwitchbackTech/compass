@@ -310,9 +310,10 @@ describe("ShortcutShowcase", () => {
     render(<ShortcutShowcase />);
     showStep("edgeResize");
 
-    expect(
-      screen.getByText(/press up or down to change just that edge/),
-    ).toBeTruthy();
+    const practice = screen.getByLabelText("Shortcut practice");
+    expect(practice).toHaveTextContent(
+      /press up or down to change just that edge/,
+    );
     expect(screen.getByTestId("arrowup-icon")).toBeTruthy();
     expect(screen.getByTestId("arrowdown-icon")).toBeTruthy();
     expect(screen.queryByTestId("arrowleft-icon")).toBeNull();
@@ -323,9 +324,9 @@ describe("ShortcutShowcase", () => {
 
     pressKey("Tab");
     expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
-    expect(
-      screen.getByText(/press up or down to change just that edge/),
-    ).toBeTruthy();
+    expect(practice).toHaveTextContent(
+      /press up or down to change just that edge/,
+    );
 
     pressKey("ArrowLeft", { shiftKey: true });
     expect(currentStepId()).toBe("edgeResize");
