@@ -6,6 +6,9 @@ import { AppConfigApi } from "@web/api/app-config.api";
 import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
 import { checkoutCelebrationActions } from "@web/billing/checkout-celebration.store";
+import { BILLING_CHECKOUT_CANCELED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { settingsActions } from "@web/settings/settings.store";
 
 export const billingQueryKeys = {
   status: ["billing", "status"] as const,
@@ -32,6 +35,9 @@ export function useBillingStatusQuery(enabled: boolean) {
   return useQuery({
     ...billingStatusQueryOptions(),
     enabled,
+    // Portal upgrades happen in another tab; always refetch when Compass
+    // becomes visible again rather than waiting out staleTime.
+    refetchOnWindowFocus: "always",
   });
 }
 
@@ -50,16 +56,22 @@ export function isBillingEnforced(
   return config?.billing.enforcement === true;
 }
 
+const STATUS_POLL_MS = 1500;
+const STATUS_POLL_WINDOW_MS = 15_000;
+
 /**
  * After Stripe Checkout returns `?checkout=success`, raise the celebration and
  * keep refetching billing status for a short window so a late webhook does not
  * leave the gate up. The polling is also what lets the celebration's copy
  * sharpen from "setting up" to the real status while it is on screen.
+ *
+ * `?checkout=cancel` is stripped with a quiet toast. `?settings=billing` is
+ * the portal return: reopen Settings on Billing and poll until status lands.
  */
 export function useCheckoutReturn() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { checkout } = useSearch({ from: "__root__" });
+  const { checkout, settings } = useSearch({ from: "__root__" });
 
   useEffect(() => {
     if (checkout !== "success") return;
@@ -70,7 +82,7 @@ export function useCheckoutReturn() {
     invalidate();
     track("trial_converted");
     checkoutCelebrationActions.celebrate();
-    const interval = window.setInterval(invalidate, 1500);
+    const interval = window.setInterval(invalidate, STATUS_POLL_MS);
     const timeout = window.setTimeout(() => {
       window.clearInterval(interval);
       void navigate({
@@ -78,11 +90,46 @@ export function useCheckoutReturn() {
         search: (prev) => ({ ...prev, checkout: undefined }),
         replace: true,
       });
-    }, 15_000);
+    }, STATUS_POLL_WINDOW_MS);
 
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
     };
   }, [checkout, navigate, queryClient]);
+
+  useEffect(() => {
+    if (checkout !== "cancel") return;
+
+    showStatusToast(BILLING_CHECKOUT_CANCELED_TOAST_ID, "Checkout canceled");
+    void navigate({
+      to: ".",
+      search: (prev) => ({ ...prev, checkout: undefined }),
+      replace: true,
+    });
+  }, [checkout, navigate]);
+
+  useEffect(() => {
+    if (settings !== "billing") return;
+
+    settingsActions.openSettings("billing");
+    const invalidate = () => {
+      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.status });
+    };
+    invalidate();
+    const interval = window.setInterval(invalidate, STATUS_POLL_MS);
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(interval);
+      void navigate({
+        to: ".",
+        search: (prev) => ({ ...prev, settings: undefined }),
+        replace: true,
+      });
+    }, STATUS_POLL_WINDOW_MS);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [navigate, queryClient, settings]);
 }

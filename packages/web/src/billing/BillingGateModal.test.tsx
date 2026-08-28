@@ -13,7 +13,15 @@ import {
 } from "@web/billing/billing-preview.store";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { BillingGateModal } from "./BillingGateModal";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
 
@@ -188,6 +196,11 @@ describe("BillingGateModal", () => {
     ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
     const { port } = createTestToastPort();
     registerToastPort(port);
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    const open = spyOn(window, "open").mockReturnValue(
+      popup as unknown as Window,
+    );
     const user = userEvent.setup();
     renderGate("canceled");
 
@@ -200,7 +213,12 @@ describe("BillingGateModal", () => {
     await user.keyboard("m");
 
     expect(createPortalSession).toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    await waitFor(() => {
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    expect(assign).not.toHaveBeenCalled();
     createPortalSession.mockRestore();
+    open.mockRestore();
   });
 });

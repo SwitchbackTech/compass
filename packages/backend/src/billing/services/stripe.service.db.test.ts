@@ -266,7 +266,7 @@ describe("StripeService", () => {
     expect(result.url).toBe("https://billing.stripe.com/p/session_1");
     expect(portalCreate.mock.calls[0]?.[0]).toEqual({
       customer: "cus_portal",
-      return_url: "http://localhost:9080",
+      return_url: "http://localhost:9080/?settings=billing",
     });
   });
 

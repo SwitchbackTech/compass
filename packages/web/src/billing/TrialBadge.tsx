@@ -32,7 +32,7 @@ export function TrialBadge() {
   const description = formatTrialBadgeDescription(daysLeft);
 
   return (
-    <TooltipWrapper description={`${description}. Press B to subscribe.`}>
+    <TooltipWrapper description={description} shortcut="B">
       <button
         aria-label={`${description}. Subscribe now.`}
         className="c-keycap c-focus-ring cursor-pointer text-xs"

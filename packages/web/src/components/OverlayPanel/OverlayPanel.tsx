@@ -9,6 +9,7 @@ import {
   useRef,
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
@@ -254,6 +255,8 @@ interface OverlayPanelActionButtonProps
   variant?: "primary" | "secondary" | "destructive" | "ghost";
   /** Visible keycap(s) for the action. */
   shortcut?: string | string[];
+  /** When false, the shortcut still belongs to the action but the chip is hidden. */
+  showShortcut?: boolean;
 }
 
 export const OverlayPanelActionButton = forwardRef<
@@ -264,8 +267,10 @@ export const OverlayPanelActionButton = forwardRef<
     children,
     className,
     shortcut,
+    showShortcut = true,
     type = "button",
     variant = "secondary",
+    onPointerEnter,
     ...buttonProps
   },
   ref,
@@ -289,10 +294,16 @@ export const OverlayPanelActionButton = forwardRef<
         className,
       )}
       type={type}
+      onPointerEnter={(event) => {
+        focusOnPointerEnter(event);
+        onPointerEnter?.(event);
+      }}
       {...buttonProps}
     >
       {children}
-      {shortcut ? <ShortcutKeys className="ml-2" keys={shortcut} /> : null}
+      {shortcut && showShortcut ? (
+        <ShortcutKeys className="ml-2" keys={shortcut} />
+      ) : null}
     </button>
   );
 });

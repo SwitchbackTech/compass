@@ -7,6 +7,7 @@ import {
 interface UpgradeConfirmationDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
+  isOpeningPortal: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onManageBilling: () => void;
@@ -16,12 +17,13 @@ interface UpgradeConfirmationDialogProps {
  * Confirms starting a Stripe subscription before the trial runs out. No amount
  * is shown here on purpose: the price lives on the Stripe Price, not in this
  * codebase, so operators can change it without a web deploy. "Manage billing"
- * is the way to see the card and the exact charge before committing, so it sits
- * apart from the two real choices rather than competing with them.
+ * opens the Stripe portal (card, invoices, cancel) and does not charge today;
+ * Start Premium is the only way to end the trial early.
  */
 export function UpgradeConfirmationDialog({
   isOpen,
   isSubmitting,
+  isOpeningPortal,
   onCancel,
   onConfirm,
   onManageBilling,
@@ -31,7 +33,7 @@ export function UpgradeConfirmationDialog({
   return (
     <OverlayPanel
       title="Start Premium now?"
-      message="Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away."
+      message="Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away. Manage billing opens your invoices and card on file. It does not charge you or end the trial."
       onDismiss={onCancel}
       align="start"
       variant="modal"
@@ -44,7 +46,9 @@ export function UpgradeConfirmationDialog({
             disabled={isSubmitting}
             onClick={onConfirm}
           >
-            {isSubmitting ? "Starting Premium…" : "Start Premium"}
+            {isSubmitting && !isOpeningPortal
+              ? "Starting Premium…"
+              : "Start Premium"}
           </OverlayPanelActionButton>
           <OverlayPanelActionButton
             shortcut="Esc"
@@ -56,10 +60,11 @@ export function UpgradeConfirmationDialog({
         </OverlayPanelActions>
         <OverlayPanelActionButton
           variant="ghost"
+          shortcut="M"
           disabled={isSubmitting}
           onClick={onManageBilling}
         >
-          Manage billing
+          {isOpeningPortal ? "Opening Stripe…" : "Manage billing"}
         </OverlayPanelActionButton>
       </div>
     </OverlayPanel>

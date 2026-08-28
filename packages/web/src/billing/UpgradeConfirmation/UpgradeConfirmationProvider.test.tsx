@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { BillingApi } from "@web/api/billing.api";
@@ -11,7 +11,15 @@ import {
   registerToastPort,
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // Register a toast port rather than spying the toast utils: spyOn patches the
 // shared module object, so calls here would leak into other suites' spies.
@@ -66,6 +74,9 @@ describe("UpgradeConfirmationProvider", () => {
     const dialog = await openDialog();
     expect(dialog.textContent).not.toMatch(/\$|\bUSD\b|\bmonth\b/);
     expect(dialog).toHaveTextContent("the card on file is charged today");
+    expect(dialog).toHaveTextContent(
+      "It does not charge you or end the trial.",
+    );
   });
 
   it("ends the trial and confirms the subscription", async () => {
@@ -150,10 +161,15 @@ describe("UpgradeConfirmationProvider", () => {
     endTrial.mockRestore();
   });
 
-  it("sends Manage billing to the Stripe portal", async () => {
+  it("sends Manage billing to the Stripe portal in a new tab", async () => {
     const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
       url: "https://billing.stripe.com/p/session_1",
     });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    const open = spyOn(window, "open").mockReturnValue(
+      popup as unknown as Window,
+    );
     await openDialog();
 
     await userEvent.click(
@@ -161,10 +177,60 @@ describe("UpgradeConfirmationProvider", () => {
     );
 
     await waitFor(() => {
-      expect(assign).toHaveBeenCalledWith(
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(replace).toHaveBeenCalledWith(
         "https://billing.stripe.com/p/session_1",
       );
     });
+    expect(assign).not.toHaveBeenCalled();
     portal.mockRestore();
+    open.mockRestore();
+  });
+
+  it("opens the portal with M and does not end the trial", async () => {
+    const endTrial = spyOn(BillingApi, "endTrial");
+    const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_1",
+    });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    await openDialog();
+
+    await userEvent.keyboard("m");
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith(
+        "https://billing.stripe.com/p/session_1",
+      );
+    });
+    expect(endTrial).not.toHaveBeenCalled();
+    portal.mockRestore();
+    endTrial.mockRestore();
+  });
+
+  it("activates Manage billing on hover then Enter instead of Start Premium", async () => {
+    const endTrial = spyOn(BillingApi, "endTrial");
+    const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
+      url: "https://billing.stripe.com/p/session_1",
+    });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    await openDialog();
+
+    const manage = screen.getByRole("button", { name: "Manage billing" });
+    fireEvent.pointerEnter(manage, { pointerType: "mouse" });
+    expect(manage).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith(
+        "https://billing.stripe.com/p/session_1",
+      );
+    });
+    expect(endTrial).not.toHaveBeenCalled();
+    portal.mockRestore();
+    endTrial.mockRestore();
   });
 });

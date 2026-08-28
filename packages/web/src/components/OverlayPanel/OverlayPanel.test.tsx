@@ -1,11 +1,11 @@
 import "@testing-library/jest-dom";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 describe("OverlayPanel", () => {
   it("locks app shortcuts while mounted and clears on unmount", () => {
@@ -283,20 +283,42 @@ describe("OverlayPanel", () => {
     ).toBeTruthy();
   });
 
-  it("renders combo shortcuts as separate keycaps", () => {
+  it("hides a shortcut chip when showShortcut is false", () => {
     render(
       <OverlayPanel title="Confirm" onDismiss={() => {}}>
-        <OverlayPanelActionButton shortcut={["Mod", "Enter"]}>
-          Discard
+        <OverlayPanelActionButton shortcut="E" showShortcut={false}>
+          Export data
         </OverlayPanelActionButton>
       </OverlayPanel>,
     );
 
-    const discard = screen.getByRole("button", { name: "Discard" });
-    expect(within(discard).getByText("Enter")).toBeTruthy();
     expect(
-      within(discard).queryByTestId("meta-icon") ??
-        within(discard).queryByTestId("control-icon"),
-    ).toBeTruthy();
+      within(screen.getByRole("button", { name: "Export data" })).queryByText(
+        "E",
+      ),
+    ).toBeNull();
+  });
+
+  it("focuses a hovered action so Enter activates that button", async () => {
+    const onPrimary = mock();
+    const onSecondary = mock();
+    const user = userEvent.setup({ delay: null });
+    render(
+      <OverlayPanel title="Confirm" onDismiss={() => {}}>
+        <OverlayPanelActionButton onClick={onPrimary}>
+          Primary
+        </OverlayPanelActionButton>
+        <OverlayPanelActionButton onClick={onSecondary}>
+          Secondary
+        </OverlayPanelActionButton>
+      </OverlayPanel>,
+    );
+
+    const secondary = screen.getByRole("button", { name: "Secondary" });
+    fireEvent.pointerEnter(secondary, { pointerType: "mouse" });
+    expect(secondary).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(onSecondary).toHaveBeenCalled();
+    expect(onPrimary).not.toHaveBeenCalled();
   });
 });

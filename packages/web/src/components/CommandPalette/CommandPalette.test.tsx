@@ -130,7 +130,7 @@ describe("CommandPalette", () => {
 
   // The plan pill shares the row's end slot with the shortcut chips, so both
   // have to survive together.
-  it("shows the plan beside the account row without dropping its shortcut", () => {
+  it("shows the plan beside the billing row", () => {
     authenticated = true;
     access = {
       kind: "server",
@@ -140,10 +140,14 @@ describe("CommandPalette", () => {
     };
     renderPalette();
 
-    const row = rowLabel("Manage Accounts").closest("button") as HTMLElement;
+    const accounts = rowLabel("Manage Accounts").closest(
+      "button",
+    ) as HTMLElement;
+    expect(within(accounts).queryByText(/Trial|Premium|Free/)).toBeNull();
+    expect(within(accounts).getByText(",")).toBeInTheDocument();
 
-    expect(within(row).getByText("Trial \u00b7 5d")).toBeInTheDocument();
-    expect(within(row).getByText(",")).toBeInTheDocument();
+    const billing = rowLabel("Manage Billing").closest("button") as HTMLElement;
+    expect(within(billing).getByText("Trial \u00b7 5d")).toBeInTheDocument();
   });
 
   it("leaves the account row bare when there is no plan to report", () => {
@@ -153,6 +157,7 @@ describe("CommandPalette", () => {
     const row = rowLabel("Manage Accounts").closest("button") as HTMLElement;
 
     expect(within(row).queryByText(/Trial|Premium|Free/)).toBeNull();
+    expect(screen.queryByText("Manage Billing")).toBeNull();
   });
 
   it("renders all sections with items and focuses the input on mount", () => {

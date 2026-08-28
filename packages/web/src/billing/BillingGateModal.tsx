@@ -116,7 +116,11 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             onClick={() => void redirectTo("checkout")}
             type="button"
           >
-            {isAwaitingCheckout ? "Start trial" : "Subscribe"}
+            {isRedirecting
+              ? "Opening Stripe…"
+              : isAwaitingCheckout
+                ? "Start trial"
+                : "Subscribe"}
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
           <button
@@ -125,7 +129,9 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             onClick={secondary.onClick}
             type="button"
           >
-            {secondary.label}
+            {isRedirecting && secondary.key === "M"
+              ? "Opening Stripe…"
+              : secondary.label}
             <ShortcutHint className="ml-2">{secondary.key}</ShortcutHint>
           </button>
         </div>

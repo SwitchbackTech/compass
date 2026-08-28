@@ -1,23 +1,17 @@
 import { UsersIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { getPlanBadge } from "@web/billing/planBadge";
-import { useAppAccess } from "@web/billing/useAppAccess";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { settingsActions } from "@web/settings/settings.store";
 
 /**
- * The single palette entry for account management: opens Settings, which
- * holds adding/disconnecting a Google account, exporting data, and deleting
- * the Compass account. Those used to also be separate top-level palette
- * items (add-account, delete-account, export-my-data), which cluttered any
- * "acc"-ish search with four near-duplicate rows - they're covered here via
- * keywords instead.
+ * The single palette entry for account management: opens Settings on the
+ * Accounts page. Adding/disconnecting a Google account, exporting data, and
+ * deleting the Compass account used to also be separate top-level palette
+ * items, which cluttered any "acc"-ish search with four near-duplicate rows
+ * - they're covered here via keywords instead.
  */
 export const useShowAccountsCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
-  // Reads billing status, so this hook now needs a QueryClient in scope. Both
-  // palettes mount inside CompassProvider, but bare hook tests must wrap.
-  const access = useAppAccess();
 
   if (!authenticated) {
     return [];
@@ -41,14 +35,8 @@ export const useShowAccountsCmdItems = (): CommandItem[] => {
         "remove account",
         "export data",
         "delete account",
-        "plan",
-        "billing",
-        "subscription",
-        "premium",
-        "trial",
       ],
-      badge: getPlanBadge(access)?.label,
-      onClick: settingsActions.openSettings,
+      onClick: () => settingsActions.openSettings("accounts"),
     },
   ];
 };
