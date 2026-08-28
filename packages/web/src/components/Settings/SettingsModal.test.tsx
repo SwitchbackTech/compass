@@ -642,6 +642,7 @@ describe("SettingsModal", () => {
 
     expect(selectSettingsPage(useSettingsStore.getState())).toBe("accounts");
     expect(screen.queryByRole("button", { name: "Billing" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Accounts" })).toHaveFocus();
   });
 
   it("seats focus on Billing when Settings opens on that page", () => {

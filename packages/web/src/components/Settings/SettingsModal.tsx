@@ -82,6 +82,7 @@ export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);
   const page = useSettingsStore(selectSettingsPage);
   const initialFocusRef = useRef<HTMLButtonElement>(null);
+  const reseatFocusOnAccountsRef = useRef(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
@@ -106,11 +107,20 @@ export const SettingsModal: FC = () => {
   // Fail-open and in-flight status both look like `kind: "open"` (no badge).
   // Bounce only once the server says there is no plan; otherwise a portal
   // return (`?settings=billing`) would snap to Accounts before status lands.
+  // The Billing nav unmounts on that bounce, so reseat focus on Accounts or
+  // it falls to document.body and Escape no longer dismisses the dialog.
   useEffect(() => {
     if (page === "billing" && access.kind === "server" && !hasBilling) {
+      reseatFocusOnAccountsRef.current = true;
       settingsActions.setSettingsPage("accounts");
     }
   }, [access.kind, hasBilling, page]);
+
+  useEffect(() => {
+    if (!reseatFocusOnAccountsRef.current || page !== "accounts") return;
+    reseatFocusOnAccountsRef.current = false;
+    initialFocusRef.current?.focus();
+  }, [page]);
 
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
