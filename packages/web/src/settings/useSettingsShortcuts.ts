@@ -35,7 +35,8 @@ const shortcutIdForEvent = (
 ): string | null => {
   const digit = physicalDigitIndex(event);
   if (digit === 0) return "nav-accounts";
-  if (digit === 1) return hasBilling ? "nav-billing" : null;
+  if (digit === 1)
+    return hasBilling || page === "billing" ? "nav-billing" : null;
 
   const key = normalizedKeyboardKey(event);
   if (page === "billing" && key === "m") return "manage-billing";

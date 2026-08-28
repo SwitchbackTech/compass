@@ -616,8 +616,9 @@ describe("SettingsModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("stays on Billing while plan data is still fail-open", () => {
+  it("stays on Billing while plan data is still fail-open", async () => {
     access = { kind: "open" };
+    const user = userEvent.setup({ delay: null });
     renderSettings({ authenticated: true, page: "billing" });
 
     expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
@@ -625,6 +626,9 @@ describe("SettingsModal", () => {
       "aria-current",
       "true",
     );
+    await user.keyboard("2");
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
   });
 
   it("leaves Billing when the server reports no plan", () => {

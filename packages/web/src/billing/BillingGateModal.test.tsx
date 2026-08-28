@@ -1,6 +1,12 @@
 import "@testing-library/jest-dom";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Status } from "@core/errors/status.codes";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
@@ -227,5 +233,35 @@ describe("BillingGateModal", () => {
     ).toHaveFocus();
     createPortalSession.mockRestore();
     open.mockRestore();
+  });
+
+  it("activates Manage billing on hover then Enter instead of Subscribe", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const createCheckoutSession = spyOn(
+      BillingApi,
+      "createCheckoutSession",
+    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
+    const { port } = createTestToastPort();
+    registerToastPort(port);
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    const user = userEvent.setup({ delay: null });
+    renderGate("canceled");
+
+    const manage = screen.getByRole("button", { name: "Manage billing" });
+    fireEvent.pointerEnter(manage, { pointerType: "mouse" });
+    expect(manage).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+    createPortalSession.mockRestore();
+    createCheckoutSession.mockRestore();
   });
 });

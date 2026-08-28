@@ -1,15 +1,15 @@
-import { type RefObject } from "react";
+import { useState } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 interface UpgradeConfirmationDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
   isOpeningPortal: boolean;
-  manageBillingRef: RefObject<HTMLButtonElement | null>;
   onCancel: () => void;
   onConfirm: () => void;
   onManageBilling: () => void;
@@ -26,11 +26,28 @@ export function UpgradeConfirmationDialog({
   isOpen,
   isSubmitting,
   isOpeningPortal,
-  manageBillingRef,
   onCancel,
   onConfirm,
   onManageBilling,
 }: UpgradeConfirmationDialogProps) {
+  const [manageBillingEl, setManageBillingEl] =
+    useState<HTMLButtonElement | null>(null);
+
+  useAppShortcut(
+    "M",
+    () => {
+      if (isSubmitting) return;
+      manageBillingEl?.focus({ preventScroll: true });
+      onManageBilling();
+    },
+    {
+      enabled: isOpen,
+      ignoreAppLock: true,
+      ignoreInputs: false,
+      preventDefault: true,
+    },
+  );
+
   if (!isOpen) return null;
 
   return (
@@ -62,7 +79,7 @@ export function UpgradeConfirmationDialog({
           </OverlayPanelActionButton>
         </OverlayPanelActions>
         <OverlayPanelActionButton
-          ref={manageBillingRef}
+          ref={setManageBillingEl}
           variant="ghost"
           shortcut="M"
           disabled={isSubmitting}

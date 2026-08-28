@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
@@ -116,6 +117,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-6 py-2"
             disabled={isRedirecting}
             onClick={() => void redirectTo("checkout")}
+            onPointerEnter={focusOnPointerEnter}
             type="button"
           >
             {isRedirecting
@@ -130,6 +132,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             className={SECONDARY_BUTTON_CLASSNAME}
             disabled={isRedirecting}
             onClick={secondary.onClick}
+            onPointerEnter={focusOnPointerEnter}
             type="button"
           >
             {isRedirecting && secondary.key === "M"
