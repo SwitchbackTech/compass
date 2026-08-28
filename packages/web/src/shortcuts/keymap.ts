@@ -22,8 +22,8 @@ export const KEYMAP = {
     keycaps: ["Mod", "1-9"],
   },
   // Same hold-Mod gesture outside the form: digits follow the active view's
-  // target list order (page-jump.targets.ts). Day view appends calendar
-  // columns after the shared 1–4 page areas, up to the physical top row.
+  // target list order (page-jump.targets.ts). Day view numbers left to right
+  // (view, columns, sidebar), up to the physical top row.
   jumpPageTarget: {
     holdModifier: "Mod",
     digits: ["1", "9"],
