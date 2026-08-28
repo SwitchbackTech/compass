@@ -36,40 +36,57 @@ describe.each([
 });
 
 describe("buildDayPageJumpTargets", () => {
-  it("appends writable columns after the shared 1-4 page areas", () => {
+  it("numbers left to right: view, columns, then sidebar", () => {
     const personal = { id: "cal-personal", name: "Personal" };
     const work = { id: "cal-work", name: "Work" };
     const targets = buildDayPageJumpTargets([personal, work]);
 
-    expect(targets.slice(0, 4)).toEqual([...CALENDAR_PAGE_JUMP_TARGETS]);
-    expect(targets[4]).toEqual({
-      digit: "5",
-      id: dayColumnJumpId(personal.id),
-      label: "Personal",
-    });
-    expect(targets[5]).toEqual({
-      digit: "6",
-      id: dayColumnJumpId(work.id),
+    expect(
+      targets.map(({ digit, id, label }) => ({ digit, id, label })),
+    ).toEqual([
+      { digit: "1", id: "view-select", label: "View dropdown" },
+      { digit: "2", id: dayColumnJumpId(personal.id), label: "Personal" },
+      { digit: "3", id: dayColumnJumpId(work.id), label: "Work" },
+      { digit: "4", id: "month-picker", label: "Month picker" },
+      { digit: "5", id: "up-next", label: "Up next" },
+      { digit: "6", id: "calendars", label: "Calendar list" },
+    ]);
+  });
+
+  it("starts the first column at 2 so sidebar digits follow the columns", () => {
+    const targets = buildDayPageJumpTargets([{ id: "cal-1", name: "Work" }]);
+    expect(targets.map((target) => target.digit)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+    expect(targets[1]).toEqual({
+      digit: "2",
+      id: dayColumnJumpId("cal-1"),
       label: "Work",
     });
+    expect(targets.at(-1)).toMatchObject({ id: "calendars", digit: "5" });
   });
 
-  it("keeps column digits at 5+ when earlier page areas would be unmounted", () => {
-    const targets = buildDayPageJumpTargets([{ id: "cal-1", name: "Work" }]);
-    expect(targets[4]?.digit).toBe("5");
-  });
-
-  it("omits calendars past the physical top-row keys", () => {
-    const extraSlots =
-      PICK_KEY_LABELS.length - CALENDAR_PAGE_JUMP_TARGETS.length;
-    const calendars = Array.from({ length: extraSlots + 3 }, (_, index) => ({
+  it("omits calendars that would overflow the reserved sidebar slots", () => {
+    const sidebarCount = CALENDAR_PAGE_JUMP_TARGETS.length - 1;
+    const maxColumns = PICK_KEY_LABELS.length - 1 - sidebarCount;
+    const calendars = Array.from({ length: maxColumns + 3 }, (_, index) => ({
       id: `cal-${index}`,
       name: `Calendar ${index}`,
     }));
     const targets = buildDayPageJumpTargets(calendars);
 
     expect(targets).toHaveLength(PICK_KEY_LABELS.length);
-    expect(targets.at(-1)?.digit).toBe(PICK_KEY_LABELS.at(-1));
+    expect(targets.at(-1)).toMatchObject({
+      id: "calendars",
+      digit: PICK_KEY_LABELS.at(-1),
+    });
+    expect(
+      targets.filter((target) => target.id.startsWith("day-column:")),
+    ).toHaveLength(maxColumns);
   });
 });
 

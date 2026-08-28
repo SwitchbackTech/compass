@@ -64,10 +64,10 @@ palette).
 
 The hold is the same everywhere. Digits are a single namespace, so the
 open event form takes them over for its fields (1–9 in DOM order). With
-the form closed, the same hold numbers page areas (sidebar, month picker,
-Up next, calendars — or Life's grid/variation/details). Day view then
-appends writable calendar columns at 5, 6, … so a user can land focus on
-a column and Shift+Arrow / C can seed a draft there.
+the form closed, the same hold numbers page areas left to right (view
+dropdown, then Day calendar columns, then month picker / Up next /
+calendars — or Life's grid/variation/details). Day view inserts writable
+columns after `1` so Shift+Arrow / C can seed a draft on a focused column.
 
 Do not run both maps at once. Do not invent a second hold key.
 
@@ -99,5 +99,5 @@ Form field digits live in
 `packages/web/src/shortcuts/edit-sequence/edit-sequence.fields.ts` (DOM
 order, 1–9). Page-area digits live in
 `packages/web/src/shortcuts/page-jump/page-jump.targets.ts`. Day-view
-calendar columns are built by `buildDayPageJumpTargets` and append after
-the shared 1–4 page areas.
+calendar columns are built by `buildDayPageJumpTargets` in left-to-right
+order (view, columns, sidebar).

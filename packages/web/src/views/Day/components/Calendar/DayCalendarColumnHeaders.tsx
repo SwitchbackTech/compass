@@ -48,7 +48,7 @@ export const DayCalendarColumnHeaders = ({
                 {isWritable ? (
                   <button
                     aria-label={`Focus ${calendar.name} column`}
-                    className="c-focus-ring flex min-w-0 items-center justify-center gap-2 rounded-sm"
+                    className="c-focus-ring flex w-full min-w-0 items-center justify-center gap-2 rounded-sm"
                     onBlur={(event) => {
                       const next = event.relatedTarget;
                       if (

@@ -1,5 +1,4 @@
 import type React from "react";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 const MONTH_NAV_BUTTON_HOVER_COLOR = "rgba(255,255,255,0.2)";
@@ -11,8 +10,6 @@ type MonthNavButtonProps = {
   isSidebarStyle?: boolean;
   onClick: () => void;
   shortcut?: string | string[];
-  holdHintKeys?: readonly string[];
-  showHoldHints?: boolean;
 };
 
 export const MonthNavButton = ({
@@ -22,8 +19,6 @@ export const MonthNavButton = ({
   isSidebarStyle = false,
   onClick,
   shortcut,
-  holdHintKeys,
-  showHoldHints = false,
 }: MonthNavButtonProps) => {
   const button = (
     <button
@@ -70,19 +65,7 @@ export const MonthNavButton = ({
     </button>
   );
 
-  const withHoldHint =
-    showHoldHints && holdHintKeys && holdHintKeys.length > 0 ? (
-      <span className="relative inline-flex">
-        {button}
-        <span className="pointer-events-none absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2">
-          <ShortcutKeys keys={[...holdHintKeys]} />
-        </span>
-      </span>
-    ) : (
-      button
-    );
+  if (!shortcut) return button;
 
-  if (!shortcut) return withHoldHint;
-
-  return <TooltipWrapper shortcut={shortcut}>{withHoldHint}</TooltipWrapper>;
+  return <TooltipWrapper shortcut={shortcut}>{button}</TooltipWrapper>;
 };
