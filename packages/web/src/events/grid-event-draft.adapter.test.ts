@@ -4,6 +4,7 @@ import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
+import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEventDraft } from "@web/events/event-draft.types";
@@ -115,7 +116,7 @@ test("attaches a create draft clientId as CreateEventInput.id", () => {
       end: new Date("2026-07-11T10:00:00-06:00"),
       timeZone: "America/Denver",
     },
-    clientId as Event["id"],
+    EventIdSchema.parse(clientId),
     timedEvent.calendarId,
   );
 

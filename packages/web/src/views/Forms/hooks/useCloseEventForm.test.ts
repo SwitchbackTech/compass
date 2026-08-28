@@ -144,4 +144,25 @@ describe("useCloseEventForm", () => {
     expect(useDraftStore.getState()).toEqual(initialDraftState);
     expect(document.activeElement).toBe(savedCard);
   });
+
+  it("ignores a non-string close argument and focuses the draft id", () => {
+    const draft = editGridEventDraft(
+      createMockEvent({ id: EventIdSchema.parse(EXISTING_EVENT_ID) }),
+    );
+    if (!draft) throw new Error("expected an edit draft");
+
+    const card = document.createElement("button");
+    card.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EXISTING_EVENT_ID);
+    card.tabIndex = 0;
+    document.body.appendChild(card);
+
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    draftActions.setFormOpen(true);
+
+    const { result } = renderHook(() => useCloseEventForm());
+    result.current({} as never);
+    flushFrame();
+
+    expect(document.activeElement).toBe(card);
+  });
 });

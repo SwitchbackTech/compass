@@ -124,9 +124,7 @@ export function useSaveEventForm() {
           // newly minted create id would miss the card and dump Tab onto
           // the month picker.
           const id =
-            parsed.input.id ??
-            draft.clientId ??
-            EventIdSchema.parse(createObjectIdString());
+            parsed.input.id ?? EventIdSchema.parse(createObjectIdString());
           const input =
             invitation === undefined
               ? { ...parsed.input, id }
