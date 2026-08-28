@@ -259,6 +259,11 @@ export const handleError = (error: Error) => {
 
   const mutationError = parseExpectedMutationError(error);
   if (mutationError) {
+    // Look-around writes are refused on purpose: the billing gate is the
+    // feedback. A catch-all toast on top of it reads as an unexpected crash.
+    if (mutationError.code === "BILLING_REQUIRED") {
+      return;
+    }
     // The backend authored a known mutation failure: tell the user what
     // actually happened when we have copy for it (a generic toast on a
     // deterministic refusal reads as "try again", which can never work).
