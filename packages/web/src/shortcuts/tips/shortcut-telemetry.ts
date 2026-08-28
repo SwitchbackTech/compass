@@ -16,7 +16,7 @@ const PRESENTATION_DEDUPE_MS = 30 * 1000;
 
 type ActiveSuggestion = Pick<
   RankedShortcutHint,
-  "actionId" | "featureArea" | "id" | "rank" | "reasonCode"
+  "actionId" | "featureArea" | "id" | "reasonCode"
 >;
 
 let activeSuggestion: ActiveSuggestion | null = null;
@@ -25,13 +25,12 @@ const lastPresentationByKey = new Map<string, number>();
 const suggestionProperties = (suggestion: ActiveSuggestion) => ({
   action_id: suggestion.actionId,
   feature_area: suggestion.featureArea,
-  rank: suggestion.rank,
+  rank: 1,
   reason_code: suggestion.reasonCode,
   source: "sidebar_status",
 });
 
 const emptyUsage = (): ShortcutActionUsage => ({
-  engagements: 0,
   invocations: 0,
   recentImpressions: 0,
 });
@@ -100,7 +99,6 @@ export function recordShortcutInvocation(
   const engaged = activeSuggestion?.actionId === hint.actionId;
   updateUsage(hint.actionId, (current) => ({
     ...current,
-    engagements: current.engagements + (engaged ? 1 : 0),
     invocations: current.invocations + 1,
     lastInvokedAt: now,
   }));

@@ -70,7 +70,6 @@ describe("shortcut telemetry", () => {
   it("captures one privacy-safe shown event and deduplicates an immediate remount", () => {
     const suggestion = {
       ...getShortcutHint("page-jump"),
-      rank: 1,
       reasonCode: "calendar_idle" as const,
     };
 
@@ -95,7 +94,6 @@ describe("shortcut telemetry", () => {
     beginShortcutSuggestionPresentation(
       {
         ...getShortcutHint("page-jump"),
-        rank: 1,
         reasonCode: "local_discovery",
       },
       100_000,
@@ -122,7 +120,7 @@ describe("shortcut telemetry", () => {
     });
     expect(
       readShortcutUsageProfile().actions["calendar.page_jump"],
-    ).toMatchObject({ engagements: 1, invocations: 1, lastInvokedAt: 200_000 });
+    ).toMatchObject({ invocations: 1, lastInvokedAt: 200_000 });
   });
 
   it("captures a detectable unavailable attempt without key or content data", () => {

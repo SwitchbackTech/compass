@@ -58,15 +58,15 @@ function ranked(
   id: ShortcutHintId,
   reasonCode = getShortcutHint(id).suggestionReason,
 ): RankedShortcutHint {
-  return { ...getShortcutHint(id), rank: 1, reasonCode };
+  return { ...getShortcutHint(id), reasonCode };
 }
 
 /**
  * Next-shortcut for the sidebar status bar. First-event create/save stay
- * sticky; afterwards the pick is the first undemonstrated id in a context
- * pool ordered by Shortcut Showcase levels, then a rotation once the pool
- * is exhausted. Mode indicators and operational status are chosen by the
- * bar itself.
+ * sticky; afterwards rankShortcutHints scores the context pool (untried
+ * actions, recency, fatigue) and uses the deterministic showcase order as
+ * the tie-breaker. Mode indicators and operational status are chosen by
+ * the bar itself.
  */
 export function selectShortcutHint(
   ctx: ShortcutHintContext,

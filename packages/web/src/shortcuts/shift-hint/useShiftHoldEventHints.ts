@@ -35,6 +35,7 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { createKeyupSwallow } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
@@ -188,7 +189,6 @@ export function useShiftHoldEventHints({
   const bufferRef = useRef("");
   const assignmentsRef = useRef<DayJumpAssignment[]>([]);
   const visibleByIdRef = useRef<Map<string, ShiftHintFocusTarget>>(new Map());
-  const suppressKeyUpRef = useRef(new Set<string>());
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -206,6 +206,8 @@ export function useShiftHoldEventHints({
   isActiveRef.current = isActive;
 
   useEffect(() => {
+    const keyupSwallow = createKeyupSwallow();
+
     const clearAmbiguousCommitTimer = () => {
       if (ambiguousCommitTimerRef.current !== null) {
         clearTimeout(ambiguousCommitTimerRef.current);
@@ -378,7 +380,7 @@ export function useShiftHoldEventHints({
           event.stopPropagation();
           activate();
           if (isActiveRef.current) {
-            suppressKeyUpRef.current.add(KEYMAP.eventJump.bareLetter);
+            keyupSwallow.add(KEYMAP.eventJump.bareLetter);
           }
           return;
         }
@@ -399,7 +401,7 @@ export function useShiftHoldEventHints({
         event.stopPropagation();
         activate();
         if (!isActiveRef.current) return;
-        suppressKeyUpRef.current.add(key);
+        keyupSwallow.add(key);
         applyMatch(match);
         return;
       }
@@ -444,7 +446,7 @@ export function useShiftHoldEventHints({
         stripDigitBuffer();
         event.preventDefault();
         event.stopPropagation();
-        suppressKeyUpRef.current.add(key);
+        keyupSwallow.add(key);
         if (key === KEYMAP.eventJump.bareLetter) {
           deactivate();
         }
@@ -453,16 +455,12 @@ export function useShiftHoldEventHints({
 
       event.preventDefault();
       event.stopPropagation();
-      suppressKeyUpRef.current.add(key);
+      keyupSwallow.add(key);
       applyMatch(match);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = normalizedKeyboardKey(event);
-      if (!suppressKeyUpRef.current.has(key)) return;
-      suppressKeyUpRef.current.delete(key);
-      event.preventDefault();
-      event.stopPropagation();
+      keyupSwallow.consume(event);
     };
 
     const onBlur = () => {
@@ -502,7 +500,7 @@ export function useShiftHoldEventHints({
 
     return () => {
       clearAmbiguousCommitTimer();
-      suppressKeyUpRef.current.clear();
+      keyupSwallow.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);

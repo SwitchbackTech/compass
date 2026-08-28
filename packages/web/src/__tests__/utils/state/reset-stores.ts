@@ -9,6 +9,10 @@ import {
   initialUserMetadataState,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import {
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
 import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-accounts.store";
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
@@ -52,6 +56,7 @@ import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { resetShortcutTelemetryForTests } from "@web/shortcuts/tips/shortcut-telemetry";
 import { resetShortcutHintProgressStoreForTests } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
@@ -87,7 +92,9 @@ const storeResets: StoreReset[] = [
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),
+  () => useBillingPreviewStore.setState(initialBillingPreviewState, true),
   resetShortcutHintProgressStoreForTests,
+  resetShortcutTelemetryForTests,
 ];
 
 export function resetAllStores() {

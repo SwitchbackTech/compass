@@ -101,7 +101,6 @@ export function rankShortcutHints(
 
   return {
     ...getShortcutHint(selected.id),
-    rank: 1,
     reasonCode: personalizedReason(selected, fallback),
   };
 }

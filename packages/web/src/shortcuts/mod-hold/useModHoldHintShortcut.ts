@@ -2,6 +2,7 @@ import { resolveModifier } from "@tanstack/react-hotkeys";
 import { useEffect, useRef, useState } from "react";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { normalizedKeyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { createKeyupSwallow } from "@web/shortcuts/swallow-next-keyup";
 
 /**
  * How long Mod must be held, with nothing else pressed, before hint chips
@@ -62,7 +63,7 @@ export function useModHoldHintShortcut({
     const modKey = isMac ? "Meta" : "Control";
     let holdTimeoutId: ReturnType<typeof setTimeout> | null = null;
     let hintsVisible = false;
-    const suppressKeyUp = new Set<string>();
+    const keyupSwallow = createKeyupSwallow();
 
     const clearHoldTimer = () => {
       if (holdTimeoutId !== null) {
@@ -116,7 +117,7 @@ export function useModHoldHintShortcut({
         // macOS swallows this key's keyup while Cmd is held and replays it
         // with metaKey:false on release; suppress so nothing downstream
         // reacts to that replay as a bare keystroke.
-        suppressKeyUp.add(normalizedKeyboardKey(event));
+        keyupSwallow.add(normalizedKeyboardKey(event));
         hideHints();
         return;
       }
@@ -127,13 +128,7 @@ export function useModHoldHintShortcut({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = normalizedKeyboardKey(event);
-      if (suppressKeyUp.has(key)) {
-        suppressKeyUp.delete(key);
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
+      if (keyupSwallow.consume(event)) return;
 
       if (event.key === modKey) {
         hideHints();
@@ -158,7 +153,7 @@ export function useModHoldHintShortcut({
 
     return () => {
       hideHints();
-      suppressKeyUp.clear();
+      keyupSwallow.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       document.removeEventListener("pointerdown", onPointerDown, true);

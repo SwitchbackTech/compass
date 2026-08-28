@@ -56,6 +56,8 @@ export function RootShell() {
   const isPreviewable = readOnlyStatus === "awaiting_checkout";
   const showReadOnlyBanner = isPreviewable && isPreviewing;
   const gateStatus = showReadOnlyBanner ? null : readOnlyStatus;
+  const showCalendarOnboarding =
+    gateStatus === null && !deferCalendarOnboarding;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
   // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
@@ -70,9 +72,9 @@ export function RootShell() {
       <Outlet />
       <AuthModal />
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
-      {gateStatus === null && !deferCalendarOnboarding && <WelcomeModal />}
-      {gateStatus === null && !deferCalendarOnboarding && <ShortcutShowcase />}
-      {gateStatus === null && !deferCalendarOnboarding && <FirstEventPrompt />}
+      {showCalendarOnboarding && <WelcomeModal />}
+      {showCalendarOnboarding && <ShortcutShowcase />}
+      {showCalendarOnboarding && <FirstEventPrompt />}
       {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
       <PointerHint />
     </AuthModalProvider>

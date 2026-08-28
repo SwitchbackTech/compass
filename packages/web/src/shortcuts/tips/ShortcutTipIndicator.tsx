@@ -10,17 +10,16 @@ import { type RankedShortcutHint } from "@web/shortcuts/tips/shortcut-tips.data"
 export const ShortcutTipIndicator: FC<{ hint: RankedShortcutHint }> = ({
   hint,
 }) => {
-  const { actionId, featureArea, id, rank, reasonCode } = hint;
+  const { actionId, featureArea, id, reasonCode } = hint;
   useEffect(
     () =>
       beginShortcutSuggestionPresentation({
         actionId,
         featureArea,
         id,
-        rank,
         reasonCode,
       }),
-    [actionId, featureArea, id, rank, reasonCode],
+    [actionId, featureArea, id, reasonCode],
   );
 
   return (
