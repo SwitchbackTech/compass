@@ -1,6 +1,7 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
+import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { viewActions } from "@web/events/stores/view.store";
 import {
   settingsActions,
@@ -78,6 +79,7 @@ export function useNavigationShortcuts() {
   useAppShortcut(
     "Mod+K",
     () => {
+      if (useWelcomeGuideStore.getState().isFirstVisitOpen) return;
       const wasOpen = useSettingsStore.getState().isCmdPaletteOpen;
       settingsActions.toggleCmdPalette();
       if (!wasOpen) {

@@ -1,12 +1,22 @@
-import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import {
+  HotkeyManager,
+  HotkeysProvider,
+  resolveModifier,
+} from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
 } from "@web/events/stores/view.store";
+import {
+  initialSettingsState,
+  selectIsCmdPaletteOpen,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -49,11 +59,21 @@ function wrapper({ children }: PropsWithChildren) {
   return <HotkeysProvider>{children}</HotkeysProvider>;
 }
 
+const pressModK = () => {
+  const isMac = resolveModifier("Mod") === "Meta";
+  pressKey("k", {
+    keyDownInit: isMac ? { metaKey: true } : { ctrlKey: true },
+  });
+};
+
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
     mockNavigate.mockClear();
     mockPathname.value = "/week";
+    useSettingsStore.setState(initialSettingsState, true);
+    welcomeGuideActions.setFirstVisitOpen(false);
+    welcomeGuideActions.close();
   });
 
   it("does not navigate to Day view when a held-Cmd D keyup is replayed after a Mod+D press", async () => {
@@ -198,6 +218,35 @@ describe("useGlobalShortcuts", () => {
     });
 
     expect(mockNavigate).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("does not open the command palette while first-visit welcome is open", () => {
+    welcomeGuideActions.setFirstVisitOpen(true);
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressModK();
+    });
+
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(false);
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("toggles the command palette after first-visit welcome is dismissed", () => {
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressModK();
+    });
+
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(true);
 
     act(() => {
       unmount();

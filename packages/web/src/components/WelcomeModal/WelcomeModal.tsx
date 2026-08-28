@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
@@ -11,7 +12,12 @@ import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { PixelPirate } from "./PixelPirate";
+import {
+  flashedShortcutClass,
+  useFlashedWelcomeShortcut,
+} from "./useFlashedWelcomeShortcut";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
@@ -43,6 +49,7 @@ export function WelcomeModal() {
   // focusable (now Log in) or the Google button: Enter on an OAuth redirect
   // would fling a first-time visitor off-site before they read anything.
   const signUpButtonRef = useRef<HTMLButtonElement>(null);
+  const flashedKey = useFlashedWelcomeShortcut();
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
@@ -195,9 +202,17 @@ export function WelcomeModal() {
               type="button"
               onClick={() => handOffToAuth("log_in")}
               className="c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs"
+              {...pointerShortcutAttributes("i")}
             >
               Log in
-              <ShortcutHint className="ml-2">i</ShortcutHint>
+              <ShortcutHint
+                className={classNames(
+                  "ml-2",
+                  flashedShortcutClass(flashedKey, "i"),
+                )}
+              >
+                i
+              </ShortcutHint>
             </button>
           </div>
         </div>
@@ -210,13 +225,21 @@ export function WelcomeModal() {
           <div className="flex w-full flex-col items-center gap-3">
             {isGoogleAvailable && (
               <>
-                <GoogleButton
-                  onClick={handOffToGoogle}
-                  disabled={isGoogleAuthLoading}
-                  label="Continue with Google"
-                  shortcutKey="G"
-                  style={{ width: "100%" }}
-                />
+                <div
+                  className={classNames(
+                    "w-full",
+                    flashedKey?.toLowerCase() === "g" && "c-shortcut-flash",
+                  )}
+                  {...pointerShortcutAttributes("G")}
+                >
+                  <GoogleButton
+                    onClick={handOffToGoogle}
+                    disabled={isGoogleAuthLoading}
+                    label="Continue with Google"
+                    shortcutKey="G"
+                    style={{ width: "100%" }}
+                  />
+                </div>
                 <p className="text-center text-text-muted text-xs">
                   Signs you up and connects your Google Calendar.
                 </p>
@@ -227,17 +250,33 @@ export function WelcomeModal() {
               ref={signUpButtonRef}
               onClick={() => handOffToAuth("sign_up")}
               className="c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full"
+              {...pointerShortcutAttributes("U")}
             >
               {isGoogleAvailable ? "Sign up with email" : "Sign up"}
-              <ShortcutHint className="ml-2">U</ShortcutHint>
+              <ShortcutHint
+                className={classNames(
+                  "ml-2",
+                  flashedShortcutClass(flashedKey, "U"),
+                )}
+              >
+                U
+              </ShortcutHint>
             </button>
             <button
               type="button"
               onClick={() => dismiss("explore")}
               className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+              {...pointerShortcutAttributes("S")}
             >
               Explore without an account
-              <ShortcutHint className="ml-2">S</ShortcutHint>
+              <ShortcutHint
+                className={classNames(
+                  "ml-2",
+                  flashedShortcutClass(flashedKey, "S"),
+                )}
+              >
+                S
+              </ShortcutHint>
             </button>
           </div>
         </WelcomeGuideBody>

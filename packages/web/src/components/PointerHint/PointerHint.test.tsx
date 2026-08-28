@@ -62,7 +62,7 @@ describe("PointerHint", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Compass is keyboard only.",
+      "Use the keys on this screen.",
     );
     expect(screen.getByRole("status")).not.toHaveTextContent("Press");
   });
@@ -76,9 +76,38 @@ describe("PointerHint", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Compass is keyboard only.",
+      "Use the keys on this screen.",
     );
     expect(screen.getByRole("status")).not.toHaveTextContent("Press");
+  });
+
+  it("teaches the matching welcome shortcut for the attempted control", () => {
+    welcomeGuideActions.setFirstVisitOpen(true);
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "1",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Press 1");
+  });
+
+  it("keeps the welcome shortcut sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    welcomeGuideActions.setFirstVisitOpen(true);
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "U",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Press U");
   });
 
   it("points at the on-screen keys while the showcase is active", () => {
