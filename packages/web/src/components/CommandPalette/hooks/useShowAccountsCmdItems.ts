@@ -1,5 +1,7 @@
 import { UsersIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { getPlanBadge } from "@web/billing/planBadge";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { settingsActions } from "@web/settings/settings.store";
 
@@ -13,6 +15,9 @@ import { settingsActions } from "@web/settings/settings.store";
  */
 export const useShowAccountsCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
+  // Reads billing status, so this hook now needs a QueryClient in scope. Both
+  // palettes mount inside CompassProvider, but bare hook tests must wrap.
+  const access = useAppAccess();
 
   if (!authenticated) {
     return [];
@@ -36,7 +41,13 @@ export const useShowAccountsCmdItems = (): CommandItem[] => {
         "remove account",
         "export data",
         "delete account",
+        "plan",
+        "billing",
+        "subscription",
+        "premium",
+        "trial",
       ],
+      badge: getPlanBadge(access)?.label,
       onClick: settingsActions.openSettings,
     },
   ];

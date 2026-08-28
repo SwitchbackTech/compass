@@ -223,9 +223,14 @@ const CommandPaletteContent = ({
                             item.label
                           )}
                         </span>
+                        {item.badge && (
+                          <span className="ml-auto shrink-0 rounded border border-border px-1.5 text-text-muted text-xs">
+                            {item.badge}
+                          </span>
+                        )}
                         {item.shortcut && (
                           <ShortcutKeys
-                            className="ml-auto shrink-0"
+                            className={`shrink-0 ${item.badge ? "" : "ml-auto"}`}
                             keys={item.shortcut}
                           />
                         )}
