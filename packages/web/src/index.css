@@ -156,6 +156,7 @@
   --animate-showcase-curtain: showcaseCurtain 900ms ease-in-out forwards;
   --animate-showcase-enter-stage: showcaseEnterStage 550ms
     cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-keycap-flash: keycapFlash 700ms ease-out both;
 
   @keyframes loaderSpin {
     from {
@@ -223,6 +224,17 @@
     }
     75% {
       transform: translate(6.25%, -6.25%);
+    }
+  }
+
+  @keyframes keycapFlash {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    35% {
+      transform: scale(1.2);
+      box-shadow: 0 0 0 2px var(--color-text);
     }
   }
 
@@ -478,6 +490,18 @@
     width: 1em;
     height: 1em;
     flex-shrink: 0;
+  }
+}
+
+@utility c-keycap-flash {
+  animation: var(--animate-keycap-flash);
+  @apply motion-reduce:animate-none;
+}
+
+@utility c-shortcut-flash {
+  & .c-keycap {
+    animation: var(--animate-keycap-flash);
+    @apply motion-reduce:animate-none;
   }
 }
 

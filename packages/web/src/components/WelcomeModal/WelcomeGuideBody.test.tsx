@@ -1,23 +1,17 @@
-import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+  initialPointerBlockState,
+  pointerBlockActions,
+  usePointerBlockStore,
+} from "@web/shortcuts/keyboard-only/pointer-block.store";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { afterEach, describe, expect, it, mock } from "bun:test";
-
-const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
 
 const pressWindowKey = (init: KeyboardEventInit) => {
   act(() => {
     window.dispatchEvent(
       new KeyboardEvent("keydown", { bubbles: true, ...init }),
-    );
-  });
-};
-
-const releaseWindowKey = (init: KeyboardEventInit) => {
-  act(() => {
-    window.dispatchEvent(
-      new KeyboardEvent("keyup", { bubbles: true, ...init }),
     );
   });
 };
@@ -35,15 +29,25 @@ const captureLinkClick = (name: string) => {
 
 describe("WelcomeGuideBody", () => {
   afterEach(() => {
-    releaseWindowKey({ key: modKey });
+    usePointerBlockStore.setState(initialPointerBlockState, true);
   });
 
   it("explains that numbered shortcuts open the FAQ", () => {
     renderWelcomeGuide();
 
     expect(screen.getByText(/Tip:/)).toBeTruthy();
-    expect(screen.getByText(/to see keys, then press a number/)).toBeTruthy();
-    expect(screen.queryByText(/The same hold reveals jump keys/)).toBeNull();
+    expect(
+      screen.getByText(/Press a number to open a question or a link/),
+    ).toBeTruthy();
+  });
+
+  it("shows numbered keycaps without holding Mod", () => {
+    renderWelcomeGuide();
+
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("6")).toBeTruthy();
+    expect(screen.getByText("0")).toBeTruthy();
   });
 
   it("toggles a FAQ with a bare digit", async () => {
@@ -63,24 +67,6 @@ describe("WelcomeGuideBody", () => {
 
     pressWindowKey({ key: "1", code: "Digit1" });
     expect(question).toHaveAttribute("aria-expanded", "false");
-  });
-
-  it("reveals numbered keycaps while Mod is held", async () => {
-    renderWelcomeGuide();
-
-    expect(screen.queryByText("1")).toBeNull();
-
-    pressWindowKey({ key: modKey });
-
-    expect(screen.getByText("1")).toBeTruthy();
-    expect(screen.getByText("5")).toBeTruthy();
-    expect(screen.getByText("6")).toBeTruthy();
-    expect(screen.getByText("0")).toBeTruthy();
-
-    releaseWindowKey({ key: modKey });
-
-    expect(screen.queryByText("1")).toBeNull();
-    expect(screen.queryByText("6")).toBeNull();
   });
 
   it("still lets a click expand a question", async () => {
@@ -148,5 +134,51 @@ describe("WelcomeGuideBody", () => {
     expect(github).toHaveBeenCalledTimes(1);
     expect(privacy).toHaveBeenCalledTimes(1);
     expect(terms).toHaveBeenCalledTimes(1);
+  });
+
+  it("flashes the matching FAQ key after a blocked click, then clears", async () => {
+    renderWelcomeGuide();
+
+    const question = screen.getByRole("button", {
+      name: "Who is Compass for?",
+    });
+    const hintWrap = question.nextElementSibling;
+    expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "1",
+      });
+    });
+
+    expect(hintWrap?.className).toMatch(/c-keycap-flash/);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({ actionId: "unknown" });
+    });
+
+    expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
+  });
+
+  it("does not replay a leftover flash when the guide remounts", () => {
+    const first = renderWelcomeGuide();
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "1",
+      });
+    });
+
+    first.unmount();
+    renderWelcomeGuide();
+
+    const question = screen.getByRole("button", {
+      name: "Who is Compass for?",
+    });
+    expect(question.nextElementSibling?.className).not.toMatch(
+      /c-keycap-flash/,
+    );
   });
 });

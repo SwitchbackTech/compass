@@ -50,7 +50,8 @@ const Key = ({ children }: { children: string }) => (
 const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
-  attempt?.actionId === POINTER_ACTIONS.eventOpen;
+  attempt?.actionId === POINTER_ACTIONS.eventOpen ||
+  Boolean(attempt?.shortcutKey);
 
 const pointerHintMessage = ({
   attempt,
@@ -96,9 +97,17 @@ const pointerHintMessage = ({
     );
   }
 
+  if (welcomeOpen && attempt?.shortcutKey) {
+    return (
+      <>
+        Press <Key>{attempt.shortcutKey}</Key>
+      </>
+    );
+  }
+
   if (isBrief) return "Keyboard only.";
 
-  if (welcomeOpen) return "Compass is keyboard only.";
+  if (welcomeOpen) return "Use the keys on this screen.";
 
   return (
     <>

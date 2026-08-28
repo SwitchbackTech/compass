@@ -3,9 +3,12 @@ import {
   LinkedinLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
+import classNames from "classnames";
 import { type ReactNode } from "react";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
+import { flashedShortcutClass } from "./useFlashedWelcomeShortcut";
 
 const SOCIAL_ICONS = {
   x: XLogoIcon,
@@ -31,7 +34,7 @@ function JumpAnchor({
   digit,
   href,
   label,
-  isModHeld,
+  flashedKey,
   className,
   children,
 }: {
@@ -39,7 +42,7 @@ function JumpAnchor({
   digit: string;
   href: string;
   label?: string;
-  isModHeld: boolean;
+  flashedKey: string | null;
   className: string;
   children: ReactNode;
 }) {
@@ -51,14 +54,22 @@ function JumpAnchor({
       aria-label={label}
       className={className}
       data-welcome-jump={String(jumpIndex)}
+      {...pointerShortcutAttributes(digit)}
     >
       {children}
-      {isModHeld && <ShortcutHint className="shrink-0">{digit}</ShortcutHint>}
+      <span
+        className={classNames(
+          "shrink-0",
+          flashedShortcutClass(flashedKey, digit),
+        )}
+      >
+        <ShortcutHint>{digit}</ShortcutHint>
+      </span>
     </a>
   );
 }
 
-export function WelcomeLinks({ isModHeld }: { isModHeld: boolean }) {
+export function WelcomeLinks({ flashedKey }: { flashedKey: string | null }) {
   return (
     <div className="flex items-center justify-between border-border border-t pt-4">
       <div className="flex items-center gap-3">
@@ -71,7 +82,7 @@ export function WelcomeLinks({ isModHeld }: { isModHeld: boolean }) {
               digit={String(index + 6)}
               href={href}
               label={label}
-              isModHeld={isModHeld}
+              flashedKey={flashedKey}
               className="c-focus-ring inline-flex items-center gap-1 text-text-muted transition-colors hover:text-text"
             >
               <SocialIcon size={18} weight="bold" />
@@ -86,7 +97,7 @@ export function WelcomeLinks({ isModHeld }: { isModHeld: boolean }) {
             jumpIndex={SOCIAL_LINKS.length + index}
             digit={digit}
             href={href}
-            isModHeld={isModHeld}
+            flashedKey={flashedKey}
             className="c-focus-ring inline-flex items-center gap-1 underline-offset-4 hover:text-text hover:underline"
           >
             {label}

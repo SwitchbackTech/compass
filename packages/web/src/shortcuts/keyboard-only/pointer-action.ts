@@ -1,5 +1,6 @@
 export const POINTER_ACTION_ATTRIBUTE = "data-pointer-action";
 export const POINTER_EVENT_ID_ATTRIBUTE = "data-pointer-event-id";
+export const POINTER_SHORTCUT_ATTRIBUTE = "data-pointer-shortcut";
 export const POINTER_EVENT_JUMP_REQUEST = "compass:pointer-event-jump";
 
 export const POINTER_ACTIONS = {
@@ -14,6 +15,7 @@ export type PointerActionId =
 export type BlockedPointerAttempt = {
   actionId: PointerActionId | "unknown";
   eventId?: string;
+  shortcutKey?: string;
 };
 
 const POINTER_ACTION_IDS = new Set<string>(Object.values(POINTER_ACTIONS));
@@ -24,16 +26,36 @@ const isPointerActionId = (value: string): value is PointerActionId =>
 export const resolveBlockedPointerAttempt = (
   path: EventTarget[],
 ): BlockedPointerAttempt => {
+  let actionId: PointerActionId | "unknown" = "unknown";
+  let eventId: string | undefined;
+  let shortcutKey: string | undefined;
+
   for (const target of path) {
     if (!(target instanceof HTMLElement)) continue;
-    const action = target.getAttribute(POINTER_ACTION_ATTRIBUTE);
-    if (!action || !isPointerActionId(action)) continue;
-    const eventId =
-      target.getAttribute(POINTER_EVENT_ID_ATTRIBUTE) ?? undefined;
-    return { actionId: action, ...(eventId ? { eventId } : {}) };
+    if (actionId === "unknown") {
+      const action = target.getAttribute(POINTER_ACTION_ATTRIBUTE);
+      if (action && isPointerActionId(action)) {
+        actionId = action;
+        eventId = target.getAttribute(POINTER_EVENT_ID_ATTRIBUTE) ?? undefined;
+      }
+    }
+    if (shortcutKey === undefined) {
+      const shortcut = target.getAttribute(POINTER_SHORTCUT_ATTRIBUTE);
+      if (shortcut) shortcutKey = shortcut;
+    }
+    if (actionId !== "unknown" && shortcutKey !== undefined) break;
   }
-  return { actionId: "unknown" };
+
+  return {
+    actionId,
+    ...(eventId ? { eventId } : {}),
+    ...(shortcutKey ? { shortcutKey } : {}),
+  };
 };
+
+export const pointerShortcutAttributes = (key: string) => ({
+  [POINTER_SHORTCUT_ATTRIBUTE]: key,
+});
 
 const PRIMARY_POINTER_BUTTON = 0;
 

@@ -2,6 +2,7 @@ import {
   POINTER_ACTION_ATTRIBUTE,
   POINTER_ACTIONS,
   POINTER_EVENT_ID_ATTRIBUTE,
+  POINTER_SHORTCUT_ATTRIBUTE,
   resolveBlockedPointerAttempt,
   teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
@@ -25,6 +26,30 @@ describe("resolveBlockedPointerAttempt", () => {
     expect(
       resolveBlockedPointerAttempt([document.createElement("div"), document]),
     ).toEqual({ actionId: "unknown" });
+  });
+
+  it("attaches the nearest shortcut key from the composed path", () => {
+    const outer = document.createElement("div");
+    outer.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "U");
+    const inner = document.createElement("button");
+    inner.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "1");
+
+    expect(resolveBlockedPointerAttempt([inner, outer, document])).toEqual({
+      actionId: "unknown",
+      shortcutKey: "1",
+    });
+  });
+
+  it("keeps an action and a shortcut from different ancestors", () => {
+    const outer = document.createElement("div");
+    outer.setAttribute(POINTER_ACTION_ATTRIBUTE, POINTER_ACTIONS.sidebarOpen);
+    const inner = document.createElement("span");
+    inner.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "S");
+
+    expect(resolveBlockedPointerAttempt([inner, outer, document])).toEqual({
+      actionId: POINTER_ACTIONS.sidebarOpen,
+      shortcutKey: "S",
+    });
   });
 });
 

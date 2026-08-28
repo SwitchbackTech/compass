@@ -1,14 +1,20 @@
+import classNames from "classnames";
 import { type ReactNode, useCallback, useId, useState } from "react";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { FAQ_ITEMS } from "./faq";
+import {
+  flashedShortcutClass,
+  useFlashedWelcomeShortcut,
+} from "./useFlashedWelcomeShortcut";
 import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
 import { WelcomeLinks } from "./WelcomeLinks";
 
 export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
   const disclosureIdPrefix = useId();
   const faqHintId = `${disclosureIdPrefix}-faq-hint`;
+  const flashedKey = useFlashedWelcomeShortcut();
   const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
     () => new Set(),
   );
@@ -35,7 +41,7 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
     [toggleFaq],
   );
 
-  const isModHeld = useWelcomeJumpShortcuts(toggleFaqAt);
+  useWelcomeJumpShortcuts(toggleFaqAt);
 
   return (
     <>
@@ -57,10 +63,14 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
           const isExpanded = expandedFaqs.has(item.question);
           const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
           const state = isExpanded ? "open" : "closed";
+          const digit = String(index + 1);
 
           return (
             <div key={item.question} className="py-3">
-              <div className="flex items-center justify-between gap-3">
+              <div
+                className="flex items-center justify-between gap-3"
+                {...pointerShortcutAttributes(digit)}
+              >
                 <button
                   type="button"
                   aria-controls={answerId}
@@ -70,9 +80,14 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
                 >
                   {item.question}
                 </button>
-                {isModHeld && (
-                  <ShortcutHint className="shrink-0">{index + 1}</ShortcutHint>
-                )}
+                <span
+                  className={classNames(
+                    "shrink-0",
+                    flashedShortcutClass(flashedKey, digit),
+                  )}
+                >
+                  <ShortcutHint>{digit}</ShortcutHint>
+                </span>
               </div>
               <div
                 id={answerId}
@@ -96,13 +111,10 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
       </div>
 
       <p id={faqHintId} className="text-text-muted text-xs leading-relaxed">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap">
-          Tip: Hold <ShortcutKeys keys={["Mod"]} /> to see keys, then press a
-          number.
-        </span>
+        Tip: Press a number to open a question or a link.
       </p>
       {children}
-      <WelcomeLinks isModHeld={isModHeld} />
+      <WelcomeLinks flashedKey={flashedKey} />
     </>
   );
 }

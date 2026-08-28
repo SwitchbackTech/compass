@@ -1,6 +1,7 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
+import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { viewActions } from "@web/events/stores/view.store";
 import {
   settingsActions,
@@ -78,6 +79,11 @@ export function useNavigationShortcuts() {
   useAppShortcut(
     "Mod+K",
     () => {
+      // Blur after this gate: first-visit welcome keys live on a focused
+      // child, and stealing focus here would leave S / Escape with nowhere
+      // to land.
+      if (useWelcomeGuideStore.getState().isFirstVisitOpen) return;
+      (document.activeElement as HTMLElement | null)?.blur?.();
       const wasOpen = useSettingsStore.getState().isCmdPaletteOpen;
       settingsActions.toggleCmdPalette();
       if (!wasOpen) {
@@ -86,7 +92,6 @@ export function useNavigationShortcuts() {
     },
     {
       ignoreInputs: false,
-      blurOnTrigger: true,
       ignoreAppLock: true,
     },
   );
