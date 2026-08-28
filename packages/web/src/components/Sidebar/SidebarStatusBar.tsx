@@ -109,7 +109,7 @@ export const SidebarStatusBar: FC = () => {
             text ? `${text}. Open account settings` : "Open account settings"
           }
           className="c-focus-ring flex min-w-0 flex-1 items-center justify-center self-stretch rounded-xs"
-          onClick={settingsActions.openSettings}
+          onClick={() => settingsActions.openSettings()}
           title={text || undefined}
           type="button"
         >

@@ -20,6 +20,7 @@ import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmd
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
+import { useShowBillingCmdItems } from "@web/components/CommandPalette/hooks/useShowBillingCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
 import { useUpgradeCmdItems } from "@web/components/CommandPalette/hooks/useUpgradeCmdItems";
 import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
@@ -301,6 +302,7 @@ export const CommandPalette = ({
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const showAccountsCmdItems = useShowAccountsCmdItems();
+  const showBillingCmdItems = useShowBillingCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const themeCmdItems = useThemeCmdItems();
   const upgradeCmdItems = useUpgradeCmdItems();
@@ -365,6 +367,7 @@ export const CommandPalette = ({
         ...notificationCmdItems,
         ...authCmdItems,
         ...showAccountsCmdItems,
+        ...showBillingCmdItems,
         ...logoutCmdItems,
       ],
     },

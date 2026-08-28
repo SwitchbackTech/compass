@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
@@ -33,6 +34,7 @@ type BillingGateModalProps = {
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
+  const secondaryButtonRef = useRef<HTMLButtonElement>(null);
   const { isRedirecting, redirectTo } = useBillingRedirect();
   const shownRef = useRef(false);
 
@@ -91,6 +93,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     "M",
     () => {
       if (isRedirecting) return;
+      secondaryButtonRef.current?.focus({ preventScroll: true });
       void redirectTo("portal");
     },
     { ...OVERLAY_LETTER_SHORTCUT, enabled: !isAwaitingCheckout },
@@ -114,18 +117,27 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-6 py-2"
             disabled={isRedirecting}
             onClick={() => void redirectTo("checkout")}
+            onPointerEnter={focusOnPointerEnter}
             type="button"
           >
-            {isAwaitingCheckout ? "Start trial" : "Subscribe"}
+            {isRedirecting
+              ? "Opening Stripe…"
+              : isAwaitingCheckout
+                ? "Start trial"
+                : "Subscribe"}
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
           <button
+            ref={secondaryButtonRef}
             className={SECONDARY_BUTTON_CLASSNAME}
             disabled={isRedirecting}
             onClick={secondary.onClick}
+            onPointerEnter={focusOnPointerEnter}
             type="button"
           >
-            {secondary.label}
+            {isRedirecting && secondary.key === "M"
+              ? "Opening Stripe…"
+              : secondary.label}
             <ShortcutHint className="ml-2">{secondary.key}</ShortcutHint>
           </button>
         </div>

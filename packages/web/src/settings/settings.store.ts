@@ -2,16 +2,20 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IS_DEV } from "@web/common/constants/env.constants";
 
+export type SettingsPage = "accounts" | "billing";
+
 interface SettingsState {
   isCmdPaletteOpen: boolean;
   isSettingsOpen: boolean;
   isAboutOpen: boolean;
+  settingsPage: SettingsPage;
 }
 
 export const initialSettingsState: SettingsState = {
   isCmdPaletteOpen: false,
   isSettingsOpen: false,
   isAboutOpen: false,
+  settingsPage: "accounts",
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -39,16 +43,31 @@ export const settingsActions = {
       { type: "toggleCmdPalette" },
     ),
   closeSettings: () =>
-    useSettingsStore.setState({ isSettingsOpen: false }, false, {
-      type: "closeSettings",
-    }),
-  openSettings: () =>
-    useSettingsStore.setState({ isSettingsOpen: true }, false, {
-      type: "openSettings",
+    useSettingsStore.setState(
+      { isSettingsOpen: false, settingsPage: "accounts" },
+      false,
+      {
+        type: "closeSettings",
+      },
+    ),
+  openSettings: (page: SettingsPage = "accounts") =>
+    useSettingsStore.setState(
+      { isSettingsOpen: true, settingsPage: page },
+      false,
+      {
+        type: "openSettings",
+      },
+    ),
+  setSettingsPage: (settingsPage: SettingsPage) =>
+    useSettingsStore.setState({ settingsPage }, false, {
+      type: "setSettingsPage",
     }),
   toggleSettings: () =>
     useSettingsStore.setState(
-      (state) => ({ isSettingsOpen: !state.isSettingsOpen }),
+      (state) =>
+        state.isSettingsOpen
+          ? { isSettingsOpen: false, settingsPage: "accounts" }
+          : { isSettingsOpen: true, settingsPage: "accounts" },
       false,
       { type: "toggleSettings" },
     ),
@@ -69,3 +88,5 @@ export const selectIsSettingsOpen = (state: SettingsState) =>
   state.isSettingsOpen;
 
 export const selectIsAboutOpen = (state: SettingsState) => state.isAboutOpen;
+
+export const selectSettingsPage = (state: SettingsState) => state.settingsPage;

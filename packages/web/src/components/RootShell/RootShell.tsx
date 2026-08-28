@@ -13,6 +13,7 @@ import {
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import { usePlanChangeToasts } from "@web/billing/usePlanChangeToasts";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
@@ -47,6 +48,7 @@ export function RootShell() {
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
   useCheckoutReturn();
+  usePlanChangeToasts();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
   usePointerSuppression();

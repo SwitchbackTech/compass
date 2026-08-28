@@ -29,11 +29,21 @@ export const MOD_HOLD_HINT_MS = 600;
  */
 export function useModHoldHintShortcut({
   enabled = true,
+  ignoreAppLock = false,
+  holdMs = MOD_HOLD_HINT_MS,
   onModChord,
   onHintsRevealed,
   onVisibilityChange,
 }: {
   enabled?: boolean;
+  /**
+   * Settings (and other app-lock overlays) still want hold-Mod chips. Page
+   * jump and form-field jump must keep the default, which hides the gesture
+   * while a dialog owns the screen.
+   */
+  ignoreAppLock?: boolean;
+  /** 0 reveals chips on the initial Mod press instead of waiting. */
+  holdMs?: number;
   onModChord: (event: KeyboardEvent) => boolean;
   /** Fires once when hold-Mod chips actually appear, not on a bare Mod tap. */
   onHintsRevealed?: () => void;
@@ -81,12 +91,17 @@ export function useModHoldHintShortcut({
     };
 
     const armHoldTimer = () => {
-      holdTimeoutId = setTimeout(() => {
+      const reveal = () => {
         holdTimeoutId = null;
         hintsVisible = true;
         publishVisibility(true);
         onHintsRevealedRef.current?.();
-      }, MOD_HOLD_HINT_MS);
+      };
+      if (holdMs <= 0) {
+        reveal();
+        return;
+      }
+      holdTimeoutId = setTimeout(reveal, holdMs);
     };
 
     const isModOnly = (event: KeyboardEvent) =>
@@ -96,7 +111,7 @@ export function useModHoldHintShortcut({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (isAppLocked()) {
+      if (!ignoreAppLock && isAppLocked()) {
         hideHints();
         return;
       }
@@ -160,7 +175,7 @@ export function useModHoldHintShortcut({
       window.removeEventListener("blur", onWindowBlur);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [enabled]);
+  }, [enabled, holdMs, ignoreAppLock]);
 
   return { areHintsVisible };
 }

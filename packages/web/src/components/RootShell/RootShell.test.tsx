@@ -14,8 +14,16 @@ import {
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import {
+  registerToastPort,
+  resetToastPort,
+} from "@web/common/utils/toast/toast.port";
 import { RootShell } from "@web/components/RootShell/RootShell";
+import {
+  selectIsSettingsOpen,
+  selectSettingsPage,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import {
   afterAll,
   afterEach,
@@ -76,6 +84,11 @@ describe("RootShell billing gates", () => {
   afterEach(() => {
     access = { kind: "open" };
     useBillingPreviewStore.setState(initialBillingPreviewState);
+    useSettingsStore.setState({
+      isSettingsOpen: false,
+      settingsPage: "accounts",
+    });
+    resetToastPort();
   });
 
   it("never gates an anonymous visitor", async () => {
@@ -183,6 +196,46 @@ describe("RootShell billing gates", () => {
     expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
     createCheckoutSession.mockRestore();
     assign.mockRestore();
+  });
+
+  it("reopens Settings on Billing after returning from the portal", async () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    spyOn(BillingApi, "getStatus").mockResolvedValue({
+      subscriptionStatus: "active",
+      trialEndsAt: null,
+      isReadOnly: false,
+    });
+    await renderShell("/week?settings=billing");
+
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+  });
+
+  it("keeps Billing open when portal return lands before plan data", async () => {
+    access = { kind: "open" };
+    await renderShell("/week?settings=billing");
+
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+  });
+
+  it("toasts and strips a canceled checkout", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const router = await renderShell("/week?checkout=cancel");
+
+    expect(mocks.toast).toHaveBeenCalledWith(
+      "Checkout canceled",
+      expect.objectContaining({ toastId: "billing-checkout-canceled" }),
+    );
+    expect(
+      (router.state.location.search as { checkout?: string }).checkout,
+    ).toBeUndefined();
   });
 });
 

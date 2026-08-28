@@ -94,7 +94,11 @@ production.
   header (`TrialBadge.tsx`, via `DatePicker`'s `headerEndContent` slot). The
   badge carries no `tabindex`: `getPageJumpFocusElement` seats Mod+2 on the
   first `[tabindex="0"]` inside the picker, and a tab stop here would steal
-  that jump.
+  that jump. Press `B` (keycap-styled in the badge tooltip and on Settings →
+  Billing) to subscribe early. That shortcut is registered by
+  `UpgradeConfirmationProvider` and keeps working while Settings is open.
+- **Active / past_due:** writable. `past_due` also shows a banner. Settings
+  splits Accounts and Billing; Billing is hidden on installs with no plan.
 - **Active / past_due:** writable. `past_due` also shows a banner.
 - **Expired / canceled:** read-only until they subscribe again. A later
   Checkout does not grant another trial.
@@ -108,8 +112,10 @@ through the webhook's own `applySubscription`, so status is fresh in the same
 response and the Stripe field mapping stays in one place. The Billing Portal
 cannot shorten a trial, which is why this endpoint exists. Three ways in, all
 gated on a running trial: the badge, a "Subscribe now" palette command, and
-bare `B`. That shortcut is registered by `UpgradeConfirmationProvider` rather
-than `useNavigationShortcuts`, which must stay usable without a QueryClient.
+bare `B`. "Manage billing" is a different action: it opens the Stripe Customer
+Portal in a new tab (popup-blocked fallback: same-tab, returning to
+`?settings=billing`). Portal return reopens Settings on Billing and refetches
+status on window focus so a trial that became Premium is visible immediately.
 A declined card lands on `past_due` (still writable), so the confirm dialog
 reports the resulting status instead of a blanket success.
 

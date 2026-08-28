@@ -1,4 +1,12 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
@@ -13,6 +21,7 @@ import {
   resetGoogleReconnectRequiredForTests,
 } from "@web/auth/google/state/google.reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -25,7 +34,11 @@ import {
   registerToastPort,
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
-import { settingsActions } from "@web/settings/settings.store";
+import {
+  selectSettingsPage,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import {
   afterAll,
   afterEach,
@@ -143,11 +156,13 @@ const renderSettings = ({
   connections = [connection()],
   calendars = [],
   open = true,
+  page = "accounts",
 }: {
   authenticated?: boolean;
   connections?: GoogleSyncConnectionSummary[];
   calendars?: Calendar[];
   open?: boolean;
+  page?: "accounts" | "billing";
 } = {}) => {
   authenticated = isAuthenticated;
   userMetadataActions.set({
@@ -155,9 +170,19 @@ const renderSettings = ({
   });
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
-  if (open) settingsActions.openSettings();
+  if (open) settingsActions.openSettings(page);
 
-  return { queryClient, ...render(<SettingsModal />, { wrapper }) };
+  return {
+    queryClient,
+    ...render(
+      <HotkeysProvider>
+        <UpgradeConfirmationProvider>
+          <SettingsModal />
+        </UpgradeConfirmationProvider>
+      </HotkeysProvider>,
+      { wrapper },
+    ),
+  };
 };
 
 describe("SettingsModal", () => {
@@ -585,9 +610,88 @@ describe("SettingsModal", () => {
     renderSettings({ authenticated: true });
 
     expect(screen.queryByText("Plan")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Billing" })).toBeNull();
     expect(
       screen.queryByRole("button", { name: "Manage billing" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("stays on Billing while plan data is still fail-open", async () => {
+    access = { kind: "open" };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await user.keyboard("2");
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
+  });
+
+  it("leaves Billing when the server reports no plan", () => {
+    access = {
+      kind: "server",
+      status: "none",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("accounts");
+    expect(screen.queryByRole("button", { name: "Billing" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Accounts" })).toHaveFocus();
+  });
+
+  it("seats focus on Billing when Settings opens on that page", () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
+  });
+
+  it("keeps timezone and accounts off the Billing page", () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(screen.queryByText("Default timezone")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Export data" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches between Accounts and Billing", async () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true });
+
+    expect(screen.getByText("Default timezone")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Billing" }));
+    expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.queryByText("Default timezone")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Accounts" }));
+    expect(screen.getByText("Default timezone")).toBeInTheDocument();
   });
 
   it("tells a subscriber they are on Premium", () => {
@@ -597,7 +701,7 @@ describe("SettingsModal", () => {
       isReadOnly: false,
       trialEndsAt: null,
     };
-    renderSettings({ authenticated: true });
+    renderSettings({ authenticated: true, page: "billing" });
 
     expect(screen.getByText("Plan")).toBeInTheDocument();
     expect(screen.getByText("Premium")).toBeInTheDocument();
@@ -613,19 +717,52 @@ describe("SettingsModal", () => {
       isReadOnly: false,
       trialEndsAt: dayjs().add(3, "day").toISOString(),
     };
-    renderSettings({ authenticated: true });
+    renderSettings({ authenticated: true, page: "billing" });
 
     expect(screen.getByText("Trial \u00b7 3d")).toBeInTheDocument();
+    expect(screen.getByText(/to subscribe now/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Press\s+B to subscribe now\./),
-    ).toBeInTheDocument();
+      within(
+        screen.getByText(/to subscribe now/).closest("p") as HTMLElement,
+      ).getByText("B"),
+    ).toBeTruthy();
   });
 
-  it("opens the billing portal from Manage billing", async () => {
+  it("opens the billing portal from Manage billing in a new tab", async () => {
     const createPortalSession = spyOn(
       BillingApi,
       "createPortalSession",
     ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    const open = spyOn(window, "open").mockReturnValue(
+      popup as unknown as Window,
+    );
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup();
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.click(screen.getByRole("button", { name: "Manage billing" }));
+
+    await waitFor(() => {
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    createPortalSession.mockRestore();
+    open.mockRestore();
+  });
+
+  it("falls back to the same tab when the portal popup is blocked", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const open = spyOn(window, "open").mockReturnValue(null);
     const assign = spyOn(window.location, "assign").mockImplementation(
       () => {},
     );
@@ -636,7 +773,7 @@ describe("SettingsModal", () => {
       trialEndsAt: null,
     };
     const user = userEvent.setup();
-    renderSettings({ authenticated: true });
+    renderSettings({ authenticated: true, page: "billing" });
 
     await user.click(screen.getByRole("button", { name: "Manage billing" }));
 
@@ -644,6 +781,129 @@ describe("SettingsModal", () => {
       expect(assign).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
     });
     createPortalSession.mockRestore();
+    open.mockRestore();
     assign.mockRestore();
+  });
+
+  it("jumps to Billing with 2 and back to Accounts with 1", async () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true });
+
+    await user.keyboard("2");
+    expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Plan")).toBeInTheDocument();
+    await user.keyboard("1");
+    expect(screen.getByText("Default timezone")).toBeInTheDocument();
+  });
+
+  it("opens the portal with M from the Billing page", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    const open = spyOn(window, "open").mockReturnValue(
+      popup as unknown as Window,
+    );
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.keyboard("m");
+
+    await waitFor(() => {
+      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    createPortalSession.mockRestore();
+    open.mockRestore();
+  });
+
+  it("reveals shortcut chips while Mod is held", async () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true });
+
+    expect(
+      within(screen.getByRole("button", { name: "Accounts" })).queryByText("1"),
+    ).toBeNull();
+
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}`);
+    expect(
+      within(screen.getByRole("button", { name: "Accounts" })).getByText("1"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("button", { name: "Billing" })).getByText("2"),
+    ).toBeInTheDocument();
+
+    await user.keyboard(`{/${modKey}}`);
+    expect(
+      within(screen.getByRole("button", { name: "Accounts" })).queryByText("1"),
+    ).toBeNull();
+  });
+
+  it("activates Manage billing on hover then Enter, without leaving Accounts focused", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const replace = mock(() => {});
+    const popup = { closed: false, location: { replace }, opener: {} };
+    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true, page: "billing" });
+
+    const manage = screen.getByRole("button", { name: "Manage billing" });
+    fireEvent.pointerEnter(manage, { pointerType: "mouse" });
+    expect(manage).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    createPortalSession.mockRestore();
+  });
+
+  it("opens the upgrade confirmation with B while Settings is open", async () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.keyboard("b");
+
+    expect(
+      screen.getByRole("dialog", { name: "Start Premium now?" }),
+    ).toBeInTheDocument();
   });
 });

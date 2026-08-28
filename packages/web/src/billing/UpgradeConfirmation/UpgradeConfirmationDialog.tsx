@@ -1,12 +1,15 @@
+import { useState } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 interface UpgradeConfirmationDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
+  isOpeningPortal: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onManageBilling: () => void;
@@ -16,22 +19,41 @@ interface UpgradeConfirmationDialogProps {
  * Confirms starting a Stripe subscription before the trial runs out. No amount
  * is shown here on purpose: the price lives on the Stripe Price, not in this
  * codebase, so operators can change it without a web deploy. "Manage billing"
- * is the way to see the card and the exact charge before committing, so it sits
- * apart from the two real choices rather than competing with them.
+ * opens the Stripe portal (card, invoices, cancel) and does not charge today;
+ * Start Premium is the only way to end the trial early.
  */
 export function UpgradeConfirmationDialog({
   isOpen,
   isSubmitting,
+  isOpeningPortal,
   onCancel,
   onConfirm,
   onManageBilling,
 }: UpgradeConfirmationDialogProps) {
+  const [manageBillingEl, setManageBillingEl] =
+    useState<HTMLButtonElement | null>(null);
+
+  useAppShortcut(
+    "M",
+    () => {
+      if (isSubmitting) return;
+      manageBillingEl?.focus({ preventScroll: true });
+      onManageBilling();
+    },
+    {
+      enabled: isOpen,
+      ignoreAppLock: true,
+      ignoreInputs: false,
+      preventDefault: true,
+    },
+  );
+
   if (!isOpen) return null;
 
   return (
     <OverlayPanel
       title="Start Premium now?"
-      message="Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away."
+      message="Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away. Manage billing opens your invoices and card on file. It does not charge you or end the trial."
       onDismiss={onCancel}
       align="start"
       variant="modal"
@@ -44,7 +66,9 @@ export function UpgradeConfirmationDialog({
             disabled={isSubmitting}
             onClick={onConfirm}
           >
-            {isSubmitting ? "Starting Premium…" : "Start Premium"}
+            {isSubmitting && !isOpeningPortal
+              ? "Starting Premium…"
+              : "Start Premium"}
           </OverlayPanelActionButton>
           <OverlayPanelActionButton
             shortcut="Esc"
@@ -55,11 +79,13 @@ export function UpgradeConfirmationDialog({
           </OverlayPanelActionButton>
         </OverlayPanelActions>
         <OverlayPanelActionButton
+          ref={setManageBillingEl}
           variant="ghost"
+          shortcut="M"
           disabled={isSubmitting}
           onClick={onManageBilling}
         >
-          Manage billing
+          {isOpeningPortal ? "Opening Stripe…" : "Manage billing"}
         </OverlayPanelActionButton>
       </div>
     </OverlayPanel>

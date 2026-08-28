@@ -27,6 +27,12 @@ const checkoutReturnUrl = (outcome: "success" | "cancel"): string => {
   return url.toString();
 };
 
+const portalReturnUrl = (): string => {
+  const url = new URL(CONFIG.FRONTEND_URL);
+  url.searchParams.set("settings", "billing");
+  return url.toString();
+};
+
 class StripeService {
   createCheckoutSession = async (
     userId: string,
@@ -192,7 +198,7 @@ class StripeService {
     const session = await stripe.billingPortal.sessions
       .create({
         customer: customerId,
-        return_url: CONFIG.FRONTEND_URL,
+        return_url: portalReturnUrl(),
       })
       .catch(wrapStripeFailure);
 

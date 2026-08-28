@@ -17,6 +17,9 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { PlanSection } from "@web/billing/PlanSection";
+import { getPlanBadge } from "@web/billing/planBadge";
+import { useUpgradeConfirmation } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -34,6 +37,7 @@ import {
 } from "@web/calendars/useDefaultTargetCalendar";
 import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
+import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { useDeleteAccountConfirmation } from "@web/components/DeleteAccountConfirmation/hooks/useDeleteAccountConfirmation";
@@ -43,11 +47,17 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   selectIsSettingsOpen,
+  selectSettingsPage,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import {
+  settingsShortcutAttrs,
+  useSettingsShortcuts,
+} from "@web/settings/useSettingsShortcuts";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 import { DefaultTimezonePicker } from "@web/timezone/DefaultTimezonePicker";
@@ -55,24 +65,37 @@ import { DefaultTimezonePicker } from "@web/timezone/DefaultTimezonePicker";
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
 
+const navButtonClassName = (current: boolean) =>
+  current
+    ? "c-focus-ring flex w-full items-center justify-between rounded bg-surface-overlay px-2 py-1 text-left text-sm text-text"
+    : "c-focus-ring flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm text-text-muted transition-colors hover:bg-surface-overlay hover:text-text";
+
 /**
- * The app's Settings menu (Mod+,): a nav shell (one item today - Accounts)
- * holding default-calendar choice, connected-account management, and the
- * signed-in user's own Log out action (which stays reachable from the
- * Command Palette too - see useLogoutCmdItems). Default-calendar and
- * account management used to live scattered across the sidebar (the
- * default-calendar star) and a dedicated "manage accounts" dialog. ESC steps
- * back a level - out of an open disconnect confirmation first, then out of
- * the modal - via `handleDismiss`, since OverlayPanel already routes both
- * ESC and a backdrop click through `onDismiss`.
+ * The app's Settings menu (Mod+,): Accounts (timezone, calendars, Google
+ * connections, export / delete / log out) and Billing (plan + portal) as
+ * sibling pages. ESC steps back a level - out of an open disconnect
+ * confirmation first, then out of the modal - via `handleDismiss`, since
+ * OverlayPanel already routes both ESC and a backdrop click through
+ * `onDismiss`.
  */
 export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);
+  const page = useSettingsStore(selectSettingsPage);
+  const initialFocusRef = useRef<HTMLButtonElement>(null);
+  const reseatFocusOnAccountsRef = useRef(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
   const { authenticated } = useSession();
   const { openLogoutConfirmation } = useLogoutConfirmation();
+  const { isOpen: isUpgradeOpen } = useUpgradeConfirmation();
+  const access = useAppAccess();
+  const hasBilling = getPlanBadge(access) !== null;
+  const { areHintsVisible } = useSettingsShortcuts({
+    enabled: isOpen && !isUpgradeOpen,
+    hasBilling,
+    page,
+  });
 
   // The modal stays mounted (self-reads the store) so a stray close path
   // that skips handleDismiss (e.g. the Mod+, toggle) can't leave a
@@ -80,6 +103,24 @@ export const SettingsModal: FC = () => {
   useEffect(() => {
     if (!isOpen) setConfirmingId(null);
   }, [isOpen]);
+
+  // Fail-open and in-flight status both look like `kind: "open"` (no badge).
+  // Bounce only once the server says there is no plan; otherwise a portal
+  // return (`?settings=billing`) would snap to Accounts before status lands.
+  // The Billing nav unmounts on that bounce, so reseat focus on Accounts or
+  // it falls to document.body and Escape no longer dismisses the dialog.
+  useEffect(() => {
+    if (page === "billing" && access.kind === "server" && !hasBilling) {
+      reseatFocusOnAccountsRef.current = true;
+      settingsActions.setSettingsPage("accounts");
+    }
+  }, [access.kind, hasBilling, page]);
+
+  useEffect(() => {
+    if (!reseatFocusOnAccountsRef.current || page !== "accounts") return;
+    reseatFocusOnAccountsRef.current = false;
+    initialFocusRef.current?.focus();
+  }, [page]);
 
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
@@ -128,6 +169,7 @@ export const SettingsModal: FC = () => {
   return (
     <OverlayPanel
       align="start"
+      initialFocusRef={initialFocusRef}
       onDismiss={handleDismiss}
       title="Settings"
       variant="modal"
@@ -136,48 +178,84 @@ export const SettingsModal: FC = () => {
       <div className="flex w-full gap-6">
         <nav className="w-32 shrink-0">
           <button
-            aria-current="true"
-            className="w-full rounded bg-surface-overlay px-2 py-1 text-left text-sm text-text"
+            aria-current={page === "accounts" ? "true" : undefined}
+            className={navButtonClassName(page === "accounts")}
+            onClick={() => settingsActions.setSettingsPage("accounts")}
+            onPointerEnter={focusOnPointerEnter}
+            ref={page === "accounts" ? initialFocusRef : undefined}
             type="button"
+            {...settingsShortcutAttrs("nav-accounts")}
           >
             Accounts
+            {areHintsVisible ? <ShortcutKeys keys="1" /> : null}
           </button>
+          {hasBilling || page === "billing" ? (
+            <button
+              aria-current={page === "billing" ? "true" : undefined}
+              className={navButtonClassName(page === "billing")}
+              onClick={() => settingsActions.setSettingsPage("billing")}
+              onPointerEnter={focusOnPointerEnter}
+              ref={page === "billing" ? initialFocusRef : undefined}
+              type="button"
+              {...settingsShortcutAttrs("nav-billing")}
+            >
+              Billing
+              {areHintsVisible ? <ShortcutKeys keys="2" /> : null}
+            </button>
+          ) : null}
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <PlanSection />
-          <DefaultTimezonePicker />
-          <DefaultCalendarPicker
-            calendars={writableCalendars}
-            connections={connections}
-            resolvedDefault={resolvedDefault}
-          />
-          <AccountsSection
-            confirmingId={confirmingId}
-            connections={connections}
-            resolvedDefault={resolvedDefault}
-            setConfirmingId={setConfirmingId}
-          />
-          <div className="mt-2 border-border border-t pt-3">
-            <OverlayPanelActions align="start">
-              <OverlayPanelActionButton
-                onClick={handleExport}
-                variant="secondary"
-              >
-                Export data
-              </OverlayPanelActionButton>
-              <OverlayPanelActionButton
-                onClick={handleDeleteAccount}
-                variant="destructive"
-              >
-                Delete account
-              </OverlayPanelActionButton>
-              {authenticated ? (
-                <OverlayPanelActionButton onClick={handleLogout}>
-                  Log out
-                </OverlayPanelActionButton>
-              ) : null}
-            </OverlayPanelActions>
-          </div>
+          {page === "billing" ? (
+            <PlanSection showShortcuts={areHintsVisible} />
+          ) : (
+            <>
+              <DefaultTimezonePicker />
+              <DefaultCalendarPicker
+                calendars={writableCalendars}
+                connections={connections}
+                resolvedDefault={resolvedDefault}
+              />
+              <AccountsSection
+                confirmingId={confirmingId}
+                connections={connections}
+                resolvedDefault={resolvedDefault}
+                setConfirmingId={setConfirmingId}
+                showShortcuts={areHintsVisible}
+              />
+              <div className="mt-2 border-border border-t pt-3">
+                <OverlayPanelActions align="start">
+                  <OverlayPanelActionButton
+                    onClick={handleExport}
+                    shortcut="E"
+                    showShortcut={areHintsVisible}
+                    variant="secondary"
+                    {...settingsShortcutAttrs("export")}
+                  >
+                    Export data
+                  </OverlayPanelActionButton>
+                  <OverlayPanelActionButton
+                    onClick={handleDeleteAccount}
+                    shortcut="D"
+                    showShortcut={areHintsVisible}
+                    variant="destructive"
+                    {...settingsShortcutAttrs("delete-account")}
+                  >
+                    Delete account
+                  </OverlayPanelActionButton>
+                  {authenticated ? (
+                    <OverlayPanelActionButton
+                      onClick={handleLogout}
+                      shortcut="O"
+                      showShortcut={areHintsVisible}
+                      {...settingsShortcutAttrs("log-out")}
+                    >
+                      Log out
+                    </OverlayPanelActionButton>
+                  ) : null}
+                </OverlayPanelActions>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </OverlayPanel>
@@ -242,6 +320,7 @@ interface AccountsSectionProps {
   connections: GoogleSyncConnectionSummary[];
   resolvedDefault: Calendar | undefined;
   setConfirmingId: (id: string | null) => void;
+  showShortcuts: boolean;
 }
 
 const AccountsSection: FC<AccountsSectionProps> = ({
@@ -249,6 +328,7 @@ const AccountsSection: FC<AccountsSectionProps> = ({
   connections,
   resolvedDefault,
   setConfirmingId,
+  showShortcuts,
 }) => {
   const { connect, isAvailable, isConnecting } = useConnectGoogle({
     newAccount: true,
@@ -285,7 +365,10 @@ const AccountsSection: FC<AccountsSectionProps> = ({
             aria-busy={isConnecting || undefined}
             disabled={isConnecting}
             onClick={connect}
+            shortcut="A"
+            showShortcut={showShortcuts}
             variant="primary"
+            {...settingsShortcutAttrs("add-account")}
           >
             {isConnecting ? "Opening Google…" : "Add account"}
           </OverlayPanelActionButton>
@@ -397,6 +480,7 @@ const AccountRow: FC<AccountRowProps> = ({
                 setConfirming(false),
               )
             }
+            onPointerEnter={focusOnPointerEnter}
             ref={confirmButtonRef}
             type="button"
           >
@@ -406,6 +490,7 @@ const AccountRow: FC<AccountRowProps> = ({
             className={OUTLINE_BUTTON_CLASSNAME}
             disabled={isDisconnecting}
             onClick={() => setConfirming(false)}
+            onPointerEnter={focusOnPointerEnter}
             type="button"
           >
             Cancel
@@ -416,6 +501,7 @@ const AccountRow: FC<AccountRowProps> = ({
           aria-label={`Disconnect ${accountEmail}`}
           className={OUTLINE_BUTTON_CLASSNAME}
           onClick={() => setConfirming(true)}
+          onPointerEnter={focusOnPointerEnter}
           ref={disconnectButtonRef}
           type="button"
         >

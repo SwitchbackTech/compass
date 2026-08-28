@@ -12,12 +12,16 @@ import {
   useUpgradeConfirmationState,
 } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { UpgradeConfirmationDialog } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationDialog";
+import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
+import { BILLING_SUBSCRIBED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import {
+  selectIsSettingsOpen,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
-
-const SUBSCRIBED_TOAST_ID = "billing-subscribed";
 
 export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
   const value = useUpgradeConfirmationState();
@@ -25,17 +29,26 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const isTrialing = useIsTrialing();
+  const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
+  const { isRedirecting, redirectTo } = useBillingRedirect();
+  const busy = isSubmitting || isRedirecting;
+  const handleManageBilling = () => {
+    if (busy) return;
+    void redirectTo("portal", "upgrade_portal");
+  };
 
   // Bare "B" for billing. The feature owns its own trigger rather than
   // `useNavigationShortcuts`, which must stay usable without a QueryClient.
-  // Registered only while a trial runs, so the key stays free otherwise. No
-  // `ignoreAppLock`: a gate or dialog already owning the screen keeps it.
+  // Registered only while a trial runs, so the key stays free otherwise.
+  // `ignoreAppLock` while Settings is open: that modal is exactly where
+  // "Press B to subscribe" is written, and OverlayPanel would otherwise
+  // swallow the key.
   useAppShortcutUp(
     "B",
     () => {
       value.openUpgradeConfirmation();
     },
-    { enabled: isTrialing },
+    { enabled: isTrialing, ignoreAppLock: isSettingsOpen },
   );
 
   const reportFailure = useCallback((error: unknown, fallback: string) => {
@@ -61,7 +74,7 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
         // be dressed up as a successful upgrade.
         if (status.subscriptionStatus === "active") {
           track("trial_converted");
-          showStatusToast(SUBSCRIBED_TOAST_ID, "You're subscribed");
+          showStatusToast(BILLING_SUBSCRIBED_TOAST_ID, "You're subscribed");
         } else {
           showErrorToast(
             "We ended your trial, but the payment didn't go through. Check your card under Manage billing.",
@@ -75,25 +88,13 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
     })();
   }, [closeUpgradeConfirmation, queryClient, reportFailure]);
 
-  const handleManageBilling = useCallback(() => {
-    setIsSubmitting(true);
-    void (async () => {
-      try {
-        const { url } = await BillingApi.createPortalSession();
-        window.location.assign(url);
-      } catch (error) {
-        reportFailure(error, "Couldn't open billing. Please try again.");
-        setIsSubmitting(false);
-      }
-    })();
-  }, [reportFailure]);
-
   return (
     <UpgradeConfirmationContext.Provider value={value}>
       {children}
       <UpgradeConfirmationDialog
         isOpen={isOpen}
-        isSubmitting={isSubmitting}
+        isSubmitting={busy}
+        isOpeningPortal={isRedirecting}
         onCancel={closeUpgradeConfirmation}
         onConfirm={handleConfirm}
         onManageBilling={handleManageBilling}

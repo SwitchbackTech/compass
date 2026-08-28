@@ -6,9 +6,12 @@ import {
 } from "@web/billing/planBadge";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
 
 const OUTLINE_BUTTON_CLASSNAME =
-  "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
+  "c-focus-ring inline-flex shrink-0 items-center rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
 
 /**
  * The account view's answer to "what am I paying for?". Until this existed,
@@ -19,7 +22,9 @@ const OUTLINE_BUTTON_CLASSNAME =
  * paused, anonymous), rather than inventing billing chrome for installs that
  * have no billing.
  */
-export const PlanSection: FC = () => {
+export const PlanSection: FC<{
+  showShortcuts?: boolean;
+}> = ({ showShortcuts = false }) => {
   const access = useAppAccess();
   const { isRedirecting, redirectTo } = useBillingRedirect();
   const badge = getPlanBadge(access);
@@ -43,8 +48,8 @@ export const PlanSection: FC = () => {
           </span>
           {trialEndsAt ? (
             <p className="mt-1 text-text-muted text-xs">
-              Your trial ends {dayjs(trialEndsAt).format("MMM D, YYYY")}. Press
-              B to subscribe now.
+              Your trial ends {dayjs(trialEndsAt).format("MMM D, YYYY")}. Press{" "}
+              <ShortcutKeys keys="B" /> to subscribe now.
             </p>
           ) : null}
         </div>
@@ -52,9 +57,12 @@ export const PlanSection: FC = () => {
           className={OUTLINE_BUTTON_CLASSNAME}
           disabled={isRedirecting}
           onClick={() => void redirectTo("portal", "settings_portal")}
+          onPointerEnter={focusOnPointerEnter}
           type="button"
+          {...settingsShortcutAttrs("manage-billing")}
         >
-          Manage billing
+          {isRedirecting ? "Opening Stripe…" : "Manage billing"}
+          {showShortcuts ? <ShortcutKeys className="ml-2" keys="M" /> : null}
         </button>
       </div>
     </div>
