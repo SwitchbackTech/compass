@@ -7,6 +7,8 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import {
+  getEdgeResizeLessonPhase,
+  getShowcaseStep,
   SHOWCASE_STEP_IDS,
   type ShowcaseStepId,
 } from "@web/components/ShortcutShowcase/showcase.steps";
@@ -310,14 +312,22 @@ describe("ShortcutShowcase", () => {
     render(<ShortcutShowcase />);
     showStep("edgeResize");
 
+    expect(getShowcaseStep("edgeResize").keycaps).toEqual([
+      "Tab",
+      "Shift",
+      "ArrowUp",
+      "ArrowDown",
+    ]);
+    expect(getEdgeResizeLessonPhase("start").keycaps).toEqual([
+      "Shift",
+      "ArrowUp",
+      "ArrowDown",
+    ]);
+
     const practice = screen.getByLabelText("Shortcut practice");
     expect(practice).toHaveTextContent(
       /press up or down to change just that edge/,
     );
-    expect(screen.getByTestId("arrowup-icon")).toBeTruthy();
-    expect(screen.getByTestId("arrowdown-icon")).toBeTruthy();
-    expect(screen.queryByTestId("arrowleft-icon")).toBeNull();
-    expect(screen.queryByTestId("arrowright-icon")).toBeNull();
 
     pressKey("ArrowDown", { shiftKey: true });
     expect(currentStepId()).toBe("edgeResize");
