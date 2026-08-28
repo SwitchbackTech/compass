@@ -792,6 +792,9 @@ describe("SettingsModal", () => {
 
     await user.keyboard("2");
     expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Billing" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Plan")).toBeInTheDocument();
     await user.keyboard("1");
     expect(screen.getByText("Default timezone")).toBeInTheDocument();
   });

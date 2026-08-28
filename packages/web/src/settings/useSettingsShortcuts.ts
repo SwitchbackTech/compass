@@ -15,6 +15,10 @@ const clickSettingsShortcut = (id: string): boolean => {
     `[${SETTINGS_SHORTCUT_ATTR}="${id}"]`,
   );
   if (!el || el.hasAttribute("disabled")) return false;
+  // Programmatic click does not move focus. Seat it on the target so a
+  // following Enter activates this control instead of the previous one
+  // (Accounts stays focused after 2, which would jump back).
+  el.focus({ preventScroll: true });
   el.click();
   return true;
 };
