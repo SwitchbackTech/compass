@@ -7,8 +7,8 @@ import {
 } from "@web/events/stores/draft.store";
 
 export function useCloseEventForm() {
-  return useCallback(() => {
-    const eventId = selectDraftId(useDraftStore.getState());
+  return useCallback((focusEventId?: string) => {
+    const eventId = focusEventId ?? selectDraftId(useDraftStore.getState());
     draftActions.discard();
     if (eventId) {
       focusCalendarEventElementAfterDiscard(eventId);

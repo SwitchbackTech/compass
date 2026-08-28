@@ -58,13 +58,16 @@ export const createAlldayDraft = (
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
     ? today.startOf("day")
     : startOfView.startOf("day");
+  // Same stable identity as timed shortcut drafts so save can reuse it as
+  // CreateEventInput.id and restore focus to the new card.
+  const clientId = EventIdSchema.parse(createObjectIdString());
   const draft = createGridEventDraft(
     {
       kind: "allDay",
       start: start.toDate(),
       end: start.add(1, "day").toDate(),
     },
-    undefined,
+    clientId,
     calendarId,
   );
 

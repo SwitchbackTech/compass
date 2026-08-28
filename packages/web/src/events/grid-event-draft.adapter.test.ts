@@ -106,6 +106,28 @@ test("keeps the schedule's own UTC offset instead of forcing Z", () => {
   expect(gridEvent.endDate).not.toMatch(/Z$/);
 });
 
+test("attaches a create draft clientId as CreateEventInput.id", () => {
+  const clientId = "0123456789abcdef01234567";
+  const draft = createGridEventDraft(
+    {
+      kind: "timed",
+      start: new Date("2026-07-11T09:00:00-06:00"),
+      end: new Date("2026-07-11T10:00:00-06:00"),
+      timeZone: "America/Denver",
+    },
+    clientId as Event["id"],
+    timedEvent.calendarId,
+  );
+
+  const result = parseGridEventDraft(draft);
+
+  expect(result).toMatchObject({
+    ok: true,
+    mode: "create",
+    input: { id: clientId },
+  });
+});
+
 test("parses an edit draft into a replace command", () => {
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");

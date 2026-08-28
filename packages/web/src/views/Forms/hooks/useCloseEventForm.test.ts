@@ -115,4 +115,33 @@ describe("useCloseEventForm", () => {
 
     expect(document.activeElement).toBe(savedCard);
   });
+
+  it("focuses an explicit saved event id when it differs from the draft id", () => {
+    const draftClientId = EventIdSchema.parse("507f1f77bcf86cd799439022");
+    const savedEventId = EventIdSchema.parse("507f1f77bcf86cd799439033");
+
+    const savedCard = document.createElement("button");
+    savedCard.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, savedEventId);
+    savedCard.tabIndex = 0;
+    document.body.appendChild(savedCard);
+
+    draftActions.startGridDraft({
+      activity: "createShortcut",
+      draft: createGridEventDraft(
+        timedGridSchedule(
+          new Date("2026-05-20T09:00:00.000Z"),
+          new Date("2026-05-20T10:00:00.000Z"),
+        ),
+        draftClientId,
+      ),
+    });
+    draftActions.setFormOpen(true);
+
+    const { result } = renderHook(() => useCloseEventForm());
+    result.current(savedEventId);
+    flushFrame();
+
+    expect(useDraftStore.getState()).toEqual(initialDraftState);
+    expect(document.activeElement).toBe(savedCard);
+  });
 });

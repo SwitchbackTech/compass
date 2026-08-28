@@ -5,7 +5,7 @@ import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
-import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -21,6 +21,10 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
+import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
@@ -206,6 +210,44 @@ describe("Enter on a focused grid event", () => {
     expect(screen.queryByDisplayValue("Quarterly review")).toBeNull();
     await waitFor(() => {
       expect(document.activeElement).toBe(card);
+    });
+  });
+
+  it("returns focus to the new grid event after creating from the form", async () => {
+    const clientId = EventIdSchema.parse(createObjectIdString());
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2024-01-15T09:00:00.000Z"),
+        new Date("2024-01-15T10:00:00.000Z"),
+      ),
+      clientId,
+      writableCalendar.id,
+    );
+    draft.values.title = "New standup";
+
+    render(
+      <Harness>
+        <GridWithSidebar />
+      </Harness>,
+    );
+
+    await act(async () => {
+      draftActions.startGridDraft({ activity: "createShortcut", draft });
+      draftActions.setFormOpen(true);
+    });
+
+    const titleField = await screen.findByRole("textbox", { name: "Title" });
+    expect(titleField).toHaveFocus();
+
+    await act(async () => {
+      fireEvent.keyDown(titleField, { key: "Enter" });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("textbox", { name: "Title" })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /new standup/i }),
+      ).toHaveFocus();
     });
   });
 });
