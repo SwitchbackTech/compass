@@ -67,14 +67,16 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
 
           return (
             <div key={item.question} className="py-3">
-              <div className="flex items-center justify-between gap-3">
+              <div
+                className="flex items-center justify-between gap-3"
+                {...pointerShortcutAttributes(digit)}
+              >
                 <button
                   type="button"
                   aria-controls={answerId}
                   aria-expanded={isExpanded}
                   className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
                   onClick={() => toggleFaq(item.question)}
-                  {...pointerShortcutAttributes(digit)}
                 >
                   {item.question}
                 </button>

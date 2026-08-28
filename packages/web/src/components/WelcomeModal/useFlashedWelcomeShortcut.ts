@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   selectLatestPointerAttempt,
   selectPointerBlockPulse,
@@ -12,9 +12,17 @@ export function useFlashedWelcomeShortcut(): string | null {
   const pulse = usePointerBlockStore(selectPointerBlockPulse);
   const attempt = usePointerBlockStore(selectLatestPointerAttempt);
   const [flashedKey, setFlashedKey] = useState<string | null>(null);
+  // Ignore the pulse already in the store on mount so a remount does not
+  // replay a flash from an earlier blocked click.
+  const lastPulseRef = useRef(pulse);
 
   useEffect(() => {
-    if (pulse === 0 || !attempt?.shortcutKey) return;
+    if (pulse === lastPulseRef.current) return;
+    lastPulseRef.current = pulse;
+    if (!attempt?.shortcutKey) {
+      setFlashedKey(null);
+      return;
+    }
     setFlashedKey(attempt.shortcutKey);
     const timer = window.setTimeout(() => setFlashedKey(null), KEYCAP_FLASH_MS);
     return () => window.clearTimeout(timer);

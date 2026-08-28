@@ -1,11 +1,10 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   initialPointerBlockState,
   pointerBlockActions,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
-import { KEYCAP_FLASH_MS } from "./useFlashedWelcomeShortcut";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -155,11 +154,31 @@ describe("WelcomeGuideBody", () => {
 
     expect(hintWrap?.className).toMatch(/c-keycap-flash/);
 
-    await waitFor(
-      () => {
-        expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
-      },
-      { timeout: KEYCAP_FLASH_MS + 200 },
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({ actionId: "unknown" });
+    });
+
+    expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
+  });
+
+  it("does not replay a leftover flash when the guide remounts", () => {
+    const first = renderWelcomeGuide();
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "1",
+      });
+    });
+
+    first.unmount();
+    renderWelcomeGuide();
+
+    const question = screen.getByRole("button", {
+      name: "Who is Compass for?",
+    });
+    expect(question.nextElementSibling?.className).not.toMatch(
+      /c-keycap-flash/,
     );
   });
 });
