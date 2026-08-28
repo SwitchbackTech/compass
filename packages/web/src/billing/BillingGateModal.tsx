@@ -33,6 +33,7 @@ type BillingGateModalProps = {
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
+  const secondaryButtonRef = useRef<HTMLButtonElement>(null);
   const { isRedirecting, redirectTo } = useBillingRedirect();
   const shownRef = useRef(false);
 
@@ -91,6 +92,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     "M",
     () => {
       if (isRedirecting) return;
+      secondaryButtonRef.current?.focus({ preventScroll: true });
       void redirectTo("portal");
     },
     { ...OVERLAY_LETTER_SHORTCUT, enabled: !isAwaitingCheckout },
@@ -124,6 +126,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
           <button
+            ref={secondaryButtonRef}
             className={SECONDARY_BUTTON_CLASSNAME}
             disabled={isRedirecting}
             onClick={secondary.onClick}

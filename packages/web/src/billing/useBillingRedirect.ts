@@ -32,13 +32,16 @@ const navigateToBillingUrl = (
     window.location.assign(url);
     return;
   }
-  if (popup && !popup.closed) {
-    popup.opener = null;
-    popup.location.replace(url);
+  // A non-null handle that is already closed means the user dismissed the
+  // blank tab. Stay in Compass. Same-tab assign is only for a blocked popup
+  // (`window.open` returned null).
+  if (!popup) {
+    window.location.assign(url);
     return;
   }
-  popup?.close();
-  window.location.assign(url);
+  if (popup.closed) return;
+  popup.opener = null;
+  popup.location.replace(url);
 };
 
 /**

@@ -218,6 +218,13 @@ describe("BillingGateModal", () => {
       expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
     });
     expect(assign).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", {
+        name: (accessibleName) =>
+          accessibleName.includes("Manage billing") ||
+          accessibleName.includes("Opening Stripe"),
+      }),
+    ).toHaveFocus();
     createPortalSession.mockRestore();
     open.mockRestore();
   });

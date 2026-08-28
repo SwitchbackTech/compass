@@ -1,3 +1,4 @@
+import { type RefObject } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -8,6 +9,7 @@ interface UpgradeConfirmationDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
   isOpeningPortal: boolean;
+  manageBillingRef: RefObject<HTMLButtonElement | null>;
   onCancel: () => void;
   onConfirm: () => void;
   onManageBilling: () => void;
@@ -24,6 +26,7 @@ export function UpgradeConfirmationDialog({
   isOpen,
   isSubmitting,
   isOpeningPortal,
+  manageBillingRef,
   onCancel,
   onConfirm,
   onManageBilling,
@@ -59,6 +62,7 @@ export function UpgradeConfirmationDialog({
           </OverlayPanelActionButton>
         </OverlayPanelActions>
         <OverlayPanelActionButton
+          ref={manageBillingRef}
           variant="ghost"
           shortcut="M"
           disabled={isSubmitting}

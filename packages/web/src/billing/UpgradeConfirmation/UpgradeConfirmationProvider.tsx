@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type PropsWithChildren, useCallback, useState } from "react";
+import { type PropsWithChildren, useCallback, useRef, useState } from "react";
 import { BillingApi } from "@web/api/billing.api";
 import {
   getApiErrorMessage,
@@ -35,8 +35,10 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
   const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
   const { isRedirecting, redirectTo } = useBillingRedirect();
   const busy = isSubmitting || isRedirecting;
+  const manageBillingRef = useRef<HTMLButtonElement>(null);
   const handleManageBilling = () => {
     if (busy) return;
+    manageBillingRef.current?.focus({ preventScroll: true });
     void redirectTo("portal", "upgrade_portal");
   };
 
@@ -105,6 +107,7 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
         isOpen={isOpen}
         isSubmitting={busy}
         isOpeningPortal={isRedirecting}
+        manageBillingRef={manageBillingRef}
         onCancel={closeUpgradeConfirmation}
         onConfirm={handleConfirm}
         onManageBilling={handleManageBilling}

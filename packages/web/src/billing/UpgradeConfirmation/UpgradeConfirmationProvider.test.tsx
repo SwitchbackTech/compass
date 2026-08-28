@@ -205,8 +205,45 @@ describe("UpgradeConfirmationProvider", () => {
       );
     });
     expect(endTrial).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", {
+        name: (accessibleName) =>
+          accessibleName.includes("Manage billing") ||
+          accessibleName.includes("Opening Stripe"),
+      }),
+    ).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(endTrial).not.toHaveBeenCalled();
     portal.mockRestore();
     endTrial.mockRestore();
+  });
+
+  it("stays in Compass if the portal tab is closed before the URL lands", async () => {
+    const popup = {
+      closed: false,
+      close: mock(),
+      location: { replace: mock() },
+      opener: {},
+    };
+    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
+    const portal = spyOn(BillingApi, "createPortalSession").mockImplementation(
+      async () => {
+        popup.closed = true;
+        return { url: "https://billing.stripe.com/p/session_1" };
+      },
+    );
+    await openDialog();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Manage billing" }),
+    );
+
+    await waitFor(() => {
+      expect(portal).toHaveBeenCalled();
+    });
+    expect(assign).not.toHaveBeenCalled();
+    expect(popup.location.replace).not.toHaveBeenCalled();
+    portal.mockRestore();
   });
 
   it("activates Manage billing on hover then Enter instead of Start Premium", async () => {
