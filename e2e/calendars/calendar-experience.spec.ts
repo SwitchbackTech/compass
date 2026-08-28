@@ -375,6 +375,15 @@ test("day view separates visible calendars into distinct columns", async ({
   });
   const primaryHeader = calendarHeaders.getByText(CALENDAR_A_NAME);
   const readerHeader = calendarHeaders.getByText(CALENDAR_B_NAME);
+  // Measure the grid cell, not the label's parent. A writable calendar's
+  // label is wrapped in a jump-target button that hugs its text, so the
+  // label's parent is the button for one column and the cell for the other.
+  const primaryColumn = calendarHeaders
+    .locator("> div")
+    .filter({ hasText: CALENDAR_A_NAME });
+  const readerColumn = calendarHeaders
+    .locator("> div")
+    .filter({ hasText: CALENDAR_B_NAME });
   const primaryEvent = dayAgenda.getByRole("button", {
     name: new RegExp(`${EVENT_A_TITLE}.*${CALENDAR_A_NAME} calendar`),
   });
@@ -391,8 +400,8 @@ test("day view separates visible calendars into distinct columns", async ({
 
   const [primaryHeaderBox, readerHeaderBox, primaryEventBox, readerEventBox] =
     await Promise.all([
-      primaryHeader.locator("..").boundingBox(),
-      readerHeader.locator("..").boundingBox(),
+      primaryColumn.boundingBox(),
+      readerColumn.boundingBox(),
       primaryEvent.boundingBox(),
       readerEvent.boundingBox(),
     ]);
