@@ -1,12 +1,5 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
-import {
-  type FC,
-  type KeyboardEvent as ReactKeyboardEvent,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useContext, useEffect, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
 import { SHOWCASE_REVEAL_MS } from "@web/common/constants/motion.constants";
@@ -72,6 +65,10 @@ const isPlatformModKey = (event: KeyboardEvent) =>
   resolveModifier("Mod") === "Meta"
     ? event.key === "Meta"
     : event.key === "Control";
+
+/** `?` is Shift+/ on common layouts; some browsers report the physical slash. */
+const isLegendToggleKey = (event: KeyboardEvent) =>
+  event.key === "?" || (event.key === "/" && event.shiftKey);
 
 const arrowDirection = (key: string): PracticeNudgeDirection | null => {
   if (key === "ArrowUp") return "up";
@@ -167,16 +164,16 @@ const ShowcaseTakeover: FC = () => {
     return () => window.removeEventListener("blur", clearMod);
   }, []);
 
-  const claim = (event: ReactKeyboardEvent<HTMLElement>) => {
+  const claim = (event: KeyboardEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    event.nativeEvent.stopImmediatePropagation();
+    event.stopImmediatePropagation();
   };
 
-  const handleTakeoverKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+  const handleTakeoverKeyDown = (event: KeyboardEvent) => {
     if (closing) {
       event.stopPropagation();
-      event.nativeEvent.stopImmediatePropagation();
+      event.stopImmediatePropagation();
       return;
     }
 
@@ -205,7 +202,7 @@ const ShowcaseTakeover: FC = () => {
       return;
     }
 
-    if (isPlatformModKey(event.nativeEvent)) {
+    if (isPlatformModKey(event)) {
       setIsModHeld(true);
       if (stepId === "pageJump") hasRevealedJumpsRef.current = true;
     }
@@ -238,7 +235,7 @@ const ShowcaseTakeover: FC = () => {
     }
 
     const isModChord = event.metaKey || event.ctrlKey;
-    if (isModChord && keyboardKey(event.nativeEvent).toLowerCase() === "k") {
+    if (isModChord && keyboardKey(event).toLowerCase() === "k") {
       claim(event);
       if (stepId === "palette" && !paletteOpen) setPaletteOpen(true);
       return;
@@ -246,7 +243,7 @@ const ShowcaseTakeover: FC = () => {
     if (
       isModChord &&
       !event.shiftKey &&
-      keyboardKey(event.nativeEvent).toLowerCase() === "z"
+      keyboardKey(event).toLowerCase() === "z"
     ) {
       if (stepId === "deleteUndo" && practice.lastDeleted) {
         claim(event);
@@ -274,7 +271,7 @@ const ShowcaseTakeover: FC = () => {
       return;
     }
 
-    if (stepId === "legend" && event.key === "?") {
+    if (stepId === "legend" && isLegendToggleKey(event)) {
       claim(event);
       setLegendOpen(true);
       return;
@@ -290,7 +287,7 @@ const ShowcaseTakeover: FC = () => {
         }
         return;
       }
-      if (!isBareLetterKey(event.nativeEvent, "u")) return;
+      if (!isBareLetterKey(event, "u")) return;
     }
 
     if (stepId === "graduation" && event.key === "Enter") {
@@ -312,7 +309,7 @@ const ShowcaseTakeover: FC = () => {
         enableNotifications();
         return;
       }
-      if (isBareLetterKey(event.nativeEvent, "n")) {
+      if (isBareLetterKey(event, "n")) {
         claim(event);
         advance();
       }
@@ -358,24 +355,19 @@ const ShowcaseTakeover: FC = () => {
       return;
     }
 
-    if (
-      isBareLetterKey(
-        event.nativeEvent,
-        KEYMAP.createEvent.hotkey.toLowerCase(),
-      )
-    ) {
+    if (isBareLetterKey(event, KEYMAP.createEvent.hotkey.toLowerCase())) {
       claim(event);
       apply(createDraft);
       return;
     }
 
     if (stepId === "eventJump") {
-      if (isBareLetterKey(event.nativeEvent, KEYMAP.eventJump.bareLetter)) {
+      if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
         claim(event);
         apply(toggleJumpHints);
         return;
       }
-      const jumpKey = keyboardKey(event.nativeEvent).toLowerCase();
+      const jumpKey = keyboardKey(event).toLowerCase();
       if (jumpKey.length === 1 && practice.jumpHintsVisible) {
         const next = apply((state) => jumpToEvent(state, jumpKey));
         if (next !== practice) {
@@ -387,16 +379,14 @@ const ShowcaseTakeover: FC = () => {
     }
 
     if (stepId === "editTitle") {
-      if (
-        isBareLetterKey(event.nativeEvent, KEYMAP.editTitle.sequence.leader)
-      ) {
+      if (isBareLetterKey(event, KEYMAP.editTitle.sequence.leader)) {
         claim(event);
         apply(armEdit);
         return;
       }
       if (
         practice.editArmed &&
-        isBareLetterKey(event.nativeEvent, KEYMAP.editTitle.sequence.second)
+        isBareLetterKey(event, KEYMAP.editTitle.sequence.second)
       ) {
         claim(event);
         apply(openTitleFromEdit);
@@ -407,7 +397,7 @@ const ShowcaseTakeover: FC = () => {
 
     if (
       stepId !== "graduation" &&
-      isBareLetterKey(event.nativeEvent, "u") &&
+      isBareLetterKey(event, "u") &&
       !authenticated
     ) {
       claim(event);
@@ -415,9 +405,36 @@ const ShowcaseTakeover: FC = () => {
     }
   };
 
-  const handleTakeoverKeyUp = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (isPlatformModKey(event.nativeEvent)) setIsModHeld(false);
+  const handleTakeoverKeyUp = (event: KeyboardEvent) => {
+    if (isPlatformModKey(event)) setIsModHeld(false);
+    // The real overlay listens on keyup. Swallow the leftover `?` so it
+    // cannot steal focus after the practice legend opens.
+    if (isLegendToggleKey(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
   };
+
+  const handleTakeoverKeyDownRef = useRef(handleTakeoverKeyDown);
+  handleTakeoverKeyDownRef.current = handleTakeoverKeyDown;
+  const handleTakeoverKeyUpRef = useRef(handleTakeoverKeyUp);
+  handleTakeoverKeyUpRef.current = handleTakeoverKeyUp;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      handleTakeoverKeyDownRef.current(event);
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      handleTakeoverKeyUpRef.current(event);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+    };
+  }, []);
 
   const runPracticeCommand = () => {
     apply((state) => ({
@@ -463,8 +480,6 @@ const ShowcaseTakeover: FC = () => {
       aria-label="Shortcut practice"
       className={`fixed inset-0 flex items-center justify-center bg-background ${closing ? "c-showcase-curtain" : ""}`}
       data-closing={closing || undefined}
-      onKeyDownCapture={handleTakeoverKeyDown}
-      onKeyUpCapture={handleTakeoverKeyUp}
       style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
     >

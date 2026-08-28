@@ -1,4 +1,8 @@
-import { resolveModifier } from "@tanstack/react-hotkeys";
+import {
+  HotkeyManager,
+  HotkeysProvider,
+  resolveModifier,
+} from "@tanstack/react-hotkeys";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestNotificationPort } from "@web/__tests__/helpers/web-test-seams";
@@ -17,6 +21,11 @@ import {
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
+import {
+  selectIsShortcutsOpen,
+  useViewStore,
+} from "@web/events/stores/view.store";
 import { registerNotificationPort } from "@web/notifications/notification.port";
 import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import { clearAppLockReasons, isAppLocked } from "@web/shortcuts/app-lock";
@@ -24,11 +33,14 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const pressKey = (key: string, init: KeyboardEventInit = {}) => {
   act(() => {
-    screen
-      .getByLabelText("Shortcut practice")
-      .dispatchEvent(
-        new KeyboardEvent("keydown", { key, bubbles: true, ...init }),
-      );
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      }),
+    );
   });
 };
 
@@ -404,6 +416,84 @@ describe("ShortcutShowcase", () => {
 
     pressKey("?");
     expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+
+    pressKey("Enter");
+    expect(currentStepId()).toBe("notifications");
+  });
+
+  it("opens the practice legend from Shift+/ as well as ?", () => {
+    render(<ShortcutShowcase />);
+    showStep("legend");
+
+    pressKey("/", { shiftKey: true });
+    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+  });
+
+  it("still completes the legend lesson after focus leaves the takeover", () => {
+    render(
+      <>
+        <input aria-label="Outside search" />
+        <ShortcutShowcase />
+      </>,
+    );
+    showStep("legend");
+
+    pressKey("?");
+    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+
+    const outside = screen.getByLabelText("Outside search");
+    outside.focus();
+    expect(outside).toHaveFocus();
+
+    act(() => {
+      outside.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+
+    expect(currentStepId()).toBe("notifications");
+  });
+
+  it("does not open the real shortcut overlay from the legend lesson", () => {
+    const Harness = () => {
+      useSidebarShortcuts();
+      return <ShortcutShowcase />;
+    };
+    HotkeyManager.resetInstance();
+    useViewStore.setState({ shortcuts: { isOpen: false } });
+
+    render(
+      <HotkeysProvider>
+        <Harness />
+      </HotkeysProvider>,
+    );
+    showStep("legend");
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "?",
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+      window.dispatchEvent(
+        new KeyboardEvent("keyup", {
+          key: "?",
+          bubbles: true,
+          cancelable: true,
+          shiftKey: true,
+        }),
+      );
+    });
+
+    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
 
     pressKey("Enter");
     expect(currentStepId()).toBe("notifications");

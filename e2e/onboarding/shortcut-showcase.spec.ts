@@ -73,6 +73,9 @@ const playThroughLevels = async (page: Page) => {
   await expect(showcase).toContainText("The rest lives in the legend");
 
   await page.keyboard.press("?");
+  await expect(
+    showcase.getByRole("dialog", { name: "Practice shortcut legend" }),
+  ).toBeVisible();
   await page.keyboard.press("Enter");
 };
 
