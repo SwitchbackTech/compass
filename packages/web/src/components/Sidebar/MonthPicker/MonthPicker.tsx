@@ -2,16 +2,10 @@ import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import {
-  selectPageJumpHintsVisible,
-  usePageJumpHintStore,
-} from "@web/shortcuts/page-jump/page-jump.store";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getMonthPickerDayClassName } from "./monthPickerDayClassName";
 import {
-  MONTH_PICKER_NEXT_HOLD_KEYCAPS,
   MONTH_PICKER_NEXT_KEYCAPS,
-  MONTH_PICKER_PREV_HOLD_KEYCAPS,
   MONTH_PICKER_PREV_KEYCAPS,
   useMonthPickerShortcuts,
 } from "./useMonthPickerShortcuts";
@@ -44,7 +38,6 @@ export const MonthPicker: FC<Props> = ({
   const [displayedMonth, setDisplayedMonth] = useState(() =>
     selectedDate.startOf("month"),
   );
-  const showHoldHints = usePageJumpHintStore(selectPageJumpHintsVisible);
 
   useMonthPickerShortcuts({
     onPrevMonth: () => setDisplayedMonth((month) => month.subtract(1, "month")),
@@ -94,9 +87,6 @@ export const MonthPicker: FC<Props> = ({
         monthNav={{
           prevShortcut: MONTH_PICKER_PREV_KEYCAPS,
           nextShortcut: MONTH_PICKER_NEXT_KEYCAPS,
-          prevHoldHint: MONTH_PICKER_PREV_HOLD_KEYCAPS,
-          nextHoldHint: MONTH_PICKER_NEXT_HOLD_KEYCAPS,
-          showHoldHints,
         }}
         monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}

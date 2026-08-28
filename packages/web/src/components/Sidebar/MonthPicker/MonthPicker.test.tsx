@@ -205,7 +205,7 @@ describe("MonthPicker", () => {
     expect(screen.getByText("May 2026")).toBeInTheDocument();
 
     act(() => {
-      pressMonthChord("J");
+      pressMonthChord(",");
     });
 
     await waitFor(() => {
@@ -215,7 +215,7 @@ describe("MonthPicker", () => {
     expect(onSelectDate).not.toHaveBeenCalled();
 
     act(() => {
-      pressMonthChord("K");
+      pressMonthChord(".");
     });
 
     await waitFor(() => {
@@ -224,20 +224,27 @@ describe("MonthPicker", () => {
     expect(onSelectDate).not.toHaveBeenCalled();
   });
 
-  it("reveals Shift+J and Shift+K chips on the chevrons while Mod-hold hints are visible", () => {
+  it("steps the month when Shift+, produces < (US QWERTY)", async () => {
+    const onSelectDate = mock();
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+
+    act(() => {
+      pressMonthChord("<");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Apr 2026")).toBeInTheDocument();
+    });
+    expect(onSelectDate).not.toHaveBeenCalled();
+  });
+
+  it("does not show remaining-key chips on the chevrons while Mod-hold hints are visible", () => {
     usePageJumpHintStore.setState({ areHintsVisible: true });
     renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
 
     const picker = screen.getByRole("group", { name: "Date navigation" });
-    expect(picker.textContent).toContain("Shift");
-    expect(picker.textContent).toContain("J");
-    expect(picker.textContent).toContain("K");
-  });
-
-  it("hides month-nav hold chips when Mod-hold hints are off", () => {
-    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
-
-    const prev = screen.getByRole("button", { name: "Previous month" });
-    expect(prev.parentElement?.textContent).not.toContain("Shift");
+    expect(picker.textContent).not.toContain("Shift");
+    expect(picker.textContent).not.toContain(",");
+    expect(picker.textContent).not.toContain(".");
   });
 });
