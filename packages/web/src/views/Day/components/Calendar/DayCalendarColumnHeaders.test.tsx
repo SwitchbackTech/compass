@@ -34,6 +34,7 @@ describe("DayCalendarColumnHeaders", () => {
         name: `Calendar timezone: ${abbreviation}`,
       }),
     ).toHaveTextContent(abbreviation);
+    expect(screen.getByLabelText("Personal")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Calendars" })).toHaveTextContent(
       "Personal",
     );
