@@ -7,7 +7,7 @@ import {
 import { track } from "@web/auth/posthog/track";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
-export type BillingRedirectKind = "checkout" | "portal";
+type BillingRedirectKind = "checkout" | "portal";
 
 const fallbackMessage = (kind: BillingRedirectKind): string =>
   kind === "portal"

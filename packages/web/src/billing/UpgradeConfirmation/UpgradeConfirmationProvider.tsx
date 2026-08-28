@@ -35,6 +35,10 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
   const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
   const { isRedirecting, redirectTo } = useBillingRedirect();
   const busy = isSubmitting || isRedirecting;
+  const handleManageBilling = () => {
+    if (busy) return;
+    void redirectTo("portal", "upgrade_portal");
+  };
 
   // Bare "B" for billing. The feature owns its own trigger rather than
   // `useNavigationShortcuts`, which must stay usable without a QueryClient.
@@ -50,19 +54,12 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
     { enabled: isTrialing, ignoreAppLock: isSettingsOpen },
   );
 
-  useAppShortcut(
-    "M",
-    () => {
-      if (busy) return;
-      void redirectTo("portal", "upgrade_portal");
-    },
-    {
-      enabled: isOpen,
-      ignoreAppLock: true,
-      ignoreInputs: false,
-      preventDefault: true,
-    },
-  );
+  useAppShortcut("M", handleManageBilling, {
+    enabled: isOpen,
+    ignoreAppLock: true,
+    ignoreInputs: false,
+    preventDefault: true,
+  });
 
   const reportFailure = useCallback((error: unknown, fallback: string) => {
     if (isSessionLevelError(error)) return;
@@ -100,11 +97,6 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
       }
     })();
   }, [closeUpgradeConfirmation, queryClient, reportFailure]);
-
-  const handleManageBilling = useCallback(() => {
-    if (busy) return;
-    void redirectTo("portal", "upgrade_portal");
-  }, [busy, redirectTo]);
 
   return (
     <UpgradeConfirmationContext.Provider value={value}>

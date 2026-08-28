@@ -1,4 +1,9 @@
-import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  queryOptions,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { type BillingStatusResponse } from "@core/types/billing.types";
@@ -59,6 +64,25 @@ export function isBillingEnforced(
 const STATUS_POLL_MS = 1500;
 const STATUS_POLL_WINDOW_MS = 15_000;
 
+function startBillingStatusPoll(
+  queryClient: QueryClient,
+  onWindowEnd: () => void,
+): () => void {
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: billingQueryKeys.status });
+  };
+  invalidate();
+  const interval = window.setInterval(invalidate, STATUS_POLL_MS);
+  const timeout = window.setTimeout(() => {
+    window.clearInterval(interval);
+    onWindowEnd();
+  }, STATUS_POLL_WINDOW_MS);
+  return () => {
+    window.clearInterval(interval);
+    window.clearTimeout(timeout);
+  };
+}
+
 /**
  * After Stripe Checkout returns `?checkout=success`, raise the celebration and
  * keep refetching billing status for a short window so a late webhook does not
@@ -74,62 +98,37 @@ export function useCheckoutReturn() {
   const { checkout, settings } = useSearch({ from: "__root__" });
 
   useEffect(() => {
-    if (checkout !== "success") return;
-
-    const invalidate = () => {
-      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.status });
-    };
-    invalidate();
-    track("trial_converted");
-    checkoutCelebrationActions.celebrate();
-    const interval = window.setInterval(invalidate, STATUS_POLL_MS);
-    const timeout = window.setTimeout(() => {
-      window.clearInterval(interval);
+    const stripCheckout = () => {
       void navigate({
         to: ".",
         search: (prev) => ({ ...prev, checkout: undefined }),
         replace: true,
       });
-    }, STATUS_POLL_WINDOW_MS);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
     };
+
+    if (checkout === "cancel") {
+      showStatusToast(BILLING_CHECKOUT_CANCELED_TOAST_ID, "Checkout canceled");
+      stripCheckout();
+      return;
+    }
+
+    if (checkout !== "success") return;
+
+    track("trial_converted");
+    checkoutCelebrationActions.celebrate();
+    return startBillingStatusPoll(queryClient, stripCheckout);
   }, [checkout, navigate, queryClient]);
-
-  useEffect(() => {
-    if (checkout !== "cancel") return;
-
-    showStatusToast(BILLING_CHECKOUT_CANCELED_TOAST_ID, "Checkout canceled");
-    void navigate({
-      to: ".",
-      search: (prev) => ({ ...prev, checkout: undefined }),
-      replace: true,
-    });
-  }, [checkout, navigate]);
 
   useEffect(() => {
     if (settings !== "billing") return;
 
     settingsActions.openSettings("billing");
-    const invalidate = () => {
-      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.status });
-    };
-    invalidate();
-    const interval = window.setInterval(invalidate, STATUS_POLL_MS);
-    const timeout = window.setTimeout(() => {
-      window.clearInterval(interval);
+    return startBillingStatusPoll(queryClient, () => {
       void navigate({
         to: ".",
         search: (prev) => ({ ...prev, settings: undefined }),
         replace: true,
       });
-    }, STATUS_POLL_WINDOW_MS);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
-    };
+    });
   }, [navigate, queryClient, settings]);
 }
