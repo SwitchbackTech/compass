@@ -1,4 +1,5 @@
 import { selectShortcutHint } from "@web/shortcuts/tips/selectShortcutHint";
+import { getHintPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
 import { describe, expect, it } from "bun:test";
 
 const calendarIdle = {
@@ -78,11 +79,65 @@ describe("selectShortcutHint", () => {
 
   it("teaches week-column letters after event jump on week view", () => {
     expect(
-      selectShortcutHint({ ...afterFirstEvent, isWeekView: true }, [
-        "page-jump",
-        "event-jump",
-      ]).id,
+      selectShortcutHint(
+        {
+          ...afterFirstEvent,
+          isWeekView: true,
+          jumpableDayPrefixes: ["m", "w"],
+        },
+        ["page-jump", "event-jump"],
+      ).id,
     ).toBe("week-day-focus");
+  });
+
+  it("names the first jumpable column at or after tomorrow", () => {
+    const hint = selectShortcutHint(
+      {
+        ...afterFirstEvent,
+        isWeekView: true,
+        jumpableDayPrefixes: ["m", "w", "sa"],
+        // Monday, so Wednesday is the next taught column, not Monday again.
+        todayWeekday: 1,
+      },
+      ["page-jump", "event-jump"],
+    );
+    expect(getHintPlainText(hint)).toBe("Shift+W jumps to Wednesday");
+  });
+
+  it("wraps past the end of the week when nothing later is jumpable", () => {
+    const hint = selectShortcutHint(
+      {
+        ...afterFirstEvent,
+        isWeekView: true,
+        jumpableDayPrefixes: ["m"],
+        todayWeekday: 5,
+      },
+      ["page-jump", "event-jump"],
+    );
+    expect(getHintPlainText(hint)).toBe("Shift+M jumps to Monday");
+  });
+
+  it("teaches the column even while an event is focused, since Shift always works", () => {
+    expect(
+      selectShortcutHint(
+        {
+          ...afterFirstEvent,
+          eventFocused: true,
+          isWeekView: true,
+          jumpableDayPrefixes: ["m"],
+        },
+        ["edit-sequence", "nudge", "edge-focus", "page-jump", "event-jump"],
+      ).id,
+    ).toBe("week-day-focus");
+  });
+
+  it("skips the column tip when no day has a jump key", () => {
+    expect(
+      selectShortcutHint(
+        { ...afterFirstEvent, isWeekView: true, jumpableDayPrefixes: [] },
+        ["page-jump", "event-jump"],
+      ).id,
+    ).toBe("command-palette");
   });
 
   it("walks the idle pool in showcase order as primitives are demonstrated", () => {

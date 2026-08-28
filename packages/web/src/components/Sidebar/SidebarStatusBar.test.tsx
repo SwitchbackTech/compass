@@ -174,6 +174,17 @@ describe("SidebarStatusBar", () => {
     expect(screen.getByRole("status")).toHaveTextContent(CREATE_EVENT_HINT);
   });
 
+  it("wraps the shortcut instead of clipping it, so no hint ends in an ellipsis", () => {
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    const status = screen.getByRole("status");
+    expect(status.className).not.toContain("truncate");
+    expect(status.className).toContain("break-words");
+    expect(status.className).toContain("text-center");
+  });
+
   it("renders exactly one save status region, regardless of account count", () => {
     const { queryClient, wrapper } = createStoreWrapper();
     seedPendingEventMutations(queryClient, ["event-1"]);

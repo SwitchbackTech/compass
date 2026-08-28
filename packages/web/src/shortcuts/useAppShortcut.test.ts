@@ -54,6 +54,19 @@ describe("useAppShortcut", () => {
     });
   });
 
+  it("leaves a shifted key to its own binding, so Shift+W is not week view", async () => {
+    // Day columns are entered with Shift+<day letter>; the bare-letter view
+    // shortcuts share those letters and must not fire alongside them.
+    renderHook(() => useAppShortcutUp("W", mockHandler));
+
+    dispatchKeyEvent("W", "keydown", { shiftKey: true });
+    dispatchKeyEvent("W", "keyup", { shiftKey: true });
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+  });
+
   it("supports modifier hotkeys", async () => {
     const modifierKey = resolveModifier("Mod");
     const isCtrl = modifierKey === "Control";

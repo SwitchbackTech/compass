@@ -194,8 +194,8 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "focus-week-day",
-    keys: ["m"],
-    label: "Focus a week column (M T W R F SA SU)",
+    keys: ["Shift", "m"],
+    label: "Focus a week column (Shift + M T W R F, Shift + S then U or A)",
     section: "focus",
     when: { weekView: true },
   },

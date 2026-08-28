@@ -20,6 +20,8 @@ const DAY_PREFIX_KEYS: Record<string, string[]> = {
   SA: ["s", "a"],
 };
 
+const WEEKDAY_PREFIXES = ["SU", "M", "T", "W", "R", "F", "SA"];
+
 /**
  * Creates a timed event on today via `c`, then nudges it by quarter-hour
  * steps so the trio gets distinct start times for chronological jump
@@ -125,7 +127,7 @@ test("tap h shows day-prefix jump keys and focuses the assigned event", async ({
   await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
-test("day prefix focuses an event without first pressing h", async ({
+test("Shift and the day letter focuses an event without first pressing h", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -136,16 +138,12 @@ test("day prefix focuses an event without first pressing h", async ({
 
   const [saved] = await getSavedEventsByTitle(page, title);
   const weekday = new Date(saved.startDate).getDay();
-  const key = weekday === 3 ? "w" : weekday === 4 ? "r" : null;
-  if (!key) {
-    test.skip(
-      true,
-      "leaderless e2e uses Wednesday/Thursday prefixes; other days are covered by unit tests",
-    );
-    return;
-  }
+  const keys = DAY_PREFIX_KEYS[WEEKDAY_PREFIXES[weekday]!]!;
 
-  await page.keyboard.press(key);
+  // Shift enters the column from idle; the weekend's second letter is typed
+  // bare, because jump mode is already on by then.
+  await page.keyboard.press(`Shift+${keys[0]}`);
+  if (keys[1]) await page.keyboard.press(keys[1]);
 
   await expect(
     page.locator("#mainGrid").getByRole("button", { name: title }),

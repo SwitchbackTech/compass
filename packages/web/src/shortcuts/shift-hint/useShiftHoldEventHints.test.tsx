@@ -39,6 +39,12 @@ const dispatch = (
   );
 };
 
+/** The idle entry gesture: Shift + the day letter (browsers report it upper). */
+const pressDayJump = (letter: string) => {
+  dispatch("keydown", letter.toUpperCase(), { shiftKey: true });
+  dispatch("keyup", letter.toUpperCase(), { shiftKey: true });
+};
+
 const pressEventJump = () => {
   dispatch("keydown", KEYMAP.eventJump.bareLetter);
   dispatch("keyup", KEYMAP.eventJump.bareLetter);
@@ -151,14 +157,15 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
-  it("focuses a day prefix without first pressing h", () => {
+  it("focuses a day prefix with Shift and the day letter", () => {
     const { focus, result, elements } = mountHints();
 
     const event = new KeyboardEvent("keydown", {
       bubbles: true,
       cancelable: true,
       composed: true,
-      key: "w",
+      key: "W",
+      shiftKey: true,
     });
     act(() => {
       document.dispatchEvent(event);
@@ -173,11 +180,11 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints.map((hint) => hint.hint)).toEqual(["w1", "w2"]);
   });
 
-  it("refines a leaderless day prefix with a following digit", () => {
+  it("refines a Shift-entered day prefix with a following digit", () => {
     const { focus, elements } = mountHints();
 
     act(() => {
-      dispatch("keydown", "w");
+      pressDayJump("w");
       dispatch("keydown", "2");
     });
 
@@ -200,7 +207,8 @@ describe("useShiftHoldEventHints", () => {
       bubbles: true,
       cancelable: true,
       composed: true,
-      key: "w",
+      key: "W",
+      shiftKey: true,
     });
     act(() => {
       document.dispatchEvent(event);
@@ -245,7 +253,7 @@ describe("useShiftHoldEventHints", () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it("does not claim m while a calendar event is focused", () => {
+  it("leaves bare m to the event menu while an event is focused", () => {
     const { focus, elements } = mountHints("week", [
       timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
     ]);
@@ -267,13 +275,15 @@ describe("useShiftHoldEventHints", () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it("claims m when no calendar event is focused", () => {
+  it("claims Shift+M even while a calendar event is focused", () => {
     const { focus, elements } = mountHints("week", [
       timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
     ]);
+    elements[0]!.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_A);
+    elements[0]!.focus();
 
     act(() => {
-      dispatch("keydown", "m");
+      pressDayJump("m");
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(true);
@@ -282,7 +292,23 @@ describe("useShiftHoldEventHints", () => {
     );
   });
 
-  it("does not claim f while a notice is visible", () => {
+  it("claims Shift+T for Tuesday while bare t still goes to today", () => {
+    const { focus, elements } = mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      pressDayJump("t");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-04"]);
+  });
+
+  it("leaves bare f to notice focus while a notice is visible", () => {
     const { focus } = mountHints("week", [
       timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
     ]);
@@ -308,13 +334,13 @@ describe("useShiftHoldEventHints", () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it("claims f when no notice is visible", () => {
+  it("claims Shift+F for Friday", () => {
     const { focus, elements } = mountHints("week", [
       timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
     ]);
 
     act(() => {
-      dispatch("keydown", "f");
+      pressDayJump("f");
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(true);
@@ -595,6 +621,35 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().pointerHintKey).toBe("W3");
   });
 
+  it("publishes the columns a day key can currently land on", () => {
+    mountHints("week", [
+      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
+    ]);
+
+    expect(useEventJumpStore.getState().jumpableDayPrefixes).toEqual([
+      "w",
+      "sa",
+    ]);
+  });
+
+  it("publishes no columns in day view, where events are numbered", () => {
+    mountHints("day");
+
+    expect(useEventJumpStore.getState().jumpableDayPrefixes).toEqual([]);
+  });
+
+  it("clears the published columns when the grid unmounts", () => {
+    mountHints();
+    expect(
+      useEventJumpStore.getState().jumpableDayPrefixes.length,
+    ).toBeGreaterThan(0);
+
+    cleanup();
+
+    expect(useEventJumpStore.getState().jumpableDayPrefixes).toEqual([]);
+  });
+
   it("does not activate on bare Shift or Shift+Tab", () => {
     const { result } = mountHints();
 
@@ -682,14 +737,14 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("focuses Saturday from idle with sa", () => {
+  it("focuses Saturday from idle with Shift+S then a", () => {
     const { focus, elements } = mountHints("week", [
       timedFixture(EVENT_A, "2026-08-02T09:00:00.000Z"),
       timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
     ]);
 
     act(() => {
-      dispatch("keydown", "s");
+      pressDayJump("s");
       dispatch("keydown", "a");
     });
 

@@ -9,6 +9,8 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import { CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES } from "@web/grid/interaction/view-event-registry";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import { getHintPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
   resetShortcutHintProgressStoreForTests,
   shortcutHintProgressActions,
@@ -34,6 +36,7 @@ describe("useShortcutHintContext", () => {
   afterEach(() => {
     draftActions.discard();
     useFirstEventPromptStore.setState(initialFirstEventPromptState, true);
+    eventJumpActions.reset();
     resetShortcutHintProgressStoreForTests();
     document.body.innerHTML = "";
     window.history.replaceState({}, "", "/");
@@ -97,9 +100,26 @@ describe("useShortcutHintContext", () => {
     act(() => {
       shortcutHintProgressActions.demonstrate("page-jump");
       shortcutHintProgressActions.demonstrate("event-jump");
+      // Exactly one jumpable column, so the assertion does not depend on
+      // which weekday the suite runs on.
+      eventJumpActions.setJumpableDayPrefixes(["w"]);
     });
 
     const { result } = renderHook(() => useShortcutHintContext());
     expect(result.current.id).toBe("week-day-focus");
+    expect(getHintPlainText(result.current)).toBe("Shift+W jumps to Wednesday");
+  });
+
+  it("falls through the column tip when no day has a jump key", () => {
+    window.history.replaceState({}, "", "/week");
+    useFirstEventPromptStore.setState({ isDone: true }, false);
+    act(() => {
+      shortcutHintProgressActions.demonstrate("page-jump");
+      shortcutHintProgressActions.demonstrate("event-jump");
+      eventJumpActions.setJumpableDayPrefixes([]);
+    });
+
+    const { result } = renderHook(() => useShortcutHintContext());
+    expect(result.current.id).toBe("command-palette");
   });
 });

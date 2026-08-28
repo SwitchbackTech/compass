@@ -10,7 +10,6 @@ import {
 } from "@web/events/stores/draft.store";
 import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
-import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   selectPageJumpHintsVisible,
   usePageJumpHintStore,
@@ -51,10 +50,9 @@ export const DayLabels: FC<Props> = ({
   const showDayJumpPrefixes =
     !isEventFormOpen && (pageJumpHintsVisible || isEventJumpActive);
   const marginLeft = useGridMarginLeft();
-  const jumpKey = KEYMAP.eventJump.keycaps[0];
   const dayJumpHowTo = isEventJumpActive
     ? "Type the day key to focus that column."
-    : `These are typed after ${jumpKey}, not with Mod.`;
+    : "Hold Shift and press the day key to focus that column.";
   const dayJumpAnnouncement = showDayJumpPrefixes
     ? `Day jump keys: ${weekDays
         .map((day) => `${day.format("dddd")} ${dayJumpPrefix(day)}`)
@@ -126,7 +124,11 @@ export const DayLabels: FC<Props> = ({
                 {dayNumber}
               </span>
               {showDayJumpPrefixes ? (
-                <ShortcutHint>{prefix}</ShortcutHint>
+                // Jump mode takes the letter bare; from idle the column is
+                // entered with Shift, so the chip has to say so.
+                <ShortcutHint>
+                  {isEventJumpActive ? prefix : `⇧${prefix}`}
+                </ShortcutHint>
               ) : (
                 <span className="relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
                   {day.format("ddd")}

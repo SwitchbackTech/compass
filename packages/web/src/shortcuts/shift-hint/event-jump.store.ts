@@ -13,6 +13,9 @@ export type EventJumpState = {
   pointerHintKey: string | null;
   /** Event that owns `pointerHintKey`, so rebuilds can refresh the token. */
   pointerHintEventId: string | null;
+  /** Day prefixes with somewhere to land right now, in weekday order. Read by
+   * the sidebar tip so it only teaches a key that would work. */
+  jumpableDayPrefixes: string[];
 };
 
 export const initialEventJumpState: EventJumpState = {
@@ -21,6 +24,7 @@ export const initialEventJumpState: EventJumpState = {
   announcement: "",
   pointerHintKey: null,
   pointerHintEventId: null,
+  jumpableDayPrefixes: [],
 };
 
 export const useEventJumpStore = create<EventJumpState>()(
@@ -71,6 +75,18 @@ export const eventJumpActions = {
       false,
       { type: "setPointerHint" },
     ),
+  setJumpableDayPrefixes: (jumpableDayPrefixes: string[]) => {
+    const current = useEventJumpStore.getState().jumpableDayPrefixes;
+    if (
+      current.length === jumpableDayPrefixes.length &&
+      current.every((prefix, i) => prefix === jumpableDayPrefixes[i])
+    ) {
+      return;
+    }
+    useEventJumpStore.setState({ jumpableDayPrefixes }, false, {
+      type: "setJumpableDayPrefixes",
+    });
+  },
   reset: () =>
     useEventJumpStore.setState(initialEventJumpState, false, { type: "reset" }),
 };
@@ -89,3 +105,6 @@ export const selectEventJumpAnnouncement = (state: EventJumpState) =>
 
 export const selectEventJumpPointerHintKey = (state: EventJumpState) =>
   state.pointerHintKey;
+
+export const selectJumpableDayPrefixes = (state: EventJumpState) =>
+  state.jumpableDayPrefixes;

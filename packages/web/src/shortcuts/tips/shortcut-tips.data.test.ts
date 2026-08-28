@@ -3,6 +3,7 @@ import {
   getHintPlainText,
   getPartsPlainText,
   SHORTCUT_HINTS,
+  weekDayFocusHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 import { describe, expect, it } from "bun:test";
 
@@ -18,31 +19,52 @@ describe("getHintPlainText", () => {
 
     expect(plainTextById["first-event-save"]).toBe("Type a title, then Enter");
     expect(plainTextById["save-draft"]).toBe(
-      `Enter to save · hold ${mod} to jump fields`,
+      `Enter saves · hold ${mod} to jump fields`,
     );
-    expect(plainTextById["life-this-week"]).toBe(
-      "Press T to jump to this week",
-    );
-    expect(plainTextById["edit-sequence"]).toBe(
-      "Press E then T to jump to the title",
-    );
-    expect(plainTextById["create-event"]).toBe("Press C to add an event");
-    expect(plainTextById["page-jump"]).toBe(
-      `Hold ${mod} to see where you can jump`,
-    );
-    expect(plainTextById["event-jump"]).toBe(
-      "Press H to show event keys, or a day key to jump",
-    );
-    expect(plainTextById["week-day-focus"]).toBe(
-      "On week view, press H then M to focus Monday",
-    );
-    expect(plainTextById.nudge).toBe("Hold Shift and press an arrow to move");
+    expect(plainTextById["life-this-week"]).toBe("T jumps to this week");
+    expect(plainTextById["edit-sequence"]).toBe("E then T edits the title");
+    expect(plainTextById["create-event"]).toBe("C creates an event");
+    expect(plainTextById["page-jump"]).toBe(`Hold ${mod} to see jump targets`);
+    expect(plainTextById["event-jump"]).toBe("H labels events to jump to");
+    expect(plainTextById["week-day-focus"]).toBe("Shift+M jumps to Monday");
+    expect(plainTextById.nudge).toBe("Shift and an arrow moves the event");
     expect(plainTextById["edge-focus"]).toBe(
-      "Press Tab to the start or end, then hold Shift and press up or down",
+      "Tab picks an edge, then Shift and up or down",
     );
     expect(plainTextById["command-palette"]).toBe(
-      `Press ${mod}+K to open the command palette`,
+      `${mod}+K opens the command palette`,
     );
+  });
+
+  it("names the day the sidebar picked, weekends as a two-key chord", () => {
+    expect(getHintPlainText(weekDayFocusHint("w"))).toBe(
+      "Shift+W jumps to Wednesday",
+    );
+    expect(getHintPlainText(weekDayFocusHint("r"))).toBe(
+      "Shift+R jumps to Thursday",
+    );
+    expect(getHintPlainText(weekDayFocusHint("su"))).toBe(
+      "Shift+S then U jumps to Sunday",
+    );
+    expect(getHintPlainText(weekDayFocusHint("sa"))).toBe(
+      "Shift+S then A jumps to Saturday",
+    );
+  });
+
+  it("keeps every tip short enough to wrap into the sidebar's two lines", () => {
+    // The status bar is one line tall at SIDEBAR_MIN_WIDTH and may grow to
+    // two. Nothing is ever clipped, so the budget lives here instead.
+    for (const hint of Object.values(SHORTCUT_HINTS)) {
+      const text = getHintPlainText(hint);
+      expect({ id: hint.id, length: text.length <= 48 }).toEqual({
+        id: hint.id,
+        length: true,
+      });
+      expect(text).not.toContain("—");
+      expect(text).not.toContain("–");
+      expect(text.startsWith("Press ")).toBe(false);
+      expect(text).not.toContain("On week view");
+    }
   });
 
   it("joins a chord's keys with + and speaks Mod as Cmd or Ctrl", () => {

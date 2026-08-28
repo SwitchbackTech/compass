@@ -74,11 +74,12 @@ describe("DayLabels", () => {
     pageJumpHintActions.setHintsVisible(true);
     renderLabels();
 
-    expect(screen.getByText("M")).toBeTruthy();
-    expect(screen.getByText("R")).toBeTruthy();
+    // Jump mode is off here, so the column chip advertises the Shift entry.
+    expect(screen.getByText("⇧M")).toBeTruthy();
+    expect(screen.getByText("⇧R")).toBeTruthy();
     expect(screen.queryByText("Mon")).toBeNull();
     expect(screen.getByRole("status").textContent).toContain(
-      "These are typed after H, not with Mod.",
+      "Hold Shift and press the day key to focus that column.",
     );
   });
 });

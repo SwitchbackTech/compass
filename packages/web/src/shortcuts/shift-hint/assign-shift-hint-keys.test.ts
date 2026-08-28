@@ -1,6 +1,7 @@
 import {
   assignDayJumpKeys,
   DAY_JUMP_PREFIX_BY_WEEKDAY,
+  dayJumpPrefixesForWeekdays,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
@@ -387,5 +388,19 @@ describe("matchDayJumpKeystroke", () => {
       dayKey: "2026-08-05",
       buffer: "2",
     });
+  });
+});
+
+describe("dayJumpPrefixesForWeekdays", () => {
+  it("returns the prefixes for the days that have events, in weekday order", () => {
+    expect(dayJumpPrefixesForWeekdays([5, 3, 3, 0])).toEqual(["su", "w", "f"]);
+  });
+
+  it("has no letters in day view, where events are numbered", () => {
+    expect(dayJumpPrefixesForWeekdays([1, 2], "day")).toEqual([]);
+  });
+
+  it("is empty when nothing is scheduled", () => {
+    expect(dayJumpPrefixesForWeekdays([])).toEqual([]);
   });
 });
