@@ -251,7 +251,7 @@ export const OverlayPanelActions = ({
 
 interface OverlayPanelActionButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "destructive";
+  variant?: "primary" | "secondary" | "destructive" | "ghost";
   /** Visible keycap(s) for the action. */
   shortcut?: string | string[];
 }
@@ -274,13 +274,18 @@ export const OverlayPanelActionButton = forwardRef<
     <button
       ref={ref}
       className={classNames(
-        "inline-flex h-11 items-center justify-center rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center rounded text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
+        // The ghost variant skips the button box entirely so it reads as a
+        // quiet link next to the real actions.
+        variant !== "ghost" && "h-11 px-4",
         variant === "primary" &&
-          "bg-accent text-on-accent transition hover:brightness-110",
+          "bg-accent font-medium text-on-accent transition hover:brightness-110",
         variant === "destructive" &&
           "bg-error text-on-accent transition hover:brightness-110",
         variant === "secondary" &&
           "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
+        variant === "ghost" &&
+          "text-text-muted underline-offset-4 transition-colors hover:text-text hover:underline",
         className,
       )}
       type={type}

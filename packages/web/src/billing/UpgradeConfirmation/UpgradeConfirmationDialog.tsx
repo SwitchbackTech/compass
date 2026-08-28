@@ -13,10 +13,11 @@ interface UpgradeConfirmationDialogProps {
 }
 
 /**
- * Confirms ending a Stripe trial early. No amount is shown here on purpose:
- * the price lives on the Stripe Price, not in this codebase, so operators can
- * change it without a web deploy. "Manage billing" is the way to see the card
- * and the exact charge before committing.
+ * Confirms starting a Stripe subscription before the trial runs out. No amount
+ * is shown here on purpose: the price lives on the Stripe Price, not in this
+ * codebase, so operators can change it without a web deploy. "Manage billing"
+ * is the way to see the card and the exact charge before committing, so it sits
+ * apart from the two real choices rather than competing with them.
  */
 export function UpgradeConfirmationDialog({
   isOpen,
@@ -29,35 +30,38 @@ export function UpgradeConfirmationDialog({
 
   return (
     <OverlayPanel
-      title="End your trial and subscribe?"
-      message="Your trial ends right away and the card on file is charged today. Your calendar keeps working, and the trial badge goes away."
+      title="Start Premium now?"
+      message="Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away."
       onDismiss={onCancel}
       align="start"
       variant="modal"
     >
-      <OverlayPanelActions align="start">
+      <div className="flex w-full flex-col items-start gap-4">
+        <OverlayPanelActions align="start">
+          <OverlayPanelActionButton
+            variant="primary"
+            shortcut="Enter"
+            disabled={isSubmitting}
+            onClick={onConfirm}
+          >
+            {isSubmitting ? "Starting Premium…" : "Start Premium"}
+          </OverlayPanelActionButton>
+          <OverlayPanelActionButton
+            shortcut="Esc"
+            disabled={isSubmitting}
+            onClick={onCancel}
+          >
+            Cancel
+          </OverlayPanelActionButton>
+        </OverlayPanelActions>
         <OverlayPanelActionButton
-          variant="primary"
-          shortcut="Enter"
-          disabled={isSubmitting}
-          onClick={onConfirm}
-        >
-          {isSubmitting ? "Subscribing…" : "Subscribe now"}
-        </OverlayPanelActionButton>
-        <OverlayPanelActionButton
-          shortcut="Esc"
-          disabled={isSubmitting}
-          onClick={onCancel}
-        >
-          Cancel
-        </OverlayPanelActionButton>
-        <OverlayPanelActionButton
+          variant="ghost"
           disabled={isSubmitting}
           onClick={onManageBilling}
         >
           Manage billing
         </OverlayPanelActionButton>
-      </OverlayPanelActions>
+      </div>
     </OverlayPanel>
   );
 }
