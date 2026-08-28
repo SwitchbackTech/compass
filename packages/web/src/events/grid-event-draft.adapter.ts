@@ -199,7 +199,16 @@ export function parseGridEventDraft(
           values: draft.values,
         };
 
-  return parseEventDraft(eventDraft);
+  const parsed = parseEventDraft(eventDraft);
+  if (
+    parsed.ok &&
+    parsed.mode === "create" &&
+    draft.kind === "create" &&
+    draft.clientId
+  ) {
+    return { ...parsed, input: { ...parsed.input, id: draft.clientId } };
+  }
+  return parsed;
 }
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {

@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
+import { EventIdSchema } from "@core/types/domain-primitives";
 import { type CreateEventInput } from "@core/types/event-command.contracts";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   gridDraftGuestsChanged,
@@ -117,15 +119,20 @@ export function useSaveEventForm() {
 
         if (parsed.mode === "create") {
           clearFieldErrors();
+          // Reuse the draft's client id (or mint one) so the optimistic card
+          // shares identity with the draft. Close then focuses that id: a
+          // newly minted create id would miss the card and dump Tab onto
+          // the month picker.
+          const id =
+            parsed.input.id ?? EventIdSchema.parse(createObjectIdString());
+          const input =
+            invitation === undefined
+              ? { ...parsed.input, id }
+              : { ...parsed.input, invitation, id };
           // Closing via the callback (not after `create` returns) keeps the draft
           // card mounted until the optimistic insert exists, so the saved card
           // replaces it in one commit instead of flashing empty.
-          create(
-            invitation === undefined
-              ? parsed.input
-              : { ...parsed.input, invitation },
-            { onOptimisticApplied: closeEventForm },
-          );
+          create(input, { onOptimisticApplied: () => closeEventForm(id) });
         }
         return;
       }

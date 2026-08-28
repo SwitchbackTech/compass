@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
-import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
+import { type CreateEventInput } from "@core/types/event-command.contracts";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   createGridEventDraft,
@@ -16,8 +17,9 @@ import {
   initialDraftState,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import { useSaveEventForm } from "./useSaveEventForm";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const calendarId = CalendarIdSchema.parse("cccccccccccccccccccccccc");
 
@@ -52,9 +54,31 @@ function createWrapper() {
   return { queryClient, Wrapper };
 }
 
+const createVariables = (queryClient: QueryClient) =>
+  queryClient.getMutationCache().getAll()[0]?.state.variables as
+    | { input: CreateEventInput }
+    | undefined;
+
+let pendingFrames: FrameRequestCallback[];
+let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
+const flushFrame = () => {
+  const frames = pendingFrames.splice(0);
+  frames.forEach((frame) => frame(performance.now()));
+};
+
 describe("useSaveEventForm", () => {
   beforeEach(() => {
     draftActions.discard();
+    pendingFrames = [];
+    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
+      pendingFrames.push(frame)) as typeof requestAnimationFrame;
+  });
+
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    document.body.innerHTML = "";
   });
 
   it("keeps the form open and surfaces field errors when the draft is invalid", () => {
@@ -82,5 +106,67 @@ describe("useSaveEventForm", () => {
     expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
     expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
     expect(useDraftStore.getState()).not.toEqual(initialDraftState);
+  });
+
+  it("reuses the create draft clientId as the saved event id and focuses that card", async () => {
+    const clientId = EventIdSchema.parse("507f1f77bcf86cd799439044");
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000Z"),
+        new Date("2026-05-20T10:00:00.000Z"),
+      ),
+      clientId,
+      calendarId,
+    );
+    draft.values.title = "New standup";
+    draftActions.startGridDraft({ activity: "createShortcut", draft });
+    draftActions.setFormOpen(true);
+
+    const card = document.createElement("button");
+    card.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, clientId);
+    card.tabIndex = 0;
+    document.body.appendChild(card);
+
+    const { queryClient, Wrapper } = createWrapper();
+    const { result } = renderHook(() => useSaveEventForm(), {
+      wrapper: Wrapper,
+    });
+
+    act(() => {
+      result.current.saveEventForm(draft);
+    });
+
+    expect(createVariables(queryClient)?.input.id).toBe(clientId);
+    await waitFor(() => {
+      expect(useDraftStore.getState()).toEqual(initialDraftState);
+    });
+    flushFrame();
+    expect(document.activeElement).toBe(card);
+  });
+
+  it("mints a create id when the draft has no clientId", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000Z"),
+        new Date("2026-05-20T10:00:00.000Z"),
+      ),
+      undefined,
+      calendarId,
+    );
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.setFormOpen(true);
+
+    const { queryClient, Wrapper } = createWrapper();
+    const { result } = renderHook(() => useSaveEventForm(), {
+      wrapper: Wrapper,
+    });
+
+    act(() => {
+      result.current.saveEventForm(draft);
+    });
+
+    const savedId = createVariables(queryClient)?.input.id;
+    expect(savedId).toBeDefined();
+    expect(EventIdSchema.safeParse(savedId).success).toBe(true);
   });
 });

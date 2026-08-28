@@ -62,6 +62,10 @@ describe("shortcut draft creation", () => {
       "2026-05-20T00:00:00.000Z",
     );
     expectSameTime(gridDraft?.values.schedule.end, "2026-05-21T00:00:00.000Z");
+    expect(gridDraft?.kind).toBe("create");
+    if (gridDraft?.kind === "create") {
+      expect(gridDraft.clientId).toBeDefined();
+    }
   });
 
   it("creates a one-day all-day draft on the visible week anchor when today is outside the visible week", async () => {
