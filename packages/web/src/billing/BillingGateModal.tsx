@@ -1,10 +1,4 @@
-import {
-  type FC,
-  type KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
@@ -12,12 +6,19 @@ import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 const PANEL_CLASSNAME =
   "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
 const SECONDARY_BUTTON_CLASSNAME =
   "c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2";
+
+const OVERLAY_LETTER_SHORTCUT = {
+  ignoreAppLock: true,
+  ignoreInputs: false,
+  preventDefault: true,
+} as const;
 
 type BillingGateModalProps = {
   status: string;
@@ -65,19 +66,35 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
         onClick: () => void redirectTo("portal"),
       };
 
-  // Welcome-style letter bindings: unmodified keys, preventDefault, then run.
-  const handleShortcutKey = (event: KeyboardEvent) => {
-    if (isRedirecting) return;
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    const actions: Record<string, () => void> = {
-      s: () => void redirectTo("checkout"),
-      [secondary.key.toLowerCase()]: secondary.onClick,
-    };
-    const action = actions[keyboardKey(event).toLowerCase()];
-    if (!action) return;
-    event.preventDefault();
-    action();
-  };
+  useAppShortcut(
+    "S",
+    () => {
+      if (isRedirecting) return;
+      void redirectTo("checkout");
+    },
+    OVERLAY_LETTER_SHORTCUT,
+  );
+
+  useAppShortcut(
+    "L",
+    () => {
+      if (isRedirecting) return;
+      // Look-around unmounts this overlay and drops app-lock before keyup.
+      // Life view is bound on that keyup — swallow it so L only means preview.
+      swallowNextKeyup("l");
+      lookAround();
+    },
+    { ...OVERLAY_LETTER_SHORTCUT, enabled: isAwaitingCheckout },
+  );
+
+  useAppShortcut(
+    "M",
+    () => {
+      if (isRedirecting) return;
+      void redirectTo("portal");
+    },
+    { ...OVERLAY_LETTER_SHORTCUT, enabled: !isAwaitingCheckout },
+  );
 
   return (
     <OverlayPanel
@@ -87,11 +104,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
       panelClassName={PANEL_CLASSNAME}
       widthClassName="w-120"
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
-      <div
-        className="flex w-full flex-col items-center gap-4"
-        onKeyDown={handleShortcutKey}
-      >
+      <div className="flex w-full flex-col items-center gap-4">
         <PixelPirateScouting className="h-14 w-14" />
         <h1 className="font-medium text-xl">{title}</h1>
         <p className="text-sm text-text-muted">{body}</p>

@@ -2,7 +2,9 @@ import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { act, type ReactElement } from "react";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
+import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import {
   billingPreviewActions,
@@ -12,6 +14,7 @@ import {
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { RootShell } from "@web/components/RootShell/RootShell";
 import {
   afterAll,
@@ -21,6 +24,7 @@ import {
   expect,
   it,
   mock,
+  spyOn,
 } from "bun:test";
 
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
@@ -54,6 +58,7 @@ const renderShell = async (
   });
   render(<div />, { router });
   await router.load();
+  return router;
 };
 
 afterAll(() => {
@@ -140,6 +145,44 @@ describe("RootShell billing gates", () => {
     expect(
       screen.getByRole("dialog", { name: "Start your 7-day trial" }),
     ).toBeInTheDocument();
+  });
+
+  it("looks around with L without navigating to Life", async () => {
+    access = awaitingCheckout;
+    const router = await renderShell("/week");
+    const user = userEvent.setup();
+
+    await user.keyboard("l");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Start your 7-day trial" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "You're looking around in read-only mode.",
+    );
+    expect(router.state.location.pathname).toBe("/week");
+  });
+
+  it("starts checkout with S from the billing gate", async () => {
+    const createCheckoutSession = spyOn(
+      BillingApi,
+      "createCheckoutSession",
+    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
+    const assign = spyOn(window.location, "assign").mockImplementation(
+      () => {},
+    );
+    const { port } = createTestToastPort();
+    registerToastPort(port);
+    access = awaitingCheckout;
+    await renderShell("/week");
+    const user = userEvent.setup();
+
+    await user.keyboard("s");
+
+    expect(createCheckoutSession).toHaveBeenCalled();
+    expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
+    createCheckoutSession.mockRestore();
+    assign.mockRestore();
   });
 });
 
