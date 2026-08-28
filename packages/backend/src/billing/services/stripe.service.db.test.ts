@@ -306,4 +306,161 @@ describe("StripeService", () => {
       clientMessage: "Couldn't start billing. Please try again in a moment.",
     });
   });
+  describe("endTrialNow", () => {
+    const seedTrialingUser = async (billing: Record<string, unknown> = {}) => {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "trial@example.com",
+        name: "Trial User",
+        firstName: "Trial",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "trialing",
+          stripeCustomerId: "cus_trial",
+          stripeSubscriptionId: "sub_trial",
+          ...billing,
+        },
+      });
+      return userId;
+    };
+
+    const stripeSubscription = (
+      status: string,
+      overrides: Record<string, unknown> = {},
+    ) =>
+      ({
+        id: "sub_trial",
+        status,
+        customer: "cus_trial",
+        cancel_at_period_end: false,
+        trial_start: 1_756_000_000,
+        trial_end: 1_756_200_000,
+        items: {
+          data: [
+            {
+              price: { id: "price_test" },
+              current_period_end: 1_758_800_000,
+            },
+          ],
+        },
+        ...overrides,
+      }) as unknown as Stripe.Subscription;
+
+    it("ends the trial now and reports the resulting active status", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser();
+
+      const update = mock(() => Promise.resolve(stripeSubscription("active")));
+      setStripeClientForTests({
+        subscriptions: { update },
+      } as unknown as Stripe);
+
+      const result = await stripeService.endTrialNow(userId.toString());
+
+      expect(result).toEqual({
+        subscriptionStatus: "active",
+        trialEndsAt: new Date(1_756_200_000 * 1000).toISOString(),
+        isReadOnly: false,
+      });
+      expect(update.mock.calls[0]?.[0]).toBe("sub_trial");
+      expect(update.mock.calls[0]?.[1]).toEqual({
+        trial_end: "now",
+        proration_behavior: "none",
+      });
+      expect(update.mock.calls[0]?.[2]).toEqual({
+        idempotencyKey: "compass-end-trial-sub_trial",
+      });
+
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.subscriptionStatus).toBe("active");
+      expect(stored?.billing?.stripePriceId).toBe("price_test");
+    });
+
+    it("reports past_due, still writable, when the charge fails", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser();
+
+      setStripeClientForTests({
+        subscriptions: {
+          update: mock(() => Promise.resolve(stripeSubscription("past_due"))),
+        },
+      } as unknown as Stripe);
+
+      const result = await stripeService.endTrialNow(userId.toString());
+
+      expect(result.subscriptionStatus).toBe("past_due");
+      expect(result.isReadOnly).toBe(false);
+    });
+
+    it("still charges a trial that is set to cancel at period end", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser({ cancelAtPeriodEnd: true });
+
+      setStripeClientForTests({
+        subscriptions: {
+          update: mock(() =>
+            Promise.resolve(
+              stripeSubscription("active", { cancel_at_period_end: true }),
+            ),
+          ),
+        },
+      } as unknown as Stripe);
+
+      const result = await stripeService.endTrialNow(userId.toString());
+
+      expect(result.subscriptionStatus).toBe("active");
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.cancelAtPeriodEnd).toBe(true);
+    });
+
+    it("rejects with 409 when the account is not trialing", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser({ subscriptionStatus: "active" });
+
+      const update = mock(() => Promise.resolve(stripeSubscription("active")));
+      setStripeClientForTests({
+        subscriptions: { update },
+      } as unknown as Stripe);
+
+      await expect(
+        stripeService.endTrialNow(userId.toString()),
+      ).rejects.toMatchObject({
+        name: "BillingHttpError",
+        status: 409,
+        clientMessage: "No active trial to end.",
+      });
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it("rejects with 409 when there is no Stripe subscription to end", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser({
+        stripeSubscriptionId: undefined,
+      });
+
+      await expect(
+        stripeService.endTrialNow(userId.toString()),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it("maps a Stripe failure to BillingHttpError", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedTrialingUser();
+
+      const stripeError = new Stripe.errors.StripeInvalidRequestError({
+        message: "No such subscription",
+        type: "invalid_request_error",
+        statusCode: 400,
+      });
+      setStripeClientForTests({
+        subscriptions: { update: mock(() => Promise.reject(stripeError)) },
+      } as unknown as Stripe);
+
+      await expect(
+        stripeService.endTrialNow(userId.toString()),
+      ).rejects.toMatchObject({ name: "BillingHttpError", status: 400 });
+    });
+  });
 });

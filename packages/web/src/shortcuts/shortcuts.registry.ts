@@ -376,6 +376,13 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "other",
   },
   {
+    id: "other-subscribe",
+    keys: ["b"],
+    label: "Subscribe now",
+    section: "other",
+    when: { isTrialing: true },
+  },
+  {
     id: "other-settings",
     keys: ["Mod", ","],
     label: "Settings",
@@ -405,6 +412,7 @@ interface FilterOptions {
   view: "day" | "week" | "life";
   isViewingCurrentPeriod: boolean;
   isFormOpen?: boolean;
+  isTrialing?: boolean;
 }
 
 // Context-sensitive display labels, keyed by shortcut id. Each override lives
@@ -433,7 +441,7 @@ const LABEL_OVERRIDES: Record<string, (options: FilterOptions) => string> = {
 export const filterShortcutsByContext = (
   options: FilterOptions,
 ): Shortcut[] => {
-  const { view, isFormOpen } = options;
+  const { view, isFormOpen, isTrialing } = options;
 
   return SHORTCUTS_REGISTRY.map((shortcut) => ({
     ...shortcut,
@@ -487,6 +495,9 @@ export const filterShortcutsByContext = (
 
     // Filter by context predicates
     if (shortcut.when?.isFormOpen && !isFormOpen) {
+      return false;
+    }
+    if (shortcut.when?.isTrialing && !isTrialing) {
       return false;
     }
 

@@ -67,6 +67,29 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
+    it("hides the subscribe row unless a trial is running", () => {
+      const ids = filterShortcutsByContext({
+        view: "week",
+        isViewingCurrentPeriod: true,
+        isTrialing: false,
+      }).map((s) => s.id);
+
+      expect(ids).not.toContain("other-subscribe");
+    });
+
+    it("lists the subscribe row in every view while trialing", () => {
+      for (const view of ["day", "week", "life"] as const) {
+        const shortcut = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+          isTrialing: true,
+        }).find((s) => s.id === "other-subscribe");
+
+        expect(shortcut?.keys).toEqual(["b"]);
+        expect(shortcut?.label).toBe("Subscribe now");
+      }
+    });
+
     it("lists f and m, and never advertises F10, in the legend", () => {
       const week = filterShortcutsByContext({
         view: "week",
