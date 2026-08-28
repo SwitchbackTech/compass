@@ -457,4 +457,77 @@ describe("groupCalendarsByAccount", () => {
     expect(groups[0]?.accountEmail).toBe("old@x.com");
     expect(groups[0]?.calendars).toEqual([]);
   });
+
+  it("nests the local calendar under the Google account that matches compassEmail", () => {
+    const work = makeCalendar({
+      name: "Work",
+      provider: "google",
+      accountEmail: "old@x.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      provider: "google",
+      accountEmail: "new@x.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    const { groups, ungrouped } = groupCalendarsByAccount(
+      [personal, work, local],
+      [connection("old@x.com"), connection("new@x.com")],
+      "old@x.com",
+    );
+
+    expect(ungrouped).toEqual([]);
+    expect(groups[0]?.calendars).toEqual([work, local]);
+    expect(groups[1]?.calendars).toEqual([personal]);
+  });
+
+  it("matches compassEmail to a Google account case-insensitively", () => {
+    const work = makeCalendar({
+      name: "Work",
+      provider: "google",
+      accountEmail: "Old@X.com",
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    const { groups, ungrouped } = groupCalendarsByAccount(
+      [work, local],
+      [connection("Old@X.com")],
+      "  old@x.com  ",
+    );
+
+    expect(ungrouped).toEqual([]);
+    expect(groups[0]?.calendars).toEqual([work, local]);
+  });
+
+  it("leaves the local calendar ungrouped when compassEmail matches no Google account", () => {
+    const work = makeCalendar({
+      name: "Work",
+      provider: "google",
+      accountEmail: "old@x.com",
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    const { groups, ungrouped } = groupCalendarsByAccount(
+      [work, local],
+      [connection("old@x.com")],
+      "login@x.com",
+    );
+
+    expect(ungrouped).toEqual([local]);
+    expect(groups[0]?.calendars).toEqual([work]);
+  });
 });

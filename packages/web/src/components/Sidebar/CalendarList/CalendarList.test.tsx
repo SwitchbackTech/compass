@@ -643,6 +643,61 @@ describe("CalendarList", () => {
     expect(screen.getByText("Work")).toBeInTheDocument();
   });
 
+  it("nests Compass under the Google account that matches the Compass login email", () => {
+    mockUserEmail = "ahab@pequod.com";
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    renderCalendarList([work, personal, local], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    const matchingSection = screen.getByRole("region", {
+      name: "Calendars for ahab@pequod.com",
+    });
+    expect(within(matchingSection).getByText("Work")).toBeInTheDocument();
+    expect(within(matchingSection).getByText("Compass")).toBeInTheDocument();
+    expect(
+      screen.queryAllByRole("region", {
+        name: "Calendars for ahab@pequod.com",
+      }),
+    ).toHaveLength(1);
+    expect(
+      within(
+        screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
+      ).queryByText("Compass"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Compass with the matching Google account when that section collapses", async () => {
+    mockUserEmail = "ahab@pequod.com";
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([work, local], {
+      connections: [makeConnection("ahab@pequod.com")],
+    });
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "ahab@pequod.com" }));
+    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
+    expect(screen.queryByText("Work")).not.toBeInTheDocument();
+  });
+
   it("keeps the local Compass section visible when Google accounts are collapsed", async () => {
     const work = makeCalendar({
       name: "Work",
