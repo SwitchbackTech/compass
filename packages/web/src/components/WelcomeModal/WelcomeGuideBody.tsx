@@ -112,7 +112,7 @@ export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
         Tip: Press a number to open a question or a link.
       </p>
       {children}
-      <WelcomeLinks />
+      <WelcomeLinks flashedKey={flashedKey} />
     </>
   );
 }

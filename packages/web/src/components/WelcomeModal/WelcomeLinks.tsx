@@ -8,10 +8,7 @@ import { type ReactNode } from "react";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
-import {
-  flashedShortcutClass,
-  useFlashedWelcomeShortcut,
-} from "./useFlashedWelcomeShortcut";
+import { flashedShortcutClass } from "./useFlashedWelcomeShortcut";
 
 const SOCIAL_ICONS = {
   x: XLogoIcon,
@@ -72,9 +69,7 @@ function JumpAnchor({
   );
 }
 
-export function WelcomeLinks() {
-  const flashedKey = useFlashedWelcomeShortcut();
-
+export function WelcomeLinks({ flashedKey }: { flashedKey: string | null }) {
   return (
     <div className="flex items-center justify-between border-border border-t pt-4">
       <div className="flex items-center gap-3">
