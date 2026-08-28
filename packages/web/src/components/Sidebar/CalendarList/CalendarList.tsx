@@ -51,8 +51,8 @@ export const CalendarList: FC = () => {
     [data, accountEmailOrder],
   );
   const { groups, ungrouped } = useMemo(
-    () => groupCalendarsByAccount(calendars, connections),
-    [calendars, connections],
+    () => groupCalendarsByAccount(calendars, connections, email),
+    [calendars, connections, email],
   );
 
   const renderRows = (rows: Calendar[], id?: string) => (

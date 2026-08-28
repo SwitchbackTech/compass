@@ -122,10 +122,16 @@ export interface AccountGroup {
  * Empty groups are kept so a connected-but-still-importing account still
  * renders its section header. Callers that cannot show an empty optgroup
  * (the Settings default-calendar select) skip those groups inline.
+ *
+ * When `compassEmail` matches a group's account email (case-insensitive),
+ * nest the local Compass calendar under that Google section instead of
+ * leaving it ungrouped. Callers that paint a second "Compass email" parent
+ * then only do so when no Google account shares the login address.
  */
 export function groupCalendarsByAccount(
   calendars: Calendar[],
   connections: GoogleSyncConnectionSummary[],
+  compassEmail?: string | null,
 ): { groups: AccountGroup[]; ungrouped: Calendar[] } {
   const groups: AccountGroup[] = [];
   const byEmail = new Map<string, AccountGroup>();
@@ -158,8 +164,36 @@ export function groupCalendarsByAccount(
     group.calendars.push(calendar);
   }
 
-  return { groups, ungrouped };
+  return nestLocalCalendarInMatchingGroup(groups, ungrouped, compassEmail);
 }
+
+const nestLocalCalendarInMatchingGroup = (
+  groups: AccountGroup[],
+  ungrouped: Calendar[],
+  compassEmail: string | null | undefined,
+): { groups: AccountGroup[]; ungrouped: Calendar[] } => {
+  const normalizedCompassEmail = compassEmail?.trim().toLowerCase();
+  if (!normalizedCompassEmail) return { groups, ungrouped };
+
+  // Connection order is already the group order; first match wins if two
+  // accounts somehow share an email.
+  const matchingGroup = groups.find(
+    (group) =>
+      group.accountEmail.trim().toLowerCase() === normalizedCompassEmail,
+  );
+  if (!matchingGroup) return { groups, ungrouped };
+
+  const stillUngrouped: Calendar[] = [];
+  for (const calendar of ungrouped) {
+    if (calendar.provider === "local") {
+      matchingGroup.calendars.push(calendar);
+    } else {
+      stillUngrouped.push(calendar);
+    }
+  }
+
+  return { groups, ungrouped: stillUngrouped };
+};
 
 export interface DefaultTargetCalendarOptions {
   /**

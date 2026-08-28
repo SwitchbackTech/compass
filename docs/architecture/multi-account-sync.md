@@ -50,9 +50,11 @@ User-visible status hangs off one connection, never the precedence-collapsed
 aggregate. A stuck account must not pin an unattributed banner (or disable
 reconciliation) for all accounts.
 
-- The local Compass calendar is its own sidebar section (the signed-in
-  user's email) once any Google account exists. It stays visible and
-  toggleable. LCV1/LCV2 still exclude it as a create target.
+- The local Compass calendar nests under the Google account whose email
+  matches the signed-in user. When no connected account shares that
+  email, it stays its own sidebar section (the signed-in user's email)
+  once any Google account exists. It stays visible and toggleable.
+  LCV1/LCV2 still exclude it as a create target.
 - A connected-but-still-importing account keeps its section header with
   zero calendars so "Adding your calendar…" attributes to that account.
 - Day view columns are active+visible calendars, matching Week.
