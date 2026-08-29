@@ -15,21 +15,10 @@ export const GOOGLE_AUTH_SCOPES_REQUIRED = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-// Optional scopes the consent screen asks for but sign-in never verifies. The
-// user can leave them unchecked and proceed; the backend stores whatever was
-// actually granted. Approved as optional sensitive scopes 2026-08-25.
-export const GOOGLE_AUTH_SCOPES_OPTIONAL = [
-  "https://www.googleapis.com/auth/contacts.readonly",
-  "https://www.googleapis.com/auth/contacts.other.readonly",
-];
-
-// What the sign-in flow REQUESTS from Google: required plus optional. Only for
-// building the consent request — callback verification stays on
-// GOOGLE_AUTH_SCOPES_REQUIRED alone.
-export const GOOGLE_AUTH_SCOPES_REQUESTED = [
-  ...GOOGLE_AUTH_SCOPES_REQUIRED,
-  ...GOOGLE_AUTH_SCOPES_OPTIONAL,
-];
+// Contacts are requested only by the explicit contacts feature flow in Sync.
+// Keeping sign-in to the verified Calendar scopes prevents Google from
+// treating the login request as unverified.
+export const GOOGLE_AUTH_SCOPES_REQUESTED = GOOGLE_AUTH_SCOPES_REQUIRED;
 
 export const GOOGLE_AUTHORIZATION_ERROR_MESSAGE =
   "We couldn't connect your Google account. Please try again.";
