@@ -1,4 +1,3 @@
-import { resolveModifier } from "@tanstack/react-hotkeys";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FormActionsRow } from "@web/views/Forms/EventForm/FormActionsRow";
@@ -132,10 +131,11 @@ describe("FormActionsRow", () => {
 
     await user.hover(screen.getByRole("button", { name: "Duplicate" }));
 
-    const modIcon = `${resolveModifier("Mod").toLowerCase()}-icon`;
+    // The description plus one keycap per key. Mod renders as an icon on
+    // every platform (the Command glyph on macOS, the Control glyph
+    // elsewhere), so it contributes no text and the whole string is stable
+    // wherever this runs.
     const tooltip = await screen.findByRole("tooltip");
-    expect(tooltip.textContent).toContain("Duplicate");
-    expect(within(tooltip).getByTestId(modIcon)).toBeInTheDocument();
-    expect(within(tooltip).getByTestId("d-icon")).toBeInTheDocument();
+    expect(tooltip.textContent).toBe("DuplicateD");
   });
 });
