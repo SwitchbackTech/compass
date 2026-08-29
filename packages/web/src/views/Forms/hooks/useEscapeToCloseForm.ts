@@ -10,9 +10,23 @@ import { shouldConfirmDiscardUnsavedChanges } from "@web/views/Forms/hooks/shoul
  * Shift+Escape always discards without prompting.
  * Nested floating layers (menus, listboxes, date pickers) register via
  * `useFloatingLayer` so Escape closes them first.
+ *
+ * `requestClose` is the same decision without the key: the form's Close
+ * action button routes through it so a dirty draft prompts there too,
+ * instead of re-deriving the dirty check at the call site.
  */
 export const useEscapeToCloseForm = (onClose: () => void) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const requestClose = () => {
+    const draft = selectGridDraft(useDraftStore.getState());
+    if (shouldConfirmDiscardUnsavedChanges(draft)) {
+      setIsConfirmOpen(true);
+      return;
+    }
+
+    onClose();
+  };
 
   useAppShortcut(
     "Escape",
@@ -20,14 +34,7 @@ export const useEscapeToCloseForm = (onClose: () => void) => {
       if (isFloatingLayerOpen()) return;
 
       keyboardEvent.preventDefault();
-
-      const draft = selectGridDraft(useDraftStore.getState());
-      if (shouldConfirmDiscardUnsavedChanges(draft)) {
-        setIsConfirmOpen(true);
-        return;
-      }
-
-      onClose();
+      requestClose();
     },
     { ignoreInputs: false },
   );
@@ -46,6 +53,7 @@ export const useEscapeToCloseForm = (onClose: () => void) => {
 
   return {
     isConfirmOpen,
+    requestClose,
     onCancelConfirm: () => setIsConfirmOpen(false),
     onDiscardConfirm: () => {
       setIsConfirmOpen(false);

@@ -70,12 +70,11 @@ import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSect
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
-import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { FormActionsRow } from "@web/views/Forms/EventForm/FormActionsRow";
 import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type GridEventFormProps,
   type SetEventFormSchedule,
@@ -754,12 +753,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       },
     );
 
+    // Same handler the Duplicate action button uses, so the key and the
+    // button cannot drift on whether the form closes afterwards.
     useAppShortcut(
       "Mod+D",
       (keyboardEvent) => {
         keyboardEvent.preventDefault();
         keyboardEvent.stopPropagation();
-        onDuplicate?.(draft);
+        onDuplicateEvent();
       },
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
@@ -773,7 +774,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
+    const { isConfirmOpen, onCancelConfirm, onDiscardConfirm, requestClose } =
       useEscapeToCloseForm(onClose);
 
     const { areHintsVisible } = useFormDigitJumpShortcut();
@@ -841,40 +842,36 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           }}
         >
           {/* Scrollable body; the save footer below stays pinned. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 [scrollbar-gutter:stable]">
-            <TitleActionsRow
-              title={
-                <Focusable
-                  id={EVENT_FORM_TITLE_ID}
-                  Component="input"
-                  className={classNames(
-                    INPUT_RESET_CLASSNAME,
-                    // w-full: an input's intrinsic size-attribute width would
-                    // overflow the sidebar-width form and force horizontal scroll
-                    "w-full bg-transparent font-semibold text-xl",
-                  )}
-                  autoFocus
-                  disabled={isReadOnly}
-                  onChange={onChangeTitle}
-                  onKeyDown={handleTitleKeyDown}
-                  placeholder="Title"
-                  aria-label="Title"
-                  name="Event Title"
-                  aria-invalid={titleError ? true : undefined}
-                  aria-describedby={titleErrorDescribedBy}
-                  underlineColor={eventColor}
-                  value={displayTitle}
-                  withUnderline
-                />
-              }
-              actions={
-                <EventActionMenu
-                  isExistingEvent={isExistingEvent}
-                  isReadOnly={isReadOnly}
-                  onDuplicate={onDuplicateEvent}
-                  onDelete={onDeleteEvent}
-                />
-              }
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-1 pb-4 [scrollbar-gutter:stable]">
+            <FormActionsRow
+              isExistingEvent={isExistingEvent}
+              isReadOnly={isReadOnly}
+              onClose={requestClose}
+              onDelete={onDeleteEvent}
+              onDuplicate={onDuplicateEvent}
+            />
+
+            <Focusable
+              id={EVENT_FORM_TITLE_ID}
+              Component="input"
+              className={classNames(
+                INPUT_RESET_CLASSNAME,
+                // w-full: an input's intrinsic size-attribute width would
+                // overflow the sidebar-width form and force horizontal scroll
+                "w-full bg-transparent font-semibold text-xl",
+              )}
+              autoFocus
+              disabled={isReadOnly}
+              onChange={onChangeTitle}
+              onKeyDown={handleTitleKeyDown}
+              placeholder="Title"
+              aria-label="Title"
+              name="Event Title"
+              aria-invalid={titleError ? true : undefined}
+              aria-describedby={titleErrorDescribedBy}
+              underlineColor={eventColor}
+              value={displayTitle}
+              withUnderline
             />
 
             {/* Same fieldset mechanism as the title above, covering

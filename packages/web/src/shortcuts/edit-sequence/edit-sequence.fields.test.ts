@@ -6,9 +6,10 @@ import {
 import { describe, expect, it } from "bun:test";
 
 describe("edit-sequence.fields", () => {
-  it("assigns a unique digit 1-9 to every field", () => {
+  it("assigns a unique digit to every jump target", () => {
     const digits = EDIT_SEQUENCE_FIELDS.map((entry) => entry.digit);
     expect([...digits].sort()).toEqual([
+      "0",
       "1",
       "2",
       "3",
@@ -22,7 +23,10 @@ describe("edit-sequence.fields", () => {
     expect(new Set(digits).size).toBe(digits.length);
   });
 
-  it("orders FORM_FIELD_DIGITS to match the form's DOM order", () => {
+  it("orders FORM_FIELD_DIGITS by physical top-row key, fields then actions", () => {
+    // The jump engine resolves a keypress to a physical key index, so `0`
+    // must land last (where the key sits) even though the actions toolbar it
+    // points at renders first, above the title.
     expect(FORM_FIELD_DIGITS.map((entry) => entry.field)).toEqual([
       "title",
       "start",
@@ -33,6 +37,7 @@ describe("edit-sequence.fields", () => {
       "location",
       "attendees",
       "description",
+      "actions",
     ]);
   });
 

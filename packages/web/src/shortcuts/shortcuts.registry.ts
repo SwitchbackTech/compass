@@ -277,7 +277,17 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   {
     id: "edit-jump-field-digit",
     keys: [...KEYMAP.jumpFormField.keycaps],
-    label: "Jump to form field (hold Mod for hints)",
+    label: "Jump to form field or actions (hold Mod for hints)",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
+  // Called out separately from the digit row above: the actions toolbar is
+  // the one jump target that isn't a field, and it's the only place Duplicate
+  // and Delete are visible.
+  {
+    id: "edit-form-actions",
+    keys: ["Mod", "0"],
+    label: "Jump to event actions",
     section: "edit",
     when: { isFormOpen: true },
   },

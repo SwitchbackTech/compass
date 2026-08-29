@@ -18,7 +18,7 @@ export function FormDigitHintOverlay({ visible }: { visible: boolean }) {
     return null;
   }
 
-  // Chip the visible control, not a hidden inner input. Only fields whose
+  // Chip the visible control, not a hidden inner input. Only targets whose
   // anchor is currently rendered get announced or chipped, e.g. the calendar
   // picker (digit 5) isn't rendered on an edit draft, so the shortcut
   // wouldn't do anything there.
@@ -27,7 +27,7 @@ export function FormDigitHintOverlay({ visible }: { visible: boolean }) {
     return anchor ? [{ ...entry, anchor }] : [];
   });
 
-  const srText = `Jump to field? ${presentFields
+  const srText = `Jump where? ${presentFields
     .map((entry) => `${entry.digit} for ${entry.label.toLowerCase()}`)
     .join(", ")}. Release the modifier to dismiss.`;
 

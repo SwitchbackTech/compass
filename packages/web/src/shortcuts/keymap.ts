@@ -16,10 +16,12 @@
 export const KEYMAP = {
   createEvent: { hotkey: "C", keycaps: ["C"] },
   saveDraft: { hotkey: "Enter", keycaps: ["Enter"] },
+  // 1-9 are the form's fields in DOM order; 0 is the action toolbar above the
+  // title (duplicate / delete / close).
   jumpFormField: {
     holdModifier: "Mod",
-    digits: ["1", "9"],
-    keycaps: ["Mod", "1-9"],
+    digits: ["0", "9"],
+    keycaps: ["Mod", "0-9"],
   },
   // Same hold-Mod gesture outside the form: digits follow the active view's
   // target list order (page-jump.targets.ts). Day view numbers left to right

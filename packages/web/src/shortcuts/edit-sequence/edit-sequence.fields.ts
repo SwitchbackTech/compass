@@ -1,4 +1,5 @@
 import { type EventFormFocusField } from "@web/common/utils/form/form.util";
+import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
 
 /**
  * The one source of truth for the `e`-leader sequences: the dispatch map, the
@@ -13,7 +14,9 @@ import { type EventFormFocusField } from "@web/common/utils/form/form.util";
 // attendees → description) so the mapping is guessable without the hold-Mod
 // hint chips. The array itself keeps its original key-taught order (unrelated
 // to digit order) since EditSequenceMenu renders straight off this order.
-// Account keeps digit 5 but has no letter key: `a` is guests.
+// Account keeps digit 5 but has no letter key: `a` is guests, and Actions is
+// digit-only too — it's a toolbar, not a field, so `e`-leader has nothing to
+// focus there.
 export const EDIT_SEQUENCE_FIELDS = [
   { key: "t", field: "title", label: "Title", digit: "1" },
   { key: "l", field: "location", label: "Location", digit: "7" },
@@ -24,6 +27,7 @@ export const EDIT_SEQUENCE_FIELDS = [
   { field: "calendar", label: "Account", digit: "5" },
   { key: "c", field: "color", label: "Color", digit: "6" },
   { key: "a", field: "attendees", label: "Guests", digit: "8" },
+  { field: "actions", label: "Actions", digit: "0" },
 ] as const satisfies readonly {
   key?: string;
   field: EventFormFocusField;
@@ -55,7 +59,13 @@ export const EDIT_SEQUENCE_FIELD_BY_DIGIT = Object.fromEntries(
   EDIT_SEQUENCE_FIELDS.map(({ digit, field }) => [digit, field]),
 ) as Record<EditSequenceDigit, EventFormFocusField>;
 
-/** Digit-ascending view of the same table, i.e. the form's DOM order. */
+/**
+ * The same table in physical top-row order: the fields in DOM order under
+ * 1…9, then the actions toolbar under 0. Sorted by position in
+ * PICK_KEY_LABELS rather than by numeric value on purpose — the jump engine
+ * resolves a keypress to a *physical key index*, so `0` has to land last,
+ * where the key actually sits, not first as `Number("0")` would put it.
+ */
 export const FORM_FIELD_DIGITS = [...EDIT_SEQUENCE_FIELDS].sort(
-  (a, b) => Number(a.digit) - Number(b.digit),
+  (a, b) => PICK_KEY_LABELS.indexOf(a.digit) - PICK_KEY_LABELS.indexOf(b.digit),
 );
