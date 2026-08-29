@@ -49,6 +49,17 @@ describe("DeleteAccountConfirmationDialog", () => {
     );
   });
 
+  it("explains the trial and subscription cancellation", () => {
+    setup();
+
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      /trial or subscription.*canceled immediately/i,
+    );
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      /previous payments aren't refunded automatically/i,
+    );
+  });
+
   it("keeps confirm disabled until the phrase is typed exactly", async () => {
     const { confirmButton, input, user } = setup();
 

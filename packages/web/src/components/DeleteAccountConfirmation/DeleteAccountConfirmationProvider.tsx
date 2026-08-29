@@ -1,6 +1,8 @@
 import { type PropsWithChildren, useCallback, useState } from "react";
 import { UserApi } from "@web/api/user.api";
+import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { getLastKnownEmail } from "@web/auth/compass/state/auth.state.util";
+import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -40,6 +42,15 @@ export function DeleteAccountConfirmationProvider({
       } catch (e) {
         console.error("Failed to delete account", e);
         setFarewell(null);
+        if (
+          isApiError(e) &&
+          getApiErrorCode(e) === "RECENT_AUTHENTICATION_REQUIRED"
+        ) {
+          showErrorToast(
+            "For security, sign out and sign back in before deleting your account.",
+          );
+          return;
+        }
         showErrorToast("Couldn't delete your account. Please try again.");
         return;
       }
@@ -49,6 +60,10 @@ export function DeleteAccountConfirmationProvider({
       } catch {
         // Already logged by clearAllBrowserStorage. The account is gone
         // either way, so still send them off as an anonymous user.
+      } finally {
+        // Match deliberate logout: do not let a later anonymous visitor or
+        // newly-created account inherit this deleted account's device identity.
+        getPosthogClient()?.reset();
       }
 
       // Hold the farewell for its full span measured from when it appeared,
