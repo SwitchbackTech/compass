@@ -1,6 +1,5 @@
 import {
   GOOGLE_AUTH_SCOPES,
-  GOOGLE_AUTH_SCOPES_OPTIONAL,
   GOOGLE_AUTH_SCOPES_REQUESTED,
 } from "@backend/auth/services/google/google.auth.scopes";
 import { describe, expect, it } from "bun:test";
@@ -22,18 +21,7 @@ describe("google auth scopes", () => {
     }
   });
 
-  it("requests the contacts scopes only as optional additions", () => {
-    expect(GOOGLE_AUTH_SCOPES_OPTIONAL).toEqual([
-      "https://www.googleapis.com/auth/contacts.readonly",
-      "https://www.googleapis.com/auth/contacts.other.readonly",
-    ]);
-    expect(GOOGLE_AUTH_SCOPES_REQUESTED).toEqual([
-      ...GOOGLE_AUTH_SCOPES,
-      ...GOOGLE_AUTH_SCOPES_OPTIONAL,
-    ]);
-    // No optional scope may leak into the required list.
-    for (const scope of GOOGLE_AUTH_SCOPES_OPTIONAL) {
-      expect(GOOGLE_AUTH_SCOPES).not.toContain(scope);
-    }
+  it("requests only the verified calendar scopes during sign-in", () => {
+    expect(GOOGLE_AUTH_SCOPES_REQUESTED).toEqual(GOOGLE_AUTH_SCOPES);
   });
 });

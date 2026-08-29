@@ -35,8 +35,8 @@ const createGoogleProvider = (
         clientType: "web",
         clientId,
         clientSecret,
-        // Requested (required + optional contacts) — the REQUIRED validation
-        // lives in google.auth.service.ts against GOOGLE_AUTH_SCOPES only.
+        // Contacts are authorized only when the user explicitly enables that
+        // feature through the Sync connection flow.
         scope: GOOGLE_AUTH_SCOPES_REQUESTED,
       },
     ],

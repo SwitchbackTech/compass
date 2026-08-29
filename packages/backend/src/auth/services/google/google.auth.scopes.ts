@@ -1,6 +1,8 @@
 // Keep the scopes configured for SuperTokens and the scopes persisted in Sync
 // together. The browser independently verifies that Google granted this set
-// before it sends its authorization code to Compass.
+// before it sends its authorization code to Compass. Contacts permission is
+// deliberately absent: it is requested only by the explicit contacts feature
+// flow in Sync, so sign-in never includes an unapproved sensitive scope.
 //
 // This is the REQUIRED list: sign-in fails without every scope in it. It must
 // stay in lockstep with the web's GOOGLE_AUTH_SCOPES_REQUIRED and the e2e
@@ -13,19 +15,6 @@ export const GOOGLE_AUTH_SCOPES: string[] = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-// Optional scopes the consent screen ASKS for but sign-in never requires. The
-// user can leave them unchecked and proceed; whatever Google actually granted
-// is persisted per connection and drives capabilities (e.g. suggestContacts)
-// downstream. Approved as optional sensitive scopes 2026-08-25.
-export const GOOGLE_AUTH_SCOPES_OPTIONAL: string[] = [
-  "https://www.googleapis.com/auth/contacts.readonly",
-  "https://www.googleapis.com/auth/contacts.other.readonly",
-];
-
-// What the sign-in flow REQUESTS from Google: every required scope plus the
-// optional ones. Only ever used to build the consent request — required-scope
-// validation stays on GOOGLE_AUTH_SCOPES alone.
-export const GOOGLE_AUTH_SCOPES_REQUESTED: string[] = [
-  ...GOOGLE_AUTH_SCOPES,
-  ...GOOGLE_AUTH_SCOPES_OPTIONAL,
-];
+// What the sign-in flow requests from Google. Keep this as a named export so
+// the provider configuration declares its intent without copying the list.
+export const GOOGLE_AUTH_SCOPES_REQUESTED = GOOGLE_AUTH_SCOPES;

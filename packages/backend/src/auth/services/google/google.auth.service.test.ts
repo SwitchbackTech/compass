@@ -197,22 +197,17 @@ describe("handleGoogleAuth", () => {
       expect(adoptCalls).toHaveLength(0);
     });
 
-    it("signs up successfully when the optional contacts scopes are not granted", async () => {
-      // The consent screen REQUESTS the contacts scopes
-      // (GOOGLE_AUTH_SCOPES_REQUESTED), but the user can uncheck them: the
-      // grant then carries exactly the required scopes and sign-in must
-      // succeed — required-scope validation checks GOOGLE_AUTH_SCOPES only.
+    it("signs up successfully with the verified calendar scopes", async () => {
+      // Sign-in requests only the verified Calendar scopes. Contacts, when
+      // enabled, are authorized separately through the Sync feature flow.
       const providerUser = makeProviderUser();
-      const withoutContacts = GOOGLE_AUTH_SCOPES_REQUESTED.filter(
-        (scope) => !scope.includes("contacts"),
-      );
-      expect(withoutContacts).toEqual(GOOGLE_AUTH_SCOPES);
+      expect(GOOGLE_AUTH_SCOPES_REQUESTED).toEqual(GOOGLE_AUTH_SCOPES);
       const success: GoogleSignInSuccess = {
         providerUser,
         oAuthTokens: {
           access_token: faker.internet.jwt(),
           refresh_token: faker.string.uuid(),
-          scope: withoutContacts.join(" "),
+          scope: GOOGLE_AUTH_SCOPES.join(" "),
         },
         createdNewRecipeUser: true,
         recipeUserId: faker.database.mongodbObjectId(),

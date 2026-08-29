@@ -35,9 +35,8 @@ export const useStartGoogleAuthorizationImpl = ({
   >(
     () => ({
       flow: "auth-code",
-      // Requested = required + optional contacts. Callback verification
-      // (complete-google-authorization) checks REQUIRED only, so leaving the
-      // contacts boxes unchecked still signs in.
+      // Contacts are requested separately only after the user enables the
+      // contacts feature. Login asks solely for verified Calendar scopes.
       scope: GOOGLE_AUTH_SCOPES_REQUESTED.join(" "),
       prompt,
       state,
