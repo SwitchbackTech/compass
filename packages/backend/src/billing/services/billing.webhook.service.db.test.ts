@@ -227,15 +227,18 @@ describe("Stripe webhook", () => {
 
     const driver = new BaseDriver();
     try {
-      const response = await driver
-        .getServer()
-        .post(STRIPE_WEBHOOK_PATH)
-        .set("stripe-signature", signature)
-        .set("Content-Type", "application/json; charset=utf-8")
-        .send(Buffer.from(payload));
+      const uri = await driver.listen();
+      const response = await fetch(`${uri}${STRIPE_WEBHOOK_PATH}`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": signature,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: payload,
+      });
 
       expect(response.status).toBe(Status.OK);
-      expect(response.body).toEqual({ received: true });
+      expect(await response.json()).toEqual({ received: true });
       const stored = await mongoService.user.findOne({ _id: userId });
       expect(stored?.billing?.subscriptionStatus).toBe("trialing");
       expect(stored?.billing?.stripeSubscriptionId).toBe("sub_1");

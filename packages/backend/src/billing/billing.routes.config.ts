@@ -23,10 +23,8 @@ const stripeWebhookLimiter = rateLimit({
 /**
  * Stripe HMAC is over the exact request bytes. SuperTokens and
  * `express.json()` both parse JSON and would destroy the signature, so this
- * route must be mounted before those middlewares. `type: "*/ *"` keeps the
- * raw parser on this path even
-if Stripe
-'s Content-Type includes a charset.
+ * route must be mounted before those middlewares. Matching every content
+ * type keeps the raw parser on this path even if Stripe includes a charset.
  */
 export function mountStripeWebhook(app: express.Application): void {
   app.post(
