@@ -1,7 +1,15 @@
 import type express from "express";
+import rateLimit from "express-rate-limit";
 import { verifySession } from "@backend/auth/session/session.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import userController from "./controllers/user.controller";
+
+const accountDeletionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * User Routes Configuration
@@ -45,6 +53,7 @@ export class UserRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/user`)
       .all(verifySession())
+      .all(accountDeletionLimiter)
       .delete(userController.deleteAccount);
 
     /**

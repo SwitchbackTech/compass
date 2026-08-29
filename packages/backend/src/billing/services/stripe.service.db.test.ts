@@ -135,6 +135,62 @@ describe("StripeService", () => {
     expect(sessionArgs.customer).toBe("cus_existing");
   });
 
+  it("deletes the Stripe customer before an account is removed", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "delete@example.com",
+      name: "Delete User",
+      firstName: "Delete",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_delete",
+      },
+    });
+    const del = mock(() =>
+      Promise.resolve({ id: "cus_delete", deleted: true }),
+    );
+    setStripeClientForTests({ customers: { del } } as unknown as Stripe);
+
+    await stripeService.deleteCustomerForAccount(userId.toString());
+
+    expect(del).toHaveBeenCalledWith("cus_delete", {
+      idempotencyKey: `compass-account-delete-${userId.toString()}`,
+    });
+  });
+
+  it("allows an idempotent account-deletion retry after Stripe removed the customer", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "already-deleted@example.com",
+      name: "Deleted User",
+      firstName: "Deleted",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "canceled",
+        stripeCustomerId: "cus_deleted",
+      },
+    });
+    const missing = new Stripe.errors.StripeInvalidRequestError({
+      message: "No such customer",
+      type: "invalid_request_error",
+      statusCode: 404,
+    });
+    setStripeClientForTests({
+      customers: { del: mock(() => Promise.reject(missing)) },
+    } as unknown as Stripe);
+
+    await expect(
+      stripeService.deleteCustomerForAccount(userId.toString()),
+    ).resolves.toBeUndefined();
+  });
+
   it("sends an incomplete Checkout (awaiting_checkout with a subscription id) to the portal", async () => {
     using _env = mockEnv(stripeConfigured);
     const userId = mongoService.objectId();

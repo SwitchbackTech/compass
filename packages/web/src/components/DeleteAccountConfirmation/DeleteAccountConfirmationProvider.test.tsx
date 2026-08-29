@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
 import { UserApi } from "@web/api/user.api";
 import * as authState from "@web/auth/compass/state/auth.state.util";
+import * as posthogBootstrap from "@web/auth/posthog/posthog.bootstrap";
 import * as browserCleanup from "@web/common/utils/cleanup/browser.cleanup.util";
 
 const deleteAccount = spyOn(UserApi, "deleteAccount").mockResolvedValue(
@@ -19,6 +20,11 @@ const getLastKnownEmail = spyOn(authState, "getLastKnownEmail").mockReturnValue(
 // jsdom's location is unconfigurable and its assign() only warns, so spy on
 // it rather than replacing the object.
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
+const posthog = { reset: spyOn({ invoke: () => {} }, "invoke") };
+const getPosthogClient = spyOn(
+  posthogBootstrap,
+  "getPosthogClient",
+).mockReturnValue(posthog as never);
 
 const { DeleteAccountConfirmationProvider } =
   require("./DeleteAccountConfirmationProvider") as typeof import("./DeleteAccountConfirmationProvider");
@@ -54,9 +60,52 @@ afterEach(() => {
   clearAllBrowserStorage.mockClear();
   getLastKnownEmail.mockClear();
   assign.mockClear();
+  getPosthogClient.mockClear();
+  posthog.reset.mockClear();
 });
 
 describe("DeleteAccountConfirmationProvider", () => {
+  it("resets the analytics identity after deleting the account", async () => {
+    await confirmDeletion();
+
+    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") callback();
+      return 0;
+    }) as typeof setTimeout);
+    try {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(posthog.reset).toHaveBeenCalledTimes(1);
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
+  it("resets analytics even when browser storage cleanup fails", async () => {
+    clearAllBrowserStorage.mockRejectedValueOnce(
+      new Error("IndexedDB blocked"),
+    );
+    await confirmDeletion();
+
+    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") callback();
+      return 0;
+    }) as typeof setTimeout);
+    try {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(posthog.reset).toHaveBeenCalledTimes(1);
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
   // Deleting spans a Mongo transaction and a Google grant revocation. The
   // farewell used to wait for that to finish, so the user sat looking at the
   // calendar of the account they'd just deleted with nothing to say it was

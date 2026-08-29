@@ -34,6 +34,43 @@ const portalReturnUrl = (): string => {
 };
 
 class StripeService {
+  /**
+   * Account deletion is deliberately stronger than cancelling a plan: deleting
+   * the Stripe customer immediately ends every subscription and removes saved
+   * payment details. Stripe retains the financial history it is required to
+   * keep, but Compass must never leave a trial able to convert after its local
+   * account is gone.
+   */
+  deleteCustomerForAccount = async (userId: string): Promise<void> => {
+    const user = await mongoService.user.findOne({
+      _id: mongoService.objectId(userId),
+    });
+    const customerId = user?.billing?.stripeCustomerId;
+
+    // Accounts that never reached Checkout have nothing in Stripe to remove.
+    if (!customerId) return;
+    if (!isStripeConfigured(CONFIG)) {
+      throw new Error(
+        "Stripe is not configured for an account with billing data",
+      );
+    }
+
+    const stripe = getStripeClient();
+    try {
+      await stripe.customers.del(customerId, {
+        idempotencyKey: `compass-account-delete-${userId}`,
+      });
+    } catch (error) {
+      // A prior attempt may have completed in Stripe before a transient error
+      // stopped the local deletion. Treat that retry as success so deletion is
+      // safely repeatable rather than marooning an already-cancelled account.
+      if (isMissingStripeCustomer(error)) {
+        return;
+      }
+      wrapStripeFailure(error);
+    }
+  };
+
   createCheckoutSession = async (
     userId: string,
   ): Promise<BillingCheckoutResponse> => {
@@ -204,6 +241,21 @@ class StripeService {
 
     return { url: session.url };
   };
+}
+
+function isMissingStripeCustomer(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as {
+    code?: unknown;
+    message?: unknown;
+    statusCode?: unknown;
+  };
+  return (
+    candidate.code === "resource_missing" ||
+    (candidate.statusCode === 404 &&
+      typeof candidate.message === "string" &&
+      candidate.message.startsWith("No such customer"))
+  );
 }
 
 export default new StripeService();

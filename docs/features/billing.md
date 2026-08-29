@@ -119,6 +119,30 @@ status on window focus so a trial that became Premium is visible immediately.
 A declined card lands on `past_due` (still writable), so the confirm dialog
 reports the resulting status instead of a blanket success.
 
+## Account deletion
+
+Deleting an account from Settings → Accounts deletes Compass calendars, events,
+settings, authentication data, browser storage, and Sync-held Google
+credentials. It never deletes Google Calendar data itself.
+
+For an account that reached Stripe Checkout, deletion first deletes its Stripe
+Customer. That immediately cancels any trial or subscription and removes saved
+payment details; Stripe retains the financial history it is required to keep.
+If Stripe cannot confirm that deletion, Compass leaves the account intact and
+asks the user to retry, rather than risk a later charge. Previous payments are
+not refunded automatically.
+
+For security, deletion also requires a sign-in within the previous 15 minutes;
+otherwise the user must sign out and sign back in before confirming it.
+
+Sync may be temporarily unavailable during deletion. Compass records the
+principal purge and retries it every ten minutes until Sync confirms its cached
+data and provider credentials are gone. This queue contains only the Compass
+principal id, not calendar content or credentials.
+
+Stripe webhook event ids are retained for 35 days for replay protection, then
+expire automatically. They contain only the Stripe event id and receipt time.
+
 Existing accounts are not grandfathered. Hosted users without a Stripe
 subscription id (including missing billing, `none`, and local/backfill
 `trialing` rows) derive as `awaiting_checkout` and see the Start-trial gate.

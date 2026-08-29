@@ -6,6 +6,7 @@ to: Manager
 owner: Manager
 status: verifying
 artifact:
+  - url: https://github.com/KeepSoftwareSimple/compass-calendar/pull/2960
   - path: packages/web/src/shortcuts/shift-hint/assign-shift-hint-keys.ts
   - path: packages/web/src/billing/useBillingRedirect.ts
   - path: packages/web/src/components/WelcomeModal/WelcomeGuideBody.tsx

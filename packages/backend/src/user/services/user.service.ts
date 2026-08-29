@@ -6,23 +6,28 @@ import { zObjectId } from "@core/types/type.utils";
 import { type Schema_User, type UserProfile } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
+import stripeService from "@backend/billing/services/stripe.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
-import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
-import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import eventService from "@backend/event/services/event.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
+import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principal-deletion-retry.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
+const RECENT_AUTHENTICATION_MS = 15 * 60_000;
+const ACCOUNT_DELETION_RETRY_INTERVAL_MS = 10 * 60_000;
+const ACCOUNT_DELETION_RETRY_BATCH_SIZE = 100;
 
 /**
  * Manages user data and metadata.
  */
 class UserService {
+  #accountDeletionRetryTimer: ReturnType<typeof setInterval> | undefined;
+
   private splitName(name: string): { firstName: string; lastName: string } {
     const trimmedName = name.trim();
     const [firstName = "Mystery", ...rest] = trimmedName.split(/\s+/);
@@ -38,7 +43,13 @@ class UserService {
   ): Promise<Schema_User & { userId: string }> => {
     const _compassUser = mapUserToCompass(gUser);
     const _id = zObjectId.parse(userId, { error: () => "Invalid user ID" });
-    const compassUser = { ..._compassUser, _id, signedUpAt: new Date() };
+    const now = new Date();
+    const compassUser = {
+      ..._compassUser,
+      _id,
+      signedUpAt: now,
+      lastLoggedInAt: now,
+    };
 
     const user = await mongoService.user.insertOne(compassUser, { session });
 
@@ -173,6 +184,7 @@ class UserService {
 
   deleteCompassDataForUser = async (
     userId: string,
+    options: { queueSyncPurge?: boolean } = {},
   ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
@@ -203,6 +215,24 @@ class UserService {
         // delete user
         const userDel = await mongoService.user.deleteOne({ _id }, { session });
         summary.user = userDel.deletedCount;
+
+        // Commit the retry intent with the account deletion itself. If this
+        // transaction succeeds, a later Sync outage cannot lose the only
+        // record that tells us to revoke the user's provider credentials.
+        if (options.queueSyncPurge) {
+          const now = new Date();
+          await mongoService.pendingSyncPrincipalDeletion.updateOne(
+            { _id: userId },
+            {
+              $setOnInsert: {
+                requestedAt: now,
+                attempts: 0,
+                lastAttemptAt: now,
+              },
+            },
+            { upsert: true, session },
+          );
+        }
       });
     } finally {
       await session.endSession();
@@ -225,25 +255,109 @@ class UserService {
    * itself is never touched. Provider grant revocation happens inside Sync's
    * principal purge, which revokes EVERY connection's credential - the legacy
    * single-slot revoke here could only ever cover the last-written account.
-   * Sync principal purge is fail-open: a Sync outage must not strand an
-   * undeleted Compass account.
+   * Sync principal purge is durable: a Sync outage does not strand an
+   * undeleted Compass account, and the queued principal is retried until its
+   * credential/cache purge succeeds.
    */
   deleteAccount = async (userId: string): Promise<Summary_Delete> => {
-    const summary = await this.deleteCompassDataForUser(userId);
-
-    await this.#purgeSyncPrincipal(userId);
-
-    return summary;
-  };
-
-  #purgeSyncPrincipal = async (userId: string): Promise<void> => {
-    const client = getSyncServiceClient();
-    const result = await client.purgePrincipal(toSyncPrincipal(userId));
-    if (!result.ok) {
-      logger.warn(
-        `Sync principal purge failed (${result.error.kind}, correlation=${result.error.correlationId}); continuing anyway`,
+    const user = await mongoService.user.findOne(
+      { _id: zObjectId.parse(userId) },
+      { projection: { lastLoggedInAt: 1 } },
+    );
+    const isRecent =
+      user?.lastLoggedInAt != null &&
+      Date.now() - user.lastLoggedInAt.getTime() <= RECENT_AUTHENTICATION_MS;
+    if (!isRecent) {
+      throw error(
+        UserError.RecentAuthenticationRequired,
+        "Recent authentication required to delete account",
       );
     }
+
+    await mongoService.pendingAccountDeletion.updateOne(
+      { _id: userId },
+      { $setOnInsert: { createdAt: new Date() } },
+      { upsert: true },
+    );
+
+    // This has to precede deletion of the user row, which is our only durable
+    // Stripe customer mapping. If Stripe cannot confirm cancellation, leave
+    // the account intact and ask the user to retry rather than risk a charge
+    // after telling them their account has gone.
+    let stripeCustomerDeleted = false;
+    try {
+      await stripeService.deleteCustomerForAccount(userId);
+      stripeCustomerDeleted = true;
+      await mongoService.pendingAccountDeletion.updateOne(
+        { _id: userId },
+        { $set: { stripeCustomerDeletedAt: new Date() } },
+      );
+    } catch (error) {
+      // Stripe failed before we could establish a safe cancellation. The
+      // account remains available for an explicit user retry.
+      if (!stripeCustomerDeleted) {
+        await mongoService.pendingAccountDeletion.deleteOne({ _id: userId });
+      }
+      throw error;
+    }
+
+    return this.#completePendingAccountDeletion(userId);
+  };
+
+  startAccountDeletionRetries = (): void => {
+    if (this.#accountDeletionRetryTimer) return;
+    void this.retryPendingAccountDeletions().catch((error) =>
+      logger.error("Could not start pending account deletion retries", error),
+    );
+    this.#accountDeletionRetryTimer = setInterval(() => {
+      void this.retryPendingAccountDeletions().catch((error) =>
+        logger.error("Could not retry pending account deletions", error),
+      );
+    }, ACCOUNT_DELETION_RETRY_INTERVAL_MS);
+  };
+
+  stopAccountDeletionRetries = (): void => {
+    if (!this.#accountDeletionRetryTimer) return;
+    clearInterval(this.#accountDeletionRetryTimer);
+    this.#accountDeletionRetryTimer = undefined;
+  };
+
+  retryPendingAccountDeletions = async (): Promise<void> => {
+    const pending = await mongoService.pendingAccountDeletion
+      .find({}, { projection: { _id: 1, stripeCustomerDeletedAt: 1 } })
+      .sort({ createdAt: 1 })
+      .limit(ACCOUNT_DELETION_RETRY_BATCH_SIZE)
+      .toArray();
+
+    for (const deletion of pending) {
+      try {
+        if (!deletion.stripeCustomerDeletedAt) {
+          await stripeService.deleteCustomerForAccount(deletion._id);
+          await mongoService.pendingAccountDeletion.updateOne(
+            { _id: deletion._id },
+            { $set: { stripeCustomerDeletedAt: new Date() } },
+          );
+        }
+        await this.#completePendingAccountDeletion(deletion._id);
+      } catch (error) {
+        logger.warn("Pending account deletion will retry", error);
+      }
+    }
+  };
+
+  async #completePendingAccountDeletion(
+    userId: string,
+  ): Promise<Summary_Delete> {
+    const summary = await this.deleteCompassDataForUser(userId, {
+      queueSyncPurge: true,
+    });
+    await this.#purgeSyncPrincipal(userId);
+    await mongoService.pendingAccountDeletion.deleteOne({ _id: userId });
+    return summary;
+  }
+
+  #purgeSyncPrincipal = async (userId: string): Promise<void> => {
+    await syncPrincipalDeletionRetry.enqueueAndAttempt(userId);
   };
 
   // Update the user's Google profile facts (identity id, picture) and stamp
