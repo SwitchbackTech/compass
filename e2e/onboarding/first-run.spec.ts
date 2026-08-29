@@ -38,6 +38,8 @@ test("welcomes a first-time user and seeds sample events", async ({
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toBeVisible();
   await page.keyboard.press("Escape");
+  await expect(showcase).toContainText("Press Esc again to leave practice.");
+  await page.keyboard.press("Escape");
   await expect(showcase).toHaveCount(0);
 
   await expect(
