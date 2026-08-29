@@ -1,12 +1,14 @@
 import { type Request, type Response } from "express";
 import Stripe from "stripe";
 import { Status } from "@core/errors/status.codes";
+import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
+import { STRIPE_WEBHOOK_PATH } from "@backend/billing/billing.constants";
 import billingWebhookController from "@backend/billing/controllers/billing.webhook.controller";
 import { processStripeEvent } from "@backend/billing/services/billing.webhook.service";
 import {
@@ -194,6 +196,52 @@ describe("Stripe webhook", () => {
     expect(stored?.billing?.subscriptionStatus).toBe("trialing");
     expect(stored?.billing?.stripeSubscriptionId).toBe("sub_1");
     expect(await mongoService.billingEvent.countDocuments()).toBe(1);
+  });
+
+  it("accepts a signed webhook over HTTP with pretty-printed JSON", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = await seedAwaitingUser("http-signed@example.com");
+    const stripe = realStripe();
+    setStripeClientForTests({
+      webhooks: stripe.webhooks,
+      subscriptions: {
+        retrieve: mock(() =>
+          Promise.resolve(
+            subscription({ metadata: { compassUserId: userId.toString() } }),
+          ),
+        ),
+      },
+    } as unknown as Stripe);
+
+    // Pretty-printed so JSON.parse + stringify would change the bytes and
+    // fail HMAC. The Express stack must hand the original payload through.
+    const payload = JSON.stringify(
+      JSON.parse(checkoutPayload(userId.toString())),
+      null,
+      2,
+    );
+    const signature = await stripe.webhooks.generateTestHeaderStringAsync({
+      payload,
+      secret: stripeConfigured.STRIPE_WEBHOOK_SECRET,
+    });
+
+    const driver = new BaseDriver();
+    try {
+      const response = await driver
+        .getServer()
+        .post(STRIPE_WEBHOOK_PATH)
+        .set("stripe-signature", signature)
+        .set("Content-Type", "application/json; charset=utf-8")
+        .send(Buffer.from(payload));
+
+      expect(response.status).toBe(Status.OK);
+      expect(response.body).toEqual({ received: true });
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.subscriptionStatus).toBe("trialing");
+      expect(stored?.billing?.stripeSubscriptionId).toBe("sub_1");
+    } finally {
+      await driver.teardown();
+    }
   });
 
   it("rejects a payload edited after it was signed", async () => {
