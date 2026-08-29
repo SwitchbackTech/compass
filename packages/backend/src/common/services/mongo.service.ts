@@ -17,6 +17,8 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { type EventRecord } from "@backend/event/event.record";
+import { type PendingAccountDeletionRecord } from "@backend/user/pending-account-deletion.record";
+import { type PendingSyncPrincipalDeletionRecord } from "@backend/user/pending-sync-principal-deletion.record";
 
 const logger = Logger("app:mongo.service");
 
@@ -26,6 +28,8 @@ interface InternalClient {
   billingEvent: Collection<BillingEventRecord>;
   calendar: Collection<CalendarRecord>;
   event: Collection<EventRecord>;
+  pendingAccountDeletion: Collection<PendingAccountDeletionRecord>;
+  pendingSyncPrincipalDeletion: Collection<PendingSyncPrincipalDeletionRecord>;
   user: Collection<Schema_User>;
 }
 
@@ -60,6 +64,14 @@ class MongoService {
    */
   get event(): InternalClient["event"] {
     return this.#accessInternalCollectionProps("event");
+  }
+
+  get pendingSyncPrincipalDeletion(): InternalClient["pendingSyncPrincipalDeletion"] {
+    return this.#accessInternalCollectionProps("pendingSyncPrincipalDeletion");
+  }
+
+  get pendingAccountDeletion(): InternalClient["pendingAccountDeletion"] {
+    return this.#accessInternalCollectionProps("pendingAccountDeletion");
   }
 
   /**
@@ -108,6 +120,13 @@ class MongoService {
       ),
       calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
       event: db.collection<EventRecord>(Collections.EVENT),
+      pendingAccountDeletion: db.collection<PendingAccountDeletionRecord>(
+        Collections.PENDING_ACCOUNT_DELETION,
+      ),
+      pendingSyncPrincipalDeletion:
+        db.collection<PendingSyncPrincipalDeletionRecord>(
+          Collections.PENDING_SYNC_PRINCIPAL_DELETION,
+        ),
       user: db.collection<Schema_User>(Collections.USER),
     };
   }

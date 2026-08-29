@@ -5,5 +5,11 @@ export const Collections = {
   CALENDAR: IS_DEV ? "_dev.calendar" : "calendar",
   EVENT: IS_DEV ? "_dev.event" : "event",
   OAUTH: IS_DEV ? "_dev.oauth" : "oauth",
+  PENDING_ACCOUNT_DELETION: IS_DEV
+    ? "_dev.pendingAccountDeletion"
+    : "pendingAccountDeletion",
+  PENDING_SYNC_PRINCIPAL_DELETION: IS_DEV
+    ? "_dev.pendingSyncPrincipalDeletion"
+    : "pendingSyncPrincipalDeletion",
   USER: IS_DEV ? "_dev.user" : "user",
 };

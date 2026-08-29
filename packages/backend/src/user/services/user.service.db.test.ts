@@ -14,12 +14,14 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
+import stripeService from "@backend/billing/services/stripe.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
+import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principal-deletion-retry.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -441,6 +443,158 @@ describe("UserService", () => {
 
       await userService.deleteAccount(user._id.toString());
 
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(
+        await mongoService.pendingSyncPrincipalDeletion.findOne({
+          _id: user._id.toString(),
+        }),
+      ).toEqual(expect.objectContaining({ attempts: 1 }));
+    });
+
+    it("retries a deferred Sync purge after the account has been deleted", async () => {
+      const user = await UserDriver.createUser();
+      let calls = 0;
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() => {
+            calls += 1;
+            return Promise.resolve(
+              calls === 1
+                ? {
+                    ok: false as const,
+                    error: {
+                      kind: "unavailable" as const,
+                      correlationId: "corr-down",
+                    },
+                  }
+                : {
+                    ok: true as const,
+                    value: {
+                      connections: 0,
+                      credentials: 0,
+                      calendars: 0,
+                      events: 0,
+                      eventOccurrences: 0,
+                      syncResources: 0,
+                      commands: 0,
+                      jobs: 0,
+                      deletionMarkers: 0,
+                      invalidations: 0,
+                    },
+                    correlationId: "corr-purge",
+                  },
+            );
+          }),
+        } as never),
+      );
+
+      await userService.deleteAccount(user._id.toString());
+      await syncPrincipalDeletionRetry.retryPending();
+
+      expect(calls).toBe(2);
+      expect(
+        await mongoService.pendingSyncPrincipalDeletion.findOne({
+          _id: user._id.toString(),
+        }),
+      ).toBeNull();
+    });
+
+    it("keeps the account intact when Stripe cannot cancel its customer", async () => {
+      const user = await UserDriver.createUser();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            billing: {
+              subscriptionStatus: "trialing",
+              stripeCustomerId: "cus_trial",
+            },
+          },
+        },
+      );
+      const cancellation = spyOn(
+        stripeService,
+        "deleteCustomerForAccount",
+      ).mockRejectedValue(new Error("Stripe unavailable"));
+
+      await expect(
+        userService.deleteAccount(user._id.toString()),
+      ).rejects.toThrow("Stripe unavailable");
+      expect(await mongoService.user.findOne({ _id: user._id })).not.toBeNull();
+
+      cancellation.mockRestore();
+    });
+
+    it("requires a fresh sign-in before deleting an account", async () => {
+      const user = await UserDriver.createUser();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { lastLoggedInAt: new Date(Date.now() - 16 * 60_000) } },
+      );
+
+      await expect(
+        userService.deleteAccount(user._id.toString()),
+      ).rejects.toThrow(
+        "For security, sign out and sign back in before deleting your account",
+      );
+      expect(await mongoService.user.findOne({ _id: user._id })).not.toBeNull();
+    });
+
+    it("retries local cleanup after Stripe cancellation has succeeded", async () => {
+      const user = await UserDriver.createUser();
+      const cleanup = spyOn(
+        userService,
+        "deleteCompassDataForUser",
+      ).mockRejectedValueOnce(new Error("Mongo unavailable"));
+
+      await expect(
+        userService.deleteAccount(user._id.toString()),
+      ).rejects.toThrow("Mongo unavailable");
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({
+          _id: user._id.toString(),
+        }),
+      ).toEqual(
+        expect.objectContaining({ stripeCustomerDeletedAt: expect.any(Date) }),
+      );
+
+      cleanup.mockRestore();
+      await userService.retryPendingAccountDeletions();
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({
+          _id: user._id.toString(),
+        }),
+      ).toBeNull();
+    });
+
+    it("keeps the deletion marker when recording Stripe success fails", async () => {
+      const user = await UserDriver.createUser();
+      const updateOne = mongoService.pendingAccountDeletion.updateOne.bind(
+        mongoService.pendingAccountDeletion,
+      );
+      let calls = 0;
+      const markerWrite = spyOn(
+        mongoService.pendingAccountDeletion,
+        "updateOne",
+      ).mockImplementation((...args) => {
+        calls += 1;
+        if (calls === 2) return Promise.reject(new Error("Marker unavailable"));
+        return updateOne(...args);
+      });
+
+      await expect(
+        userService.deleteAccount(user._id.toString()),
+      ).rejects.toThrow("Marker unavailable");
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({
+          _id: user._id.toString(),
+        }),
+      ).not.toBeNull();
+
+      markerWrite.mockRestore();
+      await userService.retryPendingAccountDeletions();
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
     });
   });

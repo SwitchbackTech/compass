@@ -1,8 +1,11 @@
+import { ensureBillingIndexes } from "@backend/billing/billing-indexes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { foregroundSyncRefresh } from "@backend/servers/sse/foreground-sync-refresh";
 import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
+import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principal-deletion-retry.service";
+import userService from "@backend/user/services/user.service";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
 import { createServer, type Server } from "node:http";
@@ -17,6 +20,7 @@ function onClose() {
 async function start() {
   try {
     await mongoService.start();
+    await ensureBillingIndexes();
 
     await new Promise((resolve) =>
       httpServer.listen(CONFIG.PORT, () => {
@@ -39,6 +43,8 @@ async function start() {
     // importing the bridge for its types never triggers a live network poll.
     syncChangeFeedBridge.start();
     foregroundSyncRefresh.start();
+    syncPrincipalDeletionRetry.start();
+    userService.startAccountDeletionRetries();
   } catch (error) {
     logger.error("Problems encountered during startup", error);
 
@@ -61,6 +67,8 @@ async function gracefulShutdown(): Promise<void> {
   try {
     syncChangeFeedBridge.stop();
     foregroundSyncRefresh.stop();
+    syncPrincipalDeletionRetry.stop();
+    userService.stopAccountDeletionRetries();
     await closeHttpServer();
     await mongoService.stop();
     await stopPostHogLogs();
