@@ -5,8 +5,13 @@ import {
   pointerBlockActions,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { useFlashedWelcomeShortcut } from "./useFlashedWelcomeShortcut";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { afterEach, describe, expect, it, mock } from "bun:test";
+
+function WelcomeGuideWithFlash() {
+  return <WelcomeGuideBody flashedKey={useFlashedWelcomeShortcut()} />;
+}
 
 const pressWindowKey = (init: KeyboardEventInit) => {
   act(() => {
@@ -16,7 +21,7 @@ const pressWindowKey = (init: KeyboardEventInit) => {
   });
 };
 
-const renderWelcomeGuide = () => render(<WelcomeGuideBody />);
+const renderWelcomeGuide = () => render(<WelcomeGuideWithFlash />);
 
 const captureLinkClick = (name: string) => {
   const link = screen.getByRole("link", { name });

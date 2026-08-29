@@ -22,6 +22,7 @@ import {
   type DayJumpMatchResult,
   DIGIT_AMBIGUOUS_COMMIT_MS,
   dayJumpPrefixesForWeekdays,
+  dayNameForPrefix,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
@@ -45,16 +46,6 @@ export type ActiveShiftHint = DayJumpAssignment & {
 
 export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
-};
-
-const DAY_NAME_BY_PREFIX: Record<string, string> = {
-  su: "Sunday",
-  m: "Monday",
-  t: "Tuesday",
-  w: "Wednesday",
-  r: "Thursday",
-  f: "Friday",
-  sa: "Saturday",
 };
 
 const isUnmodifiedSingleChar = (event: KeyboardEvent) => {
@@ -330,7 +321,7 @@ export function useShiftHoldEventHints({
         clearAmbiguousCommitTimer();
         bufferRef.current = match.buffer;
         shortcutHintProgressActions.demonstrate("week-day-focus");
-        const dayName = DAY_NAME_BY_PREFIX[match.dayPrefix] ?? match.dayPrefix;
+        const dayName = dayNameForPrefix(match.dayPrefix);
         eventJumpActions.setActiveDayKeys(
           [match.dayKey],
           `${dayName} selected`,

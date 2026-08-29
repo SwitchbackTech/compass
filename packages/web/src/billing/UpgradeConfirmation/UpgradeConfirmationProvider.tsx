@@ -1,10 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { type PropsWithChildren, useCallback, useState } from "react";
 import { BillingApi } from "@web/api/billing.api";
-import {
-  getApiErrorMessage,
-  isSessionLevelError,
-} from "@web/api/util/api.util";
 import { track } from "@web/auth/posthog/track";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import {
@@ -12,7 +8,10 @@ import {
   useUpgradeConfirmationState,
 } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { UpgradeConfirmationDialog } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationDialog";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import {
+  showBillingRequestError,
+  useBillingRedirect,
+} from "@web/billing/useBillingRedirect";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { BILLING_SUBSCRIBED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -51,14 +50,6 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
     { enabled: isTrialing, ignoreAppLock: isSettingsOpen },
   );
 
-  const reportFailure = useCallback((error: unknown, fallback: string) => {
-    if (isSessionLevelError(error)) return;
-    const fromApi = getApiErrorMessage(error);
-    showErrorToast(
-      fromApi && fromApi !== "Internal server error" ? fromApi : fallback,
-    );
-  }, []);
-
   const handleConfirm = useCallback(() => {
     setIsSubmitting(true);
     void (async () => {
@@ -81,12 +72,12 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
           );
         }
       } catch (error) {
-        reportFailure(error, "Couldn't subscribe. Please try again.");
+        showBillingRequestError(error, "Couldn't subscribe. Please try again.");
       } finally {
         setIsSubmitting(false);
       }
     })();
-  }, [closeUpgradeConfirmation, queryClient, reportFailure]);
+  }, [closeUpgradeConfirmation, queryClient]);
 
   return (
     <UpgradeConfirmationContext.Provider value={value}>

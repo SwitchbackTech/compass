@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -30,14 +30,13 @@ export function UpgradeConfirmationDialog({
   onConfirm,
   onManageBilling,
 }: UpgradeConfirmationDialogProps) {
-  const [manageBillingEl, setManageBillingEl] =
-    useState<HTMLButtonElement | null>(null);
+  const manageBillingRef = useRef<HTMLButtonElement>(null);
 
   useAppShortcut(
     "M",
     () => {
       if (isSubmitting) return;
-      manageBillingEl?.focus({ preventScroll: true });
+      manageBillingRef.current?.focus({ preventScroll: true });
       onManageBilling();
     },
     {
@@ -79,7 +78,7 @@ export function UpgradeConfirmationDialog({
           </OverlayPanelActionButton>
         </OverlayPanelActions>
         <OverlayPanelActionButton
-          ref={setManageBillingEl}
+          ref={manageBillingRef}
           variant="ghost"
           shortcut="M"
           disabled={isSubmitting}

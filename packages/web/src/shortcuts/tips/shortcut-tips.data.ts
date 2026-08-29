@@ -1,5 +1,14 @@
 import { KEYMAP } from "@web/shortcuts/keymap";
+import {
+  DAY_NAME_BY_PREFIX,
+  type DayJumpPrefix,
+} from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
+
+export {
+  DAY_JUMP_PREFIXES,
+  type DayJumpPrefix,
+} from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 
 export type ShortcutHintId =
   | "first-event-save"
@@ -85,21 +94,6 @@ const [saveKey] = KEYMAP.saveDraft.keycaps;
 const [editLeader, editSecond] = KEYMAP.editTitle.keycaps;
 const [eventJumpKey] = KEYMAP.eventJump.keycaps;
 const [nudgeModifier] = KEYMAP.moveEvent.keycaps;
-
-/** Day-column jump prefixes, in weekday order. */
-export const DAY_JUMP_PREFIXES = ["su", "m", "t", "w", "r", "f", "sa"] as const;
-
-export type DayJumpPrefix = (typeof DAY_JUMP_PREFIXES)[number];
-
-const DAY_NAME_BY_PREFIX: Record<DayJumpPrefix, string> = {
-  su: "Sunday",
-  m: "Monday",
-  t: "Tuesday",
-  w: "Wednesday",
-  r: "Thursday",
-  f: "Friday",
-  sa: "Saturday",
-};
 
 /** Weekend prefixes are a two-key chord: Shift+S selects the pair, then the
  * second letter picks the day. */
