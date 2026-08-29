@@ -101,6 +101,9 @@ test("the welcome-started practice runs the taught keys through graduation", asy
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toContainText("Press C to start a new event.");
   await expect(showcase.getByRole("button", { name: /^Skip$/ })).toBeVisible();
+  await expect(showcase).toContainText(
+    "C works on this sandbox. Clicks do not start an event.",
+  );
 
   await playThroughLevels(page);
 
@@ -172,12 +175,36 @@ test("Escape leaves the practice and it never auto-replays", async ({
   await expect(showcase).toContainText("Compass is keyboard-only");
 
   await page.keyboard.press("Escape");
+  await expect(showcase).toBeVisible();
+  await expect(showcase).toContainText("Press Esc again to leave practice.");
+
+  await page.keyboard.press("Escape");
   await expect(showcase).toHaveCount(0);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("region", { name: "Shortcut practice" }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+  ).toBeHidden();
+});
+
+test("reloading mid-practice resumes the same lesson", async ({ page }) => {
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+  await startLevelOne(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await page.keyboard.press("c");
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("See where to go: reveal the jump keys");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const resumed = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(resumed).toBeVisible();
+  await expect(resumed).toContainText("See where to go: reveal the jump keys");
   await expect(
     page.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
   ).toBeHidden();

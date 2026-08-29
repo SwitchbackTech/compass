@@ -7,6 +7,9 @@ type StorageKey =
   // Set when the user finishes or skips the Shortcut Showcase, so it never
   // auto-launches twice (palette replay ignores it).
   | "compass.onboarding.has-seen-shortcut-showcase"
+  // Current Shortcut Showcase step id while practice is in progress. Cleared
+  // on finish or a confirmed skip so a reload can resume instead of restarting.
+  | "compass.onboarding.shortcut-showcase-step"
   // Set when a welcome-modal exit hands off to signup before the showcase;
   // consumed once, right after signup completes, to offer it then.
   | "compass.onboarding.has-pending-showcase-offer"
@@ -55,6 +58,7 @@ export const STORAGE_KEYS: Record<
   | "HAS_DISMISSED_DEMO_EVENTS_BANNER"
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
   | "HAS_SEEN_SHORTCUT_SHOWCASE"
+  | "SHORTCUT_SHOWCASE_STEP"
   | "HAS_PENDING_SHOWCASE_OFFER"
   | "FIRST_EVENT_DONE"
   | "SHORTCUT_TIPS_MUTED"
@@ -83,6 +87,7 @@ export const STORAGE_KEYS: Record<
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:
     "compass.onboarding.has-dismissed-tasks-removal-notice",
   HAS_SEEN_SHORTCUT_SHOWCASE: "compass.onboarding.has-seen-shortcut-showcase",
+  SHORTCUT_SHOWCASE_STEP: "compass.onboarding.shortcut-showcase-step",
   HAS_PENDING_SHOWCASE_OFFER: "compass.onboarding.has-pending-showcase-offer",
   FIRST_EVENT_DONE: "compass.onboarding.first-event-done",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
