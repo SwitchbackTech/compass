@@ -37,12 +37,14 @@ import {
 import {
   selectShowcaseActive,
   selectShowcaseStepIndex,
+  selectSkipPending,
   shortcutShowcaseActions,
   stepIdAt,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { hasSeenWelcome } from "@web/components/WelcomeModal/welcome.modal.util";
 import { getNotificationPort } from "@web/notifications/notification.port";
 import { notificationActions } from "@web/notifications/notification.store";
 import { settingsActions } from "@web/settings/settings.store";
@@ -92,6 +94,7 @@ const arrowDirection = (key: string): PracticeNudgeDirection | null => {
  */
 const ShowcaseTakeover: FC = () => {
   const stepIndex = useShortcutShowcaseStore(selectShowcaseStepIndex);
+  const skipPending = useShortcutShowcaseStore(selectSkipPending);
   const stepId = stepIdAt(stepIndex);
   const { closing, beginDismiss } = useDismissTransition(SHOWCASE_REVEAL_MS);
   const { openModal } = useAuthModal();
@@ -177,6 +180,16 @@ const ShowcaseTakeover: FC = () => {
       return;
     }
 
+    if (event.key !== "Escape") {
+      const activatingFocusedButton =
+        (event.key === "Enter" || event.key === " ") &&
+        event.target instanceof HTMLElement &&
+        Boolean(event.target.closest("button"));
+      if (!activatingFocusedButton) {
+        shortcutShowcaseActions.clearSkipPending();
+      }
+    }
+
     if (event.key === "Tab" && regionRef.current) {
       if (stepId === "edgeResize") {
         claim(event);
@@ -229,7 +242,7 @@ const ShowcaseTakeover: FC = () => {
         );
         apply((state) => commitTitle(state, input?.value ?? ""));
       } else {
-        shortcutShowcaseActions.skip();
+        shortcutShowcaseActions.requestSkip();
       }
       return;
     }
@@ -500,6 +513,7 @@ const ShowcaseTakeover: FC = () => {
               <ShortcutTipParts parts={step.body} />
             )}
           </p>
+          {step.hint && <p className="text-text-muted text-xs">{step.hint}</p>}
           {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
           {edgeAnnouncement && (
             <p className="text-text-muted text-xs" role="status">
@@ -573,11 +587,16 @@ const ShowcaseTakeover: FC = () => {
               <button
                 type="button"
                 className={TEXT_BUTTON_CLASS}
-                onClick={() => shortcutShowcaseActions.skip()}
+                onClick={() => shortcutShowcaseActions.requestSkip()}
               >
-                Skip
+                {skipPending ? "Leave practice" : "Skip"}
                 <ShortcutHint className="shrink-0">Esc</ShortcutHint>
               </button>
+            )}
+            {skipPending && (
+              <p className="w-full text-text-muted text-xs" role="status">
+                Press Esc again to leave practice.
+              </p>
             )}
           </div>
         </aside>
@@ -597,6 +616,12 @@ const ShowcaseTakeover: FC = () => {
 
 export const ShortcutShowcase: FC = () => {
   const isActive = useShortcutShowcaseStore(selectShowcaseActive);
+
+  useEffect(() => {
+    if (!hasSeenWelcome()) return;
+    shortcutShowcaseActions.resumeIfInProgress();
+  }, []);
+
   if (!isActive) return null;
   return <ShowcaseTakeover />;
 };

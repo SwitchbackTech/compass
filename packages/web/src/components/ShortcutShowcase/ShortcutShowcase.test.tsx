@@ -61,6 +61,8 @@ describe("ShortcutShowcase", () => {
   beforeEach(() => {
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "");
+    persistentBrowserStore.remove(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP);
+    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "");
     localStorage.setItem("compass.onboarding.has-seen-onboarding-tour", "");
     clearAppLockReasons();
   });
@@ -543,7 +545,6 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.replay());
     expect(currentStepId()).toBe("create");
 
-    // No confirm in the way, and no lesson to finish first.
     await user.click(screen.getByRole("button", { name: "Skip to sign up" }));
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
@@ -552,22 +553,70 @@ describe("ShortcutShowcase", () => {
     ).toBe("true");
   });
 
-  it("Skip leaves straight away, without a confirm", async () => {
+  it("Skip arms a confirm, then Leave practice exits", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
     await user.click(screen.getByRole("button", { name: /^Skip$/ }));
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
+    expect(screen.getByText("Press Esc again to leave practice.")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: /^Leave practice$/ }));
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
   });
 
-  it("Escape skips the showcase outright", () => {
+  it("Escape arms a confirm, then a second Escape leaves", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
     pressKey("Escape");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
+
+    pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+  });
+
+  it("a lesson keystroke cancels a pending skip", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.replay());
+
+    pressKey("Escape");
+    expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
+
+    pressKey("c");
+    expect(useShortcutShowcaseStore.getState().skipPending).toBe(false);
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(screen.getByLabelText("Event title")).toBeTruthy();
+  });
+
+  it("shows an inline hint on the create lesson", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.replay());
+    expect(
+      screen.getByText(
+        "C works on this sandbox. Clicks do not start an event.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("resumes an in-progress lesson after welcome has been seen", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
+    persistentBrowserStore.set(
+      STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP,
+      "eventJump",
+    );
+
+    render(<ShortcutShowcase />);
+
+    expect(currentStepId()).toBe("eventJump");
+    expect(screen.getByRole("heading", { name: "Pick a target" })).toBeTruthy();
+    expect(
+      screen.getByText("Tap the reveal key first, then a letter on an event."),
+    ).toBeTruthy();
   });
 
   it("Escape inside the title editor closes the editor, not the showcase", async () => {
@@ -591,7 +640,10 @@ describe("ShortcutShowcase", () => {
     pressKey("c");
     expect(screen.getByLabelText("Event title")).toBeTruthy();
 
-    // With no editor open, Escape now leaves.
+    pressKey("Escape");
+    expect(screen.queryByLabelText("Event title")).toBeNull();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
     pressKey("Escape");
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -697,7 +749,11 @@ describe("ShortcutShowcase", () => {
       // asking to leave must not raise a permission prompt instead.
       screen.getByRole("button", { name: /^Skip$/ }).focus();
       await user.keyboard("{Enter}");
+      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+      expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
 
+      await user.keyboard("{Enter}");
       expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
       expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     });
@@ -769,6 +825,8 @@ describe("ShortcutShowcase", () => {
       render(<ShortcutShowcase />);
       showStep("notifications");
 
+      pressKey("Escape");
+      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
       pressKey("Escape");
       expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     });

@@ -23,6 +23,22 @@ export function markShortcutShowcaseSeen(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
 }
 
+/** Last in-progress step id, or null when there is nothing to resume. */
+export function readShowcaseProgress(): string | null {
+  if (!persistentBrowserStore.isAvailable()) return null;
+  return (
+    persistentBrowserStore.get(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP) || null
+  );
+}
+
+export function writeShowcaseProgress(stepId: string): void {
+  persistentBrowserStore.set(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP, stepId);
+}
+
+export function clearShowcaseProgress(): void {
+  persistentBrowserStore.remove(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP);
+}
+
 /** Set when a welcome-modal exit hands off to signup instead of practicing. */
 export function markShowcaseOfferPending(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER, "true");

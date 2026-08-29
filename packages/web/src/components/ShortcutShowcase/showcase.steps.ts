@@ -24,6 +24,8 @@ export type ShowcaseStep = {
   body: string | readonly ShortcutTipPart[];
   /** One keycap per entry, rendered via ShortcutKeys. */
   keycaps?: readonly string[];
+  /** Extra context under the body so the lesson does not need a helper. */
+  hint?: string;
   level?: number;
 };
 
@@ -37,6 +39,7 @@ export const SHOWCASE_STEPS = [
     id: "create",
     title: "Drop an event on the board",
     body: "Press C to start a new event.",
+    hint: "C works on this sandbox. Clicks do not start an event.",
     keycaps: KEYMAP.createEvent.keycaps,
     level: 1,
   },
@@ -59,6 +62,7 @@ export const SHOWCASE_STEPS = [
       { key: KEYMAP.eventJump.keycaps[0] },
       " to show event keys, then press a letter to land on one.",
     ],
+    hint: "Tap the reveal key first, then a letter on an event.",
     keycaps: KEYMAP.eventJump.keycaps,
     level: 3,
   },
@@ -81,6 +85,7 @@ export const SHOWCASE_STEPS = [
       { key: "Shift" },
       " and press up or down to change just that edge.",
     ],
+    hint: "Tab until start or end is announced, then hold Shift and press up or down.",
     keycaps: [KEYMAP.edgeFocus.hotkey, ...KEYMAP.moveEvent.timedEdgeKeycaps],
     level: 5,
   },
@@ -94,6 +99,7 @@ export const SHOWCASE_STEPS = [
       { key: "T" },
       " to target the title.",
     ],
+    hint: "Press E, then T. Do not hold them together.",
     keycaps: KEYMAP.editTitle.keycaps,
     level: 6,
   },
@@ -107,6 +113,7 @@ export const SHOWCASE_STEPS = [
       { keys: KEYMAP.undo.keycaps },
       " to undo.",
     ],
+    hint: "Delete first, then undo to bring it back.",
     keycaps: ["Delete", ...KEYMAP.undo.keycaps],
     level: 7,
   },
@@ -167,10 +174,11 @@ export function getShowcaseStep(id: ShowcaseStepId): ShowcaseStep {
  */
 export function getCreateLessonPhase(
   hasOpenEditor: boolean,
-): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+): Partial<Pick<ShowcaseStep, "body" | "keycaps" | "hint">> {
   if (!hasOpenEditor) return {};
   return {
     body: "Type a title, then press Enter to save.",
+    hint: "Enter saves the title and continues.",
     keycaps: KEYMAP.saveDraft.keycaps,
   };
 }
@@ -178,7 +186,7 @@ export function getCreateLessonPhase(
 /** After Tab lands on an edge, the hint swaps to the Shift+up/down beat. */
 export function getEdgeResizeLessonPhase(
   edge: PracticeEdge,
-): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+): Partial<Pick<ShowcaseStep, "body" | "keycaps" | "hint">> {
   if (!edge) return {};
   return {
     body: [
@@ -186,6 +194,7 @@ export function getEdgeResizeLessonPhase(
       { key: "Shift" },
       " and press up or down to change just that edge.",
     ],
+    hint: "Hold Shift and press up or down to move just this edge.",
     keycaps: KEYMAP.moveEvent.timedEdgeKeycaps,
   };
 }
@@ -193,7 +202,7 @@ export function getEdgeResizeLessonPhase(
 /** After Delete, the hint swaps to the undo beat. */
 export function getDeleteUndoLessonPhase(
   hasDeleted: boolean,
-): Partial<Pick<ShowcaseStep, "body" | "keycaps">> {
+): Partial<Pick<ShowcaseStep, "body" | "keycaps" | "hint">> {
   if (!hasDeleted) return {};
   return {
     body: [
@@ -201,6 +210,7 @@ export function getDeleteUndoLessonPhase(
       { keys: KEYMAP.undo.keycaps },
       " to bring the event back.",
     ],
+    hint: "Now undo to bring the event back.",
     keycaps: KEYMAP.undo.keycaps,
   };
 }
