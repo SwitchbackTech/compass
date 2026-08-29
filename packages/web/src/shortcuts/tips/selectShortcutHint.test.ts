@@ -189,10 +189,19 @@ describe("selectShortcutHint", () => {
     ).toBe("edge-focus");
   });
 
-  it("falls through to the command palette after save-draft is demonstrated", () => {
+  it("teaches the action toolbar after save-draft is demonstrated", () => {
     expect(
       selectShortcutHint({ ...afterFirstEvent, isFormOpen: true }, [
         "save-draft",
+      ]).id,
+    ).toBe("form-actions");
+  });
+
+  it("falls through to the command palette once the form tips are demonstrated", () => {
+    expect(
+      selectShortcutHint({ ...afterFirstEvent, isFormOpen: true }, [
+        "save-draft",
+        "form-actions",
       ]).id,
     ).toBe("command-palette");
   });

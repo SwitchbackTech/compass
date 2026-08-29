@@ -13,6 +13,7 @@ export {
 export type ShortcutHintId =
   | "first-event-save"
   | "save-draft"
+  | "form-actions"
   | "life-this-week"
   | "edit-sequence"
   | "nudge"
@@ -32,6 +33,7 @@ export type ShortcutActionId =
   | "event.edge_focus"
   | "event.edit_title"
   | "event.move"
+  | "event_form.actions"
   | "event_form.progress"
   | "life.focus_current_week";
 
@@ -136,6 +138,19 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
       " saves · hold ",
       { key: KEYMAP.jumpFormField.holdModifier },
       " to jump fields",
+    ],
+    suggestionReason: "event_form",
+  },
+  "form-actions": {
+    id: "form-actions",
+    actionId: "event_form.actions",
+    featureArea: "event_editing",
+    parts: [
+      "Hold ",
+      { key: KEYMAP.jumpFormField.holdModifier },
+      " then ",
+      { key: "0" },
+      " for actions",
     ],
     suggestionReason: "event_form",
   },

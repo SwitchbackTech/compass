@@ -1,5 +1,11 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act, type SetStateAction, useState } from "react";
 import { type EventId } from "@core/types/domain-primitives";
@@ -84,17 +90,6 @@ mock.module(
     },
   }),
 );
-
-mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
-  EventActionMenu: ({ onDelete }: { onDelete: () => void }) => (
-    <>
-      <button type="button">Event actions</button>
-      <button type="button" onClick={onDelete}>
-        Delete event
-      </button>
-    </>
-  ),
-}));
 
 mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
   SaveSection: ({ onSubmit }: { onSubmit: () => void }) => (
@@ -281,7 +276,7 @@ describe("EventForm", () => {
     document.body.removeAttribute("data-app-locked");
   });
 
-  it("renders the title before the actions on the same row", () => {
+  it("renders the actions toolbar above the title", () => {
     renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
@@ -296,15 +291,23 @@ describe("EventForm", () => {
     );
 
     const title = screen.getByPlaceholderText("Title");
-    const actions = screen.getByRole("button", { name: "Event actions" });
-    const row = title.parentElement?.parentElement;
+    const toolbar = screen.getByRole("toolbar", { name: "Event actions" });
 
-    expect(row).toBe(actions.parentElement?.parentElement);
-    expect(row).toHaveClass("flex");
-    expect(title.parentElement).toHaveClass("flex-1");
-    expect(actions.parentElement).toHaveClass("shrink-0");
-    expect(row?.firstElementChild?.contains(title)).toBe(true);
-    expect(row?.lastElementChild?.contains(actions)).toBe(true);
+    // Above the title in DOM order, so the title keeps the form's opening
+    // focus and the toolbar sits behind Shift+Tab rather than stealing the
+    // first forward Tab the way the old kebab menu did.
+    expect(
+      toolbar.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      within(toolbar).getByRole("button", { name: "Duplicate" }),
+    ).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: "Delete" }),
+    ).toBeInTheDocument();
+    expect(
+      within(toolbar).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
   });
 
   it("renders as a transparent sidebar column with the save footer after the fields", () => {
@@ -368,13 +371,14 @@ describe("EventForm", () => {
   it("duplicates the event with Mod+D while the title field is focused", async () => {
     const draft = createEditDraft();
     const onDuplicate = mock();
+    const onClose = mock();
 
     renderWithStore(
       <EventForm
         draft={draft}
         isDraft={false}
         isExistingEvent={true}
-        onClose={mock()}
+        onClose={onClose}
         onDelete={mock()}
         onDuplicate={onDuplicate}
         onSubmit={mock()}
@@ -391,6 +395,10 @@ describe("EventForm", () => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
     expect(onDuplicate).toHaveBeenCalledWith(draft);
+    // Same handler as the Duplicate action button, which closes the form.
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("jumps focus to the location field with Mod+E then L from the title field", () => {
@@ -744,7 +752,7 @@ describe("EventForm", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete event" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(onDelete).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);

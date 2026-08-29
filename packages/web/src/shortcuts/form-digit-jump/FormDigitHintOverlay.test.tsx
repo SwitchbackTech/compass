@@ -80,6 +80,11 @@ const buildForm = () => {
   description.id = "event-form-description";
   document.body.append(description);
 
+  const actions = document.createElement("div");
+  actions.id = "event-form-actions";
+  actions.setAttribute("role", "toolbar");
+  form.append(actions);
+
   const elements = [
     title,
     start,
@@ -89,6 +94,7 @@ const buildForm = () => {
     location,
     attendees,
     description,
+    actions,
   ];
   for (const element of elements) {
     stubRect(element, box(100, 80, 140, 240));
@@ -139,8 +145,10 @@ describe("FormDigitHintOverlay", () => {
     render(<FormDigitHintOverlay visible={true} />);
 
     // Digit 5 (calendar) has no chip: no #event-form-calendar element was added,
-    // matching an edit draft where the calendar picker isn't rendered.
-    expect(chipDigits()).toEqual(["1", "2", "3", "4", "6", "7", "8", "9"]);
+    // matching an edit draft where the calendar picker isn't rendered. Digit 0
+    // is the action toolbar, chipped last because that's where the key sits on
+    // the physical top row.
+    expect(chipDigits()).toEqual(["1", "2", "3", "4", "6", "7", "8", "9", "0"]);
   });
 
   it("renders the calendar chip once the picker is present", () => {
@@ -152,7 +160,18 @@ describe("FormDigitHintOverlay", () => {
 
     render(<FormDigitHintOverlay visible={true} />);
 
-    expect(chipDigits()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+    expect(chipDigits()).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "0",
+    ]);
   });
 
   it("exposes a screen-reader summary while the visible chips stay aria-hidden", () => {
@@ -160,10 +179,11 @@ describe("FormDigitHintOverlay", () => {
     render(<FormDigitHintOverlay visible={true} />);
 
     const status = screen.getByRole("status");
-    expect(status.textContent).toContain("Jump to field?");
+    expect(status.textContent).toContain("Jump where?");
     expect(status.textContent).toContain("1 for title");
     expect(status.textContent).toContain("8 for guests");
     expect(status.textContent).toContain("9 for description");
+    expect(status.textContent).toContain("0 for actions");
     expect(chipsWrapper()?.getAttribute("aria-hidden")).not.toBeNull();
   });
 

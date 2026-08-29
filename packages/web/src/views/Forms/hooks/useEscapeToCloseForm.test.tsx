@@ -1,5 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
   clearFloatingLayerReasons,
@@ -30,7 +30,7 @@ describe("useEscapeToCloseForm", () => {
 
   it("stands down while a floating layer owns Escape", () => {
     const onClose = mock(() => {});
-    setFloatingLayerReason("actionsMenu:test", true);
+    setFloatingLayerReason("datePicker:test", true);
     renderHook(() => useEscapeToCloseForm(onClose));
 
     pressKey("Escape");
@@ -40,13 +40,13 @@ describe("useEscapeToCloseForm", () => {
 
   it("closes after the floating layer clears", () => {
     const onClose = mock(() => {});
-    setFloatingLayerReason("actionsMenu:test", true);
+    setFloatingLayerReason("datePicker:test", true);
     renderHook(() => useEscapeToCloseForm(onClose));
 
     pressKey("Escape");
     expect(onClose).not.toHaveBeenCalled();
 
-    setFloatingLayerReason("actionsMenu:test", false);
+    setFloatingLayerReason("datePicker:test", false);
     pressKey("Escape");
 
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -62,9 +62,22 @@ describe("useEscapeToCloseForm", () => {
     expect(result.current.isConfirmOpen).toBe(false);
   });
 
+  it("closes immediately via requestClose when there is nothing to discard", () => {
+    const onClose = mock(() => {});
+    const { result } = renderHook(() => useEscapeToCloseForm(onClose));
+
+    // The Close action button's path: the same decision Escape makes, without
+    // the key. A dirty edit draft prompts instead, covered end to end in
+    // SidebarEventDetails.test.tsx.
+    act(() => result.current.requestClose());
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(result.current.isConfirmOpen).toBe(false);
+  });
+
   it("stands Shift+Escape down while a floating layer is open", () => {
     const onClose = mock(() => {});
-    setFloatingLayerReason("actionsMenu:test", true);
+    setFloatingLayerReason("datePicker:test", true);
     renderHook(() => useEscapeToCloseForm(onClose));
 
     pressKey("Escape", { keyDownInit: { shiftKey: true } });

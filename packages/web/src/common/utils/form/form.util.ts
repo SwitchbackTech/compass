@@ -3,6 +3,7 @@ import { ID_EVENT_FORM } from "../../constants/web.constants";
 const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
 export type EventFormFocusField =
+  | "actions"
   | "title"
   | "location"
   | "description"
@@ -35,6 +36,9 @@ const findFirstMatch = (selectors: string[]): HTMLElement | null => {
  * input is often 2px wide — too small for a hint chip — so combobox fields
  * put the id on the wrapper. */
 const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
+  // The action toolbar above the title. Its roving tabindex means exactly one
+  // button is tabbable at a time, which is the one FOCUSABLE_SELECTOR finds.
+  actions: [`${EVENT_FORM_SELECTOR} #event-form-actions`],
   title: [`${EVENT_FORM_SELECTOR} input[name="Event Title"]`],
   location: [
     `${EVENT_FORM_SELECTOR} #event-form-location`,

@@ -8,6 +8,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -48,7 +49,7 @@ describe("SidebarEventDetails", () => {
     expect(screen.queryByRole("form")).toBeNull();
   });
 
-  it("focuses the title when the form opens", async () => {
+  it("focuses the title when the form opens, with the actions one Shift+Tab away", async () => {
     const draft = createGridEventDraft({
       kind: "allDay",
       start: new Date("2026-05-20"),
@@ -58,8 +59,58 @@ describe("SidebarEventDetails", () => {
 
     render(<SidebarEventDetails />);
 
+    const title = await screen.findByPlaceholderText("Title");
+    await waitFor(() => expect(title).toHaveFocus());
+
+    // The toolbar renders above the title, so it sits behind Shift+Tab
+    // instead of taking the first forward Tab out of the title, and its
+    // roving tabindex makes the whole row one stop.
+    const toolbar = screen.getByRole("toolbar", { name: "Event actions" });
+    expect(
+      toolbar.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      within(toolbar)
+        .getAllByRole("button")
+        .filter((button) => button.getAttribute("tabindex") === "0"),
+    ).toHaveLength(1);
+  });
+
+  it("prompts before discarding a dirty existing event from the Close action", async () => {
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse(EXISTING_EVENT_ID),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draft.values.title = "Changed title";
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+
+    render(<SidebarEventDetails />);
+
+    await screen.findByDisplayValue("Changed title");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    // Same confirm path as Escape: the button routes through requestClose
+    // rather than re-deriving the dirty check.
+    expect(
+      await screen.findByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeInTheDocument();
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
     await waitFor(() =>
-      expect(screen.getByPlaceholderText("Title")).toHaveFocus(),
+      expect(useDraftStore.getState().status?.isFormOpen).toBe(false),
     );
   });
 

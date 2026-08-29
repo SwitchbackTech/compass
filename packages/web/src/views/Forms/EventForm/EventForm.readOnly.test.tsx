@@ -1,5 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
@@ -94,7 +94,22 @@ describe("EventForm read-only gate", () => {
     expect(
       screen.getByRole("textbox", { name: "Description" }),
     ).toHaveAttribute("contenteditable", "false");
-    expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("toolbar", { name: "Description formatting" }),
+    ).not.toBeInTheDocument();
+    // The action toolbar stays, minus Delete: read-only events can be
+    // duplicated (that creates a new, independent event) and closed, but
+    // never mutated in place.
+    const actions = screen.getByRole("toolbar", { name: "Event actions" });
+    expect(
+      within(actions).queryByRole("button", { name: "Delete" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(actions).getByRole("button", { name: "Duplicate" }),
+    ).toBeInTheDocument();
+    expect(
+      within(actions).getByRole("button", { name: "Close" }),
+    ).toBeInTheDocument();
     // The date/recurrence/description block is wrapped in a native
     // <fieldset disabled>, which auto-disables every native control it
     // contains (see EventForm.tsx) - checked on the fieldset itself rather
@@ -179,7 +194,15 @@ describe("EventForm read-only gate", () => {
     expect(
       screen.getByRole("textbox", { name: "Description" }),
     ).toHaveAttribute("contenteditable", "true");
-    expect(screen.getByRole("toolbar")).toBeInTheDocument();
+    expect(
+      screen.getByRole("toolbar", { name: "Description formatting" }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("toolbar", { name: "Event actions" })).getByRole(
+        "button",
+        { name: "Delete" },
+      ),
+    ).toBeInTheDocument();
     for (const fieldset of container.querySelectorAll("fieldset")) {
       expect(fieldset).not.toBeDisabled();
     }

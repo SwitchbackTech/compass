@@ -67,6 +67,7 @@ function withWeekDayFocus(
 
 const FORM_POOL = [
   "save-draft",
+  "form-actions",
   "command-palette",
 ] as const satisfies readonly ShortcutHintId[];
 

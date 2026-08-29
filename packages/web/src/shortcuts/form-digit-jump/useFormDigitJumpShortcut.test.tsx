@@ -94,6 +94,16 @@ const buildForm = () => {
   // Real usage sets this id on TipTap's contenteditable root, which is what
   // makes it focusable; jsdom doesn't treat contenteditable as focusable on
   // its own, so tabIndex is also set to reproduce that here.
+  // The action toolbar above the title, with a roving tabindex: exactly one
+  // button is tabbable, which is the one FIELD_SELECTORS resolves to.
+  const actions = document.createElement("div");
+  actions.id = "event-form-actions";
+  actions.setAttribute("role", "toolbar");
+  const duplicate = document.createElement("button");
+  duplicate.tabIndex = 0;
+  actions.append(duplicate);
+  form.append(actions);
+
   const description = document.createElement("div");
   description.id = "event-form-description";
   description.contentEditable = "true";
@@ -110,6 +120,7 @@ const buildForm = () => {
     location,
     attendees: attendeesInput,
     description,
+    actions: duplicate,
   };
 };
 
@@ -135,6 +146,17 @@ describe("useFormDigitJumpShortcut", () => {
       expect(fields.end).toHaveFocus();
     });
 
+    it("jumps to the action toolbar on Mod+0", () => {
+      const fields = buildForm();
+      fields.title.focus();
+      renderHook(() => useFormDigitJumpShortcut());
+
+      const event = pressModDigit("0", "Digit0");
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(fields.actions).toHaveFocus();
+    });
+
     it("maps every digit 1-9 to its field, in DOM order", () => {
       const fields = buildForm();
       renderHook(() => useFormDigitJumpShortcut());
@@ -149,6 +171,9 @@ describe("useFormDigitJumpShortcut", () => {
         ["7", fields.location],
         ["8", fields.attendees],
         ["9", fields.description],
+        // 0 sits after 9 on the physical top row, so it lands on the actions
+        // toolbar rather than shifting every field's digit by one.
+        ["0", fields.actions],
       ] as const;
 
       for (const [digit, element] of cases) {
