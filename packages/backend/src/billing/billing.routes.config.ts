@@ -1,4 +1,4 @@
-import type express from "express";
+import express from "express";
 import rateLimit from "express-rate-limit";
 import { verifySession } from "@backend/auth/session/session.middleware";
 import { STRIPE_WEBHOOK_PATH } from "@backend/billing/billing.constants";
@@ -21,8 +21,24 @@ const stripeWebhookLimiter = rateLimit({
 });
 
 /**
+ * Stripe HMAC is over the exact request bytes. SuperTokens and
+ * `express.json()` both parse JSON and would destroy the signature, so this
+ * route must be mounted before those middlewares. Matching every content
+ * type keeps the raw parser on this path even if Stripe includes a charset.
+ */
+export function mountStripeWebhook(app: express.Application): void {
+  app.post(
+    STRIPE_WEBHOOK_PATH,
+    stripeWebhookLimiter,
+    express.raw({ type: "*/*" }),
+    billingWebhookController.handleStripe,
+  );
+}
+
+/**
  * Billing routes: trial status, Stripe Checkout, ending a trial early,
- * Billing Portal, and the unauthenticated Stripe webhook.
+ * and Billing Portal. The Stripe webhook is mounted separately, ahead of
+ * body parsers; see `mountStripeWebhook`.
  */
 export class BillingRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -49,10 +65,6 @@ export class BillingRoutes extends CommonRoutesConfig {
       .route(`/api/billing/portal/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createPortalSession);
-
-    this.app
-      .route(STRIPE_WEBHOOK_PATH)
-      .post(stripeWebhookLimiter, billingWebhookController.handleStripe);
 
     return this.app;
   }
