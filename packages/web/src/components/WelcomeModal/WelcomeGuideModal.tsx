@@ -3,11 +3,13 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirate } from "./PixelPirate";
+import { useFlashedWelcomeShortcut } from "./useFlashedWelcomeShortcut";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
   const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
+  const flashedKey = useFlashedWelcomeShortcut();
 
   const dismiss = () => {
     beginDismiss(() => welcomeGuideActions.close());
@@ -24,7 +26,7 @@ export function WelcomeGuideModal() {
     >
       <div className="flex w-full flex-col gap-6">
         <PixelPirate className="h-14 w-14 shrink-0" />
-        <WelcomeGuideBody>
+        <WelcomeGuideBody flashedKey={flashedKey}>
           <div className="flex justify-center">
             <button
               type="button"

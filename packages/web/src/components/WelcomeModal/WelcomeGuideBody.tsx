@@ -4,17 +4,19 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { FAQ_ITEMS } from "./faq";
-import {
-  flashedShortcutClass,
-  useFlashedWelcomeShortcut,
-} from "./useFlashedWelcomeShortcut";
+import { flashedShortcutClass } from "./useFlashedWelcomeShortcut";
 import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
 import { WelcomeLinks } from "./WelcomeLinks";
 
-export function WelcomeGuideBody({ children }: { children?: ReactNode }) {
+export function WelcomeGuideBody({
+  children,
+  flashedKey,
+}: {
+  children?: ReactNode;
+  flashedKey: string | null;
+}) {
   const disclosureIdPrefix = useId();
   const faqHintId = `${disclosureIdPrefix}-faq-hint`;
-  const flashedKey = useFlashedWelcomeShortcut();
   const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
     () => new Set(),
   );

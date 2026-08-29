@@ -17,6 +17,34 @@ export const DAY_JUMP_PREFIX_BY_WEEKDAY = {
 
 export type DayJumpWeekday = keyof typeof DAY_JUMP_PREFIX_BY_WEEKDAY;
 
+/** Weekday order, derived from the jump engine so tips cannot drift. */
+export const DAY_JUMP_PREFIXES = [
+  DAY_JUMP_PREFIX_BY_WEEKDAY[0],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[1],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[2],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[3],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[4],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[5],
+  DAY_JUMP_PREFIX_BY_WEEKDAY[6],
+] as const;
+
+export type DayJumpPrefix = (typeof DAY_JUMP_PREFIXES)[number];
+
+export const DAY_NAME_BY_PREFIX: Record<DayJumpPrefix, string> = {
+  su: "Sunday",
+  m: "Monday",
+  t: "Tuesday",
+  w: "Wednesday",
+  r: "Thursday",
+  f: "Friday",
+  sa: "Saturday",
+};
+
+export const dayNameForPrefix = (prefix: string): string =>
+  Object.hasOwn(DAY_NAME_BY_PREFIX, prefix)
+    ? DAY_NAME_BY_PREFIX[prefix as DayJumpPrefix]
+    : prefix;
+
 export type DayJumpTarget = {
   eventId: string;
   /** Stable sort key: earlier start first. */

@@ -1,7 +1,9 @@
 import {
   assignDayJumpKeys,
   DAY_JUMP_PREFIX_BY_WEEKDAY,
+  DAY_JUMP_PREFIXES,
   dayJumpPrefixesForWeekdays,
+  dayNameForPrefix,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
@@ -66,6 +68,11 @@ describe("assignDayJumpKeys", () => {
     expect(DAY_JUMP_PREFIX_BY_WEEKDAY[4]).toBe("r");
     expect(DAY_JUMP_PREFIX_BY_WEEKDAY[5]).toBe("f");
     expect(DAY_JUMP_PREFIX_BY_WEEKDAY[6]).toBe("sa");
+    expect([...DAY_JUMP_PREFIXES]).toEqual(
+      Object.values(DAY_JUMP_PREFIX_BY_WEEKDAY),
+    );
+    expect(dayNameForPrefix("w")).toBe("Wednesday");
+    expect(dayNameForPrefix("unknown")).toBe("unknown");
 
     const assignments = assignDayJumpKeys(
       [

@@ -7,6 +7,18 @@ import {
 import { track } from "@web/auth/posthog/track";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
+/** Stripe 500s are not useful to the user; keep the surface-specific fallback. */
+export const showBillingRequestError = (
+  error: unknown,
+  fallback: string,
+): void => {
+  if (isSessionLevelError(error)) return;
+  const fromApi = getApiErrorMessage(error);
+  showErrorToast(
+    fromApi && fromApi !== "Internal server error" ? fromApi : fallback,
+  );
+};
+
 type BillingRedirectKind = "checkout" | "portal";
 
 const fallbackMessage = (kind: BillingRedirectKind): string =>
@@ -70,14 +82,7 @@ export function useBillingRedirect() {
       navigateToBillingUrl(kind, url, popup);
     } catch (error) {
       popup?.close();
-      if (!isSessionLevelError(error)) {
-        const fromApi = getApiErrorMessage(error);
-        showErrorToast(
-          fromApi && fromApi !== "Internal server error"
-            ? fromApi
-            : fallbackMessage(kind),
-        );
-      }
+      showBillingRequestError(error, fallbackMessage(kind));
     } finally {
       setIsRedirecting(false);
     }

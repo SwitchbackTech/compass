@@ -217,7 +217,7 @@ export function WelcomeModal() {
           </div>
         </div>
 
-        <WelcomeGuideBody>
+        <WelcomeGuideBody flashedKey={flashedKey}>
           {/* CTA: connecting a calendar is the moment Compass starts being
               useful, so the Google round trip - which signs up and grants
               calendar access at once - leads, and everything else is a fallback

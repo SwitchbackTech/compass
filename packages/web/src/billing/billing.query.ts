@@ -4,7 +4,11 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  type NavigateFn,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { type BillingStatusResponse } from "@core/types/billing.types";
 import { AppConfigApi } from "@web/api/app-config.api";
@@ -64,6 +68,17 @@ export function isBillingEnforced(
 const STATUS_POLL_MS = 1500;
 const STATUS_POLL_WINDOW_MS = 15_000;
 
+function stripRootSearchParam(
+  navigate: NavigateFn,
+  key: "checkout" | "settings",
+): void {
+  void navigate({
+    to: ".",
+    search: (prev) => ({ ...prev, [key]: undefined }),
+    replace: true,
+  });
+}
+
 function startBillingStatusPoll(
   queryClient: QueryClient,
   onWindowEnd: () => void,
@@ -98,13 +113,7 @@ export function useCheckoutReturn() {
   const { checkout, settings } = useSearch({ from: "__root__" });
 
   useEffect(() => {
-    const stripCheckout = () => {
-      void navigate({
-        to: ".",
-        search: (prev) => ({ ...prev, checkout: undefined }),
-        replace: true,
-      });
-    };
+    const stripCheckout = () => stripRootSearchParam(navigate, "checkout");
 
     if (checkout === "cancel") {
       showStatusToast(BILLING_CHECKOUT_CANCELED_TOAST_ID, "Checkout canceled");
@@ -124,11 +133,7 @@ export function useCheckoutReturn() {
 
     settingsActions.openSettings("billing");
     return startBillingStatusPoll(queryClient, () => {
-      void navigate({
-        to: ".",
-        search: (prev) => ({ ...prev, settings: undefined }),
-        replace: true,
-      });
+      stripRootSearchParam(navigate, "settings");
     });
   }, [navigate, queryClient, settings]);
 }
