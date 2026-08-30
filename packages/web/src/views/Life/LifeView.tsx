@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
@@ -53,7 +53,7 @@ function formatWeeks(value: number) {
 export function LifeView({ today }: LifeViewProps) {
   const currentDate = useMemo(() => today ?? new Date(), [today]);
   const navigate = useNavigate();
-  const search = useSearch({ from: ROOT_ROUTES.LIFE });
+  const search = useSearch({ from: ROUTE_IDS.LIFE });
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const currentWeekRef = useRef<HTMLButtonElement>(null);
   const isNewLifeUser = useRef(!hasLifePreferences()).current;

@@ -96,6 +96,18 @@ export const globalHandlers = [
       }),
     );
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/booking/pages/:slug`, (_req, res, ctx) => {
+    return res(ctx.status(Status.NOT_FOUND), ctx.json({ code: "NOT_FOUND" }));
+  }),
+  rest.get(
+    `${ENV_WEB.API_BASEURL}/booking/pages/:slug/slots`,
+    (_req, res, ctx) => {
+      return res(
+        ctx.status(Status.OK),
+        ctx.json({ slots: [], bookable: true }),
+      );
+    },
+  ),
   rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) => {
     return res(
       ctx.status(Status.OK),
