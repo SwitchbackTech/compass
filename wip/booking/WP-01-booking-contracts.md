@@ -2,7 +2,7 @@
 
 **task_id:** WP-01
 **github:** [#2970](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2970)
-**status:** queued
+**status:** done
 **owner:** Implementer (core)
 **depends on:** none
 **next owner after done:** WP-03, WP-04, WP-05 may start (WP-02 is
@@ -81,7 +81,13 @@ Key files (create):
 
 ## Evidence
 
-Fill when implementing.
+- Added `packages/core/src/types/booking.contracts.ts` with Zod schemas for
+  booking slugs, durations, weekly availability, admin/public pages,
+  reservations, HTTP shapes, and `allocateBookingSlug`.
+- Colocated tests in `booking.contracts.test.ts` cover acceptance cases:
+  full admin parse, public projection without calendar ids, invalid slug/duration/weekday/horizon,
+  reserved slug rejection, overlapping intervals, and slug allocation.
+- `bun test:core`, `bun run type-check`, `bun lint`, `bun knip`, `bun run verify` PASS.
 
 ## Out of scope
 
