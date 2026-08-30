@@ -135,6 +135,10 @@ export const SettingsModal: FC = () => {
   if (!isOpen) return null;
 
   const handleDismiss = () => {
+    // The upgrade dialog stacks on top of Settings (unlike delete/logout,
+    // which close Settings first). Escape must not dismiss this panel while
+    // the confirmation still owns the screen.
+    if (isUpgradeOpen) return;
     if (confirmingId !== null) {
       setConfirmingId(null);
       return;

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { viewActions } from "@web/events/stores/view.store";
 import {
+  selectIsCmdPaletteOpen,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
@@ -29,6 +30,7 @@ export function useGlobalShortcuts() {
 export function useNavigationShortcuts() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
   const weekHotkey =
     VIEW_SHORTCUTS.week.key.toUpperCase() as RegisterableHotkey;
@@ -96,12 +98,17 @@ export function useNavigationShortcuts() {
     },
   );
 
+  // Armed only while the palette is open. The handler ignoreAppLocks (so
+  // Escape can close the palette over a modal) and blurs on trigger. If it
+  // stayed registered while closed, every Escape would blur the focused
+  // overlay control and advertised Esc actions would no-op.
   useAppShortcut(
     "Escape",
     () => {
       settingsActions.closeCmdPalette();
     },
     {
+      enabled: isCmdPaletteOpen,
       ignoreInputs: false,
       blurOnTrigger: true,
       ignoreAppLock: true,

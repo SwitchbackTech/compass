@@ -31,6 +31,21 @@ export function UpgradeConfirmationDialog({
   onManageBilling,
 }: UpgradeConfirmationDialogProps) {
   const manageBillingRef = useRef<HTMLButtonElement>(null);
+  const overlayShortcut = {
+    enabled: isOpen,
+    ignoreAppLock: true,
+    ignoreInputs: false,
+    preventDefault: true,
+  } as const;
+
+  useAppShortcut(
+    "Escape",
+    () => {
+      if (isSubmitting) return;
+      onCancel();
+    },
+    overlayShortcut,
+  );
 
   useAppShortcut(
     "M",
@@ -39,12 +54,7 @@ export function UpgradeConfirmationDialog({
       manageBillingRef.current?.focus({ preventScroll: true });
       onManageBilling();
     },
-    {
-      enabled: isOpen,
-      ignoreAppLock: true,
-      ignoreInputs: false,
-      preventDefault: true,
-    },
+    overlayShortcut,
   );
 
   if (!isOpen) return null;
