@@ -161,6 +161,30 @@ describe("UpgradeConfirmationProvider", () => {
     endTrial.mockRestore();
   });
 
+  it("closes on Escape without calling Stripe", async () => {
+    const endTrial = spyOn(BillingApi, "endTrial");
+    await openDialog();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
+    ).not.toBeInTheDocument();
+    expect(endTrial).not.toHaveBeenCalled();
+    endTrial.mockRestore();
+  });
+
+  it("closes on Escape even when focus is outside the dialog", async () => {
+    await openDialog();
+    document.body.focus();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("sends Manage billing to the Stripe portal in a new tab", async () => {
     const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
       url: "https://billing.stripe.com/p/session_1",

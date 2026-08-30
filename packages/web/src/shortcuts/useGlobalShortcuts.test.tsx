@@ -258,4 +258,38 @@ describe("useGlobalShortcuts", () => {
       unmount();
     });
   });
+
+  it("closes the command palette on Escape", () => {
+    useSettingsStore.setState({ isCmdPaletteOpen: true });
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(false);
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("does not blur the focused control on Escape when the palette is closed", () => {
+    const keepFocus = document.createElement("button");
+    keepFocus.textContent = "Keep focus";
+    document.body.appendChild(keepFocus);
+    keepFocus.focus();
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    expect(document.activeElement).toBe(keepFocus);
+
+    keepFocus.remove();
+    act(() => {
+      unmount();
+    });
+  });
 });

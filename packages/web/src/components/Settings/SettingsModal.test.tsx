@@ -906,4 +906,29 @@ describe("SettingsModal", () => {
       screen.getByRole("dialog", { name: "Start Premium now?" }),
     ).toBeInTheDocument();
   });
+
+  it("closes the upgrade confirmation on Escape and leaves Settings open", async () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+    };
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.keyboard("b");
+    expect(
+      screen.getByRole("dialog", { name: "Start Premium now?" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+  });
 });
