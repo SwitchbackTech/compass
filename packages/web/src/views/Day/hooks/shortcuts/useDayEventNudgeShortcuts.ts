@@ -5,6 +5,7 @@ import { type EventMutationDependencies } from "@web/events/mutations/useEventMu
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
+import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
@@ -20,13 +21,19 @@ import { dayEventTargeting } from "@web/views/Day/interaction/registry/day-event
  */
 export function useDayEventNudgeShortcuts({
   allDayEvents = [],
+  createDraftAtTime,
   dependencies = {},
+  getQuickTimeDay,
   navigateToDate,
   placeTimedDraft,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
+  /** Quick-time create: place a draft at a typed start time. */
+  createDraftAtTime: (start: Dayjs) => void;
   dependencies?: EventMutationDependencies;
+  /** The day a typed time lands on - the date currently in view. */
+  getQuickTimeDay: () => Dayjs;
   /** Follow draft Left/Right moves so the draft stays on screen. */
   navigateToDate?: (date: Dayjs) => void;
   /** Shift+Arrow place-create when nothing is focused and no draft can move. */
@@ -86,11 +93,16 @@ export function useDayEventNudgeShortcuts({
       timedEvents,
     });
 
+  const quickTime = useQuickTimeCreate({
+    createAt: createDraftAtTime,
+    getTargetDay: getQuickTimeDay,
+  });
+
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: targeting.focus,
     listVisible: targeting.listNavigable,
-    mode: "day",
+    quickTime,
     timedEvents,
   });
 

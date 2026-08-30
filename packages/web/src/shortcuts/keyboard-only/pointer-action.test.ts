@@ -1,11 +1,18 @@
+import dayjs from "@core/util/date/dayjs";
+import {
+  ID_GRID_COLUMNS_TIMED,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
 import {
   POINTER_ACTION_ATTRIBUTE,
   POINTER_ACTIONS,
   POINTER_EVENT_ID_ATTRIBUTE,
   POINTER_SHORTCUT_ATTRIBUTE,
+  pointerGridIntentFromPointer,
   resolveBlockedPointerAttempt,
   teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { describe, expect, it } from "bun:test";
 
 describe("resolveBlockedPointerAttempt", () => {
@@ -90,5 +97,40 @@ describe("teachingFromBlockedPointer", () => {
     expect(teachingFromBlockedPointer([target, document], 0)).toEqual({
       attempt: { actionId: POINTER_ACTIONS.goToToday },
     });
+  });
+});
+
+describe("pointerGridIntentFromPointer", () => {
+  it("keeps the exact effective-zone quarter-hour selected by a timed click", () => {
+    const grid = document.createElement("div");
+    grid.id = ID_GRID_MAIN;
+    Object.defineProperty(grid, "scrollHeight", { value: 1440 });
+    grid.getBoundingClientRect = () =>
+      ({ top: 0, left: 0, right: 200, bottom: 400 }) as DOMRect;
+    const columns = document.createElement("div");
+    columns.id = ID_GRID_COLUMNS_TIMED;
+    const column = document.createElement("div");
+    column.dataset.gridDate = "2026-08-29";
+    column.getBoundingClientRect = () =>
+      ({ top: 0, left: 0, right: 200, bottom: 1440 }) as DOMRect;
+    columns.appendChild(column);
+    document.body.append(grid, columns);
+
+    const intent = pointerGridIntentFromPointer(
+      [column, columns, document],
+      100,
+      690,
+    );
+
+    expect(intent).toMatchObject({
+      date: "2026-08-29",
+      kind: "timed",
+      timeKey: "1130",
+    });
+    expect(
+      dayjs(intent?.start).tz(getEffectiveTimeZone()).format("HH:mm"),
+    ).toBe("11:30");
+    grid.remove();
+    columns.remove();
   });
 });

@@ -52,6 +52,8 @@ const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
   attempt?.actionId === POINTER_ACTIONS.goToToday ||
   attempt?.actionId === POINTER_ACTIONS.eventOpen ||
+  attempt?.actionId === "grid.timed" ||
+  attempt?.actionId === "grid.all-day" ||
   Boolean(attempt?.shortcutKey);
 
 const pointerHintMessage = ({
@@ -102,6 +104,23 @@ const pointerHintMessage = ({
       <>
         Press <Key>{eventJumpKey}</Key>, then <Key>Enter</Key> to open this
         event.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === "grid.timed" && attempt.gridTimeKey) {
+    return (
+      <>
+        Press <Key>{attempt.gridTimeKey}</Key> to create at{" "}
+        {attempt.gridTimeLabel ?? attempt.gridTimeKey}.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === "grid.all-day") {
+    return (
+      <>
+        Press <Key>Shift+C</Key> to create an all-day event here.
       </>
     );
   }

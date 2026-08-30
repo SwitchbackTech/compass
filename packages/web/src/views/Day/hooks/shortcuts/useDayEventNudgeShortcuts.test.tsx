@@ -149,11 +149,13 @@ const addReadOnlyCalendarTarget = (
 
 const renderEditShortcuts = ({
   allDayEvents = [],
+  createDraftAtTime = () => {},
   navigateToDate,
   placeTimedDraft,
   timedEvents = [timedEvent],
 }: {
   allDayEvents?: GridEvent[];
+  createDraftAtTime?: (start: Dayjs) => void;
   navigateToDate?: (date: Dayjs) => void;
   placeTimedDraft?: () => void;
   timedEvents?: GridEvent[];
@@ -200,7 +202,9 @@ const renderEditShortcuts = ({
     () =>
       useDayEventNudgeShortcuts({
         allDayEvents,
+        createDraftAtTime,
         dependencies,
+        getQuickTimeDay: () => dayjs("2026-08-05"),
         navigateToDate,
         placeTimedDraft,
         timedEvents,

@@ -167,6 +167,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "create",
   },
   {
+    id: "create-typed-time",
+    keys: ["1130"],
+    label: "Create draft at a typed time (press H to see open slots)",
+    section: "create",
+  },
+  {
     id: "create-place-discard",
     keys: ["Escape"],
     label: "Discard placed draft",
@@ -195,9 +201,8 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   {
     id: "focus-week-day",
     keys: ["Shift", "m"],
-    label: "Focus a week column (Shift + M T W R F, Shift + S then U or A)",
+    label: "Focus a day's events (Shift + M T W R F, Shift + S then U or A)",
     section: "focus",
-    when: { weekView: true },
   },
   {
     id: "focus-notice",

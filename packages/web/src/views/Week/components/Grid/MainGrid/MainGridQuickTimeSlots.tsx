@@ -1,0 +1,72 @@
+import { useMemo } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import dayjs from "@core/util/date/dayjs";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { type GridVisibleDate } from "@web/grid/types/grid.types";
+import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
+import {
+  buildQuickTimeSlots,
+  quickTimeTargetDay,
+} from "@web/shortcuts/quick-time/quick-time.util";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+
+interface Props {
+  measurements: Measurements_Grid;
+  weekProps: WeekProps;
+}
+
+/**
+ * Week-grid host for the quick-time placeholders. Sources events from the same
+ * cached week query MainGridEvents reads, the way MainGridBusyPeriods sources
+ * its own availability query, so no new props thread through the grid.
+ */
+export const MainGridQuickTimeSlots = ({ measurements, weekProps }: Props) => {
+  const { component } = weekProps;
+  // Same args as MainGridEvents so this shares that query's cache entry rather
+  // than opening a second one.
+  const { timedEvents } = useWeekEventViewModel({
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
+  });
+  const visibleDates: GridVisibleDate[] = useMemo(
+    () =>
+      component.weekDays.map((date) => ({
+        date,
+        key: date.format(YEAR_MONTH_DAY_FORMAT),
+      })),
+    [component.weekDays],
+  );
+
+  const slots = useMemo(() => {
+    const now = dayjs().tz(getEffectiveTimeZone());
+    const targetDay = quickTimeTargetDay(
+      component.startOfView,
+      component.endOfView,
+      now,
+    );
+    // All-day events live in their own row, so only timed cards can collide
+    // with a placeholder.
+    const busy = timedEvents.flatMap((event) =>
+      event.startDate && event.endDate
+        ? [
+            {
+              startMs: dayjs(event.startDate).valueOf(),
+              endMs: dayjs(event.endDate).valueOf(),
+            },
+          ]
+        : [],
+    );
+
+    return buildQuickTimeSlots({ busy, now, targetDay });
+  }, [component.endOfView, component.startOfView, timedEvents]);
+
+  return (
+    <QuickTimeSlots
+      measurements={measurements}
+      slots={slots}
+      visibleDates={visibleDates}
+    />
+  );
+};

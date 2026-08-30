@@ -102,6 +102,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
                       data-all-day-tint={tintStyle ? "true" : undefined}
                       data-focused-column={isFocusedColumn ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
+                      data-grid-date={dayKey}
                       aria-label={
                         surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
                       }
