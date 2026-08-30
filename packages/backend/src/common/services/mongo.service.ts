@@ -13,6 +13,8 @@ import { Logger } from "@core/logger/winston.logger";
 import { type Schema_User } from "@core/types/user.types";
 import { isTransientMongoNetworkError } from "@core/util/mongo-network-error.util";
 import { type BillingEventRecord } from "@backend/billing/billing-event.record";
+import { type BookingPageRecord } from "@backend/booking/booking-page.record";
+import { type BookingReservationRecord } from "@backend/booking/booking-reservation.record";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -26,6 +28,8 @@ interface InternalClient {
   db: Db;
   client: MongoClient;
   billingEvent: Collection<BillingEventRecord>;
+  bookingPage: Collection<BookingPageRecord>;
+  bookingReservation: Collection<BookingReservationRecord>;
   calendar: Collection<CalendarRecord>;
   event: Collection<EventRecord>;
   pendingAccountDeletion: Collection<PendingAccountDeletionRecord>;
@@ -55,6 +59,14 @@ class MongoService {
    */
   get billingEvent(): InternalClient["billingEvent"] {
     return this.#accessInternalCollectionProps("billingEvent");
+  }
+
+  get bookingPage(): InternalClient["bookingPage"] {
+    return this.#accessInternalCollectionProps("bookingPage");
+  }
+
+  get bookingReservation(): InternalClient["bookingReservation"] {
+    return this.#accessInternalCollectionProps("bookingReservation");
   }
 
   /**
@@ -117,6 +129,10 @@ class MongoService {
       client,
       billingEvent: db.collection<BillingEventRecord>(
         Collections.BILLING_EVENT,
+      ),
+      bookingPage: db.collection<BookingPageRecord>(Collections.BOOKING_PAGE),
+      bookingReservation: db.collection<BookingReservationRecord>(
+        Collections.BOOKING_RESERVATION,
       ),
       calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
       event: db.collection<EventRecord>(Collections.EVENT),

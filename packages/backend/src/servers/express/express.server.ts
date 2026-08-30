@@ -9,6 +9,7 @@ import {
   BillingRoutes,
   mountStripeWebhook,
 } from "@backend/billing/billing.routes.config";
+import { BookingRoutes } from "@backend/booking/booking.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { type CommonRoutesConfig } from "@backend/common/common.routes.config";
 import corsWhitelist from "@backend/common/middleware/cors.middleware";
@@ -58,6 +59,7 @@ export const initExpressServer = () => {
   routes.push(new EventsRoutes(app));
   routes.push(new CalendarRoutes(app));
   routes.push(new ContactsRoutes(app));
+  routes.push(new BookingRoutes(app));
 
   app.use(supertokensErrorHandler()); // Keep this after routes
 

@@ -11,5 +11,9 @@ export const Collections = {
   PENDING_SYNC_PRINCIPAL_DELETION: IS_DEV
     ? "_dev.pendingSyncPrincipalDeletion"
     : "pendingSyncPrincipalDeletion",
+  BOOKING_PAGE: IS_DEV ? "_dev.bookingPage" : "bookingPage",
+  BOOKING_RESERVATION: IS_DEV
+    ? "_dev.bookingReservation"
+    : "bookingReservation",
   USER: IS_DEV ? "_dev.user" : "user",
 };
