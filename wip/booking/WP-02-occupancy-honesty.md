@@ -2,7 +2,7 @@
 
 **task_id:** WP-02
 **github:** [#2971](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2971)
-**status:** queued
+**status:** done
 **owner:** Implementer (sync)
 **depends on:** none (may run parallel with WP-01)
 **next owner after done:** WP-05
@@ -72,7 +72,17 @@ Key files:
 
 ## Evidence
 
-Fill when implementing. Must include "safety-canary tests pass".
+- `isOccurrenceBusy` in `occurrence-projection.ts` sets `busy: false` only when
+  `providerMetadata["transparency"] === "transparent"`; null metadata stays busy.
+- Unit tests: transparent, null metadata, iCalUID-only opaque in
+  `occurrence-projection.test.ts`.
+- Db tests: import transparent vs opaque sibling in
+  `provider-page-applier.db.test.ts`; reproject busy flip on pull; transparent
+  exclusion in `busy-query.service.db.test.ts`.
+- Existing occurrences converge on the next pull/reproject (no new repair job).
+- safety-canary tests pass.
+- `bun test:sync` pass (1096 tests); `bun run type-check`, `bun lint`, `bun knip`,
+  `bun run verify` pass.
 
 ## Out of scope
 

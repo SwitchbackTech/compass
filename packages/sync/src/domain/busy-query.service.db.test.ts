@@ -166,6 +166,25 @@ describe("queryBusyIntervals", () => {
     expect(await query([{ calendarId: calendarA, generation: 0 }])).toEqual([]);
   });
 
+  it("excludes transparent (busy: false) occurrences", async () => {
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T09:00Z",
+      end: "2026-07-14T10:00Z",
+      busy: false,
+    });
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T11:00Z",
+      end: "2026-07-14T12:00Z",
+      busy: true,
+    });
+
+    expect(
+      iso(await query([{ calendarId: calendarA, generation: 0 }])),
+    ).toEqual([["2026-07-14T11:00:00.000Z", "2026-07-14T12:00:00.000Z"]]);
+  });
+
   it("excludes an occurrence that has no endAt yet", async () => {
     // A pre-endAt occurrence (not yet reprojected) has no end to overlap on.
     await seed({ calendarId: calendarA, start: "2026-07-14T09:00Z" });
