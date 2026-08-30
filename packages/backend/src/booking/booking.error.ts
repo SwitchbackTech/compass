@@ -8,6 +8,9 @@ export const BookingErrorCodeSchema = z.enum([
   "BLOCKING_CALENDAR_INVALID",
   "INVALID_INPUT",
   "BILLING_REQUIRED",
+  "PAGE_NOT_FOUND",
+  "SLOT_UNAVAILABLE",
+  "RESERVATION_NOT_FOUND",
 ]);
 export type BookingErrorCode = z.infer<typeof BookingErrorCodeSchema>;
 
@@ -17,6 +20,9 @@ const STATUS_BY_CODE: Record<BookingErrorCode, Status> = {
   BLOCKING_CALENDAR_INVALID: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
   BILLING_REQUIRED: Status.FORBIDDEN,
+  PAGE_NOT_FOUND: Status.NOT_FOUND,
+  SLOT_UNAVAILABLE: Status.CONFLICT,
+  RESERVATION_NOT_FOUND: Status.NOT_FOUND,
 };
 
 export class BookingException extends BaseError {

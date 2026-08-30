@@ -70,7 +70,12 @@ Key files: `packages/backend/src/booking/` public routes (no
 
 ## Evidence
 
-Fill when implementing.
+- Public routes: `GET /api/booking/pages/:slug`, `GET .../slots`, `POST .../reservations`, `POST /api/booking/reservations/:id/cancel` (no session).
+- `PublicBookingService` + `booking-reservation.repository.ts`; partial unique index on confirmed `pageId+slotStart`.
+- Cancel tokens: 32-byte random, sha256 hash stored, constant-time verify; raw token in cancel URL once.
+- GET slots returns `{ slots, bookable }`; confirm fail-closed on `bookable: false` (409, no event create).
+- Rate limits: 60/min GET slots, 10/min POST confirm per IP+slug.
+- `bun test:backend`, `bun test:core`, `bun run verify` PASS.
 
 ## Out of scope
 
