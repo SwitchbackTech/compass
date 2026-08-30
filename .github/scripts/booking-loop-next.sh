@@ -10,6 +10,60 @@ if [ -z "$REPO" ]; then
   exit 1
 fi
 
+quota_waiting_json=$(
+  gh issue list --repo "$REPO" --milestone "$MILESTONE" --state open \
+    --label "$QUOTA_WAITING_LABEL" --limit 10 --json number,title,url
+)
+
+if [ "$quota_waiting_json" != "[]" ]; then
+  quota_waiting_number=$(python3 -c '
+import json, sys
+issues = json.loads(sys.stdin.read())
+issues.sort(key=lambda issue: issue["number"])
+print(issues[0]["number"])
+' <<<"$quota_waiting_json")
+  quota_retry_at=$(gh api "repos/${REPO}/issues/${quota_waiting_number}/comments" \
+    --paginate --jq '[.[].body | select(test("booking-loop-quota-retry-at="))] | last // ""' \
+    | sed -n 's/.*booking-loop-quota-retry-at=\([^ >]*\).*/\1/p' | tail -n 1)
+  quota_retry_due=$(RETRY_AT="$quota_retry_at" python3 - <<'PY'
+from datetime import datetime, timezone
+import os
+
+retry_at = os.environ["RETRY_AT"]
+if not retry_at:
+    print("true")
+else:
+    try:
+        timestamp = datetime.fromisoformat(retry_at.replace("Z", "+00:00"))
+        print("true" if timestamp <= datetime.now(timezone.utc) else "false")
+    except ValueError:
+        print("true")
+PY
+)
+
+  if [ "$quota_retry_due" != "true" ]; then
+    echo "Booking loop is waiting for Cursor credits on #${quota_waiting_number} until ${quota_retry_at:-the next hourly retry}."
+    set_output found false
+    exit 0
+  fi
+
+  quota_waiting_selected=$(python3 -c '
+import json, sys
+issues = json.loads(sys.stdin.read())
+issues.sort(key=lambda issue: issue["number"])
+print(json.dumps(issues[0]))
+' <<<"$quota_waiting_json")
+  number=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["number"])' <<<"$quota_waiting_selected")
+  title=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["title"])' <<<"$quota_waiting_selected")
+  url=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["url"])' <<<"$quota_waiting_selected")
+  echo "Retrying Booking issue: #${number} ${title}"
+  set_output found true
+  set_output issue_number "$number"
+  set_output issue_title "$title"
+  set_output issue_url "$url"
+  exit 0
+fi
+
 running_json=$(
   gh issue list --repo "$REPO" --milestone "$MILESTONE" --state open \
     --label "$RUNNING_LABEL" --limit 10 --json number,updatedAt
@@ -78,13 +132,14 @@ prs_json=$(
 
 selected=$(
   ISSUES_JSON="$issues_json" PRS_JSON="$prs_json" \
-  SKIP_LABEL="$NEEDS_HUMAN_LABEL" RUNNING_LABEL="$RUNNING_LABEL" python3 - <<'PY'
+  SKIP_LABEL="$NEEDS_HUMAN_LABEL" RUNNING_LABEL="$RUNNING_LABEL" QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" python3 - <<'PY'
 import json, os, re
 
 issues = json.loads(os.environ["ISSUES_JSON"])
 prs = json.loads(os.environ["PRS_JSON"])
 skip_label = os.environ["SKIP_LABEL"]
 skip_also = os.environ["RUNNING_LABEL"]
+quota_waiting_label = os.environ["QUOTA_WAITING_LABEL"]
 
 issues.sort(key=lambda i: i["number"])
 
@@ -101,7 +156,7 @@ def has_open_pr(number: int) -> bool:
 
 for issue in issues:
     labels = {lab["name"] for lab in issue.get("labels") or []}
-    if skip_label in labels or skip_also in labels:
+    if skip_label in labels or skip_also in labels or quota_waiting_label in labels:
         continue
     if has_open_pr(issue["number"]):
         continue
