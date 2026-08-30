@@ -52,6 +52,19 @@ RSVP](../features/attendees.md).
 - Sync Google writer/people adapters: `packages/sync/src/providers/google/google-event-writer.adapter.ts`, `packages/sync/src/providers/google/google-people.adapter.ts`
 - E2e coverage: `e2e/attendees/`
 
+## Booking (v1, in progress)
+
+Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
+Work packages: [`wip/booking/`](../../wip/booking/README.md).
+
+- Public URL: `/book/:username` (not implemented until WP-08)
+- Shared contracts (WP-01): `packages/core/src/types/booking.contracts.ts`
+- Occupancy: `packages/sync/src/domain/occurrence-projection.ts`,
+  `packages/sync/src/domain/busy-query.service.ts`,
+  `POST /internal/availability/busy`
+- Host Settings page (WP-07): `packages/web/src/settings/`
+- Architecture: [Product Suite Boundaries](../architecture/product-suite-boundaries.md)
+
 ## Day / Week Views
 
 - Day view route and content: `packages/web/src/views/Day/view`

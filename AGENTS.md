@@ -59,6 +59,8 @@ Validation defaults:
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
 - Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
 - Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
+- Temporary booking work pack (delete when done): `wip/booking/README.md`
+- Booking product spec: `docs/features/booking.md`
 
 The `wip/restructure/` pack is deleted after WP-01–07. WP-08 was cancelled:
 discovery was not the bottleneck (failures were CI, review, evidence, and
