@@ -10,10 +10,10 @@ creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1 is specified, not shipped. A standalone Compass Booking product
-(separate brand, domain, or deployable) is **explicitly deferred**. The
-seams below are the extraction path; they are not a second service in
-v1.
+v1 is implemented in the Compass monorepo (public `/book/:username`, host
+Settings, backend APIs). A standalone Compass Booking product (separate
+brand, domain, or deployable) is **explicitly deferred**. The seams below
+are the extraction path; they are not a second service in v1.
 
 ## Public URL
 
@@ -118,12 +118,11 @@ v1 uses **Sync busy intervals**, not a new RSVP filter.
   rejected (`409`). Policy stays in Booking; Sync stays facts-only.
   See [Product Suite Boundaries](../architecture/product-suite-boundaries.md).
 
-Known gap (WP-02): occurrence projection currently forces `busy: true`
-(`packages/sync/src/domain/occurrence-projection.ts`). Google already
-normalizes transparency; `provider-page-applier.ts` stores
+Known gap (resolved in WP-02): occurrence projection previously forced
+`busy: true` (`packages/sync/src/domain/occurrence-projection.ts`). Google
+already normalizes transparency; `provider-page-applier.ts` stores
 `providerMetadata.transparency = "transparent"` for free events.
-Booking cannot ship until occurrences honor that flag. Cancelled
-occurrences stay excluded.
+Occurrences now honor that flag. Cancelled occurrences stay excluded.
 
 RSVP-strict "only organized or accepted invites block" is **v1.1**,
 not v1.
@@ -217,11 +216,38 @@ Authenticated (host session + writable billing, same as event writes):
 
 ## Implementation
 
-Until WP-09 closeout, work packages and the GitHub Project are the
-execution record:
+Work packages and the GitHub milestone record the build history until
+`wip/booking/` is deleted:
 
 - [`wip/booking/README.md`](../../wip/booking/README.md)
 - [`wip/booking/TRACKING.md`](../../wip/booking/TRACKING.md)
+
+### Implementation map
+
+| Area | Path |
+| --- | --- |
+| Shared contracts | `packages/core/src/types/booking.contracts.ts` |
+| Slot engine | `packages/core/src/booking/compute-booking-slots.ts` |
+| Backend admin API | `packages/backend/src/booking/booking.controller.ts`, `booking-page.service.ts` |
+| Backend public API | `packages/backend/src/booking/services/public-booking.service.ts` |
+| Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
+| Calendar application port | `packages/backend/src/booking/calendar-booking.port.ts`, `calendar-booking.service.ts` |
+| Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingCancelPage.tsx` |
+| Public web API client | `packages/web/src/api/public-booking.api.ts` |
+| E2e | `e2e/booking/` |
+
+### Named warts
+
+- **Slug is not editable in v1.** Allocation runs once on first enable; changing
+  slugs needs a migration with redirects.
+- **No guest reschedule.** Cancel and rebook, or the host deletes the event.
+- **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
+  disappear and confirm returns `409`.
+- **Occupancy is busy-interval based**, not RSVP-strict (v1.1).
+- **Google-only destination** calendars; password-only hosts see a connect-Google
+  prompt in Settings.
 
 ## Related docs
 

@@ -52,17 +52,28 @@ RSVP](../features/attendees.md).
 - Sync Google writer/people adapters: `packages/sync/src/providers/google/google-event-writer.adapter.ts`, `packages/sync/src/providers/google/google-people.adapter.ts`
 - E2e coverage: `e2e/attendees/`
 
-## Booking (v1, in progress)
+## Booking (v1)
 
 Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
-Work packages: [`wip/booking/`](../../wip/booking/README.md).
+Work packages: [`wip/booking/`](../../wip/booking/README.md) (delete after
+docs are the source of truth).
 
-- Public URL: `/book/:username` (not implemented until WP-08)
-- Shared contracts (WP-01): `packages/core/src/types/booking.contracts.ts`
+- Public URL: `/book/:username` (guest routes outside the calendar shell)
+- Shared contracts: `packages/core/src/types/booking.contracts.ts`
+- Slot engine: `packages/core/src/booking/compute-booking-slots.ts`
+- Backend admin: `packages/backend/src/booking/booking.controller.ts`,
+  `booking-page.service.ts`
+- Backend public API: `packages/backend/src/booking/services/public-booking.service.ts`
+- Calendar port: `packages/backend/src/booking/calendar-booking.port.ts`,
+  `calendar-booking.service.ts`
 - Occupancy: `packages/sync/src/domain/occurrence-projection.ts`,
   `packages/sync/src/domain/busy-query.service.ts`,
   `POST /internal/availability/busy`
-- Host Settings page (WP-07): `packages/web/src/settings/`
+- Host Settings: `packages/web/src/booking/BookingSettingsSection.tsx`
+- Public guest UI: `packages/web/src/booking/PublicBookingPage.tsx`,
+  `PublicBookingCancelPage.tsx`
+- Web API client: `packages/web/src/api/public-booking.api.ts`
+- E2e: `e2e/booking/`
 - Architecture: [Product Suite Boundaries](../architecture/product-suite-boundaries.md)
 
 ## Day / Week Views
