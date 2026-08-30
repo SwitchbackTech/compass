@@ -1,9 +1,10 @@
-import { type Response } from "express";
+import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
 import { toBookingErrorResponse } from "@backend/booking/booking.error";
 import bookingPageService from "@backend/booking/services/booking-page.service";
+import publicBookingService from "@backend/booking/services/public-booking.service";
 
 class BookingController {
   getPage = async (req: SessionRequest, res: Response) => {
@@ -22,6 +23,59 @@ class BookingController {
       const userId = zObjectId.parse(req.session?.getUserId());
       const response = await bookingPageService.putAdminPage(userId, req.body);
       res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
+  getPublicPage = async (req: Request, res: Response) => {
+    try {
+      const response = await publicBookingService.getPublicPage(
+        req.params["slug"] ?? "",
+      );
+      res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
+  getPublicSlots = async (req: Request, res: Response) => {
+    try {
+      const response = await publicBookingService.getSlots(
+        req.params["slug"] ?? "",
+        {
+          start: req.query["start"],
+          end: req.query["end"],
+          timeZone: req.query["timeZone"],
+        },
+      );
+      res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
+  createReservation = async (req: Request, res: Response) => {
+    try {
+      const response = await publicBookingService.createReservation(
+        req.params["slug"] ?? "",
+        req.body,
+      );
+      res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
+  cancelReservation = async (req: Request, res: Response) => {
+    try {
+      const reservationId = zObjectId.parse(req.params["id"]);
+      await publicBookingService.cancelReservation(reservationId, req.body);
+      res.status(Status.OK).json({ ok: true });
     } catch (error) {
       const { status, body } = toBookingErrorResponse(error);
       res.status(status).json(body);

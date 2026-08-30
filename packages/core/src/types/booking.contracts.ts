@@ -240,6 +240,7 @@ export type BookingSlot = z.infer<typeof BookingSlotSchema>;
 
 export const BookingSlotsResponseSchema = z.strictObject({
   slots: z.array(BookingSlotSchema).readonly(),
+  bookable: z.boolean(),
 });
 export type BookingSlotsResponse = z.infer<typeof BookingSlotsResponseSchema>;
 

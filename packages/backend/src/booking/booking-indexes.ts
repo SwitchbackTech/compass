@@ -16,7 +16,11 @@ export async function ensureBookingIndexes(): Promise<void> {
 
   await mongoService.bookingReservation.createIndex(
     { pageId: 1, slotStart: 1 },
-    { name: "booking_reservation_page_slot" },
+    {
+      name: "booking_reservation_page_slot_confirmed_unique",
+      unique: true,
+      partialFilterExpression: { status: "confirmed" },
+    },
   );
   await mongoService.bookingReservation.createIndex(
     { pageId: 1, status: 1, slotStart: 1 },
