@@ -28,7 +28,7 @@ Org project create is blocked on `project` scope; see
 | WP-06 | high | cursor/booking-wp-06-public-api-893c | done | [WP-06-public-booking-api.md](WP-06-public-booking-api.md) [#2975](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2975) | public GET page/slots, POST reservation/cancel; rate limit IP+slug; sha256 cancel tokens; fail-closed confirm; unique page+slot index; bun test:backend/core + verify PASS | | 0 | none |
 | WP-07 | high | cursor/booking-wp-07-host-settings-ui-893c | done | [WP-07-host-settings-ui.md](WP-07-host-settings-ui.md) [#2976](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2976) | Settings Booking page (duration, calendars, weekly hours, timezone, window, buffer, cap, guest-invite, copy link, connect-Google prompt); bun test:web/type-check/lint/knip/verify PASS | | 0 | none |
 | WP-08 | high | cursor/booking-wp-08-public-booking-page-893c | done | [WP-08-public-booking-page.md](WP-08-public-booking-page.md) [#2977](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2977) | public /book routes outside calendar-shell; guest TZ slot picker, form, confirm, 409 refresh, 404/unavailable; PublicBookingPage.test.tsx; bun test:web/type-check/lint/knip/verify PASS | | 0 | none |
-| WP-09 | medium | — | queued | [WP-09-e2e-docs-closeout.md](WP-09-e2e-docs-closeout.md) [#2978](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978) | | | 0 | none |
+| WP-09 | medium | cursor/booking-wp-09-e2e-docs-closeout-893c | running | [WP-09-e2e-docs-closeout.md](WP-09-e2e-docs-closeout.md) [#2978](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978) | started_at: 2026-08-30T20:00:00Z | | 0 | none |
 
 ## Escalation log
 
