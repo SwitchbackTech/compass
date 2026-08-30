@@ -292,11 +292,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" ? (liveSource ?? draft.source) : null;
     const liveDetails =
       rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
-    // Attendee-editor gate (WP-04): guests are editable only where the whole
-    // write path can deliver them — a writable Google calendar, an event the
-    // user organizes, and never a single occurrence of a series (sync
-    // refuses per-occurrence guest replacements; series-wide edits go
-    // through the "all"-scope path via the scope dialog's narrowing).
+    // Attendee-editor gate (WP-04): guests are editable everywhere the whole
+    // write path can deliver them — a writable Google calendar and an event
+    // the user organizes. Repeating events included: sync refuses
+    // per-occurrence guest replacements, so a guest change on any instance
+    // is saved series-wide (resolveRecurrenceScopeDecision widens the whole
+    // save to "all"), and the field says so.
     const { data: allCalendars } = useCalendarsQuery();
     const defaultTargetCalendar = useDefaultTargetCalendar(allCalendars ?? []);
     const attendeeCalendar =
@@ -320,9 +321,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       !isReadOnly &&
       attendeeCalendar?.provider === "google" &&
       attendeeCalendar.capabilities.canWrite &&
-      organizesEvent &&
-      (draft.kind === "create" ||
-        draft.source.recurrence.kind !== "occurrence");
+      organizesEvent;
+    const guestEditIsSeriesWide =
+      draft.kind === "edit" && draft.source.recurrence.kind !== "single";
     // RSVP gate (WP-08): show Going / Maybe / Decline when the calendar's
     // connected account email appears in the attendee list (organizer
     // included — organizers can answer their own event). Hidden when self is
@@ -980,6 +981,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       {attendeeChipTally && (
                         <p className="text-text-muted text-xs">
                           {attendeeChipTally}
+                        </p>
+                      )}
+                      {guestEditIsSeriesWide && (
+                        <p className="text-text-muted text-xs">
+                          Guest changes apply to all events in this series.
                         </p>
                       )}
                       <AttendeeField

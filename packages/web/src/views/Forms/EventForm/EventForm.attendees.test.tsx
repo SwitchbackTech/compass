@@ -16,11 +16,12 @@ import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// WP-04 attendee-editor gating: the guest combobox renders only where the
-// whole write path can deliver a guest edit — a writable Google calendar, an
-// event the user organizes, never a single occurrence of a series. Everyone
-// else keeps the read-only guest list. Sibling to EventForm.readOnly.test.tsx
-// (full form, no subcomponent mocks) for the same isolation reasons.
+// WP-04 attendee-editor gating: the guest combobox renders wherever the whole
+// write path can deliver a guest edit — a writable Google calendar and an
+// event the user organizes — repeating events included, where the edit is
+// series-wide and the field says so. Everyone else keeps the read-only guest
+// list. Sibling to EventForm.readOnly.test.tsx (full form, no subcomponent
+// mocks) for the same isolation reasons.
 
 const ACCOUNT_EMAIL = "me@example.com";
 
@@ -247,7 +248,7 @@ describe("EventForm attendee editor gating", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the editor for a single occurrence of a series (guest edits are series-wide only)", () => {
+  it("shows the editor for a single occurrence of a series, noting the edit is series-wide", () => {
     const calendar = makeCalendar();
     const seriesId = EventIdSchema.parse(createObjectIdString());
     const event = makeMeetingEvent(calendar.id, {
@@ -257,9 +258,11 @@ describe("EventForm attendee editor gating", () => {
     renderEventForm(editDraftOrThrow(event), [calendar]);
 
     expect(
-      screen.queryByRole("combobox", { name: "Guests" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText(/1 guest/)).toBeInTheDocument();
+      screen.getByRole("combobox", { name: "Guests" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Guest changes apply to all events in this series."),
+    ).toBeInTheDocument();
   });
 
   it("shows the editor when editing the series base itself", () => {
@@ -273,6 +276,23 @@ describe("EventForm attendee editor gating", () => {
     expect(
       screen.getByRole("combobox", { name: "Guests" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Guest changes apply to all events in this series."),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the series-wide note on a non-recurring event", () => {
+    const calendar = makeCalendar();
+    const event = makeMeetingEvent(calendar.id);
+
+    renderEventForm(editDraftOrThrow(event), [calendar]);
+
+    expect(
+      screen.getByRole("combobox", { name: "Guests" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Guest changes apply to all events in this series."),
+    ).not.toBeInTheDocument();
   });
 
   it("treats an event with no organizer as organized by the account (Compass-created)", () => {

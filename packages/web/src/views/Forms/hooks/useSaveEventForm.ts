@@ -47,10 +47,10 @@ export function useSaveEventForm() {
   // Belt behind the editor's own render gates: a guest edit that could never
   // deliver is dropped back to preserve semantics instead of submitting a
   // command sync/backend will refuse. The UI cannot reach these states — the
-  // editor only renders on writable Google calendars the user organizes,
-  // occurrence drafts never render it, and a guest-changed recurring edit
-  // is saved as "all" automatically — so this only defends replayed or
-  // hand-built drafts.
+  // editor only renders on writable Google calendars the user organizes, and
+  // a guest-changed recurring edit is saved as "all" automatically, whether
+  // it started from the series base or from one occurrence — so this only
+  // defends replayed or hand-built drafts.
   const normalizeGuestEdit = useCallback(
     (
       draft: GridEventDraft,
