@@ -2,8 +2,8 @@
 
 **task_id:** WP-07
 **github:** [#2976](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2976)
-**status:** queued
-**owner:** Implementer (web)
+**status:** done
+**owner:** cursor/booking-wp-07-host-settings-ui-893c
 **depends on:** WP-03
 **next owner after done:** WP-09 (after WP-08)
 
@@ -58,7 +58,12 @@ the public URL. Settings today is `"accounts" | "billing"` in
 
 ## Evidence
 
-Fill when implementing.
+- `packages/web/src/booking/BookingSettingsSection.tsx` and supporting components
+- `packages/web/src/api/booking.api.ts`, `packages/web/src/booking/booking.query.ts`
+- Settings nav `"booking"` with keyboard shortcut `3`; MSW handler for `GET/PUT /booking/page`
+- Tests: `BookingSettingsSection.test.tsx`, `BookingCopyLink.test.tsx`
+- `bun test:web` (2842 pass), `bun run type-check`, `bun lint`, `bun knip`, `bun run verify` PASS
+- `bun test:a11y` skipped (Chromium not installed in Cloud Agent VM)
 
 ## Out of scope
 

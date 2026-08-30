@@ -20,6 +20,7 @@ import { PlanSection } from "@web/billing/PlanSection";
 import { getPlanBadge } from "@web/billing/planBadge";
 import { useUpgradeConfirmation } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -94,6 +95,7 @@ export const SettingsModal: FC = () => {
   const { areHintsVisible } = useSettingsShortcuts({
     enabled: isOpen && !isUpgradeOpen,
     hasBilling,
+    hasBooking: authenticated,
     page,
   });
 
@@ -207,10 +209,26 @@ export const SettingsModal: FC = () => {
               {areHintsVisible ? <ShortcutKeys keys="2" /> : null}
             </button>
           ) : null}
+          {authenticated ? (
+            <button
+              aria-current={page === "booking" ? "true" : undefined}
+              className={navButtonClassName(page === "booking")}
+              onClick={() => settingsActions.setSettingsPage("booking")}
+              onPointerEnter={focusOnPointerEnter}
+              ref={page === "booking" ? initialFocusRef : undefined}
+              type="button"
+              {...settingsShortcutAttrs("nav-booking")}
+            >
+              Booking
+              {areHintsVisible ? <ShortcutKeys keys="3" /> : null}
+            </button>
+          ) : null}
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (
             <PlanSection showShortcuts={areHintsVisible} />
+          ) : page === "booking" ? (
+            <BookingSettingsSection showShortcuts={areHintsVisible} />
           ) : (
             <>
               <DefaultTimezonePicker />

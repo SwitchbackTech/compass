@@ -78,6 +78,24 @@ export const globalHandlers = [
       }),
     );
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/booking/page`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        enabled: false,
+        durationMinutes: 30,
+        destinationCalendarId: "000000000000000000000001",
+        blockingCalendarIds: ["000000000000000000000001"],
+        timeZone: "UTC",
+        weeklyAvailability: [],
+        minNoticeHours: 4,
+        maxHorizonDays: 60,
+        bufferMinutes: null,
+        maxBookingsPerDay: null,
+        guestsCanInviteOthers: true,
+      }),
+    );
+  }),
   rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) => {
     return res(
       ctx.status(Status.OK),
