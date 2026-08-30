@@ -710,9 +710,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           return;
         }
 
-        // Belt for the read-only gate: EventActionMenu already hides
-        // Delete for a read-only draft, but the keyboard shortcut fires
-        // regardless of what's rendered (packet 08 step 8).
+        // FormActionsRow hides Delete for read-only drafts, but the
+        // keyboard shortcut still fires.
         if (isReadOnly) {
           return;
         }

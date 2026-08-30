@@ -106,7 +106,8 @@ export const shortcutShowcaseActions = {
     const saved = readShowcaseProgress();
     if (!saved) return;
     const stepIndex = stepIndexForSavedId(saved);
-    persistStep(stepIndex);
+    // Rewrite retired/unknown ids to the resolved step so reload stays stable.
+    if (stepIdAt(stepIndex) !== saved) persistStep(stepIndex);
     useShortcutShowcaseStore.setState({
       isActive: true,
       stepIndex,
