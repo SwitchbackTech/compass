@@ -246,6 +246,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
   },
   {
+    id: "edit-copy",
+    keys: ["Mod", "C"],
+    label: "Copy focused event",
+    section: "edit",
+  },
+  {
+    id: "edit-paste",
+    keys: ["Mod", "V"],
+    label: "Paste copied event",
+    section: "edit",
+  },
+  {
     // Shift+F10 also opens this menu on platforms that have a context-menu key
     // (the browser turns it into a contextmenu event, which pointer-block lets
     // through). It is deliberately not listed here: it would be a second row

@@ -262,6 +262,14 @@ describe("shortcut menu sections", () => {
           label: "Duplicate focused event",
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
+          keys: ["Mod", "C"],
+          label: "Copy focused event",
+        });
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
+          keys: ["Mod", "V"],
+          label: "Paste copied event",
+        });
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowUp"],
           label:
             view === "week"

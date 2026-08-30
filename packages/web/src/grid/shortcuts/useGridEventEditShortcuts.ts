@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { type Event } from "@core/types/event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
@@ -52,6 +53,10 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import {
+  eventClipboardActions,
+  useEventClipboardStore,
+} from "@web/events/stores/event-clipboard.store";
+import {
   edgeFocusActions,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
@@ -65,6 +70,7 @@ import {
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
@@ -172,10 +178,10 @@ export type GridEventEditDayBoundary =
     };
 
 /**
- * Shared Delete / Mod+D / Shift+arrow nudge / draft Arrow reposition / focus
- * traversal shortcuts for Day and Week. Targeting, day-boundary policy, and
- * draft reposition stay view-specific (Day follows across midnight; Week
- * clamps to weekDays).
+ * Shared Delete / Mod+D / Mod+C+V copy-paste / Shift+arrow nudge / draft Arrow
+ * reposition / focus traversal shortcuts for Day and Week. Targeting,
+ * day-boundary policy, and draft reposition stay view-specific (Day follows
+ * across midnight; Week clamps to weekDays).
  *
  * Handlers close over latest render values; TanStack Hotkeys syncs the
  * callback each render, so event-list refs are unnecessary.
@@ -261,6 +267,23 @@ export function useGridEventEditShortcuts({
     deleteEventAndDiscardDraft(deleteEvent, event);
   };
 
+  const duplicateSourceEvent = (sourceEvent: Event) => {
+    const committed = commitDuplicateEvent({
+      source: sourceEvent,
+      calendars: calendars ?? [],
+      defaultCalendarId: defaultCalendar?.id,
+      create: createEvent,
+    });
+    if (committed) return;
+
+    // No writable calendar could be resolved for the copy - fall back to
+    // the create-draft form so the user can pick one.
+    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
+    if (!duplicate) return;
+
+    draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
+  };
+
   const duplicateFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
       return;
@@ -274,24 +297,50 @@ export function useGridEventEditShortcuts({
     const sourceEvent = findEventInCache(queryClient, gridEvent._id);
     if (!sourceEvent) return;
 
-    const committed = commitDuplicateEvent({
-      source: sourceEvent,
-      calendars: calendars ?? [],
-      defaultCalendarId: defaultCalendar?.id,
-      create: createEvent,
-    });
+    keyboardEvent.preventDefault();
+    keyboardEvent.stopPropagation();
+    duplicateSourceEvent(sourceEvent);
+  };
+
+  const copyFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
+    // Always swallow: macOS replays a meta-released C keyup that would
+    // otherwise match the create-event shortcut.
+    swallowNextKeyup("c");
+
+    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
+      return;
+    }
+
+    if (isFocusInSidebar()) return;
+
+    const eventId = targeting.getFocusedNavigable()?.eventId;
+    if (!eventId) return;
+
+    const sourceEvent = findEventInCache(queryClient, eventId);
+    if (!sourceEvent) return;
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
+    eventClipboardActions.copy(sourceEvent);
+  };
 
-    if (committed) return;
+  const pasteCopiedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
+    // Always swallow: macOS replays a meta-released V keyup that would
+    // otherwise match Join Up Next.
+    swallowNextKeyup("v");
 
-    // No writable calendar could be resolved for the copy - fall back to
-    // the create-draft form so the user can pick one.
-    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
-    if (!duplicate) return;
+    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
+      return;
+    }
 
-    draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
+    if (isFocusInSidebar()) return;
+
+    const sourceEvent = useEventClipboardStore.getState().event;
+    if (!sourceEvent) return;
+
+    keyboardEvent.preventDefault();
+    keyboardEvent.stopPropagation();
+    duplicateSourceEvent(sourceEvent);
   };
 
   const describeEdgeDate = (event: GridEvent, edge: EventEdge) => {
@@ -665,6 +714,12 @@ export function useGridEventEditShortcuts({
   });
   useAppShortcut("Mod+D", duplicateFocusedCalendarEvent, {
     ignoreInputs: false,
+  });
+  useAppShortcut("Mod+C", copyFocusedCalendarEvent, {
+    ignoreInputs: true,
+  });
+  useAppShortcut("Mod+V", pasteCopiedCalendarEvent, {
+    ignoreInputs: true,
   });
   useAppShortcut(
     KEYMAP.moveFocus.hotkeys.up,
