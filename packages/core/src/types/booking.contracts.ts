@@ -1,0 +1,336 @@
+import { z } from "zod/v4";
+import {
+  CalendarIdSchema,
+  DateTimeSchema,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
+import { ObjectIdStringSchema } from "@core/types/type.utils";
+
+export const BOOKING_RESERVED_SLUGS = [
+  "week",
+  "day",
+  "life",
+  "auth",
+  "api",
+  "cleanup",
+  "book",
+  "p",
+  "settings",
+  "admin",
+  "login",
+  "logout",
+  "signup",
+  "invite",
+  "calendar",
+] as const;
+
+export type BookingReservedSlug = (typeof BOOKING_RESERVED_SLUGS)[number];
+
+export const BookingPageIdSchema =
+  ObjectIdStringSchema.brand<"BookingPageId">();
+export type BookingPageId = z.infer<typeof BookingPageIdSchema>;
+
+export const BookingUserIdSchema =
+  ObjectIdStringSchema.brand<"BookingUserId">();
+export type BookingUserId = z.infer<typeof BookingUserIdSchema>;
+
+export const BookingReservationIdSchema =
+  ObjectIdStringSchema.brand<"BookingReservationId">();
+export type BookingReservationId = z.infer<typeof BookingReservationIdSchema>;
+
+export const BookingSlugSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9]{3,32}$/, {
+    message: "Slug must be 3-32 lowercase letters or digits",
+  })
+  .refine(
+    (slug) => !BOOKING_RESERVED_SLUGS.includes(slug as BookingReservedSlug),
+    { message: "Slug is reserved" },
+  );
+export type BookingSlug = z.infer<typeof BookingSlugSchema>;
+
+export const BookingDurationMinutesSchema = z.union([
+  z.literal(15),
+  z.literal(30),
+  z.literal(45),
+  z.literal(60),
+]);
+export type BookingDurationMinutes = z.infer<
+  typeof BookingDurationMinutesSchema
+>;
+
+const HH_MM_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const LocalTimeOfDaySchema = z
+  .string()
+  .trim()
+  .regex(HH_MM_PATTERN, { message: 'Time must be "HH:mm" in 24-hour form' });
+export type LocalTimeOfDay = z.infer<typeof LocalTimeOfDaySchema>;
+
+const localTimeToMinutes = (time: string): number => {
+  const [hoursText, minutesText] = time.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  return hours * 60 + minutes;
+};
+
+export const IsoWeekdaySchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+  z.literal(6),
+  z.literal(7),
+]);
+export type IsoWeekday = z.infer<typeof IsoWeekdaySchema>;
+
+export const WeeklyAvailabilityIntervalSchema = z
+  .strictObject({
+    weekday: IsoWeekdaySchema,
+    start: LocalTimeOfDaySchema,
+    end: LocalTimeOfDaySchema,
+  })
+  .refine(
+    ({ start, end }) => localTimeToMinutes(end) > localTimeToMinutes(start),
+    { message: "Availability end must be after start", path: ["end"] },
+  );
+export type WeeklyAvailabilityInterval = z.infer<
+  typeof WeeklyAvailabilityIntervalSchema
+>;
+
+const intervalsOverlap = (
+  a: WeeklyAvailabilityInterval,
+  b: WeeklyAvailabilityInterval,
+): boolean => {
+  if (a.weekday !== b.weekday) {
+    return false;
+  }
+  const aStart = localTimeToMinutes(a.start);
+  const aEnd = localTimeToMinutes(a.end);
+  const bStart = localTimeToMinutes(b.start);
+  const bEnd = localTimeToMinutes(b.end);
+  return aStart < bEnd && bStart < aEnd;
+};
+
+export const WeeklyAvailabilitySchema = z
+  .array(WeeklyAvailabilityIntervalSchema)
+  .readonly()
+  .superRefine((intervals, ctx) => {
+    for (let i = 0; i < intervals.length; i += 1) {
+      const left = intervals[i];
+      if (!left) {
+        continue;
+      }
+      for (let j = i + 1; j < intervals.length; j += 1) {
+        const right = intervals[j];
+        if (!right) {
+          continue;
+        }
+        if (intervalsOverlap(left, right)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Weekly availability intervals must not overlap",
+            path: [j],
+          });
+        }
+      }
+    }
+  });
+export type WeeklyAvailability = z.infer<typeof WeeklyAvailabilitySchema>;
+
+export const BookingBufferMinutesSchema = z
+  .int()
+  .positive()
+  .nullable()
+  .default(null);
+export type BookingBufferMinutes = z.infer<typeof BookingBufferMinutesSchema>;
+
+export const BookingMaxBookingsPerDaySchema = z
+  .int()
+  .positive()
+  .nullable()
+  .default(null);
+export type BookingMaxBookingsPerDay = z.infer<
+  typeof BookingMaxBookingsPerDaySchema
+>;
+
+export const BookingPageSchema = z.strictObject({
+  id: BookingPageIdSchema,
+  slug: BookingSlugSchema,
+  hostUserId: BookingUserIdSchema,
+  enabled: z.boolean(),
+  durationMinutes: BookingDurationMinutesSchema,
+  destinationCalendarId: CalendarIdSchema,
+  blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
+  timeZone: TimeZoneSchema,
+  weeklyAvailability: WeeklyAvailabilitySchema,
+  minNoticeHours: z.number().int().nonnegative().default(4),
+  maxHorizonDays: z.number().int().positive().max(60).default(60),
+  bufferMinutes: BookingBufferMinutesSchema,
+  maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
+  guestsCanInviteOthers: z.boolean().default(true),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type BookingPage = z.infer<typeof BookingPageSchema>;
+
+export const PublicBookingPageSchema = z.strictObject({
+  hostDisplayName: z.string().trim().min(1).max(256),
+  durationMinutes: BookingDurationMinutesSchema,
+  timeZone: TimeZoneSchema,
+  enabled: z.boolean(),
+});
+export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
+
+export const toPublicBookingPage = (
+  page: Pick<BookingPage, "durationMinutes" | "timeZone" | "enabled">,
+  hostDisplayName: string,
+): PublicBookingPage =>
+  PublicBookingPageSchema.parse({
+    hostDisplayName,
+    durationMinutes: page.durationMinutes,
+    timeZone: page.timeZone,
+    enabled: page.enabled,
+  });
+
+export const BookingReservationStatusSchema = z.enum([
+  "confirmed",
+  "cancelled",
+]);
+export type BookingReservationStatus = z.infer<
+  typeof BookingReservationStatusSchema
+>;
+
+export const ReservationSchema = z.strictObject({
+  id: BookingReservationIdSchema,
+  pageId: BookingPageIdSchema,
+  slotStart: DateTimeSchema,
+  slotEnd: DateTimeSchema,
+  guestName: z.string().trim().min(1).max(256),
+  guestEmail: z.string().trim().min(1).max(320),
+  notes: z.string().trim().max(4000).nullable(),
+  guestTimeZone: TimeZoneSchema,
+  status: BookingReservationStatusSchema,
+  calendarEventId: z.string().trim().min(1).max(256).nullable(),
+  cancelTokenHash: z.string().trim().min(1).max(256),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type Reservation = z.infer<typeof ReservationSchema>;
+
+export const PublicGetBookingPageResponseSchema = PublicBookingPageSchema;
+export type PublicGetBookingPageResponse = z.infer<
+  typeof PublicGetBookingPageResponseSchema
+>;
+
+export const BookingSlotsQuerySchema = z.strictObject({
+  start: DateTimeSchema,
+  end: DateTimeSchema,
+  timeZone: TimeZoneSchema,
+});
+export type BookingSlotsQuery = z.infer<typeof BookingSlotsQuerySchema>;
+
+export const BookingSlotSchema = z.strictObject({
+  slotStart: DateTimeSchema,
+  slotEnd: DateTimeSchema,
+});
+export type BookingSlot = z.infer<typeof BookingSlotSchema>;
+
+export const BookingSlotsResponseSchema = z.strictObject({
+  slots: z.array(BookingSlotSchema).readonly(),
+});
+export type BookingSlotsResponse = z.infer<typeof BookingSlotsResponseSchema>;
+
+export const CreateBookingReservationInputSchema = z.strictObject({
+  slotStart: DateTimeSchema,
+  guestName: z.string().trim().min(1).max(256),
+  guestEmail: z.string().trim().min(1).max(320),
+  notes: z.string().trim().max(4000).optional(),
+  guestTimeZone: TimeZoneSchema,
+});
+export type CreateBookingReservationInput = z.infer<
+  typeof CreateBookingReservationInputSchema
+>;
+
+export const CreateBookingReservationResponseSchema = z.strictObject({
+  reservationId: BookingReservationIdSchema,
+  slotStart: DateTimeSchema,
+  slotEnd: DateTimeSchema,
+  guestTimeZone: TimeZoneSchema,
+  cancelUrl: z.url(),
+});
+export type CreateBookingReservationResponse = z.infer<
+  typeof CreateBookingReservationResponseSchema
+>;
+
+export const CancelBookingReservationInputSchema = z.strictObject({
+  token: z.string().trim().min(1).max(256),
+});
+export type CancelBookingReservationInput = z.infer<
+  typeof CancelBookingReservationInputSchema
+>;
+
+export const AdminGetBookingPageResponseSchema = BookingPageSchema.extend({
+  bookingUrl: z.url(),
+});
+export type AdminGetBookingPageResponse = z.infer<
+  typeof AdminGetBookingPageResponseSchema
+>;
+
+export const AdminPutBookingPageInputSchema = z.strictObject({
+  enabled: z.boolean(),
+  durationMinutes: BookingDurationMinutesSchema,
+  destinationCalendarId: CalendarIdSchema,
+  blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
+  timeZone: TimeZoneSchema,
+  weeklyAvailability: WeeklyAvailabilitySchema,
+  minNoticeHours: z.number().int().nonnegative().default(4),
+  maxHorizonDays: z.number().int().positive().max(60).default(60),
+  bufferMinutes: BookingBufferMinutesSchema,
+  maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
+  guestsCanInviteOthers: z.boolean().default(true),
+});
+export type AdminPutBookingPageInput = z.infer<
+  typeof AdminPutBookingPageInputSchema
+>;
+
+const slugifyBookingCandidate = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+export const allocateBookingSlug = (
+  name: string,
+  emailLocalPart: string,
+  userIdSuffix: string,
+  taken: ReadonlySet<string>,
+): string => {
+  let candidate = slugifyBookingCandidate(name);
+
+  if (candidate.length < 3) {
+    candidate = slugifyBookingCandidate(emailLocalPart);
+  }
+
+  if (candidate.length < 3) {
+    candidate = `user${userIdSuffix.slice(-6)}`;
+  }
+
+  candidate = candidate.slice(0, 32);
+
+  const isUnavailable = (slug: string): boolean =>
+    BOOKING_RESERVED_SLUGS.includes(slug as BookingReservedSlug) ||
+    taken.has(slug);
+
+  if (!isUnavailable(candidate)) {
+    return candidate;
+  }
+
+  for (let suffix = 2; ; suffix += 1) {
+    const suffixText = String(suffix);
+    const baseMaxLength = Math.max(0, 32 - suffixText.length);
+    const nextCandidate = `${candidate.slice(0, baseMaxLength)}${suffixText}`;
+    if (!isUnavailable(nextCandidate)) {
+      return nextCandidate;
+    }
+  }
+};
