@@ -7,9 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createContext } from "react";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
-import { type CompassSession } from "@web/auth/compass/session/session.types";
 import {
   registerUseStartGoogleAuthorizationForTests,
   resetUseStartGoogleAuthorizationForTests,
@@ -32,15 +30,6 @@ const mockOpenModal = mock();
 const mockCloseModal = mock();
 const mockSetView = mock();
 const authModalState = { isOpen: false };
-const SessionContext = createContext<CompassSession>({
-  authenticated: false,
-  setAuthenticated: mock(),
-});
-
-mock.module("@web/auth/compass/session/session.context", () => ({
-  SessionContext,
-}));
-
 // mock.module is process-wide, not scoped to this file, and isn't reliably
 // "restorable" afterward (another file's top-level dynamic import can race
 // with this file's afterAll). So the factory spreads the real module's other
