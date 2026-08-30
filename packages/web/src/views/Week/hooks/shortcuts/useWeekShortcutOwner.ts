@@ -6,6 +6,8 @@ import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
+  startTimedDraftAt,
+  timedDraftEnd,
 } from "@web/common/utils/draft/draft.util";
 import { repositionDraftByKeyboard } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
 import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
@@ -19,10 +21,17 @@ import {
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
+import { quickTimeTargetDay } from "@web/shortcuts/quick-time/quick-time.util";
+import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -105,12 +114,20 @@ export const useWeekShortcutOwner = ({
   const createAllDayDraftEvent = useCallback(() => {
     if (!canSeedDraft) return;
 
+    // A blocked click on the all-day row aimed at a specific day; honor it
+    // over the today-first default, then spend the intent.
+    const pointerDateKey = useEventJumpStore.getState().pointerDraftDateKey;
+
     void createAlldayDraft(
       startOfView,
       endOfView,
       "createShortcut",
       defaultTargetCalendarId,
+      pointerDateKey
+        ? dayjs(pointerDateKey).tz(getEffectiveTimeZone(), true)
+        : undefined,
     );
+    eventJumpActions.setPointerDraftIntent(null);
   }, [canSeedDraft, defaultTargetCalendarId, endOfView, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
@@ -247,11 +264,43 @@ export const useWeekShortcutOwner = ({
     onFocusCalendar: focusFirstCalendarEvent,
   });
 
+  // Typed-time create. Same guards and same form-closed/card-focused landing
+  // as Shift+Arrow place-create, so the two gestures produce the same draft.
+  const getQuickTimeDay = useCallback(
+    () =>
+      quickTimeTargetDay(
+        startOfView,
+        endOfView,
+        dayjs().tz(getEffectiveTimeZone()),
+      ),
+    [endOfView, startOfView],
+  );
+
+  const createDraftAtTime = useCallback(
+    (start: Dayjs) => {
+      if (!canSeedDraft) return;
+      if (useDraftStore.getState().gridDraft) return;
+
+      startTimedDraftAt(
+        start.format(),
+        timedDraftEnd(start).format(),
+        "keyboardPlace",
+        defaultTargetCalendarId,
+      );
+    },
+    [canSeedDraft, defaultTargetCalendarId],
+  );
+
+  const quickTime = useQuickTimeCreate({
+    createAt: createDraftAtTime,
+    getTargetDay: getQuickTimeDay,
+  });
+
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: targeting.focus,
     listVisible: targeting.listNavigable,
-    mode: "week",
+    quickTime,
     timedEvents,
   });
 

@@ -1,8 +1,10 @@
 /**
  * Day-prefix event jump labels.
  *
- * Week: SU/M/T/W/R/F/SA + per-day chronological index (W4, SU1, F10).
- * Day view: numeric index only (1, 2, …).
+ * SU/M/T/W/R/F/SA + per-day chronological index (W4, SU1, F10), in both week
+ * and day view. Day view groups on the single date it shows, so its labels are
+ * that weekday's prefix (W1, W2, …). One scheme for both views is what keeps a
+ * bare digit free everywhere for quick-time create (shortcuts/quick-time).
  */
 
 export const DAY_JUMP_PREFIX_BY_WEEKDAY = {
@@ -67,17 +69,10 @@ export type DayJumpAssignment = {
   index: number;
 };
 
-export type DayJumpLabelMode = "week" | "day";
-
-/**
- * Day prefixes that currently have somewhere to land, in weekday order. Day
- * view labels events numerically, so no letter is live there.
- */
+/** Day prefixes that currently have somewhere to land, in weekday order. */
 export function dayJumpPrefixesForWeekdays(
   weekdays: readonly number[],
-  mode: DayJumpLabelMode = "week",
 ): string[] {
-  if (mode === "day") return [];
   const present = new Set(weekdays);
   return Object.entries(DAY_JUMP_PREFIX_BY_WEEKDAY)
     .filter(([weekday]) => present.has(Number(weekday)))
@@ -96,25 +91,11 @@ const compareTargets = (a: DayJumpTarget, b: DayJumpTarget) => {
   return a.eventId.localeCompare(b.eventId);
 };
 
-/**
- * Assign day-prefix (week) or numeric (day) hints. Same targets → same keys.
- */
+/** Assign day-prefix hints. Same targets → same keys. */
 export function assignDayJumpKeys(
   targets: DayJumpTarget[],
-  mode: DayJumpLabelMode = "week",
 ): DayJumpAssignment[] {
   if (targets.length === 0) return [];
-
-  if (mode === "day") {
-    const sorted = [...targets].sort(compareTargets);
-    return sorted.map((target, index) => ({
-      eventId: target.eventId,
-      hint: String(index + 1),
-      dayKey: target.dayKey,
-      dayPrefix: "",
-      index: index + 1,
-    }));
-  }
 
   const byDay = new Map<string, DayJumpTarget[]>();
   for (const target of targets) {
@@ -180,25 +161,21 @@ const UNIQUE_DAY_LETTERS = new Set(["m", "t", "w", "r", "f"]);
  * Unique day letters select the day and focus the first event without requiring
  * a digit. Digits append and focus when the buffer uniquely identifies a hint
  * (exact match with no longer sibling prefixes).
+ *
+ * A digit on an empty buffer is deliberately unmatched: no day is selected yet,
+ * so it belongs to quick-time create (shortcuts/quick-time) instead.
  */
 export function matchDayJumpKeystroke({
   assignments,
   key,
   buffer,
-  mode = "week",
 }: {
   assignments: DayJumpAssignment[];
   key: string;
   buffer: string;
-  mode?: DayJumpLabelMode;
 }): DayJumpMatchResult {
   if (key.length !== 1) return null;
   const lower = key.toLowerCase();
-
-  if (mode === "day") {
-    if (!/^\d$/.test(lower)) return null;
-    return matchDigitBuffer(assignments, `${buffer}${lower}`);
-  }
 
   // Digit after a day is selected (buffer is day prefix or day+digits).
   if (/^\d$/.test(lower)) {

@@ -12,13 +12,15 @@ import {
 } from "@web/shortcuts/is-bare-letter-key";
 import {
   POINTER_EVENT_JUMP_REQUEST,
+  POINTER_GRID_CREATE_REQUEST,
   pointerEventJumpId,
+  pointerGridIntent,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { type QuickTimeConsumer } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
-  type DayJumpLabelMode,
   type DayJumpMatchResult,
   DIGIT_AMBIGUOUS_COMMIT_MS,
   dayJumpPrefixesForWeekdays,
@@ -48,15 +50,14 @@ export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
 };
 
-const isUnmodifiedSingleChar = (event: KeyboardEvent) => {
-  const key = keyboardKey(event);
-  return (
-    key.length === 1 &&
-    !event.metaKey &&
-    !event.ctrlKey &&
-    !event.altKey &&
-    !event.shiftKey
-  );
+const DAY_NAME_BY_PREFIX: Record<string, string> = {
+  su: "Sunday",
+  m: "Monday",
+  t: "Tuesday",
+  w: "Wednesday",
+  r: "Thursday",
+  f: "Friday",
+  sa: "Saturday",
 };
 
 /**
@@ -110,7 +111,6 @@ const toActiveHints = (
 const buildDayJumpAssignments = (
   visible: ShiftHintFocusTarget[],
   events: GridEvent[],
-  mode: DayJumpLabelMode,
 ): {
   assignments: DayJumpAssignment[];
   visibleById: Map<string, ShiftHintFocusTarget>;
@@ -133,7 +133,7 @@ const buildDayJumpAssignments = (
   });
 
   return {
-    assignments: assignDayJumpKeys(targets, mode),
+    assignments: assignDayJumpKeys(targets),
     visibleById: new Map(visible.map((target) => [target.eventId, target])),
   };
 };
@@ -143,21 +143,27 @@ const buildDayJumpAssignments = (
  * jump mode straight onto that column (`Shift+W`, `Shift+S` then `u`/`a`).
  * Shift is what makes the day columns always available: bare `t`, `f`, and
  * `m` keep their own commands. Once jump mode is on, the labels are typed
- * bare (`w`, `w1`, day-view `1`…) and win over global shortcuts. Esc exits,
- * a second `h` toggles off. In week view `s` is only the Sunday/Saturday
- * prefix.
+ * bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a second `h`
+ * toggles off. `s` is only the Sunday/Saturday prefix.
+ *
+ * Day view uses the same scheme on the one date it shows, so a bare digit is
+ * never an event label on an empty buffer in either view - that keystroke
+ * belongs to `quickTime` instead, which this listener offers every key before
+ * reading it as a jump label. Both features read bare digits, so they share one
+ * listener with an explicit precedence rule rather than racing two whose order
+ * would depend on React mount order.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
   focus,
   listVisible,
-  mode = "week",
+  quickTime,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
   focus: (target: ShiftHintFocusTarget) => void;
   listVisible: () => ShiftHintFocusTarget[];
-  mode?: DayJumpLabelMode;
+  quickTime?: QuickTimeConsumer;
   timedEvents: GridEvent[];
 }): EventJumpHintsResult {
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
@@ -172,16 +178,16 @@ export function useShiftHoldEventHints({
   );
   const focusRef = useRef(focus);
   const listVisibleRef = useRef(listVisible);
+  const quickTimeRef = useRef(quickTime);
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
-  const modeRef = useRef(mode);
   const publishedPrefixesRef = useRef<string[]>([]);
 
   focusRef.current = focus;
   listVisibleRef.current = listVisible;
+  quickTimeRef.current = quickTime;
   allDayEventsRef.current = allDayEvents;
   timedEventsRef.current = timedEvents;
-  modeRef.current = mode;
   isActiveRef.current = isActive;
 
   useEffect(() => {
@@ -208,7 +214,6 @@ export function useShiftHoldEventHints({
       const { assignments, visibleById } = buildDayJumpAssignments(
         listVisibleRef.current(),
         [...allDayEventsRef.current, ...timedEventsRef.current],
-        modeRef.current,
       );
       assignmentsRef.current = assignments;
       visibleByIdRef.current = visibleById;
@@ -230,10 +235,11 @@ export function useShiftHoldEventHints({
       publishFiltered(dayPrefix);
     };
 
+    // Activates even with nothing to label: the quick-time slot placeholders
+    // are the whole point of `h` on an empty day.
     const activate = () => {
       if (isAppLocked()) return;
       const assignments = rebuildAssignments();
-      if (assignments.length === 0) return;
       isActiveRef.current = true;
       bufferRef.current = "";
       eventJumpActions.setActive(true);
@@ -245,6 +251,7 @@ export function useShiftHoldEventHints({
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
+      eventJumpActions.setPointerDraftIntent(null);
       eventJumpActions.setActive(false);
     };
 
@@ -259,12 +266,7 @@ export function useShiftHoldEventHints({
       clearAmbiguousCommitTimer();
       eventJumpActions.setActiveDayKeys([dayKey]);
       focusEvent(eventId);
-      // Day view clears the buffer; week keeps the day prefix for the next index.
-      if (modeRef.current === "day") {
-        bufferRef.current = "";
-        publishFiltered("");
-        return;
-      }
+      // Keep the day prefix so the next digit indexes within the same day.
       const dayPrefix = buffer.replace(/\d+$/, "") || buffer;
       bufferRef.current = dayPrefix;
       publishFiltered(dayPrefix);
@@ -353,6 +355,27 @@ export function useShiftHoldEventHints({
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
         if (isEditSequenceArmed()) return;
 
+        // An empty-grid click parks a short-lived teaching target. Escape and
+        // calendar navigation abandon it without claiming the key - the digits
+        // themselves are read by the quick-time consumer below.
+        if (useEventJumpStore.getState().pointerDraftDateKey) {
+          const inputKey = normalizedKeyboardKey(event);
+          const isViewNavigation =
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            ["j", "k", "t"].includes(inputKey);
+          if (event.key === "Escape" || isViewNavigation) {
+            eventJumpActions.setPointerDraftIntent(null);
+          }
+        }
+
+        if (quickTimeRef.current?.tryConsumeKey(event)) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
         if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
           event.preventDefault();
           event.stopPropagation();
@@ -365,14 +388,8 @@ export function useShiftHoldEventHints({
 
         // Shift+day enters jump mode straight onto that column. Any other
         // shifted letter (Shift+J, Shift+C) falls through to its own handler.
-        // Day view is numbered, and Shift+1 is "!", so its digits stay bare.
         const key = normalizedKeyboardKey(event);
-        const isDigit = /^\d$/.test(key);
-        if (
-          isDigit ? !isUnmodifiedSingleChar(event) : !isShiftedSingleChar(event)
-        ) {
-          return;
-        }
+        if (!isShiftedSingleChar(event)) return;
 
         const assignments = rebuildAssignments();
         if (assignments.length === 0) return;
@@ -381,7 +398,6 @@ export function useShiftHoldEventHints({
           assignments,
           key,
           buffer: "",
-          mode: modeRef.current,
         });
         if (!match) return;
 
@@ -396,6 +412,18 @@ export function useShiftHoldEventHints({
 
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
         deactivate();
+        return;
+      }
+
+      // Only on an empty buffer: once a day letter is typed ("w"), the digits
+      // that follow are that day's event index. Esc or a second `h` clears the
+      // buffer and puts quick-time back within reach.
+      if (
+        bufferRef.current === "" &&
+        quickTimeRef.current?.tryConsumeKey(event)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
 
@@ -426,7 +454,6 @@ export function useShiftHoldEventHints({
         assignments: assignmentsRef.current,
         key,
         buffer: bufferRef.current,
-        mode: modeRef.current,
       });
 
       if (!match) {
@@ -478,12 +505,22 @@ export function useShiftHoldEventHints({
       focusEvent(eventId);
     };
 
+    const onPointerGridCreateRequest = (event: Event) => {
+      const intent = pointerGridIntent(event);
+      if (!intent) return;
+      eventJumpActions.setPointerDraftIntent(intent);
+    };
+
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("blur", onBlur);
     document.addEventListener(
       POINTER_EVENT_JUMP_REQUEST,
       onPointerEventJumpRequest,
+    );
+    document.addEventListener(
+      POINTER_GRID_CREATE_REQUEST,
+      onPointerGridCreateRequest,
     );
 
     return () => {
@@ -496,6 +533,11 @@ export function useShiftHoldEventHints({
         POINTER_EVENT_JUMP_REQUEST,
         onPointerEventJumpRequest,
       );
+      document.removeEventListener(
+        POINTER_GRID_CREATE_REQUEST,
+        onPointerGridCreateRequest,
+      );
+      eventJumpActions.setPointerDraftIntent(null);
       if (isActiveRef.current) {
         eventJumpActions.reset();
       }
@@ -523,7 +565,6 @@ export function useShiftHoldEventHints({
     const { assignments, visibleById } = buildDayJumpAssignments(
       listVisibleRef.current(),
       [...allDayEventsRef.current, ...timedEventsRef.current],
-      modeRef.current,
     );
     assignmentsRef.current = assignments;
     visibleByIdRef.current = visibleById;
@@ -560,10 +601,10 @@ export function useShiftHoldEventHints({
     const weekdays = [...allDayEventsRef.current, ...timedEventsRef.current]
       .filter((event) => Boolean(event.startDate))
       .map((event) => scheduleMeta(event).weekday);
-    const next = dayJumpPrefixesForWeekdays(weekdays, mode);
+    const next = dayJumpPrefixesForWeekdays(weekdays);
     publishedPrefixesRef.current = next;
     eventJumpActions.setJumpableDayPrefixes(next);
-  }, [eventIdsKey, mode]);
+  }, [eventIdsKey]);
 
   // Only clear what this grid published: switching Day -> Week can mount the
   // new grid before the old one unmounts, and a blind clear there would blank

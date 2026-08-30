@@ -54,6 +54,8 @@ export interface PointerBlockEvent {
   detail?: number;
   button?: number;
   pointerType?: string;
+  clientX?: number;
+  clientY?: number;
   composedPath?(): EventTarget[];
   preventDefault(): void;
   stopPropagation(): void;

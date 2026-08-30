@@ -3,6 +3,7 @@ import {
   type CalendarId,
   CalendarIdSchema,
 } from "@core/types/domain-primitives";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -20,6 +21,8 @@ import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
+  startTimedDraftAt,
+  timedDraftEnd,
 } from "@web/common/utils/draft/draft.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -38,7 +41,14 @@ import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
 import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { buildDayPageJumpTargets } from "@web/shortcuts/page-jump/page-jump.targets";
+import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
+import { buildQuickTimeSlots } from "@web/shortcuts/quick-time/quick-time.util";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
@@ -252,18 +262,25 @@ export function DayCalendarGrid() {
     [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
 
-  const createAllDayDraftFromShortcut = useCallback(
-    () =>
-      openShortcutDraft(() =>
-        createAlldayDraft(
-          dateInView,
-          dateInView,
-          "createShortcut",
-          resolveShortcutCalendarId(),
-        ),
+  const createAllDayDraftFromShortcut = useCallback(() => {
+    // A blocked click on the all-day row aimed at a specific day; honor it
+    // over the day in view, then spend the intent.
+    const pointerDateKey = useEventJumpStore.getState().pointerDraftDateKey;
+    const start = pointerDateKey
+      ? dayjs(pointerDateKey).tz(getEffectiveTimeZone(), true)
+      : dateInView;
+
+    openShortcutDraft(() =>
+      createAlldayDraft(
+        start,
+        start,
+        "createShortcut",
+        resolveShortcutCalendarId(),
+        start,
       ),
-    [dateInView, openShortcutDraft, resolveShortcutCalendarId],
-  );
+    );
+    eventJumpActions.setPointerDraftIntent(null);
+  }, [dateInView, openShortcutDraft, resolveShortcutCalendarId]);
 
   const createTimedDraftFromShortcut = useCallback(
     () =>
@@ -294,12 +311,58 @@ export function DayCalendarGrid() {
       ),
     [dateInView, openShortcutDraft, resolveShortcutCalendarId, today],
   );
+  // Typed-time create lands on the day being viewed, form closed and card
+  // focused, matching placeTimedDraftFromShortcut above.
+  const createDraftAtTime = useCallback(
+    (start: Dayjs) =>
+      openShortcutDraft(
+        () =>
+          startTimedDraftAt(
+            start.format(),
+            timedDraftEnd(start).format(),
+            "keyboardPlace",
+            resolveShortcutCalendarId(),
+          ),
+        false,
+      ),
+    [openShortcutDraft, resolveShortcutCalendarId],
+  );
+
+  const getQuickTimeDay = useCallback(() => dateInView, [dateInView]);
+
   const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
+    createDraftAtTime,
+    getQuickTimeDay,
     navigateToDate,
     placeTimedDraft: placeTimedDraftFromShortcut,
     timedEvents: displayedTimedEvents,
   });
+
+  // The placeholder sits in the column the draft would land in - the calendar
+  // resolveShortcutCalendarId picks. Occupancy is checked across every column,
+  // so a slot busy on any calendar shows no chip; conservative, and it keeps
+  // chips off cards regardless of which column they are in.
+  const quickTimeSlots = useMemo(() => {
+    const now = dayjs().tz(getEffectiveTimeZone());
+    const busy = displayedTimedEvents.flatMap((event) =>
+      event.startDate && event.endDate
+        ? [
+            {
+              startMs: dayjs(event.startDate).valueOf(),
+              endMs: dayjs(event.endDate).valueOf(),
+            },
+          ]
+        : [],
+    );
+
+    return buildQuickTimeSlots({ busy, now, targetDay: dateInView });
+  }, [dateInView, displayedTimedEvents]);
+
+  const quickTimeCalendarId = resolveShortcutCalendarId();
+  const quickTimeColumnIndex = quickTimeCalendarId
+    ? calendarColumnIndexById.get(quickTimeCalendarId)
+    : undefined;
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity
@@ -343,6 +406,12 @@ export function DayCalendarGrid() {
           measurements={measurements}
           visibleDates={visibleDates}
         />
+        <QuickTimeSlots
+          columnIndex={quickTimeColumnIndex}
+          measurements={measurements}
+          slots={quickTimeSlots}
+          visibleDates={visibleDates}
+        />
         <DayCalendarTimedEventsLayer
           events={displayedTimedEvents}
           getCalendarColumnIndex={getCalendarColumnIndex}
@@ -363,6 +432,8 @@ export function DayCalendarGrid() {
       isDisplayedEvent,
       measurements,
       openEventFormForEvent,
+      quickTimeColumnIndex,
+      quickTimeSlots,
       visibleDates,
     ],
   );

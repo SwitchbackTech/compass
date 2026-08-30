@@ -179,4 +179,36 @@ describe("PointerHint", () => {
       "Press ] to close the sidebar.",
     );
   });
+
+  it("names the quarter-hour an empty timed-grid click aimed at", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "grid.timed",
+        gridDate: "2026-08-29",
+        gridTimeKey: "1130",
+        gridTimeLabel: "11:30 AM",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press 1130 to create at 11:30 AM.",
+    );
+  });
+
+  it("teaches Shift+C for a click on the all-day row", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "grid.all-day",
+        gridDate: "2026-08-29",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press Shift+C to create an all-day event here.",
+    );
+  });
 });

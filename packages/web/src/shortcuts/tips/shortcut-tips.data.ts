@@ -195,7 +195,7 @@ export const SHORTCUT_HINTS: Record<ShortcutHintId, ShortcutHint> = {
     id: "event-jump",
     actionId: "calendar.event_jump",
     featureArea: "calendar_navigation",
-    parts: [{ key: eventJumpKey }, " labels events to jump to"],
+    parts: [{ key: eventJumpKey }, " shows event and open-time shortcuts"],
     suggestionReason: "calendar_idle",
   },
   "week-day-focus": {

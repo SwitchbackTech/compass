@@ -13,6 +13,10 @@ export type EventJumpState = {
   pointerHintKey: string | null;
   /** Event that owns `pointerHintKey`, so rebuilds can refresh the token. */
   pointerHintEventId: string | null;
+  /** Date selected by the latest blocked empty-grid click. */
+  pointerDraftDateKey: string | null;
+  pointerDraftStart: string | null;
+  pointerDraftTimeKey: string | null;
   /** Day prefixes with somewhere to land right now, in weekday order. Read by
    * the sidebar tip so it only teaches a key that would work. */
   jumpableDayPrefixes: string[];
@@ -24,6 +28,9 @@ export const initialEventJumpState: EventJumpState = {
   announcement: "",
   pointerHintKey: null,
   pointerHintEventId: null,
+  pointerDraftDateKey: null,
+  pointerDraftStart: null,
+  pointerDraftTimeKey: null,
   jumpableDayPrefixes: [],
 };
 
@@ -74,6 +81,18 @@ export const eventJumpActions = {
       },
       false,
       { type: "setPointerHint" },
+    ),
+  setPointerDraftIntent: (
+    pointerDraft: { date: string; start?: string; timeKey?: string } | null,
+  ) =>
+    useEventJumpStore.setState(
+      {
+        pointerDraftDateKey: pointerDraft?.date ?? null,
+        pointerDraftStart: pointerDraft?.start ?? null,
+        pointerDraftTimeKey: pointerDraft?.timeKey ?? null,
+      },
+      false,
+      { type: "setPointerDraftIntent" },
     ),
   setJumpableDayPrefixes: (jumpableDayPrefixes: string[]) => {
     const current = useEventJumpStore.getState().jumpableDayPrefixes;

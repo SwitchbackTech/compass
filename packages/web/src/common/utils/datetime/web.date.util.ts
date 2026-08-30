@@ -53,7 +53,7 @@ export const getColorsByHour = (currentHour: number) => {
   return colors;
 };
 
-const getDayjsByTimeValue = (timeValue: string) => {
+export const getDayjsByTimeValue = (timeValue: string) => {
   return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
 };
 

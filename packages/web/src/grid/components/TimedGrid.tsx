@@ -107,6 +107,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
                       data-all-day-tint={tintStyle ? "true" : undefined}
                       data-focused-column={isFocusedColumn ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
+                      data-grid-date={dayKey}
                       data-past={date.isBefore(today, "day")}
                       aria-label={
                         surfaceLabel ?? date.format("dddd, MMMM D, YYYY")

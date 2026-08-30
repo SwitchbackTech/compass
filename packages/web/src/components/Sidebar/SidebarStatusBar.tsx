@@ -20,6 +20,11 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { KeyboardPlaceIndicator } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
+import { QuickTimeIndicator } from "@web/shortcuts/quick-time/QuickTimeIndicator";
+import {
+  selectQuickTimeDigits,
+  useQuickTimeStore,
+} from "@web/shortcuts/quick-time/quick-time.store";
 import { EventJumpIndicator } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
   selectEventJumpActive,
@@ -45,6 +50,7 @@ import { useTimeTravelZone } from "@web/timezone/time-travel.store";
  */
 export const SidebarStatusBar: FC = () => {
   const hint = useShortcutHintContext();
+  const quickTimeDigits = useQuickTimeStore(selectQuickTimeDigits);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
@@ -83,7 +89,11 @@ export const SidebarStatusBar: FC = () => {
 
   // Highest-priority active indicator wins the bar; the next-shortcut hint
   // is the idle default. Operational status uses the settings button.
-  const indicator = showEventJump ? (
+  // A half-typed time is the most transient state on the bar, and it lapses on
+  // its own in well under a second, so it outranks every mode indicator.
+  const indicator = quickTimeDigits ? (
+    <QuickTimeIndicator />
+  ) : showEventJump ? (
     <EventJumpIndicator />
   ) : showEdgeFocus ? (
     <EdgeFocusIndicator />
