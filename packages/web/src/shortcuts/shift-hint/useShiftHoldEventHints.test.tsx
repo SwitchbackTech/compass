@@ -74,10 +74,7 @@ describe("useShiftHoldEventHints", () => {
     document.body.innerHTML = "";
   });
 
-  const mountHints = (
-    mode: "week" | "day" = "week",
-    timedEvents?: GridEvent[],
-  ) => {
+  const mountHints = (timedEvents?: GridEvent[]) => {
     const focus = mock((_target: { eventId: string }) => {});
     const events = timedEvents ?? [
       timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
@@ -113,7 +110,6 @@ describe("useShiftHoldEventHints", () => {
             eventType: "timed" as const,
             element: elements[index]!,
           })),
-        mode,
         timedEvents: events,
       }),
     );
@@ -199,7 +195,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("does not claim a day letter with no events that day", () => {
-    const { focus, result } = mountHints("week", [
+    const { focus, result } = mountHints([
       timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
     ]);
 
@@ -220,21 +216,19 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("focuses a day-view index without first pressing h", () => {
-    const { focus, elements } = mountHints("day");
+  it("leaves a bare digit alone so quick-time create can read it", () => {
+    const { focus } = mountHints();
 
     act(() => {
       dispatch("keydown", "1");
     });
 
-    expect(useEventJumpStore.getState().isActive).toBe(true);
-    expect(focus).toHaveBeenCalledWith(
-      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
-    );
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it("does not claim t while jump is off so today still works", () => {
-    const { focus } = mountHints("week", [
+    const { focus } = mountHints([
       timedFixture(EVENT_A, "2026-08-04T09:00:00.000Z"),
     ]);
 
@@ -254,7 +248,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("leaves bare m to the event menu while an event is focused", () => {
-    const { focus, elements } = mountHints("week", [
+    const { focus, elements } = mountHints([
       timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
     ]);
     elements[0]!.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_A);
@@ -276,7 +270,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("claims Shift+M even while a calendar event is focused", () => {
-    const { focus, elements } = mountHints("week", [
+    const { focus, elements } = mountHints([
       timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
     ]);
     elements[0]!.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_A);
@@ -293,7 +287,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("claims Shift+T for Tuesday while bare t still goes to today", () => {
-    const { focus, elements } = mountHints("week", [
+    const { focus, elements } = mountHints([
       timedFixture(EVENT_A, "2026-08-04T09:00:00.000Z"),
     ]);
 
@@ -309,7 +303,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("leaves bare f to notice focus while a notice is visible", () => {
-    const { focus } = mountHints("week", [
+    const { focus } = mountHints([
       timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
     ]);
     const notice = document.createElement("div");
@@ -335,7 +329,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("claims Shift+F for Friday", () => {
-    const { focus, elements } = mountHints("week", [
+    const { focus, elements } = mountHints([
       timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
     ]);
 
@@ -489,7 +483,6 @@ describe("useShiftHoldEventHints", () => {
             eventType: "timed" as const,
             element: elements[index]!,
           })),
-        mode: "week",
         timedEvents,
       }),
     );
@@ -598,7 +591,6 @@ describe("useShiftHoldEventHints", () => {
                 },
               ];
             }),
-          mode: "week",
           timedEvents,
         }),
       { initialProps: { timedEvents: events } },
@@ -622,7 +614,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("publishes the columns a day key can currently land on", () => {
-    mountHints("week", [
+    mountHints([
       timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
       timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
     ]);
@@ -631,12 +623,6 @@ describe("useShiftHoldEventHints", () => {
       "w",
       "sa",
     ]);
-  });
-
-  it("publishes no columns in day view, where events are numbered", () => {
-    mountHints("day");
-
-    expect(useEventJumpStore.getState().jumpableDayPrefixes).toEqual([]);
   });
 
   it("clears the published columns when the grid unmounts", () => {
@@ -705,23 +691,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("toggles off with a second h in day view", () => {
-    const { result } = mountHints("day");
-
-    act(() => {
-      pressEventJump();
-    });
-    expect(useEventJumpStore.getState().isActive).toBe(true);
-    expect(result.current.hints).toHaveLength(3);
-
-    act(() => {
-      pressEventJump();
-    });
-    expect(useEventJumpStore.getState().isActive).toBe(false);
-    expect(result.current.hints).toEqual([]);
-  });
-
-  it("toggles off with a second h in week view", () => {
+  it("toggles off with a second h", () => {
     const { result } = mountHints();
 
     act(() => {
@@ -738,7 +708,7 @@ describe("useShiftHoldEventHints", () => {
   });
 
   it("focuses Saturday from idle with Shift+S then a", () => {
-    const { focus, elements } = mountHints("week", [
+    const { focus, elements } = mountHints([
       timedFixture(EVENT_A, "2026-08-02T09:00:00.000Z"),
       timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
     ]);

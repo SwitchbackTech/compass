@@ -30,6 +30,21 @@ export const createTimedDraft = (
   calendarId: CalendarId | null = null,
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
+
+  startTimedDraftAt(startDate, endDate, activity, calendarId);
+};
+
+/**
+ * Seed and start a timed draft at an already-decided time. Shared by the
+ * near-now defaults above and by quick-time create, which picks its own start
+ * from a typed digit sequence.
+ */
+export const startTimedDraftAt = (
+  startDate: string,
+  endDate: string,
+  activity: "createShortcut" | "keyboardPlace",
+  calendarId: CalendarId | null = null,
+) => {
   // Stable grid identity so place-create can focus the card and Enter can
   // open the live draft without reseeding.
   const clientId = EventIdSchema.parse(createObjectIdString());
@@ -46,6 +61,21 @@ export const createTimedDraft = (
   if (activity === "keyboardPlace") {
     focusCalendarEventElement(clientId);
   }
+};
+
+/**
+ * One hour after `start`, clamped to midnight: a draft that crossed into the
+ * next day would render in the all-day row (multi-day timed display), which is
+ * a surprising place for "create an event" to land. Ending exactly at midnight
+ * still counts as inside the day, so the draft stays in the timed grid.
+ */
+export const timedDraftEnd = (start: Dayjs): Dayjs => {
+  const midnightAfterStart = start.add(1, "day").startOf("day");
+  const oneHourEnd = start.add(1, "hour");
+
+  return oneHourEnd.isAfter(midnightAfterStart)
+    ? midnightAfterStart
+    : oneHourEnd;
 };
 
 export const createAlldayDraft = (
@@ -81,18 +111,8 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
 
   const fullStart = isCurrentWeek ? now : startOfWeek.hour(now.hour());
   const _start = fullStart.minute(nextMinuteInterval).second(0);
-
-  // Clamp to midnight: a default that crossed into the next day would render
-  // in the all-day row (multi-day timed display), which is a surprising place
-  // for "create an event now" to land. Ending exactly at midnight still
-  // counts as inside the day, so the draft stays in the timed grid.
-  const midnightAfterStart = _start.add(1, "day").startOf("day");
-  const oneHourEnd = _start.add(1, "hour");
-  const _end = oneHourEnd.isAfter(midnightAfterStart)
-    ? midnightAfterStart
-    : oneHourEnd;
   const startDate = _start.format();
-  const endDate = _end.format();
+  const endDate = timedDraftEnd(_start).format();
 
   return { startDate, endDate };
 };

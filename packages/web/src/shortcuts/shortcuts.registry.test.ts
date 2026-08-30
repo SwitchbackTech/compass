@@ -134,19 +134,13 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
-    it("lists week-column focus only in week view", () => {
-      const week = filterShortcutsByContext({
-        view: "week",
-        isViewingCurrentPeriod: true,
-      }).map((shortcut) => shortcut.id);
-      expect(week).toContain("focus-week-day");
-
-      for (const view of ["day", "life"] as const) {
+    it("lists day-letter focus in both calendar views", () => {
+      for (const view of ["week", "day"] as const) {
         const ids = filterShortcutsByContext({
           view,
           isViewingCurrentPeriod: true,
         }).map((shortcut) => shortcut.id);
-        expect(ids).not.toContain("focus-week-day");
+        expect(ids).toContain("focus-week-day");
       }
     });
 

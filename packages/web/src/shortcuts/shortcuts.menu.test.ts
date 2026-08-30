@@ -223,6 +223,11 @@ describe("shortcut menu sections", () => {
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["h"], label: "Toggle event jump keys" },
+        {
+          keys: ["Shift", "m"],
+          label:
+            "Focus a day's events (Shift + M T W R F, Shift + S then U or A)",
+        },
         { keys: ["f"], label: "Focus latest notice" },
         {
           keys: ["Mod", "1-9"],
@@ -236,7 +241,7 @@ describe("shortcut menu sections", () => {
         {
           keys: ["Shift", "m"],
           label:
-            "Focus a week column (Shift + M T W R F, Shift + S then U or A)",
+            "Focus a day's events (Shift + M T W R F, Shift + S then U or A)",
         },
         { keys: ["f"], label: "Focus latest notice" },
         {

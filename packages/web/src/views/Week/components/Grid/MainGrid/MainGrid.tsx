@@ -4,6 +4,7 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { TimedGrid } from "@web/grid/components/TimedGrid";
 import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
+import { MainGridQuickTimeSlots } from "@web/views/Week/components/Grid/MainGrid/MainGridQuickTimeSlots";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
@@ -69,6 +70,10 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
           measurements={measurements}
           weekProps={weekProps}
         />
+        <MainGridQuickTimeSlots
+          measurements={measurements}
+          weekProps={weekProps}
+        />
         <MainGridEvents measurements={measurements} weekProps={weekProps} />
       </>
     ),
@@ -105,6 +110,10 @@ const MainGridCalendar: FC<MainGridCalendarProps> = ({
     () => (
       <>
         <MainGridBusyPeriods
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+        <MainGridQuickTimeSlots
           measurements={measurements}
           weekProps={weekProps}
         />
