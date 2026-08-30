@@ -18,7 +18,8 @@ INPUT: GitHub issue in milestone Compass Booking v1
 SKILL/PROMPT: .github/prompts/booking-loop.md
 OUTPUT: ready PR with Fixes #<n>, squash-merge, staging smoke, next WP launched
 IDEMPOTENCY: one in-flight agent; booking-loop-running; skip issues with an open Fixes PR
-RETRY: dispatch a fresh run (do not “Re-run jobs” on a failed snapshot)
+RETRY: HTTP 429 waits for credits and retries on the hourly watchdog; dispatch a
+  fresh run for all other retryable investigation (do not “Re-run jobs” on a failed snapshot)
 APPROVAL: booking-automerge + merge-guard; bun run verify PASS + required checks
 STOP: repo var BOOKING_LOOP_ENABLED (must be string "true"; default off)
 HEARTBEAT: hourly cron watchdog when idle; Discord on merge-guard / smoke failure
@@ -59,7 +60,7 @@ required for WP-01 through WP-09.
    squash-merge commits trigger `release-on-main` (the default
    `GITHUB_TOKEN` does not).
 4. Labels `booking-automerge`, `booking-loop-running`,
-   `booking-loop-needs-human` on this repo (create with
+   `booking-loop-waiting-for-credits`, `booking-loop-needs-human` on this repo (create with
    `gh label create` if missing).
 
 Org Project "Compass Booking" is optional. Milestone
@@ -87,7 +88,10 @@ both channels are configured).
    3 hours are treated as abandoned and cleared.
 2. **Launch** (`.github/scripts/booking-loop-launch.sh`): POST the Cloud
    Agents API when `CURSOR_API_KEY` is set; otherwise comment
-   `booking-loop: pickup`. Never both.
+   `booking-loop: pickup`. Never both. HTTP 429 records the provider's retry
+   time, labels the issue `booking-loop-waiting-for-credits`, and exits
+   successfully so the hourly watchdog can resume it. Other launch failures
+   are `booking-loop-needs-human` stops.
 3. **Agent** follows `.github/prompts/booking-loop.md`: implement the WP, run
    `bun run verify`, open a ready PR, add label `booking-automerge`.
 4. **Merge guard** (`.github/scripts/booking-loop-merge-guard.sh`): enable
@@ -152,6 +156,7 @@ When the agent opens a PR, it writes `.agents/handoffs/<issue-number>.md`
 | --- | --- |
 | `booking-automerge` | Agent finished; merge-guard may squash-merge. |
 | `booking-loop-running` | An agent is in flight for this issue. |
+| `booking-loop-waiting-for-credits` | Cursor returned HTTP 429; retry only after the recorded time. |
 | `booking-loop-needs-human` | Kill this issue's loop; do not pick it again. |
 
 ## Drills (documented, not run)

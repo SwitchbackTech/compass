@@ -7,6 +7,7 @@ MILESTONE="${BOOKING_LOOP_MILESTONE:-Compass Booking v1}"
 STAGING_URL="${BOOKING_LOOP_STAGING_URL:-https://staging.compasscalendar.com}"
 PICKUP_PHRASE="booking-loop: pickup"
 RUNNING_LABEL="booking-loop-running"
+QUOTA_WAITING_LABEL="booking-loop-waiting-for-credits"
 NEEDS_HUMAN_LABEL="booking-loop-needs-human"
 AUTOMERGE_LABEL="booking-automerge"
 

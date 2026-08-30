@@ -21,7 +21,7 @@ describe("booking-loop Routine contract", () => {
     );
     expect(routine).toContain("STOP: repo var BOOKING_LOOP_ENABLED");
     expect(routine).toContain(
-      "RETRY: dispatch a fresh run (do not “Re-run jobs” on a failed snapshot)",
+      "RETRY: HTTP 429 waits for credits and retries on the hourly watchdog",
     );
     expect(routine).toContain(
       "VERIFIER: .github/scripts/booking-loop-merge-guard.sh",
@@ -49,8 +49,8 @@ describe("booking-loop Routine contract", () => {
       "utf8",
     );
     expect(guard).toContain("NO_AUTOMERGE_PATH_PATTERNS=(");
-    expect(guard).toContain("MAX_FILES=${BOOKING_LOOP_MAX_FILES:-60}");
-    expect(guard).toContain("MAX_LINES=${BOOKING_LOOP_MAX_LINES:-4000}");
+    expect(guard).toContain(`MAX_FILES=\${BOOKING_LOOP_MAX_FILES:-60}`);
+    expect(guard).toContain(`MAX_LINES=\${BOOKING_LOOP_MAX_LINES:-4000}`);
 
     const routine = readFileSync("docs/CI-CD/booking-loop-routine.md", "utf8");
     expect(routine).toContain("MAX_FILES=60");
@@ -85,9 +85,17 @@ describe("booking-loop Routine contract", () => {
     );
     expect(launch).toContain("https://api.cursor.com/v0/agents");
     expect(launch).toContain("booking-loop: pickup");
-    expect(launch).toContain('if [ -n "${CURSOR_API_KEY:-}" ]');
+    expect(launch).toContain(`if [ -n "\${CURSOR_API_KEY:-}" ]`);
     expect(launch).toContain("Not commenting");
     expect(launch).toContain("dual-launch");
+    expect(launch).toContain('if [ "$http_code" = "429" ]');
+    const helpers = readFileSync(".github/scripts/booking-loop-lib.sh", "utf8");
+    expect(helpers).toContain("booking-loop-waiting-for-credits");
+    expect(launch).toContain("booking-loop-quota-retry-at=");
+
+    const next = readFileSync(".github/scripts/booking-loop-next.sh", "utf8");
+    expect(next).toContain("QUOTA_WAITING_LABEL");
+    expect(next).toContain("Booking loop is waiting for Cursor credits");
 
     const workflow = readFileSync(".github/workflows/booking-loop.yml", "utf8");
     expect(workflow).toContain("vars.BOOKING_LOOP_ENABLED == 'true'");
