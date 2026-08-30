@@ -72,6 +72,55 @@ test("adding a guest prompts to send invitations and puts the replaced guest set
   await expect(page.getByRole("form").getByPlaceholder("Title")).toBeHidden();
 });
 
+test("adding a guest on one occurrence of a series saves the whole series", async ({
+  page,
+}) => {
+  const seriesId = "evt-series-guests";
+  const captured = await prepareSignedInGooglePage(page, {
+    events: [
+      buildEventFixture({
+        id: `${seriesId}::20260601T100000Z`,
+        title: "Weekly Sync",
+        recurrence: { kind: "occurrence", seriesId },
+        attendees: [
+          {
+            email: ACCOUNT_EMAIL,
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+      }),
+    ],
+  });
+
+  await openEventForm(page, "Weekly Sync");
+
+  // The editor renders on an occurrence, and says where the edit lands.
+  await expect(
+    page.getByText("Guest changes apply to all events in this series."),
+  ).toBeVisible();
+
+  const combobox = getGuestCombobox(page);
+  await combobox.fill("dana@example.com");
+  await page.keyboard.press("Enter");
+
+  await clickSave(page);
+  await dispatchClick(page.getByRole("button", { name: "Send", exact: true }));
+
+  await expect.poll(() => captured.replaceRequests.length).toBe(1);
+  const { eventId, body } = captured.replaceRequests[0];
+  // The composite occurrence id still addresses the request; the backend
+  // collapses it to the series master because the scope is "all".
+  expect(eventId).toBe(`${seriesId}::20260601T100000Z`);
+  expect(body.scope).toBe("all");
+  const content = body.content as Record<string, unknown>;
+  expect(content.attendees).toEqual([
+    { email: ACCOUNT_EMAIL, displayName: null },
+    { email: "dana@example.com", displayName: null },
+  ]);
+  expect(body.invitation).toBe("all");
+});
+
 test("choosing Don't send saves the guest edit with invitation none", async ({
   page,
 }) => {

@@ -1,8 +1,13 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
+import * as realSessionHook from "@web/auth/compass/session/useSession";
+import * as realUserHook from "@web/auth/compass/user/hooks/useUser";
+import * as realUserMetadata from "@web/auth/compass/user/util/user-metadata.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import * as realSseClient from "@web/sse/client/sse.client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
@@ -18,20 +23,22 @@ const onStreamReopen = mock((handler: () => void) => {
   };
 });
 
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realSessionHook, {
   useSession: mockUseSession,
-}));
-mock.module("@web/auth/compass/user/hooks/useUser", () => ({
+});
+mockModuleForFile("@web/auth/compass/user/hooks/useUser", realUserHook, {
   useUser: mockUseUser,
-}));
-mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: mockRefreshUserMetadata,
-}));
-mock.module("../client/sse.client", () => ({
+});
+mockModuleForFile(
+  "@web/auth/compass/user/util/user-metadata.util",
+  realUserMetadata,
+  { refreshUserMetadata: mockRefreshUserMetadata },
+);
+mockModuleForFile("@web/sse/client/sse.client", realSseClient, {
   openStream,
   closeStream,
   onStreamReopen,
-}));
+});
 
 const { useSSEConnection } =
   require("./useSSEConnection") as typeof import("./useSSEConnection");

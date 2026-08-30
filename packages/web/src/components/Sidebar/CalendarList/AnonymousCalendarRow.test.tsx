@@ -5,7 +5,10 @@ import {
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import * as realAuthModal from "@web/components/AuthModal/hooks/useAuthModal";
 import { AnonymousCalendarRow } from "./AnonymousCalendarRow";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -15,19 +18,23 @@ beforeEach(() => {
   mockOpenModal.mockClear();
 });
 
-mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: () => ({
-    openModal: mockOpenModal,
-  }),
-}));
+mockModuleForFile(
+  "@web/components/AuthModal/hooks/useAuthModal",
+  realAuthModal,
+  { useAuthModal: () => ({ openModal: mockOpenModal }) },
+);
 
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  shouldShowAnonymousCalendarChangeSignUpPrompt: () => false,
-  subscribeToAuthState: (callback: () => void) => {
-    callback();
-    return () => {};
+mockModuleForFile(
+  "@web/auth/compass/state/auth.state.util",
+  realAuthStateUtil,
+  {
+    shouldShowAnonymousCalendarChangeSignUpPrompt: () => false,
+    subscribeToAuthState: (callback: () => void) => {
+      callback();
+      return () => {};
+    },
   },
-}));
+);
 
 describe("AnonymousCalendarRow", () => {
   const mockCalendar: Calendar = {

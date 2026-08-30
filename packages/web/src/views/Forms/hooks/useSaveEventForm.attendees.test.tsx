@@ -5,7 +5,7 @@ import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
-import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
@@ -280,6 +280,40 @@ describe("useSaveEventForm guest edits", () => {
     const draft = editDraftOrThrow(
       meetingEvent({
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+      }),
+    );
+    draft.values.attendees = [
+      { email: "guest@example.com", displayName: null },
+      { email: "new-guest@example.com", displayName: null },
+    ];
+
+    act(() => {
+      result.current.saveEventForm(draft, RecurringEventUpdateScope.ALL_EVENTS);
+    });
+    act(() => {
+      result.current.invitationPrompt?.onSend();
+    });
+
+    const variables = replaceVariables(queryClient);
+    expect(variables?.input.scope).toBe("all");
+    expect(variables?.input.content.attendees).toHaveLength(2);
+    expect(variables?.input.invitation).toBe("all");
+  });
+
+  // The grid only ever opens occurrences of a series, so this is the path a
+  // real guest edit on a repeating event takes: resolveRecurrenceScopeDecision
+  // widens it to "all" and normalizeGuestEdit must let it through intact.
+  it("keeps a guest edit made on one occurrence of a series", () => {
+    const { queryClient, Wrapper } = createWrapper();
+    const { result } = renderHook(() => useSaveEventForm(), {
+      wrapper: Wrapper,
+    });
+    const draft = editDraftOrThrow(
+      meetingEvent({
+        recurrence: {
+          kind: "occurrence",
+          seriesId: EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa"),
+        },
       }),
     );
     draft.values.attendees = [

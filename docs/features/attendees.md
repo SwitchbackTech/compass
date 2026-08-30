@@ -68,13 +68,15 @@ Source: `packages/core/src/types/event-command.contracts.ts`
   attendee-support payloads); present (including `[]`) means "replace
   membership with exactly this set." Entries are `{email, displayName}` —
   no `responseStatus` ever rides the write side.
-- The editor (`AttendeeField`) only renders for the organizer, on a writable
-  Google calendar, on a single event or a series base — never on one
-  occurrence of a series (guest edits have no per-occurrence semantics; see
-  `packages/web/src/views/Forms/EventForm/EventForm.attendees.test.tsx`).
-  A recurring series-base edit that changed the guest set is saved as
-  "All Events" automatically (`resolveRecurrenceScopeDecision`) — guest
-  replacements have no per-occurrence semantics.
+- The editor (`AttendeeField`) renders for the organizer on a writable Google
+  calendar, whether the event repeats or not — including on one occurrence of
+  a series, which is the only thing the grid ever opens for a repeating event
+  (see `packages/web/src/views/Forms/EventForm/EventForm.attendees.test.tsx`).
+  Guest edits still have no per-occurrence semantics, so any save that changed
+  the guest set on a recurring event is applied as "All Events" automatically
+  (`resolveRecurrenceScopeDecision`), and the field carries a note saying so.
+  Because the widened scope covers the whole save, other fields changed in the
+  same save go series-wide with the guests.
 - Incoming RSVP from other attendees is visible to the host without
   photos: chips and the read-only guest list show a compact status badge
   (yes / no / maybe / awaiting) looked up from the live `Attendee[]` by
