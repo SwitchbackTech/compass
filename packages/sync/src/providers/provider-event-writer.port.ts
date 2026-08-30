@@ -37,6 +37,10 @@ interface ProviderWriteBody {
   // read-reflected state and is never written; only this field reaches the
   // provider.
   readonly attendees?: readonly Attendee[];
+  // Booking-only create flags. Omitted/false keeps legacy calendar creates
+  // byte-identical on the provider insert path.
+  readonly createConference?: boolean;
+  readonly guestsCanInviteOthers?: boolean;
 }
 
 export interface ProviderCreateInput extends ProviderWriteBody {

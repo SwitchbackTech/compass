@@ -55,6 +55,8 @@ const CreateCommandInputSchema = z.strictObject({
   clientEventId: ClientEventIdSchema.nullable().default(null),
   invitation: InvitationIntentSchema,
   attendeesEdit: AttendeesEditSchema,
+  createConference: z.boolean().default(false),
+  guestsCanInviteOthers: z.boolean().optional(),
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,

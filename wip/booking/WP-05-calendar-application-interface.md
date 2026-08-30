@@ -2,7 +2,7 @@
 
 **task_id:** WP-05
 **github:** [#2974](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2974)
-**status:** queued
+**status:** done
 **owner:** Implementer (backend + sync)
 **depends on:** WP-01, WP-02
 **next owner after done:** WP-06
@@ -83,7 +83,14 @@ Key files:
 
 ## Evidence
 
-Fill when implementing. Must include "safety-canary tests pass".
+- Added `CalendarBookingPort` + `CalendarBookingService` with 5-minute
+  `booking_confirmation` maxAge, create (Meet + guestsCanInviteOthers), and
+  delete (invitation all).
+- Extended create command schema with `createConference` (default false) and
+  optional `guestsCanInviteOthers`; threaded through provider command executor
+  and Google insert (conferenceDataVersion 1 + createRequest).
+- Legacy create insert body unchanged when flags omitted (regression test).
+- safety-canary tests pass; `bun test:sync`, `bun test:backend`, `bun run verify` PASS.
 
 ## Out of scope
 

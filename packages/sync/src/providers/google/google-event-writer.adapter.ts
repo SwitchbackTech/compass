@@ -41,6 +41,7 @@ export interface GoogleEventsApi {
     calendarId: string;
     requestBody: gSchema$Event;
     sendUpdates: string;
+    conferenceDataVersion?: 1;
   }): Promise<gSchema$Event>;
   patch(params: {
     calendarId: string;
@@ -156,6 +157,19 @@ export class GoogleEventWriter implements ProviderEventWriter {
         input.recurrence,
         input.attendees,
       ),
+      ...(input.guestsCanInviteOthers !== undefined
+        ? { guestsCanInviteOthers: input.guestsCanInviteOthers }
+        : {}),
+      ...(input.createConference
+        ? {
+            conferenceData: {
+              createRequest: {
+                requestId: input.providerEventId,
+                conferenceSolutionKey: { type: "hangoutsMeet" },
+              },
+            },
+          }
+        : {}),
     };
 
     try {
@@ -163,6 +177,7 @@ export class GoogleEventWriter implements ProviderEventWriter {
         calendarId: input.calendarId,
         requestBody,
         sendUpdates: toSendUpdates(input.invitation),
+        ...(input.createConference ? { conferenceDataVersion: 1 } : {}),
       });
       return toResult(created);
     } catch (error) {

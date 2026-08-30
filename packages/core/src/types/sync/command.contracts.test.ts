@@ -105,6 +105,26 @@ describe("Sync command contracts", () => {
       }
     });
 
+    it("defaults createConference to false and omits guestsCanInviteOthers", () => {
+      const parsed = SyncCommandInputSchema.parse(createInput());
+      if (parsed.kind === "create") {
+        expect(parsed.createConference).toBe(false);
+        expect(parsed.guestsCanInviteOthers).toBeUndefined();
+      }
+    });
+
+    it("accepts booking-only create flags", () => {
+      const parsed = SyncCommandInputSchema.parse({
+        ...createInput(),
+        createConference: true,
+        guestsCanInviteOthers: true,
+      });
+      if (parsed.kind === "create") {
+        expect(parsed.createConference).toBe(true);
+        expect(parsed.guestsCanInviteOthers).toBe(true);
+      }
+    });
+
     it("accepts a create carrying a clientEventId for promotion", () => {
       const promoted = { ...createInput(), clientEventId: objectId() };
       const parsed = SyncCommandInputSchema.safeParse(promoted);
