@@ -2,7 +2,7 @@
 
 **task_id:** WP-03
 **github:** [#2972](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2972)
-**status:** queued
+**status:** done
 **owner:** Implementer (backend)
 **depends on:** WP-01
 **next owner after done:** WP-06 (API) and WP-07 (Settings UI)
@@ -80,7 +80,22 @@ Reuse:
 
 ## Evidence
 
-Fill when implementing.
+- Added `packages/backend/src/booking/` module: Mongo records for
+  `bookingPage` and `bookingReservation`, sparse unique index on
+  `bookingSlug`, unique index on `userId`, reservation indexes for
+  `{pageId, slotStart}` and `{pageId, status, slotStart}`.
+- Authenticated `GET`/`PUT /api/booking/page` registered in Express.
+  Slug allocated on first enable via `allocateBookingSlug` with
+  duplicate-key retry. Slug is immutable after allocation.
+- Enable path returns typed `403` for missing Google connection,
+  non-writable destination calendar, and billing write gate. GET before
+  any PUT returns virtual defaults without inserting a row (no slug or
+  bookingUrl until enable).
+- Tests in `booking-page.service.db.test.ts` cover slug allocation,
+  reserved suffix collision, immutability, Google/billing/calendar gates,
+  and GET defaults.
+- `bun test:backend`, `bun test:core`, `bun run type-check`, `bun lint`,
+  `bun knip`, `bun run verify` PASS.
 
 ## Out of scope
 

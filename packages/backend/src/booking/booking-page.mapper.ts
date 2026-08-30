@@ -1,0 +1,81 @@
+import {
+  type AdminGetBookingPageResponse,
+  type AdminPutBookingPageInput,
+  type BookingPage,
+  BookingPageSchema,
+} from "@core/types/booking.contracts";
+import {
+  CalendarIdSchema,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
+import { type BookingPageRecord } from "@backend/booking/booking-page.record";
+import { CONFIG } from "@backend/common/constants/config.constants";
+
+export const buildBookingUrl = (slug: string): string =>
+  new URL(`/book/${slug}`, CONFIG.FRONTEND_URL).href;
+
+export const mapBookingPageRecordToWire = (
+  record: BookingPageRecord & { bookingSlug: string },
+): BookingPage =>
+  BookingPageSchema.parse({
+    id: record._id.toString(),
+    slug: record.bookingSlug,
+    hostUserId: record.userId.toString(),
+    enabled: record.enabled,
+    durationMinutes: record.durationMinutes,
+    destinationCalendarId: record.destinationCalendarId,
+    blockingCalendarIds: record.blockingCalendarIds,
+    timeZone: record.timeZone,
+    weeklyAvailability: record.weeklyAvailability,
+    minNoticeHours: record.minNoticeHours,
+    maxHorizonDays: record.maxHorizonDays,
+    bufferMinutes: record.bufferMinutes,
+    maxBookingsPerDay: record.maxBookingsPerDay,
+    guestsCanInviteOthers: record.guestsCanInviteOthers,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  });
+
+export const mapBookingPageRecordToAdminResponse = (
+  record: BookingPageRecord & { bookingSlug: string },
+): AdminGetBookingPageResponse => ({
+  ...mapBookingPageRecordToWire(record),
+  bookingUrl: buildBookingUrl(record.bookingSlug),
+});
+
+export const mapPutInputToRecordFields = (
+  input: AdminPutBookingPageInput,
+): Omit<
+  BookingPageRecord,
+  "_id" | "userId" | "bookingSlug" | "createdAt" | "updatedAt"
+> => ({
+  enabled: input.enabled,
+  durationMinutes: input.durationMinutes,
+  destinationCalendarId: input.destinationCalendarId,
+  blockingCalendarIds: input.blockingCalendarIds,
+  timeZone: input.timeZone,
+  weeklyAvailability: input.weeklyAvailability,
+  minNoticeHours: input.minNoticeHours,
+  maxHorizonDays: input.maxHorizonDays,
+  bufferMinutes: input.bufferMinutes,
+  maxBookingsPerDay: input.maxBookingsPerDay,
+  guestsCanInviteOthers: input.guestsCanInviteOthers,
+});
+
+const PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
+  "000000000000000000000001",
+);
+
+export const buildDefaultAdminPutInput = (): AdminPutBookingPageInput => ({
+  enabled: false,
+  durationMinutes: 30,
+  destinationCalendarId: PLACEHOLDER_CALENDAR_ID,
+  blockingCalendarIds: [PLACEHOLDER_CALENDAR_ID],
+  timeZone: TimeZoneSchema.parse("UTC"),
+  weeklyAvailability: [],
+  minNoticeHours: 4,
+  maxHorizonDays: 60,
+  bufferMinutes: null,
+  maxBookingsPerDay: null,
+  guestsCanInviteOthers: true,
+});

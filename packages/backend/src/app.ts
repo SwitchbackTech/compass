@@ -1,4 +1,5 @@
 import { ensureBillingIndexes } from "@backend/billing/billing-indexes";
+import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
@@ -21,6 +22,7 @@ async function start() {
   try {
     await mongoService.start();
     await ensureBillingIndexes();
+    await ensureBookingIndexes();
 
     await new Promise((resolve) =>
       httpServer.listen(CONFIG.PORT, () => {
