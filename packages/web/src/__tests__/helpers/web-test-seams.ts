@@ -106,7 +106,10 @@ export function createTestNotificationPort(options?: {
   let permission: NotificationPermission = options?.permission ?? "default";
   const permissionListeners = new Set<() => void>();
 
-  const show = mock(() => options?.showSucceeds !== false);
+  const show = mock(
+    (..._args: Parameters<NotificationPort["show"]>): boolean =>
+      options?.showSucceeds !== false,
+  );
   const requestPermission = mock(async () => {
     permission = options?.respondWith ?? permission;
     return permission;
