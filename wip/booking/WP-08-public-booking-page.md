@@ -61,7 +61,11 @@ and [`packages/web/src/common/constants/routes.ts`](../../packages/web/src/commo
 
 ## Evidence
 
-Fill when implementing.
+- Split root router: `AppRoot` outlet + pathless `calendar-shell` (`RootShell`) for calendar routes; public `/book/$username` and `/book/cancel/$reservationId` lazy-load booking-only views without calendar shortcuts (asserted in `PublicBookingPage.test.tsx`).
+- States: loading, generic not-found/disabled, `bookable: false` unavailable, guest-TZ slot picker, name/email/notes form, confirmation with cancel URL, cancel page POST.
+- `409` shows "This time is no longer available. Pick another slot." and refetches slots.
+- Added `bookable` to `BookingSlotsResponseSchema` (aligns with WP-06 public slots API).
+- `bun test:web`, `type-check`, `lint`, `knip`, `bun run verify` PASS.
 
 ## Out of scope
 

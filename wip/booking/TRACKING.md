@@ -27,7 +27,7 @@ Org project create is blocked on `project` scope; see
 | WP-05 | high | cursor/booking-wp-05-calendar-port-893c | done | [WP-05-calendar-application-interface.md](WP-05-calendar-application-interface.md) [#2974](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2974) | CalendarBookingPort + createConference/guestsCanInviteOthers; safety-canary green; verify PASS | | 0 | none |
 | WP-06 | high | — | queued | [WP-06-public-booking-api.md](WP-06-public-booking-api.md) [#2975](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2975) | | | 0 | none |
 | WP-07 | high | cursor/booking-wp-07-host-settings-ui-893c | done | [WP-07-host-settings-ui.md](WP-07-host-settings-ui.md) [#2976](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2976) | Settings Booking page (duration, calendars, weekly hours, timezone, window, buffer, cap, guest-invite, copy link, connect-Google prompt); bun test:web/type-check/lint/knip/verify PASS | | 0 | none |
-| WP-08 | high | — | queued | [WP-08-public-booking-page.md](WP-08-public-booking-page.md) [#2977](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2977) | | | 0 | none |
+| WP-08 | high | cursor/booking-wp-08-public-booking-page-893c | done | [WP-08-public-booking-page.md](WP-08-public-booking-page.md) [#2977](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2977) | public /book routes outside calendar-shell; guest TZ slot picker, form, confirm, 409 refresh, 404/unavailable; PublicBookingPage.test.tsx; bun test:web/type-check/lint/knip/verify PASS | | 0 | none |
 | WP-09 | medium | — | queued | [WP-09-e2e-docs-closeout.md](WP-09-e2e-docs-closeout.md) [#2978](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978) | | | 0 | none |
 
 ## Escalation log
