@@ -152,6 +152,36 @@ longer usable and Google-origin data should be pruned or reconnected.
 calendar refreshes, import status, metadata updates, and Google revocation.
 Browsers connect with `GET /api/events/stream`.
 
+## Booking
+
+**Booking page**:
+The one v1 scheduling page owned by a Compass user. Settings configure
+it; guests open it at `/book/:username`.
+_Avoid_: event type (v1 has one duration per user, not Calendly-style
+multiple event types)
+
+**Booking slug**:
+The immutable-in-v1 public username segment in
+`/book/:username`. Allocated from the host's display name. Not a
+SuperTokens username and not the Google email.
+_Avoid_: username, handle (until slug editing ships)
+
+**Reservation**:
+A confirmed (or cancelled) booking record owned by the Booking module.
+It references a Calendar event id after confirm. It is not itself a
+calendar Event.
+
+**Host** (booking):
+The Google-connected Compass user who owns the booking page.
+_Avoid_: organizer when you mean the Compass account rather than the
+Google event organizer field
+
+**Guest** (booking):
+The unauthenticated person who picks a slot on a booking page.
+_Avoid_: attendee when you mean the public booking user rather than a
+calendar guest-list row (the created event does add them as an
+attendee)
+
 ## Keyboard
 
 **Shortcut**: A keyboard combination that triggers an app action, from the
@@ -231,3 +261,6 @@ _Avoid_: hotkey — the term survives only inside the third-party
   HTTPS when continuous sync is expected.
 - The **Sync service** may own provider connections and event commands when
   cutover routing is `sync`; the backend still owns browser HTTP and **SSE**.
+- A **Host** owns one **Booking page** identified by a **Booking slug**.
+- A **Guest** confirms a **Reservation**, which then asks Calendar to
+  create an **Event**. Booking does not write Calendar collections.

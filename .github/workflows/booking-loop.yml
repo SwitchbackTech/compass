@@ -1,0 +1,133 @@
+name: Booking loop
+
+# Autonomous manager loop for Compass Booking v1 (wip/booking/).
+# Contract: docs/CI-CD/booking-loop-routine.md
+# Prompt: .github/prompts/booking-loop.md
+#
+# Kill switch: repo variable BOOKING_LOOP_ENABLED (string "true"; default off).
+# Manual re-runs: dispatch a fresh run instead of "Re-run jobs" on a failed
+# snapshot so workflow file fixes apply.
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Booking issue number to launch (blank = pick next eligible WP)"
+        required: false
+        type: string
+  schedule:
+    - cron: "17 * * * *"
+  workflow_run:
+    workflows: ["Release on main"]
+    types: [completed]
+  pull_request:
+    types: [labeled, synchronize, opened, reopened, ready_for_review]
+
+concurrency:
+  group: booking-loop
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  merge-guard:
+    name: Merge booking-automerge PRs
+    if: >-
+      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (
+        github.event.action != 'labeled' ||
+        github.event.label.name == 'booking-automerge'
+      ) &&
+      contains(github.event.pull_request.labels.*.name, 'booking-automerge')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Deterministic merge guard + enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+        run: .github/scripts/booking-loop-merge-guard.sh "${{ github.event.pull_request.number }}"
+
+  post-deploy:
+    name: Smoke staging and launch next WP
+    if: >-
+      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      launch_next: ${{ steps.postdeploy.outputs.launch_next }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Smoke staging and annotate the booking issue
+        id: postdeploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: .github/scripts/booking-loop-postdeploy.sh
+
+      - name: Pick next WP
+        if: steps.postdeploy.outputs.launch_next == 'true'
+        id: next
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/booking-loop-next.sh
+
+      - name: Launch next agent
+        if: steps.next.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: .github/scripts/booking-loop-launch.sh "${{ steps.next.outputs.issue_number }}"
+
+  kick:
+    name: Pick and launch a booking WP
+    if: >-
+      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Use dispatched issue number
+        id: given
+        if: github.event_name == 'workflow_dispatch' && inputs.issue_number != ''
+        run: |
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${{ inputs.issue_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Pick next WP
+        id: next
+        if: steps.given.outputs.found != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/booking-loop-next.sh
+
+      - name: Launch agent
+        if: steps.given.outputs.found == 'true' || steps.next.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          n="${{ steps.given.outputs.issue_number }}"
+          if [ -z "$n" ]; then
+            n="${{ steps.next.outputs.issue_number }}"
+          fi
+          .github/scripts/booking-loop-launch.sh "$n"

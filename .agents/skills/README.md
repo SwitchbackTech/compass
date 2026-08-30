@@ -14,6 +14,7 @@ Eval stubs: [`_evals/README.md`](_evals/README.md).
 | name | version | owner | role | last_verified |
 | --- | --- | --- | --- | --- |
 | a11y-audit | 1 | compass-maintainers | specialist | 2026-08-25 |
+| booking-loop | 1 | compass-maintainers | Manager | 2026-08-30 |
 | chaos | 1 | compass-maintainers | specialist | 2026-08-25 |
 | google-sync-debug | 1 | compass-maintainers | specialist | 2026-08-25 |
 | handoff | 1 | compass-maintainers | specialist | 2026-08-25 |
@@ -26,6 +27,7 @@ Eval stubs: [`_evals/README.md`](_evals/README.md).
 
 ## Change log
 
+- 2026-08-30: `/booking-loop` v1 — autonomous Booking v1 WP → merge → staging.
 - 2026-08-27: `/ship` v2 — merge after verify without waiting for a human.
 - 2026-08-25: WP-05 — add `version` / `owner` / `last_verified` to all skills.
 

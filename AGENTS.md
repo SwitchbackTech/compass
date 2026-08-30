@@ -57,8 +57,11 @@ Validation defaults:
 - Skills registry: `.agents/skills/README.md`
 - Handoffs: `.agents/handoffs/SCHEMA.md`
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
+- Booking loop Routine: `docs/CI-CD/booking-loop-routine.md`
 - Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
 - Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
+- Temporary booking work pack (delete when done): `wip/booking/README.md`
+- Booking product spec: `docs/features/booking.md`
 
 The `wip/restructure/` pack is deleted after WP-01–07. WP-08 was cancelled:
 discovery was not the bottleneck (failures were CI, review, evidence, and
@@ -70,6 +73,7 @@ was empty; merged PRs #2865–#2869, #2872, and #2873 are the loop evidence.
 Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`):
 
 - `/ship`: Manager — route, ledger, PR/merge after specialist verdicts
+- `/booking-loop`: Manager — Booking v1 WP → merge → staging without a human
 - `/review`: read-only independent diff review
 - `/simplify`: reduce complexity without changing behavior
 - `/a11y-audit`: review changed UI for accessibility regressions
