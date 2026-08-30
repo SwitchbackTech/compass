@@ -94,6 +94,20 @@ const SPATIAL_DIRECTION = {
 const isArrowKey = (key: string): key is keyof typeof SPATIAL_DIRECTION =>
   key in SPATIAL_DIRECTION;
 
+const isFocusInSidebar = () =>
+  Boolean(document.activeElement?.closest(`#${ID_SIDEBAR}`));
+
+/** Form-open, typing in the form, or sidebar focus: grid edit keys stand down. */
+const isGridEditShortcutBlocked = (keyboardEvent: KeyboardEvent) =>
+  isEventFormOpen() ||
+  isEventFormKeyboardTarget(keyboardEvent) ||
+  isFocusInSidebar();
+
+const claimShortcut = (keyboardEvent: KeyboardEvent) => {
+  keyboardEvent.preventDefault();
+  keyboardEvent.stopPropagation();
+};
+
 /**
  * First visit / returning from another tab / calendar canvas: nothing
  * particular is focused. The timed grid and week scroller are WCAG
@@ -246,9 +260,6 @@ export function useGridEventEditShortcuts({
     return event;
   };
 
-  const isFocusInSidebar = () =>
-    Boolean(document.activeElement?.closest(`#${ID_SIDEBAR}`));
-
   const deleteFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (
       isDeleteTextEditingTarget(keyboardEvent) ||
@@ -262,8 +273,7 @@ export function useGridEventEditShortcuts({
     const event = getFocusedMutableCalendarEvent();
     if (!event) return;
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     deleteEventAndDiscardDraft(deleteEvent, event);
   };
 
@@ -285,11 +295,7 @@ export function useGridEventEditShortcuts({
   };
 
   const duplicateFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
-    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
-      return;
-    }
-
-    if (isFocusInSidebar()) return;
+    if (isGridEditShortcutBlocked(keyboardEvent)) return;
 
     const gridEvent = getFocusedMutableCalendarEvent();
     if (!gridEvent?._id) return;
@@ -297,8 +303,7 @@ export function useGridEventEditShortcuts({
     const sourceEvent = findEventInCache(queryClient, gridEvent._id);
     if (!sourceEvent) return;
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     duplicateSourceEvent(sourceEvent);
   };
 
@@ -306,12 +311,7 @@ export function useGridEventEditShortcuts({
     // Always swallow: macOS replays a meta-released C keyup that would
     // otherwise match the create-event shortcut.
     swallowNextKeyup("c");
-
-    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
-      return;
-    }
-
-    if (isFocusInSidebar()) return;
+    if (isGridEditShortcutBlocked(keyboardEvent)) return;
 
     const eventId = targeting.getFocusedNavigable()?.eventId;
     if (!eventId) return;
@@ -319,8 +319,7 @@ export function useGridEventEditShortcuts({
     const sourceEvent = findEventInCache(queryClient, eventId);
     if (!sourceEvent) return;
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     eventClipboardActions.copy(sourceEvent);
   };
 
@@ -328,18 +327,12 @@ export function useGridEventEditShortcuts({
     // Always swallow: macOS replays a meta-released V keyup that would
     // otherwise match Join Up Next.
     swallowNextKeyup("v");
-
-    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
-      return;
-    }
-
-    if (isFocusInSidebar()) return;
+    if (isGridEditShortcutBlocked(keyboardEvent)) return;
 
     const sourceEvent = useEventClipboardStore.getState().event;
     if (!sourceEvent) return;
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     duplicateSourceEvent(sourceEvent);
   };
 
@@ -534,8 +527,7 @@ export function useGridEventEditShortcuts({
 
     const didMoveDraft = repositionDraftByKey(keyboardEvent.key);
     if (didMoveDraft) {
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
+      claimShortcut(keyboardEvent);
       return;
     }
 
@@ -570,8 +562,7 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     edgeFocusActions.cycle(event._id, forward ? "forward" : "backward");
   };
 
@@ -655,8 +646,7 @@ export function useGridEventEditShortcuts({
 
     const didMove = repositionDraftByKey(keyboardEvent.key);
     if (didMove) {
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
+      claimShortcut(keyboardEvent);
       return;
     }
 
@@ -703,8 +693,7 @@ export function useGridEventEditShortcuts({
     }
     if (!adjacent) return;
 
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
+    claimShortcut(keyboardEvent);
     adjacent.element.scrollIntoView({ block: "nearest" });
     targeting.focus(adjacent);
   };
