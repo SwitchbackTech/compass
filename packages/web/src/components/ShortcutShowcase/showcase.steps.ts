@@ -142,7 +142,7 @@ export const SHOWCASE_STEPS = [
   {
     id: "notifications",
     title: "Never miss a meeting",
-    body: "Compass can nudge you five minutes before a timed event starts, even when this tab is in the background. You can turn it off any time from the command palette.",
+    body: "Compass can nudge you five minutes before a timed event starts while this browser is open, even if the tab is in the background. You can turn it off any time from the command palette.",
   },
   {
     id: "graduation",

@@ -1,4 +1,6 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { track } from "@web/auth/posthog/track";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { type NotificationPort } from "@web/notifications/notification.port";
 import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
@@ -48,6 +50,25 @@ export function toNotifiableEvents(
  */
 export function notificationKey(event: NotifiableEvent): string {
   return `${event._id}|${event.startDate}`;
+}
+
+/**
+ * Event query range for the notifier and up-next: today's local day, plus the
+ * lead window into tomorrow so a meeting just after midnight still gets a
+ * full five-minute heads-up.
+ *
+ * Same `[start, end)` shape as `dayEventQueryRange`.
+ */
+export function notifiableEventQueryRange(now: Dayjs): {
+  startDate: string;
+  endDate: string;
+} {
+  return {
+    startDate: toUTCOffset(now.startOf("day")),
+    endDate: toUTCOffset(
+      now.startOf("day").add(1, "day").add(NOTIFY_LEAD_MINUTES, "minute"),
+    ),
+  };
 }
 
 /**
@@ -114,14 +135,20 @@ export function announceUpcomingEvents(
   const announced = pruneFiredKeys(firedKeys, now);
   for (const event of due) {
     const key = notificationKey(event);
-    port.show(event.title?.trim() || "Untitled event", {
+    const shown = port.show(event.title?.trim() || "Untitled event", {
       body: `Starts at ${inEffectiveTimeZone(event.startDate).format("h:mm A")}`,
       // Same value as the de-dupe key, so a reload inside the lead window
       // replaces the earlier notification instead of stacking a second.
       tag: key,
       onClick: () => window.focus(),
     });
-    announced.add(key);
+    if (shown) {
+      announced.add(key);
+      track("notifications_shown");
+      continue;
+    }
+    // A silent browser drop must not burn the key: the next tick retries.
+    track("notifications_show_failed");
   }
   return announced;
 }

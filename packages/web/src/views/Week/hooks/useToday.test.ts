@@ -13,27 +13,31 @@ import {
 } from "bun:test";
 
 describe("useToday", () => {
-  let intervalCallback: (() => void) | undefined;
-  let setIntervalSpy: ReturnType<typeof spyOn>;
+  let timeoutCallback: (() => void) | undefined;
+  let setTimeoutSpy: ReturnType<typeof spyOn>;
+  let clearTimeoutSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     setSystemTime(new Date("2026-02-05T23:59:00.000Z"));
-    intervalCallback = undefined;
-    setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(((
+    timeoutCallback = undefined;
+    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
       callback: TimerHandler,
     ) => {
       if (typeof callback === "function") {
-        intervalCallback = () => callback();
+        timeoutCallback = () => callback();
       }
 
-      return 1 as unknown as ReturnType<typeof setInterval>;
-    }) as unknown as typeof setInterval);
-    spyOn(globalThis, "clearInterval").mockImplementation(() => {});
+      return 1 as unknown as ReturnType<typeof setTimeout>;
+    }) as unknown as typeof setTimeout);
+    clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(
+      () => {},
+    );
   });
 
   afterEach(() => {
     setSystemTime();
-    setIntervalSpy.mockRestore();
+    setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
   });
 
   it("keeps the same `today` reference across a tick within the same day", () => {
@@ -42,7 +46,7 @@ describe("useToday", () => {
 
     setSystemTime(new Date("2026-02-05T23:59:30.000Z"));
     act(() => {
-      intervalCallback?.();
+      timeoutCallback?.();
     });
 
     expect(result.current.today).toBe(initialToday);
@@ -53,7 +57,7 @@ describe("useToday", () => {
 
     setSystemTime(new Date("2026-02-06T00:01:00.000Z"));
     act(() => {
-      intervalCallback?.();
+      timeoutCallback?.();
     });
 
     expect(result.current.today.isSame("2026-02-06", "day")).toBe(true);

@@ -6,7 +6,6 @@ import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProv
 import { DocumentTitle } from "@web/components/DocumentTitle/DocumentTitle";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
 import { UpNextBanner } from "@web/components/Sidebar/UpNextCard/UpNextBanner";
-import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
 import SSEProvider from "@web/sse/provider/SSEProvider";
 
 export const RootView = () => {
@@ -24,7 +23,6 @@ export const RootView = () => {
         <GlobalShortcutsHost />
         <DocumentTitle />
         <UpNextBanner />
-        <UpcomingEventNotifier />
         <AuthenticatedLayout />
       </SSEProvider>
     </UserProvider>
