@@ -1,0 +1,342 @@
+import { expect, type Page } from "@playwright/test";
+
+/** ObjectId-shaped id for stubbed Google calendar in host settings e2e. */
+export const BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
+
+export const HOST_ACCOUNT_EMAIL = "host@example.com";
+
+const googleCalendar = {
+  id: BOOKING_CALENDAR_ID,
+  name: "Work",
+  description: "",
+  timeZone: "America/Chicago",
+  foregroundColor: "#ffffff",
+  backgroundColor: "#4285f4",
+  provider: "google",
+  access: "owner",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+  },
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+  accountEmail: HOST_ACCOUNT_EMAIL,
+};
+
+/** A slot two days ahead at 15:00 UTC, always inside the 14-day guest window. */
+export function buildBookableSlot(durationMinutes = 30): {
+  slotStart: string;
+  slotEnd: string;
+} {
+  const start = new Date();
+  start.setUTCDate(start.getUTCDate() + 2);
+  start.setUTCHours(15, 0, 0, 0);
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+  return { slotStart: start.toISOString(), slotEnd: end.toISOString() };
+}
+
+export interface PublicBookingStubOptions {
+  slug?: string;
+  hostDisplayName?: string;
+  durationMinutes?: number;
+  slots?: Array<{ slotStart: string; slotEnd: string }>;
+  bookable?: boolean;
+  /** When set, POST /reservations returns this status instead of 200. */
+  confirmStatus?: number;
+}
+
+export interface CapturedBookingRequests {
+  reservationPosts: Array<Record<string, unknown>>;
+  slotGets: number;
+}
+
+export async function preparePublicBookingPage(
+  page: Page,
+  options: PublicBookingStubOptions = {},
+): Promise<CapturedBookingRequests> {
+  const slug = options.slug ?? "tylerdane";
+  const captured: CapturedBookingRequests = {
+    reservationPosts: [],
+    slotGets: 0,
+  };
+  const slot =
+    options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
+  const slots = options.slots ?? [slot];
+
+  const json = (body: unknown, status = 200) => ({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path === `/api/booking/pages/${slug}` && request.method() === "GET") {
+      return route.fulfill(
+        json({
+          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
+          durationMinutes: options.durationMinutes ?? 30,
+          timeZone: "America/Chicago",
+          enabled: true,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/pages/${slug}/slots` &&
+      request.method() === "GET"
+    ) {
+      captured.slotGets += 1;
+      return route.fulfill(
+        json({
+          bookable: options.bookable ?? true,
+          slots,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/pages/${slug}/reservations` &&
+      request.method() === "POST"
+    ) {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      captured.reservationPosts.push(body);
+      if (options.confirmStatus === 409) {
+        return route.fulfill(json({}, 409));
+      }
+      return route.fulfill(
+        json({
+          reservationId: "000000000000000000000099",
+          slotStart: body.slotStart,
+          slotEnd: slot.slotEnd,
+          guestTimeZone: body.guestTimeZone,
+          cancelUrl:
+            "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        }),
+      );
+    }
+
+    return route.fulfill(json({}));
+  });
+
+  await page.goto(`/book/${slug}`, { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Book with Tyler Dane" }),
+  ).toBeVisible({ timeout: 15000 });
+
+  return captured;
+}
+
+export interface HostBookingSettingsStubOptions {
+  slug?: string;
+  bookingUrl?: string;
+}
+
+export interface CapturedHostBookingRequests {
+  putBodies: Array<Record<string, unknown>>;
+}
+
+export async function prepareSignedInBookingSettingsPage(
+  page: Page,
+  options: HostBookingSettingsStubOptions = {},
+): Promise<CapturedHostBookingRequests> {
+  const slug = options.slug ?? "hostuser";
+  const bookingUrl =
+    options.bookingUrl ?? `https://compasscalendar.com/book/${slug}`;
+  const captured: CapturedHostBookingRequests = { putBodies: [] };
+
+  await page.addInitScript((accountEmail) => {
+    (
+      window as Window & { __COMPASS_E2E_TEST__?: boolean }
+    ).__COMPASS_E2E_TEST__ = true;
+    localStorage.setItem(
+      "compass.auth",
+      JSON.stringify({ hasAuthenticated: true, lastKnownEmail: accountEmail }),
+    );
+  }, HOST_ACCOUNT_EMAIL);
+
+  const json = (body: unknown, status = 200) => ({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
+
+  const bookingPagePayload = {
+    enabled: false,
+    durationMinutes: 45,
+    destinationCalendarId: BOOKING_CALENDAR_ID,
+    blockingCalendarIds: [BOOKING_CALENDAR_ID],
+    timeZone: "America/New_York",
+    weeklyAvailability: [],
+    minNoticeHours: 4,
+    maxHorizonDays: 60,
+    bufferMinutes: null,
+    maxBookingsPerDay: null,
+    guestsCanInviteOthers: true,
+  };
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path.endsWith("/api/calendars")) {
+      return route.fulfill(json({ calendars: [googleCalendar] }));
+    }
+
+    if (path.endsWith("/api/event") && request.method() === "GET") {
+      return route.fulfill(json({ events: [] }));
+    }
+
+    if (path.endsWith("/api/booking/page") && request.method() === "GET") {
+      return route.fulfill(json(bookingPagePayload));
+    }
+
+    if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      captured.putBodies.push(body);
+      return route.fulfill(
+        json({
+          ...bookingPagePayload,
+          ...body,
+          id: "000000000000000000000001",
+          slug,
+          hostUserId: "000000000000000000000002",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          bookingUrl,
+        }),
+      );
+    }
+
+    if (path.endsWith("/api/user/metadata")) {
+      return route.fulfill(
+        json({
+          google: {
+            connectionState: "HEALTHY",
+            connections: [
+              {
+                id: "e2e-connection-1",
+                state: "healthy",
+                stateReason: null,
+                lastSyncedAt: null,
+                lastHealthyAt: null,
+                accountEmail: HOST_ACCOUNT_EMAIL,
+                connectionState: "HEALTHY",
+                canSuggestContacts: false,
+              },
+            ],
+          },
+        }),
+      );
+    }
+
+    if (path.endsWith("/api/config")) {
+      return route.fulfill(json({ google: { isConfigured: true } }));
+    }
+
+    return route.fulfill(json({}));
+  });
+
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { level: 1 }).getByRole("button"),
+  ).toBeVisible({ timeout: 15000 });
+
+  await page.waitForFunction(
+    () =>
+      (
+        window as Window & {
+          __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
+        }
+      ).__COMPASS_E2E_HOOKS__ !== undefined,
+  );
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
+      }
+    ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
+  });
+
+  await page.waitForFunction(() => {
+    const bridge = (
+      window as Window & {
+        __COMPASS_E2E_STORE__?: { userMetadata?: unknown };
+      }
+    ).__COMPASS_E2E_STORE__;
+    return Boolean(bridge?.userMetadata);
+  });
+  await page.evaluate(
+    (metadata) => {
+      const bridge = (
+        window as Window & {
+          __COMPASS_E2E_STORE__?: {
+            userMetadata?: { set: (metadata: unknown) => void };
+          };
+        }
+      ).__COMPASS_E2E_STORE__;
+      bridge?.userMetadata?.set(metadata);
+    },
+    {
+      google: {
+        connectionState: "HEALTHY",
+        connections: [
+          {
+            id: "e2e-connection-1",
+            state: "healthy",
+            stateReason: null,
+            lastSyncedAt: null,
+            lastHealthyAt: null,
+            accountEmail: HOST_ACCOUNT_EMAIL,
+            connectionState: "HEALTHY",
+            canSuggestContacts: false,
+          },
+        ],
+      },
+    },
+  );
+
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+Comma");
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(settingsDialog).toBeVisible({ timeout: 10000 });
+  await page.evaluate(() => {
+    document
+      .querySelector<HTMLElement>('[data-settings-shortcut="nav-booking"]')
+      ?.click();
+  });
+  await expect(
+    settingsDialog.getByRole("button", { name: "Save booking settings" }),
+  ).toBeVisible({ timeout: 15000 });
+
+  return captured;
+}
+
+/** Dispatches a DOM click for OverlayPanel buttons that re-render during Playwright clicks. */
+export const dispatchClick = async (
+  locator: import("@playwright/test").Locator,
+) => {
+  await locator.waitFor({ state: "attached", timeout: 10000 });
+  await locator.evaluate((el) => {
+    (el as HTMLElement).click();
+  });
+};
+
+export function formatSlotButtonLabel(slotStart: string): RegExp {
+  const time = new Intl.DateTimeFormat(undefined, {
+    timeZone: "UTC",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(slotStart));
+  const escaped = time.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(escaped, "i");
+}

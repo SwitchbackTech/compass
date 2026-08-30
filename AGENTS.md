@@ -54,6 +54,7 @@ Validation defaults:
 ## Lookups
 
 - Docs index: `docs/README.md`
+- Booking product spec: `docs/features/booking.md`
 - Skills registry: `.agents/skills/README.md`
 - Handoffs: `.agents/handoffs/SCHEMA.md`
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
