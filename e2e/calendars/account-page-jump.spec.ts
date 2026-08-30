@@ -1,5 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
-import { ensureSidebarOpen } from "../utils/event-test-utils";
+import {
+  ensureSidebarOpen,
+  getViewSwitcherButton,
+} from "../utils/event-test-utils";
 
 test.use({ viewport: { width: 1600, height: 900 } });
 
@@ -54,14 +57,12 @@ const googleCalendar = (
 });
 
 const holdMod = async (page: Page) => {
-  // Linux resolves Mod to Control; macOS to Meta. Hold both so the platform
-  // hold tracker and the chord check both fire (same as the showcase spec).
+  // This VM resolves Mod to Control. Hold only that key: a second modifier
+  // (Meta) is treated as "not pausing to look" and cancels the hold timer.
   await page.keyboard.down("Control");
-  await page.keyboard.down("Meta");
 };
 
 const releaseMod = async (page: Page) => {
-  await page.keyboard.up("Meta");
   await page.keyboard.up("Control");
 };
 
@@ -141,6 +142,10 @@ const setupTwoAccountWeek = async (page: Page) => {
   });
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await getViewSwitcherButton(page).waitFor({
+    state: "visible",
+    timeout: 15000,
+  });
   await page.waitForFunction(
     () => (window as CompassE2EWindow).__COMPASS_E2E_HOOKS__ !== undefined,
   );
@@ -149,9 +154,13 @@ const setupTwoAccountWeek = async (page: Page) => {
   });
 
   await ensureSidebarOpen(page);
-  await expect(page.getByRole("heading", { name: WORK_EMAIL })).toBeVisible({
-    timeout: 10000,
-  });
+  await expect(
+    page
+      .locator("#sidebar")
+      .getByRole("button", { name: /calendar$/ })
+      .first(),
+  ).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: WORK_EMAIL })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: PERSONAL_EMAIL }),
   ).toBeVisible();
@@ -163,20 +172,32 @@ test("hold-Mod gives each calendar account its own jump key, including collapsed
   await setupTwoAccountWeek(page);
 
   const personalToggle = page.getByRole("button", { name: PERSONAL_EMAIL });
-  await personalToggle.click();
+  await personalToggle.focus();
+  await page.keyboard.press("Enter");
   await expect(personalToggle).toHaveAttribute("aria-expanded", "false");
 
   await holdMod(page);
-  await expect(page.locator("[data-page-jump-hints]")).toBeVisible({
-    timeout: 2000,
-  });
-  const jumpStatus = page.locator("[data-page-jump-hints]").getByRole("status");
-  await expect(jumpStatus).toContainText(`4 for ${WORK_EMAIL}`);
-  await expect(jumpStatus).toContainText(`5 for ${PERSONAL_EMAIL}`);
+  try {
+    await expect(page.locator("[data-page-jump-hints]")).toBeVisible({
+      timeout: 2000,
+    });
+    const jumpStatus = page
+      .locator("[data-page-jump-hints]")
+      .getByRole("status");
+    await expect(jumpStatus).toContainText(`4 for ${WORK_EMAIL}`);
+    await expect(jumpStatus).toContainText(`5 for ${PERSONAL_EMAIL}`);
+    await page.screenshot({
+      path: test.info().outputPath("hold-mod-account-chips.png"),
+    });
 
-  await page.keyboard.press("5");
-  await releaseMod(page);
+    await page.keyboard.press("5");
+  } finally {
+    await releaseMod(page);
+  }
 
   await expect(personalToggle).toBeFocused();
   await expect(personalToggle).toHaveAttribute("aria-expanded", "true");
+  await page.screenshot({
+    path: test.info().outputPath("mod-5-expands-collapsed-account.png"),
+  });
 });
