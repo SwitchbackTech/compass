@@ -1,6 +1,7 @@
 # WP-03 — Booking persistence and slug
 
 **task_id:** WP-03
+**github:** [#2972](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2972)
 **status:** queued
 **owner:** Implementer (backend)
 **depends on:** WP-01

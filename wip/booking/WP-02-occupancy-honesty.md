@@ -1,6 +1,7 @@
 # WP-02 — Occupancy honesty (occurrence busy)
 
 **task_id:** WP-02
+**github:** [#2971](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2971)
 **status:** queued
 **owner:** Implementer (sync)
 **depends on:** none (may run parallel with WP-01)

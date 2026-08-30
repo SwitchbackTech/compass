@@ -1,6 +1,7 @@
 # WP-04 — Slot engine
 
 **task_id:** WP-04
+**github:** [#2973](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2973)
 **status:** queued
 **owner:** Implementer (core or backend; prefer a pure module imported by
 backend)

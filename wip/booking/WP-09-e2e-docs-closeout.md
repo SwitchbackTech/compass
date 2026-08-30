@@ -1,6 +1,7 @@
 # WP-09 — E2E, docs, pack closeout
 
 **task_id:** WP-09
+**github:** [#2978](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978)
 **status:** queued
 **owner:** Implementer (e2e + docs), then Verifier
 **depends on:** WP-07, WP-08

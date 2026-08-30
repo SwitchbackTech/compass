@@ -1,6 +1,7 @@
 # WP-01 — Booking Zod contracts
 
 **task_id:** WP-01
+**github:** [#2970](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2970)
 **status:** queued
 **owner:** Implementer (core)
 **depends on:** none

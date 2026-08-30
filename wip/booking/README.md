@@ -12,7 +12,9 @@ approved by the product owner on 2026-08-30. If a WP's steps contradict
 the code you find, prefer the code, note the delta in the WP's Evidence
 section, and keep the WP's finish line intact.
 
-GitHub Project: Compass Booking (org project on KeepSoftwareSimple).
+GitHub: milestone [Compass Booking v1](https://github.com/KeepSoftwareSimple/compass-calendar/milestone/7)
+([#2970](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2970)–[#2978](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978)).
+Org project create needs `project` scope: [`GITHUB-PROJECT.md`](GITHUB-PROJECT.md).
 Agent-ready issues are linked from [`TRACKING.md`](TRACKING.md).
 
 ## How to pick up (manager-loop protocol)

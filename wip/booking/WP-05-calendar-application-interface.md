@@ -1,6 +1,7 @@
 # WP-05 — Calendar application interface for booking
 
 **task_id:** WP-05
+**github:** [#2974](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2974)
 **status:** queued
 **owner:** Implementer (backend + sync)
 **depends on:** WP-01, WP-02

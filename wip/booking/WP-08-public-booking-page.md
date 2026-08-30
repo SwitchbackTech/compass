@@ -1,6 +1,7 @@
 # WP-08 — Public booking page
 
 **task_id:** WP-08
+**github:** [#2977](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2977)
 **status:** queued
 **owner:** Implementer (web)
 **depends on:** WP-06

@@ -1,6 +1,7 @@
 # WP-06 — Public book, confirm, and cancel APIs
 
 **task_id:** WP-06
+**github:** [#2975](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2975)
 **status:** queued
 **owner:** Implementer (backend)
 **depends on:** WP-03, WP-04, WP-05

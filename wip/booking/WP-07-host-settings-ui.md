@@ -1,6 +1,7 @@
 # WP-07 — Host Settings booking page
 
 **task_id:** WP-07
+**github:** [#2976](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2976)
 **status:** queued
 **owner:** Implementer (web)
 **depends on:** WP-03
