@@ -18,21 +18,43 @@ import { validateLifeSearch } from "@web/views/Life/life-search";
 import { NotFoundView } from "@web/views/NotFound";
 
 export const rootRoute = createRootRoute({
-  // Lazy: RootShell pulls in AuthModal's whole auth stack (supertokens,
-  // Google auth, UserApi). Eagerly importing it here would make every
-  // module that touches this file - including tests that only inspect
-  // route shape, like routers/index.test.tsx - transitively evaluate that
-  // real dependency graph before it can be mocked.
   component: lazyRouteComponent(
-    () => import("@web/components/RootShell/RootShell"),
-    "RootShell",
+    () => import("@web/components/RootShell/AppRoot"),
+    "AppRoot",
   ),
   notFoundComponent: NotFoundView,
   validateSearch: validateAuthSearch,
 });
 
-export const lifeRoute = createRoute({
+export const calendarShellRoute = createRoute({
   getParentRoute: () => rootRoute,
+  id: "calendar-shell",
+  component: lazyRouteComponent(
+    () => import("@web/components/RootShell/RootShell"),
+    "RootShell",
+  ),
+});
+
+export const publicBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROOT_ROUTES.BOOK,
+  component: lazyRouteComponent(
+    () => import("@web/booking/PublicBookingPage"),
+    "PublicBookingPage",
+  ),
+});
+
+export const publicBookCancelRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROOT_ROUTES.BOOK_CANCEL,
+  component: lazyRouteComponent(
+    () => import("@web/booking/PublicBookingCancelPage"),
+    "PublicBookingCancelPage",
+  ),
+});
+
+export const lifeRoute = createRoute({
+  getParentRoute: () => calendarShellRoute,
   path: ROOT_ROUTES.LIFE,
   validateSearch: validateLifeSearch,
   component: lazyRouteComponent(
@@ -42,7 +64,7 @@ export const lifeRoute = createRoute({
 });
 
 export const authenticatedLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => calendarShellRoute,
   id: "authenticated",
   beforeLoad: loadAuthenticated,
   component: lazyRouteComponent(() => import("@web/views/Root"), "RootView"),
@@ -77,11 +99,6 @@ export const dayIndexRoute = createRoute({
 export const weekRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: ROOT_ROUTES.WEEK,
-  // WeekView lives on the parent so a single instance persists across the bare
-  // /week (index) and /week/$dateString routes. Navigating between them updates
-  // the anchor without remounting the view (a remount would restart the sidebar
-  // open-animation). useWeek reads the optional dateString param and falls back
-  // to a width-aware default (today at phone width, start of week on desktop).
   component: lazyRouteComponent(
     () => import("@web/views/Week/WeekView"),
     "WeekView",
@@ -107,7 +124,7 @@ export const rootIndexRoute = createRoute({
 });
 
 export const cleanupRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => calendarShellRoute,
   path: ROOT_ROUTES.CLEANUP,
   component: lazyRouteComponent(
     () => import("@web/views/Cleanup/Cleanup"),
@@ -130,9 +147,15 @@ const authenticatedRoute = authenticatedLayoutRoute.addChildren([
   rootIndexRoute,
 ]);
 
-export const routeTree = rootRoute.addChildren([
+const calendarShellChildren = calendarShellRoute.addChildren([
   lifeRoute,
   authenticatedRoute,
   ...(IS_DEV ? [cleanupRoute] : []),
+]);
+
+export const routeTree = rootRoute.addChildren([
+  calendarShellChildren,
+  publicBookRoute,
+  publicBookCancelRoute,
   googleAuthCallbackRoute,
 ]);

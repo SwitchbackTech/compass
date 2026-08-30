@@ -1,5 +1,7 @@
 export const ROOT_ROUTES = {
   API: "/api",
+  BOOK: "/book/$username",
+  BOOK_CANCEL: "/book/cancel/$reservationId",
   CLEANUP: "/cleanup",
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
   LIFE: "/life",
@@ -18,6 +20,7 @@ export const DEFAULT_CALENDAR_ROUTE = ROOT_ROUTES.WEEK;
 // from router.routes.tsx so hooks like useWeek don't drag in that module's
 // (now eager) view component imports.
 export const ROUTE_IDS = {
-  DAY_DATE: "/authenticated/day/$dateString",
-  WEEK_DATE: "/authenticated/week/$dateString",
+  DAY_DATE: "/calendar-shell/authenticated/day/$dateString",
+  LIFE: "/calendar-shell/life",
+  WEEK_DATE: "/calendar-shell/authenticated/week/$dateString",
 } as const;

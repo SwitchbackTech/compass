@@ -2,26 +2,31 @@ import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   authenticatedLayoutRoute,
+  calendarShellRoute,
   lifeRoute,
+  publicBookRoute,
   rootRoute,
   routeTree,
 } from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
 
-// Constructing a router (without rendering it) resolves each route's
-// path/parentRoute getters, which otherwise stay unpopulated until the tree
-// is processed.
 createRouter({ routeTree, history: createMemoryHistory() });
 
 describe("routeTree", () => {
-  it("registers /life as a public route (no loader) directly under the root", () => {
+  it("registers /life under the calendar shell (not the public booking route)", () => {
     expect(lifeRoute.fullPath).toBe(ROOT_ROUTES.LIFE);
     expect(lifeRoute.options.loader).toBeUndefined();
-    expect(lifeRoute.parentRoute).toBe(rootRoute);
+    expect(lifeRoute.parentRoute).toBe(calendarShellRoute);
   });
 
-  it("gates the authenticated layout behind loadAuthenticated", () => {
+  it("registers /book/$username as a public route outside the calendar shell", () => {
+    expect(publicBookRoute.fullPath).toBe("/book/$username");
+    expect(publicBookRoute.options.beforeLoad).toBeUndefined();
+    expect(publicBookRoute.parentRoute).toBe(rootRoute);
+  });
+
+  it("gates the authenticated layout behind loadAuthenticated inside the calendar shell", () => {
     expect(authenticatedLayoutRoute.options.beforeLoad).toBeDefined();
-    expect(authenticatedLayoutRoute.parentRoute).toBe(rootRoute);
+    expect(authenticatedLayoutRoute.parentRoute).toBe(calendarShellRoute);
   });
 });
