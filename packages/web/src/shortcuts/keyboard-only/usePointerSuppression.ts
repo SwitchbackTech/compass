@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import {
+  type BlockedPointerAttempt,
+  pointerGridIntentFromPointer,
   requestPointerEventJump,
+  requestPointerGridCreate,
   teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
@@ -22,11 +25,34 @@ export function usePointerSuppression() {
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: (event) => {
-        const { attempt, jumpEventId } = teachingFromBlockedPointer(
-          event.composedPath?.() ?? [],
-          event.button ?? 0,
-        );
+        const { attempt: baseAttempt, jumpEventId } =
+          teachingFromBlockedPointer(
+            event.composedPath?.() ?? [],
+            event.button ?? 0,
+          );
+        const gridIntent =
+          baseAttempt.actionId === "unknown"
+            ? pointerGridIntentFromPointer(
+                event.composedPath?.() ?? [],
+                event.clientX ?? 0,
+                event.clientY ?? 0,
+              )
+            : null;
+        const attempt: BlockedPointerAttempt = gridIntent
+          ? {
+              actionId:
+                gridIntent.kind === "timed" ? "grid.timed" : "grid.all-day",
+              gridDate: gridIntent.date,
+              gridTimeKey: gridIntent.timeKey,
+              gridTimeLabel: gridIntent.timeLabel,
+            }
+          : baseAttempt;
         pointerBlockActions.pulseBlockedClick(attempt);
+        if (gridIntent) {
+          eventJumpActions.setActive(false);
+          requestPointerGridCreate(gridIntent);
+          return;
+        }
         if (jumpEventId) {
           // Never let a prior event's assignment flash for a new/locked target.
           eventJumpActions.setPointerHint(null);

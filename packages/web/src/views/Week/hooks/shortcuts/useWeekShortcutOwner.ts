@@ -24,6 +24,10 @@ import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEvent
 import { quickTimeTargetDay } from "@web/shortcuts/quick-time/quick-time.util";
 import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
 } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
@@ -110,12 +114,20 @@ export const useWeekShortcutOwner = ({
   const createAllDayDraftEvent = useCallback(() => {
     if (!canSeedDraft) return;
 
+    // A blocked click on the all-day row aimed at a specific day; honor it
+    // over the today-first default, then spend the intent.
+    const pointerDateKey = useEventJumpStore.getState().pointerDraftDateKey;
+
     void createAlldayDraft(
       startOfView,
       endOfView,
       "createShortcut",
       defaultTargetCalendarId,
+      pointerDateKey
+        ? dayjs(pointerDateKey).tz(getEffectiveTimeZone(), true)
+        : undefined,
     );
+    eventJumpActions.setPointerDraftIntent(null);
   }, [canSeedDraft, defaultTargetCalendarId, endOfView, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {

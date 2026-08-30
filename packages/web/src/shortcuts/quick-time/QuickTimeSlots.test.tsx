@@ -47,30 +47,29 @@ describe("QuickTimeSlots", () => {
   it("stays hidden until event jump reveals the open slots", () => {
     renderSlots();
 
-    expect(document.querySelector("[data-quick-time-slot]")).toBeNull();
+    expect(screen.queryByText("1700")).toBeNull();
   });
 
   it("advertises each open slot's sequence once jump mode is on", () => {
     eventJumpActions.setActive(true);
     renderSlots();
 
-    const slot = document.querySelector("[data-quick-time-slot]");
+    const slot = screen.getByText("1700").closest("[data-quick-time-slot]");
     expect(slot?.getAttribute("data-quick-time-slot")).toBe("1700");
-    expect(screen.getByText("1700")).toBeTruthy();
   });
 
   it("renders nothing when every hour is taken", () => {
     eventJumpActions.setActive(true);
-    renderSlots({ slots: [] });
+    const { container } = renderSlots({ slots: [] });
 
-    expect(document.getElementById("quickTimeSlots")).toBeNull();
+    expect(container.firstChild).toBeNull();
   });
 
   it("is inert decoration the keyboard and pointer cannot reach", () => {
     eventJumpActions.setActive(true);
     renderSlots();
 
-    const slot = document.querySelector("[data-quick-time-slot]");
+    const slot = screen.getByText("1700").closest("[data-quick-time-slot]");
     expect(slot?.getAttribute("aria-hidden")).toBe("true");
     expect(slot?.className).toContain("pointer-events-none");
   });

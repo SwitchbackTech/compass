@@ -11,6 +11,10 @@ import {
 } from "@web/shortcuts/quick-time/quick-time.store";
 import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import { DIGIT_AMBIGUOUS_COMMIT_MS } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const TARGET_DAY = dayjs().startOf("day");
@@ -176,6 +180,7 @@ describe("useQuickTimeCreate deferred commit", () => {
   afterEach(() => {
     cleanup();
     quickTimeActions.clear();
+    eventJumpActions.setPointerDraftIntent(null);
   });
 
   it("commits a still-growable sequence once the window lapses", async () => {
@@ -192,5 +197,41 @@ describe("useQuickTimeCreate deferred commit", () => {
     );
 
     expect(startedAt(createAt)).toBe("00:00");
+  });
+
+  describe("with an empty-grid click parked", () => {
+    const CLICKED_DAY = TARGET_DAY.add(2, "day");
+
+    const parkIntent = (timeKey: string, hour: number) =>
+      eventJumpActions.setPointerDraftIntent({
+        date: CLICKED_DAY.format("YYYY-MM-DD"),
+        start: CLICKED_DAY.hour(hour).minute(30).format(),
+        timeKey,
+      });
+
+    it("lands on the clicked instant, not a re-resolved one", () => {
+      // 1130 clicked in the evening parks 23:30. Re-resolving those digits
+      // could pick the morning instead, moving the draft off the slot the
+      // hint pointed at.
+      parkIntent("1130", 23);
+      const { createAt, type } = mountConsumer();
+
+      type(["1", "1", "3", "0"]);
+
+      expect(startedAt(createAt)).toBe("23:30");
+      expect(useEventJumpStore.getState().pointerDraftDateKey).toBeNull();
+    });
+
+    it("retargets a different sequence to the clicked day", () => {
+      parkIntent("1130", 23);
+      const { createAt, type } = mountConsumer();
+
+      type(["1", "7", "0", "0"]);
+
+      const start = createAt.mock.calls[0]?.[0] as Dayjs;
+      expect(start.format("YYYY-MM-DD HH:mm")).toBe(
+        `${CLICKED_DAY.format("YYYY-MM-DD")} 17:00`,
+      );
+    });
   });
 });

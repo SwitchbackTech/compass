@@ -43,6 +43,10 @@ import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { buildDayPageJumpTargets } from "@web/shortcuts/page-jump/page-jump.targets";
 import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
 import { buildQuickTimeSlots } from "@web/shortcuts/quick-time/quick-time.util";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
@@ -258,18 +262,25 @@ export function DayCalendarGrid() {
     [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
 
-  const createAllDayDraftFromShortcut = useCallback(
-    () =>
-      openShortcutDraft(() =>
-        createAlldayDraft(
-          dateInView,
-          dateInView,
-          "createShortcut",
-          resolveShortcutCalendarId(),
-        ),
+  const createAllDayDraftFromShortcut = useCallback(() => {
+    // A blocked click on the all-day row aimed at a specific day; honor it
+    // over the day in view, then spend the intent.
+    const pointerDateKey = useEventJumpStore.getState().pointerDraftDateKey;
+    const start = pointerDateKey
+      ? dayjs(pointerDateKey).tz(getEffectiveTimeZone(), true)
+      : dateInView;
+
+    openShortcutDraft(() =>
+      createAlldayDraft(
+        start,
+        start,
+        "createShortcut",
+        resolveShortcutCalendarId(),
+        start,
       ),
-    [dateInView, openShortcutDraft, resolveShortcutCalendarId],
-  );
+    );
+    eventJumpActions.setPointerDraftIntent(null);
+  }, [dateInView, openShortcutDraft, resolveShortcutCalendarId]);
 
   const createTimedDraftFromShortcut = useCallback(
     () =>

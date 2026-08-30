@@ -56,11 +56,11 @@ export const SHOWCASE_STEPS = [
   },
   {
     id: "eventJump",
-    title: "Pick a target",
+    title: "Pick a target or time",
     body: [
       "Tap ",
       { key: KEYMAP.eventJump.keycaps[0] },
-      " to show event keys, then press a letter to land on one.",
+      " to show event keys and open times. Type 1130 to create at 11:30.",
     ],
     hint: "Tap the reveal key first, then a letter on an event.",
     keycaps: KEYMAP.eventJump.keycaps,

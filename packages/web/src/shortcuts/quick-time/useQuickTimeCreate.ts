@@ -14,7 +14,10 @@ import {
   resolveQuickTimeStart,
 } from "@web/shortcuts/quick-time/quick-time.util";
 import { DIGIT_AMBIGUOUS_COMMIT_MS } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
-import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
@@ -26,6 +29,29 @@ const MODIFIER_KEYS = new Set(["Alt", "Control", "Meta", "Shift"]);
 export type QuickTimeConsumer = {
   /** True when the key was consumed and must not reach another handler. */
   tryConsumeKey: (event: KeyboardEvent) => boolean;
+};
+
+/**
+ * A blocked empty-grid click parks the exact instant it aimed at, and
+ * PointerHint teaches that instant's own digits. Typing them back must land
+ * there exactly - resolving them again could pick the other meridiem and move
+ * the draft off the slot the user clicked.
+ */
+const pointerDraftStart = (digits: string): Dayjs | null => {
+  const { pointerDraftStart: start, pointerDraftTimeKey } =
+    useEventJumpStore.getState();
+  if (!start || pointerDraftTimeKey !== digits) return null;
+
+  return dayjs(start).tz(getEffectiveTimeZone());
+};
+
+/** A click on another day retargets the sequence to that day. */
+const pointerDraftDay = (): Dayjs | null => {
+  const { pointerDraftDateKey } = useEventJumpStore.getState();
+
+  return pointerDraftDateKey
+    ? dayjs(pointerDraftDateKey).tz(getEffectiveTimeZone(), true)
+    : null;
 };
 
 /**
@@ -75,8 +101,16 @@ export function useQuickTimeCreate({
     if (!digits) return;
 
     const now = dayjs().tz(getEffectiveTimeZone());
-    const start = resolveQuickTimeStart(digits, now, getTargetDayRef.current());
+    const start =
+      pointerDraftStart(digits) ??
+      resolveQuickTimeStart(
+        digits,
+        now,
+        pointerDraftDay() ?? getTargetDayRef.current(),
+      );
     if (!start) return;
+
+    eventJumpActions.setPointerDraftIntent(null);
 
     // The slot placeholders have answered their question, and leaving them up
     // would strew chips across the draft that just arrived. Dropped before the

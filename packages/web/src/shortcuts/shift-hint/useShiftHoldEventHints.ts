@@ -12,7 +12,9 @@ import {
 } from "@web/shortcuts/is-bare-letter-key";
 import {
   POINTER_EVENT_JUMP_REQUEST,
+  POINTER_GRID_CREATE_REQUEST,
   pointerEventJumpId,
+  pointerGridIntent,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { type QuickTimeConsumer } from "@web/shortcuts/quick-time/useQuickTimeCreate";
@@ -249,6 +251,7 @@ export function useShiftHoldEventHints({
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
+      eventJumpActions.setPointerDraftIntent(null);
       eventJumpActions.setActive(false);
     };
 
@@ -351,6 +354,21 @@ export function useShiftHoldEventHints({
       if (!isActiveRef.current) {
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
         if (isEditSequenceArmed()) return;
+
+        // An empty-grid click parks a short-lived teaching target. Escape and
+        // calendar navigation abandon it without claiming the key - the digits
+        // themselves are read by the quick-time consumer below.
+        if (useEventJumpStore.getState().pointerDraftDateKey) {
+          const inputKey = normalizedKeyboardKey(event);
+          const isViewNavigation =
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            ["j", "k", "t"].includes(inputKey);
+          if (event.key === "Escape" || isViewNavigation) {
+            eventJumpActions.setPointerDraftIntent(null);
+          }
+        }
 
         if (quickTimeRef.current?.tryConsumeKey(event)) {
           event.preventDefault();
@@ -487,12 +505,22 @@ export function useShiftHoldEventHints({
       focusEvent(eventId);
     };
 
+    const onPointerGridCreateRequest = (event: Event) => {
+      const intent = pointerGridIntent(event);
+      if (!intent) return;
+      eventJumpActions.setPointerDraftIntent(intent);
+    };
+
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
     window.addEventListener("blur", onBlur);
     document.addEventListener(
       POINTER_EVENT_JUMP_REQUEST,
       onPointerEventJumpRequest,
+    );
+    document.addEventListener(
+      POINTER_GRID_CREATE_REQUEST,
+      onPointerGridCreateRequest,
     );
 
     return () => {
@@ -505,6 +533,11 @@ export function useShiftHoldEventHints({
         POINTER_EVENT_JUMP_REQUEST,
         onPointerEventJumpRequest,
       );
+      document.removeEventListener(
+        POINTER_GRID_CREATE_REQUEST,
+        onPointerGridCreateRequest,
+      );
+      eventJumpActions.setPointerDraftIntent(null);
       if (isActiveRef.current) {
         eventJumpActions.reset();
       }

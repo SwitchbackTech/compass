@@ -10,8 +10,6 @@ export const QUICK_TIME_MAX_DIGITS = 4;
 
 const DIGITS_ONLY = /^\d{1,4}$/;
 
-export const isQuickTimeDigit = (key: string) => /^\d$/.test(key);
-
 /** False once the buffer is HHMM, which is when it can commit immediately. */
 export const canQuickTimeBufferGrow = (digits: string) =>
   digits.length < QUICK_TIME_MAX_DIGITS;

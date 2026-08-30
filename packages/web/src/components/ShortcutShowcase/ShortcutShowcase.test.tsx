@@ -613,7 +613,9 @@ describe("ShortcutShowcase", () => {
     render(<ShortcutShowcase />);
 
     expect(currentStepId()).toBe("eventJump");
-    expect(screen.getByRole("heading", { name: "Pick a target" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Pick a target or time" }),
+    ).toBeTruthy();
     expect(
       screen.getByText("Tap the reveal key first, then a letter on an event."),
     ).toBeTruthy();

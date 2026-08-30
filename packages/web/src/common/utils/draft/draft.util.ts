@@ -83,11 +83,16 @@ export const createAlldayDraft = (
   endOfView: Dayjs,
   activity: "createShortcut",
   calendarId: CalendarId | null = null,
+  /** Day a blocked pointer click picked, which wins over the today-first
+   * default so the draft lands on the day the user actually aimed at. */
+  startAt?: Dayjs,
 ) => {
   const today = dayjs().tz(getEffectiveTimeZone());
-  const start = today.isBetween(startOfView, endOfView, "day", "[]")
-    ? today.startOf("day")
-    : startOfView.startOf("day");
+  const start =
+    startAt?.startOf("day") ??
+    (today.isBetween(startOfView, endOfView, "day", "[]")
+      ? today.startOf("day")
+      : startOfView.startOf("day"));
   // Same stable identity as timed shortcut drafts so save can reuse it as
   // CreateEventInput.id and restore focus to the new card.
   const clientId = EventIdSchema.parse(createObjectIdString());
