@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IS_DEV } from "@web/common/constants/env.constants";
 
-export type SettingsPage = "accounts" | "billing";
+export type SettingsPage = "accounts" | "billing" | "booking";
 
 interface SettingsState {
   isCmdPaletteOpen: boolean;
