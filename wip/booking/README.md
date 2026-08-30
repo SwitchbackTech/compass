@@ -17,6 +17,17 @@ GitHub: milestone [Compass Booking v1](https://github.com/KeepSoftwareSimple/com
 Org project create needs `project` scope: [`GITHUB-PROJECT.md`](GITHUB-PROJECT.md).
 Agent-ready issues are linked from [`TRACKING.md`](TRACKING.md).
 
+## Autonomy (no human in the loop)
+
+After the one-time setup in
+[`docs/CI-CD/booking-loop-routine.md`](../../docs/CI-CD/booking-loop-routine.md)
+(`BOOKING_LOOP_ENABLED=true`, plus `CURSOR_API_KEY` or the Automation in
+[`AUTOMATION.md`](AUTOMATION.md), plus a merge PAT), GitHub Actions pick the
+next WP, launch a Cloud Agent, squash-merge `booking-automerge` PRs, smoke
+`https://staging.compasscalendar.com`, and start the next issue. Agents
+must not wait for a human to click merge, and must never enter credentials
+on staging. Dispatch **Booking loop** once after enabling the kill switch.
+
 ## How to pick up (manager-loop protocol)
 
 1. Read this file, [`TRACKING.md`](TRACKING.md), and

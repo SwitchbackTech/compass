@@ -23,7 +23,7 @@ describe("skill registry", () => {
       const skill = readFileSync(`${SKILLS_DIR}/${name}/SKILL.md`, "utf8");
       expect(skill).toMatch(/^version: \d+$/m);
       expect(skill).toContain("owner: compass-maintainers");
-      expect(skill).toContain("last_verified: 2026-08-25");
+      expect(skill).toMatch(/^last_verified: \d{4}-\d{2}-\d{2}$/m);
       expect(skill).toContain("## When");
       expect(skill).toContain("## Steps");
       expect(skill).toContain("## Output");

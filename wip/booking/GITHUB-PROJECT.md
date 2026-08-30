@@ -49,3 +49,7 @@ closed. Move a card to **In progress** when TRACKING.md is `running`.
 | 07 | https://github.com/KeepSoftwareSimple/compass-calendar/issues/2976 | WP-03 done |
 | 08 | https://github.com/KeepSoftwareSimple/compass-calendar/issues/2977 | WP-06 done |
 | 09 | https://github.com/KeepSoftwareSimple/compass-calendar/issues/2978 | WP-07 and WP-08 done |
+
+Autonomous loop (merge, next WP, staging smoke):
+[`AUTOMATION.md`](AUTOMATION.md) and
+[`docs/CI-CD/booking-loop-routine.md`](../../docs/CI-CD/booking-loop-routine.md).

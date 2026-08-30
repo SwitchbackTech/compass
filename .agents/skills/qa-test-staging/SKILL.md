@@ -102,6 +102,11 @@ Run anonymous coverage only when a separate connected profile visibly reports
 then return to the authenticated profile. If unavailable, report it as skipped,
 not failed.
 
+After Booking WP-08 is on staging, also load
+`https://staging.compasscalendar.com/book/<slug>` as a guest (no login).
+Confirm the public page renders or 404s when the host page is disabled.
+Never enter credentials for this path.
+
 ## 5. Report and cleanup
 
 Report:
