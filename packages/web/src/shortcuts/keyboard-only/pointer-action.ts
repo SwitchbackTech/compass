@@ -5,6 +5,7 @@ export const POINTER_EVENT_JUMP_REQUEST = "compass:pointer-event-jump";
 
 export const POINTER_ACTIONS = {
   eventOpen: "event.open",
+  goToToday: "calendar.today",
   sidebarClose: "sidebar.close",
   sidebarOpen: "sidebar.open",
 } as const;

@@ -50,6 +50,7 @@ const Key = ({ children }: { children: string }) => (
 const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
+  attempt?.actionId === POINTER_ACTIONS.goToToday ||
   attempt?.actionId === POINTER_ACTIONS.eventOpen ||
   Boolean(attempt?.shortcutKey);
 
@@ -77,6 +78,14 @@ const pointerHintMessage = ({
     return (
       <>
         Press <Key>]</Key> to {verb} the sidebar.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.goToToday) {
+    return (
+      <>
+        Press <Key>T</Key> to go to today.
       </>
     );
   }
