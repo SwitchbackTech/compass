@@ -59,6 +59,20 @@ describe("booking-loop Routine contract", () => {
     expect(routine).toContain("do not widen from this doc");
   });
 
+  it("waits for checks and squash-merges without GitHub auto-merge", () => {
+    const guard = readFileSync(
+      ".github/scripts/booking-loop-merge-guard.sh",
+      "utf8",
+    );
+    const checksIndex = guard.indexOf("gh pr checks");
+    const mergeIndex = guard.indexOf("gh pr merge");
+
+    expect(checksIndex).toBeGreaterThan(-1);
+    expect(mergeIndex).toBeGreaterThan(checksIndex);
+    expect(guard).toContain("--squash --delete-branch");
+    expect(guard).not.toContain("--auto --squash");
+  });
+
   it("still blocks the sensitive paths from auto-merging", () => {
     const guard = readFileSync(
       ".github/scripts/booking-loop-merge-guard.sh",

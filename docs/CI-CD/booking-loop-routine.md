@@ -94,10 +94,9 @@ both channels are configured).
    are `booking-loop-needs-human` stops.
 3. **Agent** follows `.github/prompts/booking-loop.md`: implement the WP, run
    `bun run verify`, open a ready PR, add label `booking-automerge`.
-4. **Merge guard** (`.github/scripts/booking-loop-merge-guard.sh`): enable
-   squash auto-merge when CI is green, size is under the booking limits, and
-   no sensitive path is in the diff. Otherwise add `booking-loop-needs-human`
-   and stop.
+4. **Merge guard** (`.github/scripts/booking-loop-merge-guard.sh`): wait for
+   CI, then squash-merge when size is under the booking limits and no sensitive
+   path is in the diff. Otherwise add `booking-loop-needs-human` and stop.
 5. **Release on main** deploys staging (code paths only; docs-only merges skip
    deploy). The hourly cron is the watchdog for docs-only WPs.
 6. **Post-deploy** (`booking-loop.yml` `workflow_run`): smoke staging, strip

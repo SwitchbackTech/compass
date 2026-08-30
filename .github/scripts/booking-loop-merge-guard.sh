@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deterministic re-check before squash-merging a booking-loop PR.
+# Deterministic re-check, verification wait, and squash-merge for a Booking
+# loop PR.
 # The agent's `booking-automerge` label is necessary but not sufficient —
 # this script independently re-verifies size rails and sensitive paths.
 #
@@ -41,7 +42,7 @@ fi
 downgrade() {
   local pr_number=$1
   local reason=$2
-  notify "Booking-loop PR #${pr_number} ${reason}; leaving for human review — https://github.com/${REPO}/pull/${pr_number}"
+  notify "Booking-loop PR #${pr_number} ${reason}; leaving for human review: https://github.com/${REPO}/pull/${pr_number}"
   gh pr edit "$pr_number" --repo "$REPO" \
     --remove-label "$AUTOMERGE_LABEL" --add-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || true
   local issue_number
@@ -104,15 +105,16 @@ check_and_merge() {
     return 0
   fi
 
-  if ! gh pr merge "$pr_number" --repo "$REPO" --auto --squash --delete-branch; then
-    notify "Booking-loop PR #${pr_number} passed the merge guard but gh pr merge --auto failed — https://github.com/${REPO}/pull/${pr_number}"
+  if ! gh pr checks "$pr_number" --repo "$REPO" --watch --fail-fast; then
+    notify "Booking-loop PR #${pr_number} failed CI after merge-guard verification: https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi
-  printf 'enabled auto-merge on booking PR #%s\n' "$pr_number"
 
-  if ! gh pr checks "$pr_number" --repo "$REPO" --watch --fail-fast; then
-    notify "Booking-loop PR #${pr_number} failed CI after auto-merge was enabled — https://github.com/${REPO}/pull/${pr_number}"
+  if ! gh pr merge "$pr_number" --repo "$REPO" --squash --delete-branch; then
+    notify "Booking-loop PR #${pr_number} passed verification but direct squash-merge failed: https://github.com/${REPO}/pull/${pr_number}"
+    return 0
   fi
+  printf 'squash-merged booking PR #%s\n' "$pr_number"
 }
 
 main() {

@@ -49,7 +49,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Deterministic merge guard + enable auto-merge
+      - name: Deterministic merge guard, verify, and squash-merge
         env:
           GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
