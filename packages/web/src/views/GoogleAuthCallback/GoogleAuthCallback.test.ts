@@ -1,19 +1,24 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { AuthApi } from "@web/api/auth.api";
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
 import {
   readGoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
 } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
+// Patch the one method on the real AuthApi object rather than replacing the
+// module: mock.module is process-wide and permanent, and an AuthApi carrying
+// only loginOrSignup breaks every later file that reaches for another method
+// (useConnectGoogle.scope.test.tsx spies on beginGoogleConnection).
 const mockLoginOrSignup = mock();
+const realLoginOrSignup = AuthApi.loginOrSignup;
+AuthApi.loginOrSignup = mockLoginOrSignup as typeof AuthApi.loginOrSignup;
 
-mock.module("@web/api/auth.api", () => ({
-  AuthApi: {
-    loginOrSignup: mockLoginOrSignup,
-  },
-}));
+afterAll(() => {
+  AuthApi.loginOrSignup = realLoginOrSignup;
+});
 
 const { port, mocks } = createTestToastPort();
 

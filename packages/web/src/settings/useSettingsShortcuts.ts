@@ -32,14 +32,18 @@ const shortcutIdForEvent = (
   event: KeyboardEvent,
   page: SettingsPage,
   hasBilling: boolean,
+  hasBooking: boolean,
 ): string | null => {
   const digit = physicalDigitIndex(event);
   if (digit === 0) return "nav-accounts";
   if (digit === 1)
     return hasBilling || page === "billing" ? "nav-billing" : null;
+  if (digit === 2)
+    return hasBooking || page === "booking" ? "nav-booking" : null;
 
   const key = normalizedKeyboardKey(event);
   if (page === "billing" && key === "m") return "manage-billing";
+  if (page === "booking" && key === "s") return "save-booking";
   if (page !== "accounts") return null;
   if (key === "a") return "add-account";
   if (key === "e") return "export";
@@ -56,10 +60,12 @@ const shortcutIdForEvent = (
 export function useSettingsShortcuts({
   enabled,
   hasBilling,
+  hasBooking,
   page,
 }: {
   enabled: boolean;
   hasBilling: boolean;
+  hasBooking: boolean;
   page: SettingsPage;
 }): { areHintsVisible: boolean } {
   const { areHintsVisible } = useModHoldHintShortcut({
@@ -67,7 +73,7 @@ export function useSettingsShortcuts({
     holdMs: 0,
     ignoreAppLock: true,
     onModChord: (event) => {
-      const id = shortcutIdForEvent(event, page, hasBilling);
+      const id = shortcutIdForEvent(event, page, hasBilling, hasBooking);
       if (!id) return false;
       return clickSettingsShortcut(id);
     },
@@ -81,7 +87,7 @@ export function useSettingsShortcuts({
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isEditableKeyboardTarget(event)) return;
 
-      const id = shortcutIdForEvent(event, page, hasBilling);
+      const id = shortcutIdForEvent(event, page, hasBilling, hasBooking);
       if (!id) return;
 
       event.preventDefault();
@@ -91,7 +97,7 @@ export function useSettingsShortcuts({
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [enabled, hasBilling, page]);
+  }, [enabled, hasBilling, hasBooking, page]);
 
   return { areHintsVisible };
 }

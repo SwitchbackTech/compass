@@ -289,6 +289,96 @@ describe("resolveRecurrenceScopeDecision", () => {
       });
     });
 
+    it("applies ALL_EVENTS when an occurrence's guest set changes", () => {
+      const baseEventId = new ObjectId().toString();
+      const baseEvent = createMockEvent({
+        id: EventIdSchema.parse(baseEventId),
+        recurrence: { kind: "series", rules: ["FREQ=WEEKLY;COUNT=4"] },
+        schedule: SCHEDULE,
+      });
+      const draft = buildEditDraft({
+        recurrence: {
+          kind: "occurrence",
+          seriesId: EventIdSchema.parse(baseEventId),
+        },
+      });
+      if (draft.kind !== "edit") throw new Error("Expected an edit draft");
+      draft.values.attendees = [
+        { email: "guest@example.com", displayName: null },
+      ];
+
+      expect(
+        resolveRecurrenceScopeDecision({
+          action: "save",
+          baseEvent,
+          draft,
+          isInstance: true,
+          isRecurring: true,
+        }),
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.ALL_EVENTS,
+      });
+    });
+
+    // The series base is a cache scan away and is absent whenever the loaded
+    // week misses the first occurrence, so the guest rule must not need it.
+    it("applies ALL_EVENTS for an occurrence guest change with no series base loaded", () => {
+      const draft = buildEditDraft({
+        recurrence: {
+          kind: "occurrence",
+          seriesId: EventIdSchema.parse(new ObjectId().toString()),
+        },
+      });
+      if (draft.kind !== "edit") throw new Error("Expected an edit draft");
+      draft.values.attendees = [
+        { email: "guest@example.com", displayName: null },
+      ];
+
+      expect(
+        resolveRecurrenceScopeDecision({
+          action: "save",
+          baseEvent: null,
+          draft,
+          isInstance: true,
+          isRecurring: true,
+        }),
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.ALL_EVENTS,
+      });
+    });
+
+    it("still converts to standalone when repeat is cleared alongside a guest change", () => {
+      const baseEventId = new ObjectId().toString();
+      const baseEvent = createMockEvent({
+        id: EventIdSchema.parse(baseEventId),
+        recurrence: { kind: "series", rules: ["FREQ=WEEKLY;COUNT=4"] },
+        schedule: SCHEDULE,
+      });
+      const draft = buildEditDraft({
+        recurrence: {
+          kind: "occurrence",
+          seriesId: EventIdSchema.parse(baseEventId),
+        },
+        liveRecurrence: { kind: "single" },
+      });
+      if (draft.kind !== "edit") throw new Error("Expected an edit draft");
+      draft.values.attendees = [
+        { email: "guest@example.com", displayName: null },
+      ];
+
+      expect(
+        resolveRecurrenceScopeDecision({
+          action: "save",
+          baseEvent,
+          draft,
+          isInstance: true,
+          isRecurring: true,
+        }),
+      ).toEqual({ kind: "convertToStandalone" });
+    });
+
     it("applies THIS_AND_FOLLOWING when the recurrence rule changes", () => {
       const baseEventId = new ObjectId().toString();
       const baseEvent = createMockEvent({

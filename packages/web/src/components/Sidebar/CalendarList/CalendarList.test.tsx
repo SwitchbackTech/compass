@@ -398,6 +398,34 @@ describe("CalendarList", () => {
     ).toBeInTheDocument();
   });
 
+  it("gives each account section its own page-jump target", () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+    ).toHaveAttribute("data-page-jump", "calendar-account:ahab@pequod.com");
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
+    ).toHaveAttribute("data-page-jump", "calendar-account:ahab@gmail.com");
+    expect(
+      screen.getByRole("region", { name: "Calendars" }),
+    ).not.toHaveAttribute("data-page-jump");
+  });
+
   it("hides the generic header as soon as any account section exists", () => {
     // Found live on staging: the Compass login's own Google account (A7
     // adopts it as a connection at sign-up) is always one of the sections
@@ -424,6 +452,10 @@ describe("CalendarList", () => {
 
     expect(screen.getByText(HEADER_EMAIL)).toBeInTheDocument();
     expect(screen.getByText("Compass")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Calendars" })).toHaveAttribute(
+      "data-page-jump",
+      "calendars",
+    );
   });
 
   it("orders sections by connection order, not calendar order", () => {

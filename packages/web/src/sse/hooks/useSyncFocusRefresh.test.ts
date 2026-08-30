@@ -1,5 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUserMetadata from "@web/auth/compass/user/util/user-metadata.util";
 import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
   afterEach,
@@ -14,9 +16,11 @@ import {
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const mockRefreshUserMetadata = mock().mockResolvedValue(undefined);
 
-mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: mockRefreshUserMetadata,
-}));
+mockModuleForFile(
+  "@web/auth/compass/user/util/user-metadata.util",
+  realUserMetadata,
+  { refreshUserMetadata: mockRefreshUserMetadata },
+);
 
 const { useSyncFocusRefresh } =
   require("./useSyncFocusRefresh") as typeof import("./useSyncFocusRefresh");

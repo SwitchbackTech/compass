@@ -1,7 +1,9 @@
 import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
 import {
+  buildCalendarPageJumpTargets,
   buildDayPageJumpTargets,
   CALENDAR_PAGE_JUMP_TARGETS,
+  calendarAccountJumpId,
   dayColumnJumpId,
   focusPageJumpTarget,
   getPageJumpFocusElement,
@@ -32,6 +34,44 @@ describe.each([
     targets.forEach((target, index) => {
       expect(target.digit).toBe(PICK_KEY_LABELS[index]);
     });
+  });
+});
+
+describe("buildCalendarPageJumpTargets", () => {
+  it("matches the no-account Week map when no emails are given", () => {
+    expect(buildCalendarPageJumpTargets()).toEqual(CALENDAR_PAGE_JUMP_TARGETS);
+  });
+
+  it("replaces the list-level calendars slot with one target per account", () => {
+    const work = "ahab@pequod.com";
+    const personal = "ahab@gmail.com";
+    const targets = buildCalendarPageJumpTargets([work, personal]);
+
+    expect(
+      targets.map(({ digit, id, label }) => ({ digit, id, label })),
+    ).toEqual([
+      { digit: "1", id: "view-select", label: "View dropdown" },
+      { digit: "2", id: "month-picker", label: "Month picker" },
+      { digit: "3", id: "up-next", label: "Up next" },
+      { digit: "4", id: calendarAccountJumpId(work), label: work },
+      { digit: "5", id: calendarAccountJumpId(personal), label: personal },
+    ]);
+  });
+
+  it("omits extra accounts that would overflow the top-row keys", () => {
+    const emails = Array.from(
+      { length: PICK_KEY_LABELS.length },
+      (_, index) => `account${index}@x.com`,
+    );
+    const targets = buildCalendarPageJumpTargets(emails);
+
+    expect(targets).toHaveLength(PICK_KEY_LABELS.length);
+    expect(targets[0]).toMatchObject({ id: "view-select" });
+    expect(targets[1]).toMatchObject({ id: "month-picker" });
+    expect(targets[2]).toMatchObject({ id: "up-next" });
+    expect(
+      targets.filter((target) => target.id.startsWith("calendar-account:")),
+    ).toHaveLength(PICK_KEY_LABELS.length - 3);
   });
 });
 
@@ -82,6 +122,46 @@ describe("buildDayPageJumpTargets", () => {
     expect(targets).toHaveLength(PICK_KEY_LABELS.length);
     expect(targets.at(-1)).toMatchObject({
       id: "calendars",
+      digit: PICK_KEY_LABELS.at(-1),
+    });
+    expect(
+      targets.filter((target) => target.id.startsWith("day-column:")),
+    ).toHaveLength(maxColumns);
+  });
+
+  it("replaces the list-level calendars slot with one target per account", () => {
+    const work = "ahab@pequod.com";
+    const personal = "ahab@gmail.com";
+    const targets = buildDayPageJumpTargets(
+      [{ id: "cal-work", name: "Work" }],
+      [work, personal],
+    );
+
+    expect(
+      targets.map(({ digit, id, label }) => ({ digit, id, label })),
+    ).toEqual([
+      { digit: "1", id: "view-select", label: "View dropdown" },
+      { digit: "2", id: dayColumnJumpId("cal-work"), label: "Work" },
+      { digit: "3", id: "month-picker", label: "Month picker" },
+      { digit: "4", id: "up-next", label: "Up next" },
+      { digit: "5", id: calendarAccountJumpId(work), label: work },
+      { digit: "6", id: calendarAccountJumpId(personal), label: personal },
+    ]);
+  });
+
+  it("omits extra columns so per-account sidebar slots still fit", () => {
+    const emails = ["a@x.com", "b@x.com", "c@x.com"];
+    const sidebarCount = buildCalendarPageJumpTargets(emails).length - 1;
+    const maxColumns = PICK_KEY_LABELS.length - 1 - sidebarCount;
+    const calendars = Array.from({ length: maxColumns + 3 }, (_, index) => ({
+      id: `cal-${index}`,
+      name: `Calendar ${index}`,
+    }));
+    const targets = buildDayPageJumpTargets(calendars, emails);
+
+    expect(targets).toHaveLength(PICK_KEY_LABELS.length);
+    expect(targets.at(-1)).toMatchObject({
+      id: calendarAccountJumpId("c@x.com"),
       digit: PICK_KEY_LABELS.at(-1),
     });
     expect(
@@ -183,5 +263,46 @@ describe("focusPageJumpTarget", () => {
 
     expect(focusPageJumpTarget("calendars")).toBe(true);
     expect(clicks).toBe(0);
+  });
+
+  it("expands a collapsed account heading so its calendars are revealed", () => {
+    const id = calendarAccountJumpId("ahab@gmail.com");
+    const anchor = addAnchor(id);
+    const toggle = document.createElement("button");
+    toggle.setAttribute("aria-controls", "account-calendars");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.addEventListener("click", () => {
+      toggle.setAttribute("aria-expanded", "true");
+    });
+    anchor.append(toggle);
+
+    expect(focusPageJumpTarget(id)).toBe(true);
+    expect(document.activeElement).toBe(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("does not collapse an already-expanded account heading", () => {
+    const id = calendarAccountJumpId("ahab@gmail.com");
+    const anchor = addAnchor(id);
+    const toggle = document.createElement("button");
+    toggle.setAttribute("aria-expanded", "true");
+    let clicks = 0;
+    toggle.addEventListener("click", () => {
+      clicks += 1;
+    });
+    anchor.append(toggle);
+
+    expect(focusPageJumpTarget(id)).toBe(true);
+    expect(clicks).toBe(0);
+  });
+
+  it("finds an account anchor whose email contains CSS-significant characters", () => {
+    const id = calendarAccountJumpId("tyler+work@gmail.com");
+    const anchor = addAnchor(id);
+    const toggle = document.createElement("button");
+    anchor.append(toggle);
+
+    expect(focusPageJumpTarget(id)).toBe(true);
+    expect(document.activeElement).toBe(toggle);
   });
 });

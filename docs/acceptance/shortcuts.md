@@ -310,7 +310,7 @@ Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 
 ### UX
 
-On Day view, holding Mod reveals numbered chips left to right: `1` on the view dropdown, then each **writable** calendar column (`2`, `3`, …), then the sidebar (month picker, Up next, calendars). Pressing that digit focuses the column header. Shift+Arrow then places a timed draft on that calendar; `C` / `Shift+C` honor the same focused column. Idle create (no column focused) still uses the default target calendar.
+On Day view, holding Mod reveals numbered chips left to right: `1` on the view dropdown, then each **writable** calendar column (`2`, `3`, …), then the sidebar (month picker, Up next, then each connected calendar account). Pressing that digit focuses the column header or account heading. Shift+Arrow then places a timed draft on that calendar; `C` / `Shift+C` honor the same focused column. Idle create (no column focused) still uses the default target calendar.
 
 ### Steps
 
@@ -322,7 +322,7 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ### Expected Results
 
-- Hold-Mod chips on columns follow the view dropdown (`1`, then `2`…). Sidebar chips continue after the last column. Week view still uses 1–4 for view / month picker / Up next / calendars.
+- Hold-Mod chips on columns follow the view dropdown (`1`, then `2`…). Sidebar chips continue after the last column: month picker, Up next, then one chip per connected account. Collapsed accounts still get a chip; jumping to one expands it. Week view uses the same sidebar map after `1` on the view dropdown (no column chips). With no connected accounts, the last sidebar slot is the calendar list as a whole.
 - Read-only columns (for example holidays) have no chip and are not focusable via Mod+digit.
 - After focusing a column, Shift+Arrow places a form-closed timed draft in that column.
 - `C` and `Shift+C` seed the focused column's calendar. With no column focused, they still use the default create target.

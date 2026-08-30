@@ -2,6 +2,8 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   GoogleReconnectToast,
   showGoogleReconnectToast,
@@ -19,9 +21,11 @@ const mockUseConnectGoogle = mock(() => ({ connect: mockConnect }));
 // directly). Mocking the hook keeps this file testing only what it owns —
 // that a click dismisses the toast and calls connect() — not re-deriving
 // useConnectGoogle's own behavior.
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
-  useConnectGoogle: mockUseConnectGoogle,
-}));
+mockModuleForFile(
+  "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle",
+  realConnectGoogle,
+  { useConnectGoogle: mockUseConnectGoogle },
+);
 
 describe("GoogleReconnectToast", () => {
   const { port, mocks } = createTestToastPort();

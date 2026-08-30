@@ -91,6 +91,26 @@ export const resolveRecurrenceScopeDecision = (
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
+  const rule = getScopeDecisionRecurrenceRule(draft, baseEvent);
+  const toStandAlone = isInstance && rule === null;
+
+  // Ahead of both rules below: turning Repeat off detaches this instance, so
+  // it must never be reinterpreted as a series-wide edit. Only an explicit
+  // "single" choice yields a null rule (a "preserve" occurrence whose series
+  // base is not in cache returns undefined), so checking this first cannot
+  // swallow an ordinary occurrence edit.
+  if (toStandAlone) {
+    return { kind: "convertToStandalone" };
+  }
+
+  // Ahead of the instance rule below: guest replacements have no
+  // per-occurrence semantics (sync refuses attendees at "this" /
+  // "thisAndFollowing"), so a guest change widens the whole save to the
+  // series no matter which instance it started from.
+  if (isRecurring && gridDraftGuestsChanged(draft)) {
+    return { kind: "apply", scope: RecurringEventUpdateScope.ALL_EVENTS };
+  }
+
   // Ordinary occurrence changes stay in flow: apply to this instance now
   // and let the live toast promote the exact mutation to following/all.
   if (
@@ -99,19 +119,6 @@ export const resolveRecurrenceScopeDecision = (
     draft.values.recurrence.kind === "preserve"
   ) {
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
-  }
-
-  const rule = getScopeDecisionRecurrenceRule(draft, baseEvent);
-  const toStandAlone = isInstance && rule === null;
-
-  if (toStandAlone) {
-    return { kind: "convertToStandalone" };
-  }
-
-  // Guest replacements have no per-occurrence semantics; sync refuses
-  // attendees at "this" / "thisAndFollowing".
-  if (isRecurring && gridDraftGuestsChanged(draft)) {
-    return { kind: "apply", scope: RecurringEventUpdateScope.ALL_EVENTS };
   }
 
   // Changing the RRULE itself is not a valid "this" operation, and the

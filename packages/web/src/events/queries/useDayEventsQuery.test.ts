@@ -2,7 +2,9 @@ import { waitFor } from "@testing-library/react";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import * as realDayQuery from "@web/events/queries/day.event.query";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -18,9 +20,9 @@ const dayEvent = createMockEvent({
 
 const fetchDayEvents = mock(async () => normalizeEventList([dayEvent]));
 
-mock.module("@web/events/queries/day.event.query", () => ({
+mockModuleForFile("@web/events/queries/day.event.query", realDayQuery, {
   fetchDayEvents,
-}));
+});
 
 const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
