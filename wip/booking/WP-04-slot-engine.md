@@ -2,7 +2,7 @@
 
 **task_id:** WP-04
 **github:** [#2973](https://github.com/KeepSoftwareSimple/compass-calendar/issues/2973)
-**status:** queued
+**status:** done
 **owner:** Implementer (core or backend; prefer a pure module imported by
 backend)
 **depends on:** WP-01
@@ -70,7 +70,14 @@ Prefer core so native clients can reuse the same rules later.
 
 ## Evidence
 
-Fill when implementing.
+- Added `packages/core/src/booking/compute-booking-slots.ts` with pure
+  `computeBookingSlots`, `mergeBookingBusyIntervals` (half-open semantics
+  matching sync), 15-minute host-timezone grid, buffer both sides,
+  min notice, 60-day horizon, and max-per-day caps.
+- Table-driven tests pin UTC instants for Mon/Wed availability, buffer
+  removal around a 10:00-11:00 busy block, min notice, max/day, horizon,
+  and DST fall-back/spring-forward cases.
+- `bun test:core`, `bun run type-check`, `bun lint`, `bun knip`, `bun run verify` PASS.
 
 ## Out of scope
 

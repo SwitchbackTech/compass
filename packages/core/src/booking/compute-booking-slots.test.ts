@@ -1,0 +1,181 @@
+import {
+  type ComputeBookingSlotsInput,
+  computeBookingSlots,
+  mergeBookingBusyIntervals,
+} from "@core/booking/compute-booking-slots";
+import { describe, expect, it } from "bun:test";
+
+const denver = "America/Denver";
+
+const baseInput = (
+  overrides: Partial<ComputeBookingSlotsInput> = {},
+): ComputeBookingSlotsInput => ({
+  timeZone: denver,
+  durationMinutes: 30,
+  weeklyAvailability: [
+    { weekday: 1, start: "09:00", end: "12:00" },
+    { weekday: 3, start: "09:00", end: "12:00" },
+  ],
+  minNoticeHours: 0,
+  maxHorizonDays: 60,
+  bufferMinutes: null,
+  maxBookingsPerDay: null,
+  busyIntervals: [],
+  confirmedReservationStarts: [],
+  now: new Date("2026-09-01T12:00:00.000Z"),
+  windowStart: new Date("2026-09-07T06:00:00.000Z"),
+  windowEnd: new Date("2026-09-14T06:00:00.000Z"),
+  ...overrides,
+});
+
+describe("mergeBookingBusyIntervals", () => {
+  it("merges overlapping and touching half-open intervals", () => {
+    const start = new Date("2026-09-07T10:00:00.000Z");
+    const mid = new Date("2026-09-07T11:00:00.000Z");
+    const end = new Date("2026-09-07T12:00:00.000Z");
+
+    expect(
+      mergeBookingBusyIntervals([
+        { start, end: mid },
+        { start: mid, end },
+      ]),
+    ).toEqual([{ start, end }]);
+  });
+});
+
+describe("computeBookingSlots", () => {
+  it("returns 15-minute starts that fit before noon on Mon/Wed", () => {
+    const slots = computeBookingSlots(baseInput());
+
+    const mondayStarts = slots.filter((slot) => slot.startsWith("2026-09-07"));
+    const wednesdayStarts = slots.filter((slot) =>
+      slot.startsWith("2026-09-09"),
+    );
+
+    expect(mondayStarts).toEqual([
+      "2026-09-07T15:00:00Z",
+      "2026-09-07T15:15:00Z",
+      "2026-09-07T15:30:00Z",
+      "2026-09-07T15:45:00Z",
+      "2026-09-07T16:00:00Z",
+      "2026-09-07T16:15:00Z",
+      "2026-09-07T16:30:00Z",
+      "2026-09-07T16:45:00Z",
+      "2026-09-07T17:00:00Z",
+      "2026-09-07T17:15:00Z",
+      "2026-09-07T17:30:00Z",
+    ]);
+    expect(wednesdayStarts).toEqual(
+      mondayStarts.map((slot) => slot.replace("2026-09-07", "2026-09-09")),
+    );
+  });
+
+  it("returns no slots when weekly availability is empty", () => {
+    expect(
+      computeBookingSlots(
+        baseInput({
+          weeklyAvailability: [],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("removes adjacent starts around a busy block with a 30-minute buffer", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        bufferMinutes: 30,
+        busyIntervals: [
+          {
+            start: new Date("2026-09-07T16:00:00.000Z"),
+            end: new Date("2026-09-07T17:00:00.000Z"),
+          },
+        ],
+        windowStart: new Date("2026-09-07T06:00:00.000Z"),
+        windowEnd: new Date("2026-09-08T06:00:00.000Z"),
+        weeklyAvailability: [{ weekday: 1, start: "09:00", end: "12:00" }],
+      }),
+    );
+
+    expect(slots).toEqual(["2026-09-07T15:00:00Z", "2026-09-07T17:30:00Z"]);
+  });
+
+  it("enforces minimum notice", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        minNoticeHours: 4,
+        now: new Date("2026-09-07T14:30:00.000Z"),
+        windowStart: new Date("2026-09-07T06:00:00.000Z"),
+        windowEnd: new Date("2026-09-08T06:00:00.000Z"),
+        weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
+      }),
+    );
+
+    expect(slots.every((slot) => slot >= "2026-09-07T18:30:00.000Z")).toBe(
+      true,
+    );
+    expect(slots).toContain("2026-09-07T18:30:00Z");
+  });
+
+  it("caps slots at max bookings per host-local day", () => {
+    const reservationStarts = [
+      new Date("2026-09-07T15:00:00.000Z"),
+      new Date("2026-09-07T15:30:00.000Z"),
+      new Date("2026-09-07T16:00:00.000Z"),
+      new Date("2026-09-07T16:30:00.000Z"),
+    ];
+
+    expect(
+      computeBookingSlots(
+        baseInput({
+          maxBookingsPerDay: 4,
+          confirmedReservationStarts: reservationStarts,
+          windowStart: new Date("2026-09-07T06:00:00.000Z"),
+          windowEnd: new Date("2026-09-08T06:00:00.000Z"),
+          weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
+        }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("respects the 60-day horizon", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        now: new Date("2026-09-01T00:00:00.000Z"),
+        maxHorizonDays: 60,
+        windowStart: new Date("2026-11-01T06:00:00.000Z"),
+        windowEnd: new Date("2026-11-02T06:00:00.000Z"),
+        weeklyAvailability: [{ weekday: 7, start: "09:00", end: "10:00" }],
+      }),
+    );
+
+    expect(slots).toEqual([]);
+  });
+
+  it("does not duplicate instants across DST fall-back", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        now: new Date("2026-10-25T00:00:00.000Z"),
+        windowStart: new Date("2026-11-01T05:00:00.000Z"),
+        windowEnd: new Date("2026-11-02T08:00:00.000Z"),
+        weeklyAvailability: [{ weekday: 7, start: "01:00", end: "03:30" }],
+        durationMinutes: 30,
+      }),
+    );
+
+    expect(new Set(slots).size).toBe(slots.length);
+  });
+
+  it("skips invalid local times on DST spring-forward", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        now: new Date("2026-03-01T00:00:00.000Z"),
+        windowStart: new Date("2026-03-08T07:00:00.000Z"),
+        windowEnd: new Date("2026-03-09T07:00:00.000Z"),
+        weeklyAvailability: [{ weekday: 7, start: "02:00", end: "04:00" }],
+        durationMinutes: 15,
+      }),
+    );
+
+    expect(slots.every((slot) => !slot.includes("T08:30:00"))).toBe(true);
+  });
+});
