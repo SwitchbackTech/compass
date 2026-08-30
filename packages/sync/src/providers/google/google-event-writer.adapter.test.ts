@@ -372,6 +372,34 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.patch[0].requestBody).not.toHaveProperty("attendees");
   });
 
+  it("adds Meet createRequest and guestsCanInviteOthers on booking create only", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({
+      ...baseCreate,
+      invitation: "all",
+      createConference: true,
+      guestsCanInviteOthers: true,
+      attendees: [
+        {
+          email: "guest@example.com",
+          displayName: "Guest",
+          responseStatus: "needsAction",
+        },
+      ],
+    });
+
+    expect(api.calls.insert[0].conferenceDataVersion).toBe(1);
+    expect(api.calls.insert[0].requestBody.conferenceData).toEqual({
+      createRequest: {
+        requestId: "abc12deadbeef00000000000",
+        conferenceSolutionKey: { type: "hangoutsMeet" },
+      },
+    });
+    expect(api.calls.insert[0].requestBody.guestsCanInviteOthers).toBe(true);
+  });
+
   it("conditions a patch on the expected version via If-Match", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);

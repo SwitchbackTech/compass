@@ -1,0 +1,146 @@
+import { ObjectId } from "mongodb";
+import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
+import { CommandSubmitRequestSchema } from "@core/types/sync/command.contracts";
+import {
+  ClientEventIdSchema,
+  SyncEventCalendarIdSchema,
+} from "@core/types/sync/event.contracts";
+import { IdempotencyKeySchema } from "@core/types/sync/identity.contracts";
+import { bookingError } from "@backend/booking/booking.error";
+import {
+  BOOKING_CONFIRMATION_MAX_AGE_MS,
+  type CalendarBookingCreateEventInput,
+  type CalendarBookingDeleteEventInput,
+  type CalendarBookingGetAvailabilityInput,
+  type CalendarBookingPort,
+} from "@backend/booking/services/calendar-booking.port";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import {
+  throwSyncCommandSubmitFailure,
+  throwSyncProxyFailure,
+} from "@backend/common/services/sync-service/sync-proxy-error";
+import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
+
+const mintEventId = (): EventId =>
+  EventIdSchema.parse(new ObjectId().toHexString());
+
+const toDeleteSubmitRequest = (eventId: EventId) =>
+  CommandSubmitRequestSchema.parse({
+    idempotencyKey: IdempotencyKeySchema.parse(`delete:${eventId}:all`),
+    eventId,
+    expectedVersion: null,
+    input: {
+      kind: "delete",
+      invitation: "all",
+      scope: "all",
+      recurrenceId: null,
+    },
+  });
+
+const toBookingCreateSubmitRequest = (
+  eventId: EventId,
+  input: CalendarBookingCreateEventInput,
+) =>
+  CommandSubmitRequestSchema.parse({
+    idempotencyKey: IdempotencyKeySchema.parse(`create:${eventId}`),
+    eventId,
+    expectedVersion: null,
+    input: {
+      kind: "create",
+      calendarId: SyncEventCalendarIdSchema.parse(input.calendarId),
+      clientEventId: ClientEventIdSchema.parse(eventId),
+      invitation: "all",
+      attendeesEdit: "replace",
+      createConference: true,
+      guestsCanInviteOthers: input.guestsCanInviteOthers,
+      content: {
+        title: input.title,
+        description: input.description,
+        location: null,
+        organizer: null,
+        attendees: [
+          {
+            email: input.guest.email,
+            displayName: input.guest.displayName,
+            responseStatus: "needsAction",
+          },
+        ],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: input.start,
+        end: input.end,
+        timeZone: input.timeZone,
+      },
+      recurrence: { kind: "single" },
+    },
+  });
+
+export class CalendarBookingService implements CalendarBookingPort {
+  constructor(
+    private readonly client: SyncServiceClient = getSyncServiceClient(),
+  ) {}
+
+  async getAvailability(
+    userId: string,
+    input: CalendarBookingGetAvailabilityInput,
+  ) {
+    const result = await this.client.queryBusyAvailability(
+      toSyncPrincipal(userId),
+      {
+        calendarIds: [...input.calendarIds],
+        start: input.start,
+        end: input.end,
+        maxAgeMs: input.maxAgeMs ?? BOOKING_CONFIRMATION_MAX_AGE_MS,
+        purpose: "booking_confirmation",
+      },
+    );
+    if (!result.ok) {
+      throwSyncProxyFailure(
+        result.error.kind,
+        `Failed to query booking availability (${result.error.kind})`,
+        result.error.detail,
+      );
+    }
+    return result.value;
+  }
+
+  async createBookingEvent(
+    userId: string,
+    input: CalendarBookingCreateEventInput,
+  ): Promise<EventId> {
+    const guestEmail = input.guest.email.trim();
+    if (!guestEmail) {
+      throw bookingError("INVALID_INPUT", "Guest email is required");
+    }
+
+    const eventId = mintEventId();
+    const request = toBookingCreateSubmitRequest(eventId, {
+      ...input,
+      guest: { ...input.guest, email: guestEmail },
+    });
+    const result = await this.client.submitCommand(
+      toSyncPrincipal(userId),
+      request,
+    );
+    if (!result.ok) {
+      throwSyncCommandSubmitFailure(result.error.kind);
+    }
+    return eventId;
+  }
+
+  async deleteBookingEvent(
+    userId: string,
+    input: CalendarBookingDeleteEventInput,
+  ): Promise<void> {
+    const result = await this.client.submitCommand(
+      toSyncPrincipal(userId),
+      toDeleteSubmitRequest(input.eventId),
+    );
+    if (!result.ok) {
+      throwSyncCommandSubmitFailure(result.error.kind);
+    }
+  }
+}

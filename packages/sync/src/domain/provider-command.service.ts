@@ -149,6 +149,10 @@ export async function executeProviderCreate(
       recurrence: toProviderWriteRecurrence(input.recurrence),
       invitation: input.invitation,
       ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
+      ...(input.createConference ? { createConference: true } : {}),
+      ...(input.guestsCanInviteOthers !== undefined
+        ? { guestsCanInviteOthers: input.guestsCanInviteOthers }
+        : {}),
     }),
   );
   if (!writeResult.ok) {
