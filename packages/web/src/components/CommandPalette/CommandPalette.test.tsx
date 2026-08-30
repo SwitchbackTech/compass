@@ -549,4 +549,15 @@ describe("LifeCommandPalette", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText("Calendar up-to-date")).not.toBeInTheDocument();
   });
+
+  it("offers event notifications in Settings", () => {
+    renderWithStore(
+      <LifeCommandPalette placeholder="Try: 'day', 'week', or 'feedback'" />,
+      { settings: { isCmdPaletteOpen: true } },
+    );
+
+    expect(
+      screen.getByRole("option", { name: "Enable event notifications" }),
+    ).toBeInTheDocument();
+  });
 });

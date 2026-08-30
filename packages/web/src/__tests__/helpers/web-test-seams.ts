@@ -100,11 +100,13 @@ export function createTestNotificationPort(options?: {
   /** What requestPermission resolves to; defaults to the current permission. */
   respondWith?: NotificationPermission;
   supported?: boolean;
+  /** What show returns; defaults to true so de-dupe keys burn like production. */
+  showSucceeds?: boolean;
 }) {
   let permission: NotificationPermission = options?.permission ?? "default";
   const permissionListeners = new Set<() => void>();
 
-  const show = mock();
+  const show = mock(() => options?.showSucceeds !== false);
   const requestPermission = mock(async () => {
     permission = options?.respondWith ?? permission;
     return permission;

@@ -55,7 +55,7 @@ export const notificationActions = {
       setPref(true, "enable");
       showStatusToast(
         NOTIFICATIONS_STATUS_TOAST_ID,
-        "Event notifications on. You'll get a heads-up 5 minutes before each event.",
+        "Event notifications on. You'll get a heads-up 5 minutes before each event while this browser is open.",
       );
       track("notifications_enabled", { source });
       return;

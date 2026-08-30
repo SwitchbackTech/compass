@@ -18,7 +18,8 @@ export interface NotificationPort {
   isSupported(): boolean;
   getPermission(): NotificationPermission;
   requestPermission(): Promise<NotificationPermission>;
-  show(title: string, options?: ShowNotificationOptions): void;
+  /** Returns true only when the OS notification was actually constructed. */
+  show(title: string, options?: ShowNotificationOptions): boolean;
   /** Fires when the browser-level permission changes; returns an unsubscribe. */
   observePermission(onChange: () => void): () => void;
 }
@@ -43,7 +44,7 @@ const productionNotificationPort: NotificationPort = {
   },
 
   show: (title, options = {}) => {
-    if (!isSupported() || Notification.permission !== "granted") return;
+    if (!isSupported() || Notification.permission !== "granted") return false;
     try {
       const notification = new Notification(title, {
         body: options.body,
@@ -53,9 +54,12 @@ const productionNotificationPort: NotificationPort = {
         options.onClick?.();
         notification.close();
       };
+      return true;
     } catch {
       // Constructing a Notification throws on platforms that require a
-      // service worker (Android Chrome). Nothing to recover — stay silent.
+      // service worker (Android Chrome). The caller must not burn its
+      // de-dupe key, so the next tick can retry.
+      return false;
     }
   },
 

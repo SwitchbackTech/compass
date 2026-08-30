@@ -4,6 +4,7 @@ import {
   announceUpcomingEvents,
   NOTIFY_LEAD_MINUTES,
   type NotifiableEvent,
+  notifiableEventQueryRange,
   notificationKey,
   pruneFiredKeys,
   selectEventsToNotify,
@@ -188,6 +189,25 @@ describe("announceUpcomingEvents", () => {
     expect(show).not.toHaveBeenCalled();
     expect([...fired]).toEqual([...existing]);
   });
+
+  it("does not burn the de-dupe key when the browser silently drops the notification", () => {
+    const { port, mocks } = createTestNotificationPort({
+      permission: "granted",
+      showSucceeds: false,
+    });
+    const event = eventAt(3);
+
+    const fired = announceUpcomingEvents(port, NOW, [event], new Set());
+
+    expect(mocks.show).toHaveBeenCalledTimes(1);
+    expect([...fired]).toEqual([]);
+
+    mocks.show.mockImplementation(() => true);
+    const retried = announceUpcomingEvents(port, NOW, [event], fired);
+
+    expect(mocks.show).toHaveBeenCalledTimes(2);
+    expect([...retried]).toEqual([notificationKey(event)]);
+  });
 });
 
 describe("pruneFiredKeys", () => {
@@ -207,5 +227,26 @@ describe("pruneFiredKeys", () => {
     const pruned = pruneFiredKeys(new Set(["broken-key-without-date"]), NOW);
 
     expect([...pruned]).toEqual([]);
+  });
+});
+
+describe("notifiableEventQueryRange", () => {
+  it("keeps today's local day and extends five minutes into tomorrow", () => {
+    setEffectiveTimeZoneForTests("America/Denver");
+    const now = dayjs.tz("2026-07-16 23:56", "America/Denver");
+
+    const { startDate, endDate } = notifiableEventQueryRange(now);
+
+    const evening = dayjs.tz("2026-07-16 21:00", "America/Denver");
+    const justAfterMidnight = dayjs.tz("2026-07-17 00:03", "America/Denver");
+    const afterLead = dayjs.tz("2026-07-17 00:06", "America/Denver");
+
+    expect(evening.valueOf()).toBeGreaterThanOrEqual(Date.parse(startDate));
+    expect(evening.valueOf()).toBeLessThan(Date.parse(endDate));
+    expect(justAfterMidnight.valueOf()).toBeGreaterThanOrEqual(
+      Date.parse(startDate),
+    );
+    expect(justAfterMidnight.valueOf()).toBeLessThan(Date.parse(endDate));
+    expect(afterLead.valueOf()).toBeGreaterThanOrEqual(Date.parse(endDate));
   });
 });

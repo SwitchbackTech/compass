@@ -25,6 +25,7 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
+import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";
 import { useFocusNoticeShortcut } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
@@ -83,6 +84,7 @@ export function RootShell() {
       {showPastDue && <BillingPastDueBanner />}
       {showReadOnlyBanner && <BillingReadOnlyBanner />}
       <Outlet />
+      <UpcomingEventNotifier />
       <AuthModal />
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
       <CheckoutCelebrationModal />

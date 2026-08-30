@@ -22,6 +22,8 @@ export type ProductEvent =
   | "notifications_enabled"
   | "notifications_disabled"
   | "notifications_enable_denied"
+  | "notifications_shown"
+  | "notifications_show_failed"
   | "shortcut_suggestion_shown"
   | "shortcut_invoked"
   | "shortcut_suggestion_engaged"

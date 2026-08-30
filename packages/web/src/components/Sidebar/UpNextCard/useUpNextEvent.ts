@@ -4,7 +4,7 @@ import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
-import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
+import { notifiableEventQueryRange } from "@web/notifications/upcoming-notifier.logic";
 
 /**
  * Today's timed events with their real start/end bounds, ticking every minute.
@@ -13,7 +13,7 @@ import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
  */
 export function useTodayTimedEvents() {
   const now = useMinuteTick();
-  const { startDate, endDate } = dayEventQueryRange(now);
+  const { startDate, endDate } = notifiableEventQueryRange(now);
   const { events, timedEvents, allDayEvents } = useDayEventViewModel({
     startDate,
     endDate,
