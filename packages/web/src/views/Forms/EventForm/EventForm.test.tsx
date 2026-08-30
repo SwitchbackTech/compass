@@ -401,6 +401,30 @@ describe("EventForm", () => {
     });
   });
 
+  it("does not duplicate the event with Mod+C while the title field is focused", () => {
+    const onDuplicate = mock();
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={onDuplicate}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "c");
+
+    expect(onDuplicate).not.toHaveBeenCalled();
+  });
+
   it("jumps focus to the location field with Mod+E then L from the title field", () => {
     renderWithStore(
       <WithEditLeader>

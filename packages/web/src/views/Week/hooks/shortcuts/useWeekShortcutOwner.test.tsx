@@ -28,6 +28,10 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  initialEventClipboardState,
+  useEventClipboardStore,
+} from "@web/events/stores/event-clipboard.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   initialEdgeFocusState,
@@ -172,6 +176,7 @@ const getEditMutation = (queryClient: QueryClient) =>
 beforeEach(() => {
   HotkeyManager.resetInstance();
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  useEventClipboardStore.setState(initialEventClipboardState, true);
   draftActions.discard();
 });
 
@@ -182,8 +187,16 @@ afterEach(() => {
   weekEventRegistry.clear();
   useViewStore.setState(initialViewState);
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  useEventClipboardStore.setState(initialEventClipboardState, true);
   draftActions.discard();
   setSystemTime();
+  // Drain leftover swallowNextKeyup capture listeners from Mod+C / Mod+V.
+  window.dispatchEvent(
+    new KeyboardEvent("keyup", { bubbles: true, cancelable: true, key: "c" }),
+  );
+  window.dispatchEvent(
+    new KeyboardEvent("keyup", { bubbles: true, cancelable: true, key: "v" }),
+  );
 });
 
 const addCalendarTarget = (
@@ -511,6 +524,240 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     const state = useDraftStore.getState();
     expect(state.status?.isFormOpen).toBe(false);
     expect(state.gridDraft).toBeNull();
+  });
+
+  it("copies a focused event with Mod+C and pastes a duplicate at the original time with Mod+V", () => {
+    const button = addCalendarTarget();
+    button.focus();
+    const { queryClient } = renderShortcuts();
+
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+
+    button.blur();
+    pressKey("v", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    const created = queryClient
+      .getMutationCache()
+      .getAll()
+      .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+    const { input } = created?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.calendarId).toBe(editableEvent.calendarId);
+    expect(input.content.title).toBe("Editable event");
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
+
+  it("pastes the latest copied event when the user copies a second event before pasting", () => {
+    const first = addCalendarTarget();
+    const second = addCalendarTarget(leftmostEvent.id);
+    first.focus();
+    const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
+
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+    second.focus();
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+    pressKey("v", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    const created = queryClient
+      .getMutationCache()
+      .getAll()
+      .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+    const { input } = created?.state.variables as {
+      input: { content: { title: string } };
+    };
+    expect(input.content.title).toBe("Leftmost event");
+  });
+
+  it("does not create an event when pasting with an empty clipboard", () => {
+    const { queryClient } = renderShortcuts();
+
+    pressKey("v", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+  });
+
+  it("does not copy when nothing is focused", () => {
+    addCalendarTarget();
+    renderShortcuts();
+
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    expect(useEventClipboardStore.getState().event).toBeNull();
+  });
+
+  it("still pastes after the keyup-swallow window: the clipboard has no TTL", () => {
+    const button = addCalendarTarget();
+    button.focus();
+    const { queryClient } = renderShortcuts();
+
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+    button.blur();
+
+    expect(useEventClipboardStore.getState().event?.id).toBe(editableEvent.id);
+
+    pressKey("v", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => mutation.options.mutationKey?.[2] === "create"),
+    ).toBe(true);
+  });
+
+  it("does not open a create draft from a meta-released C keyup after Mod+C", () => {
+    const button = addCalendarTarget();
+    button.focus();
+    renderShortcuts();
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: "c",
+          ctrlKey: true,
+        }),
+      );
+    });
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keyup", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: "c",
+          ctrlKey: false,
+        }),
+      );
+    });
+
+    expect(useDraftStore.getState().status?.activity).not.toBe(
+      "createShortcut",
+    );
+    expect(useEventClipboardStore.getState().event?.id).toBe(editableEvent.id);
+  });
+
+  it("swallows a meta-released V keyup after Mod+V so it cannot join a meeting", () => {
+    const button = addCalendarTarget();
+    button.focus();
+    renderShortcuts();
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: "c",
+          ctrlKey: true,
+        }),
+      );
+    });
+    button.blur();
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          key: "v",
+          ctrlKey: true,
+        }),
+      );
+    });
+
+    const replayed = new KeyboardEvent("keyup", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "v",
+      ctrlKey: false,
+    });
+    act(() => {
+      window.dispatchEvent(replayed);
+    });
+
+    expect(replayed.defaultPrevented).toBe(true);
+  });
+
+  it("does not copy an event with Mod+C while a text input is focused", () => {
+    addCalendarTarget();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    renderShortcuts();
+
+    pressKey(
+      "c",
+      {
+        keyDownInit: { ctrlKey: true },
+        keyUpInit: { ctrlKey: true },
+      },
+      input,
+    );
+
+    expect(useEventClipboardStore.getState().event).toBeNull();
+  });
+
+  it("copies a focused read-only event so paste can duplicate it onto a writable calendar", () => {
+    const readOnlyButton = addReadOnlyCalendarTarget(readOnlyEvent.id);
+    readOnlyButton.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [writableCalendar, readOnlyCalendar],
+    });
+
+    pressKey("c", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+    readOnlyButton.blur();
+    pressKey("v", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    const created = queryClient
+      .getMutationCache()
+      .getAll()
+      .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+    const { input } = created?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.content.title).toBe("Read-only event");
+    expect(input.calendarId).toBe(writableCalendar.id);
   });
 
   it("keeps ArrowDown on the same day when a later event exists that day", () => {

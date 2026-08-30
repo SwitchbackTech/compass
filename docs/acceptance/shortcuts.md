@@ -425,6 +425,30 @@ Bare `Z` opens the time-travel timezone picker in Day and Week view. Cmd+Z / Ctr
 
 ---
 
+## Scenario 17: Copy And Paste An Event (Cmd+C / Cmd+V)
+
+### UX
+
+With a grid event focused (form closed, not typing in an input), Cmd+C (Mac) or Ctrl+C (Windows/Linux) copies that event into an in-app clipboard. Cmd+V / Ctrl+V then creates a duplicate at the original date and time, the same result as Cmd+D, including when nothing is focused. A later copy replaces the previous one. The clipboard lasts for the tab session with no expiry. While a text field is focused, Cmd+C / Cmd+V stay native text copy/paste.
+
+### Steps
+
+1. Navigate to `/week` (or `/day`) with at least two saved events.
+2. Focus an event (U, then arrows).
+3. Press Cmd+C (Mac) or Ctrl+C (Windows/Linux).
+4. Focus a different event and press Cmd+C again.
+5. Blur the event (click the grid background is inert; press Escape if needed so nothing is focused) and press Cmd+V.
+6. Open an event form, focus the title, select text, and press Cmd+C then Cmd+V.
+
+### Expected Results
+
+- The first Cmd+C does not create an event.
+- After the second copy, Cmd+V creates a duplicate of the *second* event at that event's original time. The two source events remain.
+- Cmd+D still duplicates the currently focused event immediately.
+- Cmd+C / Cmd+V inside the title field copy and paste text and do not duplicate an event.
+
+---
+
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping shortcut-related changes:
@@ -449,3 +473,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 18. Alt+ArrowUp / Alt+ArrowDown pan the timed grid by one hour in Day and Week view even when an event is focused; they do not fire in a text input.
 19. `Z` opens time travel in Day and Week view; Cmd+Z / Ctrl+Z still undoes and does not open the picker.
 20. On Day view, hold Mod then a column digit (2+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
+21. Cmd+C / Ctrl+C copies a focused event; Cmd+V / Ctrl+V pastes a duplicate at the original time without requiring focus. A later copy replaces the clipboard. Empty paste is a no-op. Copy/paste do not fire while typing in an input (native text clipboard). Cmd+D is unchanged.

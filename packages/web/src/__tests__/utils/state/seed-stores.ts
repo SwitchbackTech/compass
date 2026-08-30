@@ -1,3 +1,4 @@
+import { type Event } from "@core/types/event.contracts";
 import {
   type UserMetadataState,
   useUserMetadataStore,
@@ -6,6 +7,7 @@ import {
   type State_DraftEvent,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { eventClipboardActions } from "@web/events/stores/event-clipboard.store";
 import { useViewStore } from "@web/events/stores/view.store";
 import { useSettingsStore } from "@web/settings/settings.store";
 
@@ -16,7 +18,10 @@ type ViewState = ReturnType<typeof useViewStore.getState>;
  * State shape accepted by the render helpers' `state` option.
  */
 export type TestAppState = {
-  events?: { draft?: Partial<State_DraftEvent> };
+  events?: {
+    draft?: Partial<State_DraftEvent>;
+    clipboard?: Event | null;
+  };
   settings?: Partial<SettingsState>;
   userMetadata?: Partial<UserMetadataState>;
   view?: Partial<ViewState>;
@@ -28,6 +33,8 @@ export function seedStoresFromState(state?: TestAppState): void {
 
   const { events, settings, userMetadata, view } = state;
   if (events?.draft) useDraftStore.setState(events.draft);
+  if (events?.clipboard) eventClipboardActions.copy(events.clipboard);
+  if (events?.clipboard === null) eventClipboardActions.clear();
   if (settings) useSettingsStore.setState(settings);
   if (userMetadata) useUserMetadataStore.setState(userMetadata);
   if (view) useViewStore.setState(view);

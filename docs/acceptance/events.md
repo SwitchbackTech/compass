@@ -193,6 +193,8 @@ With an event form open, pressing Cmd+D (Mac) or Ctrl+D (Windows) creates a copy
 - Both the original and the duplicate are present on the grid.
 - The duplicate persists after a page reload.
 
+Cmd+C / Ctrl+C and Cmd+V / Ctrl+V are the two-step version of this: copy snapshots the focused event, paste duplicates it at the same date and time (including when nothing is focused). A later copy replaces the clipboard. These chords do not fire while typing in an input.
+
 ---
 
 ## Scenario 8: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
