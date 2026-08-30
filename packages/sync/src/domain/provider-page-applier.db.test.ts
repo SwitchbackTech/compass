@@ -111,6 +111,64 @@ describe("ProviderPageApplier", () => {
     });
   });
 
+  it("projects transparent imports as non-busy while opaque siblings occupy listBusyOverlapping", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+
+    await run.applyPage([
+      { ...single("opaque"), providerEventId: "opaque" },
+      {
+        ...single("transparent"),
+        providerEventId: "transparent",
+        busy: false,
+      },
+    ]);
+
+    const windowStart = new Date("2026-07-14T15:00:00.000Z");
+    const windowEnd = new Date("2026-07-14T17:00:00.000Z");
+    const busy = await occurrences.listBusyOverlapping({
+      tenantId: calendar.tenantId,
+      principalId: calendar.principalId,
+      calendars: [{ calendarId: calendar._id, generation: 0 }],
+      start: windowStart,
+      end: windowEnd,
+    });
+
+    expect(busy).toEqual([
+      {
+        startAt: new Date("2026-07-14T15:00:00.000Z"),
+        endAt: new Date("2026-07-14T16:00:00.000Z"),
+      },
+    ]);
+  });
+
+  it("reprojects occurrence busy when a transparent import becomes opaque on pull", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+    const window = {
+      start: new Date("2026-07-14T15:00:00.000Z"),
+      end: new Date("2026-07-14T17:00:00.000Z"),
+    };
+    const queryBusy = () =>
+      occurrences.listBusyOverlapping({
+        tenantId: calendar.tenantId,
+        principalId: calendar.principalId,
+        calendars: [{ calendarId: calendar._id, generation: 0 }],
+        ...window,
+      });
+
+    await run.applyPage([{ ...single("flex"), busy: false }]);
+    expect(await queryBusy()).toEqual([]);
+
+    await run.applyPage([{ ...single("flex"), busy: true }]);
+    expect(await queryBusy()).toEqual([
+      {
+        startAt: new Date("2026-07-14T15:00:00.000Z"),
+        endAt: new Date("2026-07-14T16:00:00.000Z"),
+      },
+    ]);
+  });
+
   it("preserves an existing iCalUID when a later sparse read omits it", async () => {
     const calendar = await seedCalendar();
     const byId = (providerEventId: string) =>

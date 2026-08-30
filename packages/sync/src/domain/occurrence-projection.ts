@@ -346,6 +346,12 @@ function shiftSchedule(
   } as EventSchedule;
 }
 
+function isOccurrenceBusy(event: EventRecord): boolean {
+  // Missing provider metadata defaults to busy (Google's opaque default and
+  // Compass-created events with no provider bag).
+  return event.providerMetadata?.["transparency"] !== "transparent";
+}
+
 function toOccurrence(
   event: EventRecord,
   schedule: EventSchedule,
@@ -361,9 +367,7 @@ function toOccurrence(
     schedule,
     startAt,
     endAt: scheduleEndAt(schedule),
-    // Sync's content carries no free/busy transparency yet, so every occurrence
-    // is busy. Transparency modeling lands with provider content mapping.
-    busy: true,
+    busy: isOccurrenceBusy(event),
     title: event.content.title,
     cancelled,
     generation: event.generation,

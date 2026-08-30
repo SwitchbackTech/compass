@@ -106,6 +106,36 @@ describe("projectOccurrences", () => {
       );
       expect(projectOccurrences(e, HORIZON)).toHaveLength(0);
     });
+
+    it("marks a transparent provider event as not busy", () => {
+      const e = event(
+        timed("2026-07-14T09:00:00-06:00", "2026-07-14T10:00:00-06:00"),
+        { kind: "single" },
+        { providerMetadata: { transparency: "transparent" } },
+      );
+      const [occ] = projectOccurrences(e, HORIZON);
+      expect(occ?.busy).toBe(false);
+    });
+
+    it("marks null providerMetadata as busy", () => {
+      const e = event(
+        timed("2026-07-14T09:00:00-06:00", "2026-07-14T10:00:00-06:00"),
+        { kind: "single" },
+        { providerMetadata: null },
+      );
+      const [occ] = projectOccurrences(e, HORIZON);
+      expect(occ?.busy).toBe(true);
+    });
+
+    it("marks an opaque correlated import as busy when metadata has only iCalUID", () => {
+      const e = event(
+        timed("2026-07-14T09:00:00-06:00", "2026-07-14T10:00:00-06:00"),
+        { kind: "single" },
+        { providerMetadata: { iCalUID: "opaque@google.com" } },
+      );
+      const [occ] = projectOccurrences(e, HORIZON);
+      expect(occ?.busy).toBe(true);
+    });
   });
 
   describe("exceptions", () => {
