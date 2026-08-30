@@ -2,9 +2,14 @@ import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
+import * as realUserHook from "@web/auth/compass/user/hooks/useUser";
+import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import * as realAuthModal from "@web/components/AuthModal/hooks/useAuthModal";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
 let mockEmail: string | undefined;
@@ -36,44 +41,30 @@ const mockUseConnectGoogle = mock(() => ({
   commandAction: googleCommandActionFor(mockGoogleState),
 }));
 
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  shouldShowAnonymousCalendarChangeSignUpPrompt: () => mockIsAnonymousDirty,
-  subscribeToAuthState: () => () => {},
-}));
+mockModuleForFile(
+  "@web/auth/compass/state/auth.state.util",
+  realAuthStateUtil,
+  {
+    shouldShowAnonymousCalendarChangeSignUpPrompt: () => mockIsAnonymousDirty,
+    subscribeToAuthState: () => () => {},
+  },
+);
 
-mock.module("@web/auth/compass/user/hooks/useUser", () => ({
-  useUser: () => ({
-    email: mockEmail,
-  }),
-}));
-
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
-  useConnectGoogle: mockUseConnectGoogle,
-}));
-
-// mock.module is process-wide, not scoped to this file, and isn't reliably
-// "restorable" afterward (another file's top-level dynamic import can race
-// with this file's afterAll). So the factory spreads the real module's other
-// exports (AuthModalContext, useAuthModalState, validateAuthSearch - needed
-// by AuthModalProvider/router code elsewhere) and checks a flag on every
-// useAuthModal() call instead of freezing the mock in at registration time.
-const actualAuthModal = {
-  ...(await import("@web/components/AuthModal/hooks/useAuthModal")),
-};
-let isAuthModalMocked = true;
-
-mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  ...actualAuthModal,
-  useAuthModal: (...args: unknown[]) =>
-    isAuthModalMocked
-      ? { openModal: mockOpenModal }
-      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
-        actualAuthModal.useAuthModal(...(args as [])),
-}));
-
-afterAll(() => {
-  isAuthModalMocked = false;
+mockModuleForFile("@web/auth/compass/user/hooks/useUser", realUserHook, {
+  useUser: () => ({ email: mockEmail }),
 });
+
+mockModuleForFile(
+  "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle",
+  realConnectGoogle,
+  { useConnectGoogle: mockUseConnectGoogle },
+);
+
+mockModuleForFile(
+  "@web/components/AuthModal/hooks/useAuthModal",
+  realAuthModal,
+  { useAuthModal: () => ({ openModal: mockOpenModal }) },
+);
 
 // CalendarListHeader.tsx is already cached by the time this file runs -
 // CalendarList.test.tsx (which sorts before this file) imports

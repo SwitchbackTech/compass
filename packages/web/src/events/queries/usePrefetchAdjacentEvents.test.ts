@@ -1,5 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realWeekQuery from "@web/events/queries/week.event.query";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const fetchWeekEvents = mock(async () => ({
@@ -14,9 +16,9 @@ const fetchWeekEvents = mock(async () => ({
   },
 }));
 
-mock.module("@web/events/queries/week.event.query", () => ({
+mockModuleForFile("@web/events/queries/week.event.query", realWeekQuery, {
   fetchWeekEvents,
-}));
+});
 
 const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
