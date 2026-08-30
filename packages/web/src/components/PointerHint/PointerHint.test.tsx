@@ -137,6 +137,20 @@ describe("PointerHint", () => {
     );
   });
 
+  it("teaches the today shortcut for the month picker today control", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.goToToday,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press T to go to today.",
+    );
+  });
+
   it("teaches the assigned sequence for the attempted event", () => {
     render(<PointerHint />);
 
@@ -177,6 +191,21 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Press ] to close the sidebar.",
+    );
+  });
+
+  it("keeps the today shortcut sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.goToToday,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press T to go to today.",
     );
   });
 

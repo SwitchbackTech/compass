@@ -90,6 +90,14 @@ describe("teachingFromBlockedPointer", () => {
       attempt: { actionId: POINTER_ACTIONS.sidebarClose },
     });
   });
+
+  it("teaches go-to-today from the annotated month picker control", () => {
+    const target = document.createElement("button");
+    target.setAttribute(POINTER_ACTION_ATTRIBUTE, POINTER_ACTIONS.goToToday);
+    expect(teachingFromBlockedPointer([target, document], 0)).toEqual({
+      attempt: { actionId: POINTER_ACTIONS.goToToday },
+    });
+  });
 });
 
 describe("pointerGridIntentFromPointer", () => {

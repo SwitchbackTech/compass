@@ -13,6 +13,7 @@ import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 import { CircleIcon } from "../Icons/CircleIcon";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
@@ -224,7 +225,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   </MonthNavButton>
                 </div>
                 {withTodayButton && (
-                  <TooltipWrapper description={currentMonth}>
+                  <TooltipWrapper
+                    description={currentMonth}
+                    shortcut={view === "sidebar" ? "T" : undefined}
+                  >
                     <button
                       type="button"
                       aria-label="Go to this month"
@@ -232,6 +236,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                         "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-text/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                         currentMonth === selectedMonth && "invisible",
                       )}
+                      data-pointer-action={
+                        view === "sidebar"
+                          ? POINTER_ACTIONS.goToToday
+                          : undefined
+                      }
                       style={{ color: headerColor }}
                       onClick={() => {
                         headerProps.changeMonth(dayjs().month());
