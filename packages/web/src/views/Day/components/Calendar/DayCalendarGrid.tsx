@@ -139,8 +139,12 @@ export function DayCalendarGrid() {
     [writableDisplayedCalendars],
   );
   const pageJumpTargets = useMemo(
-    () => buildDayPageJumpTargets(writableDisplayedCalendars),
-    [writableDisplayedCalendars],
+    () =>
+      buildDayPageJumpTargets(
+        writableDisplayedCalendars,
+        connectedAccountEmails,
+      ),
+    [connectedAccountEmails, writableDisplayedCalendars],
   );
   const [focusedColumnKey, setFocusedColumnKey] = useState<string | null>(null);
   const { gridRefs, measurements } = useGridMeasurements({

@@ -1,7 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { PageJumpHintOverlay } from "@web/shortcuts/page-jump/PageJumpHintOverlay";
 import {
+  buildCalendarPageJumpTargets,
   buildDayPageJumpTargets,
+  calendarAccountJumpId,
   dayColumnJumpId,
   LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
@@ -148,5 +150,30 @@ describe("PageJumpHintOverlay", () => {
 
     expect(chipDigits()).toEqual(["1", "2"]);
     expect(screen.getByRole("status").textContent).toContain("2 for work");
+  });
+
+  it("chips each connected account after Up next", () => {
+    addAnchor("view-select");
+    addAnchor("month-picker");
+    addAnchor("up-next");
+    addAnchor(calendarAccountJumpId("ahab@pequod.com"));
+    addAnchor(calendarAccountJumpId("ahab@gmail.com"));
+    render(
+      <PageJumpHintOverlay
+        targets={buildCalendarPageJumpTargets([
+          "ahab@pequod.com",
+          "ahab@gmail.com",
+        ])}
+        visible={true}
+      />,
+    );
+
+    expect(chipDigits()).toEqual(["1", "2", "3", "4", "5"]);
+    expect(screen.getByRole("status").textContent).toContain(
+      "4 for ahab@pequod.com",
+    );
+    expect(screen.getByRole("status").textContent).toContain(
+      "5 for ahab@gmail.com",
+    );
   });
 });

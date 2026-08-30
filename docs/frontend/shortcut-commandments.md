@@ -66,8 +66,10 @@ The hold is the same everywhere. Digits are a single namespace, so the
 open event form takes them over for its fields (1–9 in DOM order). With
 the form closed, the same hold numbers page areas left to right (view
 dropdown, then Day calendar columns, then month picker / Up next /
-calendars — or Life's grid/variation/details). Day view inserts writable
-columns after `1` so Shift+Arrow / C can seed a draft on a focused column.
+each connected calendar account — or Life's grid/variation/details).
+With no accounts, the last sidebar slot is the calendar list as a whole.
+Day view inserts writable columns after `1` so Shift+Arrow / C can seed
+a draft on a focused column.
 
 Do not run both maps at once. Do not invent a second hold key.
 
