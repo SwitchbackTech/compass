@@ -16,7 +16,9 @@ import {
   usePageJumpHintStore,
 } from "@web/shortcuts/page-jump/page-jump.store";
 import {
+  buildCalendarPageJumpTargets,
   buildDayPageJumpTargets,
+  calendarAccountJumpId,
   dayColumnJumpId,
   LIFE_PAGE_JUMP_TARGETS,
   PAGE_JUMP_ATTRIBUTE,
@@ -196,6 +198,37 @@ describe("usePageJumpShortcut", () => {
       const viewEvent = pressModDigit("1");
       expect(viewEvent.defaultPrevented).toBe(true);
       expect(viewTrigger).toHaveFocus();
+    });
+
+    it("jumps to a specific calendar account instead of the first in the list", () => {
+      const first = document.createElement("button");
+      const firstAnchor = document.createElement("section");
+      firstAnchor.setAttribute(
+        PAGE_JUMP_ATTRIBUTE,
+        calendarAccountJumpId("ahab@pequod.com"),
+      );
+      firstAnchor.append(first);
+      document.body.append(firstAnchor);
+
+      const second = document.createElement("button");
+      const secondAnchor = document.createElement("section");
+      secondAnchor.setAttribute(
+        PAGE_JUMP_ATTRIBUTE,
+        calendarAccountJumpId("ahab@gmail.com"),
+      );
+      secondAnchor.append(second);
+      document.body.append(secondAnchor);
+
+      renderHook(() =>
+        usePageJumpShortcut(
+          buildCalendarPageJumpTargets(["ahab@pequod.com", "ahab@gmail.com"]),
+        ),
+      );
+
+      const event = pressModDigit("5");
+      expect(event.defaultPrevented).toBe(true);
+      expect(second).toHaveFocus();
+      expect(first).not.toHaveFocus();
     });
   });
 

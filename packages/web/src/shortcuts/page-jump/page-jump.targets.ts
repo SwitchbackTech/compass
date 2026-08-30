@@ -8,13 +8,19 @@
  * digits come from this list's order, so it is the single place to add,
  * remove, or renumber a target. An unmounted anchor (collapsed sidebar,
  * empty Up Next) simply gets no chip and its digit does nothing. A closed
- * menu trigger (the view dropdown) is clicked after focus so the jump
- * reveals Day / Week / Life instead of landing on a closed heading.
+ * menu trigger (the view dropdown) or collapsed account heading is clicked
+ * after focus so the jump reveals the contents instead of landing on a
+ * closed control.
+ *
+ * Week view numbers the sidebar after the view dropdown (`buildCalendarPageJumpTargets`):
+ * month picker, Up next, then one target per connected account. With no
+ * accounts, a single "calendars" slot covers the list. Extra accounts that
+ * would overflow the physical top-row keys are omitted.
  *
  * Day view numbers left to right (`buildDayPageJumpTargets`): view dropdown,
- * then writable calendar columns, then the sidebar (month picker, Up next,
- * calendars). Extra columns that would overflow the physical top-row keys
- * are omitted so the three sidebar slots still get chips when mounted.
+ * then writable calendar columns, then that same sidebar map. Extra columns
+ * that would crowd out the reserved sidebar slots (month picker, Up next,
+ * and each account) are omitted so those chips still appear when mounted.
  */
 
 import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
@@ -22,6 +28,8 @@ import { PICK_KEY_LABELS } from "@web/shortcuts/digit-pick.util";
 export const PAGE_JUMP_ATTRIBUTE = "data-page-jump";
 
 export const DAY_COLUMN_JUMP_ID_PREFIX = "day-column:" as const;
+
+export const CALENDAR_ACCOUNT_JUMP_ID_PREFIX = "calendar-account:" as const;
 
 export type PageJumpTargetId =
   | "view-select"
@@ -31,7 +39,8 @@ export type PageJumpTargetId =
   | "life-grid"
   | "life-variation"
   | "life-details"
-  | `${typeof DAY_COLUMN_JUMP_ID_PREFIX}${string}`;
+  | `${typeof DAY_COLUMN_JUMP_ID_PREFIX}${string}`
+  | `${typeof CALENDAR_ACCOUNT_JUMP_ID_PREFIX}${string}`;
 
 export type PageJumpTarget = {
   digit: string;
@@ -41,12 +50,75 @@ export type PageJumpTarget = {
 
 export type PageJumpTargets = readonly PageJumpTarget[];
 
-export const CALENDAR_PAGE_JUMP_TARGETS: PageJumpTargets = [
-  { digit: "1", id: "view-select", label: "View dropdown" },
-  { digit: "2", id: "month-picker", label: "Month picker" },
-  { digit: "3", id: "up-next", label: "Up next" },
-  { digit: "4", id: "calendars", label: "Calendar list" },
-];
+type PageJumpTargetDraft = Omit<PageJumpTarget, "digit">;
+
+const VIEW_SELECT_TARGET: PageJumpTargetDraft = {
+  id: "view-select",
+  label: "View dropdown",
+};
+
+const MONTH_PICKER_TARGET: PageJumpTargetDraft = {
+  id: "month-picker",
+  label: "Month picker",
+};
+
+const UP_NEXT_TARGET: PageJumpTargetDraft = {
+  id: "up-next",
+  label: "Up next",
+};
+
+const CALENDARS_LIST_TARGET: PageJumpTargetDraft = {
+  id: "calendars",
+  label: "Calendar list",
+};
+
+const withPickDigits = (
+  targets: readonly PageJumpTargetDraft[],
+): PageJumpTargets =>
+  targets.slice(0, PICK_KEY_LABELS.length).map((target, index) => ({
+    ...target,
+    digit: PICK_KEY_LABELS[index] ?? "",
+  }));
+
+export const calendarAccountJumpId = (
+  accountEmail: string,
+): `${typeof CALENDAR_ACCOUNT_JUMP_ID_PREFIX}${string}` =>
+  `${CALENDAR_ACCOUNT_JUMP_ID_PREFIX}${accountEmail}`;
+
+/**
+ * Sidebar calendar slots after month picker / Up next: one numbered target
+ * per connected account so hold-Mod jumps straight to that heading. With no
+ * accounts, keep a single list-level slot for the anonymous / disconnected
+ * calendar rows.
+ */
+const calendarListJumpTargets = (
+  accountEmails: readonly string[],
+): PageJumpTargetDraft[] =>
+  accountEmails.length === 0
+    ? [CALENDARS_LIST_TARGET]
+    : accountEmails.map((accountEmail) => ({
+        id: calendarAccountJumpId(accountEmail),
+        label: accountEmail,
+      }));
+
+/**
+ * Week (and the Day sidebar suffix): view dropdown, month picker, Up next,
+ * then each connected account. Extra accounts that would overflow the
+ * physical top-row keys are omitted — no chip, no binding.
+ */
+export const buildCalendarPageJumpTargets = (
+  accountEmails: readonly string[] = [],
+): PageJumpTargets =>
+  withPickDigits([
+    VIEW_SELECT_TARGET,
+    MONTH_PICKER_TARGET,
+    UP_NEXT_TARGET,
+    ...calendarListJumpTargets(accountEmails),
+  ]);
+
+/** No-account Week map. Prefer `buildCalendarPageJumpTargets` when accounts exist. */
+export const CALENDAR_PAGE_JUMP_TARGETS: PageJumpTargets =
+  buildCalendarPageJumpTargets();
 
 export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = [
   { digit: "1", id: "view-select", label: "View dropdown" },
@@ -68,13 +140,16 @@ export const dayColumnJumpId = (
 /**
  * Day view's hold-Mod map in visual left-to-right order: the view dropdown,
  * then one numbered target per writable displayed column, then the sidebar
- * page areas. Extra calendars that would crowd out the reserved sidebar
- * slots are omitted — no chip, no binding.
+ * page areas (month picker, Up next, each account). Extra calendars that
+ * would crowd out the reserved sidebar slots are omitted — no chip, no
+ * binding.
  */
 export const buildDayPageJumpTargets = (
   calendars: readonly DayColumnJumpCalendar[],
+  accountEmails: readonly string[] = [],
 ): PageJumpTargets => {
-  const [viewSelect, ...sidebarTargets] = CALENDAR_PAGE_JUMP_TARGETS;
+  const [viewSelect, ...sidebarTargets] =
+    buildCalendarPageJumpTargets(accountEmails);
   const maxColumns = PICK_KEY_LABELS.length - 1 - sidebarTargets.length;
   const columnTargets = calendars
     .slice(0, Math.max(0, maxColumns))
@@ -83,12 +158,7 @@ export const buildDayPageJumpTargets = (
       label: calendar.name,
     }));
 
-  return [viewSelect, ...columnTargets, ...sidebarTargets].map(
-    (target, index) => ({
-      ...target,
-      digit: PICK_KEY_LABELS[index] ?? "",
-    }),
-  );
+  return withPickDigits([viewSelect, ...columnTargets, ...sidebarTargets]);
 };
 
 /** Spread onto a component's container element to mark it as a jump target. */
@@ -98,8 +168,20 @@ export const pageJumpAttrs = (
   [PAGE_JUMP_ATTRIBUTE]: id,
 });
 
-export const getPageJumpAnchor = (id: PageJumpTargetId): HTMLElement | null =>
-  document.querySelector<HTMLElement>(`[${PAGE_JUMP_ATTRIBUTE}="${id}"]`);
+/**
+ * Match by attribute value rather than interpolating `id` into a selector:
+ * account emails can contain CSS-significant characters (`+`, `.`).
+ */
+export const getPageJumpAnchor = (id: PageJumpTargetId): HTMLElement | null => {
+  for (const element of document.querySelectorAll<HTMLElement>(
+    `[${PAGE_JUMP_ATTRIBUTE}]`,
+  )) {
+    if (element.getAttribute(PAGE_JUMP_ATTRIBUTE) === id) {
+      return element;
+    }
+  }
+  return null;
+};
 
 const INTERACTIVE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -124,14 +206,12 @@ export const getPageJumpFocusElement = (
 };
 
 const shouldOpenOnJump = (element: HTMLElement): boolean =>
-  Boolean(element.getAttribute("aria-haspopup")) &&
-  element.getAttribute("aria-expanded") !== "true";
+  element.getAttribute("aria-expanded") === "false";
 
 /**
  * Focus a page jump target; returns whether a focusable element was found.
- * Menu/listbox triggers are clicked after focus so the dropdown opens —
- * that's what makes hold-Mod on the view switcher a discovery path for
- * Day / Week / Life, instead of landing on a closed heading.
+ * Closed menus and collapsed account headings are clicked after focus so
+ * the jump reveals their contents instead of landing on a closed control.
  */
 export const focusPageJumpTarget = (id: PageJumpTargetId): boolean => {
   const element = getPageJumpFocusElement(id);

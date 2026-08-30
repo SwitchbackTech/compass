@@ -19,7 +19,10 @@ import {
 } from "@web/calendars/collapsed-accounts.store";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
-import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
+import {
+  calendarAccountJumpId,
+  pageJumpAttrs,
+} from "@web/shortcuts/page-jump/page-jump.targets";
 import { AccountSectionHeader } from "./AccountSectionHeader";
 import { AnonymousCalendarRow } from "./AnonymousCalendarRow";
 import { CalendarListHeader } from "./CalendarListHeader";
@@ -76,7 +79,10 @@ export const CalendarList: FC = () => {
       : renderRows(rows, accountCalendarListId(key));
 
   return (
-    <section aria-label="Calendars" {...pageJumpAttrs("calendars")}>
+    <section
+      aria-label="Calendars"
+      {...(groups.length === 0 ? pageJumpAttrs("calendars") : {})}
+    >
       {/* Every connected account carries its own heading below, so the generic
           banner is only for users who have none yet and are signed in. Anonymous
           users get a single calendar row instead. Showing it alongside account
@@ -107,6 +113,7 @@ export const CalendarList: FC = () => {
             <section
               aria-label={`Calendars for ${group.accountEmail}`}
               key={group.accountEmail}
+              {...pageJumpAttrs(calendarAccountJumpId(group.accountEmail))}
             >
               <AccountSectionHeader
                 accountEmail={group.accountEmail}
