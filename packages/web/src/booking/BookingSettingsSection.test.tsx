@@ -261,8 +261,10 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const field = await screen.findByLabelText("Booking timezone");
-    expect(field).toHaveValue(HOST_TIME_ZONE);
+    const trigger = await screen.findByRole("button", {
+      name: /^Booking timezone:/,
+    });
+    expect(trigger).toHaveAccessibleName("Booking timezone: Chicago (CDT)");
   });
 
   it("keeps a configured page's stored timezone even when it is UTC", async () => {
@@ -301,8 +303,10 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const field = await screen.findByLabelText("Booking timezone");
-    expect(field).toHaveValue("UTC");
+    const trigger = await screen.findByRole("button", {
+      name: /^Booking timezone:/,
+    });
+    expect(trigger).toHaveAccessibleName("Booking timezone: UTC (UTC)");
   });
 
   it("blocks enable without a destination calendar", async () => {
