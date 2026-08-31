@@ -27,14 +27,29 @@ const googleCalendar = {
   accountEmail: HOST_ACCOUNT_EMAIL,
 };
 
-/** A slot two days ahead at 15:00 UTC, always inside the 14-day guest window. */
+/** A slot later in the current UTC month, inside today's remaining hours when the month is ending. */
 export function buildBookableSlot(durationMinutes = 30): {
   slotStart: string;
   slotEnd: string;
 } {
-  const start = new Date();
-  start.setUTCDate(start.getUTCDate() + 2);
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCDate(now.getUTCDate() + 2);
   start.setUTCHours(15, 0, 0, 0);
+  const sameMonth =
+    start.getUTCMonth() === now.getUTCMonth() &&
+    start.getUTCFullYear() === now.getUTCFullYear();
+  if (!sameMonth || start.getTime() <= now.getTime()) {
+    start.setTime(now.getTime());
+    start.setUTCHours(15, 0, 0, 0);
+    if (
+      start.getTime() <= now.getTime() ||
+      start.getUTCMonth() !== now.getUTCMonth()
+    ) {
+      start.setTime(now.getTime() + 2 * 60 * 60 * 1000);
+      start.setUTCMinutes(0, 0, 0);
+    }
+  }
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   return { slotStart: start.toISOString(), slotEnd: end.toISOString() };
 }
@@ -52,6 +67,7 @@ export interface PublicBookingStubOptions {
 export interface CapturedBookingRequests {
   reservationPosts: Array<Record<string, unknown>>;
   slotGets: number;
+  slotQueries: Array<{ start: string | null; end: string | null }>;
 }
 
 export async function preparePublicBookingPage(
@@ -62,6 +78,7 @@ export async function preparePublicBookingPage(
   const captured: CapturedBookingRequests = {
     reservationPosts: [],
     slotGets: 0,
+    slotQueries: [],
   };
   const slot =
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
@@ -95,10 +112,22 @@ export async function preparePublicBookingPage(
       request.method() === "GET"
     ) {
       captured.slotGets += 1;
+      const windowStart = url.searchParams.get("start");
+      const windowEnd = url.searchParams.get("end");
+      captured.slotQueries.push({
+        start: windowStart,
+        end: windowEnd,
+      });
+      const startMs = windowStart ? Date.parse(windowStart) : Number.NaN;
+      const endMs = windowEnd ? Date.parse(windowEnd) : Number.NaN;
+      const slotsInWindow = slots.filter((entry) => {
+        const slotMs = Date.parse(entry.slotStart);
+        return slotMs >= startMs && slotMs < endMs;
+      });
       return route.fulfill(
         json({
           bookable: options.bookable ?? true,
-          slots,
+          slots: slotsInWindow,
         }),
       );
     }

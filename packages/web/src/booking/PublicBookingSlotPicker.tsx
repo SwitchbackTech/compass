@@ -25,7 +25,7 @@ export function PublicBookingSlotPicker({
   if (dateKeys.length === 0) {
     return (
       <p className="text-sm text-text-muted">
-        No open times in the next two weeks. Try again later.
+        No open times this month. Try another month or check back later.
       </p>
     );
   }

@@ -234,6 +234,109 @@ describe("PublicBookingPage", () => {
     expect(screen.queryByText(/Keyboard shortcuts/i)).not.toBeInTheDocument();
   });
 
+  it("starts page meta and the current-month slots request in parallel", async () => {
+    const events: string[] = [];
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        async (_req, res, ctx) => {
+          events.push("page-start");
+          await delay(80);
+          events.push("page-end");
+          return res(ctx.status(Status.OK), ctx.json(publicPagePayload()));
+        },
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        async (_req, res, ctx) => {
+          events.push("slots-start");
+          await delay(80);
+          events.push("slots-end");
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              bookable: true,
+              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    await waitFor(() => {
+      expect(events).toContain("page-start");
+      expect(events).toContain("slots-start");
+    });
+    expect(events).not.toContain("page-end");
+    expect(events).not.toContain("slots-end");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Loading open times..."),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders a prefetched month without a new slots request", async () => {
+    const user = userEvent.setup({ delay: null });
+    let slotRequests = 0;
+
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        (_req, res, ctx) => {
+          slotRequests += 1;
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              bookable: true,
+              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Loading open times..."),
+      ).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(slotRequests).toBeGreaterThanOrEqual(2);
+    });
+    const requestsAfterPrefetch = slotRequests;
+
+    await user.click(screen.getByRole("button", { name: "Next month" }));
+    expect(screen.queryByText("Loading open times...")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(slotRequests).toBeGreaterThanOrEqual(requestsAfterPrefetch);
+    });
+    const requestsAfterArrive = slotRequests;
+
+    await user.click(screen.getByRole("button", { name: "Previous month" }));
+    await user.click(screen.getByRole("button", { name: "Next month" }));
+    expect(slotRequests).toBe(requestsAfterArrive);
+  });
+
   it("clamps the slot request to the host horizon and still loads times", async () => {
     let slotStartParam: string | null = null;
     let slotEndParam: string | null = null;
@@ -256,8 +359,10 @@ describe("PublicBookingPage", () => {
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
         (req, res, ctx) => {
-          slotStartParam = req.url.searchParams.get("start");
-          slotEndParam = req.url.searchParams.get("end");
+          if (slotStartParam == null) {
+            slotStartParam = req.url.searchParams.get("start");
+            slotEndParam = req.url.searchParams.get("end");
+          }
           return res(
             ctx.status(Status.OK),
             ctx.json({
@@ -282,6 +387,10 @@ describe("PublicBookingPage", () => {
     const requestedMs =
       Date.parse(slotEndParam ?? "") - Date.parse(slotStartParam ?? "");
     expect(requestedMs).toBeGreaterThan(0);
-    expect(requestedMs).toBeLessThanOrEqual(7 * 24 * 60 * 60 * 1000 + 60_000);
+    expect(requestedMs).toBeLessThanOrEqual(32 * 24 * 60 * 60 * 1000);
+    const start = new Date(slotStartParam ?? "");
+    expect(start.getUTCMinutes()).toBe(0);
+    expect(start.getUTCSeconds()).toBe(0);
+    expect(start.getUTCMilliseconds()).toBe(0);
   });
 });

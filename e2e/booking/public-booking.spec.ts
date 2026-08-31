@@ -57,8 +57,7 @@ test.describe("public booking page", () => {
     await page.setViewportSize({ width: 800, height: 480 });
 
     const origin = new Date();
-    origin.setUTCDate(origin.getUTCDate() + 2);
-    origin.setUTCHours(8, 0, 0, 0);
+    origin.setUTCHours(origin.getUTCHours() + 1, 0, 0, 0);
     const slots = Array.from({ length: 60 }, (_, index) => {
       const slotStart = new Date(origin.getTime() + index * 15 * 60 * 1000);
       return {
@@ -157,5 +156,38 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("button", { name: "Confirm booking" }),
     ).toBeEnabled();
+  });
+
+  test("renders a prefetched month without issuing a new slots request", async ({
+    page,
+  }) => {
+    const captured = await preparePublicBookingPage(page);
+
+    await expect(
+      page.getByRole("button", { name: "Previous month" }),
+    ).toBeDisabled();
+    const next = page.getByRole("button", { name: "Next month" });
+    await expect(next).toBeEnabled();
+    await next.hover();
+    await expect.poll(() => captured.slotGets).toBeGreaterThanOrEqual(2);
+    await next.click();
+    await expect(
+      page.getByRole("button", { name: "Previous month" }),
+    ).toBeEnabled();
+    await expect(page.getByText("Loading open times...")).toHaveCount(0);
+    await expect.poll(() => captured.slotGets).toBeGreaterThanOrEqual(3);
+    const afterArrive = captured.slotGets;
+
+    await page.getByRole("button", { name: "Previous month" }).click();
+    await next.click();
+    expect(captured.slotGets).toBe(afterArrive);
+
+    const firstWindow = captured.slotQueries[0];
+    expect(firstWindow?.start).toBeTruthy();
+    expect(firstWindow?.end).toBeTruthy();
+    const startMs = Date.parse(firstWindow?.start ?? "");
+    const endMs = Date.parse(firstWindow?.end ?? "");
+    expect(endMs - startMs).toBeGreaterThan(0);
+    expect(endMs - startMs).toBeLessThanOrEqual(32 * 24 * 60 * 60 * 1000);
   });
 });
