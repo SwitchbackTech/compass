@@ -68,8 +68,34 @@ Host administration lives in Settings as a new page (today
 ### Guest
 
 The guest is unauthenticated. They open the public URL, pick a slot
-shown in **their browser timezone**, enter name + email (optional
-notes), and confirm. They do not need a Compass account.
+shown in **their timezone** (browser default, overridable), enter name +
+email (optional notes), and confirm. They do not need a Compass account.
+
+### Guest keyboard path
+
+Public booking is click-first and fully keyboard operable. Visible
+focus uses the accent ring. Intended Tab order on the picker:
+
+1. **Skip to open times** (focus-revealed link) jumps to **Pick a time**,
+   skipping the month grid.
+2. Timezone control, then previous/next month, then one tab stop on the
+   selected day (arrow keys move among days).
+3. Slot buttons for that day. Enter/Space opens **Your details** and
+   moves focus to that heading. **Skip to your details** is the first
+   tab stop on that step.
+4. **Change time**, then name, email, notes, **Confirm booking**.
+   **Change time** returns focus to **Pick a time**.
+5. After confirm, `/book/confirmed/:id` focuses **You are booked with
+   {host}**. Unknown, cancelled, and load-error states focus their
+   headings.
+6. A 409 conflict focuses the alert. Slot-load retry focuses **Pick a
+   time**. Jump to next available day does the same.
+7. Cancel (`/book/cancel/:id`) focuses its heading on load and after
+   each state change. Tab then reaches **Cancel this booking**.
+
+The month grid stays in the DOM ahead of the slot list. The skip link
+exists so keyboard users are not forced through every day cell before
+times (and, on details, before the form).
 
 ### Outcome
 

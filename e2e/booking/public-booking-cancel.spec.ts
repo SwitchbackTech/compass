@@ -16,7 +16,7 @@ test.describe("public booking cancel page", () => {
 
     await expect(
       page.getByRole("heading", { name: "Booking canceled" }),
-    ).toBeVisible();
+    ).toBeFocused();
     expect(captured.cancelPosts).toHaveLength(1);
     expect(captured.cancelPosts[0]).toMatchObject({ token: "abc" });
   });
@@ -44,7 +44,7 @@ test.describe("public booking cancel page", () => {
 
     await expect(
       page.getByRole("heading", { name: "Could not cancel booking" }),
-    ).toBeVisible();
+    ).toBeFocused();
     await expect(
       page.getByRole("heading", { name: "Booking canceled" }),
     ).not.toBeVisible();

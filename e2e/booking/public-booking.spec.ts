@@ -16,6 +16,34 @@ test.describe("public booking page", () => {
     ).toBeVisible();
   });
 
+  test("walks the picker with the keyboard via the skip link", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("link", { name: "Skip to open times" }),
+    ).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("button", { name: formatSlotButtonLabel(slotStart) }),
+    ).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: "Your details" }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("button", { name: "Change time" }),
+    ).toBeFocused();
+  });
+
   test("confirms a booking against stubbed APIs", async ({ page }) => {
     const { slotStart } = buildBookableSlot();
     const captured = await preparePublicBookingPage(page);
@@ -35,7 +63,7 @@ test.describe("public booking page", () => {
 
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     expect(captured.reservationPosts).toHaveLength(1);
     expect(captured.reservationPosts[0]).toMatchObject({
       slotStart,
@@ -68,7 +96,7 @@ test.describe("public booking page", () => {
 
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     expect(captured.reservationPosts).toHaveLength(1);
     expect(captured.reservationPosts[0]).toMatchObject({
       slotStart,
@@ -89,7 +117,7 @@ test.describe("public booking page", () => {
 
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     await expect(page).toHaveURL(
       /\/book\/confirmed\/000000000000000000000099$/,
     );
@@ -101,7 +129,7 @@ test.describe("public booking page", () => {
 
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     await expect(page.getByText("30 minutes")).toBeVisible();
     await expect(page).toHaveURL(
       /\/book\/confirmed\/000000000000000000000099$/,
@@ -114,7 +142,7 @@ test.describe("public booking page", () => {
     await preparePublicBookingConfirmedPage(page);
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toHaveCount(0);
@@ -153,7 +181,7 @@ test.describe("public booking page", () => {
     });
     await expect(
       page.getByRole("heading", { name: "This booking was canceled" }),
-    ).toBeVisible();
+    ).toBeFocused();
   });
 
   test("shows a calm state for an unknown confirmation permalink", async ({
@@ -164,7 +192,18 @@ test.describe("public booking page", () => {
     });
     await expect(
       page.getByRole("heading", { name: "Booking not found" }),
-    ).toBeVisible();
+    ).toBeFocused();
+  });
+
+  test("shows a retryable heading when the confirmation GET fails", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationGetStatus: 500,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Could not load booking" }),
+    ).toBeFocused();
   });
 
   test("does not POST when email is missing", async ({ page }) => {
@@ -456,6 +495,10 @@ test.describe("public booking page", () => {
       .click();
 
     await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeFocused();
+
+    await expect(
       page.getByRole("heading", { name: nextMonthHeading }),
     ).toBeVisible();
     await expect(
@@ -558,7 +601,7 @@ test.describe("public booking page", () => {
     release();
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeVisible();
+    ).toBeFocused();
     expect(captured.reservationPosts).toHaveLength(1);
   });
 
@@ -601,6 +644,9 @@ test.describe("public booking page", () => {
     ).toBeVisible();
     slotFailGate.fail = false;
     await page.getByRole("button", { name: "Retry" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeFocused();
     await expect(
       page.getByRole("button", {
         name: formatSlotButtonLabel(slot.slotStart),
