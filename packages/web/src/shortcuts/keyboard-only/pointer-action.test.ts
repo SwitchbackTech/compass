@@ -1,5 +1,8 @@
 import dayjs from "@core/util/date/dayjs";
 import {
+  DATA_TIMED_GRID_ROW,
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_ALLDAY_ROW,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
@@ -13,7 +16,7 @@ import {
   teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 describe("resolveBlockedPointerAttempt", () => {
   it("uses the nearest annotated element in the composed path", () => {
@@ -101,20 +104,45 @@ describe("teachingFromBlockedPointer", () => {
 });
 
 describe("pointerGridIntentFromPointer", () => {
-  it("keeps the exact effective-zone quarter-hour selected by a timed click", () => {
-    const grid = document.createElement("div");
+  const mounted: HTMLElement[] = [];
+
+  const mount = (node: HTMLElement) => {
+    document.body.append(node);
+    mounted.push(node);
+    return node;
+  };
+
+  afterEach(() => {
+    for (const node of mounted) node.remove();
+    mounted.length = 0;
+  });
+
+  const mountTimedGrid = () => {
+    const grid = mount(document.createElement("div"));
     grid.id = ID_GRID_MAIN;
     Object.defineProperty(grid, "scrollHeight", { value: 1440 });
     grid.getBoundingClientRect = () =>
-      ({ top: 0, left: 0, right: 200, bottom: 400 }) as DOMRect;
+      ({ top: 0, left: 0, right: 250, bottom: 400 }) as DOMRect;
+
     const columns = document.createElement("div");
     columns.id = ID_GRID_COLUMNS_TIMED;
     const column = document.createElement("div");
     column.dataset.gridDate = "2026-08-29";
     column.getBoundingClientRect = () =>
-      ({ top: 0, left: 0, right: 200, bottom: 1440 }) as DOMRect;
+      ({ top: 0, left: 50, right: 250, bottom: 1440 }) as DOMRect;
     columns.appendChild(column);
-    document.body.append(grid, columns);
+
+    const hourRows = document.createElement("div");
+    const hourRow = document.createElement("div");
+    hourRow.setAttribute(DATA_TIMED_GRID_ROW, "true");
+    hourRows.appendChild(hourRow);
+
+    grid.append(columns, hourRows);
+    return { column, columns, grid, hourRow, hourRows };
+  };
+
+  it("keeps the exact effective-zone quarter-hour selected by a timed click", () => {
+    const { column, columns } = mountTimedGrid();
 
     const intent = pointerGridIntentFromPointer(
       [column, columns, document],
@@ -130,7 +158,67 @@ describe("pointerGridIntentFromPointer", () => {
     expect(
       dayjs(intent?.start).tz(getEffectiveTimeZone()).format("HH:mm"),
     ).toBe("11:30");
-    grid.remove();
-    columns.remove();
+  });
+
+  it("reads the clicked quarter-hour from an empty hour-row overlay", () => {
+    const { grid, hourRow, hourRows } = mountTimedGrid();
+
+    const intent = pointerGridIntentFromPointer(
+      [hourRow, hourRows, grid, document],
+      100,
+      690,
+    );
+
+    expect(intent).toMatchObject({
+      date: "2026-08-29",
+      kind: "timed",
+      timeKey: "1130",
+    });
+  });
+
+  it("maps an evening empty-grid click to 24-hour digits", () => {
+    const { grid, hourRow, hourRows } = mountTimedGrid();
+
+    const intent = pointerGridIntentFromPointer(
+      [hourRow, hourRows, grid, document],
+      100,
+      1110,
+    );
+
+    expect(intent).toMatchObject({
+      date: "2026-08-29",
+      kind: "timed",
+      timeKey: "1830",
+    });
+  });
+
+  it("still teaches a time when the click is in the hour-label gutter", () => {
+    const { grid } = mountTimedGrid();
+
+    const intent = pointerGridIntentFromPointer([grid, document], 20, 690);
+
+    expect(intent).toMatchObject({
+      date: "2026-08-29",
+      kind: "timed",
+      timeKey: "1130",
+    });
+  });
+
+  it("treats an empty all-day-row click as an all-day create", () => {
+    const row = mount(document.createElement("section"));
+    row.id = ID_GRID_ALLDAY_ROW;
+    const columns = document.createElement("div");
+    columns.id = ID_ALLDAY_COLUMNS;
+    const column = document.createElement("div");
+    column.dataset.gridDate = "2026-08-29";
+    column.getBoundingClientRect = () =>
+      ({ top: 0, left: 0, right: 200, bottom: 40 }) as DOMRect;
+    columns.appendChild(column);
+    row.appendChild(columns);
+
+    expect(pointerGridIntentFromPointer([row, document], 100, 10)).toEqual({
+      date: "2026-08-29",
+      kind: "all-day",
+    });
   });
 });

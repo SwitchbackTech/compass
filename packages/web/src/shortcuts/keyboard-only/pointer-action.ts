@@ -1,6 +1,9 @@
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
+  DATA_TIMED_GRID_ROW,
   ID_ALLDAY_COLUMNS,
+  ID_GRID_ALLDAY_ROW,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
@@ -148,36 +151,57 @@ export const pointerGridIntent = (event: Event): PointerGridIntent | null => {
   };
 };
 
-export const pointerGridIntentFromPointer = (
-  path: EventTarget[],
+const ALL_DAY_GRID_IDS = new Set([
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_EVENTS_ALLDAY,
+  ID_GRID_ALLDAY_ROW,
+]);
+
+const TIMED_GRID_IDS = new Set([
+  ID_GRID_COLUMNS_TIMED,
+  ID_GRID_EVENTS_TIMED,
+  ID_GRID_MAIN,
+]);
+
+const gridKindFromElement = (
+  target: HTMLElement,
+): PointerGridIntent["kind"] | undefined => {
+  if (ALL_DAY_GRID_IDS.has(target.id)) return "all-day";
+  if (TIMED_GRID_IDS.has(target.id)) return "timed";
+  // Hour lines sit on top of the day columns, so an empty click hits a row
+  // (or #mainGrid) rather than #timedColumns.
+  if (target.hasAttribute(DATA_TIMED_GRID_ROW)) return "timed";
+};
+
+const gridDateFromColumns = (
+  kind: PointerGridIntent["kind"],
   clientX: number,
+): string | undefined => {
+  const columnsRoot = document.getElementById(
+    kind === "all-day" ? ID_ALLDAY_COLUMNS : ID_GRID_COLUMNS_TIMED,
+  );
+  const columns = [
+    ...(columnsRoot?.querySelectorAll<HTMLElement>("[data-grid-date]") ?? []),
+  ];
+  const underPointer = columns.find((column) => {
+    const rect = column.getBoundingClientRect();
+    return clientX >= rect.left && clientX <= rect.right;
+  })?.dataset.gridDate;
+  if (underPointer) return underPointer;
+
+  const todayKey = dayjs()
+    .tz(getEffectiveTimeZone())
+    .format(YEAR_MONTH_DAY_FORMAT);
+  return (
+    columns.find((column) => column.dataset.gridDate === todayKey)?.dataset
+      .gridDate ?? columns[0]?.dataset.gridDate
+  );
+};
+
+const timedIntentAt = (
+  date: string,
   clientY: number,
 ): PointerGridIntent | null => {
-  let date: string | undefined;
-  let kind: PointerGridIntent["kind"] | undefined;
-  for (const target of path) {
-    if (!(target instanceof HTMLElement)) continue;
-    date ??= target.dataset.gridDate;
-    if (target.id === ID_ALLDAY_COLUMNS) kind = "all-day";
-    if (target.id === ID_GRID_COLUMNS_TIMED) kind = "timed";
-    if (target.id === ID_GRID_EVENTS_ALLDAY) kind = "all-day";
-    if (target.id === ID_GRID_EVENTS_TIMED) kind = "timed";
-  }
-  if (!kind) return null;
-  if (!date) {
-    const columns = document.getElementById(
-      kind === "all-day" ? ID_ALLDAY_COLUMNS : ID_GRID_COLUMNS_TIMED,
-    );
-    date = [
-      ...(columns?.querySelectorAll<HTMLElement>("[data-grid-date]") ?? []),
-    ].find((column) => {
-      const rect = column.getBoundingClientRect();
-      return clientX >= rect.left && clientX <= rect.right;
-    })?.dataset.gridDate;
-  }
-  if (!date) return null;
-  if (kind === "all-day") return { date, kind };
-
   const grid = document.getElementById(ID_GRID_MAIN);
   if (!grid) return null;
   const rect = grid.getBoundingClientRect();
@@ -189,18 +213,37 @@ export const pointerGridIntentFromPointer = (
   );
   const hour = Math.floor(minute / 60);
   const minutes = minute % 60;
-  const timeKey = `${String(hour).padStart(2, "0")}${String(minutes).padStart(2, "0")}`;
+  const hh = String(hour).padStart(2, "0");
+  const mm = String(minutes).padStart(2, "0");
+  const timeKey = `${hh}${mm}`;
   const timeLabel = new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(2000, 0, 1, hour, minutes));
   const start = dayjs
-    .tz(
-      `${date}T${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
-      getEffectiveTimeZone(),
-    )
+    .tz(`${date}T${hh}:${mm}`, getEffectiveTimeZone())
     .format();
-  return { date, kind, start, timeKey, timeLabel };
+  return { date, kind: "timed", start, timeKey, timeLabel };
+};
+
+export const pointerGridIntentFromPointer = (
+  path: EventTarget[],
+  clientX: number,
+  clientY: number,
+): PointerGridIntent | null => {
+  let date: string | undefined;
+  let kind: PointerGridIntent["kind"] | undefined;
+  for (const target of path) {
+    if (!(target instanceof HTMLElement)) continue;
+    date ??= target.dataset.gridDate;
+    kind ??= gridKindFromElement(target);
+    if (date && kind) break;
+  }
+  if (!kind) return null;
+  date ??= gridDateFromColumns(kind, clientX);
+  if (!date) return null;
+  if (kind === "all-day") return { date, kind };
+  return timedIntentAt(date, clientY);
 };
 
 export const pointerEventJumpId = (event: Event): string | undefined => {

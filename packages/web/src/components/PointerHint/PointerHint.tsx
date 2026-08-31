@@ -111,7 +111,7 @@ const pointerHintMessage = ({
   if (attempt?.actionId === "grid.timed" && attempt.gridTimeKey) {
     return (
       <>
-        Press <Key>{attempt.gridTimeKey}</Key> to create at{" "}
+        Type <Key>{attempt.gridTimeKey}</Key> to create an event at{" "}
         {attempt.gridTimeLabel ?? attempt.gridTimeKey}.
       </>
     );

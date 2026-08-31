@@ -97,7 +97,9 @@ Pointer suppression (always on, mounted from `RootShell`):
   and hover remain
 - keyboard-activation clicks (Enter/Space on a native button), keyboard
   contextmenu (Shift+F10), and synthetic `.click()` calls pass through
-- blocked clicks pulse `PointerHint`, a transient "keyboard only" pill
+- blocked clicks pulse `PointerHint`, a transient pill: known targets get
+  the matching shortcut (including HHMM digits for an empty timed-grid
+  click), and unannotated controls fall back to "keyboard only"
 
 See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
 [Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for
