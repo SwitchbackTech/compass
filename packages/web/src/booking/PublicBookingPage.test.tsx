@@ -13,6 +13,7 @@ import {
   formatBookingDateKey,
   formatBookingMonthDayLabel,
   formatBookingMonthHeading,
+  formatBookingMonthKey,
   formatBookingSlotLabel,
   formatBookingSlotTime,
   shiftBookingMonthKey,
@@ -32,32 +33,108 @@ function renderBookingRoute(path: string) {
   return { ...result, router };
 }
 
-function bookableSlotInCurrentMonth(minuteOffset = 0) {
-  const now = new Date();
-  const start = new Date(now);
-  start.setUTCHours(15, minuteOffset, 0, 0);
-  if (
-    start.getTime() <= now.getTime() ||
-    start.getUTCMonth() !== now.getUTCMonth()
-  ) {
-    start.setTime(now.getTime() + 2 * 60 * 60 * 1000);
-    start.setUTCMinutes(minuteOffset, 0, 0);
-  }
+function monthKeyInZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  return `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}`;
+}
+
+function slotAround(start: Date) {
   return {
     slotStart: start.toISOString(),
     slotEnd: new Date(start.getTime() + 30 * 60 * 1000).toISOString(),
   };
 }
 
+function utcTodayAt(now: Date, hours: number, minutes: number) {
+  return new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      hours,
+      minutes,
+      0,
+      0,
+    ),
+  );
+}
+
+/**
+ * Future slot in the current UTC month. Prefers 12:00 UTC so the calendar
+ * date matches Europe/Berlin. After noon, stay on today instead of +2h,
+ * which becomes 12:00 AM the next Berlin day on month-end evenings.
+ */
+function bookableSlotInCurrentMonth(minuteOffset = 0) {
+  const now = new Date();
+  const berlinMonthNow = monthKeyInZone(now, "Europe/Berlin");
+  const noon = utcTodayAt(now, 12, minuteOffset);
+  if (
+    noon.getTime() > now.getTime() &&
+    noon.getUTCMonth() === now.getUTCMonth()
+  ) {
+    return slotAround(noon);
+  }
+
+  const evening = utcTodayAt(now, 20, minuteOffset);
+  if (
+    evening.getTime() > now.getTime() &&
+    monthKeyInZone(evening, "Europe/Berlin") === berlinMonthNow
+  ) {
+    return slotAround(evening);
+  }
+
+  const soon = new Date(now.getTime() + (20 + minuteOffset) * 60 * 1000);
+  soon.setUTCSeconds(0, 0);
+  soon.setUTCMilliseconds(0);
+  if (soon.getUTCMonth() === now.getUTCMonth()) {
+    if (monthKeyInZone(soon, "Europe/Berlin") === berlinMonthNow) {
+      return slotAround(soon);
+    }
+    const stillThisBerlinMonth = berlinMonthNow === monthKeyInZone(now, "UTC");
+    if (stillThisBerlinMonth) {
+      const beforeBerlinMidnight = new Date(now.getTime() + 60 * 1000);
+      beforeBerlinMidnight.setUTCSeconds(0, 0);
+      if (
+        monthKeyInZone(beforeBerlinMidnight, "Europe/Berlin") ===
+          berlinMonthNow &&
+        beforeBerlinMidnight.getUTCMonth() === now.getUTCMonth()
+      ) {
+        return slotAround(beforeBerlinMidnight);
+      }
+    }
+    return slotAround(soon);
+  }
+
+  const late = utcTodayAt(now, 23, 59);
+  if (late.getTime() > now.getTime()) {
+    return slotAround(late);
+  }
+
+  return slotAround(soon);
+}
+
+function bookableSlotOnSecondOfUtcMonth(year: number, monthIndex: number) {
+  return slotAround(new Date(Date.UTC(year, monthIndex, 2, 16, 0, 0)));
+}
+
 function bookableSlotInNextMonth() {
   const now = new Date();
-  const start = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 2, 16, 0, 0),
+  return bookableSlotOnSecondOfUtcMonth(
+    now.getUTCFullYear(),
+    now.getUTCMonth() + 1,
   );
-  return {
-    slotStart: start.toISOString(),
-    slotEnd: new Date(start.getTime() + 30 * 60 * 1000).toISOString(),
-  };
+}
+
+/** Day 2 of the month after `now` in `timeZone`, at 16:00 UTC. */
+function bookableSlotAfterCurrentMonthInZone(timeZone: string) {
+  const [year, month] = monthKeyInZone(new Date(), timeZone)
+    .split("-")
+    .map(Number);
+  return bookableSlotOnSecondOfUtcMonth(year, month);
 }
 
 function slotButtonName(iso: string, timeZone = "UTC") {
@@ -74,7 +151,19 @@ async function selectGuestTimeZone(
 }
 
 const currentSlot = bookableSlotInCurrentMonth();
-const laterCurrentSlot = bookableSlotInCurrentMonth(30);
+const laterCurrentSlot = (() => {
+  const later = bookableSlotInCurrentMonth(30);
+  if (later.slotStart.slice(0, 10) === currentSlot.slotStart.slice(0, 10)) {
+    return later;
+  }
+  const currentMs = Date.parse(currentSlot.slotStart);
+  const endOfUtcDay = Date.parse(
+    `${currentSlot.slotStart.slice(0, 10)}T23:59:00.000Z`,
+  );
+  return slotAround(
+    new Date(Math.min(currentMs + 15 * 60 * 1000, endOfUtcDay)),
+  );
+})();
 const nextMonthSlot = bookableSlotInNextMonth();
 const guestTimeZone = "UTC";
 const currentMonthKey = new Date().toISOString().slice(0, 7);
@@ -401,6 +490,7 @@ describe("PublicBookingPage", () => {
   it("keeps the guest timezone across month navigation and the details step", async () => {
     const user = userEvent.setup({ delay: null });
     const overrideZone = "Europe/Berlin";
+    const persistNextSlot = bookableSlotAfterCurrentMonthInZone(overrideZone);
 
     server.use(
       rest.get(
@@ -415,7 +505,7 @@ describe("PublicBookingPage", () => {
           const end = req.url.searchParams.get("end");
           const startMs = start ? Date.parse(start) : Number.NEGATIVE_INFINITY;
           const endMs = end ? Date.parse(end) : Number.POSITIVE_INFINITY;
-          const slots = [currentSlot, nextMonthSlot].filter((slot) => {
+          const slots = [currentSlot, persistNextSlot].filter((slot) => {
             const at = Date.parse(slot.slotStart);
             return at >= startMs && at < endMs;
           });
@@ -443,7 +533,11 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Next month" }));
-    const nextMonthKey = shiftBookingMonthKey(currentMonthKey, 1, overrideZone);
+    const nextMonthKey = shiftBookingMonthKey(
+      formatBookingMonthKey(new Date(), overrideZone),
+      1,
+      overrideZone,
+    );
     expect(
       await screen.findByRole("heading", {
         name: formatBookingMonthHeading(nextMonthKey, overrideZone),
@@ -454,7 +548,7 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", {
-        name: slotButtonName(nextMonthSlot.slotStart, overrideZone),
+        name: slotButtonName(persistNextSlot.slotStart, overrideZone),
       }),
     ).toBeInTheDocument();
 
