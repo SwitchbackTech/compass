@@ -104,6 +104,23 @@ One booking-page record per user.
 of `duration` fits inside an availability interval after buffers and busy
 blocks.
 
+### Host Settings controls
+
+The Settings **Booking** page is keyboard-first. It is not a native
+timezone `<select>` plus a checkbox and two time inputs per weekday.
+
+- **Timezone** uses the same searchable combobox as time travel. The
+  trigger is one tab stop and still renders a stored non-canonical alias.
+- **Weekly hours** are one typed range per weekday (`9-5`, or `9-12, 1-5`
+  for a break). A blank day is unavailable. The parser reuses
+  `parseUserTime` with an explicit PM-correction rule.
+- **Jump:** `e` then a letter focuses a field (`e` enable, `d` duration,
+  `c` destination, `b` blocking, `z` timezone, `h` hours, `n` notice,
+  `x` horizon, `o` buffer and limits, `l` link). Settings owns `s` (save)
+  and digits `1/2/3` (nav) on this page, which is why the leader is `e`
+  rather than `Mod+digit`. Focus uses `data-booking-field` and does not
+  click, so jumping onto a checkbox does not toggle it.
+
 ## Busy occupancy
 
 v1 uses **Sync busy intervals**, not a new RSVP filter.

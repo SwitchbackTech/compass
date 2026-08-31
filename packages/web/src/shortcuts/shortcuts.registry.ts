@@ -415,6 +415,17 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Settings",
     section: "other",
   },
+  // One summary row rather than ten, following the collapsed Mod+E / Mod 0-9
+  // rows above. Ungated for the same reason as the edit sequences: the legend
+  // is a reference, not a live-focus readout. The which-key menu carries the
+  // per-field detail in the moment, which matters here because the legend
+  // overlay is unreachable while the Settings modal holds app-lock.
+  {
+    id: "other-booking-jump",
+    keys: ["e", "letter"],
+    label: "Jump to a booking settings field",
+    section: "other",
+  },
   {
     id: "other-undo",
     keys: caps(KEYMAP.undo.hotkey),

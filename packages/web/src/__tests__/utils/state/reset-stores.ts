@@ -49,6 +49,10 @@ import {
 } from "@web/settings/settings.store";
 import { useThemeStore } from "@web/settings/theme/theme.store";
 import {
+  initialEditSequenceState,
+  useEditSequenceStore,
+} from "@web/shortcuts/edit-sequence/edit-sequence.store";
+import {
   initialPointerBlockState,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
@@ -94,6 +98,7 @@ const storeResets: StoreReset[] = [
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
+  () => useEditSequenceStore.setState(initialEditSequenceState, true),
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),

@@ -8,6 +8,7 @@ import {
   formatHoursRanges,
   parseHoursRanges,
 } from "@web/booking/weekly-hours.parse";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 type Weekday = WeeklyAvailabilityInterval["weekday"];
 
@@ -19,6 +20,8 @@ interface BookingWeeklyHoursEditorProps {
   disabled?: boolean;
   /** Raised when a row cannot be read, so the form can block saving. */
   onValidityChange?: (isValid: boolean) => void;
+  /** Jump keys to reveal beside the legend while hold-Mod hints are up. */
+  shortcutKeys?: readonly string[];
 }
 
 const textForWeekday = (value: WeeklyAvailability, weekday: Weekday): string =>
@@ -44,6 +47,7 @@ export function BookingWeeklyHoursEditor({
   onChange,
   disabled = false,
   onValidityChange,
+  shortcutKeys,
 }: BookingWeeklyHoursEditorProps) {
   // Raw text per row so a half-typed value is never yanked out from under the
   // user; it only becomes availability once it parses.
@@ -125,7 +129,10 @@ export function BookingWeeklyHoursEditor({
 
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
-      <legend className="mb-1 text-sm text-text">Weekly hours</legend>
+      <legend className="mb-1 flex items-center gap-1 text-sm text-text">
+        Weekly hours
+        {shortcutKeys ? <ShortcutKeys keys={[...shortcutKeys]} /> : null}
+      </legend>
       <p className="text-text-muted text-xs" id="booking-hours-hint">
         Type a range like 9-5, or 9-12, 1-5 for a break. Leave a day blank to be
         unavailable.

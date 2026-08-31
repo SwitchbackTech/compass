@@ -77,4 +77,28 @@ describe("EditSequenceMenu", () => {
 
     expect(document.querySelector("[data-edit-sequence-menu]")).not.toBeNull();
   });
+
+  it("stays hidden when a different scope is armed", () => {
+    editSequenceActions.arm("booking");
+    editSequenceActions.showMenu();
+    render(<EditSequenceMenu getAnchor={() => null} />);
+
+    expect(document.querySelector("[data-edit-sequence-menu]")).toBeNull();
+  });
+
+  it("renders the supplied rows for its own scope", () => {
+    editSequenceActions.arm("booking");
+    editSequenceActions.showMenu();
+    render(
+      <EditSequenceMenu
+        getAnchor={() => null}
+        options={[{ key: "h", label: "Weekly hours" }]}
+        scope="booking"
+      />,
+    );
+
+    const menu = document.querySelector("[data-edit-sequence-menu]");
+    expect(menu?.textContent).toContain("Weekly hours");
+    expect(menu?.textContent).not.toContain("Title");
+  });
 });
