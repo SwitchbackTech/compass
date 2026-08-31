@@ -13,6 +13,7 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -58,6 +59,11 @@ import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut"
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
+
+// Named so the value the checkbox writes and the value its label promises can
+// only ever be the same number.
+const DEFAULT_BUFFER_MINUTES = 30;
+const DEFAULT_MAX_BOOKINGS_PER_DAY = 4;
 
 const isSavedBookingPage = (
   page: AdminPutBookingPageInput | AdminGetBookingPageResponse,
@@ -204,7 +210,6 @@ export function BookingSettingsSection({
     availabilityCalendars,
     connections,
   );
-
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
     setEnableError(null);
@@ -233,6 +238,16 @@ export function BookingSettingsSection({
       };
     });
   };
+
+  const renderBlockingCalendar = (calendar: Calendar) => (
+    <BookingCheckboxRow
+      checked={blockingSet.has(calendar.id)}
+      key={calendar.id}
+      onChange={(checked) => toggleBlockingCalendar(calendar.id, checked)}
+    >
+      {calendar.name}
+    </BookingCheckboxRow>
+  );
 
   const handleEnableChange = (enabled: boolean) => {
     if (enabled && !canEnableBookingPage(form, writableCalendars)) {
@@ -396,43 +411,10 @@ export function BookingSettingsSection({
                   <p className="text-text-muted text-xs">
                     {group.accountEmail}
                   </p>
-                  {group.calendars.map((calendar) => (
-                    <label
-                      className="flex items-center gap-2 text-sm text-text"
-                      key={calendar.id}
-                    >
-                      <input
-                        checked={blockingSet.has(calendar.id)}
-                        className="c-all-day-checkbox"
-                        onChange={(event) =>
-                          toggleBlockingCalendar(
-                            calendar.id,
-                            event.target.checked,
-                          )
-                        }
-                        type="checkbox"
-                      />
-                      {calendar.name}
-                    </label>
-                  ))}
+                  {group.calendars.map(renderBlockingCalendar)}
                 </div>
               ))}
-            {ungrouped.map((calendar) => (
-              <label
-                className="flex items-center gap-2 text-sm text-text"
-                key={calendar.id}
-              >
-                <input
-                  checked={blockingSet.has(calendar.id)}
-                  className="c-all-day-checkbox"
-                  onChange={(event) =>
-                    toggleBlockingCalendar(calendar.id, event.target.checked)
-                  }
-                  type="checkbox"
-                />
-                {calendar.name}
-              </label>
-            ))}
+            {ungrouped.map(renderBlockingCalendar)}
           </>
         )}
       </fieldset>
@@ -509,41 +491,36 @@ export function BookingSettingsSection({
           ) : null}
         </legend>
 
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            checked={form.bufferMinutes !== null}
-            className="c-all-day-checkbox"
-            onChange={(event) =>
-              updateForm({ bufferMinutes: event.target.checked ? 30 : null })
-            }
-            type="checkbox"
-          />
-          Buffer between appointments (30 minutes)
-        </label>
+        <BookingCheckboxRow
+          checked={form.bufferMinutes !== null}
+          onChange={(checked) =>
+            updateForm({
+              bufferMinutes: checked ? DEFAULT_BUFFER_MINUTES : null,
+            })
+          }
+        >
+          Buffer between appointments ({DEFAULT_BUFFER_MINUTES} minutes)
+        </BookingCheckboxRow>
 
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            checked={form.maxBookingsPerDay !== null}
-            className="c-all-day-checkbox"
-            onChange={(event) =>
-              updateForm({ maxBookingsPerDay: event.target.checked ? 4 : null })
-            }
-            type="checkbox"
-          />
-          Max bookings per day (4)
-        </label>
+        <BookingCheckboxRow
+          checked={form.maxBookingsPerDay !== null}
+          onChange={(checked) =>
+            updateForm({
+              maxBookingsPerDay: checked ? DEFAULT_MAX_BOOKINGS_PER_DAY : null,
+            })
+          }
+        >
+          Max bookings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
+        </BookingCheckboxRow>
 
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            checked={form.guestsCanInviteOthers}
-            className="c-all-day-checkbox"
-            onChange={(event) =>
-              updateForm({ guestsCanInviteOthers: event.target.checked })
-            }
-            type="checkbox"
-          />
+        <BookingCheckboxRow
+          checked={form.guestsCanInviteOthers}
+          onChange={(guestsCanInviteOthers) =>
+            updateForm({ guestsCanInviteOthers })
+          }
+        >
           Guest can invite others
-        </label>
+        </BookingCheckboxRow>
       </fieldset>
 
       <OverlayPanelActions align="start">
