@@ -44,7 +44,7 @@ export function PublicBookingDetailsStep({
           type="button"
           disabled={disabled}
           onClick={onChangeTime}
-          className="shrink-0 text-accent text-sm underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+          className="c-focus-ring shrink-0 text-accent text-sm underline disabled:cursor-not-allowed disabled:opacity-60"
         >
           Change time
         </button>

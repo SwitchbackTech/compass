@@ -1,7 +1,6 @@
 import { MongoServerError, type ObjectId } from "mongodb";
 import {
-  type AdminGetBookingPageResponse,
-  type AdminGetBookingPageSetupResponse,
+  type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
@@ -12,6 +11,7 @@ import { bookingError } from "@backend/booking/booking.error";
 import {
   buildDefaultAdminPutInput,
   mapBookingPageRecordToAdminResponse,
+  mapBookingPageRecordToSetupResponse,
   mapPutInputToRecordFields,
 } from "@backend/booking/booking-page.mapper";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
@@ -110,12 +110,8 @@ const allocateSlugForUser = async (userId: ObjectId): Promise<string> => {
 const isDuplicateSlugError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
 
-export type HostBookingPageGetResponse =
-  | AdminGetBookingPageResponse
-  | AdminGetBookingPageSetupResponse;
-
 class BookingPageService {
-  async getAdminPage(userId: ObjectId): Promise<HostBookingPageGetResponse> {
+  async getAdminPage(userId: ObjectId): Promise<AdminGetBookingPageResult> {
     const record = await bookingPageRepository.findByUserId(userId);
     if (!record) {
       // Nothing saved yet, so the timeZone below is only a placeholder - the
@@ -124,30 +120,7 @@ class BookingPageService {
     }
 
     if (!record.bookingSlug) {
-      const { enabled, ...rest } = mapPutInputToRecordFields(
-        AdminPutBookingPageInputSchema.parse({
-          enabled: record.enabled,
-          durationMinutes: record.durationMinutes,
-          destinationCalendarId: record.destinationCalendarId,
-          blockingCalendarIds: record.blockingCalendarIds,
-          timeZone: record.timeZone,
-          weeklyAvailability: record.weeklyAvailability,
-          minNoticeHours: record.minNoticeHours,
-          maxHorizonDays: record.maxHorizonDays,
-          bufferMinutes: record.bufferMinutes,
-          maxBookingsPerDay: record.maxBookingsPerDay,
-          guestsCanInviteOthers: record.guestsCanInviteOthers,
-        }),
-      );
-      return {
-        ...AdminPutBookingPageInputSchema.parse({
-          enabled,
-          ...rest,
-        }),
-        // Saved, just never enabled, so no slug exists. The host's stored
-        // timezone is a real choice and must not be re-seeded.
-        isConfigured: true,
-      };
+      return mapBookingPageRecordToSetupResponse(record);
     }
 
     return mapBookingPageRecordToAdminResponse({
@@ -159,7 +132,7 @@ class BookingPageService {
   async putAdminPage(
     userId: ObjectId,
     rawInput: unknown,
-  ): Promise<HostBookingPageGetResponse> {
+  ): Promise<AdminGetBookingPageResult> {
     const input = AdminPutBookingPageInputSchema.parse(rawInput);
 
     if (input.enabled) {
@@ -188,24 +161,7 @@ class BookingPageService {
         });
 
         if (!saved.bookingSlug) {
-          // Saved but never enabled, so no slug exists yet. Mark it configured
-          // so the client keeps the host's stored timezone.
-          return {
-            ...AdminPutBookingPageInputSchema.parse({
-              enabled: saved.enabled,
-              durationMinutes: saved.durationMinutes,
-              destinationCalendarId: saved.destinationCalendarId,
-              blockingCalendarIds: saved.blockingCalendarIds,
-              timeZone: saved.timeZone,
-              weeklyAvailability: saved.weeklyAvailability,
-              minNoticeHours: saved.minNoticeHours,
-              maxHorizonDays: saved.maxHorizonDays,
-              bufferMinutes: saved.bufferMinutes,
-              maxBookingsPerDay: saved.maxBookingsPerDay,
-              guestsCanInviteOthers: saved.guestsCanInviteOthers,
-            }),
-            isConfigured: true,
-          };
+          return mapBookingPageRecordToSetupResponse(saved);
         }
 
         return mapBookingPageRecordToAdminResponse({

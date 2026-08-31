@@ -1,130 +1,27 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import {
-  type BookingSlotsResponse,
-  CreateBookingReservationInputSchema,
-} from "@core/types/booking.contracts";
-import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
-import {
-  type PublicBookingGuestDetails,
-  PublicBookingGuestForm,
-  type PublicBookingGuestFormValues,
-} from "@web/booking/PublicBookingGuestForm";
+import { PublicBookingGuestForm } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
 import { PublicBookingSkipLink } from "@web/booking/PublicBookingSkipLink";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
-import {
-  findNextAvailableBookingDate,
-  formatBookingDateKey,
-  formatBookingMonthKey,
-  formatDurationMinutes,
-  listBookingAvailableDateKeysInMonth,
-  shiftBookingMonthKey,
-} from "@web/booking/public-booking.format";
-import {
-  isPublicBookingConflictError,
-  prefetchPublicBookingMonth,
-  publicBookingQueryKeys,
-  useCreatePublicBookingReservationMutation,
-  usePrefetchAdjacentBookingMonths,
-  usePublicBookingPageQuery,
-  usePublicBookingSlotsQuery,
-} from "@web/booking/public-booking.query";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
-
-const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
-  guestName: "",
-  guestEmail: "",
-  notes: "",
-};
+import { formatDurationMinutes } from "@web/booking/public-booking.format";
+import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
+import { usePublicBookingFlow } from "@web/booking/use-public-booking-flow";
 
 const STICKY_STEP_CLASS_NAME =
   "sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0";
 
 export function PublicBookingPage() {
-  const { username } = useParams({ from: "/book/$username" });
-  const slug = username ?? "";
-  const navigate = useNavigate();
-  const [guestTimeZone, setGuestTimeZone] = useState(getBrowserTimeZone);
-  const queryClient = useQueryClient();
-  const [monthKey, setMonthKey] = useState(() =>
-    formatBookingMonthKey(dayjs(), getBrowserTimeZone()),
+  const flow = usePublicBookingFlow();
+  const { pageQuery, slotsQuery } = flow;
+
+  useBookingDocumentTitle(
+    pageQuery.data?.enabled
+      ? `Book with ${pageQuery.data.hostDisplayName}`
+      : null,
   );
-
-  const pageQuery = usePublicBookingPageQuery(slug);
-  const slotsQuery = usePublicBookingSlotsQuery(
-    slug,
-    monthKey,
-    pageQuery.data?.maxHorizonDays,
-    guestTimeZone,
-  );
-  const createReservation = useCreatePublicBookingReservationMutation(slug);
-
-  const [selectedSlotStart, setSelectedSlotStart] = useState<string | null>(
-    null,
-  );
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
-  const [guestDetails, setGuestDetails] =
-    useState<PublicBookingGuestDetails>(EMPTY_GUEST_DETAILS);
-  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
-  const [step, setStep] = useState<"picker" | "details">("picker");
-  const conflictAlertRef = useRef<HTMLParagraphElement>(null);
-  const detailsHeadingRef = useRef<HTMLHeadingElement>(null);
-  const pickerHeadingRef = useRef<HTMLHeadingElement>(null);
-  const submitInFlightRef = useRef(false);
-  const pendingPickerFocusRef = useRef(false);
-
-  useEffect(() => {
-    if (conflictMessage) {
-      conflictAlertRef.current?.focus();
-    }
-  }, [conflictMessage]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: jump remounts the picker heading
-  useEffect(() => {
-    if (step === "details") {
-      detailsHeadingRef.current?.focus();
-      return;
-    }
-    if (pendingPickerFocusRef.current) {
-      pendingPickerFocusRef.current = false;
-      pickerHeadingRef.current?.focus();
-    }
-  }, [monthKey, selectedDateKey, step]);
-
-  usePrefetchAdjacentBookingMonths(
-    slug,
-    monthKey,
-    guestTimeZone,
-    pageQuery.data?.maxHorizonDays,
-    pageQuery.isSuccess && pageQuery.data.enabled && slotsQuery.isSuccess,
-  );
-
-  useEffect(() => {
-    if (!slotsQuery.data?.bookable) {
-      return;
-    }
-    const todayKey = formatBookingDateKey(dayjs(), guestTimeZone);
-    const available = listBookingAvailableDateKeysInMonth(
-      slotsQuery.data.slots,
-      monthKey,
-      guestTimeZone,
-      todayKey,
-    );
-    if (selectedDateKey && available.includes(selectedDateKey)) {
-      return;
-    }
-    if (selectedDateKey?.startsWith(monthKey)) {
-      return;
-    }
-    setSelectedDateKey(available[0] ?? null);
-  }, [guestTimeZone, monthKey, selectedDateKey, slotsQuery.data]);
 
   if (pageQuery.isLoading) {
     return (
@@ -167,174 +64,17 @@ export function PublicBookingPage() {
     );
   }
 
-  const showDetailsStep = step === "details" && selectedSlotStart !== null;
-  const showConflictForm = !showDetailsStep && conflictMessage !== null;
-  const slotsHasData = Boolean(slotsQuery.data);
-  const slotsFetching =
-    !slotsHasData && (slotsQuery.isPending || slotsQuery.isFetching);
-  const slotsError = Boolean(slotsQuery.isError && !slotsHasData);
-  const slotsPending = slotsFetching && !slotsError;
-
-  const handleSelectSlot = (slotStart: string) => {
-    setSelectedSlotStart(slotStart);
-    setSelectedDateKey(formatBookingDateKey(slotStart, guestTimeZone));
-    setConflictMessage(null);
-    setStep("details");
-  };
-
-  const handleSelectDay = (dateKey: string) => {
-    setSelectedDateKey(dateKey);
-    if (
-      selectedSlotStart &&
-      formatBookingDateKey(selectedSlotStart, guestTimeZone) !== dateKey
-    ) {
-      setSelectedSlotStart(null);
-    }
-  };
-
-  const handleMonthChange = (nextMonthKey: string) => {
-    setMonthKey(nextMonthKey);
-    setSelectedSlotStart(null);
-    setSelectedDateKey(null);
-    setConflictMessage(null);
-    setStep("picker");
-  };
-
-  const handleTimeZoneChange = (nextTimeZone: string) => {
-    if (nextTimeZone === guestTimeZone) {
-      return;
-    }
-    const currentMonthInOldZone = formatBookingMonthKey(dayjs(), guestTimeZone);
-    setGuestTimeZone(nextTimeZone);
-    if (selectedSlotStart) {
-      const nextDateKey = formatBookingDateKey(selectedSlotStart, nextTimeZone);
-      setSelectedDateKey(nextDateKey);
-      setMonthKey(nextDateKey.slice(0, 7));
-      return;
-    }
-    if (monthKey === currentMonthInOldZone) {
-      setMonthKey(formatBookingMonthKey(dayjs(), nextTimeZone));
-    }
-    setSelectedDateKey(null);
-  };
-
-  const handleChangeTime = () => {
-    pendingPickerFocusRef.current = true;
-    setStep("picker");
-  };
-
-  const handlePrefetchMonth = (nextMonthKey: string) => {
-    void prefetchPublicBookingMonth(
-      queryClient,
-      slug,
-      nextMonthKey,
-      guestTimeZone,
-      page.maxHorizonDays,
-    );
-  };
-
-  const handleJumpToNextAvailable = async () => {
-    const todayKey = formatBookingDateKey(dayjs(), guestTimeZone);
-    const slotsByMonth = new Map<
-      string,
-      BookingSlotsResponse["slots"] | undefined
-    >();
-    let cursor = monthKey;
-    for (let step = 0; step < 14; step += 1) {
-      const cached = queryClient.getQueryData<BookingSlotsResponse>(
-        publicBookingQueryKeys.slots(slug, cursor, guestTimeZone),
-      );
-      if (cached) {
-        slotsByMonth.set(cursor, cached.slots);
-      }
-      cursor = shiftBookingMonthKey(cursor, 1, guestTimeZone);
-    }
-    if (slotsQuery.data && !slotsByMonth.has(monthKey)) {
-      slotsByMonth.set(monthKey, slotsQuery.data.slots);
-    }
-
-    for (let attempt = 0; attempt < 14; attempt += 1) {
-      const next = findNextAvailableBookingDate(
-        monthKey,
-        selectedDateKey,
-        slotsByMonth,
-        guestTimeZone,
-        todayKey,
-        page.maxHorizonDays,
-      );
-      if (!next) {
-        return;
-      }
-      if (next.dateKey) {
-        pendingPickerFocusRef.current = true;
-        setSelectedSlotStart(null);
-        setConflictMessage(null);
-        setStep("picker");
-        setMonthKey(next.monthKey);
-        setSelectedDateKey(next.dateKey);
-        return;
-      }
-      await prefetchPublicBookingMonth(
-        queryClient,
-        slug,
-        next.monthKey,
-        guestTimeZone,
-        page.maxHorizonDays,
-      );
-      const fetched = queryClient.getQueryData<BookingSlotsResponse>(
-        publicBookingQueryKeys.slots(slug, next.monthKey, guestTimeZone),
-      );
-      slotsByMonth.set(next.monthKey, fetched?.slots ?? []);
-    }
-  };
-
-  const handleSubmit = async (values: PublicBookingGuestFormValues) => {
-    if (!selectedSlotStart || submitInFlightRef.current) {
-      return;
-    }
-
-    submitInFlightRef.current = true;
-    setConflictMessage(null);
-
-    try {
-      const result = await createReservation.mutateAsync(
-        CreateBookingReservationInputSchema.parse({
-          slotStart: selectedSlotStart,
-          guestName: values.guestName,
-          guestEmail: values.guestEmail,
-          notes: values.notes || undefined,
-          guestTimeZone: values.guestTimeZone,
-        }),
-      );
-      await navigate({
-        to: ROOT_ROUTES.BOOK_CONFIRMED,
-        params: { reservationId: result.reservationId },
-        // Post-submit only: the public GET cannot reconstruct the cancel token.
-        state: { cancelUrl: result.cancelUrl } as never,
-      });
-    } catch (error) {
-      if (isPublicBookingConflictError(error)) {
-        setConflictMessage(
-          "This time is no longer available. Pick another slot.",
-        );
-        setSelectedSlotStart(null);
-        setStep("picker");
-        await slotsQuery.refetch();
-        return;
-      }
-      setConflictMessage("Could not confirm this booking. Please try again.");
-    } finally {
-      submitInFlightRef.current = false;
-    }
-  };
-
   return (
     <PublicBookingLayout wide>
       <PublicBookingSkipLink
         href={
-          showDetailsStep ? "#booking-form-heading" : "#booking-slots-heading"
+          flow.showDetailsStep
+            ? "#booking-form-heading"
+            : "#booking-slots-heading"
         }
-        label={showDetailsStep ? "Skip to your details" : "Skip to open times"}
+        label={
+          flow.showDetailsStep ? "Skip to your details" : "Skip to open times"
+        }
       />
       <header className="flex flex-col gap-1">
         <h1 className="font-semibold text-text text-xl">
@@ -346,74 +86,74 @@ export function PublicBookingPage() {
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-text-muted">
           <p>Times shown in your timezone</p>
           <PublicBookingTimezoneControl
-            timeZone={guestTimeZone}
-            onChange={handleTimeZoneChange}
+            timeZone={flow.guestTimeZone}
+            onChange={flow.handleTimeZoneChange}
           />
         </div>
       </header>
 
-      {conflictMessage ? (
+      {flow.alertMessage ? (
         <p
-          ref={conflictAlertRef}
+          ref={flow.alertRef}
           role="alert"
           tabIndex={-1}
           className="rounded-md border border-warning/40 bg-surface-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          {conflictMessage}
+          {flow.alertMessage}
         </p>
       ) : null}
 
-      {showDetailsStep && selectedSlotStart ? (
+      {flow.showDetailsStep && flow.selectedSlotStart ? (
         <div className={STICKY_STEP_CLASS_NAME}>
           <PublicBookingDetailsStep
-            headingRef={detailsHeadingRef}
-            slotStart={selectedSlotStart}
+            headingRef={flow.detailsHeadingRef}
+            slotStart={flow.selectedSlotStart}
             durationMinutes={page.durationMinutes}
-            timeZone={guestTimeZone}
-            disabled={createReservation.isPending}
-            values={guestDetails}
-            onChange={setGuestDetails}
-            onSubmit={handleSubmit}
-            onChangeTime={handleChangeTime}
+            timeZone={flow.guestTimeZone}
+            disabled={flow.createReservation.isPending}
+            values={flow.guestDetails}
+            onChange={flow.setGuestDetails}
+            onSubmit={flow.handleSubmit}
+            onChangeTime={flow.handleChangeTime}
           />
         </div>
       ) : (
         <>
           <PublicBookingPicker
-            monthKey={monthKey}
-            timeZone={guestTimeZone}
+            monthKey={flow.monthKey}
+            timeZone={flow.guestTimeZone}
             maxHorizonDays={page.maxHorizonDays}
             slots={slotsQuery.data?.slots ?? []}
-            slotsPending={slotsPending}
-            slotsError={slotsError}
-            slotsFetching={slotsFetching}
-            selectedDateKey={selectedDateKey}
-            selectedSlotStart={selectedSlotStart}
-            slotsHeadingRef={pickerHeadingRef}
-            onMonthChange={handleMonthChange}
-            onPrefetchMonth={handlePrefetchMonth}
-            onSelectDate={handleSelectDay}
-            onSelectSlot={handleSelectSlot}
+            slotsPending={flow.slotsPending}
+            slotsError={flow.slotsError}
+            slotsFetching={flow.slotsFetching}
+            selectedDateKey={flow.selectedDateKey}
+            selectedSlotStart={flow.selectedSlotStart}
+            slotsHeadingRef={flow.pickerHeadingRef}
+            onMonthChange={flow.handleMonthChange}
+            onPrefetchMonth={flow.handlePrefetchMonth}
+            onSelectDate={flow.handleSelectDay}
+            onSelectSlot={flow.handleSelectSlot}
             onJumpToNextAvailable={() => {
-              void handleJumpToNextAvailable();
+              void flow.handleJumpToNextAvailable();
             }}
             onRetrySlots={() => {
               void slotsQuery.refetch();
             }}
           />
 
-          {showConflictForm ? (
+          {flow.showConflictForm ? (
             <div className={STICKY_STEP_CLASS_NAME}>
               <PublicBookingGuestForm
-                disabled={createReservation.isPending}
-                submitDisabled={!selectedSlotStart}
-                guestTimeZone={guestTimeZone}
-                values={guestDetails}
-                onChange={setGuestDetails}
-                onSubmit={handleSubmit}
+                disabled={flow.createReservation.isPending}
+                submitDisabled={!flow.selectedSlotStart}
+                guestTimeZone={flow.guestTimeZone}
+                values={flow.guestDetails}
+                onChange={flow.setGuestDetails}
+                onSubmit={flow.handleSubmit}
               />
             </div>
-          ) : selectedSlotStart ? null : (
+          ) : flow.selectedSlotStart ? null : (
             <p className="text-sm text-text-muted">
               Select a time to continue.
             </p>

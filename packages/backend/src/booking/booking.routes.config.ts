@@ -7,6 +7,14 @@ import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 const bookingSlugKey = (req: express.Request): string =>
   `${req.ip ?? "unknown"}:${req.params["slug"] ?? "unknown"}`;
 
+const publicPageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingSlugKey,
+});
+
 const publicSlotsLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 60,
@@ -34,6 +42,14 @@ const publicReservationGetLimiter = rateLimit({
   keyGenerator: bookingReservationKey,
 });
 
+const publicCancelLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingReservationKey,
+});
+
 /**
  * Host admin routes require a session. Public guest routes are unauthenticated.
  */
@@ -51,7 +67,7 @@ export class BookingRoutes extends CommonRoutesConfig {
 
     this.app
       .route(`/api/booking/pages/:slug`)
-      .get(bookingController.getPublicPage);
+      .get(publicPageLimiter, bookingController.getPublicPage);
 
     this.app
       .route(`/api/booking/pages/:slug/slots`)
@@ -67,7 +83,7 @@ export class BookingRoutes extends CommonRoutesConfig {
 
     this.app
       .route(`/api/booking/reservations/:id/cancel`)
-      .post(bookingController.cancelReservation);
+      .post(publicCancelLimiter, bookingController.cancelReservation);
 
     return this.app;
   }

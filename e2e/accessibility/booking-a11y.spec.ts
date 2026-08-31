@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
+  dispatchFill,
   formatSlotButtonLabel,
   preparePublicBookingCancelPage,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
+  prepareSignedInBookingSettingsPage,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
@@ -200,5 +202,36 @@ test.describe("public booking cancel page", () => {
       page.getByRole("heading", { name: "Could not cancel booking" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel error" });
+  });
+});
+
+test.describe("settings booking section", () => {
+  test.use({ viewport: { width: 1600, height: 900 } });
+
+  test("has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(settingsDialog.getByLabel("Duration")).toBeVisible();
+    // Scoped to the dialog: the calendar shell behind the modal is not this
+    // suite's subject and has its own pre-existing findings.
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("number-field errors have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchFill(settingsDialog.getByLabel("Maximum horizon (days)"), "");
+    await expect(settingsDialog.getByText("Enter 1 to 60 days.")).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking error",
+      include: "[role='dialog']",
+    });
   });
 });

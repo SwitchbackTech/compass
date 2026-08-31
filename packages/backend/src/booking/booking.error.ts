@@ -1,6 +1,9 @@
 import { ZodError, z } from "zod/v4";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+
+const logger = Logger("app:booking.error");
 
 export const BookingErrorCodeSchema = z.enum([
   "GOOGLE_NOT_CONNECTED",
@@ -11,6 +14,7 @@ export const BookingErrorCodeSchema = z.enum([
   "PAGE_NOT_FOUND",
   "SLOT_UNAVAILABLE",
   "RESERVATION_NOT_FOUND",
+  "INTERNAL_ERROR",
 ]);
 export type BookingErrorCode = z.infer<typeof BookingErrorCodeSchema>;
 
@@ -23,6 +27,7 @@ const STATUS_BY_CODE: Record<BookingErrorCode, Status> = {
   PAGE_NOT_FOUND: Status.NOT_FOUND,
   SLOT_UNAVAILABLE: Status.CONFLICT,
   RESERVATION_NOT_FOUND: Status.NOT_FOUND,
+  INTERNAL_ERROR: Status.INTERNAL_SERVER,
 };
 
 export class BookingException extends BaseError {
@@ -50,12 +55,15 @@ export const toBookingErrorResponse = (
   }
 
   if (e instanceof ZodError) {
-    const message = e.issues
-      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-      .join("; ");
+    // Issue paths name internal schema fields; log them, don't return them.
+    logger.warn(
+      `Booking input rejected: ${e.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("; ")}`,
+    );
     return {
       status: STATUS_BY_CODE.INVALID_INPUT,
-      body: { code: "INVALID_INPUT", message },
+      body: { code: "INVALID_INPUT", message: "Invalid input" },
     };
   }
 
@@ -69,9 +77,12 @@ export const toBookingErrorResponse = (
     }
   }
 
-  const message = e instanceof Error ? e.message : "Unexpected error";
+  logger.error(e instanceof Error ? e : `Unexpected booking error: ${e}`);
   return {
-    status: Status.INTERNAL_SERVER,
-    body: { code: "INVALID_INPUT", message },
+    status: STATUS_BY_CODE.INTERNAL_ERROR,
+    body: {
+      code: "INTERNAL_ERROR",
+      message: "Something went wrong. Please try again.",
+    },
   };
 };

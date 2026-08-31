@@ -79,9 +79,9 @@ Do not block merge on staging. After the release is live (or if you
 are a post-deploy session):
 
 - Always: frontend loads, not 5xx.
-- After WP-08: `https://staging.compasscalendar.com/book/<slug>` as an
+- Public booking: `https://staging.compasscalendar.com/book/<slug>` as an
   anonymous guest. No login.
-- Settings Booking (WP-07): only if a connected browser is already
+- Settings Booking: only if a connected browser is already
   signed in as `compasscaltest3@gmail.com`. Never enter credentials.
 
 ## New work items

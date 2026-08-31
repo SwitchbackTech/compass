@@ -226,24 +226,14 @@ test.describe("public booking page", () => {
     await page.setViewportSize({ width: 800, height: 480 });
 
     const origin = buildBookableSlot();
-    const originMs = Date.parse(origin.slotStart);
-    const originDate = origin.slotStart.slice(0, 10);
-    // Keep 40 slots on the origin UTC day. A fixed 15-minute step runs out
-    // of that day near UTC midnight, and on month-end when buildBookableSlot
-    // falls back to now+2h.
-    const remainingMinutes = Math.floor(
-      (Date.parse(`${originDate}T00:00:00.000Z`) +
-        24 * 60 * 60 * 1000 -
-        originMs) /
-        60_000,
-    );
-    const stepMinutes = Math.max(
-      1,
-      Math.min(15, Math.floor(remainingMinutes / 40)),
-    );
+    // Fill the origin's whole UTC day from midnight: counting forward from
+    // the origin left too few slots to scroll when the suite ran late in the
+    // UTC day (the origin can fall back to now + 2h).
+    const dayStart = new Date(origin.slotStart);
+    dayStart.setUTCHours(0, 0, 0, 0);
     const slots: Array<{ slotStart: string; slotEnd: string }> = [];
     for (let index = 0; index < 40; index += 1) {
-      const slotStart = new Date(originMs + index * stepMinutes * 60 * 1000);
+      const slotStart = new Date(dayStart.getTime() + index * 15 * 60 * 1000);
       slots.push({
         slotStart: slotStart.toISOString(),
         slotEnd: new Date(slotStart.getTime() + 30 * 60 * 1000).toISOString(),

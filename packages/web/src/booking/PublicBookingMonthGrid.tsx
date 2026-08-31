@@ -202,7 +202,7 @@ export function PublicBookingMonthGrid({
                       onSelectDate(day.dateKey);
                     }}
                     onKeyDown={(event) => handleDayKeyDown(event, day.dateKey)}
-                    className={`flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`c-focus-ring flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors ${
                       isSelected
                         ? "bg-accent text-on-accent hover:bg-accent"
                         : "bg-surface-panel text-text hover:bg-surface-raised"

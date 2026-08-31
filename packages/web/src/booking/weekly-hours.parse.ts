@@ -1,4 +1,7 @@
-import { type LocalTimeOfDay } from "@core/types/booking.contracts";
+import {
+  type LocalTimeOfDay,
+  localTimeToMinutes,
+} from "@core/types/booking.contracts";
 import {
   getDayjsByTimeValue,
   parseUserTime,
@@ -20,10 +23,7 @@ const EXPLICIT_MERIDIEM = /[ap]\.?m?\.?\s*$/i;
 const toLocalTime = (value: string): LocalTimeOfDay =>
   getDayjsByTimeValue(value).format("HH:mm") as LocalTimeOfDay;
 
-const minutesOf = (time: LocalTimeOfDay): number => {
-  const [hours, minutes] = time.split(":");
-  return Number(hours) * 60 + Number(minutes);
-};
+const minutesOf = localTimeToMinutes;
 
 /** Push a bare 1-11 o'clock into the afternoon. */
 const toPm = (time: LocalTimeOfDay): LocalTimeOfDay => {

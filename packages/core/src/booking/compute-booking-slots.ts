@@ -1,5 +1,6 @@
 import {
   type BookingDurationMinutes,
+  localTimeToMinutes,
   type WeeklyAvailability,
 } from "@core/types/booking.contracts";
 import dayjs from "@core/util/date/dayjs";
@@ -52,11 +53,6 @@ export const mergeBookingBusyIntervals = (
     }
   }
   return merged;
-};
-
-const localTimeToMinutes = (time: string): number => {
-  const [hoursText, minutesText] = time.split(":");
-  return Number(hoursText) * 60 + Number(minutesText);
 };
 
 const toIsoWeekday = (localDay: dayjs.Dayjs): number => {

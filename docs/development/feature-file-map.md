@@ -60,11 +60,11 @@ Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
   cancel `/book/cancel/:id` (guest routes outside the calendar shell)
 - Shared contracts: `packages/core/src/types/booking.contracts.ts`
 - Slot engine: `packages/core/src/booking/compute-booking-slots.ts`
-- Backend admin: `packages/backend/src/booking/booking.controller.ts`,
-  `booking-page.service.ts`
+- Backend admin: `packages/backend/src/booking/controllers/booking.controller.ts`,
+  `services/booking-page.service.ts`
 - Backend public API: `packages/backend/src/booking/services/public-booking.service.ts`
-- Calendar port: `packages/backend/src/booking/calendar-booking.port.ts`,
-  `calendar-booking.service.ts`
+- Calendar port: `packages/backend/src/booking/services/calendar-booking.port.ts`,
+  `services/calendar-booking.service.ts`
 - Occupancy: `packages/sync/src/domain/occurrence-projection.ts`,
   `packages/sync/src/domain/busy-query.service.ts`,
   `POST /internal/availability/busy`
