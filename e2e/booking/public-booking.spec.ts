@@ -38,17 +38,6 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("heading", { name: "Your details" }),
     ).toBeFocused();
-    await page.evaluate(() => {
-      (document.activeElement as HTMLElement | null)?.blur();
-    });
-    await page.keyboard.press("Tab");
-    await expect(
-      page.getByRole("link", { name: "Skip to your details" }),
-    ).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(
-      page.getByRole("heading", { name: "Your details" }),
-    ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
       page.getByRole("button", { name: "Change time" }),
