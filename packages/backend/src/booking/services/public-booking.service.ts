@@ -1,6 +1,7 @@
 import { MongoServerError, type ObjectId } from "mongodb";
 import { computeBookingSlots } from "@core/booking/compute-booking-slots";
 import {
+  BookingDurationMinutesSchema,
   BookingSlotsQuerySchema,
   type BookingSlotsResponse,
   BookingSlotsResponseSchema,
@@ -308,10 +309,18 @@ export class PublicBookingService {
     }
 
     const hostDisplayName = await getHostDisplayName(page.userId);
+    const fromSlot = Math.round(
+      (reservation.slotEnd.getTime() - reservation.slotStart.getTime()) /
+        60_000,
+    );
+    const durationMinutes = BookingDurationMinutesSchema.safeParse(fromSlot)
+      .success
+      ? fromSlot
+      : page.durationMinutes;
     return PublicGetBookingReservationResponseSchema.parse({
       slotStart: reservation.slotStart.toISOString(),
       guestTimeZone: reservation.guestTimeZone,
-      durationMinutes: page.durationMinutes,
+      durationMinutes,
       hostDisplayName,
       status: reservation.status,
     });

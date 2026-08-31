@@ -1097,6 +1097,21 @@ describe("PublicBookingConfirmedPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a retryable state when the public GET fails", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/000000000000000000000099`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.INTERNAL_SERVER), ctx.json({})),
+      ),
+    );
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", { name: "Could not load booking" }),
+    ).toBeInTheDocument();
+  });
+
   it("copies the cancel URL when history state includes it", async () => {
     const user = userEvent.setup({ delay: null });
     const written: string[] = [];

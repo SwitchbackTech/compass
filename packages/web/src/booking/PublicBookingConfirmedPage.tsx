@@ -1,4 +1,5 @@
 import { useParams, useRouterState } from "@tanstack/react-router";
+import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
@@ -34,7 +35,24 @@ export function PublicBookingConfirmedPage() {
     );
   }
 
-  if (reservationQuery.isError || !reservationQuery.data) {
+  if (reservationQuery.isError) {
+    if (reservationQuery.error instanceof PublicBookingNotFoundError) {
+      return (
+        <PublicBookingStatusMessage
+          title="Booking not found"
+          description="This confirmation link may be incorrect or no longer available."
+        />
+      );
+    }
+    return (
+      <PublicBookingStatusMessage
+        title="Could not load booking"
+        description="Please refresh and try again."
+      />
+    );
+  }
+
+  if (!reservationQuery.data) {
     return (
       <PublicBookingStatusMessage
         title="Booking not found"

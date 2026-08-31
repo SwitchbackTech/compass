@@ -388,6 +388,34 @@ describe("PublicBookingService", () => {
     expect(publicReservation).not.toHaveProperty("notes");
   });
 
+  it("returns the booked slot duration after the host changes page duration", async () => {
+    const { slug, userId, calendarId } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "secret notes",
+      guestTimeZone: "Europe/London",
+    });
+
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendarId,
+        blockingCalendarIds: [calendarId],
+        durationMinutes: 45,
+      }),
+    );
+
+    const publicReservation = await service.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.durationMinutes).toBe(30);
+  });
+
   it("returns cancelled status without leaking guest contact", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
