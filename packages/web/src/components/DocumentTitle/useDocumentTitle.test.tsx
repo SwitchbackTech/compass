@@ -1,5 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUseupnextevent from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   DEFAULT_DOCUMENT_TITLE,
@@ -38,13 +40,17 @@ const actualUpNext = {
   ...(await import("@web/components/Sidebar/UpNextCard/useUpNextEvent")),
 };
 let isUpNextMocked = true;
-mock.module("@web/components/Sidebar/UpNextCard/useUpNextEvent", () => ({
-  useUpNextEvent: () =>
-    isUpNextMocked
-      ? upNextState
-      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory, not a component
-        actualUpNext.useUpNextEvent(),
-}));
+mockModuleForFile(
+  "@web/components/Sidebar/UpNextCard/useUpNextEvent",
+  realUseupnextevent,
+  {
+    useUpNextEvent: () =>
+      isUpNextMocked
+        ? upNextState
+        : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory, not a component
+          actualUpNext.useUpNextEvent(),
+  },
+);
 
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 const locationState = { pathname: "/week/2026-08-02" };

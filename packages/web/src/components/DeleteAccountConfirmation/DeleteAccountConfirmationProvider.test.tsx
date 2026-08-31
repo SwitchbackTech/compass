@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, afterEach, describe, expect, it, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
 import { UserApi } from "@web/api/user.api";
 import * as authState from "@web/auth/compass/state/auth.state.util";
@@ -25,6 +25,18 @@ const getPosthogClient = spyOn(
   posthogBootstrap,
   "getPosthogClient",
 ).mockReturnValue(posthog as never);
+
+// These spies live at module scope so the requires below see them, and bun
+// never restores a spy on its own: without this every later file in the run
+// would keep the fakes (a getPosthogClient with no capture(), a stubbed
+// location.assign), and fail somewhere unrelated.
+afterAll(() => {
+  deleteAccount.mockRestore();
+  clearAllBrowserStorage.mockRestore();
+  getLastKnownEmail.mockRestore();
+  assign.mockRestore();
+  getPosthogClient.mockRestore();
+});
 
 const { DeleteAccountConfirmationProvider } =
   require("./DeleteAccountConfirmationProvider") as typeof import("./DeleteAccountConfirmationProvider");

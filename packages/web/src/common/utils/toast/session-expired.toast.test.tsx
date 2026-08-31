@@ -2,15 +2,17 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { render, screen, within } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import * as realRouters from "@web/routers";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
 
-mock.module("@web/routers", () => ({
+mockModuleForFile("@web/routers", realRouters, {
   router: { navigate: mockNavigate },
-}));
+});
 
 describe("SessionExpiredToast", () => {
   const { port, mocks } = createTestToastPort();

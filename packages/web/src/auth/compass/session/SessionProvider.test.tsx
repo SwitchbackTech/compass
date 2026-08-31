@@ -1,6 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, useContext } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { session } from "@web/auth/compass/session/Session";
+import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import { DEFAULT_AUTH_STATE } from "@web/auth/compass/state/auth.state.util";
 import * as userMetadataUtil from "@web/auth/compass/user/util/user-metadata.util";
 import {
@@ -50,18 +52,22 @@ const subscribeToAuthState = mock();
 const updateAuthState = mock();
 const doesSessionExist = spyOn(session, "doesSessionExist");
 
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  clearAnonymousCalendarChangeSignUpPrompt,
-  clearAuthenticationState,
-  getAuthState,
-  getLastKnownEmail,
-  hasUserEverAuthenticated,
-  markUserAsAuthenticated,
-  markAnonymousCalendarChangeForSignUpPrompt,
-  shouldShowAnonymousCalendarChangeSignUpPrompt,
-  subscribeToAuthState,
-  updateAuthState,
-}));
+mockModuleForFile(
+  "@web/auth/compass/state/auth.state.util",
+  realAuthStateUtil,
+  {
+    clearAnonymousCalendarChangeSignUpPrompt,
+    clearAuthenticationState,
+    getAuthState,
+    getLastKnownEmail,
+    hasUserEverAuthenticated,
+    markUserAsAuthenticated,
+    markAnonymousCalendarChangeForSignUpPrompt,
+    shouldShowAnonymousCalendarChangeSignUpPrompt,
+    subscribeToAuthState,
+    updateAuthState,
+  },
+);
 
 const { SessionContext } =
   require("./session.context") as typeof import("./session.context");

@@ -1,13 +1,20 @@
 import { UNAUTHENTICATED_USER } from "@web/auth/compass/session/session.util";
 import { session } from "./Session";
 import { getUserId } from "./session.util";
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const mockDoesSessionExist = spyOn(session, "doesSessionExist");
 const mockGetAccessTokenPayloadSecurely = spyOn(
   session,
   "getAccessTokenPayloadSecurely",
 );
+
+// bun never restores a spy on its own, and these live at module scope: without
+// this they stay installed on supertokens' session module for every later file.
+afterAll(() => {
+  mockDoesSessionExist.mockRestore();
+  mockGetAccessTokenPayloadSecurely.mockRestore();
+});
 
 describe("session.util", () => {
   beforeEach(() => {

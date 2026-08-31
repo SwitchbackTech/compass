@@ -4,6 +4,7 @@ import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
   initialFirstEventPromptState,
@@ -34,6 +35,7 @@ import {
   getShortcutHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
+import * as realUsessedegraded from "@web/sse/hooks/useSseDegraded";
 import { TIME_TRAVEL_HINT_PARTS } from "@web/timezone/TimeTravelIndicator";
 import {
   resetTimeTravelStoreForTests,
@@ -84,10 +86,10 @@ let isSseDegraded = false;
 let isSseDegradedMocked = true;
 const actualUseSseDegraded = (await import("@web/sse/hooks/useSseDegraded"))
   .useSseDegraded;
-mock.module("@web/sse/hooks/useSseDegraded", () => ({
+mockModuleForFile("@web/sse/hooks/useSseDegraded", realUsessedegraded, {
   useSseDegraded: () =>
     isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
-}));
+});
 
 afterAll(() => {
   isConnectGoogleMocked = false;

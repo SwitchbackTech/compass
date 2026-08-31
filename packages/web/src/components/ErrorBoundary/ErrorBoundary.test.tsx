@@ -1,5 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realPosthogBootstrap from "@web/auth/posthog/posthog.bootstrap";
+import * as realBrowserNavigationUtil from "@web/common/utils/browser/browser-navigation.util";
 import { ErrorBoundary } from "@web/components/ErrorBoundary/ErrorBoundary";
 import {
   afterEach,
@@ -19,17 +22,21 @@ const mockReload = mock();
 // `capture` is a no-op here (not a mock) so a `track()` call elsewhere in the
 // same test run - the module registration is process-global - doesn't crash
 // on a stubbed client shaped only for captureException.
-mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
+mockModuleForFile("@web/auth/posthog/posthog.bootstrap", realPosthogBootstrap, {
   getPosthogClient: () => ({
     captureException: mockCaptureException,
     capture: () => undefined,
     reset: () => undefined,
   }),
-}));
+});
 
-mock.module("@web/common/utils/browser/browser-navigation.util", () => ({
-  reloadLocation: mockReload,
-}));
+mockModuleForFile(
+  "@web/common/utils/browser/browser-navigation.util",
+  realBrowserNavigationUtil,
+  {
+    reloadLocation: mockReload,
+  },
+);
 
 const Boom = () => {
   throw new Error("render exploded");

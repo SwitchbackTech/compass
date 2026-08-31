@@ -1,5 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUsesession from "@web/auth/compass/session/useSession";
+import * as realUseappaccess from "@web/billing/useAppAccess";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import {
   selectIsSettingsOpen,
@@ -10,14 +13,14 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
 
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
-}));
+});
 
 let access: AppAccess = { kind: "open" };
-mock.module("@web/billing/useAppAccess", () => ({
+mockModuleForFile("@web/billing/useAppAccess", realUseappaccess, {
   useAppAccess: () => access,
-}));
+});
 
 const { useShowBillingCmdItems } = await import("./useShowBillingCmdItems");
 

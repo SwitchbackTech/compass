@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUsesession from "@web/auth/compass/session/useSession";
 import { createTasksRemovalNotice } from "./TasksRemovalNotice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -8,9 +10,9 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 // function, injected via createTasksRemovalNotice below — no mock.module,
 // no cache-busting.
 const mockUseSession = mock();
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
-}));
+});
 
 describe("TasksRemovalNotice", () => {
   const mockUseTasksRemovalNotice = mock();

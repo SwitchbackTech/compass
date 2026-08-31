@@ -17,6 +17,7 @@ import {
 } from "@web/__tests__/render-with-store";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { focusEventFormField } from "@web/common/utils/form/form.util";
@@ -31,6 +32,7 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
+import * as realSavesection from "@web/views/Forms/EventForm/SaveSection";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 /**
@@ -91,13 +93,13 @@ mock.module(
   }),
 );
 
-mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
+mockModuleForFile("@web/views/Forms/EventForm/SaveSection", realSavesection, {
   SaveSection: ({ onSubmit }: { onSubmit: () => void }) => (
     <button type="button" onClick={onSubmit}>
       Save
     </button>
   ),
-}));
+});
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 
