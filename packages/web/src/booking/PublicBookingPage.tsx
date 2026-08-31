@@ -202,10 +202,7 @@ export function PublicBookingPage() {
     const currentMonthInOldZone = formatBookingMonthKey(dayjs(), guestTimeZone);
     setGuestTimeZone(nextTimeZone);
     if (selectedSlotStart) {
-      const nextDateKey = formatBookingSlotDateKey(
-        selectedSlotStart,
-        nextTimeZone,
-      );
+      const nextDateKey = formatBookingDateKey(selectedSlotStart, nextTimeZone);
       setSelectedDateKey(nextDateKey);
       setMonthKey(nextDateKey.slice(0, 7));
       return;

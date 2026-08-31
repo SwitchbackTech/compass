@@ -308,7 +308,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Next month" }));
 
-    const utcDateKey = formatBookingSlotDateKey(slot.slotStart, guestTimeZone);
+    const utcDateKey = formatBookingDateKey(slot.slotStart, guestTimeZone);
     expect(
       await screen.findByRole("button", {
         name: formatBookingMonthDayLabel(utcDateKey, guestTimeZone),
@@ -329,7 +329,7 @@ describe("PublicBookingPage", () => {
       expect(slotTimeZones).toContain(overrideZone);
     });
 
-    const tokyoDateKey = formatBookingSlotDateKey(slot.slotStart, overrideZone);
+    const tokyoDateKey = formatBookingDateKey(slot.slotStart, overrideZone);
     expect(tokyoDateKey).not.toBe(utcDateKey);
     expect(
       await screen.findByRole("button", {
