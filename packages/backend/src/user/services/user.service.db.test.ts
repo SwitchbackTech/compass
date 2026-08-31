@@ -525,19 +525,28 @@ describe("UserService", () => {
       cancellation.mockRestore();
     });
 
-    it("requires a fresh sign-in before deleting an account", async () => {
+    it("deletes the account when lastLoggedInAt was never stamped", async () => {
+      const user = await UserDriver.createUser();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $unset: { lastLoggedInAt: "" } },
+      );
+
+      await userService.deleteAccount(user._id.toString());
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+    });
+
+    it("deletes the account when the last sign-in was not recent", async () => {
       const user = await UserDriver.createUser();
       await mongoService.user.updateOne(
         { _id: user._id },
         { $set: { lastLoggedInAt: new Date(Date.now() - 16 * 60_000) } },
       );
 
-      await expect(
-        userService.deleteAccount(user._id.toString()),
-      ).rejects.toThrow(
-        "For security, sign out and sign back in before deleting your account",
-      );
-      expect(await mongoService.user.findOne({ _id: user._id })).not.toBeNull();
+      await userService.deleteAccount(user._id.toString());
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
     });
 
     it("retries local cleanup after Stripe cancellation has succeeded", async () => {

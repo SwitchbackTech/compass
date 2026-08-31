@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, describe, expect, it, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
@@ -65,6 +65,28 @@ const confirmDeletion = async () => {
   await user.click(screen.getByRole("button", { name: "open" }));
   await user.type(screen.getByRole("textbox"), DELETE_ACCOUNT_PHRASE);
   await user.click(screen.getByRole("button", { name: "Delete account" }));
+  return user;
+};
+
+// Spy setTimeout only after user-event is done. Testing Library treats a
+// mocked setTimeout as fake timers and then user-event/waitFor crash.
+const flushPendingDelete = async (finishDelete: () => void) => {
+  const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+    callback: TimerHandler,
+  ) => {
+    if (typeof callback === "function") callback();
+    return 0;
+  }) as typeof setTimeout);
+  try {
+    await act(async () => {
+      finishDelete();
+      for (let i = 0; i < 30; i++) {
+        await Promise.resolve();
+      }
+    });
+  } finally {
+    setTimeoutSpy.mockRestore();
+  }
 };
 
 afterEach(() => {
@@ -78,50 +100,41 @@ afterEach(() => {
 
 describe("DeleteAccountConfirmationProvider", () => {
   it("resets the analytics identity after deleting the account", async () => {
-    await confirmDeletion();
+    let finishDelete = () => {};
+    deleteAccount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDelete = () => resolve({} as never);
+        }) as never,
+    );
 
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      expect(posthog.reset).toHaveBeenCalledTimes(1);
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await confirmDeletion();
+    await flushPendingDelete(finishDelete);
+
+    expect(posthog.reset).toHaveBeenCalledTimes(1);
   });
 
   it("resets analytics even when browser storage cleanup fails", async () => {
     clearAllBrowserStorage.mockRejectedValueOnce(
       new Error("IndexedDB blocked"),
     );
-    await confirmDeletion();
+    let finishDelete = () => {};
+    deleteAccount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDelete = () => resolve({} as never);
+        }) as never,
+    );
 
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      expect(posthog.reset).toHaveBeenCalledTimes(1);
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await confirmDeletion();
+    await flushPendingDelete(finishDelete);
+
+    expect(posthog.reset).toHaveBeenCalledTimes(1);
   });
 
-  // Deleting spans a Mongo transaction and a Google grant revocation. The
-  // farewell used to wait for that to finish, so the user sat looking at the
-  // calendar of the account they'd just deleted with nothing to say it was
-  // working.
+  // Deleting spans a Mongo transaction and a Google grant revocation. Until
+  // the working overlay covers the screen the user is looking at the calendar
+  // of the account they just asked to delete, with nothing to say it's working.
   it("covers the calendar while the account is still being deleted", async () => {
     let finishDelete = () => {};
     deleteAccount.mockImplementationOnce(
@@ -133,45 +146,89 @@ describe("DeleteAccountConfirmationProvider", () => {
 
     await confirmDeletion();
 
-    // Still in flight: the request has not resolved yet.
-    const farewell = await screen.findByRole("status");
-    expect(farewell).toHaveTextContent(/so long captain@example.com/i);
-    // aria-busy on a live region withholds the announcement until it flips
-    // false, and this one never does - it lives until the reload, so a screen
-    // reader user got silence where everyone else got the farewell.
-    expect(farewell).not.toHaveAttribute("aria-busy");
+    const deleting = await screen.findByRole("status");
+    expect(deleting).toHaveTextContent(/deleting your account/i);
+    expect(deleting).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
-    // Resolve the one production timer immediately. This keeps the production
-    // API unchanged and prevents a real timer from leaking into later files.
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
-      finishDelete();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+    await flushPendingDelete(finishDelete);
 
-      expect(assign).toHaveBeenCalled();
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /so long captain@example.com/i,
+    );
+    expect(assign).toHaveBeenCalled();
   });
 
-  it("takes the farewell back down if the account could not be deleted", async () => {
+  it("keeps the user in a keyboard dialog if the account could not be deleted", async () => {
     deleteAccount.mockImplementationOnce(
       () => Promise.reject(new Error("nope")) as never,
     );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
+
+    const user = await confirmDeletion();
+
+    const failure = await screen.findByRole("dialog", {
+      name: /couldn't delete your account/i,
+    });
+    expect(failure).toHaveTextContent(/your account is still here/i);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
+
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(deleteAccount).toHaveBeenCalledTimes(2);
+    });
+
+    consoleError.mockRestore();
+  });
+
+  it("lets the user dismiss a failed delete with Escape", async () => {
+    deleteAccount.mockImplementationOnce(
+      () => Promise.reject(new Error("nope")) as never,
+    );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
+
+    const user = await confirmDeletion();
+
+    await screen.findByRole("dialog", {
+      name: /couldn't delete your account/i,
+    });
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", {
+          name: /couldn't delete your account/i,
+        }),
+      ).not.toBeInTheDocument();
+    });
+    expect(assign).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
+  it("does not stack a retry dialog on top of session recovery", async () => {
+    deleteAccount.mockImplementationOnce(
+      () =>
+        Promise.reject({
+          config: {},
+          response: { status: 401 },
+        }) as never,
+    );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
 
     await confirmDeletion();
 
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
+    expect(
+      screen.queryByRole("dialog", {
+        name: /couldn't delete your account/i,
+      }),
+    ).not.toBeInTheDocument();
     expect(assign).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
   });
 });

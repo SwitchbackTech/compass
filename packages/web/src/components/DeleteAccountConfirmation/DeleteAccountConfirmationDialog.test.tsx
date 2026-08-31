@@ -82,6 +82,24 @@ describe("DeleteAccountConfirmationDialog", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it("confirms from the keyboard with Enter after the phrase is typed", async () => {
+    const { input, onConfirm, user } = setup();
+
+    await user.type(input, DELETE_ACCOUNT_PHRASE);
+    await user.keyboard("{Enter}");
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not confirm on Enter until the phrase matches", async () => {
+    const { input, onConfirm, user } = setup();
+
+    await user.type(input, "not the phrase");
+    await user.keyboard("{Enter}");
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it("blocks pasting the phrase, so it has to be typed", async () => {
     const { confirmButton, input, user } = setup();
 
