@@ -17,8 +17,8 @@
     -->
     <script>
       try {
-        var stored = localStorage.getItem("compass.theme");
-        var useLight =
+        const stored = localStorage.getItem("compass.theme");
+        const useLight =
           stored === "light-beach" ||
           (stored === null &&
             window.matchMedia &&
