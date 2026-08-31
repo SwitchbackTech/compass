@@ -11,6 +11,8 @@ import {
   CreateBookingReservationResponseSchema,
   type PublicGetBookingPageResponse,
   PublicGetBookingPageResponseSchema,
+  type PublicGetBookingReservationResponse,
+  PublicGetBookingReservationResponseSchema,
 } from "@core/types/booking.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 import { getErrorStatus } from "@web/api/util/api.util";
@@ -67,6 +69,23 @@ const PublicBookingApi = {
       { skipSessionRecovery: true },
     );
     return CreateBookingReservationResponseSchema.parse(response.data);
+  },
+
+  async getReservation(
+    reservationId: string,
+  ): Promise<PublicGetBookingReservationResponse> {
+    try {
+      const response = await BaseApi.get<unknown>(
+        `/booking/reservations/${encodeURIComponent(reservationId)}`,
+        { skipSessionRecovery: true },
+      );
+      return PublicGetBookingReservationResponseSchema.parse(response.data);
+    } catch (error) {
+      if (getErrorStatus(error) === 404) {
+        throw new PublicBookingNotFoundError();
+      }
+      throw error;
+    }
   },
 
   async cancelReservation(

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   type BookingSlotsResponse,
@@ -7,7 +7,6 @@ import {
 } from "@core/types/booking.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
-import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
 import {
   type PublicBookingGuestDetails,
@@ -28,7 +27,6 @@ import {
 } from "@web/booking/public-booking.format";
 import {
   isPublicBookingConflictError,
-  type PublicBookingConfirmation,
   prefetchPublicBookingMonth,
   publicBookingQueryKeys,
   useCreatePublicBookingReservationMutation,
@@ -36,6 +34,7 @@ import {
   usePublicBookingPageQuery,
   usePublicBookingSlotsQuery,
 } from "@web/booking/public-booking.query";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
@@ -47,6 +46,7 @@ const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
 export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
   const slug = username ?? "";
+  const navigate = useNavigate();
   const [guestTimeZone, setGuestTimeZone] = useState(getBrowserTimeZone);
   const queryClient = useQueryClient();
   const [monthKey, setMonthKey] = useState(() =>
@@ -68,8 +68,6 @@ export function PublicBookingPage() {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [guestDetails, setGuestDetails] =
     useState<PublicBookingGuestDetails>(EMPTY_GUEST_DETAILS);
-  const [confirmation, setConfirmation] =
-    useState<PublicBookingConfirmation | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
   const [step, setStep] = useState<"picker" | "details">("picker");
   const conflictAlertRef = useRef<HTMLParagraphElement>(null);
@@ -154,16 +152,6 @@ export function PublicBookingPage() {
   }
 
   const page = pageQuery.data;
-
-  if (confirmation) {
-    return (
-      <PublicBookingConfirmationView
-        hostDisplayName={page.hostDisplayName}
-        durationMinutes={page.durationMinutes}
-        confirmation={confirmation}
-      />
-    );
-  }
 
   if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
@@ -312,7 +300,12 @@ export function PublicBookingPage() {
           guestTimeZone: values.guestTimeZone,
         }),
       );
-      setConfirmation(result);
+      await navigate({
+        to: ROOT_ROUTES.BOOK_CONFIRMED,
+        params: { reservationId: result.reservationId },
+        // Post-submit only: the public GET cannot reconstruct the cancel token.
+        state: { cancelUrl: result.cancelUrl } as never,
+      });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {
         setConflictMessage(

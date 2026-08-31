@@ -121,6 +121,27 @@ function slotsInWindow(
   );
 }
 
+function reservationGetHandler(
+  overrides: Record<string, unknown> = {},
+  id = "000000000000000000000099",
+) {
+  return rest.get(
+    `${ENV_WEB.API_BASEURL}/booking/reservations/${id}`,
+    (_req, res, ctx) =>
+      res(
+        ctx.status(Status.OK),
+        ctx.json({
+          slotStart: currentSlot.slotStart,
+          guestTimeZone: "UTC",
+          durationMinutes: 30,
+          hostDisplayName: "Tyler Dane",
+          status: "confirmed",
+          ...overrides,
+        }),
+      ),
+  );
+}
+
 describe("PublicBookingPage", () => {
   it("shows a generic not-found state for an unknown slug", async () => {
     renderBookingRoute("/book/unknown-host");
@@ -140,6 +161,7 @@ describe("PublicBookingPage", () => {
     server.use(
       pageHandler(),
       slotsInWindow([currentSlot]),
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
         async (req, res, ctx) => {
@@ -216,6 +238,9 @@ describe("PublicBookingPage", () => {
       guestEmail: "guest@example.com",
       guestTimeZone: "UTC",
     });
+    expect(
+      screen.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeInTheDocument();
   });
 
   it("overrides the guest timezone for labels, day grouping, and submit", async () => {
@@ -249,6 +274,10 @@ describe("PublicBookingPage", () => {
           );
         },
       ),
+      reservationGetHandler({
+        slotStart: slot.slotStart,
+        guestTimeZone: overrideZone,
+      }),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/pages/tzhost/reservations`,
         async (req, res, ctx) => {
@@ -816,6 +845,7 @@ describe("PublicBookingPage", () => {
     server.use(
       pageHandler(),
       slotsInWindow([currentSlot]),
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
         async (_req, res, ctx) => {
@@ -1017,5 +1047,115 @@ describe("PublicBookingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("PublicBookingConfirmedPage", () => {
+  it("shows booking details from the public GET", async () => {
+    server.use(reservationGetHandler());
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/30 minutes/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Copy cancel link" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a calm state for a cancelled reservation", async () => {
+    server.use(reservationGetHandler({ status: "cancelled" }));
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "This booking was canceled",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a calm state for an unknown reservation", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/000000000000000000000099`,
+        (_req, res, ctx) => res(ctx.status(Status.NOT_FOUND), ctx.json({})),
+      ),
+    );
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", { name: "Booking not found" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a retryable state when the public GET fails", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/000000000000000000000099`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.INTERNAL_SERVER), ctx.json({})),
+      ),
+    );
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", { name: "Could not load booking" }),
+    ).toBeInTheDocument();
+  });
+
+  it("copies the cancel URL when history state includes it", async () => {
+    const user = userEvent.setup({ delay: null });
+    const written: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          written.push(value);
+        },
+      },
+    });
+
+    server.use(
+      pageHandler(),
+      slotsInWindow([currentSlot]),
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
+        async (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json({
+              reservationId: "000000000000000000000099",
+              slotStart: currentSlot.slotStart,
+              slotEnd: currentSlot.slotEnd,
+              guestTimeZone: "UTC",
+              cancelUrl:
+                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+            }),
+          ),
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    );
+    await user.type(screen.getByLabelText("Name"), "Guest User");
+    await user.type(screen.getByLabelText("Email"), "guest@example.com");
+    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Copy cancel link" }),
+    );
+
+    expect(written).toEqual([
+      "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+    ]);
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Copied");
   });
 });

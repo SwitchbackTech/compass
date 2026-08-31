@@ -5,6 +5,7 @@ describe("isBookingPathname", () => {
   it("matches public booking and cancel paths", () => {
     expect(isBookingPathname("/book/tylerdane")).toBe(true);
     expect(isBookingPathname("/book/cancel/abc123")).toBe(true);
+    expect(isBookingPathname("/book/confirmed/abc123")).toBe(true);
   });
 
   it("does not match calendar routes", () => {

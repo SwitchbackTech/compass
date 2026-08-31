@@ -14,6 +14,8 @@ export const BOOKING_RESERVED_SLUGS = [
   "api",
   "cleanup",
   "book",
+  "cancel",
+  "confirmed",
   "p",
   "settings",
   "admin",
@@ -269,6 +271,17 @@ export const CreateBookingReservationResponseSchema = z.strictObject({
 });
 export type CreateBookingReservationResponse = z.infer<
   typeof CreateBookingReservationResponseSchema
+>;
+
+export const PublicGetBookingReservationResponseSchema = z.strictObject({
+  slotStart: DateTimeSchema,
+  guestTimeZone: TimeZoneSchema,
+  durationMinutes: BookingDurationMinutesSchema,
+  hostDisplayName: z.string().trim().min(1).max(256),
+  status: BookingReservationStatusSchema,
+});
+export type PublicGetBookingReservationResponse = z.infer<
+  typeof PublicGetBookingReservationResponseSchema
 >;
 
 export const CancelBookingReservationInputSchema = z.strictObject({
