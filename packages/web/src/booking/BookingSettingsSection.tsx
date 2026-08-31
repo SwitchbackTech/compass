@@ -31,6 +31,14 @@ import {
   resolveWritableCalendars,
   toBookingPageInput,
 } from "@web/booking/booking.util";
+import {
+  BOOKING_FIELD_BY_KEY,
+  BOOKING_SEQUENCE_FIELDS,
+  type BookingSequenceField,
+  bookingFieldAttrs,
+  bookingFieldKey,
+  focusBookingField,
+} from "@web/booking/booking-sequence.fields";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -41,7 +49,10 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
+import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
+import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
@@ -108,6 +119,41 @@ interface BookingSettingsSectionProps {
   showShortcuts: boolean;
 }
 
+/**
+ * A field caption with its `e`-leader key, revealed on hold-Mod alongside the
+ * Settings nav digits, so one gesture teaches the whole page.
+ */
+function FieldLabel({
+  children,
+  field,
+  htmlFor,
+  showShortcuts,
+}: {
+  children: string;
+  field: BookingSequenceField;
+  htmlFor?: string;
+  showShortcuts: boolean;
+}) {
+  const chip = showShortcuts ? (
+    <ShortcutKeys keys={`e ${bookingFieldKey(field)}`} />
+  ) : null;
+
+  return htmlFor ? (
+    <label
+      className="mb-1 flex items-center gap-1 text-sm text-text"
+      htmlFor={htmlFor}
+    >
+      {children}
+      {chip}
+    </label>
+  ) : (
+    <span className="mb-1 flex items-center gap-1 text-sm text-text">
+      {children}
+      {chip}
+    </span>
+  );
+}
+
 export function BookingSettingsSection({
   showShortcuts,
 }: BookingSettingsSectionProps) {
@@ -142,6 +188,17 @@ export function BookingSettingsSection({
   );
   const [enableError, setEnableError] = useState<string | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
+  const sectionRef = useRef<HTMLFieldSetElement>(null);
+
+  // ignoreAppLock because the Settings modal itself holds the lock, the same
+  // reason useSettingsShortcuts sets it. Scoped to "booking" so the which-key
+  // menu cannot appear over the grid.
+  useEditSequenceShortcut({
+    fieldByKey: BOOKING_FIELD_BY_KEY,
+    ignoreAppLock: true,
+    onSequence: focusBookingField,
+    scope: "booking",
+  });
 
   // Re-seed only when the server actually answers with a different page.
   // Keying the effect on writableCalendars/effectiveTimeZone as well meant a
@@ -227,10 +284,18 @@ export function BookingSettingsSection({
     <fieldset
       className="flex flex-col gap-4"
       disabled={isReadOnly || saveMutation.isPending}
+      ref={sectionRef}
     >
-      {savedPage ? <BookingCopyLink bookingUrl={savedPage.bookingUrl} /> : null}
+      {savedPage ? (
+        <div {...bookingFieldAttrs("link")}>
+          <BookingCopyLink bookingUrl={savedPage.bookingUrl} />
+        </div>
+      ) : null}
 
-      <label className="flex items-center gap-2 text-sm text-text">
+      <label
+        className="flex items-center gap-2 text-sm text-text"
+        {...bookingFieldAttrs("enabled")}
+      >
         <input
           checked={form.enabled}
           className="c-all-day-checkbox"
@@ -238,6 +303,7 @@ export function BookingSettingsSection({
           type="checkbox"
         />
         Enable booking page
+        {showShortcuts ? <ShortcutKeys keys="e e" /> : null}
       </label>
       {enableError ? (
         <p className="text-error text-sm" role="alert">
@@ -246,13 +312,15 @@ export function BookingSettingsSection({
       ) : null}
 
       <div>
-        <label
-          className="mb-1 block text-sm text-text"
+        <FieldLabel
+          field="duration"
           htmlFor="booking-duration"
+          showShortcuts={showShortcuts}
         >
           Duration
-        </label>
+        </FieldLabel>
         <select
+          {...bookingFieldAttrs("duration")}
           className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
           id="booking-duration"
           onChange={(event) =>
@@ -273,13 +341,15 @@ export function BookingSettingsSection({
       </div>
 
       <div>
-        <label
-          className="mb-1 block text-sm text-text"
+        <FieldLabel
+          field="destination"
           htmlFor="booking-destination-calendar"
+          showShortcuts={showShortcuts}
         >
           Destination calendar
-        </label>
+        </FieldLabel>
         <select
+          {...bookingFieldAttrs("destination")}
           className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
           id="booking-destination-calendar"
           onChange={(event) =>
@@ -302,8 +372,14 @@ export function BookingSettingsSection({
         </select>
       </div>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm text-text">Blocking calendars</legend>
+      <fieldset
+        className="flex flex-col gap-2"
+        {...bookingFieldAttrs("blocking")}
+      >
+        <legend className="mb-1 flex items-center gap-1 text-sm text-text">
+          Blocking calendars
+          {showShortcuts ? <ShortcutKeys keys="e b" /> : null}
+        </legend>
         {availabilityCalendars.length === 0 ? (
           <p className="text-sm text-text-muted">No calendars available.</p>
         ) : (
@@ -356,26 +432,34 @@ export function BookingSettingsSection({
         )}
       </fieldset>
 
-      <BookingTimezoneField
-        onChange={(timeZone) => updateForm({ timeZone })}
-        timeZone={form.timeZone}
-      />
+      <div {...bookingFieldAttrs("timezone")}>
+        <BookingTimezoneField
+          onChange={(timeZone) => updateForm({ timeZone })}
+          shortcutKeys={showShortcuts ? "e z" : undefined}
+          timeZone={form.timeZone}
+        />
+      </div>
 
-      <BookingWeeklyHoursEditor
-        onChange={(weeklyAvailability) => updateForm({ weeklyAvailability })}
-        onValidityChange={setAreHoursValid}
-        value={form.weeklyAvailability}
-      />
+      <div {...bookingFieldAttrs("hours")}>
+        <BookingWeeklyHoursEditor
+          onChange={(weeklyAvailability) => updateForm({ weeklyAvailability })}
+          onValidityChange={setAreHoursValid}
+          shortcutKeys={showShortcuts ? "e h" : undefined}
+          value={form.weeklyAvailability}
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label
-            className="mb-1 block text-sm text-text"
+          <FieldLabel
+            field="notice"
             htmlFor="booking-min-notice"
+            showShortcuts={showShortcuts}
           >
             Minimum notice (hours)
-          </label>
+          </FieldLabel>
           <input
+            {...bookingFieldAttrs("notice")}
             className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
             id="booking-min-notice"
             min={0}
@@ -387,13 +471,15 @@ export function BookingSettingsSection({
           />
         </div>
         <div>
-          <label
-            className="mb-1 block text-sm text-text"
+          <FieldLabel
+            field="horizon"
             htmlFor="booking-max-horizon"
+            showShortcuts={showShortcuts}
           >
             Maximum horizon (days)
-          </label>
+          </FieldLabel>
           <input
+            {...bookingFieldAttrs("horizon")}
             className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
             id="booking-max-horizon"
             max={60}
@@ -407,41 +493,51 @@ export function BookingSettingsSection({
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-text">
-        <input
-          checked={form.bufferMinutes !== null}
-          className="c-all-day-checkbox"
-          onChange={(event) =>
-            updateForm({ bufferMinutes: event.target.checked ? 30 : null })
-          }
-          type="checkbox"
-        />
-        Buffer between appointments (30 minutes)
-      </label>
+      <fieldset
+        className="flex flex-col gap-2"
+        {...bookingFieldAttrs("options")}
+      >
+        <legend className="mb-1 flex items-center gap-1 text-sm text-text">
+          Buffer and limits
+          {showShortcuts ? <ShortcutKeys keys="e o" /> : null}
+        </legend>
 
-      <label className="flex items-center gap-2 text-sm text-text">
-        <input
-          checked={form.maxBookingsPerDay !== null}
-          className="c-all-day-checkbox"
-          onChange={(event) =>
-            updateForm({ maxBookingsPerDay: event.target.checked ? 4 : null })
-          }
-          type="checkbox"
-        />
-        Max bookings per day (4)
-      </label>
+        <label className="flex items-center gap-2 text-sm text-text">
+          <input
+            checked={form.bufferMinutes !== null}
+            className="c-all-day-checkbox"
+            onChange={(event) =>
+              updateForm({ bufferMinutes: event.target.checked ? 30 : null })
+            }
+            type="checkbox"
+          />
+          Buffer between appointments (30 minutes)
+        </label>
 
-      <label className="flex items-center gap-2 text-sm text-text">
-        <input
-          checked={form.guestsCanInviteOthers}
-          className="c-all-day-checkbox"
-          onChange={(event) =>
-            updateForm({ guestsCanInviteOthers: event.target.checked })
-          }
-          type="checkbox"
-        />
-        Guest can invite others
-      </label>
+        <label className="flex items-center gap-2 text-sm text-text">
+          <input
+            checked={form.maxBookingsPerDay !== null}
+            className="c-all-day-checkbox"
+            onChange={(event) =>
+              updateForm({ maxBookingsPerDay: event.target.checked ? 4 : null })
+            }
+            type="checkbox"
+          />
+          Max bookings per day (4)
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-text">
+          <input
+            checked={form.guestsCanInviteOthers}
+            className="c-all-day-checkbox"
+            onChange={(event) =>
+              updateForm({ guestsCanInviteOthers: event.target.checked })
+            }
+            type="checkbox"
+          />
+          Guest can invite others
+        </label>
+      </fieldset>
 
       <OverlayPanelActions align="start">
         <OverlayPanelActionButton
@@ -456,6 +552,16 @@ export function BookingSettingsSection({
           {saveMutation.isPending ? "Saving…" : "Save booking settings"}
         </OverlayPanelActionButton>
       </OverlayPanelActions>
+
+      <p className="text-text-muted text-xs">
+        Press <kbd>e</kbd> then a letter to jump to a field. <kbd>S</kbd> saves.
+      </p>
+
+      <EditSequenceMenu
+        getAnchor={() => sectionRef.current}
+        options={BOOKING_SEQUENCE_FIELDS}
+        scope="booking"
+      />
     </fieldset>
   );
 }

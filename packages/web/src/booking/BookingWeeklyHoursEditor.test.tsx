@@ -1,11 +1,15 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type WeeklyAvailability } from "@core/types/booking.contracts";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 afterEach(() => {
+  // Unmount, not just empty the DOM: OverlayPanel registers an app-lock reason
+  // and document listeners in effects, and replaceChildren alone never runs
+  // their teardown.
+  cleanup();
   document.body.replaceChildren();
 });
 
