@@ -13,5 +13,16 @@ describe("PublicBookingLayout", () => {
     const main = screen.getByRole("main");
     expect(main).toHaveTextContent("Booking content");
     expect(main.parentElement).toHaveAttribute("data-document-scroll");
+    expect(main.className).toContain("max-w-lg");
+  });
+
+  it("widens the two-pane picker page", () => {
+    render(
+      <PublicBookingLayout wide>
+        <p>Picker</p>
+      </PublicBookingLayout>,
+    );
+
+    expect(screen.getByRole("main").className).toContain("max-w-3xl");
   });
 });

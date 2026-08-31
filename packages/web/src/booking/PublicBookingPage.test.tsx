@@ -9,6 +9,12 @@ import { rest } from "msw";
 import { Status } from "@core/errors/status.codes";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import {
+  formatBookingMonthDayLabel,
+  formatBookingMonthHeading,
+  formatBookingSlotDateKey,
+  shiftBookingMonthKey,
+} from "@web/booking/public-booking.format";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { routeTree } from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
@@ -24,7 +30,48 @@ function renderBookingRoute(path: string) {
   return { ...result, router };
 }
 
-const slotStart = "2026-09-01T15:00:00.000Z";
+function bookableSlotInCurrentMonth(minuteOffset = 0) {
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCHours(15, minuteOffset, 0, 0);
+  if (
+    start.getTime() <= now.getTime() ||
+    start.getUTCMonth() !== now.getUTCMonth()
+  ) {
+    start.setTime(now.getTime() + 2 * 60 * 60 * 1000);
+    start.setUTCMinutes(minuteOffset, 0, 0);
+  }
+  return {
+    slotStart: start.toISOString(),
+    slotEnd: new Date(start.getTime() + 30 * 60 * 1000).toISOString(),
+  };
+}
+
+function bookableSlotInNextMonth() {
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 2, 16, 0, 0),
+  );
+  return {
+    slotStart: start.toISOString(),
+    slotEnd: new Date(start.getTime() + 30 * 60 * 1000).toISOString(),
+  };
+}
+
+function slotTimePattern(iso: string) {
+  const label = new Intl.DateTimeFormat(undefined, {
+    timeZone: "UTC",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(iso));
+  return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+}
+
+const currentSlot = bookableSlotInCurrentMonth();
+const laterCurrentSlot = bookableSlotInCurrentMonth(30);
+const nextMonthSlot = bookableSlotInNextMonth();
+const guestTimeZone = "UTC";
+const currentMonthKey = new Date().toISOString().slice(0, 7);
 
 const publicPagePayload = (overrides: Record<string, unknown> = {}) => ({
   hostDisplayName: "Tyler Dane",
@@ -34,6 +81,35 @@ const publicPagePayload = (overrides: Record<string, unknown> = {}) => ({
   maxHorizonDays: 60,
   ...overrides,
 });
+
+function pageHandler() {
+  return rest.get(
+    `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+    (_req, res, ctx) =>
+      res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
+  );
+}
+
+function slotsInWindow(
+  allSlots: Array<{ slotStart: string; slotEnd: string }>,
+  onRequest?: () => void,
+) {
+  return rest.get(
+    `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+    (req, res, ctx) => {
+      onRequest?.();
+      const start = req.url.searchParams.get("start");
+      const end = req.url.searchParams.get("end");
+      const startMs = start ? Date.parse(start) : Number.NEGATIVE_INFINITY;
+      const endMs = end ? Date.parse(end) : Number.POSITIVE_INFINITY;
+      const slots = allSlots.filter((slot) => {
+        const at = Date.parse(slot.slotStart);
+        return at >= startMs && at < endMs;
+      });
+      return res(ctx.status(Status.OK), ctx.json({ bookable: true, slots }));
+    },
+  );
+}
 
 describe("PublicBookingPage", () => {
   it("shows a generic not-found state for an unknown slug", async () => {
@@ -52,22 +128,8 @@ describe("PublicBookingPage", () => {
     let postedBody: unknown;
 
     server.use(
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
-        (_req, res, ctx) =>
-          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
-      ),
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
-        (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json({
-              bookable: true,
-              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
-            }),
-          ),
-      ),
+      pageHandler(),
+      slotsInWindow([currentSlot]),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
         async (req, res, ctx) => {
@@ -76,8 +138,8 @@ describe("PublicBookingPage", () => {
             ctx.status(Status.OK),
             ctx.json({
               reservationId: "000000000000000000000099",
-              slotStart,
-              slotEnd: "2026-09-01T15:30:00.000Z",
+              slotStart: currentSlot.slotStart,
+              slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
@@ -95,12 +157,25 @@ describe("PublicBookingPage", () => {
     expect(screen.getByRole("main").parentElement).toHaveAttribute(
       "data-document-scroll",
     );
+    expect(screen.getByRole("main").className).toContain("max-w-3xl");
     expect(
       await screen.findByText(/Times shown in your timezone/),
     ).toBeInTheDocument();
 
+    const dateKey = formatBookingSlotDateKey(
+      currentSlot.slotStart,
+      guestTimeZone,
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: formatBookingMonthDayLabel(dateKey, guestTimeZone),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+
     await user.click(
-      await screen.findByRole("button", { name: /3:00 PM|15:00/i }),
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
@@ -112,7 +187,7 @@ describe("PublicBookingPage", () => {
       }),
     ).toBeInTheDocument();
     expect(postedBody).toMatchObject({
-      slotStart,
+      slotStart: currentSlot.slotStart,
       guestName: "Guest User",
       guestEmail: "guest@example.com",
     });
@@ -120,11 +195,7 @@ describe("PublicBookingPage", () => {
 
   it("shows unavailable when bookable is false", async () => {
     server.use(
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
-        (_req, res, ctx) =>
-          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
-      ),
+      pageHandler(),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
         (_req, res, ctx) =>
@@ -145,33 +216,12 @@ describe("PublicBookingPage", () => {
   it("keeps guest details and moves focus to the alert on 409", async () => {
     const user = userEvent.setup({ delay: null });
     let slotRequests = 0;
-    const laterSlotStart = "2026-09-01T15:30:00.000Z";
 
     server.use(
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
-        (_req, res, ctx) =>
-          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
-      ),
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
-        (_req, res, ctx) => {
-          slotRequests += 1;
-          return res(
-            ctx.status(Status.OK),
-            ctx.json({
-              bookable: true,
-              slots: [
-                { slotStart, slotEnd: laterSlotStart },
-                {
-                  slotStart: laterSlotStart,
-                  slotEnd: "2026-09-01T16:00:00.000Z",
-                },
-              ],
-            }),
-          );
-        },
-      ),
+      pageHandler(),
+      slotsInWindow([currentSlot, laterCurrentSlot], () => {
+        slotRequests += 1;
+      }),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
         (_req, res, ctx) => res(ctx.status(Status.CONFLICT), ctx.json({})),
@@ -182,7 +232,9 @@ describe("PublicBookingPage", () => {
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     await user.click(
-      await screen.findByRole("button", { name: /3:00 PM|15:00/i }),
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
@@ -208,7 +260,11 @@ describe("PublicBookingPage", () => {
       expect(slotRequests).toBeGreaterThan(1);
     });
 
-    await user.click(screen.getByRole("button", { name: /3:30 PM|15:30/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: slotTimePattern(laterCurrentSlot.slotStart),
+      }),
+    );
     expect(
       screen.getByRole("button", { name: "Confirm booking" }),
     ).toBeEnabled();
@@ -216,11 +272,7 @@ describe("PublicBookingPage", () => {
 
   it("does not boot the calendar shortcut overlay on public booking routes", async () => {
     server.use(
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
-        (_req, res, ctx) =>
-          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
-      ),
+      pageHandler(),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
         (_req, res, ctx) =>
@@ -261,7 +313,7 @@ describe("PublicBookingPage", () => {
             ctx.status(Status.OK),
             ctx.json({
               bookable: true,
-              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
+              slots: [currentSlot],
             }),
           );
         },
@@ -292,24 +344,10 @@ describe("PublicBookingPage", () => {
     let slotRequests = 0;
 
     server.use(
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
-        (_req, res, ctx) =>
-          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
-      ),
-      rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
-        (_req, res, ctx) => {
-          slotRequests += 1;
-          return res(
-            ctx.status(Status.OK),
-            ctx.json({
-              bookable: true,
-              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
-            }),
-          );
-        },
-      ),
+      pageHandler(),
+      slotsInWindow([currentSlot, nextMonthSlot], () => {
+        slotRequests += 1;
+      }),
     );
 
     renderBookingRoute("/book/tylerdane");
@@ -392,5 +430,87 @@ describe("PublicBookingPage", () => {
     expect(start.getUTCMinutes()).toBe(0);
     expect(start.getUTCSeconds()).toBe(0);
     expect(start.getUTCMilliseconds()).toBe(0);
+  });
+
+  it("scopes the slot list to the selected day and swaps it when the month changes", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot, nextMonthSlot]));
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: slotTimePattern(nextMonthSlot.slotStart),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next month" }));
+
+    const nextMonthKey = shiftBookingMonthKey(
+      currentMonthKey,
+      1,
+      guestTimeZone,
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: formatBookingMonthHeading(nextMonthKey, guestTimeZone),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(nextMonthSlot.slotStart),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("jumps across a month boundary to the next open day", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([nextMonthSlot]));
+
+    renderBookingRoute("/book/tylerdane");
+
+    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    expect(
+      await screen.findByText("No open times this month."),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Jump to next available day" }),
+    );
+
+    const nextMonthKey = shiftBookingMonthKey(
+      currentMonthKey,
+      1,
+      guestTimeZone,
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: formatBookingMonthHeading(nextMonthKey, guestTimeZone),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(nextMonthSlot.slotStart),
+      }),
+    ).toBeInTheDocument();
+    const nextDateKey = formatBookingSlotDateKey(
+      nextMonthSlot.slotStart,
+      guestTimeZone,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: formatBookingMonthDayLabel(nextDateKey, guestTimeZone),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });

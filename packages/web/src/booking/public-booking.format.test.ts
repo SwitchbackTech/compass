@@ -1,9 +1,11 @@
 import { DateTimeSchema, TimeZoneSchema } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
+  findNextAvailableBookingDate,
   formatBookingMonthKey,
   getPublicBookingMonthWindow,
   isBookingMonthAvailable,
+  listBookingAvailableDateKeysInMonth,
   listBookingAvailableDayKeys,
   listBookingMonthGridWeeks,
   shiftBookingMonthKey,
@@ -133,5 +135,91 @@ describe("stepBookingAvailableDay", () => {
     expect(
       stepBookingAvailableDay("2026-08-24", available, utc, "nextWeek"),
     ).toBe("2026-08-24");
+  });
+});
+
+describe("findNextAvailableBookingDate", () => {
+  const augustSlots = [
+    { slotStart: "2026-08-17T15:00:00.000Z" },
+    { slotStart: "2026-08-20T15:00:00.000Z" },
+  ];
+  const septemberSlots = [{ slotStart: "2026-09-02T15:00:00.000Z" }];
+  const now = dayjs("2026-08-15T12:00:00.000Z");
+
+  it("returns the next open day later in the same month", () => {
+    const slotsByMonth = new Map<
+      string,
+      readonly { slotStart: string }[] | undefined
+    >([["2026-08", augustSlots]]);
+
+    expect(
+      findNextAvailableBookingDate(
+        "2026-08",
+        "2026-08-17",
+        slotsByMonth,
+        utc,
+        "2026-08-15",
+        60,
+        now,
+      ),
+    ).toEqual({ monthKey: "2026-08", dateKey: "2026-08-20" });
+  });
+
+  it("crosses into a prefetched month when the current month is exhausted", () => {
+    const slotsByMonth = new Map<
+      string,
+      readonly { slotStart: string }[] | undefined
+    >([
+      ["2026-08", augustSlots],
+      ["2026-09", septemberSlots],
+    ]);
+
+    expect(
+      findNextAvailableBookingDate(
+        "2026-08",
+        "2026-08-20",
+        slotsByMonth,
+        utc,
+        "2026-08-15",
+        60,
+        now,
+      ),
+    ).toEqual({ monthKey: "2026-09", dateKey: "2026-09-02" });
+  });
+
+  it("asks the caller to fetch a month that is not in cache", () => {
+    const slotsByMonth = new Map<
+      string,
+      readonly { slotStart: string }[] | undefined
+    >([["2026-08", []]]);
+
+    expect(
+      findNextAvailableBookingDate(
+        "2026-08",
+        null,
+        slotsByMonth,
+        utc,
+        "2026-08-15",
+        60,
+        now,
+      ),
+    ).toEqual({ monthKey: "2026-09", dateKey: null });
+  });
+});
+
+describe("listBookingAvailableDateKeysInMonth", () => {
+  it("keeps only in-month days that have slots and are not before today", () => {
+    expect(
+      listBookingAvailableDateKeysInMonth(
+        [
+          { slotStart: "2026-08-10T15:00:00.000Z" },
+          { slotStart: "2026-08-17T15:00:00.000Z" },
+          { slotStart: "2026-09-02T15:00:00.000Z" },
+        ],
+        "2026-08",
+        utc,
+        "2026-08-15",
+      ),
+    ).toEqual(["2026-08-17"]);
   });
 });

@@ -1,7 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { CreateBookingReservationInputSchema } from "@core/types/booking.contracts";
+import {
+  type BookingSlotsResponse,
+  CreateBookingReservationInputSchema,
+} from "@core/types/booking.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
@@ -11,18 +14,23 @@ import {
   type PublicBookingGuestFormValues,
 } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
-import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
-import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
+import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import {
+  findNextAvailableBookingDate,
+  formatBookingDateKey,
   formatBookingMonthKey,
   formatBookingSlotDateKey,
   formatDurationMinutes,
+  formatGuestTimeZoneLabel,
+  listBookingAvailableDateKeysInMonth,
+  shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
 import {
   isPublicBookingConflictError,
   type PublicBookingConfirmation,
   prefetchPublicBookingMonth,
+  publicBookingQueryKeys,
   useCreatePublicBookingReservationMutation,
   usePrefetchAdjacentBookingMonths,
   usePublicBookingPageQuery,
@@ -77,6 +85,26 @@ export function PublicBookingPage() {
     pageQuery.data?.maxHorizonDays,
     pageQuery.isSuccess && pageQuery.data.enabled && slotsQuery.isSuccess,
   );
+
+  useEffect(() => {
+    if (!slotsQuery.data?.bookable) {
+      return;
+    }
+    const todayKey = formatBookingDateKey(dayjs(), guestTimeZone);
+    const available = listBookingAvailableDateKeysInMonth(
+      slotsQuery.data.slots,
+      monthKey,
+      guestTimeZone,
+      todayKey,
+    );
+    if (selectedDateKey && available.includes(selectedDateKey)) {
+      return;
+    }
+    if (selectedDateKey?.startsWith(monthKey)) {
+      return;
+    }
+    setSelectedDateKey(available[0] ?? null);
+  }, [guestTimeZone, monthKey, selectedDateKey, slotsQuery.data]);
 
   if (pageQuery.isLoading) {
     return (
@@ -165,6 +193,59 @@ export function PublicBookingPage() {
     );
   };
 
+  const handleJumpToNextAvailable = async () => {
+    const todayKey = formatBookingDateKey(dayjs(), guestTimeZone);
+    const slotsByMonth = new Map<
+      string,
+      BookingSlotsResponse["slots"] | undefined
+    >();
+    let cursor = monthKey;
+    for (let step = 0; step < 14; step += 1) {
+      const cached = queryClient.getQueryData<BookingSlotsResponse>(
+        publicBookingQueryKeys.slots(slug, cursor, guestTimeZone),
+      );
+      if (cached) {
+        slotsByMonth.set(cursor, cached.slots);
+      }
+      cursor = shiftBookingMonthKey(cursor, 1, guestTimeZone);
+    }
+    if (slotsQuery.data && !slotsByMonth.has(monthKey)) {
+      slotsByMonth.set(monthKey, slotsQuery.data.slots);
+    }
+
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const next = findNextAvailableBookingDate(
+        monthKey,
+        selectedDateKey,
+        slotsByMonth,
+        guestTimeZone,
+        todayKey,
+        page.maxHorizonDays,
+      );
+      if (!next) {
+        return;
+      }
+      if (next.dateKey) {
+        setSelectedSlotStart(null);
+        setConflictMessage(null);
+        setMonthKey(next.monthKey);
+        setSelectedDateKey(next.dateKey);
+        return;
+      }
+      await prefetchPublicBookingMonth(
+        queryClient,
+        slug,
+        next.monthKey,
+        guestTimeZone,
+        page.maxHorizonDays,
+      );
+      const fetched = queryClient.getQueryData<BookingSlotsResponse>(
+        publicBookingQueryKeys.slots(slug, next.monthKey, guestTimeZone),
+      );
+      slotsByMonth.set(next.monthKey, fetched?.slots ?? []);
+    }
+  };
+
   const handleSubmit = async (values: PublicBookingGuestFormValues) => {
     if (!selectedSlotStart) {
       return;
@@ -197,13 +278,17 @@ export function PublicBookingPage() {
   };
 
   return (
-    <PublicBookingLayout>
+    <PublicBookingLayout wide>
       <header className="flex flex-col gap-1">
         <h1 className="font-semibold text-text text-xl">
           Book with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">
           {formatDurationMinutes(page.durationMinutes)} meeting
+        </p>
+        <p className="text-sm text-text-muted">
+          Times shown in your timezone (
+          {formatGuestTimeZoneLabel(guestTimeZone)}).
         </p>
       </header>
 
@@ -218,40 +303,34 @@ export function PublicBookingPage() {
         </p>
       ) : null}
 
-      <PublicBookingMonthGrid
+      <PublicBookingPicker
         monthKey={monthKey}
         timeZone={guestTimeZone}
         maxHorizonDays={page.maxHorizonDays}
         slots={slotsQuery.data?.slots ?? []}
+        slotsPending={slotsPending}
+        slotsError={slotsQuery.isError || (!slotsPending && !slotsQuery.data)}
         selectedDateKey={selectedDateKey}
+        selectedSlotStart={selectedSlotStart}
         onMonthChange={handleMonthChange}
         onPrefetchMonth={handlePrefetchMonth}
         onSelectDate={handleSelectDay}
+        onSelectSlot={handleSelectSlot}
+        onJumpToNextAvailable={() => {
+          void handleJumpToNextAvailable();
+        }}
       />
 
-      {slotsPending ? (
-        <p className="text-sm text-text-muted">Loading open times...</p>
-      ) : slotsQuery.isError || !slotsQuery.data ? (
-        <p className="text-sm text-text-muted">
-          Could not load times. Please refresh and try again.
-        </p>
-      ) : (
-        <PublicBookingSlotPicker
-          slots={slotsQuery.data.slots}
-          guestTimeZone={guestTimeZone}
-          selectedSlotStart={selectedSlotStart}
-          onSelectSlot={handleSelectSlot}
-        />
-      )}
-
       {showGuestForm ? (
-        <PublicBookingGuestForm
-          disabled={createReservation.isPending}
-          submitDisabled={!selectedSlotStart}
-          values={guestDetails}
-          onChange={setGuestDetails}
-          onSubmit={handleSubmit}
-        />
+        <div className="sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+          <PublicBookingGuestForm
+            disabled={createReservation.isPending}
+            submitDisabled={!selectedSlotStart}
+            values={guestDetails}
+            onChange={setGuestDetails}
+            onSubmit={handleSubmit}
+          />
+        </div>
       ) : (
         <p className="text-sm text-text-muted">Select a time to continue.</p>
       )}
