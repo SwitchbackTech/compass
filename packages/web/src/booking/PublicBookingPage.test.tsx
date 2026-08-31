@@ -922,17 +922,17 @@ describe("PublicBookingPage", () => {
   });
 
   it("keeps the host heading visible and announces slot loading", async () => {
-    const delay = (ms: number) =>
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-      });
+    let releaseSlots = () => {};
+    const slotsGate = new Promise<void>((resolve) => {
+      releaseSlots = resolve;
+    });
 
     server.use(
       pageHandler(),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
         async (_req, res, ctx) => {
-          await delay(80);
+          await slotsGate;
           return res(
             ctx.status(Status.OK),
             ctx.json({ bookable: true, slots: [currentSlot] }),
@@ -946,12 +946,15 @@ describe("PublicBookingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Loading open times",
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Loading open times",
+      );
+    });
     expect(
       screen.queryByRole("heading", { name: "Pick a time" }),
     ).not.toBeInTheDocument();
+    releaseSlots();
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
     ).toBeInTheDocument();
@@ -1016,10 +1019,10 @@ describe("PublicBookingPage", () => {
 
   it("shows a slot-pane skeleton on an unfetched month without replacing the header", async () => {
     const user = userEvent.setup({ delay: null });
-    const delay = (ms: number) =>
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-      });
+    let releaseNextMonthSlots = () => {};
+    const nextMonthSlotsGate = new Promise<void>((resolve) => {
+      releaseNextMonthSlots = resolve;
+    });
     let currentMonthRequests = 0;
 
     server.use(
@@ -1036,7 +1039,7 @@ describe("PublicBookingPage", () => {
               ctx.json({ bookable: true, slots: [currentSlot] }),
             );
           }
-          await delay(80);
+          await nextMonthSlotsGate;
           return res(
             ctx.status(Status.OK),
             ctx.json({ bookable: true, slots: [nextMonthSlot] }),
@@ -1066,12 +1069,15 @@ describe("PublicBookingPage", () => {
         ),
       }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Loading open times",
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Loading open times",
+      );
+    });
     expect(
       screen.queryByRole("heading", { name: "Pick a time" }),
     ).not.toBeInTheDocument();
+    releaseNextMonthSlots();
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
     ).toBeInTheDocument();
