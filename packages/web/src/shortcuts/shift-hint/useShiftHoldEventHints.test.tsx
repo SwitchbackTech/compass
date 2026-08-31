@@ -742,6 +742,81 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints.length).toBeGreaterThan(0);
   });
 
+  it("edits the title with e then t after focusing a Monday event in jump mode", () => {
+    const onSequence = mock(() => {});
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "m");
+    });
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A }),
+    );
+    focus.mockClear();
+
+    act(() => {
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(onSequence).toHaveBeenCalledWith("title");
+    expect(focus).not.toHaveBeenCalled();
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+  });
+
+  it("edits the title with e then t even when jump's listener is registered first", () => {
+    const onSequence = mock(() => {});
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "m");
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(onSequence).toHaveBeenCalledWith("title");
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A }),
+    );
+    expect(focus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
+  });
+
+  it("still jumps to Tuesday with t when nothing can arm the edit sequence", () => {
+    renderHook(() =>
+      useEditSequenceShortcut({
+        canArm: () => false,
+        onSequence: mock(() => {}),
+      }),
+    );
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
   it("does not steal s while the e edit sequence is armed", () => {
     const onSequence = mock(() => {});
     renderHook(() => useEditSequenceShortcut({ onSequence }));

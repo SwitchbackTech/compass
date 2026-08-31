@@ -134,7 +134,9 @@ const buildDayJumpAssignments = (
  * Shift is what makes the day columns always available: bare `t`, `f`, and
  * `m` keep their own commands. Once jump mode is on, the labels are typed
  * bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a second `h`
- * toggles off. `s` is only the Sunday/Saturday prefix.
+ * toggles off. `s` is only the Sunday/Saturday prefix. `e` is not a day
+ * prefix: jump yields to an armed (or about-to-arm) edit sequence so `e`
+ * then `t` edits the title instead of selecting Tuesday.
  *
  * Day view uses the same scheme on the one date it shows, so a bare digit is
  * never an event label on an empty buffer in either view - that keystroke
@@ -340,10 +342,13 @@ export function useShiftHoldEventHints({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
+      // Armed `e`… sequences own the follow key (`t` title vs Tuesday). Check
+      // in both on and off states: jump stays on after focusing a card, and
+      // the two capture listeners can register in either order.
+      if (isEditSequenceArmed()) return;
 
       if (!isActiveRef.current) {
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-        if (isEditSequenceArmed()) return;
 
         // An empty-grid click parks a short-lived teaching target. Escape and
         // calendar navigation abandon it without claiming the key - the digits
@@ -449,6 +454,12 @@ export function useShiftHoldEventHints({
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
+        // `e` is not a day prefix. Leave it unclaimed so a later-registered
+        // edit-sequence listener can still arm (`e` then `t` on a focused
+        // event). Other unmatched letters stay swallowed so j/k/c cannot fire.
+        if (key === KEYMAP.editTitle.sequence.leader) {
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         keyupSwallow.add(key);

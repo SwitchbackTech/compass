@@ -17,7 +17,10 @@ import {
   normalizedKeyboardKey,
 } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
-import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  eventJumpActions,
+  isEventJumpActive,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { createKeyupSwallow } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 
@@ -53,6 +56,10 @@ const hasModifier = (event: KeyboardEvent) =>
  * targets. Both land in the same arm/dispatch path, which is why this is one
  * listener rather than two: a second listener claiming `Mod+E` would fire the
  * sequence twice.
+ *
+ * Jump mode can still be on after focusing a card (`h` then a day letter).
+ * Arming turns jump off so the follow key (`t` title vs Tuesday) cannot be
+ * stolen. A stray `e` with nothing to edit does not arm (`canArm`).
  *
  * Capture-phase listeners suppress the follow key's keyup so existing keyup
  * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
@@ -183,11 +190,15 @@ export function useEditSequenceShortcut<
           !isEditableKeyboardTarget(event));
 
       if (!isLeader) return;
-      // Event jump owns the letter keys while it is on, and it already stands
-      // down for an armed sequence. Yield back, or a stray `e` would arm
-      // underneath the jump hints and steal the next day letter.
-      if (isEventJumpActive()) return;
+      // `canArm` is the stray-`e` gate (nothing focused → do not swallow the
+      // next key). Jump mode staying on after a focused card used to block
+      // this path entirely, so `e` then `t` selected Tuesday instead of the
+      // title. Drop jump once we are actually arming so the follow key cannot
+      // be read as a day prefix.
       if (canArmRef.current && !canArmRef.current()) return;
+      if (isEventJumpActive()) {
+        eventJumpActions.setActive(false);
+      }
 
       if (isMod) {
         event.preventDefault();
