@@ -93,6 +93,7 @@ describe("EditSequenceMenu", () => {
       <EditSequenceMenu
         getAnchor={() => null}
         options={[{ key: "h", label: "Weekly hours" }]}
+        prompt="Jump to which field?"
         scope="booking"
       />,
     );
@@ -100,5 +101,7 @@ describe("EditSequenceMenu", () => {
     const menu = document.querySelector("[data-edit-sequence-menu]");
     expect(menu?.textContent).toContain("Weekly hours");
     expect(menu?.textContent).not.toContain("Title");
+    expect(menu?.textContent).toContain("Jump to which field?");
+    expect(menu?.textContent).not.toContain("Edit which field?");
   });
 });

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
@@ -10,6 +10,7 @@ import {
   createMockCalendar,
   createMockConnection,
 } from "@web/__tests__/utils/factories/calendar.factory";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
 import {
@@ -395,6 +396,47 @@ describe("BookingSettingsSection", () => {
     expect(document.activeElement).toBe(
       screen.getByRole("button", { name: /^Booking timezone:/ }),
     );
+  });
+
+  it("does not jump out of the nested timezone dialog", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.click(
+      screen.getByRole("button", { name: /^Booking timezone:/ }),
+    );
+    const search = await screen.findByRole("combobox", {
+      name: "Search booking timezones",
+    });
+    await waitFor(() => expect(search).toHaveFocus());
+
+    // Mod+E is the in-field leader; ignoreAppLock would otherwise arm it
+    // here and jump to Monday behind the dialog.
+    const modInit: KeyboardEventInit =
+      resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
+    pressKey("e", { keyDownInit: modInit, keyUpInit: modInit }, search);
+    pressKey("h", {}, search);
+
+    expect(search).toHaveFocus();
+    expect(
+      screen.getByRole("combobox", { name: "Search booking timezones" }),
+    ).toBeInTheDocument();
   });
 
   it("does not arm the leader while the caret is in a field", async () => {

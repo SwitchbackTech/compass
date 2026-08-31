@@ -159,7 +159,18 @@ export function BookingSettingsSection({
   // reason useSettingsShortcuts sets it. Scoped to "booking" so the which-key
   // menu cannot appear over the grid, and so the grid's still-mounted listener
   // cannot disarm this sequence on the follow key.
+  //
+  // Stand down when focus is in a nested dialog (the timezone OverlayPanel):
+  // that panel also holds app-lock, and ignoreAppLock would otherwise arm
+  // Mod+E inside it and jump to a field behind the dialog.
   useEditSequenceShortcut({
+    canArm: () => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) return true;
+      const closestDialog = active.closest("[role='dialog']");
+      const settingsDialog = sectionRef.current?.closest("[role='dialog']");
+      return closestDialog == null || closestDialog === settingsDialog;
+    },
     fieldByKey: BOOKING_FIELD_BY_KEY,
     ignoreAppLock: true,
     onSequence: focusBookingField,
@@ -532,6 +543,7 @@ export function BookingSettingsSection({
       <EditSequenceMenu
         getAnchor={() => sectionRef.current}
         options={BOOKING_SEQUENCE_FIELDS}
+        prompt="Jump to which field?"
         scope="booking"
       />
     </fieldset>
