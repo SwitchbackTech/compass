@@ -35,6 +35,15 @@ const googleCalendar = {
   accountEmail: HOST_ACCOUNT_EMAIL,
 };
 
+function monthKeyInZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  return `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}`;
+}
+
 /** A slot later in the current UTC month, inside today's remaining hours when the month is ending. */
 export function buildBookableSlot(durationMinutes = 30): {
   slotStart: string;
@@ -43,19 +52,54 @@ export function buildBookableSlot(durationMinutes = 30): {
   const now = new Date();
   const start = new Date(now);
   start.setUTCDate(now.getUTCDate() + 2);
-  start.setUTCHours(15, 0, 0, 0);
-  const sameMonth =
+  start.setUTCHours(12, 0, 0, 0);
+  const sameUtcMonth =
     start.getUTCMonth() === now.getUTCMonth() &&
     start.getUTCFullYear() === now.getUTCFullYear();
-  if (!sameMonth || start.getTime() <= now.getTime()) {
-    start.setTime(now.getTime());
-    start.setUTCHours(15, 0, 0, 0);
+  if (!sameUtcMonth || start.getTime() <= now.getTime()) {
+    start.setTime(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        12,
+        0,
+        0,
+        0,
+      ),
+    );
     if (
       start.getTime() <= now.getTime() ||
       start.getUTCMonth() !== now.getUTCMonth()
     ) {
-      start.setTime(now.getTime() + 2 * 60 * 60 * 1000);
-      start.setUTCMinutes(0, 0, 0);
+      // Noon UTC is past. Stay on today rather than +2h, which is 12:00 AM
+      // the next Berlin day on month-end evenings.
+      start.setTime(now.getTime() + 20 * 60 * 1000);
+      start.setUTCSeconds(0, 0);
+      start.setUTCMilliseconds(0);
+      const berlinNow = monthKeyInZone(now, "Europe/Berlin");
+      if (
+        start.getUTCMonth() === now.getUTCMonth() &&
+        monthKeyInZone(start, "Europe/Berlin") !== berlinNow &&
+        berlinNow === monthKeyInZone(now, "UTC")
+      ) {
+        start.setTime(now.getTime() + 60 * 1000);
+        start.setUTCSeconds(0, 0);
+        start.setUTCMilliseconds(0);
+      }
+      if (start.getUTCMonth() !== now.getUTCMonth()) {
+        start.setTime(
+          Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            23,
+            59,
+            0,
+            0,
+          ),
+        );
+      }
     }
   }
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);

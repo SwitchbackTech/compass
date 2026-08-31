@@ -120,6 +120,28 @@ describe("UpNextBanner", () => {
     );
   });
 
+  it("pressing v opens the meeting link when the banner is not showing", async () => {
+    const user = userEvent.setup();
+    render(<UpNextBanner />, {
+      events: [
+        timedEvent(LATER_EVENT_ID, "Later Standup", 30, {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: null,
+        }),
+      ],
+    });
+
+    expect(screen.queryByRole("status")).toBeNull();
+
+    await user.keyboard("v");
+
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      "https://meet.google.com/abc-defg-hij",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
   it("pressing n opens the event details form even when Join is shown", async () => {
     const user = userEvent.setup();
     render(<UpNextBanner />, {
