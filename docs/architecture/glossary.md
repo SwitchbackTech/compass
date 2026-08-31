@@ -177,7 +177,9 @@ _Avoid_: organizer when you mean the Compass account rather than the
 Google event organizer field
 
 **Guest** (booking):
-The unauthenticated person who picks a slot on a booking page.
+The unauthenticated person who picks a day and time on a public booking
+page (month grid plus that day's slots), then confirms. Times show in
+their timezone.
 _Avoid_: attendee when you mean the public booking user rather than a
 calendar guest-list row (the created event does add them as an
 attendee)
