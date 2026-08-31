@@ -10,7 +10,8 @@ describe("PublicBookingLayout", () => {
       </PublicBookingLayout>,
     );
 
-    expect(document.querySelector("[data-document-scroll]")).toBeTruthy();
-    expect(screen.getByRole("main")).toHaveTextContent("Booking content");
+    const main = screen.getByRole("main");
+    expect(main).toHaveTextContent("Booking content");
+    expect(main.parentElement).toHaveAttribute("data-document-scroll");
   });
 });
