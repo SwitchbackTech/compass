@@ -514,6 +514,12 @@ must inspect.
 `e2e/accessibility/datepicker-a11y.spec.ts` covers the sidebar date navigation
 region and keeps its own targeted per-date contrast regression (below).
 
+`e2e/accessibility/booking-a11y.spec.ts` covers public booking: picker and
+details (light and dark `prefers-color-scheme`), slots error, 409 conflict,
+confirmation (confirmed, cancelled, not-found, load error), and cancel
+(confirm, in-flight, success, not-found, error). CI `bun run test:e2e`
+runs the whole `e2e/` tree, including this file.
+
 #### When To Add A Targeted Regression Test
 
 Keep focused browser assertions when the failure depends on a state or visual

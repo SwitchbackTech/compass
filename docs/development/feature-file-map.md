@@ -58,7 +58,8 @@ Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
 Work packages: [`wip/booking/`](../../wip/booking/README.md) (delete after
 docs are the source of truth).
 
-- Public URL: `/book/:username` (guest routes outside the calendar shell)
+- Public URL: `/book/:username`, confirmation `/book/confirmed/:id`,
+  cancel `/book/cancel/:id` (guest routes outside the calendar shell)
 - Shared contracts: `packages/core/src/types/booking.contracts.ts`
 - Slot engine: `packages/core/src/booking/compute-booking-slots.ts`
 - Backend admin: `packages/backend/src/booking/booking.controller.ts`,
@@ -71,9 +72,9 @@ docs are the source of truth).
   `POST /internal/availability/busy`
 - Host Settings: `packages/web/src/booking/BookingSettingsSection.tsx`
 - Public guest UI: `packages/web/src/booking/PublicBookingPage.tsx`,
-  `PublicBookingCancelPage.tsx`
+  `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`
 - Web API client: `packages/web/src/api/public-booking.api.ts`
-- E2e: `e2e/booking/`
+- E2e: `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts`
 - Architecture: [Product Suite Boundaries](../architecture/product-suite-boundaries.md)
 
 ## Day / Week Views

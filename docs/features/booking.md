@@ -25,9 +25,14 @@ The username is a `bookingSlug` allocated from the Compass account. It
 is not editable in v1. Changing it later is a dedicated migration with
 redirects.
 
+Confirmation permalink: `/book/confirmed/:reservationId` (survives
+refresh; cancel copy is only present when the guest just confirmed).
+
+Cancel: `/book/cancel/:reservationId?token=…`.
+
 Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
-`cleanup`, `book`, `p`, `settings`, `admin`, `login`, `logout`, `signup`,
-`invite`, `calendar`.
+`cleanup`, `book`, `cancel`, `confirmed`, `p`, `settings`, `admin`,
+`login`, `logout`, `signup`, `invite`, `calendar`.
 
 ### Slug allocation
 
@@ -67,9 +72,28 @@ Host administration lives in Settings as a new page (today
 
 ### Guest
 
-The guest is unauthenticated. They open the public URL, pick a slot
-shown in **their timezone** (browser default, overridable), enter name +
-email (optional notes), and confirm. They do not need a Compass account.
+The guest is unauthenticated. They open the public URL, pick a day on
+the **month grid** and a time from that day's list, shown in **their
+timezone** (browser default, overridable), enter name + email (optional
+notes), and confirm. They do not need a Compass account.
+
+```mermaid
+flowchart TD
+  load["Open /book/:slug"]
+  picker["Two-pane: month grid + day's times"]
+  details["Your details"]
+  permalink["/book/confirmed/:id"]
+  cancel["/book/cancel/:id"]
+  load --> picker
+  picker -->|select a time| details
+  details -->|Change time| picker
+  details -->|Confirm booking| permalink
+  permalink -->|tokenized cancel URL| cancel
+```
+
+Public booking follows `prefers-color-scheme` when `compass.theme` is
+unset: a light OS uses `light-beach`, a dark OS keeps the app dark
+default. A stored theme wins over the OS.
 
 ### Guest keyboard path
 
@@ -233,10 +257,14 @@ Unauthenticated:
 - `GET /api/booking/pages/:slug` — public page (host display name,
   duration, timezone, enabled). `404` when missing or disabled.
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
-  instants in the guest timezone. Window must be within the 60-day
-  horizon.
+  instants in the guest timezone for that window. The guest UI requests
+  **one month at a time** (plus prefetch of adjacent months). Window
+  must be within the 60-day horizon.
 - `POST /api/booking/pages/:slug/reservations` — `{slotStart, guestName,
   guestEmail, notes?, guestTimeZone}`. Re-checks busy, then creates.
+- `GET /api/booking/reservations/:id` — public confirmation payload
+  (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
+  `status`). `404` when missing. No guest email, notes, or cancel token.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
 
 Authenticated (host session + writable billing, same as event writes):
@@ -282,9 +310,9 @@ Work packages and the GitHub milestone record the build history until
 | Calendar application port | `packages/backend/src/booking/calendar-booking.port.ts`, `calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts` |
 | Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
-| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingCancelPage.tsx` |
+| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
-| E2e | `e2e/booking/` |
+| E2e | `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts` |
 
 ### Named warts
 

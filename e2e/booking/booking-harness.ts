@@ -82,6 +82,11 @@ export interface CapturedBookingRequests {
   slotQueries: Array<{ start: string | null; end: string | null }>;
 }
 
+/**
+ * Stub public booking APIs for the shipped two-pane picker: month-window
+ * slot GETs (filtered by `start`/`end`), day-scoped slot buttons, the
+ * details step, confirmation permalink GET, and cancel POST-on-confirm.
+ */
 export async function preparePublicBookingPage(
   page: Page,
   options: PublicBookingStubOptions = {},
