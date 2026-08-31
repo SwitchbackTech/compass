@@ -51,6 +51,57 @@ test.describe("public booking page", () => {
     await expect(page.getByLabel("Email")).toBeFocused();
   });
 
+  test("scrolls when available times overflow the viewport", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 800, height: 480 });
+
+    const origin = new Date();
+    origin.setUTCDate(origin.getUTCDate() + 2);
+    origin.setUTCHours(8, 0, 0, 0);
+    const slots = Array.from({ length: 60 }, (_, index) => {
+      const slotStart = new Date(origin.getTime() + index * 15 * 60 * 1000);
+      return {
+        slotStart: slotStart.toISOString(),
+        slotEnd: new Date(slotStart.getTime() + 30 * 60 * 1000).toISOString(),
+      };
+    });
+
+    await preparePublicBookingPage(page, { slots });
+
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const scrolling = document.scrollingElement;
+          if (!scrolling) {
+            return false;
+          }
+          const overflowY = getComputedStyle(
+            document.documentElement,
+          ).overflowY;
+          return (
+            (overflowY === "auto" || overflowY === "scroll") &&
+            scrolling.scrollHeight > scrolling.clientHeight + 40
+          );
+        }),
+      )
+      .toBe(true);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.mouse.move(400, 200);
+    await page.mouse.wheel(0, 1600);
+    await expect
+      .poll(async () => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(80);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.locator("body").click({ position: { x: 16, y: 16 } });
+    await page.keyboard.press("PageDown");
+    await expect
+      .poll(async () => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(80);
+  });
+
   test("refreshes slots and shows a conflict message on 409", async ({
     page,
   }) => {

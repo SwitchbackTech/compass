@@ -91,6 +91,7 @@ describe("PublicBookingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeInTheDocument();
+    expect(document.querySelector("[data-document-scroll]")).toBeTruthy();
     expect(
       await screen.findByText(/Times shown in your timezone/),
     ).toBeInTheDocument();

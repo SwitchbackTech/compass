@@ -279,6 +279,34 @@
     height: 100%;
   }
 
+  /* Public booking is a document-height page, not a pane inside the
+     calendar shell. Opt in with data-document-scroll so guests can
+     scroll (wheel, Page Up/Down) to later time slots. */
+  html:has([data-document-scroll]) {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100dvh;
+    scrollbar-width: auto;
+  }
+
+  html:has([data-document-scroll]) body,
+  html:has([data-document-scroll]) #root {
+    overflow: visible;
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  html:has([data-document-scroll])::-webkit-scrollbar {
+    display: block;
+    width: 12px;
+  }
+
+  html:has([data-document-scroll])::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 6px;
+  }
+
   body {
     background-color: var(--color-background);
   }
