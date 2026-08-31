@@ -300,9 +300,14 @@ class UserService {
   retryPendingAccountDeletions = async (): Promise<void> => {
     await this.#migrateLegacySyncPrincipalDeletions();
 
-    const pending = await mongoService.pendingAccountDeletion
+    const pendingLocalCleanup = await mongoService.pendingAccountDeletion
       .find(
-        {},
+        {
+          $or: [
+            { stripeCustomerDeletedAt: { $exists: false } },
+            { compassDataDeletedAt: { $exists: false } },
+          ],
+        },
         {
           projection: {
             _id: 1,
@@ -314,8 +319,30 @@ class UserService {
       .sort({ createdAt: 1 })
       .limit(ACCOUNT_DELETION_RETRY_BATCH_SIZE)
       .toArray();
+    const syncRetrySlots =
+      ACCOUNT_DELETION_RETRY_BATCH_SIZE - pendingLocalCleanup.length;
+    const pendingSyncPurge =
+      syncRetrySlots === 0
+        ? []
+        : await mongoService.pendingAccountDeletion
+            .find(
+              {
+                stripeCustomerDeletedAt: { $exists: true },
+                compassDataDeletedAt: { $exists: true },
+              },
+              {
+                projection: {
+                  _id: 1,
+                  stripeCustomerDeletedAt: 1,
+                  compassDataDeletedAt: 1,
+                },
+              },
+            )
+            .sort({ lastSyncPurgeAttemptAt: 1, createdAt: 1 })
+            .limit(syncRetrySlots)
+            .toArray();
 
-    for (const deletion of pending) {
+    for (const deletion of [...pendingLocalCleanup, ...pendingSyncPurge]) {
       try {
         if (!deletion.stripeCustomerDeletedAt) {
           await stripeService.deleteCustomerForAccount(deletion._id);
