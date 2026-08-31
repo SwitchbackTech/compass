@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
@@ -25,6 +26,7 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
+import { isMobileOS } from "@web/common/utils/device/device.util";
 import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";
@@ -44,6 +46,10 @@ import { isLifePathname } from "./isLifePathname";
 export function RootShell() {
   const { pathname } = useLocation();
   const deferCalendarOnboarding = isLifePathname(pathname);
+  // The keyboard onboarding overlays paint over MobileGate (they're fixed
+  // full-screen), so a phone user would finish the whole walkthrough only to
+  // land on "open this on a computer". Gate them up front instead.
+  const isMobile = useMemo(() => isMobileOS(), []);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
@@ -71,7 +77,7 @@ export function RootShell() {
   const gateStatus =
     showReadOnlyBanner || isCelebrating ? null : readOnlyStatus;
   const showCalendarOnboarding =
-    gateStatus === null && !deferCalendarOnboarding;
+    gateStatus === null && !deferCalendarOnboarding && !isMobile;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
   // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
