@@ -41,6 +41,7 @@ const PublicBookingApi = {
   async getSlots(
     slug: string,
     query: BookingSlotsQuery,
+    signal?: AbortSignal,
   ): Promise<BookingSlotsResponse> {
     const parsed = BookingSlotsQuerySchema.parse(query);
     const params = new URLSearchParams({
@@ -50,7 +51,7 @@ const PublicBookingApi = {
     });
     const response = await BaseApi.get<unknown>(
       `/booking/pages/${encodeURIComponent(slug)}/slots?${params.toString()}`,
-      { skipSessionRecovery: true },
+      { skipSessionRecovery: true, signal },
     );
     return BookingSlotsResponseSchema.parse(response.data);
   },

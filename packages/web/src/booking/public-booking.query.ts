@@ -55,7 +55,7 @@ export function publicBookingSlotsQueryOptions(
 ) {
   return queryOptions({
     queryKey: publicBookingQueryKeys.slots(slug, monthKey, timeZone),
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       const window = getPublicBookingMonthWindow(
         monthKey,
         timeZone,
@@ -64,7 +64,7 @@ export function publicBookingSlotsQueryOptions(
       if (!window) {
         return { slots: [], bookable: true as const };
       }
-      return PublicBookingApi.getSlots(slug, window);
+      return PublicBookingApi.getSlots(slug, window, signal);
     },
     staleTime: PUBLIC_BOOKING_SLOTS_STALE_TIME_MS,
   });

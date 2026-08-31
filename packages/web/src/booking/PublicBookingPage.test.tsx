@@ -235,31 +235,28 @@ describe("PublicBookingPage", () => {
   });
 
   it("starts page meta and the current-month slots request in parallel", async () => {
-    let pageStarted = false;
-    let slotsStarted = false;
-    let releasePage!: () => void;
-    let releaseSlots!: () => void;
-    const holdPage = new Promise<void>((resolve) => {
-      releasePage = resolve;
-    });
-    const holdSlots = new Promise<void>((resolve) => {
-      releaseSlots = resolve;
-    });
+    const events: string[] = [];
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
 
     server.use(
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         async (_req, res, ctx) => {
-          pageStarted = true;
-          await holdPage;
+          events.push("page-start");
+          await delay(80);
+          events.push("page-end");
           return res(ctx.status(Status.OK), ctx.json(publicPagePayload()));
         },
       ),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
         async (_req, res, ctx) => {
-          slotsStarted = true;
-          await holdSlots;
+          events.push("slots-start");
+          await delay(80);
+          events.push("slots-end");
           return res(
             ctx.status(Status.OK),
             ctx.json({
@@ -274,16 +271,20 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/book/tylerdane");
 
     await waitFor(() => {
-      expect(pageStarted).toBe(true);
-      expect(slotsStarted).toBe(true);
+      expect(events).toContain("page-start");
+      expect(events).toContain("slots-start");
     });
-
-    releasePage();
-    releaseSlots();
+    expect(events).not.toContain("page-end");
+    expect(events).not.toContain("slots-end");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Loading open times..."),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("renders a prefetched month without a new slots request", async () => {
@@ -314,6 +315,11 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/book/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Loading open times..."),
+      ).not.toBeInTheDocument();
+    });
     await waitFor(() => {
       expect(slotRequests).toBeGreaterThanOrEqual(2);
     });
