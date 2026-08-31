@@ -141,6 +141,7 @@ export function BookingSettingsSection({
     buildInitialForm(undefined, effectiveTimeZone, writableCalendars),
   );
   const [enableError, setEnableError] = useState<string | null>(null);
+  const [areHoursValid, setAreHoursValid] = useState(true);
 
   // Re-seed only when the server actually answers with a different page.
   // Keying the effect on writableCalendars/effectiveTimeZone as well meant a
@@ -206,6 +207,10 @@ export function BookingSettingsSection({
   };
 
   const handleSave = () => {
+    if (!areHoursValid) {
+      setEnableError("Fix the weekly hours that could not be read.");
+      return;
+    }
     if (form.enabled && !canEnableBookingPage(form, writableCalendars)) {
       setEnableError("Choose a destination calendar before enabling booking.");
       return;
@@ -358,6 +363,7 @@ export function BookingSettingsSection({
 
       <BookingWeeklyHoursEditor
         onChange={(weeklyAvailability) => updateForm({ weeklyAvailability })}
+        onValidityChange={setAreHoursValid}
         value={form.weeklyAvailability}
       />
 
