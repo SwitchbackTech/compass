@@ -1,5 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
+import dayjs from "@core/util/date/dayjs";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
@@ -103,7 +104,9 @@ describe("useShiftHoldEventHints", () => {
 
     const { result } = renderHook(() =>
       useShiftHoldEventHints({
+        createAtTime: () => {},
         focus: (target) => focus(target),
+        getQuickTimeDay: () => dayjs("2026-08-05"),
         listVisible: () =>
           ids.map((id, index) => ({
             eventId: id,
@@ -216,7 +219,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("leaves a bare digit alone so quick-time create can read it", () => {
+  it("routes a bare digit to typed-time creation while jump is off", () => {
     const { focus } = mountHints();
 
     act(() => {
@@ -224,6 +227,7 @@ describe("useShiftHoldEventHints", () => {
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("1");
     expect(focus).not.toHaveBeenCalled();
   });
 
@@ -476,7 +480,9 @@ describe("useShiftHoldEventHints", () => {
 
     renderHook(() =>
       useShiftHoldEventHints({
+        createAtTime: () => {},
         focus: (target) => focus(target),
+        getQuickTimeDay: () => dayjs("2026-08-05"),
         listVisible: () =>
           ids.map((id, index) => ({
             eventId: id,
@@ -576,7 +582,9 @@ describe("useShiftHoldEventHints", () => {
     const { rerender } = renderHook(
       ({ timedEvents }) =>
         useShiftHoldEventHints({
+          createAtTime: () => {},
           focus: (target) => focus(target),
+          getQuickTimeDay: () => dayjs("2026-08-05"),
           listVisible: () =>
             timedEvents.flatMap((event) => {
               const index = [EVENT_A, EVENT_B, EVENT_C, EVENT_D].indexOf(
