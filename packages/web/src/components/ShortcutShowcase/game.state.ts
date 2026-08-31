@@ -98,9 +98,6 @@ export const createInitialGameState = (runCount = 1): GameState => ({
 export const currentTask = (state: GameState): GameTask | null =>
   RUN_TASKS[state.taskIndex] ?? null;
 
-export const remainingMs = (state: GameState, nowMs: number): number =>
-  state.phase === "running" ? Math.max(0, state.endsAtMs - nowMs) : 0;
-
 /** Pin focus to a task's target so Shift+Arrow/Delete land without hunting. */
 const enterTask = (state: GameState): GameState => {
   const task = currentTask(state);
