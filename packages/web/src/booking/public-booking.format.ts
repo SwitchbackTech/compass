@@ -153,15 +153,41 @@ export function formatDurationMinutes(minutes: number): string {
 }
 
 /**
+ * One `Intl` formatter per timezone.
+ *
+ * Building a formatter is ~200x the cost of using one, and both of the
+ * implementations this replaced built a fresh one (or a fresh Dayjs) on every
+ * call. That runs once per slot, per render, to bucket slots by day, so a
+ * busy month spent tens of milliseconds re-deriving the same seven formatters.
+ */
+const dateKeyFormatters = new Map<string, Intl.DateTimeFormat>();
+
+const dateKeyFormatter = (timeZone: string): Intl.DateTimeFormat => {
+  const cached = dateKeyFormatters.get(timeZone);
+  if (cached) {
+    return cached;
+  }
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  dateKeyFormatters.set(timeZone, formatter);
+  return formatter;
+};
+
+/**
  * The one YYYY-MM-DD-in-a-timezone key. Slot starts used to go through a
  * separate `Intl` "en-CA" formatter, which is a second way to be right about
- * the same thing, and so a second thing to keep right.
+ * the same thing, and so a second thing to keep right. "en-CA" is what makes
+ * that locale print ISO order.
  */
 export function formatBookingDateKey(
   instant: Date | string | Dayjs,
   timeZone: string,
 ): string {
-  return dayjs(instant).tz(timeZone).format("YYYY-MM-DD");
+  return dateKeyFormatter(timeZone).format(dayjs(instant).toDate());
 }
 
 export function collectBookingAvailableDateKeys(
