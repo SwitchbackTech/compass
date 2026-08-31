@@ -15,6 +15,8 @@ evidence:
     result: passed
   - command: independent re-review
     result: no confirmed findings
+  - command: gh pr view 3039
+    result: ready pull request https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039
 assumptions:
   - Preserve keyboard precedence, timing, announcements, and Day/Week behavior.
 open_risks:

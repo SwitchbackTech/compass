@@ -19,6 +19,8 @@ evidence:
     result: scripts, type-check, lint, knip, accessibility, and branch-specific checks passed
   - command: independent review
     result: no confirmed findings
+  - command: gh pr view 3039
+    result: ready pull request https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039
 assumptions:
   - Preserve runtime behavior and required-check semantics.
 open_risks:

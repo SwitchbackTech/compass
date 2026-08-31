@@ -15,6 +15,8 @@ evidence:
     result: 35 passed, 0 failed, including legacy adoption, saturation, and fair rotation
   - command: independent re-review
     result: no confirmed findings after starvation and test-boundary fixes
+  - command: gh pr view 3039
+    result: ready pull request https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039
 assumptions:
   - Account deletion ordering, fail-open Sync purge, and retry behavior are public contracts to preserve.
 open_risks:

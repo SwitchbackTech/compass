@@ -22,6 +22,6 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2918 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2918 | bun run verify PASS; review finding fixed in 3fa6e4a8c | 2026-08-27T20:30:00Z | 0 | none |
 | 2922 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun run verify PASS; simplify c4cbe8696; review: no confirmed findings | 2026-08-27T21:00:00Z | 0 | none |
 | simplify-recent-2965 | medium | Manager | verifying | packages/web/src/shortcuts/quick-time/quick-time.util.ts | bun run verify PASS: web, type-check, lint, knip; review: no confirmed findings | 2026-08-31T06:00:00Z | 0 | none |
-| simplify-docs-ci | medium | Manager | verifying | .agents/handoffs/simplify-docs-ci.md | verify PASS; review no findings; item 1 resolved by e6a2b7fc0 | 2026-08-31T18:00:00Z | 0 | none |
-| simplify-account-deletion | high | Manager | verifying | .agents/handoffs/simplify-account-deletion.md | backend 495 passed, 1 skipped; re-review no findings | 2026-08-31T18:00:00Z | 2 | none |
-| simplify-keyboard-mode | high | Manager | verifying | .agents/handoffs/simplify-keyboard-mode.md | focused keyboard 49 passed; re-review no findings | 2026-08-31T18:00:00Z | 0 | none |
+| simplify-docs-ci | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039 | verify PASS; review no findings; item 1 resolved by e6a2b7fc0 | 2026-08-31T18:00:00Z | 0 | none |
+| simplify-account-deletion | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039 | backend 496 passed, 1 skipped; re-review no findings | 2026-08-31T18:00:00Z | 2 | none |
+| simplify-keyboard-mode | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3039 | focused keyboard 49 passed; re-review no findings | 2026-08-31T18:00:00Z | 0 | none |
