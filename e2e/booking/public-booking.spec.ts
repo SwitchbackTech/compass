@@ -428,6 +428,7 @@ test.describe("public booking page", () => {
     await page.getByRole("button", { name: "Confirm booking" }).click();
     const confirming = page.getByRole("button", { name: "Confirming..." });
     await expect(confirming).toHaveAttribute("aria-busy", "true");
+    await expect.poll(() => captured.reservationPosts.length).toBe(1);
     await confirming.click({ force: true });
     expect(captured.reservationPosts).toHaveLength(1);
     release();
