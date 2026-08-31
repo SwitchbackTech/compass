@@ -206,4 +206,29 @@ describe("DeleteAccountConfirmationProvider", () => {
 
     consoleError.mockRestore();
   });
+
+  it("does not stack a retry dialog on top of session recovery", async () => {
+    deleteAccount.mockImplementationOnce(
+      () =>
+        Promise.reject({
+          config: {},
+          response: { status: 401 },
+        }) as never,
+    );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
+
+    await confirmDeletion();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("dialog", {
+        name: /couldn't delete your account/i,
+      }),
+    ).not.toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
 });

@@ -1,5 +1,6 @@
 import { type PropsWithChildren, useCallback, useState } from "react";
 import { UserApi } from "@web/api/user.api";
+import { isSessionLevelError } from "@web/api/util/api.util";
 import { getLastKnownEmail } from "@web/auth/compass/state/auth.state.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -20,21 +21,20 @@ export function DeleteAccountConfirmationProvider({
 }: PropsWithChildren) {
   const value = useDeleteAccountConfirmationState();
   const { closeDeleteAccountConfirmation, isOpen } = value;
-  const [farewell, setFarewell] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasFailed, setHasFailed] = useState(false);
 
   const deleteAccount = useCallback(async () => {
     setHasFailed(false);
-    setFarewell(null);
-    setIsDeleting(true);
+    setStatusMessage("Deleting your account.");
 
     try {
       await UserApi.deleteAccount();
     } catch (e) {
       console.error("Failed to delete account", e);
-      setIsDeleting(false);
-      setHasFailed(true);
+      setStatusMessage(null);
+      // Session recovery already showed its own sign-in UI.
+      if (!isSessionLevelError(e)) setHasFailed(true);
       return;
     }
 
@@ -51,8 +51,7 @@ export function DeleteAccountConfirmationProvider({
       getPosthogClient()?.reset();
     }
 
-    setIsDeleting(false);
-    setFarewell(email);
+    setStatusMessage(`Until our sails cross paths again, so long ${email}.`);
 
     await new Promise((resolve) => setTimeout(resolve, FAREWELL_MS));
     window.location.assign(ROOT_ROUTES.ROOT);
@@ -80,19 +79,8 @@ export function DeleteAccountConfirmationProvider({
         onCancel={handleFailureCancel}
         onRetry={deleteAccount}
       />
-      {isDeleting && (
-        <OverlayPanel
-          role="status"
-          variant="status"
-          message="Deleting your account."
-        />
-      )}
-      {farewell && (
-        <OverlayPanel
-          role="status"
-          variant="status"
-          message={`Until our sails cross paths again, so long ${farewell}.`}
-        />
+      {statusMessage && (
+        <OverlayPanel role="status" variant="status" message={statusMessage} />
       )}
     </DeleteAccountConfirmationContext.Provider>
   );
