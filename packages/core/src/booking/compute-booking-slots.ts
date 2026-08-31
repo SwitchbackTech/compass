@@ -103,14 +103,22 @@ const isSlotBlocked = (
 const localDateKey = (instant: Date, timeZone: string): string =>
   dayjs(instant).tz(timeZone).format("YYYY-MM-DD");
 
-const countReservationsOnLocalDate = (
+/**
+ * Reservations tallied by their local date, in one pass. The day loop below
+ * would otherwise re-scan every reservation - and pay a timezone conversion
+ * for each - once per day in the window.
+ */
+const countReservationsByLocalDate = (
   reservationStarts: readonly Date[],
-  localDate: string,
   timeZone: string,
-): number =>
-  reservationStarts.filter(
-    (start) => localDateKey(start, timeZone) === localDate,
-  ).length;
+): Map<string, number> => {
+  const counts = new Map<string, number>();
+  for (const start of reservationStarts) {
+    const localDate = localDateKey(start, timeZone);
+    counts.set(localDate, (counts.get(localDate) ?? 0) + 1);
+  }
+  return counts;
+};
 
 const availabilityForWeekday = (
   weeklyAvailability: WeeklyAvailability,
@@ -159,6 +167,11 @@ export const computeBookingSlots = (
     ...reservationIntervals,
   ]);
 
+  const reservationsPerLocalDate =
+    maxBookingsPerDay === null
+      ? null
+      : countReservationsByLocalDate(confirmedReservationStarts, timeZone);
+
   const slots: string[] = [];
   const seenStarts = new Set<number>();
 
@@ -172,11 +185,7 @@ export const computeBookingSlots = (
 
     if (
       maxBookingsPerDay !== null &&
-      countReservationsOnLocalDate(
-        confirmedReservationStarts,
-        localDate,
-        timeZone,
-      ) >= maxBookingsPerDay
+      (reservationsPerLocalDate?.get(localDate) ?? 0) >= maxBookingsPerDay
     ) {
       dayCursor = dayCursor.add(1, "day");
       continue;
