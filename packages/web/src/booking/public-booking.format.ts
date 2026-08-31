@@ -2,30 +2,97 @@ import {
   type BookingSlotsQuery,
   BookingSlotsQuerySchema,
 } from "@core/types/booking.contracts";
-import dayjs from "@core/util/date/dayjs";
-import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
-const SLOT_WINDOW_DAYS = 14;
+const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
 
-export function getPublicBookingSlotWindow(
-  hostTimeZone: string,
+export function formatBookingMonthKey(
+  instant: Date | string | Dayjs,
+  timeZone: string,
+): string {
+  return dayjs(instant).tz(timeZone).format("YYYY-MM");
+}
+
+export function shiftBookingMonthKey(
+  monthKey: string,
+  delta: number,
+  timeZone: string,
+): string {
+  const monthStart = parseBookingMonthStart(monthKey, timeZone);
+  if (!monthStart) {
+    return monthKey;
+  }
+  return monthStart.add(delta, "month").format("YYYY-MM");
+}
+
+export function formatBookingMonthHeading(
+  monthKey: string,
+  timeZone: string,
+): string {
+  const monthStart = parseBookingMonthStart(monthKey, timeZone);
+  if (!monthStart) {
+    return monthKey;
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric",
+    timeZone,
+  }).format(monthStart.toDate());
+}
+
+function parseBookingMonthStart(
+  monthKey: string,
+  timeZone: string,
+): Dayjs | null {
+  if (!MONTH_KEY_PATTERN.test(monthKey)) {
+    return null;
+  }
+  const monthStart = dayjs.tz(`${monthKey}-01`, timeZone).startOf("month");
+  return monthStart.isValid() ? monthStart : null;
+}
+
+/**
+ * Day-rounded window for one guest-timezone month, clamped to
+ * `[today, now + maxHorizonDays]`. Null when the month is entirely in the
+ * past or past the host horizon.
+ */
+export function getPublicBookingMonthWindow(
+  monthKey: string,
+  timeZone: string,
   maxHorizonDays: number,
-): BookingSlotsQuery {
-  const guestTimeZone = getBrowserTimeZone();
-  const start = dayjs().tz(guestTimeZone).startOf("minute");
-  const preferredEnd = dayjs()
-    .tz(guestTimeZone)
-    .add(SLOT_WINDOW_DAYS, "day")
-    .endOf("day");
-  // Match the slot engine: horizon is now + maxHorizonDays, not end-of-day.
-  const horizonEnd = dayjs().add(maxHorizonDays, "day");
-  const end = preferredEnd.isAfter(horizonEnd) ? horizonEnd : preferredEnd;
+  now: Dayjs = dayjs(),
+): BookingSlotsQuery | null {
+  const monthStart = parseBookingMonthStart(monthKey, timeZone);
+  if (!monthStart) {
+    return null;
+  }
+
+  const todayStart = now.tz(timeZone).startOf("day");
+  const nextMonthStart = monthStart.add(1, "month").startOf("month");
+  const horizonEnd = now.add(maxHorizonDays, "day");
+  const start = monthStart.isBefore(todayStart) ? todayStart : monthStart;
+  const end = nextMonthStart.isAfter(horizonEnd) ? horizonEnd : nextMonthStart;
+
+  if (!end.isAfter(start)) {
+    return null;
+  }
 
   return BookingSlotsQuerySchema.parse({
     start: start.toISOString(),
     end: end.toISOString(),
-    timeZone: guestTimeZone || hostTimeZone,
+    timeZone,
   });
+}
+
+export function isBookingMonthAvailable(
+  monthKey: string,
+  timeZone: string,
+  maxHorizonDays: number,
+  now: Dayjs = dayjs(),
+): boolean {
+  return (
+    getPublicBookingMonthWindow(monthKey, timeZone, maxHorizonDays, now) != null
+  );
 }
 
 export function formatGuestTimeZoneLabel(timeZone: string): string {

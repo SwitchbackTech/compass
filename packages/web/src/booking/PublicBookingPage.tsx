@@ -1,6 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { CreateBookingReservationInputSchema } from "@core/types/booking.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import {
@@ -9,13 +11,19 @@ import {
   type PublicBookingGuestFormValues,
 } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
+import { PublicBookingMonthNav } from "@web/booking/PublicBookingMonthNav";
 import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
-import { formatDurationMinutes } from "@web/booking/public-booking.format";
+import {
+  formatBookingMonthKey,
+  formatDurationMinutes,
+} from "@web/booking/public-booking.format";
 import {
   isPublicBookingConflictError,
   type PublicBookingConfirmation,
+  prefetchPublicBookingMonth,
   useCreatePublicBookingReservationMutation,
+  usePrefetchAdjacentBookingMonths,
   usePublicBookingPageQuery,
   usePublicBookingSlotsQuery,
 } from "@web/booking/public-booking.query";
@@ -31,11 +39,15 @@ export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
   const slug = username ?? "";
   const guestTimeZone = getBrowserTimeZone();
+  const queryClient = useQueryClient();
+  const [monthKey, setMonthKey] = useState(() =>
+    formatBookingMonthKey(dayjs(), guestTimeZone),
+  );
 
   const pageQuery = usePublicBookingPageQuery(slug);
   const slotsQuery = usePublicBookingSlotsQuery(
     slug,
-    pageQuery.isSuccess && pageQuery.data.enabled,
+    monthKey,
     pageQuery.data?.maxHorizonDays,
   );
   const createReservation = useCreatePublicBookingReservationMutation(slug);
@@ -55,6 +67,14 @@ export function PublicBookingPage() {
       conflictAlertRef.current?.focus();
     }
   }, [conflictMessage]);
+
+  usePrefetchAdjacentBookingMonths(
+    slug,
+    monthKey,
+    guestTimeZone,
+    pageQuery.data?.maxHorizonDays,
+    pageQuery.isSuccess && pageQuery.data.enabled && slotsQuery.isSuccess,
+  );
 
   if (pageQuery.isLoading) {
     return (
@@ -98,25 +118,7 @@ export function PublicBookingPage() {
     );
   }
 
-  if (slotsQuery.isLoading) {
-    return (
-      <PublicBookingStatusMessage
-        title={`Book with ${page.hostDisplayName}`}
-        description="Loading open times..."
-      />
-    );
-  }
-
-  if (slotsQuery.isError || !slotsQuery.data) {
-    return (
-      <PublicBookingStatusMessage
-        title="Could not load times"
-        description="Please refresh and try again."
-      />
-    );
-  }
-
-  if (!slotsQuery.data.bookable) {
+  if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
       <PublicBookingStatusMessage
         title="Booking temporarily unavailable"
@@ -125,12 +127,28 @@ export function PublicBookingPage() {
     );
   }
 
-  const slots = slotsQuery.data;
   const showGuestForm = selectedSlotStart !== null || conflictMessage !== null;
+  const slotsPending = slotsQuery.isLoading && !slotsQuery.data;
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
     setConflictMessage(null);
+  };
+
+  const handleMonthChange = (nextMonthKey: string) => {
+    setMonthKey(nextMonthKey);
+    setSelectedSlotStart(null);
+    setConflictMessage(null);
+  };
+
+  const handlePrefetchMonth = (nextMonthKey: string) => {
+    void prefetchPublicBookingMonth(
+      queryClient,
+      slug,
+      nextMonthKey,
+      guestTimeZone,
+      page.maxHorizonDays,
+    );
   };
 
   const handleSubmit = async (values: PublicBookingGuestFormValues) => {
@@ -186,12 +204,28 @@ export function PublicBookingPage() {
         </p>
       ) : null}
 
-      <PublicBookingSlotPicker
-        slots={slots.slots}
-        guestTimeZone={guestTimeZone}
-        selectedSlotStart={selectedSlotStart}
-        onSelectSlot={handleSelectSlot}
+      <PublicBookingMonthNav
+        monthKey={monthKey}
+        timeZone={guestTimeZone}
+        maxHorizonDays={page.maxHorizonDays}
+        onMonthChange={handleMonthChange}
+        onPrefetchMonth={handlePrefetchMonth}
       />
+
+      {slotsPending ? (
+        <p className="text-sm text-text-muted">Loading open times...</p>
+      ) : slotsQuery.isError || !slotsQuery.data ? (
+        <p className="text-sm text-text-muted">
+          Could not load times. Please refresh and try again.
+        </p>
+      ) : (
+        <PublicBookingSlotPicker
+          slots={slotsQuery.data.slots}
+          guestTimeZone={guestTimeZone}
+          selectedSlotStart={selectedSlotStart}
+          onSelectSlot={handleSelectSlot}
+        />
+      )}
 
       {showGuestForm ? (
         <PublicBookingGuestForm

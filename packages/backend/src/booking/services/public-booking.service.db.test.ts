@@ -316,6 +316,18 @@ describe("PublicBookingService", () => {
     );
   });
 
+  it("accepts a month-length slot window within the existing 60-day cap", async () => {
+    const { slug } = await enableBookingPage();
+    const response = await service.getSlots(slug, {
+      start: "2026-08-01T00:00:00.000Z",
+      end: "2026-09-01T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.bookable).toBe(true);
+    expect(Array.isArray(response.slots)).toBe(true);
+  });
+
   it("still rejects a slot window whose end is not after start", async () => {
     const { slug } = await enableBookingPage();
 
