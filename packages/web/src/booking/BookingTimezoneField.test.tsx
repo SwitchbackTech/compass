@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type TimeZone, TimeZoneSchema } from "@core/types/domain-primitives";
 import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
@@ -8,6 +8,10 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 const zone = (id: string): TimeZone => TimeZoneSchema.parse(id);
 
 afterEach(() => {
+  // Unmount, not just empty the DOM: OverlayPanel registers an app-lock reason
+  // and document listeners in effects, and replaceChildren alone never runs
+  // their teardown, so every render in the file stays retained.
+  cleanup();
   document.body.replaceChildren();
 });
 

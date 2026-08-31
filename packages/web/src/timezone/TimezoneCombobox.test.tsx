@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TimezoneCombobox } from "@web/timezone/TimezoneCombobox";
 import { afterEach, describe, expect, it, mock } from "bun:test";
@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 const noop = () => {};
 
 afterEach(() => {
+  // Unmount, not just empty the DOM: OverlayPanel registers an app-lock reason
+  // and document listeners in effects, and replaceChildren alone never runs
+  // their teardown, so every render in the file stays retained.
+  cleanup();
   document.body.replaceChildren();
 });
 
