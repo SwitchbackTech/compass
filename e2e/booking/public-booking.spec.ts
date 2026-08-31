@@ -103,6 +103,18 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByText("30 minutes")).toBeVisible();
+    await expect(page).toHaveURL(
+      /\/book\/confirmed\/000000000000000000000099$/,
+    );
+  });
+
+  test("does not show a cancel copy button on a cold confirmation permalink", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page);
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toHaveCount(0);
