@@ -5,6 +5,14 @@ export const BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
 
 export const HOST_ACCOUNT_EMAIL = "host@example.com";
 
+function jsonResponse(body: unknown, status = 200) {
+  return {
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  };
+}
+
 const googleCalendar = {
   id: BOOKING_CALENDAR_ID,
   name: "Work",
@@ -101,12 +109,6 @@ export async function preparePublicBookingPage(
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
   const slots = options.slots ?? [slot];
 
-  const json = (body: unknown, status = 200) => ({
-    status,
-    contentType: "application/json",
-    body: JSON.stringify(body),
-  });
-
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -114,7 +116,7 @@ export async function preparePublicBookingPage(
 
     if (path === `/api/booking/pages/${slug}` && request.method() === "GET") {
       return route.fulfill(
-        json({
+        jsonResponse({
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           durationMinutes: options.durationMinutes ?? 30,
           timeZone: "America/Chicago",
@@ -139,7 +141,7 @@ export async function preparePublicBookingPage(
         await options.holdFirstSlots;
       }
       if (options.slotFailGate?.fail) {
-        return route.fulfill(json({}, 500));
+        return route.fulfill(jsonResponse({}, 500));
       }
       const startMs = windowStart ? Date.parse(windowStart) : Number.NaN;
       const endMs = windowEnd ? Date.parse(windowEnd) : Number.NaN;
@@ -148,7 +150,7 @@ export async function preparePublicBookingPage(
         return slotMs >= startMs && slotMs < endMs;
       });
       return route.fulfill(
-        json({
+        jsonResponse({
           bookable: options.bookable ?? true,
           slots: slotsInWindow,
         }),
@@ -165,10 +167,10 @@ export async function preparePublicBookingPage(
         await options.holdConfirm;
       }
       if (options.confirmStatus === 409) {
-        return route.fulfill(json({}, 409));
+        return route.fulfill(jsonResponse({}, 409));
       }
       return route.fulfill(
-        json({
+        jsonResponse({
           reservationId: "000000000000000000000099",
           slotStart: body.slotStart,
           slotEnd: slot.slotEnd,
@@ -184,7 +186,7 @@ export async function preparePublicBookingPage(
       request.method() === "GET"
     ) {
       if (options.reservationNotFound) {
-        return route.fulfill(json({}, 404));
+        return route.fulfill(jsonResponse({}, 404));
       }
       const lastPost = captured.reservationPosts.at(-1);
       const postedSlotStart =
@@ -196,7 +198,7 @@ export async function preparePublicBookingPage(
           ? lastPost.guestTimeZone
           : "UTC";
       return route.fulfill(
-        json({
+        jsonResponse({
           slotStart: postedSlotStart,
           guestTimeZone: postedTimeZone,
           durationMinutes: options.durationMinutes ?? 30,
@@ -206,7 +208,7 @@ export async function preparePublicBookingPage(
       );
     }
 
-    return route.fulfill(json({}));
+    return route.fulfill(jsonResponse({}));
   });
 
   await page.goto(`/book/${slug}`, { waitUntil: "domcontentloaded" });
@@ -225,12 +227,6 @@ export async function preparePublicBookingConfirmedPage(
   const slot =
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
 
-  const json = (body: unknown, status = 200) => ({
-    status,
-    contentType: "application/json",
-    body: JSON.stringify(body),
-  });
-
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -241,13 +237,13 @@ export async function preparePublicBookingConfirmedPage(
       request.method() === "GET"
     ) {
       if (options.reservationNotFound) {
-        return route.fulfill(json({}, 404));
+        return route.fulfill(jsonResponse({}, 404));
       }
       if (options.reservationGetStatus) {
-        return route.fulfill(json({}, options.reservationGetStatus));
+        return route.fulfill(jsonResponse({}, options.reservationGetStatus));
       }
       return route.fulfill(
-        json({
+        jsonResponse({
           slotStart: slot.slotStart,
           guestTimeZone: "UTC",
           durationMinutes: options.durationMinutes ?? 30,
@@ -257,7 +253,7 @@ export async function preparePublicBookingConfirmedPage(
       );
     }
 
-    return route.fulfill(json({}));
+    return route.fulfill(jsonResponse({}));
   });
 
   await page.goto(`/book/confirmed/${reservationId}`, {
@@ -286,12 +282,6 @@ export async function preparePublicBookingCancelPage(
   const token = options.token ?? "abc";
   const captured: CapturedCancelRequests = { cancelPosts: [] };
 
-  const json = (body: unknown, status = 200) => ({
-    status,
-    contentType: "application/json",
-    body: JSON.stringify(body),
-  });
-
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -307,10 +297,12 @@ export async function preparePublicBookingCancelPage(
         await options.holdCancel;
       }
       const status = options.cancelStatus ?? 200;
-      return route.fulfill(json(status === 200 ? { ok: true } : {}, status));
+      return route.fulfill(
+        jsonResponse(status === 200 ? { ok: true } : {}, status),
+      );
     }
 
-    return route.fulfill(json({}));
+    return route.fulfill(jsonResponse({}));
   });
 
   const search = token ? `?token=${encodeURIComponent(token)}` : "";
@@ -349,12 +341,6 @@ export async function prepareSignedInBookingSettingsPage(
     );
   }, HOST_ACCOUNT_EMAIL);
 
-  const json = (body: unknown, status = 200) => ({
-    status,
-    contentType: "application/json",
-    body: JSON.stringify(body),
-  });
-
   const bookingPagePayload = {
     enabled: false,
     durationMinutes: 45,
@@ -384,11 +370,11 @@ export async function prepareSignedInBookingSettingsPage(
     const path = url.pathname;
 
     if (path.endsWith("/api/calendars")) {
-      return route.fulfill(json({ calendars: [googleCalendar] }));
+      return route.fulfill(jsonResponse({ calendars: [googleCalendar] }));
     }
 
     if (path.endsWith("/api/event") && request.method() === "GET") {
-      return route.fulfill(json({ events: [] }));
+      return route.fulfill(jsonResponse({ events: [] }));
     }
 
     if (path.endsWith("/api/booking/page") && request.method() === "GET") {
@@ -396,14 +382,16 @@ export async function prepareSignedInBookingSettingsPage(
       // exists. Returning the bare input shape here hid a bug where the
       // response-only keys rode into the strict PUT schema and killed every
       // save after the first.
-      return route.fulfill(json({ ...bookingPagePayload, ...savedPageFields }));
+      return route.fulfill(
+        jsonResponse({ ...bookingPagePayload, ...savedPageFields }),
+      );
     }
 
     if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
       const body = request.postDataJSON() as Record<string, unknown>;
       captured.putBodies.push(body);
       return route.fulfill(
-        json({
+        jsonResponse({
           ...bookingPagePayload,
           ...savedPageFields,
           ...body,
@@ -413,7 +401,7 @@ export async function prepareSignedInBookingSettingsPage(
 
     if (path.endsWith("/api/user/metadata")) {
       return route.fulfill(
-        json({
+        jsonResponse({
           google: {
             connectionState: "HEALTHY",
             connections: [
@@ -434,10 +422,10 @@ export async function prepareSignedInBookingSettingsPage(
     }
 
     if (path.endsWith("/api/config")) {
-      return route.fulfill(json({ google: { isConfigured: true } }));
+      return route.fulfill(jsonResponse({ google: { isConfigured: true } }));
     }
 
-    return route.fulfill(json({}));
+    return route.fulfill(jsonResponse({}));
   });
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });

@@ -5,10 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import {
-  type CreateBookingReservationInput,
-  type CreateBookingReservationResponse,
-} from "@core/types/booking.contracts";
+import { type CreateBookingReservationInput } from "@core/types/booking.contracts";
 import {
   PublicBookingApi,
   PublicBookingNotFoundError,
@@ -19,8 +16,8 @@ import {
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
 
-export const PUBLIC_BOOKING_PAGE_STALE_TIME_MS = 5 * 60 * 1000;
-export const PUBLIC_BOOKING_SLOTS_STALE_TIME_MS = 60_000;
+const PUBLIC_BOOKING_PAGE_STALE_TIME_MS = 5 * 60 * 1000;
+const PUBLIC_BOOKING_SLOTS_STALE_TIME_MS = 60_000;
 
 export const publicBookingQueryKeys = {
   page: (slug: string) => ["public-booking", "page", slug] as const,
@@ -30,7 +27,7 @@ export const publicBookingQueryKeys = {
     ["public-booking", "reservation", reservationId] as const,
 };
 
-export function publicBookingPageQueryOptions(slug: string) {
+function publicBookingPageQueryOptions(slug: string) {
   return queryOptions({
     queryKey: publicBookingQueryKeys.page(slug),
     queryFn: () => PublicBookingApi.getPage(slug),
@@ -48,7 +45,7 @@ export function usePublicBookingPageQuery(slug: string) {
   return useQuery(publicBookingPageQueryOptions(slug));
 }
 
-export function publicBookingReservationQueryOptions(reservationId: string) {
+function publicBookingReservationQueryOptions(reservationId: string) {
   return queryOptions({
     queryKey: publicBookingQueryKeys.reservation(reservationId),
     queryFn: () => PublicBookingApi.getReservation(reservationId),
@@ -190,5 +187,3 @@ export function useCreatePublicBookingReservationMutation(slug: string) {
 export function isPublicBookingConflictError(error: unknown): boolean {
   return getErrorStatus(error) === 409;
 }
-
-export type PublicBookingConfirmation = CreateBookingReservationResponse;

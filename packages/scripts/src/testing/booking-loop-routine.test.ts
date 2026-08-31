@@ -10,7 +10,6 @@ describe("booking-loop Routine contract", () => {
     expect(existsSync(".github/workflows/booking-loop.yml")).toBe(true);
     expect(existsSync(".github/prompts/booking-loop.md")).toBe(true);
     expect(existsSync(".agents/skills/booking-loop/SKILL.md")).toBe(true);
-    expect(existsSync("wip/booking/AUTOMATION.md")).toBe(true);
   });
 
   it("documents trigger, stop, retry, verifier, dual-launch, and staging", () => {

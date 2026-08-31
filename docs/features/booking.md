@@ -1,9 +1,7 @@
 # Compass Calendar Booking (v1)
 
 Locked product spec for public scheduling on Compass Cloud
-(`https://compasscalendar.com`). Approved 2026-08-30. Implementation
-work packages live in [`wip/booking/`](../../wip/booking/README.md)
-until that pack is deleted.
+(`https://compasscalendar.com`). Approved 2026-08-30.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
@@ -291,12 +289,6 @@ Authenticated (host session + writable billing, same as event writes):
 - Non-Google destination calendars
 
 ## Implementation
-
-Work packages and the GitHub milestone record the build history until
-`wip/booking/` is deleted:
-
-- [`wip/booking/README.md`](../../wip/booking/README.md)
-- [`wip/booking/TRACKING.md`](../../wip/booking/TRACKING.md)
 
 ### Implementation map
 

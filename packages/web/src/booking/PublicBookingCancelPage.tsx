@@ -1,9 +1,10 @@
 import { useParams, useSearch } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { PublicBookingApi } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 type CancelState =
   | "confirm"
@@ -19,15 +20,8 @@ export function PublicBookingCancelPage() {
   const [state, setState] = useState<CancelState>(
     reservationId && token ? "confirm" : "not-found",
   );
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingRef = useBookingHeadingFocus(state);
   const inFlightRef = useRef(false);
-
-  // The ref is attached after render; `state` is the view key so focus
-  // follows confirm -> cancelled / error instead of staying on a detached node.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: state is the view key
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, [state]);
 
   const handleConfirm = async () => {
     if (!reservationId || !token || inFlightRef.current) {
@@ -39,7 +33,6 @@ export function PublicBookingCancelPage() {
 
     try {
       await PublicBookingApi.cancelReservation(reservationId, { token });
-      // Idempotent: a second cancel with a valid token is also 200.
       setState("cancelled");
     } catch (error) {
       if (getErrorStatus(error) === 404) {
@@ -84,7 +77,6 @@ export function PublicBookingCancelPage() {
   if (state === "cancelled") {
     return (
       <PublicBookingStatusMessage
-        headingRef={headingRef}
         title="Booking canceled"
         description="Your appointment has been canceled. You can close this page."
       />
@@ -94,7 +86,6 @@ export function PublicBookingCancelPage() {
   if (state === "not-found") {
     return (
       <PublicBookingStatusMessage
-        headingRef={headingRef}
         title="Booking not found"
         description="This cancel link may be invalid or already used."
       />
@@ -103,11 +94,8 @@ export function PublicBookingCancelPage() {
 
   return (
     <PublicBookingStatusMessage
-      headingRef={headingRef}
       title="Could not cancel booking"
       description="Please try again or use the link from your calendar invite."
     />
   );
 }
-
-export default PublicBookingCancelPage;

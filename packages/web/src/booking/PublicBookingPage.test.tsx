@@ -14,6 +14,7 @@ import {
   formatBookingMonthDayLabel,
   formatBookingMonthHeading,
   formatBookingSlotLabel,
+  formatBookingSlotTime,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -59,13 +60,8 @@ function bookableSlotInNextMonth() {
   };
 }
 
-function slotTimePattern(iso: string, timeZone = "UTC") {
-  const label = new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(iso));
-  return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+function slotButtonName(iso: string, timeZone = "UTC") {
+  return formatBookingSlotTime(iso, timeZone);
 }
 
 async function selectGuestTimeZone(
@@ -171,7 +167,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     expect(
@@ -235,7 +231,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     const detailsHeading = screen.getByRole("heading", {
@@ -348,7 +344,7 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(slot.slotStart, guestTimeZone),
+        name: slotButtonName(slot.slotStart, guestTimeZone),
       }),
     ).toBeInTheDocument();
 
@@ -370,18 +366,18 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(slot.slotStart, overrideZone),
+        name: slotButtonName(slot.slotStart, overrideZone),
       }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
-        name: slotTimePattern(slot.slotStart, guestTimeZone),
+        name: slotButtonName(slot.slotStart, guestTimeZone),
       }),
     ).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: slotTimePattern(slot.slotStart, overrideZone),
+        name: slotButtonName(slot.slotStart, overrideZone),
       }),
     );
     expect(
@@ -434,7 +430,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/book/tzpersist");
 
     await screen.findByRole("button", {
-      name: slotTimePattern(currentSlot.slotStart, guestTimeZone),
+      name: slotButtonName(currentSlot.slotStart, guestTimeZone),
     });
     await selectGuestTimeZone(user, "berlin");
     expect(
@@ -442,7 +438,7 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+        name: slotButtonName(currentSlot.slotStart, overrideZone),
       }),
     ).toBeInTheDocument();
 
@@ -458,14 +454,14 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(nextMonthSlot.slotStart, overrideZone),
+        name: slotButtonName(nextMonthSlot.slotStart, overrideZone),
       }),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Previous month" }));
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+        name: slotButtonName(currentSlot.slotStart, overrideZone),
       }),
     );
     expect(
@@ -525,7 +521,7 @@ describe("PublicBookingPage", () => {
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
@@ -557,7 +553,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: slotTimePattern(laterCurrentSlot.slotStart),
+        name: slotButtonName(laterCurrentSlot.slotStart),
       }),
     );
     expect(
@@ -740,12 +736,12 @@ describe("PublicBookingPage", () => {
 
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
-        name: slotTimePattern(nextMonthSlot.slotStart),
+        name: slotButtonName(nextMonthSlot.slotStart),
       }),
     ).not.toBeInTheDocument();
 
@@ -763,12 +759,12 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(nextMonthSlot.slotStart),
+        name: slotButtonName(nextMonthSlot.slotStart),
       }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     ).not.toBeInTheDocument();
   });
@@ -800,7 +796,7 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(nextMonthSlot.slotStart),
+        name: slotButtonName(nextMonthSlot.slotStart),
       }),
     ).toBeInTheDocument();
     const nextDateKey = formatBookingDateKey(
@@ -822,7 +818,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
@@ -844,14 +840,14 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: slotTimePattern(laterCurrentSlot.slotStart),
+        name: slotButtonName(laterCurrentSlot.slotStart),
       }),
     );
     expect(screen.getByLabelText("Name")).toHaveValue("Guest User");
@@ -902,7 +898,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
@@ -1010,7 +1006,7 @@ describe("PublicBookingPage", () => {
     });
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     ).toBeInTheDocument();
     expect(
@@ -1174,7 +1170,7 @@ describe("PublicBookingConfirmedPage", () => {
     renderBookingRoute("/book/tylerdane");
     await user.click(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart),
+        name: slotButtonName(currentSlot.slotStart),
       }),
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");

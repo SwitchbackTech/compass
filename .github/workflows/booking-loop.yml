@@ -1,6 +1,6 @@
 name: Booking loop
 
-# Autonomous manager loop for Compass Booking v1 (wip/booking/).
+# Autonomous manager loop for Compass Booking GitHub issues.
 # Contract: docs/CI-CD/booking-loop-routine.md
 # Prompt: .github/prompts/booking-loop.md
 #

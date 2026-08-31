@@ -3,7 +3,6 @@ import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
 import { PublicBookingMonthGridSkeleton } from "@web/booking/PublicBookingMonthGridSkeleton";
 import { PublicBookingSlotPaneSkeleton } from "@web/booking/PublicBookingSlotPaneSkeleton";
 import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
-import { PublicBookingSlotsLiveStatus } from "@web/booking/PublicBookingSlotsLiveStatus";
 import { formatBookingMonthHeading } from "@web/booking/public-booking.format";
 
 interface PublicBookingPickerProps {
@@ -99,7 +98,9 @@ export function PublicBookingPicker({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3">
-      <PublicBookingSlotsLiveStatus message={liveMessage} />
+      <p aria-live="polite" className="sr-only" role="status">
+        {liveMessage}
+      </p>
       <div className="grid w-full min-w-0 gap-6 sm:grid-cols-2 sm:items-start">
         <div className="min-w-0">
           {showGridSkeleton ? (

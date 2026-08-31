@@ -32,7 +32,7 @@ Target issue: #${ISSUE_NUMBER}
 Issue URL: ${issue_url}
 
 Read ${prompt_file##*/} at .github/prompts/booking-loop.md and follow it exactly.
-Also read .agents/skills/booking-loop/SKILL.md, wip/booking/README.md, wip/booking/TRACKING.md, and docs/features/booking.md.
+Also read .agents/skills/booking-loop/SKILL.md and docs/features/booking.md.
 
 Take only the work package for this issue from origin/main to a ready PR with Fixes #${ISSUE_NUMBER}, then squash-merge. Label the PR ${AUTOMERGE_LABEL}. Do not wait for a human. Never enter credentials on staging.
 EOF

@@ -1,17 +1,17 @@
-import { type Ref } from "react";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
+import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 interface PublicBookingStatusMessageProps {
   title: string;
   description: string;
-  headingRef?: Ref<HTMLHeadingElement>;
 }
 
 export function PublicBookingStatusMessage({
   title,
   description,
-  headingRef,
 }: PublicBookingStatusMessageProps) {
+  const headingRef = useBookingHeadingFocus(title);
+
   return (
     <PublicBookingLayout>
       <section aria-labelledby="booking-status-heading">

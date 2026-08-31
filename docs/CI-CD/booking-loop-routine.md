@@ -1,7 +1,7 @@
 # Booking loop Routine
 
-Autonomous manager loop that walks the Compass Booking v1 work packages
-(`wip/booking/`) from issue → PR → merge → staging smoke → next WP.
+Autonomous manager loop that walks Compass Booking GitHub issues from
+issue → PR → merge → staging smoke → next issue.
 
 This is a Routine, not a Skill. The Skill
 [`.agents/skills/booking-loop/SKILL.md`](../../.agents/skills/booking-loop/SKILL.md)
@@ -10,7 +10,7 @@ is the agent-facing prompt. The launch/merge/smoke scripts live under
 
 ```text
 ROUTINE: booking-loop
-PURPOSE: Walk Compass Booking v1 work packages from issue to merged-on-staging
+PURPOSE: Walk Compass Booking issues from GitHub to merged-on-staging
   without a human in the loop, except the one-time setup listed below.
 OWNER: compass-maintainers
 TRIGGER: workflow_dispatch | hourly cron | Release on main completed | pull_request labeled booking-automerge
@@ -39,8 +39,8 @@ Sources of truth:
 | Merge-guard Verifier (no-auto-merge paths, size) | `.github/scripts/booking-loop-merge-guard.sh` |
 | Staging smoke | `.github/scripts/booking-loop-staging-smoke.sh` |
 | Post-deploy (smoke + annotate + launch-next flag) | `.github/scripts/booking-loop-postdeploy.sh` |
-| Work pack | `wip/booking/README.md` |
-| Cursor Automation paste | `wip/booking/AUTOMATION.md` |
+| Product spec | `docs/features/booking.md` |
+| Cursor Automation paste | this document (one-time setup) |
 
 ## One-time human setup
 
@@ -54,7 +54,10 @@ required for WP-01 through WP-09.
    - A Cursor Automation whose trigger is an issue comment matching
      `booking-loop: pickup` and whose prompt is
      [`.github/prompts/booking-loop.md`](../../.github/prompts/booking-loop.md).
-     Paste steps: [`wip/booking/AUTOMATION.md`](../../wip/booking/AUTOMATION.md).
+     In Cursor Dashboard → Automations: name `booking-loop`, trigger on a
+     GitHub issue comment whose body contains exactly `booking-loop: pickup`,
+     prompt that file, same Cloud Agent environment as manual runs. Skip this
+     Automation when `CURSOR_API_KEY` is set (dual-launch rule).
 3. A PAT with `contents:write` + `pull_requests:write` stored as
    `BOOKING_LOOP_GITHUB_TOKEN`, or reuse `AUTOFIX_GITHUB_TOKEN`. Required so
    squash-merge commits trigger `release-on-main` (the default
@@ -192,6 +195,6 @@ human_decision: <re-dispatch | leave | revert>
 
 - Skill: [`.agents/skills/booking-loop/SKILL.md`](../../.agents/skills/booking-loop/SKILL.md)
 - Prompt: [`.github/prompts/booking-loop.md`](../../.github/prompts/booking-loop.md)
-- Work pack: [`wip/booking/README.md`](../../wip/booking/README.md)
+- Product spec: [`docs/features/booking.md`](../features/booking.md)
 - Staging QA: [`.agents/skills/qa-test-staging/SKILL.md`](../../.agents/skills/qa-test-staging/SKILL.md)
 - Error-autofix (sibling Routine): [`error-autofix-routine.md`](./error-autofix-routine.md)

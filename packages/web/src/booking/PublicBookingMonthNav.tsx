@@ -31,6 +31,11 @@ export function PublicBookingMonthNav({
     timeZone,
     maxHorizonDays,
   );
+  const prefetchIfEnabled = (enabled: boolean, target: string) => {
+    if (enabled) {
+      onPrefetchMonth(target);
+    }
+  };
 
   return (
     <nav
@@ -42,16 +47,8 @@ export function PublicBookingMonthNav({
         aria-label="Previous month"
         disabled={!canGoPrevious}
         onClick={() => onMonthChange(previousMonthKey)}
-        onMouseEnter={() => {
-          if (canGoPrevious) {
-            onPrefetchMonth(previousMonthKey);
-          }
-        }}
-        onFocus={() => {
-          if (canGoPrevious) {
-            onPrefetchMonth(previousMonthKey);
-          }
-        }}
+        onMouseEnter={() => prefetchIfEnabled(canGoPrevious, previousMonthKey)}
+        onFocus={() => prefetchIfEnabled(canGoPrevious, previousMonthKey)}
         className="rounded-md px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-surface-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
@@ -67,16 +64,8 @@ export function PublicBookingMonthNav({
         aria-label="Next month"
         disabled={!canGoNext}
         onClick={() => onMonthChange(nextMonthKey)}
-        onMouseEnter={() => {
-          if (canGoNext) {
-            onPrefetchMonth(nextMonthKey);
-          }
-        }}
-        onFocus={() => {
-          if (canGoNext) {
-            onPrefetchMonth(nextMonthKey);
-          }
-        }}
+        onMouseEnter={() => prefetchIfEnabled(canGoNext, nextMonthKey)}
+        onFocus={() => prefetchIfEnabled(canGoNext, nextMonthKey)}
         className="rounded-md px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-surface-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
