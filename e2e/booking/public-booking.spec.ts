@@ -190,4 +190,39 @@ test.describe("public booking page", () => {
     expect(endMs - startMs).toBeGreaterThan(0);
     expect(endMs - startMs).toBeLessThanOrEqual(32 * 24 * 60 * 60 * 1000);
   });
+
+  test("selects a highlighted day from the month grid", async ({ page }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    const dayName = await page.evaluate((iso) => {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone,
+      }).format(new Date(iso));
+    }, slotStart);
+
+    const dayButton = page.getByRole("button", { name: dayName });
+    await expect(dayButton).toBeVisible();
+    await dayButton.click();
+    const selectedCell = page.getByRole("gridcell", { selected: true });
+    await expect(selectedCell).toBeVisible();
+    await expect(
+      selectedCell.getByRole("button", { name: dayName }),
+    ).toBeVisible();
+
+    const headers = page.getByRole("columnheader");
+    await expect(headers).toHaveCount(7);
+    for (const header of await headers.all()) {
+      await expect(header).not.toHaveAttribute("tabindex");
+    }
+
+    await dayButton.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(dayButton).toBeFocused();
+  });
 });

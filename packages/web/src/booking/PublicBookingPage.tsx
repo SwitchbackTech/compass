@@ -11,11 +11,12 @@ import {
   type PublicBookingGuestFormValues,
 } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
-import { PublicBookingMonthNav } from "@web/booking/PublicBookingMonthNav";
+import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
 import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import {
   formatBookingMonthKey,
+  formatBookingSlotDateKey,
   formatDurationMinutes,
 } from "@web/booking/public-booking.format";
 import {
@@ -55,6 +56,7 @@ export function PublicBookingPage() {
   const [selectedSlotStart, setSelectedSlotStart] = useState<string | null>(
     null,
   );
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [guestDetails, setGuestDetails] =
     useState<PublicBookingGuestDetails>(EMPTY_GUEST_DETAILS);
   const [confirmation, setConfirmation] =
@@ -132,12 +134,24 @@ export function PublicBookingPage() {
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
+    setSelectedDateKey(formatBookingSlotDateKey(slotStart, guestTimeZone));
     setConflictMessage(null);
+  };
+
+  const handleSelectDay = (dateKey: string) => {
+    setSelectedDateKey(dateKey);
+    if (
+      selectedSlotStart &&
+      formatBookingSlotDateKey(selectedSlotStart, guestTimeZone) !== dateKey
+    ) {
+      setSelectedSlotStart(null);
+    }
   };
 
   const handleMonthChange = (nextMonthKey: string) => {
     setMonthKey(nextMonthKey);
     setSelectedSlotStart(null);
+    setSelectedDateKey(null);
     setConflictMessage(null);
   };
 
@@ -204,12 +218,15 @@ export function PublicBookingPage() {
         </p>
       ) : null}
 
-      <PublicBookingMonthNav
+      <PublicBookingMonthGrid
         monthKey={monthKey}
         timeZone={guestTimeZone}
         maxHorizonDays={page.maxHorizonDays}
+        slots={slotsQuery.data?.slots ?? []}
+        selectedDateKey={selectedDateKey}
         onMonthChange={handleMonthChange}
         onPrefetchMonth={handlePrefetchMonth}
+        onSelectDate={handleSelectDay}
       />
 
       {slotsPending ? (
