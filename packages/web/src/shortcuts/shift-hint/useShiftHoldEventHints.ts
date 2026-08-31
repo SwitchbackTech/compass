@@ -50,16 +50,6 @@ export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
 };
 
-const DAY_NAME_BY_PREFIX: Record<string, string> = {
-  su: "Sunday",
-  m: "Monday",
-  t: "Tuesday",
-  w: "Wednesday",
-  r: "Thursday",
-  f: "Friday",
-  sa: "Saturday",
-};
-
 /**
  * Day columns are entered with Shift so they never race the bare-letter
  * commands they used to lose to (`t` today, `f` notice focus, `m` event menu).
@@ -560,8 +550,6 @@ export function useShiftHoldEventHints({
       setHints([]);
       return;
     }
-    void eventIdsKey;
-
     const { assignments, visibleById } = buildDayJumpAssignments(
       listVisibleRef.current(),
       [...allDayEventsRef.current, ...timedEventsRef.current],
@@ -597,7 +585,6 @@ export function useShiftHoldEventHints({
   // keypress. Events without a start date would otherwise advertise the
   // FALLBACK_SCHEDULE's phantom Sunday.
   useEffect(() => {
-    void eventIdsKey;
     const weekdays = [...allDayEventsRef.current, ...timedEventsRef.current]
       .filter((event) => Boolean(event.startDate))
       .map((event) => scheduleMeta(event).weekday);

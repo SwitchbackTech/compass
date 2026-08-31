@@ -15,11 +15,10 @@ import { usePageJumpShortcut } from "@web/shortcuts/page-jump/usePageJumpShortcu
  */
 export function PageJumpHints({ targets }: { targets?: PageJumpTargets }) {
   const accountEmails = useConnectedAccountEmails();
-  const calendarTargets = useMemo(
-    () => buildCalendarPageJumpTargets(accountEmails),
-    [accountEmails],
+  const resolvedTargets = useMemo(
+    () => targets ?? buildCalendarPageJumpTargets(accountEmails),
+    [accountEmails, targets],
   );
-  const resolvedTargets = targets ?? calendarTargets;
   const { areHintsVisible } = usePageJumpShortcut(resolvedTargets);
   return (
     <PageJumpHintOverlay targets={resolvedTargets} visible={areHintsVisible} />

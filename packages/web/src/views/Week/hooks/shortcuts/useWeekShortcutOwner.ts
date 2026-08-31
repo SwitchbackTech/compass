@@ -130,29 +130,30 @@ export const useWeekShortcutOwner = ({
     eventJumpActions.setPointerDraftIntent(null);
   }, [canSeedDraft, defaultTargetCalendarId, endOfView, startOfView]);
 
-  const createTimedDraftEvent = useCallback(() => {
-    if (!canSeedDraft) return;
+  const seedTimedDraft = useCallback(
+    (activity: "createShortcut" | "keyboardPlace") => {
+      if (!canSeedDraft) return;
+      void createTimedDraft(
+        isCurrentWeek,
+        startOfView,
+        activity,
+        defaultTargetCalendarId,
+      );
+    },
+    [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView],
+  );
 
-    void createTimedDraft(
-      isCurrentWeek,
-      startOfView,
-      "createShortcut",
-      defaultTargetCalendarId,
-    );
-  }, [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView]);
+  const createTimedDraftEvent = useCallback(
+    () => seedTimedDraft("createShortcut"),
+    [seedTimedDraft],
+  );
 
   // Idle Shift+Arrow place-create. Existing-draft / focused-target guards live
   // in useGridEventEditShortcuts so a failed clamp/midnight move never reseeds.
-  const placeTimedDraftEvent = useCallback(() => {
-    if (!canSeedDraft) return;
-
-    void createTimedDraft(
-      isCurrentWeek,
-      startOfView,
-      "keyboardPlace",
-      defaultTargetCalendarId,
-    );
-  }, [canSeedDraft, defaultTargetCalendarId, isCurrentWeek, startOfView]);
+  const placeTimedDraftEvent = useCallback(
+    () => seedTimedDraft("keyboardPlace"),
+    [seedTimedDraft],
+  );
 
   // The command palette's create-event rows (event.cmd.constants.ts) can only
   // reach this view through the bus; the C/Shift+C keys below call the create
