@@ -18,6 +18,9 @@ export default defineConfig({
   },
   use: {
     baseURL: `http://localhost:${TEST_PORT}`,
+    // Historic app tests assume Dark Abyss tokens. Guest booking specs that
+    // cover prefers-color-scheme override this per test.
+    colorScheme: "dark",
     trace: "on-first-retry",
   },
   projects: [
