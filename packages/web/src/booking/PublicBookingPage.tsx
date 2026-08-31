@@ -307,7 +307,8 @@ export function PublicBookingPage() {
       await navigate({
         to: ROOT_ROUTES.BOOK_CONFIRMED,
         params: { reservationId: result.reservationId },
-        state: { cancelUrl: result.cancelUrl },
+        // Post-submit only: the public GET cannot reconstruct the cancel token.
+        state: { cancelUrl: result.cancelUrl } as never,
       });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {

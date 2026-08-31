@@ -27,12 +27,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-declare module "@tanstack/history" {
-  interface HistoryState {
-    cancelUrl?: string;
-  }
-}
-
 export const CompassRouterProvider = (props?: { router?: AnyRouter }) => {
   return <RouterProvider router={props?.router ?? router} />;
 };

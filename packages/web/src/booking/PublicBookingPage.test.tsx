@@ -1100,8 +1100,9 @@ describe("PublicBookingConfirmedPage", () => {
   it("copies the cancel URL when history state includes it", async () => {
     const user = userEvent.setup({ delay: null });
     const written: string[] = [];
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
         writeText: async (value: string) => {
           written.push(value);
         },
