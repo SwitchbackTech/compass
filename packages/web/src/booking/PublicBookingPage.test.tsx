@@ -226,6 +226,7 @@ describe("PublicBookingPage", () => {
     let postedBody: unknown;
     const slotTimeZones: string[] = [];
     const overrideZone = "Asia/Tokyo";
+    const slot = nextMonthSlot;
 
     server.use(
       rest.get(
@@ -241,8 +242,10 @@ describe("PublicBookingPage", () => {
           const end = req.url.searchParams.get("end");
           const startMs = start ? Date.parse(start) : Number.NEGATIVE_INFINITY;
           const endMs = end ? Date.parse(end) : Number.POSITIVE_INFINITY;
-          const at = Date.parse(currentSlot.slotStart);
-          const slots = at >= startMs && at < endMs ? [currentSlot] : [];
+          const slots = [slot].filter((item) => {
+            const at = Date.parse(item.slotStart);
+            return at >= startMs && at < endMs;
+          });
           return res(
             ctx.status(Status.OK),
             ctx.json({ bookable: true, slots }),
@@ -257,8 +260,8 @@ describe("PublicBookingPage", () => {
             ctx.status(Status.OK),
             ctx.json({
               reservationId: "000000000000000000000099",
-              slotStart: currentSlot.slotStart,
-              slotEnd: currentSlot.slotEnd,
+              slotStart: slot.slotStart,
+              slotEnd: slot.slotEnd,
               guestTimeZone: overrideZone,
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
@@ -277,10 +280,9 @@ describe("PublicBookingPage", () => {
       screen.getByRole("button", { name: /^Timezone: UTC/ }),
     ).toBeInTheDocument();
 
-    const utcDateKey = formatBookingSlotDateKey(
-      currentSlot.slotStart,
-      guestTimeZone,
-    );
+    await user.click(await screen.findByRole("button", { name: "Next month" }));
+
+    const utcDateKey = formatBookingSlotDateKey(slot.slotStart, guestTimeZone);
     expect(
       await screen.findByRole("button", {
         name: formatBookingMonthDayLabel(utcDateKey, guestTimeZone),
@@ -288,7 +290,7 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, guestTimeZone),
+        name: slotTimePattern(slot.slotStart, guestTimeZone),
       }),
     ).toBeInTheDocument();
 
@@ -301,10 +303,8 @@ describe("PublicBookingPage", () => {
       expect(slotTimeZones).toContain(overrideZone);
     });
 
-    const tokyoDateKey = formatBookingSlotDateKey(
-      currentSlot.slotStart,
-      overrideZone,
-    );
+    const tokyoDateKey = formatBookingSlotDateKey(slot.slotStart, overrideZone);
+    expect(tokyoDateKey).not.toBe(utcDateKey);
     expect(
       await screen.findByRole("button", {
         name: formatBookingMonthDayLabel(tokyoDateKey, overrideZone),
@@ -312,24 +312,22 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       await screen.findByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+        name: slotTimePattern(slot.slotStart, overrideZone),
       }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, guestTimeZone),
+        name: slotTimePattern(slot.slotStart, guestTimeZone),
       }),
     ).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
-        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+        name: slotTimePattern(slot.slotStart, overrideZone),
       }),
     );
     expect(
-      screen.getByText(
-        formatBookingSlotLabel(currentSlot.slotStart, overrideZone),
-      ),
+      screen.getByText(formatBookingSlotLabel(slot.slotStart, overrideZone)),
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
@@ -341,7 +339,7 @@ describe("PublicBookingPage", () => {
       }),
     ).toBeInTheDocument();
     expect(postedBody).toMatchObject({
-      slotStart: currentSlot.slotStart,
+      slotStart: slot.slotStart,
       guestTimeZone: overrideZone,
     });
   });
