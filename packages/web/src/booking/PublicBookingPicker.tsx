@@ -1,3 +1,4 @@
+import { type Ref } from "react";
 import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
 import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
 
@@ -10,6 +11,7 @@ interface PublicBookingPickerProps {
   slotsError: boolean;
   selectedDateKey: string | null;
   selectedSlotStart: string | null;
+  slotsHeadingRef?: Ref<HTMLHeadingElement>;
   onMonthChange: (monthKey: string) => void;
   onPrefetchMonth: (monthKey: string) => void;
   onSelectDate: (dateKey: string) => void;
@@ -26,6 +28,7 @@ export function PublicBookingPicker({
   slotsError,
   selectedDateKey,
   selectedSlotStart,
+  slotsHeadingRef,
   onMonthChange,
   onPrefetchMonth,
   onSelectDate,
@@ -59,6 +62,7 @@ export function PublicBookingPicker({
             selectedDateKey={selectedDateKey}
             guestTimeZone={timeZone}
             selectedSlotStart={selectedSlotStart}
+            headingRef={slotsHeadingRef}
             onSelectSlot={onSelectSlot}
             onJumpToNextAvailable={onJumpToNextAvailable}
           />

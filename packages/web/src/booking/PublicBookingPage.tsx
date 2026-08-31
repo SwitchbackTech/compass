@@ -74,7 +74,9 @@ export function PublicBookingPage() {
   const [step, setStep] = useState<"picker" | "details">("picker");
   const conflictAlertRef = useRef<HTMLParagraphElement>(null);
   const detailsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const pickerHeadingRef = useRef<HTMLHeadingElement>(null);
   const submitInFlightRef = useRef(false);
+  const pendingPickerFocusRef = useRef(false);
 
   useEffect(() => {
     if (conflictMessage) {
@@ -85,6 +87,11 @@ export function PublicBookingPage() {
   useEffect(() => {
     if (step === "details") {
       detailsHeadingRef.current?.focus();
+      return;
+    }
+    if (pendingPickerFocusRef.current) {
+      pendingPickerFocusRef.current = false;
+      pickerHeadingRef.current?.focus();
     }
   }, [step]);
 
@@ -197,6 +204,7 @@ export function PublicBookingPage() {
   };
 
   const handleChangeTime = () => {
+    pendingPickerFocusRef.current = true;
     setStep("picker");
   };
 
@@ -352,6 +360,7 @@ export function PublicBookingPage() {
             }
             selectedDateKey={selectedDateKey}
             selectedSlotStart={selectedSlotStart}
+            slotsHeadingRef={pickerHeadingRef}
             onMonthChange={handleMonthChange}
             onPrefetchMonth={handlePrefetchMonth}
             onSelectDate={handleSelectDay}
@@ -371,7 +380,7 @@ export function PublicBookingPage() {
                 onSubmit={handleSubmit}
               />
             </div>
-          ) : (
+          ) : selectedSlotStart ? null : (
             <p className="text-sm text-text-muted">
               Select a time to continue.
             </p>

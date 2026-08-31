@@ -555,9 +555,12 @@ describe("PublicBookingPage", () => {
     await user.type(screen.getByLabelText("Notes (optional)"), "Bring slides");
     await user.click(screen.getByRole("button", { name: "Change time" }));
 
-    expect(
-      await screen.findByRole("heading", { name: "Pick a time" }),
-    ).toBeInTheDocument();
+    const pickerHeading = await screen.findByRole("heading", {
+      name: "Pick a time",
+    });
+    await waitFor(() => {
+      expect(pickerHeading).toHaveFocus();
+    });
     const dateKey = formatBookingSlotDateKey(
       currentSlot.slotStart,
       guestTimeZone,

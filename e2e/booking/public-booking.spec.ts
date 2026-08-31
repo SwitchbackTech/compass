@@ -396,7 +396,7 @@ test.describe("public booking page", () => {
 
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
-    ).toBeVisible();
+    ).toBeFocused();
     await expect(page.getByRole("button", { name: dayName })).toHaveAttribute(
       "aria-pressed",
       "true",
