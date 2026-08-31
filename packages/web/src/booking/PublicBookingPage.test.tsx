@@ -357,11 +357,9 @@ describe("PublicBookingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(
-        screen.queryByText("Loading open times..."),
-      ).not.toBeInTheDocument();
-    });
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
   });
 
   it("renders a prefetched month without a new slots request", async () => {
@@ -378,18 +376,21 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/book/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
-    await waitFor(() => {
-      expect(
-        screen.queryByText("Loading open times..."),
-      ).not.toBeInTheDocument();
-    });
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(slotRequests).toBeGreaterThanOrEqual(2);
     });
     const requestsAfterPrefetch = slotRequests;
 
     await user.click(screen.getByRole("button", { name: "Next month" }));
-    expect(screen.queryByText("Loading open times...")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(slotRequests).toBeGreaterThanOrEqual(requestsAfterPrefetch);
     });
@@ -650,5 +651,151 @@ describe("PublicBookingPage", () => {
       }),
     ).toBeInTheDocument();
     expect(posts).toBe(1);
+  });
+
+  it("keeps the host heading visible and announces slot loading", async () => {
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
+    server.use(
+      pageHandler(),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        async (_req, res, ctx) => {
+          await delay(80);
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ bookable: true, slots: [currentSlot] }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Loading open times",
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Pick a time" }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Times loaded");
+    expect(
+      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+  });
+
+  it("retries a failed slots request without leaving the page", async () => {
+    const user = userEvent.setup({ delay: null });
+    const slotFailGate = { fail: true };
+
+    server.use(
+      pageHandler(),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        (_req, res, ctx) => {
+          if (slotFailGate.fail) {
+            return res(ctx.status(Status.INTERNAL_SERVER), ctx.json({}));
+          }
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ bookable: true, slots: [currentSlot] }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Retry" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Could not load times",
+    );
+    slotFailGate.fail = false;
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a slot-pane skeleton on an unfetched month without replacing the header", async () => {
+    const user = userEvent.setup({ delay: null });
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
+    let currentMonthRequests = 0;
+
+    server.use(
+      pageHandler(),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        async (req, res, ctx) => {
+          const start = req.url.searchParams.get("start") ?? "";
+          const isCurrentMonth = start.startsWith(`${currentMonthKey}-`);
+          if (isCurrentMonth) {
+            currentMonthRequests += 1;
+            return res(
+              ctx.status(Status.OK),
+              ctx.json({ bookable: true, slots: [currentSlot] }),
+            );
+          }
+          await delay(80);
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ bookable: true, slots: [nextMonthSlot] }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(currentMonthRequests).toBeGreaterThan(0);
+    });
+
+    await user.click(screen.getByRole("button", { name: "Next month" }));
+    expect(
+      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: formatBookingMonthHeading(
+          shiftBookingMonthKey(currentMonthKey, 1, guestTimeZone),
+          guestTimeZone,
+        ),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Loading open times",
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Pick a time" }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
   });
 });

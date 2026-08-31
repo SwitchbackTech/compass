@@ -33,6 +33,18 @@ test("the public booking details step has no automatically detectable accessibil
   await expectNoAxeViolations(page, { checkpoint: "public booking details" });
 });
 
+test("the public booking slots error has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  const slotFailGate = { fail: true };
+  await preparePublicBookingPage(page, { slotFailGate });
+
+  await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+  await expectNoAxeViolations(page, {
+    checkpoint: "public booking slots error",
+  });
+});
+
 test("the public booking conflict alert has no automatically detectable accessibility violations", async ({
   page,
 }) => {

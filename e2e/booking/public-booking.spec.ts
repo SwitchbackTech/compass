@@ -208,7 +208,7 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("button", { name: "Previous month" }),
     ).toBeEnabled();
-    await expect(page.getByText("Loading open times...")).toHaveCount(0);
+    await expect(page.getByText("Loading open times")).toHaveCount(0);
     await expect.poll(() => captured.slotGets).toBeGreaterThanOrEqual(3);
     const afterArrive = captured.slotGets;
 
@@ -436,5 +436,51 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeVisible();
     expect(captured.reservationPosts).toHaveLength(1);
+  });
+
+  test("announces slot loading without replacing the host heading", async ({
+    page,
+  }) => {
+    let release!: () => void;
+    const holdFirstSlots = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await preparePublicBookingPage(page, { holdFirstSlots });
+
+    await expect(
+      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Loading open times");
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toHaveCount(0);
+    release();
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Times loaded");
+  });
+
+  test("retries a failed slots request without a page reload", async ({
+    page,
+  }) => {
+    const slot = buildBookableSlot();
+    const slotFailGate = { fail: true };
+    await preparePublicBookingPage(page, {
+      slots: [slot],
+      slotFailGate,
+    });
+
+    await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeVisible();
+    slotFailGate.fail = false;
+    await page.getByRole("button", { name: "Retry" }).click();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(slot.slotStart),
+      }),
+    ).toBeVisible();
   });
 });

@@ -67,6 +67,7 @@ export function publicBookingSlotsQueryOptions(
       return PublicBookingApi.getSlots(slug, window, signal);
     },
     staleTime: PUBLIC_BOOKING_SLOTS_STALE_TIME_MS,
+    retry: false,
   });
 }
 
