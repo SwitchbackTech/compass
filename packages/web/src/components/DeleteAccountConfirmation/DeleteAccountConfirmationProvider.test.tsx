@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, describe, expect, it, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
@@ -68,7 +68,9 @@ const confirmDeletion = async () => {
   return user;
 };
 
-const flushFarewellTimer = async (run: () => Promise<void> | void) => {
+// Spy setTimeout only after user-event is done. Testing Library treats a
+// mocked setTimeout as fake timers and then user-event/waitFor crash.
+const flushPendingDelete = async (finishDelete: () => void) => {
   const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
     callback: TimerHandler,
   ) => {
@@ -76,7 +78,12 @@ const flushFarewellTimer = async (run: () => Promise<void> | void) => {
     return 0;
   }) as typeof setTimeout);
   try {
-    await run();
+    await act(async () => {
+      finishDelete();
+      for (let i = 0; i < 30; i++) {
+        await Promise.resolve();
+      }
+    });
   } finally {
     setTimeoutSpy.mockRestore();
   }
@@ -93,24 +100,36 @@ afterEach(() => {
 
 describe("DeleteAccountConfirmationProvider", () => {
   it("resets the analytics identity after deleting the account", async () => {
-    await flushFarewellTimer(async () => {
-      await confirmDeletion();
-      await waitFor(() => {
-        expect(posthog.reset).toHaveBeenCalledTimes(1);
-      });
-    });
+    let finishDelete = () => {};
+    deleteAccount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDelete = () => resolve({} as never);
+        }) as never,
+    );
+
+    await confirmDeletion();
+    await flushPendingDelete(finishDelete);
+
+    expect(posthog.reset).toHaveBeenCalledTimes(1);
   });
 
   it("resets analytics even when browser storage cleanup fails", async () => {
     clearAllBrowserStorage.mockRejectedValueOnce(
       new Error("IndexedDB blocked"),
     );
-    await flushFarewellTimer(async () => {
-      await confirmDeletion();
-      await waitFor(() => {
-        expect(posthog.reset).toHaveBeenCalledTimes(1);
-      });
-    });
+    let finishDelete = () => {};
+    deleteAccount.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishDelete = () => resolve({} as never);
+        }) as never,
+    );
+
+    await confirmDeletion();
+    await flushPendingDelete(finishDelete);
+
+    expect(posthog.reset).toHaveBeenCalledTimes(1);
   });
 
   // Deleting spans a Mongo transaction and a Google grant revocation. Until
@@ -132,21 +151,19 @@ describe("DeleteAccountConfirmationProvider", () => {
     expect(deleting).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
-    await flushFarewellTimer(async () => {
-      finishDelete();
-      await waitFor(() => {
-        expect(screen.getByRole("status")).toHaveTextContent(
-          /so long captain@example.com/i,
-        );
-        expect(assign).toHaveBeenCalled();
-      });
-    });
+    await flushPendingDelete(finishDelete);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /so long captain@example.com/i,
+    );
+    expect(assign).toHaveBeenCalled();
   });
 
   it("keeps the user in a keyboard dialog if the account could not be deleted", async () => {
     deleteAccount.mockImplementationOnce(
       () => Promise.reject(new Error("nope")) as never,
     );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
 
     const user = await confirmDeletion();
 
@@ -157,19 +174,19 @@ describe("DeleteAccountConfirmationProvider", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(assign).not.toHaveBeenCalled();
 
-    await flushFarewellTimer(async () => {
-      await user.keyboard("{Enter}");
-      await waitFor(() => {
-        expect(deleteAccount).toHaveBeenCalledTimes(2);
-        expect(assign).toHaveBeenCalled();
-      });
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      expect(deleteAccount).toHaveBeenCalledTimes(2);
     });
+
+    consoleError.mockRestore();
   });
 
   it("lets the user dismiss a failed delete with Escape", async () => {
     deleteAccount.mockImplementationOnce(
       () => Promise.reject(new Error("nope")) as never,
     );
+    const consoleError = spyOn(console, "error").mockImplementation(() => {});
 
     const user = await confirmDeletion();
 
@@ -186,5 +203,7 @@ describe("DeleteAccountConfirmationProvider", () => {
       ).not.toBeInTheDocument();
     });
     expect(assign).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
   });
 });
