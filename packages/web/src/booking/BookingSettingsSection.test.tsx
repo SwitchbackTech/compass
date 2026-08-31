@@ -35,6 +35,7 @@ afterEach(() => {
   isAppAccessMocked = true;
   setPinnedTimeZone(null);
   clearAppLockReasons();
+  setClipboard(originalClipboard);
 });
 
 const writableCalendar = createMockCalendar({
@@ -46,6 +47,15 @@ const writableCalendar = createMockCalendar({
 const bookingPageUrl = `${ENV_WEB.API_BASEURL}/booking/page`;
 
 const HOST_TIME_ZONE = "America/Chicago";
+
+const originalClipboard = navigator.clipboard;
+const setClipboard = (value: unknown) => {
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value,
+    writable: true,
+  });
+};
 
 const unconfiguredPage = () => ({
   enabled: false,
@@ -426,6 +436,92 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByText("Fix the weekly hours that could not be read."),
     ).toBeInTheDocument();
+  });
+
+  it("copies the booking link after a save that returns one", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    const slug = "hostuser";
+    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug,
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(bookingUrl);
+    });
+  });
+
+  it("does not claim a copy when the page has no link yet", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+    let putCount = 0;
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      // Saving while disabled allocates no slug, so the response carries no
+      // bookingUrl and there is nothing to copy.
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        putCount += 1;
+        const body = (await req.json()) as Record<string, unknown>;
+        return res(ctx.json({ ...body, isConfigured: true }));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    await waitFor(() => {
+      expect(putCount).toBe(1);
+    });
+    expect(writeText).not.toHaveBeenCalled();
   });
 
   it("blocks enable without a destination calendar", async () => {
