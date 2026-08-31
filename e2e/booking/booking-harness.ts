@@ -135,6 +135,62 @@ export async function preparePublicBookingPage(
   return captured;
 }
 
+export interface PublicBookingCancelStubOptions {
+  reservationId?: string;
+  token?: string;
+  /** HTTP status for POST /reservations/:id/cancel. Default 200. */
+  cancelStatus?: number;
+  /** When set, the cancel POST waits until this resolves (for in-flight UI). */
+  holdCancel?: Promise<void>;
+}
+
+export interface CapturedCancelRequests {
+  cancelPosts: Array<Record<string, unknown>>;
+}
+
+export async function preparePublicBookingCancelPage(
+  page: Page,
+  options: PublicBookingCancelStubOptions = {},
+): Promise<CapturedCancelRequests> {
+  const reservationId = options.reservationId ?? "000000000000000000000099";
+  const token = options.token ?? "abc";
+  const captured: CapturedCancelRequests = { cancelPosts: [] };
+
+  const json = (body: unknown, status = 200) => ({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (
+      path === `/api/booking/reservations/${reservationId}/cancel` &&
+      request.method() === "POST"
+    ) {
+      const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      captured.cancelPosts.push(body);
+      if (options.holdCancel) {
+        await options.holdCancel;
+      }
+      const status = options.cancelStatus ?? 200;
+      return route.fulfill(json(status === 200 ? { ok: true } : {}, status));
+    }
+
+    return route.fulfill(json({}));
+  });
+
+  const search = token ? `?token=${encodeURIComponent(token)}` : "";
+  await page.goto(`/book/cancel/${reservationId}${search}`, {
+    waitUntil: "domcontentloaded",
+  });
+
+  return captured;
+}
+
 export interface HostBookingSettingsStubOptions {
   slug?: string;
   bookingUrl?: string;
