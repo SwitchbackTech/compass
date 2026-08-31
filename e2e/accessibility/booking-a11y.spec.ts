@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+  buildBookableSlot,
+  formatSlotButtonLabel,
   preparePublicBookingCancelPage,
   preparePublicBookingPage,
 } from "../booking/booking-harness";
@@ -14,6 +16,23 @@ test("the public booking page renders with no automatically detectable accessibi
     page.getByRole("heading", { name: "Pick a time" }),
   ).toBeVisible();
   await expectNoAxeViolations(page, { checkpoint: "public booking page" });
+});
+
+test("the public booking conflict alert has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  const { slotStart } = buildBookableSlot();
+  await preparePublicBookingPage(page, { confirmStatus: 409 });
+
+  await page
+    .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+    .click();
+  await page.getByLabel("Name").fill("Guest User");
+  await page.getByLabel("Email").fill("guest@example.com");
+  await page.getByRole("button", { name: "Confirm booking" }).click();
+
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "public booking conflict" });
 });
 
 test.describe("public booking cancel page", () => {

@@ -1,9 +1,10 @@
 import { useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CreateBookingReservationInputSchema } from "@core/types/booking.contracts";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import {
+  type PublicBookingGuestDetails,
   PublicBookingGuestForm,
   type PublicBookingGuestFormValues,
 } from "@web/booking/PublicBookingGuestForm";
@@ -19,6 +20,12 @@ import {
   usePublicBookingSlotsQuery,
 } from "@web/booking/public-booking.query";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
+
+const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
+  guestName: "",
+  guestEmail: "",
+  notes: "",
+};
 
 export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
@@ -36,9 +43,18 @@ export function PublicBookingPage() {
   const [selectedSlotStart, setSelectedSlotStart] = useState<string | null>(
     null,
   );
+  const [guestDetails, setGuestDetails] =
+    useState<PublicBookingGuestDetails>(EMPTY_GUEST_DETAILS);
   const [confirmation, setConfirmation] =
     useState<PublicBookingConfirmation | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const conflictAlertRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (conflictMessage) {
+      conflictAlertRef.current?.focus();
+    }
+  }, [conflictMessage]);
 
   if (pageQuery.isLoading) {
     return (
@@ -110,6 +126,12 @@ export function PublicBookingPage() {
   }
 
   const slots = slotsQuery.data;
+  const showGuestForm = selectedSlotStart !== null || conflictMessage !== null;
+
+  const handleSelectSlot = (slotStart: string) => {
+    setSelectedSlotStart(slotStart);
+    setConflictMessage(null);
+  };
 
   const handleSubmit = async (values: PublicBookingGuestFormValues) => {
     if (!selectedSlotStart) {
@@ -145,7 +167,7 @@ export function PublicBookingPage() {
   return (
     <PublicBookingLayout>
       <header className="flex flex-col gap-1">
-        <h1 className="font-semibold text-xl text-text">
+        <h1 className="font-semibold text-text text-xl">
           Book with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">
@@ -155,8 +177,10 @@ export function PublicBookingPage() {
 
       {conflictMessage ? (
         <p
+          ref={conflictAlertRef}
           role="alert"
-          className="rounded-md border border-warning/40 bg-surface-panel px-3 py-2 text-sm text-text"
+          tabIndex={-1}
+          className="rounded-md border border-warning/40 bg-surface-panel px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {conflictMessage}
         </p>
@@ -166,12 +190,15 @@ export function PublicBookingPage() {
         slots={slots.slots}
         guestTimeZone={guestTimeZone}
         selectedSlotStart={selectedSlotStart}
-        onSelectSlot={setSelectedSlotStart}
+        onSelectSlot={handleSelectSlot}
       />
 
-      {selectedSlotStart ? (
+      {showGuestForm ? (
         <PublicBookingGuestForm
           disabled={createReservation.isPending}
+          submitDisabled={!selectedSlotStart}
+          values={guestDetails}
+          onChange={setGuestDetails}
           onSubmit={handleSubmit}
         />
       ) : (
