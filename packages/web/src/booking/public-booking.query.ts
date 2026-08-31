@@ -18,7 +18,6 @@ import {
   getPublicBookingMonthWindow,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
-import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 export const PUBLIC_BOOKING_PAGE_STALE_TIME_MS = 5 * 60 * 1000;
 export const PUBLIC_BOOKING_SLOTS_STALE_TIME_MS = 60_000;
@@ -75,8 +74,8 @@ export function usePublicBookingSlotsQuery(
   slug: string,
   monthKey: string,
   maxHorizonDays: number | undefined,
+  timeZone: string,
 ) {
-  const timeZone = getBrowserTimeZone();
   // Start the first month in parallel with page meta. 60 is the schema max
   // and only used until `maxHorizonDays` is known; the query key is the month
   // so landing page meta does not refetch. The backend still clamps to the

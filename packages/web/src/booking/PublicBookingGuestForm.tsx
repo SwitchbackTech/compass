@@ -1,5 +1,4 @@
 import { type FormEvent } from "react";
-import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 export interface PublicBookingGuestDetails {
   guestName: string;
@@ -16,6 +15,7 @@ interface PublicBookingGuestFormProps {
   disabled: boolean;
   submitDisabled: boolean;
   showHeading?: boolean;
+  guestTimeZone: string;
   values: PublicBookingGuestDetails;
   onChange: (values: PublicBookingGuestDetails) => void;
   onSubmit: (values: PublicBookingGuestFormValues) => void;
@@ -25,6 +25,7 @@ export function PublicBookingGuestForm({
   disabled,
   submitDisabled,
   showHeading = true,
+  guestTimeZone,
   values,
   onChange,
   onSubmit,
@@ -38,7 +39,7 @@ export function PublicBookingGuestForm({
       guestName: values.guestName.trim(),
       guestEmail: values.guestEmail.trim(),
       notes: values.notes.trim(),
-      guestTimeZone: getBrowserTimeZone(),
+      guestTimeZone,
     });
   };
 

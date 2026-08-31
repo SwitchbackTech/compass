@@ -440,9 +440,12 @@ export const dispatchClick = async (
   });
 };
 
-export function formatSlotButtonLabel(slotStart: string): RegExp {
+export function formatSlotButtonLabel(
+  slotStart: string,
+  timeZone = "UTC",
+): RegExp {
   const time = new Intl.DateTimeFormat(undefined, {
-    timeZone: "UTC",
+    timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(slotStart));
