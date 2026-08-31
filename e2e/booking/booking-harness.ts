@@ -85,6 +85,7 @@ export async function preparePublicBookingPage(
           durationMinutes: options.durationMinutes ?? 30,
           timeZone: "America/Chicago",
           enabled: true,
+          maxHorizonDays: 60,
         }),
       );
     }

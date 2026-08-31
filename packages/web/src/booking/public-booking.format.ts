@@ -9,18 +9,21 @@ const SLOT_WINDOW_DAYS = 14;
 
 export function getPublicBookingSlotWindow(
   hostTimeZone: string,
+  maxHorizonDays: number,
 ): BookingSlotsQuery {
   const guestTimeZone = getBrowserTimeZone();
-  const start = dayjs().tz(guestTimeZone).startOf("minute").toISOString();
-  const end = dayjs()
+  const start = dayjs().tz(guestTimeZone).startOf("minute");
+  const preferredEnd = dayjs()
     .tz(guestTimeZone)
     .add(SLOT_WINDOW_DAYS, "day")
-    .endOf("day")
-    .toISOString();
+    .endOf("day");
+  // Match the slot engine: horizon is now + maxHorizonDays, not end-of-day.
+  const horizonEnd = dayjs().add(maxHorizonDays, "day");
+  const end = preferredEnd.isAfter(horizonEnd) ? horizonEnd : preferredEnd;
 
   return BookingSlotsQuerySchema.parse({
-    start,
-    end,
+    start: start.toISOString(),
+    end: end.toISOString(),
     timeZone: guestTimeZone || hostTimeZone,
   });
 }

@@ -29,6 +29,7 @@ export function PublicBookingPage() {
   const slotsQuery = usePublicBookingSlotsQuery(
     slug,
     pageQuery.isSuccess && pageQuery.data.enabled,
+    pageQuery.data?.maxHorizonDays,
   );
   const createReservation = useCreatePublicBookingReservationMutation(slug);
 

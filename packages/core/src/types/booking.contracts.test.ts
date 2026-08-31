@@ -115,6 +115,7 @@ describe("PublicBookingPageSchema", () => {
       "durationMinutes",
       "timeZone",
       "enabled",
+      "maxHorizonDays",
     ]);
   });
 
@@ -128,6 +129,7 @@ describe("PublicBookingPageSchema", () => {
       durationMinutes: 30,
       timeZone: "America/Denver",
       enabled: true,
+      maxHorizonDays: 60,
     });
     expect(Object.keys(pub)).not.toContain("destinationCalendarId");
     expect(Object.keys(pub)).not.toContain("blockingCalendarIds");
@@ -199,6 +201,7 @@ describe("HTTP booking contracts", () => {
         durationMinutes: admin.durationMinutes,
         timeZone: admin.timeZone,
         enabled: admin.enabled,
+        maxHorizonDays: admin.maxHorizonDays,
       }).success,
     ).toBe(true);
 

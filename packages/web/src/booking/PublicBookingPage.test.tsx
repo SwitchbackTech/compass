@@ -26,6 +26,15 @@ function renderBookingRoute(path: string) {
 
 const slotStart = "2026-09-01T15:00:00.000Z";
 
+const publicPagePayload = (overrides: Record<string, unknown> = {}) => ({
+  hostDisplayName: "Tyler Dane",
+  durationMinutes: 30,
+  timeZone: "America/Chicago",
+  enabled: true,
+  maxHorizonDays: 60,
+  ...overrides,
+});
+
 describe("PublicBookingPage", () => {
   it("shows a generic not-found state for an unknown slug", async () => {
     renderBookingRoute("/book/unknown-host");
@@ -46,15 +55,7 @@ describe("PublicBookingPage", () => {
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json({
-              hostDisplayName: "Tyler Dane",
-              durationMinutes: 30,
-              timeZone: "America/Chicago",
-              enabled: true,
-            }),
-          ),
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
       ),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
@@ -122,15 +123,7 @@ describe("PublicBookingPage", () => {
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json({
-              hostDisplayName: "Tyler Dane",
-              durationMinutes: 30,
-              timeZone: "America/Chicago",
-              enabled: true,
-            }),
-          ),
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
       ),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
@@ -157,15 +150,7 @@ describe("PublicBookingPage", () => {
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json({
-              hostDisplayName: "Tyler Dane",
-              durationMinutes: 30,
-              timeZone: "America/Chicago",
-              enabled: true,
-            }),
-          ),
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
       ),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
@@ -209,15 +194,7 @@ describe("PublicBookingPage", () => {
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json({
-              hostDisplayName: "Tyler Dane",
-              durationMinutes: 30,
-              timeZone: "America/Chicago",
-              enabled: true,
-            }),
-          ),
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
       ),
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
@@ -230,5 +207,56 @@ describe("PublicBookingPage", () => {
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     expect(screen.queryByText(/Keyboard shortcuts/i)).not.toBeInTheDocument();
+  });
+
+  it("clamps the slot request to the host horizon and still loads times", async () => {
+    let slotStartParam: string | null = null;
+    let slotEndParam: string | null = null;
+    const inWindowStart = new Date(
+      Date.now() + 2 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const inWindowEnd = new Date(
+      Date.parse(inWindowStart) + 30 * 60 * 1000,
+    ).toISOString();
+
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json(publicPagePayload({ maxHorizonDays: 7 })),
+          ),
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        (req, res, ctx) => {
+          slotStartParam = req.url.searchParams.get("start");
+          slotEndParam = req.url.searchParams.get("end");
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              bookable: true,
+              slots: [{ slotStart: inWindowStart, slotEnd: inWindowEnd }],
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Could not load times" }),
+    ).not.toBeInTheDocument();
+    expect(slotStartParam).toBeTruthy();
+    expect(slotEndParam).toBeTruthy();
+    const requestedMs =
+      Date.parse(slotEndParam ?? "") - Date.parse(slotStartParam ?? "");
+    expect(requestedMs).toBeGreaterThan(0);
+    expect(requestedMs).toBeLessThanOrEqual(7 * 24 * 60 * 60 * 1000 + 60_000);
   });
 });

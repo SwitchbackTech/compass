@@ -181,11 +181,15 @@ export const PublicBookingPageSchema = z.strictObject({
   durationMinutes: BookingDurationMinutesSchema,
   timeZone: TimeZoneSchema,
   enabled: z.boolean(),
+  maxHorizonDays: z.number().int().positive().max(60),
 });
 export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 
 export const toPublicBookingPage = (
-  page: Pick<BookingPage, "durationMinutes" | "timeZone" | "enabled">,
+  page: Pick<
+    BookingPage,
+    "durationMinutes" | "timeZone" | "enabled" | "maxHorizonDays"
+  >,
   hostDisplayName: string,
 ): PublicBookingPage =>
   PublicBookingPageSchema.parse({
@@ -193,6 +197,7 @@ export const toPublicBookingPage = (
     durationMinutes: page.durationMinutes,
     timeZone: page.timeZone,
     enabled: page.enabled,
+    maxHorizonDays: page.maxHorizonDays,
   });
 
 export const BookingReservationStatusSchema = z.enum([

@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
-  BookingSlotsQuerySchema,
   type CreateBookingReservationInput,
   type CreateBookingReservationResponse,
 } from "@core/types/booking.contracts";
@@ -40,8 +39,16 @@ export function usePublicBookingPageQuery(slug: string) {
   return useQuery(publicBookingPageQueryOptions(slug));
 }
 
-export function usePublicBookingSlotsQuery(slug: string, enabled: boolean) {
-  const window = useMemo(() => getPublicBookingSlotWindow("UTC"), []);
+export function usePublicBookingSlotsQuery(
+  slug: string,
+  enabled: boolean,
+  maxHorizonDays: number | undefined,
+) {
+  // Query stays disabled until maxHorizonDays is known; 60 only fills the key.
+  const window = useMemo(
+    () => getPublicBookingSlotWindow("UTC", maxHorizonDays ?? 60),
+    [maxHorizonDays],
+  );
   return useQuery({
     queryKey: publicBookingQueryKeys.slots(
       slug,
@@ -50,7 +57,7 @@ export function usePublicBookingSlotsQuery(slug: string, enabled: boolean) {
       window.timeZone,
     ),
     queryFn: () => PublicBookingApi.getSlots(slug, window),
-    enabled: enabled && Boolean(slug),
+    enabled: enabled && Boolean(slug) && maxHorizonDays != null,
   });
 }
 
