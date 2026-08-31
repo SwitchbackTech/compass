@@ -10,9 +10,9 @@ import { Status } from "@core/errors/status.codes";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import {
+  formatBookingDateKey,
   formatBookingMonthDayLabel,
   formatBookingMonthHeading,
-  formatBookingSlotDateKey,
   formatBookingSlotLabel,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
@@ -172,10 +172,7 @@ describe("PublicBookingPage", () => {
       await screen.findByText(/Times shown in your timezone/),
     ).toBeInTheDocument();
 
-    const dateKey = formatBookingSlotDateKey(
-      currentSlot.slotStart,
-      guestTimeZone,
-    );
+    const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
     expect(
       await screen.findByRole("button", {
         name: formatBookingMonthDayLabel(dateKey, guestTimeZone),
@@ -745,7 +742,7 @@ describe("PublicBookingPage", () => {
         name: slotTimePattern(nextMonthSlot.slotStart),
       }),
     ).toBeInTheDocument();
-    const nextDateKey = formatBookingSlotDateKey(
+    const nextDateKey = formatBookingDateKey(
       nextMonthSlot.slotStart,
       guestTimeZone,
     );
@@ -778,10 +775,7 @@ describe("PublicBookingPage", () => {
     await waitFor(() => {
       expect(pickerHeading).toHaveFocus();
     });
-    const dateKey = formatBookingSlotDateKey(
-      currentSlot.slotStart,
-      guestTimeZone,
-    );
+    const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
     expect(
       screen.getByRole("button", {
         name: formatBookingMonthDayLabel(dateKey, guestTimeZone),

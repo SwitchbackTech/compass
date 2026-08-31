@@ -1,7 +1,7 @@
 import { type Ref } from "react";
 import {
+  formatBookingDateKey,
   formatBookingSlotDateHeading,
-  formatBookingSlotDateKey,
   formatBookingSlotTime,
 } from "@web/booking/public-booking.format";
 
@@ -27,7 +27,7 @@ export function PublicBookingSlotPicker({
   const daySlots = selectedDateKey
     ? slots.filter(
         (slot) =>
-          formatBookingSlotDateKey(slot.slotStart, guestTimeZone) ===
+          formatBookingDateKey(slot.slotStart, guestTimeZone) ===
           selectedDateKey,
       )
     : [];
