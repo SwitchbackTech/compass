@@ -1,9 +1,9 @@
 ---
 schema_version: 1
 task_id: simplify-docs-ci
-from: Implementer(tooling)
-to: Verifier
-owner: Verifier
+from: Reviewer
+to: Manager
+owner: Manager
 status: verifying
 artifact:
   - path: .github/scripts/detect-code-changes.sh
@@ -15,10 +15,14 @@ evidence:
     result: 88 passed, 0 failed
   - command: git show --stat e6a2b7fc0
     result: recommendation 1 already resolved on main by deleting the booking v1 work pack
+  - command: bun run verify
+    result: scripts, type-check, lint, knip, accessibility, and branch-specific checks passed
+  - command: independent review
+    result: no confirmed findings
 assumptions:
   - Preserve runtime behavior and required-check semantics.
 open_risks:
-  - Combined-diff verification and required-check parity are pending.
+  - Required GitHub checks and merge are pending.
 next_deadline: 2026-08-31T18:00:00Z
 retry: 0
 approval: none

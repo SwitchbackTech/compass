@@ -1,9 +1,9 @@
 ---
 schema_version: 1
 task_id: simplify-keyboard-mode
-from: Implementer(web)
-to: Verifier
-owner: Verifier
+from: Reviewer
+to: Manager
+owner: Manager
 status: verifying
 artifact:
   - path: packages/web/src/shortcuts/shift-hint/useShiftHoldEventHints.ts
@@ -13,10 +13,13 @@ evidence:
     result: 170 passed, 0 failed
   - command: bun type-check
     result: passed
+  - command: independent re-review
+    result: no confirmed findings
 assumptions:
   - Preserve keyboard precedence, timing, announcements, and Day/Week behavior.
 open_risks:
-  - Combined-diff verification and rapid Day/Week remount behavior need independent review.
+  - Rapid Day/Week remount behavior has focused unit coverage but no dedicated browser test.
+  - Required GitHub checks and merge are pending.
 next_deadline: 2026-08-31T18:00:00Z
 retry: 0
 approval: none
@@ -24,4 +27,4 @@ waiting_on: null
 escalation: null
 ---
 
-Verify the single keyboard owner, typed-time/event-jump precedence, timers, indicators, and Day/Week remount cleanup.
+Ready the single keyboard owner for merge after verification and independent review.
