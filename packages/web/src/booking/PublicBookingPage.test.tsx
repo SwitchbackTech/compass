@@ -698,9 +698,13 @@ describe("PublicBookingPage", () => {
     const slotFailGate = { fail: true };
 
     server.use(
-      pageHandler(),
       rest.get(
-        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/slots`,
+        `${ENV_WEB.API_BASEURL}/booking/pages/retryhost`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/retryhost/slots`,
         (_req, res, ctx) => {
           if (slotFailGate.fail) {
             return res(ctx.status(Status.INTERNAL_SERVER), ctx.json({}));
@@ -713,7 +717,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/book/retryhost");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -726,6 +730,12 @@ describe("PublicBookingPage", () => {
     );
     slotFailGate.fail = false;
     await user.click(screen.getByRole("button", { name: "Retry" }));
+    const pickTime = await screen.findByRole("heading", {
+      name: "Pick a time",
+    });
+    await waitFor(() => {
+      expect(pickTime).toHaveFocus();
+    });
     expect(
       await screen.findByRole("button", {
         name: slotTimePattern(currentSlot.slotStart),

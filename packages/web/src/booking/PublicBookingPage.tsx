@@ -176,9 +176,11 @@ export function PublicBookingPage() {
 
   const showDetailsStep = step === "details" && selectedSlotStart !== null;
   const showConflictForm = !showDetailsStep && conflictMessage !== null;
-  const slotsPending =
-    slotsQuery.isPending || (slotsQuery.isFetching && !slotsQuery.data);
-  const slotsError = slotsQuery.isError && !slotsPending;
+  const slotsHasData = Boolean(slotsQuery.data);
+  const slotsFetching =
+    !slotsHasData && (slotsQuery.isPending || slotsQuery.isFetching);
+  const slotsError = Boolean(slotsQuery.isError && !slotsHasData);
+  const slotsPending = slotsFetching && !slotsError;
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
@@ -358,6 +360,7 @@ export function PublicBookingPage() {
             slots={slotsQuery.data?.slots ?? []}
             slotsPending={slotsPending}
             slotsError={slotsError}
+            slotsFetching={slotsFetching}
             selectedDateKey={selectedDateKey}
             selectedSlotStart={selectedSlotStart}
             slotsHeadingRef={pickerHeadingRef}

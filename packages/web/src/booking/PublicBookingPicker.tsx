@@ -13,6 +13,7 @@ interface PublicBookingPickerProps {
   slots: readonly { slotStart: string }[];
   slotsPending: boolean;
   slotsError: boolean;
+  slotsFetching: boolean;
   selectedDateKey: string | null;
   selectedSlotStart: string | null;
   slotsHeadingRef?: Ref<HTMLHeadingElement>;
@@ -55,6 +56,7 @@ export function PublicBookingPicker({
   slots,
   slotsPending,
   slotsError,
+  slotsFetching,
   selectedDateKey,
   selectedSlotStart,
   slotsHeadingRef,
@@ -66,14 +68,34 @@ export function PublicBookingPicker({
   onRetrySlots,
 }: PublicBookingPickerProps) {
   const [hasRenderedGrid, setHasRenderedGrid] = useState(false);
-  const liveMessage = useSlotsLiveMessage(slotsPending, slotsError);
+  const liveMessage = useSlotsLiveMessage(
+    slotsFetching,
+    slotsError && !slotsFetching,
+  );
   const showGridSkeleton = slotsPending && !hasRenderedGrid;
+  const restoreFocusAfterError = useRef(false);
 
   useEffect(() => {
     if (!slotsPending) {
       setHasRenderedGrid(true);
     }
   }, [slotsPending]);
+
+  useEffect(() => {
+    if (slotsError) {
+      restoreFocusAfterError.current = true;
+    }
+  }, [slotsError]);
+
+  useEffect(() => {
+    if (slotsPending || slotsError || !restoreFocusAfterError.current) {
+      return;
+    }
+    restoreFocusAfterError.current = false;
+    if (typeof slotsHeadingRef === "object" && slotsHeadingRef) {
+      slotsHeadingRef.current?.focus();
+    }
+  }, [slotsError, slotsHeadingRef, slotsPending]);
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3">
@@ -105,8 +127,10 @@ export function PublicBookingPicker({
               <p className="text-sm text-text-muted">Could not load times.</p>
               <button
                 type="button"
+                disabled={slotsFetching}
+                aria-busy={slotsFetching || undefined}
                 onClick={onRetrySlots}
-                className="rounded-md bg-surface-panel px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="rounded-md bg-surface-panel px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Retry
               </button>
