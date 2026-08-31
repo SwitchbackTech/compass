@@ -15,6 +15,7 @@ export interface PublicBookingGuestFormValues
 interface PublicBookingGuestFormProps {
   disabled: boolean;
   submitDisabled: boolean;
+  showHeading?: boolean;
   values: PublicBookingGuestDetails;
   onChange: (values: PublicBookingGuestDetails) => void;
   onSubmit: (values: PublicBookingGuestFormValues) => void;
@@ -23,12 +24,16 @@ interface PublicBookingGuestFormProps {
 export function PublicBookingGuestForm({
   disabled,
   submitDisabled,
+  showHeading = true,
   values,
   onChange,
   onSubmit,
 }: PublicBookingGuestFormProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (disabled || submitDisabled) {
+      return;
+    }
     onSubmit({
       guestName: values.guestName.trim(),
       guestEmail: values.guestEmail.trim(),
@@ -43,9 +48,14 @@ export function PublicBookingGuestForm({
       className="flex flex-col gap-4"
       onSubmit={handleSubmit}
     >
-      <h2 id="booking-form-heading" className="font-medium text-base text-text">
-        Your details
-      </h2>
+      {showHeading ? (
+        <h2
+          id="booking-form-heading"
+          className="font-medium text-base text-text"
+        >
+          Your details
+        </h2>
+      ) : null}
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-text-muted">Name</span>
         <input
@@ -89,9 +99,10 @@ export function PublicBookingGuestForm({
       <button
         type="submit"
         disabled={disabled || submitDisabled}
+        aria-busy={disabled || undefined}
         className="rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Confirm booking
+        {disabled ? "Confirming..." : "Confirm booking"}
       </button>
     </form>
   );

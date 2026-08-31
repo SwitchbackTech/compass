@@ -62,6 +62,8 @@ export interface PublicBookingStubOptions {
   bookable?: boolean;
   /** When set, POST /reservations returns this status instead of 200. */
   confirmStatus?: number;
+  /** When set, the reservation POST waits until this resolves (for in-flight UI). */
+  holdConfirm?: Promise<void>;
 }
 
 export interface CapturedBookingRequests {
@@ -138,6 +140,9 @@ export async function preparePublicBookingPage(
     ) {
       const body = request.postDataJSON() as Record<string, unknown>;
       captured.reservationPosts.push(body);
+      if (options.holdConfirm) {
+        await options.holdConfirm;
+      }
       if (options.confirmStatus === 409) {
         return route.fulfill(json({}, 409));
       }

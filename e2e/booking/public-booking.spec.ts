@@ -22,6 +22,12 @@ test.describe("public booking page", () => {
     await page
       .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
       .click();
+    await expect(
+      page.getByRole("heading", { name: "Your details" }),
+    ).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Change time" }),
+    ).toBeVisible();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
     await page.getByRole("button", { name: "Confirm booking" }).click();
@@ -178,13 +184,12 @@ test.describe("public booking page", () => {
       .getByRole("button", { name: formatSlotButtonLabel(second.slotStart) })
       .click();
     await expect(
-      page.getByRole("button", {
-        name: formatSlotButtonLabel(second.slotStart),
-      }),
-    ).toHaveAttribute("aria-pressed", "true");
+      page.getByRole("heading", { name: "Your details" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Confirm booking" }),
     ).toBeEnabled();
+    await expect(page.getByLabel("Name")).toHaveValue("Guest User");
   });
 
   test("renders a prefetched month without issuing a new slots request", async ({
@@ -363,5 +368,73 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("button", { name: "Confirm booking" }),
     ).toBeVisible();
+  });
+
+  test("returns to the picker from Change time with the day still selected", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    const dayName = await page.evaluate((iso) => {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone,
+      }).format(new Date(iso));
+    }, slotStart);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Change time" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeFocused();
+    await expect(page.getByRole("button", { name: dayName })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(
+      page.getByRole("button", { name: formatSlotButtonLabel(slotStart) }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await expect(page.getByLabel("Name")).toHaveValue("Guest User");
+    await expect(page.getByLabel("Email")).toHaveValue("guest@example.com");
+  });
+
+  test("does not POST twice while confirm is in flight", async ({ page }) => {
+    const { slotStart } = buildBookableSlot();
+    let release!: () => void;
+    const holdConfirm = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const captured = await preparePublicBookingPage(page, { holdConfirm });
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+    const confirming = page.getByRole("button", { name: "Confirming..." });
+    await expect(confirming).toHaveAttribute("aria-busy", "true");
+    await expect.poll(() => captured.reservationPosts.length).toBe(1);
+    await confirming.click({ force: true });
+    expect(captured.reservationPosts).toHaveLength(1);
+    release();
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    expect(captured.reservationPosts).toHaveLength(1);
   });
 });
