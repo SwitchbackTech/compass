@@ -16,12 +16,12 @@ import compassAuthService from "@backend/auth/services/compass/compass.auth.serv
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import stripeService from "@backend/billing/services/stripe.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { Collections } from "@backend/common/constants/collections";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principal-deletion-retry.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -445,10 +445,15 @@ describe("UserService", () => {
 
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
       expect(
-        await mongoService.pendingSyncPrincipalDeletion.findOne({
+        await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
-      ).toEqual(expect.objectContaining({ attempts: 1 }));
+      ).toEqual(
+        expect.objectContaining({
+          compassDataDeletedAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
     });
 
     it("retries a deferred Sync purge after the account has been deleted", async () => {
@@ -489,13 +494,111 @@ describe("UserService", () => {
       );
 
       await userService.deleteAccount(user._id.toString());
-      await syncPrincipalDeletionRetry.retryPending();
+      const localCleanup = spyOn(userService, "deleteCompassDataForUser");
+      deleteAccountSpies.push(localCleanup);
+      await userService.retryPendingAccountDeletions();
 
       expect(calls).toBe(2);
+      expect(localCleanup).not.toHaveBeenCalled();
       expect(
-        await mongoService.pendingSyncPrincipalDeletion.findOne({
+        await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
+      ).toBeNull();
+    });
+
+    it("adopts legacy Sync purge rows without repeating account cleanup", async () => {
+      const userId = mongoService.objectId().toString();
+      const requestedAt = new Date(Date.now() - 60_000);
+      const legacyQueue = mongoService.db.collection(
+        Collections.LEGACY_PENDING_SYNC_PRINCIPAL_DELETION,
+      );
+      await legacyQueue.insertOne({
+        _id: userId,
+        requestedAt,
+        lastAttemptAt: requestedAt,
+        attempts: 2,
+      });
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() =>
+            Promise.resolve({
+              ok: false as const,
+              error: {
+                kind: "unavailable" as const,
+                correlationId: "corr-legacy-down",
+              },
+            }),
+          ),
+        } as never),
+      );
+      const localCleanup = spyOn(userService, "deleteCompassDataForUser");
+      deleteAccountSpies.push(localCleanup);
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(localCleanup).not.toHaveBeenCalled();
+      expect(await legacyQueue.findOne({ _id: userId })).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({ _id: userId }),
+      ).toEqual(
+        expect.objectContaining({
+          stripeCustomerDeletedAt: requestedAt,
+          compassDataDeletedAt: requestedAt,
+          syncPurgeAttempts: 3,
+        }),
+      );
+    });
+
+    it("idempotently drains a legacy row already adopted by the unified queue", async () => {
+      const userId = mongoService.objectId().toString();
+      const requestedAt = new Date(Date.now() - 60_000);
+      const legacyQueue = mongoService.db.collection(
+        Collections.LEGACY_PENDING_SYNC_PRINCIPAL_DELETION,
+      );
+      await legacyQueue.insertOne({
+        _id: userId,
+        requestedAt,
+        lastAttemptAt: requestedAt,
+        attempts: 1,
+      });
+      await mongoService.pendingAccountDeletion.insertOne({
+        _id: userId,
+        createdAt: requestedAt,
+        stripeCustomerDeletedAt: requestedAt,
+        compassDataDeletedAt: requestedAt,
+        syncPurgeAttempts: 1,
+      });
+      const purgePrincipal = mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            connections: 0,
+            credentials: 0,
+            calendars: 0,
+            events: 0,
+            eventOccurrences: 0,
+            syncResources: 0,
+            commands: 0,
+            jobs: 0,
+            deletionMarkers: 0,
+            invalidations: 0,
+          },
+          correlationId: "corr-legacy-purge",
+        }),
+      );
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal,
+        } as never),
+      );
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(purgePrincipal).toHaveBeenCalledTimes(1);
+      expect(await legacyQueue.findOne({ _id: userId })).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({ _id: userId }),
       ).toBeNull();
     });
 
@@ -575,7 +678,12 @@ describe("UserService", () => {
         await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
-      ).toBeNull();
+      ).toEqual(
+        expect.objectContaining({
+          compassDataDeletedAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
     });
 
     it("keeps the deletion marker when recording Stripe success fails", async () => {
