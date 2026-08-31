@@ -157,23 +157,6 @@ export function formatBookingSlotDateHeading(
   }).format(new Date(slotStart));
 }
 
-export function groupSlotsByGuestDate<T extends { slotStart: string }>(
-  slots: readonly T[],
-  timeZone: string,
-): Map<string, T[]> {
-  const grouped = new Map<string, T[]>();
-  for (const slot of slots) {
-    const key = formatBookingSlotDateKey(slot.slotStart, timeZone);
-    const existing = grouped.get(key);
-    if (existing) {
-      existing.push(slot);
-    } else {
-      grouped.set(key, [slot]);
-    }
-  }
-  return grouped;
-}
-
 export function formatDurationMinutes(minutes: number): string {
   if (minutes === 60) {
     return "1 hour";
@@ -335,4 +318,59 @@ export function formatBookingMonthDayLabel(
     year: "numeric",
     timeZone,
   }).format(dayjs.tz(dateKey, timeZone).toDate());
+}
+
+export function listBookingAvailableDateKeysInMonth(
+  slots: readonly { slotStart: string }[],
+  monthKey: string,
+  timeZone: string,
+  todayKey: string,
+): string[] {
+  return listBookingAvailableDayKeys(
+    listBookingMonthGridWeeks(
+      monthKey,
+      timeZone,
+      collectBookingAvailableDateKeys(slots, timeZone),
+      todayKey,
+    ),
+  );
+}
+
+export function findNextAvailableBookingDate(
+  monthKey: string,
+  afterDateKey: string | null,
+  slotsByMonth: ReadonlyMap<
+    string,
+    readonly { slotStart: string }[] | undefined
+  >,
+  timeZone: string,
+  todayKey: string,
+  maxHorizonDays: number,
+  now?: Dayjs,
+): { monthKey: string; dateKey: string | null } | null {
+  let month = monthKey;
+  let after = afterDateKey;
+  for (let step = 0; step < 14; step += 1) {
+    if (!isBookingMonthAvailable(month, timeZone, maxHorizonDays, now)) {
+      return null;
+    }
+    if (!slotsByMonth.has(month)) {
+      return { monthKey: month, dateKey: null };
+    }
+    const days = listBookingAvailableDateKeysInMonth(
+      slotsByMonth.get(month) ?? [],
+      month,
+      timeZone,
+      todayKey,
+    );
+    const afterKey = after;
+    const next =
+      afterKey == null ? days[0] : days.find((dateKey) => dateKey > afterKey);
+    if (next) {
+      return { monthKey: month, dateKey: next };
+    }
+    month = shiftBookingMonthKey(month, 1, timeZone);
+    after = null;
+  }
+  return null;
 }

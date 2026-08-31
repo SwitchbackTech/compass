@@ -51,53 +51,82 @@ test.describe("public booking page", () => {
     await expect(page.getByLabel("Email")).toBeFocused();
   });
 
-  test("scrolls when available times overflow the viewport", async ({
+  test("scrolls later times in the selected day's slot pane", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 800, height: 480 });
 
-    const origin = new Date();
-    origin.setUTCHours(origin.getUTCHours() + 1, 0, 0, 0);
-    const slots = Array.from({ length: 60 }, (_, index) => {
-      const slotStart = new Date(origin.getTime() + index * 15 * 60 * 1000);
-      return {
+    const origin = buildBookableSlot();
+    const originDate = origin.slotStart.slice(0, 10);
+    const slots: Array<{ slotStart: string; slotEnd: string }> = [];
+    for (let index = 0; index < 40; index += 1) {
+      const slotStart = new Date(
+        Date.parse(origin.slotStart) + index * 15 * 60 * 1000,
+      );
+      if (slotStart.toISOString().slice(0, 10) !== originDate) {
+        break;
+      }
+      slots.push({
         slotStart: slotStart.toISOString(),
         slotEnd: new Date(slotStart.getTime() + 30 * 60 * 1000).toISOString(),
-      };
-    });
+      });
+    }
 
     await preparePublicBookingPage(page, { slots });
 
     await expect
       .poll(async () =>
         page.evaluate(() => {
-          const scrolling = document.scrollingElement;
-          if (!scrolling) {
-            return false;
+          const heading = Array.from(document.querySelectorAll("h2")).find(
+            (node) => node.textContent === "Pick a time",
+          );
+          let node = heading?.parentElement ?? null;
+          while (node && node !== document.body) {
+            const style = getComputedStyle(node);
+            if (style.overflowY === "auto" || style.overflowY === "scroll") {
+              return node.scrollHeight > node.clientHeight + 20;
+            }
+            node = node.parentElement;
           }
-          const overflowY = getComputedStyle(
-            document.documentElement,
-          ).overflowY;
-          return (
-            (overflowY === "auto" || overflowY === "scroll") &&
-            scrolling.scrollHeight > scrolling.clientHeight + 40
+          const scrolling = document.scrollingElement;
+          return Boolean(
+            scrolling && scrolling.scrollHeight > scrolling.clientHeight + 40,
           );
         }),
       )
       .toBe(true);
 
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.mouse.move(400, 200);
-    await page.mouse.wheel(0, 1600);
+    await page.evaluate(() => {
+      const heading = Array.from(document.querySelectorAll("h2")).find(
+        (node) => node.textContent === "Pick a time",
+      );
+      let node = heading?.parentElement ?? null;
+      while (node && node !== document.body) {
+        const style = getComputedStyle(node);
+        if (style.overflowY === "auto" || style.overflowY === "scroll") {
+          node.scrollTop = 600;
+          return;
+        }
+        node = node.parentElement;
+      }
+    });
     await expect
-      .poll(async () => page.evaluate(() => window.scrollY))
-      .toBeGreaterThan(80);
-
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.locator("body").click({ position: { x: 16, y: 16 } });
-    await page.keyboard.press("PageDown");
-    await expect
-      .poll(async () => page.evaluate(() => window.scrollY))
+      .poll(async () =>
+        page.evaluate(() => {
+          const heading = Array.from(document.querySelectorAll("h2")).find(
+            (node) => node.textContent === "Pick a time",
+          );
+          let node = heading?.parentElement ?? null;
+          while (node && node !== document.body) {
+            const style = getComputedStyle(node);
+            if (style.overflowY === "auto" || style.overflowY === "scroll") {
+              return node.scrollTop;
+            }
+            node = node.parentElement;
+          }
+          return window.scrollY;
+        }),
+      )
       .toBeGreaterThan(80);
   });
 
@@ -214,5 +243,125 @@ test.describe("public booking page", () => {
     await dayButton.focus();
     await page.keyboard.press("ArrowRight");
     await expect(dayButton).toBeFocused();
+  });
+
+  test("shows only the selected day's times in the slot pane", async ({
+    page,
+  }) => {
+    const today = buildBookableSlot();
+    const laterTodayStart = new Date(
+      Date.parse(today.slotStart) + 30 * 60 * 1000,
+    ).toISOString();
+    const laterToday = {
+      slotStart: laterTodayStart,
+      slotEnd: new Date(
+        Date.parse(laterTodayStart) + 30 * 60 * 1000,
+      ).toISOString(),
+    };
+    const otherDayStart = new Date(
+      Date.parse(today.slotStart) + 25 * 60 * 60 * 1000,
+    ).toISOString();
+    const otherDay = {
+      slotStart: otherDayStart,
+      slotEnd: new Date(
+        Date.parse(otherDayStart) + 30 * 60 * 1000,
+      ).toISOString(),
+    };
+
+    await preparePublicBookingPage(page, {
+      slots: [today, laterToday, otherDay],
+    });
+
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(today.slotStart),
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(laterToday.slotStart),
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(otherDay.slotStart),
+      }),
+    ).toHaveCount(0);
+
+    const monthBox = await page
+      .getByRole("heading", { name: /20\d{2}$/ })
+      .boundingBox();
+    const slotsBox = await page
+      .getByRole("heading", { name: "Pick a time" })
+      .boundingBox();
+    expect(monthBox).toBeTruthy();
+    expect(slotsBox).toBeTruthy();
+    expect(Math.abs((monthBox?.y ?? 0) - (slotsBox?.y ?? 0))).toBeLessThan(80);
+    expect(monthBox?.x ?? 0).toBeLessThan(slotsBox?.x ?? 0);
+  });
+
+  test("jumps to the next open day in the following month", async ({
+    page,
+  }) => {
+    const now = new Date();
+    const nextMonthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 2, 16, 0, 0),
+    );
+    const nextMonthSlot = {
+      slotStart: nextMonthStart.toISOString(),
+      slotEnd: new Date(
+        nextMonthStart.getTime() + 30 * 60 * 1000,
+      ).toISOString(),
+    };
+    const nextMonthHeading = new Intl.DateTimeFormat(undefined, {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(nextMonthStart);
+
+    await preparePublicBookingPage(page, { slots: [nextMonthSlot] });
+
+    await expect(page.getByText("No open times this month.")).toBeVisible();
+    await page
+      .getByRole("button", { name: "Jump to next available day" })
+      .click();
+
+    await expect(
+      page.getByRole("heading", { name: nextMonthHeading }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(nextMonthSlot.slotStart),
+      }),
+    ).toBeVisible();
+  });
+
+  test("stacks without horizontal scroll at 375px", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    const monthHeading = page.getByRole("heading", { name: /20\d{2}$/ });
+    const slotsHeading = page.getByRole("heading", { name: "Pick a time" });
+    const monthBox = await monthHeading.boundingBox();
+    const slotsBox = await slotsHeading.boundingBox();
+    expect(monthBox).toBeTruthy();
+    expect(slotsBox).toBeTruthy();
+    expect((monthBox?.y ?? 0) + (monthBox?.height ?? 0)).toBeLessThan(
+      slotsBox?.y ?? 0,
+    );
+
+    const overflowX = await page.evaluate(() => {
+      const root = document.scrollingElement ?? document.documentElement;
+      return root.scrollWidth - root.clientWidth;
+    });
+    expect(overflowX).toBeLessThanOrEqual(1);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Confirm booking" }),
+    ).toBeVisible();
   });
 });
