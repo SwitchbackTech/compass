@@ -2,7 +2,10 @@ import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
 import { zObjectId } from "@core/types/type.utils";
-import { toBookingErrorResponse } from "@backend/booking/booking.error";
+import {
+  bookingError,
+  toBookingErrorResponse,
+} from "@backend/booking/booking.error";
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import publicBookingService from "@backend/booking/services/public-booking.service";
 
@@ -63,6 +66,26 @@ class BookingController {
       const response = await publicBookingService.createReservation(
         req.params["slug"] ?? "",
         req.body,
+      );
+      res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
+  getPublicReservation = async (req: Request, res: Response) => {
+    try {
+      const parsedId = zObjectId.safeParse(req.params["id"]);
+      if (!parsedId.success) {
+        const { status, body } = toBookingErrorResponse(
+          bookingError("RESERVATION_NOT_FOUND", "Reservation not found"),
+        );
+        res.status(status).json(body);
+        return;
+      }
+      const response = await publicBookingService.getPublicReservation(
+        parsedId.data,
       );
       res.status(Status.OK).json(response);
     } catch (error) {

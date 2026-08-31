@@ -68,6 +68,10 @@ export interface PublicBookingStubOptions {
   slotFailGate?: { fail: boolean };
   /** When set, the first slot GET waits until this resolves. */
   holdFirstSlots?: Promise<void>;
+  /** Public GET reservation status. Defaults to confirmed. */
+  reservationStatus?: "confirmed" | "cancelled";
+  /** When true, GET /reservations/:id returns 404. */
+  reservationNotFound?: boolean;
 }
 
 export interface CapturedBookingRequests {
@@ -168,6 +172,33 @@ export async function preparePublicBookingPage(
       );
     }
 
+    if (
+      /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
+      request.method() === "GET"
+    ) {
+      if (options.reservationNotFound) {
+        return route.fulfill(json({}, 404));
+      }
+      const lastPost = captured.reservationPosts.at(-1);
+      const postedSlotStart =
+        typeof lastPost?.slotStart === "string"
+          ? lastPost.slotStart
+          : slot.slotStart;
+      const postedTimeZone =
+        typeof lastPost?.guestTimeZone === "string"
+          ? lastPost.guestTimeZone
+          : "UTC";
+      return route.fulfill(
+        json({
+          slotStart: postedSlotStart,
+          guestTimeZone: postedTimeZone,
+          durationMinutes: options.durationMinutes ?? 30,
+          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
+          status: options.reservationStatus ?? "confirmed",
+        }),
+      );
+    }
+
     return route.fulfill(json({}));
   });
 
@@ -177,6 +208,51 @@ export async function preparePublicBookingPage(
   ).toBeVisible({ timeout: 15000 });
 
   return captured;
+}
+
+export async function preparePublicBookingConfirmedPage(
+  page: Page,
+  options: PublicBookingStubOptions & { reservationId?: string } = {},
+): Promise<void> {
+  const reservationId = options.reservationId ?? "000000000000000000000099";
+  const slot =
+    options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
+
+  const json = (body: unknown, status = 200) => ({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (
+      /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
+      request.method() === "GET"
+    ) {
+      if (options.reservationNotFound) {
+        return route.fulfill(json({}, 404));
+      }
+      return route.fulfill(
+        json({
+          slotStart: slot.slotStart,
+          guestTimeZone: "UTC",
+          durationMinutes: options.durationMinutes ?? 30,
+          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
+          status: options.reservationStatus ?? "confirmed",
+        }),
+      );
+    }
+
+    return route.fulfill(json({}));
+  });
+
+  await page.goto(`/book/confirmed/${reservationId}`, {
+    waitUntil: "domcontentloaded",
+  });
 }
 
 export interface PublicBookingCancelStubOptions {

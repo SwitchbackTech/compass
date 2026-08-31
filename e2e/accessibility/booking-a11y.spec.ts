@@ -3,6 +3,7 @@ import {
   buildBookableSlot,
   formatSlotButtonLabel,
   preparePublicBookingCancelPage,
+  preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
@@ -83,65 +84,105 @@ test("the public booking conflict alert has no automatically detectable accessib
   await expectNoAxeViolations(page, { checkpoint: "public booking conflict" });
 });
 
-test.describe("public booking cancel page", () => {
-  test("confirm state has no automatically detectable accessibility violations", async ({
+test.describe("public booking confirmation page", () => {
+  test("confirmed state has no automatically detectable accessibility violations", async ({
     page,
   }) => {
-    await preparePublicBookingCancelPage(page);
+    await preparePublicBookingConfirmedPage(page);
     await expect(
-      page.getByRole("heading", { name: "Cancel this booking?" }),
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeVisible();
-    await expectNoAxeViolations(page, { checkpoint: "cancel confirm" });
-  });
-
-  test("cancelling state has no automatically detectable accessibility violations", async ({
-    page,
-  }) => {
-    let release!: () => void;
-    const holdCancel = new Promise<void>((resolve) => {
-      release = resolve;
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation permalink",
     });
-    await preparePublicBookingCancelPage(page, { holdCancel });
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
-    await expect(
-      page.getByRole("button", { name: "Canceling..." }),
-    ).toBeVisible();
-    await expectNoAxeViolations(page, { checkpoint: "cancel in-flight" });
-    release();
-    await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
-    ).toBeVisible();
   });
 
-  test("canceled state has no automatically detectable accessibility violations", async ({
+  test("cancelled state has no automatically detectable accessibility violations", async ({
     page,
   }) => {
-    await preparePublicBookingCancelPage(page);
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await preparePublicBookingConfirmedPage(page, {
+      reservationStatus: "cancelled",
+    });
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "This booking was canceled" }),
     ).toBeVisible();
-    await expectNoAxeViolations(page, { checkpoint: "cancel success" });
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation cancelled",
+    });
   });
 
   test("not-found state has no automatically detectable accessibility violations", async ({
     page,
   }) => {
-    await preparePublicBookingCancelPage(page, { token: "" });
+    await preparePublicBookingConfirmedPage(page, {
+      reservationNotFound: true,
+    });
     await expect(
       page.getByRole("heading", { name: "Booking not found" }),
     ).toBeVisible();
-    await expectNoAxeViolations(page, { checkpoint: "cancel not found" });
-  });
-
-  test("error state has no automatically detectable accessibility violations", async ({
-    page,
-  }) => {
-    await preparePublicBookingCancelPage(page, { cancelStatus: 500 });
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Could not cancel booking" }),
-    ).toBeVisible();
-    await expectNoAxeViolations(page, { checkpoint: "cancel error" });
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation not found",
+    });
   });
 });
+test("confirm state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingCancelPage(page);
+  await expect(
+    page.getByRole("heading", { name: "Cancel this booking?" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "cancel confirm" });
+});
+
+test("cancelling state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const holdCancel = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await preparePublicBookingCancelPage(page, { holdCancel });
+  await page.getByRole("button", { name: "Cancel this booking" }).click();
+  await expect(
+    page.getByRole("button", { name: "Canceling..." }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "cancel in-flight" });
+  release();
+  await expect(
+    page.getByRole("heading", { name: "Booking canceled" }),
+  ).toBeVisible();
+});
+
+test("canceled state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingCancelPage(page);
+  await page.getByRole("button", { name: "Cancel this booking" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Booking canceled" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "cancel success" });
+});
+
+test("not-found state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingCancelPage(page, { token: "" });
+  await expect(
+    page.getByRole("heading", { name: "Booking not found" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "cancel not found" });
+});
+
+test("error state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingCancelPage(page, { cancelStatus: 500 });
+  await page.getByRole("button", { name: "Cancel this booking" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Could not cancel booking" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "cancel error" });
+});
+})

@@ -1,32 +1,33 @@
+import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import {
   formatBookingSlotLabel,
   formatDurationMinutes,
 } from "@web/booking/public-booking.format";
-import { type PublicBookingConfirmation } from "@web/booking/public-booking.query";
 
 interface PublicBookingConfirmationViewProps {
   hostDisplayName: string;
   durationMinutes: number;
-  confirmation: PublicBookingConfirmation;
+  slotStart: string;
+  timeZone: string;
+  cancelUrl?: string;
 }
 
 export function PublicBookingConfirmationView({
   hostDisplayName,
   durationMinutes,
-  confirmation,
+  slotStart,
+  timeZone,
+  cancelUrl,
 }: PublicBookingConfirmationViewProps) {
-  const when = formatBookingSlotLabel(
-    confirmation.slotStart,
-    confirmation.guestTimeZone,
-  );
+  const when = formatBookingSlotLabel(slotStart, timeZone);
 
   return (
     <PublicBookingLayout>
       <section aria-labelledby="booking-confirmation-heading">
         <h1
           id="booking-confirmation-heading"
-          className="font-semibold text-xl text-text"
+          className="font-semibold text-text text-xl"
         >
           You are booked with {hostDisplayName}
         </h1>
@@ -35,16 +36,12 @@ export function PublicBookingConfirmationView({
         </p>
         <p className="mt-4 text-sm text-text">
           A calendar invite is on its way to your email. To cancel, use the link
-          in that invite or visit:
+          in that invite
+          {cancelUrl ? " or copy it here:" : "."}
         </p>
-        <p className="mt-2 break-all text-sm text-accent">
-          <a
-            href={confirmation.cancelUrl}
-            className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            {confirmation.cancelUrl}
-          </a>
-        </p>
+        {cancelUrl ? (
+          <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
+        ) : null}
       </section>
     </PublicBookingLayout>
   );

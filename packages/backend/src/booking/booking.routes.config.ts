@@ -23,6 +23,17 @@ const publicConfirmLimiter = rateLimit({
   keyGenerator: bookingSlugKey,
 });
 
+const bookingReservationKey = (req: express.Request): string =>
+  `${req.ip ?? "unknown"}:${req.params["id"] ?? "unknown"}`;
+
+const publicReservationGetLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingReservationKey,
+});
+
 /**
  * Host admin routes require a session. Public guest routes are unauthenticated.
  */
@@ -49,6 +60,10 @@ export class BookingRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/booking/pages/:slug/reservations`)
       .post(publicConfirmLimiter, bookingController.createReservation);
+
+    this.app
+      .route(`/api/booking/reservations/:id`)
+      .get(publicReservationGetLimiter, bookingController.getPublicReservation);
 
     this.app
       .route(`/api/booking/reservations/:id/cancel`)

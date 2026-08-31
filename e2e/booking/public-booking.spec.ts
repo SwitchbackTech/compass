@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
   formatSlotButtonLabel,
+  preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
 } from "./booking-harness";
 
@@ -73,6 +74,85 @@ test.describe("public booking page", () => {
       slotStart,
       guestTimeZone: "Europe/Berlin",
     });
+  });
+
+  test("keeps confirmation details after a refresh", async ({ page }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(
+      /\/book\/confirmed\/000000000000000000000099$/,
+    );
+    await expect(
+      page.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeVisible();
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    await expect(page.getByText("30 minutes")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Copy cancel link" }),
+    ).toHaveCount(0);
+  });
+
+  test("copies the cancel link from the confirmation page", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+
+    await page.getByRole("button", { name: "Copy cancel link" }).click();
+    await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Copied");
+    await expect
+      .poll(async () => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe(
+        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      );
+  });
+
+  test("shows a calm state for a cancelled confirmation permalink", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationStatus: "cancelled",
+    });
+    await expect(
+      page.getByRole("heading", { name: "This booking was canceled" }),
+    ).toBeVisible();
+  });
+
+  test("shows a calm state for an unknown confirmation permalink", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationNotFound: true,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Booking not found" }),
+    ).toBeVisible();
   });
 
   test("does not POST when email is missing", async ({ page }) => {
