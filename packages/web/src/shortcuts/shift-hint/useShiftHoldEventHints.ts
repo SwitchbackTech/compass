@@ -201,7 +201,6 @@ export function useShiftHoldEventHints({
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const quickTimeDigitsRef = useRef("");
   const quickTimeCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -239,12 +238,11 @@ export function useShiftHoldEventHints({
 
     const resetQuickTime = () => {
       clearQuickTimeCommitTimer();
-      quickTimeDigitsRef.current = "";
       eventJumpActions.setQuickTimeDigits("");
     };
 
     const commitQuickTime = () => {
-      const digits = quickTimeDigitsRef.current;
+      const digits = useEventJumpStore.getState().quickTimeDigits;
       resetQuickTime();
       if (!digits) return;
 
@@ -281,7 +279,7 @@ export function useShiftHoldEventHints({
         return false;
       }
 
-      const buffered = quickTimeDigitsRef.current !== "";
+      const buffered = useEventJumpStore.getState().quickTimeDigits !== "";
 
       if (event.key === "Escape") {
         if (!buffered) return false;
@@ -302,8 +300,9 @@ export function useShiftHoldEventHints({
         return false;
       }
 
-      const next = `${quickTimeDigitsRef.current}${PICK_KEY_LABELS[pickIndex]}`;
-      quickTimeDigitsRef.current = next;
+      const next = `${
+        useEventJumpStore.getState().quickTimeDigits
+      }${PICK_KEY_LABELS[pickIndex]}`;
       eventJumpActions.setQuickTimeDigits(next);
 
       if (!canQuickTimeBufferGrow(next)) {
@@ -314,7 +313,7 @@ export function useShiftHoldEventHints({
       clearQuickTimeCommitTimer();
       quickTimeCommitTimerRef.current = setTimeout(() => {
         quickTimeCommitTimerRef.current = null;
-        if (quickTimeDigitsRef.current !== next) return;
+        if (useEventJumpStore.getState().quickTimeDigits !== next) return;
         commitQuickTime();
       }, DIGIT_AMBIGUOUS_COMMIT_MS);
 
