@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 interface BookingCopyLinkProps {
@@ -9,7 +10,14 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(bookingUrl).then(() => {
+    void copyText(bookingUrl).then((didCopy) => {
+      if (!didCopy) {
+        showStatusToast(
+          "booking-link-copied",
+          "Could not copy. Select the link to copy it.",
+        );
+        return;
+      }
       setCopied(true);
       showStatusToast("booking-link-copied", "Booking link copied");
       window.setTimeout(() => setCopied(false), 2000);

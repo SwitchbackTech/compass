@@ -120,6 +120,11 @@ timezone `<select>` plus a checkbox and two time inputs per weekday.
   and digits `1/2/3` (nav) on this page, which is why the leader is `e`
   rather than `Mod+digit`. Focus uses `data-booking-field` and does not
   click, so jumping onto a checkbox does not toggle it.
+- **Save:** a successful save that returns a booking URL copies it. A
+  page that has never been enabled has no slug yet, so the toast says to
+  enable booking instead. Safari can drop a copy that follows the save
+  round trip; the toast then names `e` then `l`, and the Copy button
+  stays.
 
 ## Busy occupancy
 
