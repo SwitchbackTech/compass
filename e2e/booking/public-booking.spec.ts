@@ -209,17 +209,7 @@ test.describe("public booking page", () => {
     const dayButton = page.getByRole("button", { name: dayName });
     await expect(dayButton).toBeVisible();
     await dayButton.click();
-    const selectedCell = page.getByRole("gridcell", { selected: true });
-    await expect(selectedCell).toBeVisible();
-    await expect(
-      selectedCell.getByRole("button", { name: dayName }),
-    ).toBeVisible();
-
-    const headers = page.getByRole("columnheader");
-    await expect(headers).toHaveCount(7);
-    for (const header of await headers.all()) {
-      await expect(header).not.toHaveAttribute("tabindex");
-    }
+    await expect(dayButton).toHaveAttribute("aria-pressed", "true");
 
     await dayButton.focus();
     await page.keyboard.press("ArrowRight");

@@ -8,6 +8,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingMonthNav } from "@web/booking/PublicBookingMonthNav";
 import {
+  type BookingMonthGridCell,
   collectBookingAvailableDateKeys,
   formatBookingDateKey,
   formatBookingMonthDayLabel,
@@ -146,86 +147,89 @@ export function PublicBookingMonthGrid({
         onMonthChange={onMonthChange}
         onPrefetchMonth={onPrefetchMonth}
       />
-      <table
-        className="w-full table-fixed border-collapse"
-        role="grid"
-        aria-labelledby="booking-month-heading"
-      >
-        <thead>
-          <tr>
-            {weekdayHeadings.map((weekday) => (
-              <th
-                key={weekday.long}
-                scope="col"
-                className="pb-1 text-center font-medium text-text-muted text-xs"
-              >
-                <span aria-hidden="true">{weekday.short}</span>
-                <span className="sr-only">{weekday.long}</span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {weeks.map((week, weekIndex) => (
-            <tr key={weekIndex}>
+      <div className="w-full">
+        <div className="grid grid-cols-7">
+          {weekdayHeadings.map((weekday) => (
+            <div
+              key={weekday.long}
+              className="pb-1 text-center font-medium text-text-muted text-xs"
+            >
+              <span aria-hidden="true">{weekday.short}</span>
+              <span className="sr-only">{weekday.long}</span>
+            </div>
+          ))}
+        </div>
+        {weeks.map((week) => {
+          const rowKey = weekRowKey(week, monthKey);
+          return (
+            <div key={rowKey} className="grid grid-cols-7">
               {week.map((cell, cellIndex) => {
                 if (cell.kind === "pad") {
                   return (
-                    <td
-                      key={`pad-${weekIndex}-${cellIndex}`}
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: leading and trailing pads have no date identity
+                      key={`${rowKey}-pad-${cellIndex}`}
                       className="p-0.5"
+                      aria-hidden="true"
                     />
                   );
                 }
                 const { day } = cell;
                 const isSelected = selectedDateKey === day.dateKey;
                 const label = formatBookingMonthDayLabel(day.dateKey, timeZone);
+                if (!day.available) {
+                  return (
+                    <div
+                      key={day.dateKey}
+                      aria-current={day.isToday ? "date" : undefined}
+                      className="flex h-10 w-full items-center justify-center rounded-md text-sm text-text-muted"
+                    >
+                      {day.dayOfMonth}
+                    </div>
+                  );
+                }
                 return (
-                  <td
+                  <button
                     key={day.dateKey}
-                    role="gridcell"
-                    className="p-0.5"
-                    aria-selected={day.available ? isSelected : undefined}
+                    type="button"
+                    id={bookingDayButtonId(monthKey, day.dateKey)}
+                    aria-label={label}
+                    aria-pressed={isSelected}
+                    aria-current={day.isToday ? "date" : undefined}
+                    tabIndex={tabStopDateKey === day.dateKey ? 0 : -1}
+                    onClick={() => {
+                      setFocusedDateKey(day.dateKey);
+                      onSelectDate(day.dateKey);
+                    }}
+                    onKeyDown={(event) => handleDayKeyDown(event, day.dateKey)}
+                    className={`flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      isSelected
+                        ? "bg-accent text-on-accent hover:bg-accent"
+                        : "text-text hover:bg-surface-panel"
+                    }`}
                   >
-                    {day.available ? (
-                      <button
-                        type="button"
-                        id={bookingDayButtonId(monthKey, day.dateKey)}
-                        aria-label={label}
-                        aria-current={day.isToday ? "date" : undefined}
-                        tabIndex={tabStopDateKey === day.dateKey ? 0 : -1}
-                        onClick={() => {
-                          setFocusedDateKey(day.dateKey);
-                          onSelectDate(day.dateKey);
-                        }}
-                        onKeyDown={(event) =>
-                          handleDayKeyDown(event, day.dateKey)
-                        }
-                        className={`flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                          isSelected
-                            ? "bg-accent text-on-accent hover:bg-accent"
-                            : "text-text hover:bg-surface-panel"
-                        }`}
-                      >
-                        {day.dayOfMonth}
-                      </button>
-                    ) : (
-                      <span
-                        className="flex h-10 w-full cursor-default items-center justify-center rounded-md text-sm text-text-muted"
-                        aria-current={day.isToday ? "date" : undefined}
-                      >
-                        {day.dayOfMonth}
-                      </span>
-                    )}
-                  </td>
+                    {day.dayOfMonth}
+                  </button>
                 );
               })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+function weekRowKey(
+  week: readonly BookingMonthGridCell[],
+  monthKey: string,
+): string {
+  for (const cell of week) {
+    if (cell.kind === "day") {
+      return cell.day.dateKey;
+    }
+  }
+  return `${monthKey}-empty`;
 }
 
 function bookingDayButtonId(monthKey: string, dateKey: string): string {

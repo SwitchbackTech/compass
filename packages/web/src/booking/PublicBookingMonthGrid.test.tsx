@@ -1,9 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
 import {
   formatBookingMonthDayLabel,
   formatBookingMonthHeading,
+  listBookingWeekdayHeadings,
 } from "@web/booking/public-booking.format";
 import { describe, expect, it } from "bun:test";
 
@@ -85,17 +86,16 @@ describe("PublicBookingMonthGrid", () => {
       }),
     ).not.toBeInTheDocument();
 
-    const grid = screen.getByRole("grid");
-    expect(within(grid).getByText("10")).toBeInTheDocument();
-    expect(within(grid).getByText("16")).toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("16")).toBeInTheDocument();
   });
 
   it("keeps a single day in the tab order and moves with arrow keys", async () => {
     const user = userEvent.setup({ delay: null });
     const { selected } = renderGrid();
 
-    for (const header of screen.getAllByRole("columnheader")) {
-      expect(header).not.toHaveAttribute("tabindex");
+    for (const weekday of listBookingWeekdayHeadings(timeZone)) {
+      expect(screen.getByText(weekday.long)).not.toHaveAttribute("tabindex");
     }
 
     const seventeenth = screen.getByRole("button", {
@@ -128,13 +128,19 @@ describe("PublicBookingMonthGrid", () => {
     expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
   });
 
-  it("sets aria-selected on the chosen day's grid cell", () => {
+  it("sets aria-pressed on the chosen day", () => {
     renderGrid({ selectedDateKey: availableA });
 
-    const selectedCell = screen.getByRole("gridcell", { selected: true });
     expect(
-      within(selectedCell).getByRole("button", {
+      screen.getByRole("button", {
         name: formatBookingMonthDayLabel(availableA, timeZone),
+        pressed: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: formatBookingMonthDayLabel(availableB, timeZone),
+        pressed: false,
       }),
     ).toBeInTheDocument();
   });
