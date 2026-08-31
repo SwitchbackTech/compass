@@ -124,6 +124,20 @@ test.describe("public booking confirmation page", () => {
       checkpoint: "booking confirmation not found",
     });
   });
+
+  test("load-error state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationGetStatus: 500,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Could not load booking" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation load error",
+    });
+  });
 });
 
 test.describe("public booking cancel page", () => {

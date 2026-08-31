@@ -19,7 +19,7 @@ export function PublicBookingStatusMessage({
           ref={headingRef}
           id="booking-status-heading"
           tabIndex={-1}
-          className="font-semibold text-text text-xl"
+          className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {title}
         </h1>

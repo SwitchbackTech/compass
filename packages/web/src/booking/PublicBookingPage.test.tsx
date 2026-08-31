@@ -148,10 +148,42 @@ describe("PublicBookingPage", () => {
 
     expect(
       await screen.findByRole("heading", { name: "Booking page not found" }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
     expect(
       screen.getByText(/may be incorrect or the host has turned booking off/),
     ).toBeInTheDocument();
+  });
+
+  it("skips the month grid to the slot list", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    await user.tab();
+    expect(
+      screen.getByRole("link", { name: "Skip to open times" }),
+    ).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: "Pick a time" })).toHaveFocus();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Your details" }),
+    ).toHaveFocus();
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.tab();
+    expect(
+      screen.getByRole("link", { name: "Skip to your details" }),
+    ).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { name: "Your details" })).toHaveFocus();
   });
 
   it("labels times in the guest timezone and confirms a booking", async () => {
@@ -231,7 +263,7 @@ describe("PublicBookingPage", () => {
       await screen.findByRole("heading", {
         name: "You are booked with Tyler Dane",
       }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
     expect(postedBody).toMatchObject({
       slotStart: currentSlot.slotStart,
       guestName: "Guest User",
@@ -1059,7 +1091,7 @@ describe("PublicBookingConfirmedPage", () => {
       await screen.findByRole("heading", {
         name: "You are booked with Tyler Dane",
       }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
     expect(screen.getByText(/30 minutes/)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Copy cancel link" }),
@@ -1074,7 +1106,7 @@ describe("PublicBookingConfirmedPage", () => {
       await screen.findByRole("heading", {
         name: "This booking was canceled",
       }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
   });
 
   it("shows a calm state for an unknown reservation", async () => {
@@ -1088,7 +1120,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", { name: "Booking not found" }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
   });
 
   it("shows a retryable state when the public GET fails", async () => {
@@ -1103,7 +1135,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", { name: "Could not load booking" }),
-    ).toBeInTheDocument();
+    ).toHaveFocus();
   });
 
   it("copies the cancel URL when history state includes it", async () => {

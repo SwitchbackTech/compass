@@ -1,3 +1,4 @@
+import { type Ref } from "react";
 import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import {
@@ -11,6 +12,7 @@ interface PublicBookingConfirmationViewProps {
   slotStart: string;
   timeZone: string;
   cancelUrl?: string;
+  headingRef?: Ref<HTMLHeadingElement>;
 }
 
 export function PublicBookingConfirmationView({
@@ -19,6 +21,7 @@ export function PublicBookingConfirmationView({
   slotStart,
   timeZone,
   cancelUrl,
+  headingRef,
 }: PublicBookingConfirmationViewProps) {
   const when = formatBookingSlotLabel(slotStart, timeZone);
 
@@ -26,8 +29,10 @@ export function PublicBookingConfirmationView({
     <PublicBookingLayout>
       <section aria-labelledby="booking-confirmation-heading">
         <h1
+          ref={headingRef}
           id="booking-confirmation-heading"
-          className="font-semibold text-text text-xl"
+          tabIndex={-1}
+          className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
         >
           You are booked with {hostDisplayName}
         </h1>

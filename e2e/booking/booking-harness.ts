@@ -72,6 +72,8 @@ export interface PublicBookingStubOptions {
   reservationStatus?: "confirmed" | "cancelled";
   /** When true, GET /reservations/:id returns 404. */
   reservationNotFound?: boolean;
+  /** When set, GET /reservations/:id returns this status instead of 200. */
+  reservationGetStatus?: number;
 }
 
 export interface CapturedBookingRequests {
@@ -235,6 +237,9 @@ export async function preparePublicBookingConfirmedPage(
     ) {
       if (options.reservationNotFound) {
         return route.fulfill(json({}, 404));
+      }
+      if (options.reservationGetStatus) {
+        return route.fulfill(json({}, options.reservationGetStatus));
       }
       return route.fulfill(
         json({

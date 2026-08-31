@@ -8,6 +8,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
+import { PublicBookingFocusedStatus } from "@web/booking/PublicBookingFocusedStatus";
 import {
   type PublicBookingGuestDetails,
   PublicBookingGuestForm,
@@ -15,7 +16,7 @@ import {
 } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
-import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import { PublicBookingSkipLink } from "@web/booking/PublicBookingSkipLink";
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import {
   findNextAvailableBookingDate,
@@ -82,6 +83,7 @@ export function PublicBookingPage() {
     }
   }, [conflictMessage]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: jump remounts the picker heading
   useEffect(() => {
     if (step === "details") {
       detailsHeadingRef.current?.focus();
@@ -91,7 +93,7 @@ export function PublicBookingPage() {
       pendingPickerFocusRef.current = false;
       pickerHeadingRef.current?.focus();
     }
-  }, [step]);
+  }, [monthKey, selectedDateKey, step]);
 
   usePrefetchAdjacentBookingMonths(
     slug,
@@ -123,7 +125,7 @@ export function PublicBookingPage() {
 
   if (pageQuery.isLoading) {
     return (
-      <PublicBookingStatusMessage
+      <PublicBookingFocusedStatus
         title="Loading booking page"
         description="One moment while we load available times."
       />
@@ -135,7 +137,7 @@ export function PublicBookingPage() {
     (pageQuery.isSuccess && !pageQuery.data.enabled)
   ) {
     return (
-      <PublicBookingStatusMessage
+      <PublicBookingFocusedStatus
         title="Booking page not found"
         description="This link may be incorrect or the host has turned booking off."
       />
@@ -144,7 +146,7 @@ export function PublicBookingPage() {
 
   if (pageQuery.isError || !pageQuery.isSuccess || !pageQuery.data) {
     return (
-      <PublicBookingStatusMessage
+      <PublicBookingFocusedStatus
         title="Could not load booking page"
         description="Please refresh and try again."
       />
@@ -155,7 +157,7 @@ export function PublicBookingPage() {
 
   if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
-      <PublicBookingStatusMessage
+      <PublicBookingFocusedStatus
         title="Booking temporarily unavailable"
         description="The host calendar is not ready for new bookings. Please try again later."
       />
@@ -261,6 +263,7 @@ export function PublicBookingPage() {
         return;
       }
       if (next.dateKey) {
+        pendingPickerFocusRef.current = true;
         setSelectedSlotStart(null);
         setConflictMessage(null);
         setStep("picker");
@@ -324,6 +327,12 @@ export function PublicBookingPage() {
 
   return (
     <PublicBookingLayout wide>
+      <PublicBookingSkipLink
+        href={
+          showDetailsStep ? "#booking-form-heading" : "#booking-slots-heading"
+        }
+        label={showDetailsStep ? "Skip to your details" : "Skip to open times"}
+      />
       <header className="flex flex-col gap-1">
         <h1 className="font-semibold text-text text-xl">
           Book with {page.hostDisplayName}

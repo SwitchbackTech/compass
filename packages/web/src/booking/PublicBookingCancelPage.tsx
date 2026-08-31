@@ -59,7 +59,7 @@ export function PublicBookingCancelPage() {
             ref={headingRef}
             id="booking-cancel-heading"
             tabIndex={-1}
-            className="font-semibold text-text text-xl"
+            className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
           >
             Cancel this booking?
           </h1>

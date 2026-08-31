@@ -15,7 +15,10 @@ export function PublicBookingLayout({
   wide = false,
 }: PublicBookingLayoutProps) {
   return (
-    <div data-document-scroll className="min-h-dvh bg-background text-text">
+    <div
+      data-document-scroll
+      className="relative min-h-dvh bg-background text-text"
+    >
       <main
         className={`mx-auto flex w-full min-w-0 flex-col gap-6 px-4 py-10 ${
           wide ? "max-w-3xl" : "max-w-lg"
