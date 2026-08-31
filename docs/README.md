@@ -22,7 +22,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 - Local-first or storage behavior: [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
 - Backend routes and API behavior: [Backend Route Map](./backend/README.md), [Backend Request Flow](./backend/backend-request-flow.md), [Backend Error Handling](./backend/backend-error-handling.md)
 - Trial, pricing, or Stripe: [Billing And Trial](./features/billing.md)
-- Public booking pages or availability rules: [Compass Calendar Booking (v1)](./features/booking.md), temporary pack [`wip/booking/`](../wip/booking/README.md)
+- Public booking pages or availability rules: [Compass Calendar Booking (v1)](./features/booking.md)
 - A new calendar integration or Google-sync behavior: [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md), the `packages/sync` domain code directly
 
 ## Architecture And Domain

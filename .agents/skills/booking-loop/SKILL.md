@@ -3,7 +3,7 @@ name: booking-loop
 version: 1
 owner: compass-maintainers
 last_verified: 2026-08-30
-description: Manager loop that takes the next Compass Booking v1 work package from queued to squash-merged main, updates GitHub work items, and smokes staging.compasscalendar.com without waiting for a human. Use when launched by the booking-loop Routine, a Cursor Automation, or the user says "run the booking loop".
+description: Manager loop that takes the next Compass Booking GitHub issue from queued to squash-merged main, updates GitHub work items, and smokes staging.compasscalendar.com without waiting for a human. Use when launched by the booking-loop Routine, a Cursor Automation, or the user says "run the booking loop".
 ---
 
 ## When
@@ -15,12 +15,11 @@ click. Also when the user says "run the booking loop".
 ## Steps
 
 Pick next WP, implement only that WP, verify, simplify, review, open
-a ready PR, squash-merge, update issues and TRACKING, smoke staging.
+a ready PR, squash-merge, update issues, smoke staging.
 
 ## Output
 
-Merged PR, closed GitHub issue, TRACKING row `done`, next WP launched
-or a typed escalation.
+Merged PR, closed GitHub issue, next WP launched or a typed escalation.
 
 ## Pass
 
@@ -79,6 +78,6 @@ staging has the release, exercise
 
 If implementation discovers a missing slice that is still in v1
 scope, open a new GitHub issue with the agent-task template, label
-`agent-ready`, milestone **Compass Booking v1**, and add a TRACKING
-row. Do not silently expand v1 (multiple event types, reschedule,
-standalone product). Those stay out of scope.
+`agent-ready`, milestone **Compass Booking v1**. Do not silently
+expand v1 (multiple event types, reschedule, standalone product).
+Those stay out of scope.

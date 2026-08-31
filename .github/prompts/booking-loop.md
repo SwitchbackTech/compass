@@ -10,12 +10,10 @@ that change secrets, git history, or the kill switch.
 
 ## Read first
 
-1. `wip/booking/README.md` and `wip/booking/TRACKING.md`
-2. `docs/features/booking.md` (product; do not re-litigate)
-3. The WP file named in TRACKING for the issue you were given
-4. `.agents/skills/booking-loop/SKILL.md`
-5. `.agents/skills/ship/SKILL.md` (merge gates)
-6. `AGENTS.md`
+1. `docs/features/booking.md` (product; do not re-litigate)
+2. `.agents/skills/booking-loop/SKILL.md`
+3. `.agents/skills/ship/SKILL.md` (merge gates)
+4. `AGENTS.md`
 
 If `BOOKING_LOOP_ENABLED` is not `true` in the launch context, stop.
 
@@ -26,9 +24,8 @@ If the launch named an issue number, that is the WP. Otherwise:
 - Open issues, milestone **Compass Booking v1**, label `agent-ready`
 - Skip any issue labeled `booking-loop-running` or `booking-loop-needs-human`
 - Skip if an open PR already has `Fixes #<n>` for that issue
-- Take the **lowest issue number** whose WP dependencies in
-  `wip/booking/README.md` are `done` on TRACKING (or have closed
-  GitHub issues)
+- Take the **lowest issue number** whose GitHub dependencies
+  (linked/closed issues named in the body) are done
 
 If nothing is eligible, comment "booking-loop: idle, no eligible WP"
 on the milestone's newest issue (or skip commenting if you have no
@@ -36,10 +33,9 @@ issue) and **exit without a PR**.
 
 ## Concurrency
 
-Apply `booking-loop-running` to the issue as soon as you start. Commit
-TRACKING.md `running` + `started_at` (UTC) **before** implementing.
-If another row is `running` with `started_at` younger than 3 hours,
-exit as a no-op.
+Apply `booking-loop-running` to the issue as soon as you start.
+If another open issue already has a fresh `booking-loop-running` label
+(younger than 3 hours), exit as a no-op.
 
 ## Implement
 
@@ -91,8 +87,8 @@ are a post-deploy session):
 ## New work items
 
 Still in v1 (one page, one duration, cancel, Meet): open a new
-`agent-ready` issue on milestone **Compass Booking v1** and a
-TRACKING row. Out of v1: do not file as this pack.
+`agent-ready` issue on milestone **Compass Booking v1**. Out of v1:
+do not file on that milestone.
 
 ## Escalate
 
@@ -102,6 +98,5 @@ launch the next WP.
 
 ## Stop when
 
-The pack finish line in `wip/booking/README.md` holds and WP-09 is
-`done`. Then disable the loop (comment that `BOOKING_LOOP_ENABLED`
-should be flipped to not-true) and do not launch another agent.
+No eligible milestone issue remains. Comment "booking-loop: idle, no
+eligible WP" and exit without a PR. Do not flip `BOOKING_LOOP_ENABLED`.

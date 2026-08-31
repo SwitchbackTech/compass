@@ -55,8 +55,6 @@ RSVP](../features/attendees.md).
 ## Booking (v1)
 
 Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
-Work packages: [`wip/booking/`](../../wip/booking/README.md) (delete after
-docs are the source of truth).
 
 - Public URL: `/book/:username`, confirmation `/book/confirmed/:id`,
   cancel `/book/cancel/:id` (guest routes outside the calendar shell)
