@@ -13,6 +13,7 @@ import {
 } from "@core/types/booking.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
 import { BUSY_QUERY_MAX_WINDOW_MS } from "@core/types/sync/availability.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { bookingError } from "@backend/booking/booking.error";
 import {
   generateCancelToken,
@@ -106,9 +107,7 @@ export class PublicBookingService {
     const now = new Date();
     const windowStart = new Date(query.start);
     const requestedEnd = new Date(query.end);
-    const horizonEnd = new Date(
-      now.getTime() + page.maxHorizonDays * 24 * 60 * 60 * 1000,
-    );
+    const horizonEnd = dayjs(now).add(page.maxHorizonDays, "day").toDate();
     const windowEnd =
       requestedEnd.getTime() > horizonEnd.getTime() ? horizonEnd : requestedEnd;
 
