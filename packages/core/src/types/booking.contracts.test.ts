@@ -8,6 +8,7 @@ import {
   CreateBookingReservationInputSchema,
   PublicBookingPageSchema,
   PublicGetBookingPageResponseSchema,
+  PublicGetBookingReservationResponseSchema,
   toPublicBookingPage,
   WeeklyAvailabilityIntervalSchema,
 } from "@core/types/booking.contracts";
@@ -234,5 +235,32 @@ describe("HTTP booking contracts", () => {
         guestTimeZone: "Europe/London",
       }).success,
     ).toBe(true);
+  });
+
+  it("parses a public reservation GET without guest contact fields", () => {
+    expect(
+      PublicGetBookingReservationResponseSchema.safeParse({
+        slotStart: "2026-09-01T15:00:00.000Z",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+        hostDisplayName: "Tyler Dane",
+        status: "confirmed",
+      }).success,
+    ).toBe(true);
+    expect(
+      PublicGetBookingReservationResponseSchema.safeParse({
+        slotStart: "2026-09-01T15:00:00.000Z",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+        hostDisplayName: "Tyler Dane",
+        status: "confirmed",
+        guestEmail: "ada@example.com",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects reserved slug confirmed", () => {
+    expect(BookingSlugSchema.safeParse("confirmed").success).toBe(false);
+    expect(BookingSlugSchema.safeParse("cancel").success).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import {
   authenticatedLayoutRoute,
   calendarShellRoute,
   lifeRoute,
+  publicBookConfirmedRoute,
   publicBookRoute,
   rootRoute,
   routeTree,
@@ -23,6 +24,13 @@ describe("routeTree", () => {
     expect(publicBookRoute.fullPath).toBe("/book/$username");
     expect(publicBookRoute.options.beforeLoad).toBeUndefined();
     expect(publicBookRoute.parentRoute).toBe(rootRoute);
+  });
+
+  it("registers /book/confirmed/$reservationId as a public route", () => {
+    expect(publicBookConfirmedRoute.fullPath).toBe(
+      "/book/confirmed/$reservationId",
+    );
+    expect(publicBookConfirmedRoute.parentRoute).toBe(rootRoute);
   });
 
   it("gates the authenticated layout behind loadAuthenticated inside the calendar shell", () => {

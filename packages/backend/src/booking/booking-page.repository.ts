@@ -12,6 +12,12 @@ class BookingPageRepository {
     return BookingPageRecordSchema.parse(record);
   }
 
+  async findById(id: ObjectId): Promise<BookingPageRecord | null> {
+    const record = await mongoService.bookingPage.findOne({ _id: id });
+    if (!record) return null;
+    return BookingPageRecordSchema.parse(record);
+  }
+
   async findBySlug(slug: string): Promise<BookingPageRecord | null> {
     const record = await mongoService.bookingPage.findOne({
       bookingSlug: slug,

@@ -362,6 +362,86 @@ describe("PublicBookingService", () => {
     expect(stored?.status).toBe("cancelled");
   });
 
+  it("returns minimal public reservation details", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "secret notes",
+      guestTimeZone: "Europe/London",
+    });
+
+    const publicReservation = await service.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+
+    expect(publicReservation).toEqual({
+      slotStart: created.slotStart,
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+      hostDisplayName: "Host User",
+      status: "confirmed",
+    });
+    expect(publicReservation).not.toHaveProperty("guestEmail");
+    expect(publicReservation).not.toHaveProperty("cancelUrl");
+    expect(publicReservation).not.toHaveProperty("notes");
+  });
+
+  it("returns the booked slot duration after the host changes page duration", async () => {
+    const { slug, userId, calendarId } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "secret notes",
+      guestTimeZone: "Europe/London",
+    });
+
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendarId,
+        blockingCalendarIds: [calendarId],
+        durationMinutes: 45,
+      }),
+    );
+
+    const publicReservation = await service.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.durationMinutes).toBe(30);
+  });
+
+  it("returns cancelled status without leaking guest contact", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    await service.cancelReservation(new ObjectId(created.reservationId), {
+      token,
+    });
+
+    const publicReservation = await service.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.status).toBe("cancelled");
+    expect(publicReservation).not.toHaveProperty("guestEmail");
+  });
+
+  it("throws not found for an unknown reservation", async () => {
+    await expect(
+      service.getPublicReservation(new ObjectId()),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+  });
+
   it("rejects invalid guest email", async () => {
     const { slug } = await enableBookingPage();
     await expect(
@@ -462,6 +542,62 @@ describe("Public booking routes", () => {
       .getServer()
       .get("/api/booking/pages/notfound999")
       .expect(Status.NOT_FOUND);
+  });
+
+  it("GET public reservation returns 404 for an invalid id", async () => {
+    await baseDriver
+      .getServer()
+      .get("/api/booking/reservations/not-an-id")
+      .expect(Status.NOT_FOUND);
+  });
+
+  it("GET public reservation returns minimal fields", async () => {
+    const userId = await createNamedUser("Permalink Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    if (!("id" in page)) {
+      throw new Error("expected a saved booking page");
+    }
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId: new ObjectId(page.id),
+      slotStart: new Date("2026-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2026-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "secret notes",
+      guestTimeZone: "Europe/London",
+      status: "confirmed",
+      calendarEventId: "evt-1",
+      cancelTokenHash: "a".repeat(64),
+    });
+
+    const response = await baseDriver
+      .getServer()
+      .get(`/api/booking/reservations/${reservationId.toString()}`)
+      .expect(Status.OK);
+
+    expect(response.body).toEqual({
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+      hostDisplayName: "Permalink Host",
+      status: "confirmed",
+    });
+    expect(response.body).not.toHaveProperty("guestEmail");
+    expect(response.body).not.toHaveProperty("cancelUrl");
+    expect(response.body).not.toHaveProperty("notes");
   });
 
   it("POST reservation returns 409 when bookable is false", async () => {

@@ -3,6 +3,7 @@ import {
   buildBookableSlot,
   formatSlotButtonLabel,
   preparePublicBookingCancelPage,
+  preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
@@ -81,6 +82,48 @@ test("the public booking conflict alert has no automatically detectable accessib
 
   await expect(page.getByRole("alert")).toBeVisible();
   await expectNoAxeViolations(page, { checkpoint: "public booking conflict" });
+});
+
+test.describe("public booking confirmation page", () => {
+  test("confirmed state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page);
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation permalink",
+    });
+  });
+
+  test("cancelled state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationStatus: "cancelled",
+    });
+    await expect(
+      page.getByRole("heading", { name: "This booking was canceled" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation cancelled",
+    });
+  });
+
+  test("not-found state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      reservationNotFound: true,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Booking not found" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation not found",
+    });
+  });
 });
 
 test.describe("public booking cancel page", () => {

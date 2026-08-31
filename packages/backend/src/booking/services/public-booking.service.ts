@@ -4,6 +4,7 @@ import {
   computeBookingSlots,
 } from "@core/booking/compute-booking-slots";
 import {
+  BookingDurationMinutesSchema,
   BookingSlotsQuerySchema,
   type BookingSlotsResponse,
   BookingSlotsResponseSchema,
@@ -12,6 +13,8 @@ import {
   CreateBookingReservationResponseSchema,
   type PublicBookingPage,
   PublicBookingPageSchema,
+  type PublicGetBookingReservationResponse,
+  PublicGetBookingReservationResponseSchema,
   toPublicBookingPage,
 } from "@core/types/booking.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
@@ -306,6 +309,38 @@ export class PublicBookingService {
       }
       throw error;
     }
+  }
+
+  async getPublicReservation(
+    reservationId: ObjectId,
+  ): Promise<PublicGetBookingReservationResponse> {
+    const reservation =
+      await bookingReservationRepository.findById(reservationId);
+    if (!reservation) {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    const page = await bookingPageRepository.findById(reservation.pageId);
+    if (!page) {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    const hostDisplayName = await getHostDisplayName(page.userId);
+    const fromSlot = Math.round(
+      (reservation.slotEnd.getTime() - reservation.slotStart.getTime()) /
+        60_000,
+    );
+    const durationMinutes = BookingDurationMinutesSchema.safeParse(fromSlot)
+      .success
+      ? fromSlot
+      : page.durationMinutes;
+    return PublicGetBookingReservationResponseSchema.parse({
+      slotStart: reservation.slotStart.toISOString(),
+      guestTimeZone: reservation.guestTimeZone,
+      durationMinutes,
+      hostDisplayName,
+      status: reservation.status,
+    });
   }
 
   async cancelReservation(

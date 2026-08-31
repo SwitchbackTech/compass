@@ -53,6 +53,15 @@ export const publicBookCancelRoute = createRoute({
   ),
 });
 
+export const publicBookConfirmedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROOT_ROUTES.BOOK_CONFIRMED,
+  component: lazyRouteComponent(
+    () => import("@web/booking/PublicBookingConfirmedPage"),
+    "PublicBookingConfirmedPage",
+  ),
+});
+
 export const lifeRoute = createRoute({
   getParentRoute: () => calendarShellRoute,
   path: ROOT_ROUTES.LIFE,
@@ -155,7 +164,8 @@ const calendarShellChildren = calendarShellRoute.addChildren([
 
 export const routeTree = rootRoute.addChildren([
   calendarShellChildren,
-  publicBookRoute,
+  publicBookConfirmedRoute,
   publicBookCancelRoute,
+  publicBookRoute,
   googleAuthCallbackRoute,
 ]);

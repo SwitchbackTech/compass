@@ -26,6 +26,8 @@ export const publicBookingQueryKeys = {
   page: (slug: string) => ["public-booking", "page", slug] as const,
   slots: (slug: string, monthKey: string, timeZone: string) =>
     ["public-booking", "slots", slug, monthKey, timeZone] as const,
+  reservation: (reservationId: string) =>
+    ["public-booking", "reservation", reservationId] as const,
 };
 
 export function publicBookingPageQueryOptions(slug: string) {
@@ -44,6 +46,25 @@ export function publicBookingPageQueryOptions(slug: string) {
 
 export function usePublicBookingPageQuery(slug: string) {
   return useQuery(publicBookingPageQueryOptions(slug));
+}
+
+export function publicBookingReservationQueryOptions(reservationId: string) {
+  return queryOptions({
+    queryKey: publicBookingQueryKeys.reservation(reservationId),
+    queryFn: () => PublicBookingApi.getReservation(reservationId),
+    staleTime: PUBLIC_BOOKING_PAGE_STALE_TIME_MS,
+    retry: (failureCount, error) => {
+      if (error instanceof PublicBookingNotFoundError) {
+        return false;
+      }
+      return failureCount < 1;
+    },
+    enabled: Boolean(reservationId),
+  });
+}
+
+export function usePublicBookingReservationQuery(reservationId: string) {
+  return useQuery(publicBookingReservationQueryOptions(reservationId));
 }
 
 export function publicBookingSlotsQueryOptions(
