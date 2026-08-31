@@ -1,31 +1,17 @@
-import {
-  HotkeyManager,
-  HotkeysProvider,
-  resolveModifier,
-} from "@tanstack/react-hotkeys";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { resolveModifier } from "@tanstack/react-hotkeys";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestNotificationPort } from "@web/__tests__/helpers/web-test-seams";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { RUN_TASKS } from "@web/components/ShortcutShowcase/game.tasks";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
-import {
-  getEdgeResizeLessonPhase,
-  getShowcaseStep,
-  SHOWCASE_STEP_IDS,
-  type ShowcaseStepId,
-} from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   initialShortcutShowcaseState,
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
-import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
-import {
-  selectIsShortcutsOpen,
-  useViewStore,
-} from "@web/events/stores/view.store";
 import { registerNotificationPort } from "@web/notifications/notification.port";
 import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import { clearAppLockReasons, isAppLocked } from "@web/shortcuts/app-lock";
@@ -44,17 +30,47 @@ const pressKey = (key: string, init: KeyboardEventInit = {}) => {
   });
 };
 
-const currentStepId = () =>
-  SHOWCASE_STEP_IDS[useShortcutShowcaseStore.getState().stepIndex];
+const modInit = () =>
+  resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
 
-/** Jumps straight to a lesson; there is no store action for an arbitrary step. */
-const showStep = (id: ShowcaseStepId) => {
-  act(() =>
-    useShortcutShowcaseStore.setState({
-      isActive: true,
-      stepIndex: SHOWCASE_STEP_IDS.indexOf(id),
-    }),
-  );
+const typeDigits = (digits: string) => {
+  for (const digit of digits) pressKey(digit);
+};
+
+/** Starts the clock from the how-to card and clears the whole queue. */
+const playWinningRun = () => {
+  pressKey("Enter");
+  // place-standup
+  pressKey("c");
+  pressKey("ArrowLeft");
+  pressKey("Enter");
+  // quicktime-lunch
+  typeDigits("1230");
+  pressKey("Enter");
+  // place-review
+  pressKey("c");
+  pressKey("ArrowRight");
+  pressKey("ArrowRight");
+  pressKey("Enter");
+  // nudge-standup
+  for (let i = 0; i < 4; i += 1) pressKey("ArrowDown", { shiftKey: true });
+  // resize-one-on-one
+  pressKey("Tab");
+  pressKey("Tab");
+  pressKey("ArrowDown", { shiftKey: true });
+  pressKey("ArrowDown", { shiftKey: true });
+  // quicktime-focus
+  typeDigits("1600");
+  pressKey("Enter");
+  // delete-gym, undo-gym
+  pressKey("Delete");
+  pressKey("z", modInit());
+  // nudge-review
+  pressKey("ArrowLeft", { shiftKey: true });
+  // place-party
+  pressKey("c");
+  for (let i = 0; i < 4; i += 1) pressKey("ArrowDown");
+  pressKey("Enter");
 };
 
 describe("ShortcutShowcase", () => {
@@ -73,30 +89,6 @@ describe("ShortcutShowcase", () => {
     clearAppLockReasons();
   });
 
-  it("focuses the first practice control and keeps Tab inside the takeover", async () => {
-    const user = userEvent.setup();
-    render(
-      <>
-        <button type="button">Outside calendar</button>
-        <ShortcutShowcase />
-      </>,
-    );
-    const outside = screen.getByRole("button", { name: "Outside calendar" });
-    outside.focus();
-
-    act(() => shortcutShowcaseActions.replay());
-
-    const first = screen.getByRole("button", { name: /Skip to sign up/ });
-    expect(first).toHaveFocus();
-
-    await user.tab({ shift: true });
-    expect(outside).not.toHaveFocus();
-    expect(first).not.toHaveFocus();
-
-    await user.tab();
-    expect(first).toHaveFocus();
-  });
-
   it("renders nothing until started, then locks the app while up", () => {
     render(<ShortcutShowcase />);
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
@@ -109,6 +101,30 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.skip());
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(isAppLocked()).toBe(false);
+  });
+
+  it("focuses the first control and keeps Tab inside the takeover", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Outside calendar</button>
+        <ShortcutShowcase />
+      </>,
+    );
+    const outside = screen.getByRole("button", { name: "Outside calendar" });
+    outside.focus();
+
+    act(() => shortcutShowcaseActions.replay());
+
+    const first = screen.getByRole("button", { name: "Start the clock" });
+    expect(first).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(outside).not.toHaveFocus();
+    expect(first).not.toHaveFocus();
+
+    await user.tab();
+    expect(first).toHaveFocus();
   });
 
   it("ignores KeyboardEvents with no key instead of throwing", () => {
@@ -124,67 +140,50 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByLabelText("Shortcut practice")).toBeTruthy();
   });
 
-  it("starts from welcome on the intro, and Enter opens level 1", () => {
+  it("shows the how-to card, and Enter starts the clock on task 1", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.startFromWelcome());
 
-    expect(currentStepId()).toBe("intro");
+    expect(screen.getByText("Schedule Rush")).toBeTruthy();
     expect(
-      screen.getByRole("heading", { name: "Compass is keyboard-only" }),
+      screen.getByRole("button", { name: "Start the clock" }),
     ).toBeTruthy();
-    expect(
-      screen.getByText(/That takes a little practice to get the muscle memory/),
-    ).toBeTruthy();
-    expect(screen.queryByText("Level 1/9")).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Start practicing" }),
-    ).toBeTruthy();
+    expect(screen.queryByRole("timer")).toBeNull();
 
+    // Game keys do nothing before the clock starts.
     pressKey("c");
-    expect(currentStepId()).toBe("intro");
-    expect(screen.queryByLabelText("Event title")).toBeNull();
+    expect(screen.queryByRole("timer")).toBeNull();
 
     pressKey("Enter");
-    expect(currentStepId()).toBe("create");
-    expect(screen.getByText("Level 1/9")).toBeTruthy();
-    expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
+    expect(screen.getByRole("timer")).toBeTruthy();
+    expect(screen.getByText(`Task 1/${RUN_TASKS.length}`)).toBeTruthy();
+    expect(screen.getByText("Standup")).toBeTruthy();
   });
 
-  it("teaches create as one motion, then continues to the next level", async () => {
-    const user = userEvent.setup();
+  it("clears the queue with the taught keys and reaches the end screen", () => {
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
-    expect(currentStepId()).toBe("create");
-    expect(screen.getByText("Press C to start a new event.")).toBeTruthy();
-    expect(screen.getByText("Level 1/9")).toBeTruthy();
+    act(() => shortcutShowcaseActions.startFromWelcome());
 
-    pressKey("c");
-    expect(currentStepId()).toBe("create");
-    expect(screen.getByText(/Type a title, then press Enter/)).toBeTruthy();
+    playWinningRun();
 
-    await user.type(
-      screen.getByLabelText("Event title"),
-      "Coffee with Alex{Enter}",
-    );
-    expect(currentStepId()).toBe("pageJump");
-    expect(screen.getByText("Coffee with Alex")).toBeTruthy();
-    expect(screen.getByText("Level 2/9")).toBeTruthy();
+    expect(screen.getByText("You cleared the week!")).toBeTruthy();
     expect(
-      screen.getByText("See where to go: reveal the jump keys"),
+      screen.getByText(`${RUN_TASKS.length}/${RUN_TASKS.length} tasks cleared`),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /Sign up to keep your calendar/ }),
+    ).toBeTruthy();
+    // The run finished, but nothing is marked seen until the user leaves.
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
   });
 
-  it("graduates on Enter from the graduation step", async () => {
+  it("graduates from the end screen and fades out before unmounting", async () => {
     render(<ShortcutShowcase />);
-    showStep("graduation");
-    expect(screen.getByText(/you've got this/)).toBeTruthy();
+    act(() => shortcutShowcaseActions.startFromWelcome());
+    playWinningRun();
 
-    const seeCalendar = screen.getByRole("button", {
-      name: "See your calendar",
-    });
-    expect(within(seeCalendar).queryByText("Enter")).toBeNull();
-
-    pressKey("Enter");
+    // O opens the calendar for anonymous players (Enter belongs to signup).
+    pressKey("o");
     expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
       "data-closing",
     );
@@ -200,32 +199,6 @@ describe("ShortcutShowcase", () => {
       { timeout: 2000 },
     );
     expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
-  });
-
-  it("fades the takeover on See your calendar, then unmounts", async () => {
-    const user = userEvent.setup();
-    render(<ShortcutShowcase />);
-    showStep("graduation");
-
-    await user.click(screen.getByRole("button", { name: "See your calendar" }));
-    expect(screen.getByLabelText("Shortcut practice")).toHaveAttribute(
-      "data-closing",
-    );
-    expect(
-      screen.getByRole("button", { name: "See your calendar" }),
-    ).toBeDisabled();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-
-    pressKey("Enter");
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-
-    await waitFor(
-      () => {
-        expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
-      },
-      { timeout: 2000 },
-    );
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
   it("graduates immediately when reduced motion is preferred", async () => {
@@ -244,8 +217,9 @@ describe("ShortcutShowcase", () => {
 
     try {
       render(<ShortcutShowcase />);
-      showStep("graduation");
-      pressKey("Enter");
+      act(() => shortcutShowcaseActions.startFromWelcome());
+      playWinningRun();
+      pressKey("o");
       await waitFor(() => {
         expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
       });
@@ -255,317 +229,44 @@ describe("ShortcutShowcase", () => {
     }
   });
 
-  it("does not treat S as skip-to-signup; U leaves for signup", () => {
+  it("Enter on the end screen hands an anonymous player to signup", () => {
     render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
+    act(() => shortcutShowcaseActions.startFromWelcome());
+    playWinningRun();
 
-    pressKey("s");
-    pressKey("d");
-    pressKey("x");
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(currentStepId()).toBe("create");
-
-    pressKey("u");
+    pressKey("Enter");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-  });
-
-  it("does not leave graduation when U is pressed", () => {
-    render(<ShortcutShowcase />);
-    showStep("graduation");
-
-    pressKey("u");
-
-    expect(currentStepId()).toBe("graduation");
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-  });
-
-  it("places the practice sidebar after the grid, matching the real calendar", () => {
-    render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
-
-    const monday = screen.getByText("Mon");
-    const upNext = screen.getByText("Up next");
-    expect(
-      monday.compareDocumentPosition(upNext) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-  });
-
-  it("advances the hold-Mod level after revealing jump keys", () => {
-    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-    render(<ShortcutShowcase />);
-    showStep("pageJump");
-
-    pressKey(modKey);
-    expect(screen.getByText("1")).toBeTruthy();
-    expect(screen.getByText("2")).toBeTruthy();
-
-    pressKey("1", { code: "Digit1" });
-    expect(currentStepId()).toBe("eventJump");
-  });
-
-  it("teaches H then a letter to land on an event", () => {
-    render(<ShortcutShowcase />);
-    showStep("eventJump");
-
-    pressKey("h");
-    expect(screen.getByText("F")).toBeTruthy();
-
-    pressKey("f");
-    expect(currentStepId()).toBe("nudge");
-  });
-
-  it("teaches Shift+arrow to nudge the focused event", () => {
-    render(<ShortcutShowcase />);
-    showStep("nudge");
-
-    pressKey("ArrowRight", { shiftKey: true });
-    expect(currentStepId()).toBe("edgeResize");
-  });
-
-  it("teaches Tab then Shift+up/down to resize one edge", () => {
-    render(<ShortcutShowcase />);
-    showStep("edgeResize");
-
-    expect(getShowcaseStep("edgeResize").keycaps).toEqual([
-      "Tab",
-      "Shift",
-      "ArrowUp",
-      "ArrowDown",
-    ]);
-    expect(getEdgeResizeLessonPhase("start").keycaps).toEqual([
-      "Shift",
-      "ArrowUp",
-      "ArrowDown",
-    ]);
-
-    const practice = screen.getByLabelText("Shortcut practice");
-    expect(practice).toHaveTextContent(
-      /press up or down to change just that edge/,
-    );
-
-    pressKey("ArrowDown", { shiftKey: true });
-    expect(currentStepId()).toBe("edgeResize");
-
-    pressKey("Tab");
-    expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
-    expect(practice).toHaveTextContent(
-      /press up or down to change just that edge/,
-    );
-
-    pressKey("ArrowLeft", { shiftKey: true });
-    expect(currentStepId()).toBe("edgeResize");
-
-    pressKey("ArrowDown", { shiftKey: true });
-    expect(currentStepId()).toBe("editTitle");
-  });
-
-  it("keeps Tab on the focused event during the edge-resize lesson", () => {
-    render(<ShortcutShowcase />);
-    showStep("edgeResize");
-
-    pressKey("Tab");
-    expect(screen.getByRole("status")).toHaveTextContent("Editing start time");
-    pressKey("Tab");
-    expect(screen.getByRole("status")).toHaveTextContent("Editing end time");
-    pressKey("Tab");
-    expect(screen.queryByRole("status")).toBeNull();
-  });
-
-  it("teaches E then T to target the title", async () => {
-    const user = userEvent.setup();
-    render(<ShortcutShowcase />);
-    showStep("editTitle");
-
-    pressKey("e");
-    pressKey("t");
-    expect(currentStepId()).toBe("editTitle");
-    expect(screen.getByLabelText("Event title")).toBeTruthy();
-
-    await user.type(screen.getByLabelText("Event title"), "{Enter}");
-    expect(currentStepId()).toBe("deleteUndo");
-  });
-
-  it("teaches Delete then undo", () => {
-    const isMac = resolveModifier("Mod") === "Meta";
-    render(<ShortcutShowcase />);
-    showStep("deleteUndo");
-
-    expect(screen.getByText("Team sync")).toBeTruthy();
-    pressKey("Delete");
-    expect(screen.queryByText("Team sync")).toBeNull();
-    expect(currentStepId()).toBe("deleteUndo");
-
-    pressKey("z", isMac ? { metaKey: true } : { ctrlKey: true });
-    expect(screen.getByText("Team sync")).toBeTruthy();
-    expect(currentStepId()).toBe("palette");
-  });
-
-  it("opens a practice palette with Mod+K and completes on Enter", () => {
-    const isMac = resolveModifier("Mod") === "Meta";
-    render(<ShortcutShowcase />);
-    showStep("palette");
-
-    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
-    expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
-
-    pressKey("Enter");
-    expect(currentStepId()).toBe("legend");
-  });
-
-  it("opens a practice legend with ? and completes on Enter", () => {
-    render(<ShortcutShowcase />);
-    showStep("legend");
-
-    pressKey("?");
-    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
-
-    pressKey("Enter");
-    expect(currentStepId()).toBe("notifications");
-  });
-
-  it("opens the practice legend from Shift+/ as well as ?", () => {
-    render(<ShortcutShowcase />);
-    showStep("legend");
-
-    pressKey("/", { shiftKey: true });
-    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
-  });
-
-  it("still completes the legend lesson after focus leaves the takeover", () => {
-    render(
-      <>
-        <input aria-label="Outside search" />
-        <ShortcutShowcase />
-      </>,
-    );
-    showStep("legend");
-
-    pressKey("?");
-    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
-
-    const outside = screen.getByLabelText("Outside search");
-    outside.focus();
-    expect(outside).toHaveFocus();
-
-    act(() => {
-      outside.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-    });
-
-    expect(currentStepId()).toBe("notifications");
-  });
-
-  it("does not open the real shortcut overlay from the legend lesson", () => {
-    const Harness = () => {
-      useSidebarShortcuts();
-      return <ShortcutShowcase />;
-    };
-    HotkeyManager.resetInstance();
-    useViewStore.setState({ shortcuts: { isOpen: false } });
-
-    render(
-      <HotkeysProvider>
-        <Harness />
-      </HotkeysProvider>,
-    );
-    showStep("legend");
-
-    act(() => {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "?",
-          bubbles: true,
-          cancelable: true,
-          shiftKey: true,
-        }),
-      );
-      window.dispatchEvent(
-        new KeyboardEvent("keyup", {
-          key: "?",
-          bubbles: true,
-          cancelable: true,
-          shiftKey: true,
-        }),
-      );
-    });
-
-    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
-    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
-
-    pressKey("Enter");
-    expect(currentStepId()).toBe("notifications");
-  });
-
-  it("Escape closes the practice legend and stays on the legend level", () => {
-    render(<ShortcutShowcase />);
-    showStep("legend");
-
-    pressKey("?");
-    expect(screen.getByLabelText("Practice shortcut legend")).toBeTruthy();
-
-    pressKey("Escape");
-    expect(screen.queryByLabelText("Practice shortcut legend")).toBeNull();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(currentStepId()).toBe("legend");
-  });
-
-  it("does not open the practice palette on Mod+K before the palette level", () => {
-    const isMac = resolveModifier("Mod") === "Meta";
-    render(<ShortcutShowcase />);
-    showStep("create");
-
-    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
-    expect(screen.queryByLabelText("Practice command palette")).toBeNull();
-    expect(currentStepId()).toBe("create");
-  });
-
-  it("Escape closes the practice palette and stays on the palette level", () => {
-    const isMac = resolveModifier("Mod") === "Meta";
-    render(<ShortcutShowcase />);
-    showStep("palette");
-
-    pressKey("k", isMac ? { metaKey: true } : { ctrlKey: true });
-    expect(screen.getByLabelText("Practice command palette")).toBeTruthy();
-
-    pressKey("Escape");
-    expect(screen.queryByLabelText("Practice command palette")).toBeNull();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(currentStepId()).toBe("palette");
-    expect(screen.getByText("When you forget, ask the palette")).toBeTruthy();
-  });
-
-  it("offers 'Skip to sign up' from the first step and leaves on the first click", async () => {
-    const user = userEvent.setup();
-    render(<ShortcutShowcase />);
-    act(() => shortcutShowcaseActions.replay());
-    expect(currentStepId()).toBe("create");
-
-    await user.click(screen.getByRole("button", { name: "Skip to sign up" }));
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-    expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
   });
 
-  it("Skip arms a confirm, then Leave practice exits", async () => {
-    const user = userEvent.setup();
+  it("replays from the end screen with a fresh board and score", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.startFromWelcome());
+    playWinningRun();
+    expect(screen.getByText("You cleared the week!")).toBeTruthy();
+
+    pressKey("p");
+    expect(screen.getByRole("timer")).toBeTruthy();
+    expect(screen.getByText(`Task 1/${RUN_TASKS.length}`)).toBeTruthy();
+    expect(
+      screen.getByText("0", { selector: "[data-game-score]" }),
+    ).toBeTruthy();
+  });
+
+  it("does not treat S as skip-to-signup; U leaves for signup mid-run", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
+    pressKey("Enter");
 
-    await user.click(screen.getByRole("button", { name: /^Skip$/ }));
+    pressKey("s");
+    pressKey("d");
+    pressKey("x");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
-    expect(screen.getByText("Press Esc again to leave practice.")).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: /^Leave practice$/ }));
+    pressKey("u");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-    expect(screen.queryByLabelText("Shortcut practice")).toBeNull();
   });
 
   it("Escape arms a confirm, then a second Escape leaves", () => {
@@ -575,14 +276,16 @@ describe("ShortcutShowcase", () => {
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
+    expect(screen.getByText("Press Esc again to leave practice.")).toBeTruthy();
 
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("a lesson keystroke cancels a pending skip", () => {
+  it("a game keystroke cancels a pending skip", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
+    pressKey("Enter");
 
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
@@ -590,21 +293,22 @@ describe("ShortcutShowcase", () => {
     pressKey("c");
     expect(useShortcutShowcaseStore.getState().skipPending).toBe(false);
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(screen.getByLabelText("Event title")).toBeTruthy();
   });
 
-  it("shows an inline hint on the create lesson", () => {
+  it("swallows the palette and legend triggers during the game", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
-    expect(
-      screen.getByText(
-        "C works on this sandbox. Clicks do not start an event.",
-      ),
-    ).toBeTruthy();
+    pressKey("Enter");
+
+    pressKey("k", modInit());
+    pressKey("?", { shiftKey: true });
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(screen.getByRole("timer")).toBeTruthy();
   });
 
-  it("resumes an in-progress lesson after welcome has been seen", () => {
+  it("re-offers an unfinished attempt from the how-to card after reload", () => {
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
+    // Legacy lesson step ids from before the game shipped count too.
     persistentBrowserStore.set(
       STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP,
       "eventJump",
@@ -612,46 +316,27 @@ describe("ShortcutShowcase", () => {
 
     render(<ShortcutShowcase />);
 
-    expect(currentStepId()).toBe("eventJump");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     expect(
-      screen.getByRole("heading", { name: "Pick a target or time" }),
+      screen.getByRole("button", { name: "Start the clock" }),
     ).toBeTruthy();
     expect(
-      screen.getByText("Tap the reveal key first, then a letter on an event."),
-    ).toBeTruthy();
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
   });
 
-  it("Escape inside the title editor closes the editor, not the showcase", async () => {
-    const user = userEvent.setup();
+  it("places the practice sidebar after the grid, matching the real calendar", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.replay());
 
-    pressKey("c");
-    expect(currentStepId()).toBe("create");
-
-    await user.type(screen.getByLabelText("Event title"), "Standup prep");
-    pressKey("Escape");
-    // Editor committed and closed; the showcase is still running, and the
-    // lesson hasn't advanced (only a title commit advances it).
-    expect(screen.queryByLabelText("Event title")).toBeNull();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(currentStepId()).toBe("create");
-    expect(screen.getByText("Standup prep")).toBeTruthy();
-
-    // C works again, reopening the editor for another try.
-    pressKey("c");
-    expect(screen.getByLabelText("Event title")).toBeTruthy();
-
-    pressKey("Escape");
-    expect(screen.queryByLabelText("Event title")).toBeNull();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-
-    pressKey("Escape");
-    pressKey("Escape");
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    const monday = screen.getByText("Mon");
+    const upNext = screen.getByText("Up next", { selector: "div" });
+    expect(
+      monday.compareDocumentPosition(upNext) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
   });
 
-  describe("the notifications offer", () => {
+  describe("the reminders offer on the end screen", () => {
     const installPort = (
       options?: Parameters<typeof createTestNotificationPort>[0],
     ) => {
@@ -663,174 +348,34 @@ describe("ShortcutShowcase", () => {
       return seam;
     };
 
-    it("asks the browser, then moves on once permission is granted", async () => {
+    it("asks the browser once, even when pressed twice", async () => {
       const user = userEvent.setup();
       const seam = installPort({ respondWith: "granted" });
       render(<ShortcutShowcase />);
-      showStep("notifications");
+      act(() => shortcutShowcaseActions.replay());
+      playWinningRun();
 
-      await user.click(
-        screen.getByRole("button", { name: /Enable notifications/ }),
-      );
-
-      expect(seam.mocks.requestPermission).toHaveBeenCalled();
-      await waitFor(() => {
-        expect(currentStepId()).toBe("graduation");
-      });
-    });
-
-    it("moves on even when the browser blocks the request", async () => {
-      const user = userEvent.setup();
-      installPort({ respondWith: "denied" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      await user.click(
-        screen.getByRole("button", { name: /Enable notifications/ }),
-      );
-
-      // A toast explains the block. Holding the user here would turn a
-      // one-key offer into a decision they cannot undo from this screen.
-      await waitFor(() => {
-        expect(currentStepId()).toBe("graduation");
-      });
-    });
-
-    it("takes the offer from the keyboard with Enter", async () => {
-      const seam = installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      pressKey("Enter");
-
-      expect(seam.mocks.requestPermission).toHaveBeenCalled();
-      await waitFor(() => {
-        expect(currentStepId()).toBe("graduation");
-      });
-    });
-
-    it("asks once, and lands on graduation, when Enter is pressed twice", async () => {
-      const seam = installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      // The step does not change until the prompt resolves, so both presses
-      // land on the offer. Advancing twice would skip graduation entirely.
-      pressKey("Enter");
-      pressKey("Enter");
+      const button = screen.getByRole("button", { name: /Enable reminders/ });
+      await user.click(button);
+      await user.click(button);
 
       await waitFor(() => {
-        expect(currentStepId()).toBe("graduation");
+        expect(seam.mocks.requestPermission).toHaveBeenCalledTimes(1);
       });
-      expect(seam.mocks.requestPermission).toHaveBeenCalledTimes(1);
+      // The end screen stays put: enabling reminders is not an exit.
       expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+      expect(screen.getByText("You cleared the week!")).toBeTruthy();
     });
 
-    it("does not double-advance when the offer is passed mid-prompt", async () => {
-      installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      pressKey("Enter");
-      pressKey("n");
-
-      await waitFor(() => {
-        expect(currentStepId()).toBe("graduation");
-      });
-      // Still on graduation, not finished out from under the user.
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    });
-
-    it("lets Enter activate whichever button has focus", async () => {
-      const user = userEvent.setup();
-      const seam = installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      // Enter is the step's shortcut, but a focused button owns it first:
-      // asking to leave must not raise a permission prompt instead.
-      screen.getByRole("button", { name: /^Skip$/ }).focus();
-      await user.keyboard("{Enter}");
-      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-      expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
-
-      await user.keyboard("{Enter}");
-      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-    });
-
-    it("does not raise the prompt from a held Enter carried in from typing", () => {
-      const seam = installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      // Auto-repeat from the Enter that committed the practice title lands
-      // here once the editor unmounts.
-      pressKey("Enter", { repeat: true });
-
-      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
-      expect(currentStepId()).toBe("notifications");
-    });
-
-    it("'Not now' passes without ever prompting", async () => {
-      const user = userEvent.setup();
-      const seam = installPort({ respondWith: "granted" });
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      await user.click(screen.getByRole("button", { name: /Not now/ }));
-
-      expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
-      expect(currentStepId()).toBe("graduation");
-    });
-
-    it("leaves the practice keys behind on the create lesson", async () => {
-      const user = userEvent.setup();
-      installPort();
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      // U belongs to a button this step does not render; C drives a
-      // practice board this step is not teaching.
-      await user.keyboard("d");
-      await user.keyboard("u");
-      await user.keyboard("c");
-      expect(currentStepId()).toBe("notifications");
-      expect(screen.queryByLabelText("Event title")).toBeNull();
-    });
-
-    it("says so, and still lets the user pass, where the API is missing", () => {
+    it("offers no reminders button where the API is missing", () => {
       installPort({ supported: false });
       render(<ShortcutShowcase />);
-      showStep("notifications");
+      act(() => shortcutShowcaseActions.replay());
+      playWinningRun();
 
-      expect(screen.getByText("Not supported in this browser")).toBeTruthy();
       expect(
-        screen.queryByRole("button", { name: /Enable notifications/ }),
+        screen.queryByRole("button", { name: /Enable reminders/ }),
       ).toBeNull();
-
-      pressKey("n");
-      expect(currentStepId()).toBe("graduation");
-    });
-
-    it("carries no level chip, because it teaches no key", () => {
-      installPort();
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      expect(screen.queryByText(/^Level \d+\/\d+$/)).toBeNull();
-    });
-
-    it("still offers the door out to the calendar", () => {
-      installPort();
-      render(<ShortcutShowcase />);
-      showStep("notifications");
-
-      pressKey("Escape");
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-      pressKey("Escape");
-      expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     });
   });
 });

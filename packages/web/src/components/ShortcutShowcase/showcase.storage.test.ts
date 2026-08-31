@@ -2,8 +2,8 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   clearShowcaseProgress,
-  readShowcaseProgress,
-  writeShowcaseProgress,
+  hasShowcaseInProgress,
+  markShowcaseInProgress,
 } from "@web/components/ShortcutShowcase/showcase.storage";
 import { afterEach, describe, expect, it } from "bun:test";
 
@@ -12,21 +12,23 @@ describe("showcase progress storage", () => {
     persistentBrowserStore.remove(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP);
   });
 
-  it("round-trips a step id and clears it", () => {
-    expect(readShowcaseProgress()).toBeNull();
+  it("round-trips the in-progress marker and clears it", () => {
+    expect(hasShowcaseInProgress()).toBe(false);
 
-    writeShowcaseProgress("create");
-    expect(readShowcaseProgress()).toBe("create");
-    expect(
-      persistentBrowserStore.get(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP),
-    ).toBe("create");
+    markShowcaseInProgress();
+    expect(hasShowcaseInProgress()).toBe(true);
 
     clearShowcaseProgress();
-    expect(readShowcaseProgress()).toBeNull();
+    expect(hasShowcaseInProgress()).toBe(false);
+  });
+
+  it("treats a legacy lesson step id as an unfinished attempt", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP, "create");
+    expect(hasShowcaseInProgress()).toBe(true);
   });
 
   it("treats an empty stored value as no progress", () => {
     persistentBrowserStore.set(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP, "");
-    expect(readShowcaseProgress()).toBeNull();
+    expect(hasShowcaseInProgress()).toBe(false);
   });
 });

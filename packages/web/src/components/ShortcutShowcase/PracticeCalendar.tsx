@@ -6,6 +6,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
+import { type GameSlot } from "@web/components/ShortcutShowcase/game.tasks";
 import {
   type PracticeEventBlock,
   type PracticeState,
@@ -13,12 +14,14 @@ import {
   SHOWCASE_GRID_END_HOUR,
   SHOWCASE_GRID_START_HOUR,
 } from "@web/components/ShortcutShowcase/practice.state";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { eventEdgeFocusShadow } from "@web/grid/components/calendar-accent.util";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
 const TOTAL_MIN = (SHOWCASE_GRID_END_HOUR - SHOWCASE_GRID_START_HOUR) * 60;
+
+/** The lock flash retriggers by remounting the block with a new seq. */
+export type PracticeFlash = { eventId: string; seq: number };
 
 // Same format constants the real grid uses, so the first calendar a new
 // user sees reads exactly like the one they graduate into.
@@ -28,17 +31,22 @@ const formatHour = (hour: number) =>
 const formatTime = (minutes: number) =>
   dayjs().startOf("day").add(minutes, "minute").format(HOURS_AM_FORMAT);
 
+const slotGeometry = (startMin: number, endMin: number) => ({
+  top: `${((startMin - GRID_START_MIN) / TOTAL_MIN) * 100}%`,
+  height: `${((endMin - startMin) / TOTAL_MIN) * 100}%`,
+});
+
 const PracticeBlock: FC<{
   block: PracticeEventBlock;
   state: PracticeState;
-  onTitleCommit: (title: string) => void;
-}> = ({ block, state, onTitleCommit }) => {
+  flashing: boolean;
+  pulsing: boolean;
+}> = ({ block, state, flashing, pulsing }) => {
   const { base } = useEventPalette(block.color);
   const contentColor = theme.getContrastText(base);
   const isFocused = state.focusedId === block.id;
-  const isEditing = state.editor?.eventId === block.id;
+  const isPlacing = state.placingId === block.id;
   const focusedEdge = isFocused ? state.edge : null;
-  const top = ((block.startMin - GRID_START_MIN) / TOTAL_MIN) * 100;
   const height = ((block.endMin - block.startMin) / TOTAL_MIN) * 100;
 
   const focusShadow = isFocused
@@ -59,51 +67,25 @@ const PracticeBlock: FC<{
 
   return (
     <div
-      className="absolute inset-x-1 rounded-md px-2 py-1 text-xs transition-all duration-200"
+      className={`absolute inset-x-1 rounded-md px-2 py-1 text-xs transition-all duration-200 ${
+        flashing ? "c-game-lock-flash" : ""
+      } ${pulsing && isFocused ? "c-game-focus-pulse" : ""} ${
+        isPlacing ? "opacity-90" : ""
+      }`}
       data-practice-event-id={block.id}
       data-practice-focused={isFocused ? "" : undefined}
+      data-practice-placing={isPlacing ? "" : undefined}
       data-edge-focus={edgeFocusAttr}
       style={{
-        top: `${top}%`,
-        height: `${height}%`,
+        ...slotGeometry(block.startMin, block.endMin),
         backgroundColor: base,
         color: contentColor,
         boxShadow: [focusShadow, edgeFocusShadow].filter(Boolean).join(", "),
       }}
     >
-      {isEditing ? (
-        <input
-          // biome-ignore lint/a11y/noAutofocus: keyboard lesson; focus must land in the field the keystroke opened
-          autoFocus
-          aria-label="Event title"
-          className="w-full bg-transparent font-medium outline-none placeholder:opacity-60"
-          data-practice-title-input=""
-          defaultValue={block.title}
-          placeholder="Add a title"
-          style={{ color: contentColor }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.stopPropagation();
-              onTitleCommit(event.currentTarget.value);
-            }
-          }}
-        />
-      ) : (
-        <div className="flex items-start justify-between gap-1">
-          <div className="min-w-0 truncate font-medium">
-            {block.title || "New event"}
-          </div>
-          {state.jumpHintsVisible && (
-            <ShortcutHint className="shrink-0">
-              {block.jumpKey.toUpperCase()}
-            </ShortcutHint>
-          )}
-          {state.editArmed && isFocused && (
-            <ShortcutHint className="shrink-0">T</ShortcutHint>
-          )}
-        </div>
-      )}
+      <div className="min-w-0 truncate font-medium">
+        {block.title || "New event"}
+      </div>
       {height > 8 && (
         <div className="truncate opacity-80">
           {formatTime(block.startMin)} to {formatTime(block.endMin)}
@@ -115,12 +97,10 @@ const PracticeBlock: FC<{
 
 /**
  * Static month-picker chrome so the sandbox reads like the real sidebar.
- * Not interactive: the lesson only needs a place to park a jump chip.
- * Cells are unlabeled so they cannot collide with event jump letters.
+ * Not interactive: it only exists so the stage matches the calendar the
+ * player graduates into.
  */
-const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
-  showPageJumpHints,
-}) => {
+const PracticeSidebar: FC = () => {
   const monthLabel = dayjs().format("MMMM");
 
   return (
@@ -129,9 +109,6 @@ const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
       className="relative flex w-28 shrink-0 flex-col gap-3 pl-3"
       data-practice-jump="sidebar"
     >
-      {showPageJumpHints && (
-        <ShortcutHint className="absolute top-1 left-1 z-10">2</ShortcutHint>
-      )}
       <div className="font-medium text-text-muted text-xs">{monthLabel}</div>
       <div className="h-20 rounded-md bg-surface-overlay" />
       <div className="rounded-md bg-surface-overlay px-2 py-1.5 text-[10px] text-text-muted">
@@ -145,14 +122,16 @@ const PracticeSidebar: FC<{ showPageJumpHints: boolean }> = ({
  * The showcase's fake grid: day columns, hour lines, time-positioned
  * blocks, and a right-hand sidebar matching the real calendar. Deliberately
  * not the real TimedGrid, which drags in stores and scroll plumbing the
- * lesson does not need; geometry is plain percentage math off the practice
- * state.
+ * game does not need; geometry is plain percentage math off the practice
+ * state. The dashed target slot is the game's "ghost piece".
  */
 export const PracticeCalendar: FC<{
   state: PracticeState;
-  onTitleCommit: (title: string) => void;
-  showPageJumpHints?: boolean;
-}> = ({ state, onTitleCommit, showPageJumpHints = false }) => {
+  targetSlot?: GameSlot | null;
+  flash?: PracticeFlash | null;
+  /** Pulse the focused block so an auto-focused task target stands out. */
+  pulseFocused?: boolean;
+}> = ({ state, targetSlot = null, flash = null, pulseFocused = false }) => {
   const hours: number[] = [];
   for (let h = SHOWCASE_GRID_START_HOUR; h < SHOWCASE_GRID_END_HOUR; h += 1) {
     hours.push(h);
@@ -191,11 +170,6 @@ export const PracticeCalendar: FC<{
             {DAY_LABELS[dayIndex]}
           </div>
           <div className="relative flex-1">
-            {showPageJumpHints && dayIndex === 0 && (
-              <ShortcutHint className="absolute top-2 left-1 z-10">
-                1
-              </ShortcutHint>
-            )}
             {hours.map((hour) => (
               <div
                 key={hour}
@@ -205,21 +179,34 @@ export const PracticeCalendar: FC<{
                 }}
               />
             ))}
+            {targetSlot && targetSlot.dayIndex === dayIndex && (
+              <div
+                aria-hidden
+                className="absolute inset-x-1 rounded-md border-2 border-border-strong border-dashed bg-surface-overlay/40"
+                data-practice-target-slot=""
+                style={slotGeometry(targetSlot.startMin, targetSlot.endMin)}
+              />
+            )}
             {state.events
               .filter((block) => block.dayIndex === dayIndex)
               .map((block) => (
                 <PracticeBlock
-                  key={block.id}
+                  key={
+                    flash?.eventId === block.id
+                      ? `${block.id}-flash-${flash.seq}`
+                      : block.id
+                  }
                   block={block}
                   state={state}
-                  onTitleCommit={onTitleCommit}
+                  flashing={flash?.eventId === block.id}
+                  pulsing={pulseFocused}
                 />
               ))}
           </div>
         </div>
       ))}
 
-      <PracticeSidebar showPageJumpHints={showPageJumpHints} />
+      <PracticeSidebar />
     </div>
   );
 };

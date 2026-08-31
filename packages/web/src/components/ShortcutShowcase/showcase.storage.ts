@@ -25,16 +25,24 @@ export function markShortcutShowcaseSeen(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
 }
 
-/** Last in-progress step id, or null when there is nothing to resume. */
-export function readShowcaseProgress(): string | null {
-  if (!persistentBrowserStore.isAvailable()) return null;
-  return (
-    persistentBrowserStore.get(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP) || null
+/**
+ * A 90-second game has no mid-run resume point: any stored value under the
+ * old step key — the sentinel below, or a lesson step id written before the
+ * game shipped — just means "an unfinished attempt exists", and a reload
+ * re-offers the game from its how-to card.
+ */
+export function hasShowcaseInProgress(): boolean {
+  if (!persistentBrowserStore.isAvailable()) return false;
+  return Boolean(
+    persistentBrowserStore.get(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP),
   );
 }
 
-export function writeShowcaseProgress(stepId: string): void {
-  persistentBrowserStore.set(STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP, stepId);
+export function markShowcaseInProgress(): void {
+  persistentBrowserStore.set(
+    STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP,
+    "in-progress",
+  );
 }
 
 export function clearShowcaseProgress(): void {

@@ -15,6 +15,7 @@ import {
 } from "@web/billing/checkout-celebration.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { usePlanChangeToasts } from "@web/billing/usePlanChangeToasts";
+import { isMobileOS } from "@web/common/utils/device/device.util";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
@@ -26,7 +27,6 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
-import { isMobileOS } from "@web/common/utils/device/device.util";
 import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";

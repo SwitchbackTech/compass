@@ -1,19 +1,26 @@
 import { create } from "zustand";
 import { track } from "@web/auth/posthog/track";
-import { SHOWCASE_STEP_IDS } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   clearShowcaseProgress,
   consumePendingShowcaseOffer,
   hasSeenShortcutShowcase,
+  hasShowcaseInProgress,
   markShortcutShowcaseSeen,
+  markShowcaseInProgress,
   markShowcaseOfferPending,
-  readShowcaseProgress,
-  writeShowcaseProgress,
 } from "@web/components/ShortcutShowcase/showcase.storage";
+
+/** How the practice arena was opened, so the activation funnel can tell them apart. */
+export type ShowcaseEntry = "welcome" | "post_signup" | "palette";
+
+/** Where a user who left early went next, so the funnel can tell them apart. */
+export type ShowcaseExit = "calendar" | "signup";
+
+/** Run details the takeover attaches to funnel events (score, tasks, phase). */
+export type ShowcaseEventContext = Record<string, boolean | number | string>;
 
 export type ShortcutShowcaseState = {
   isActive: boolean;
-  stepIndex: number;
   /**
    * True once markSeen ran this session, so components re-render when the
    * flag flips — a localStorage write notifies nobody. Storage stays the
@@ -22,35 +29,20 @@ export type ShortcutShowcaseState = {
   hasSeenShowcase: boolean;
   /** First Skip/Esc arms leave; the second actually skips. */
   skipPending: boolean;
+  /** Null for a resumed attempt: same attempt, not a new activation. */
+  entry: ShowcaseEntry | null;
 };
 
 export const initialShortcutShowcaseState: ShortcutShowcaseState = {
   isActive: false,
-  stepIndex: 0,
   hasSeenShowcase: false,
   skipPending: false,
+  entry: null,
 };
-
-/** Where a user who left early went next, so the funnel can tell them apart. */
-export type ShowcaseExit = "calendar" | "signup";
 
 export const useShortcutShowcaseStore = create<ShortcutShowcaseState>()(() => ({
   ...initialShortcutShowcaseState,
 }));
-
-export const stepIdAt = (index: number) =>
-  SHOWCASE_STEP_IDS[index] ?? SHOWCASE_STEP_IDS[0];
-
-const persistStep = (index: number) => {
-  writeShowcaseProgress(stepIdAt(index));
-};
-
-const stepIndexForSavedId = (saved: string): number => {
-  const index = SHOWCASE_STEP_IDS.indexOf(
-    saved as (typeof SHOWCASE_STEP_IDS)[number],
-  );
-  return index === -1 ? 0 : index;
-};
 
 /** Persist the seen flag and wake everyone reading it. */
 const markSeen = () => {
@@ -64,25 +56,18 @@ const endShowcase = () => {
   markSeen();
   useShortcutShowcaseStore.setState({
     isActive: false,
-    stepIndex: 0,
     skipPending: false,
+    entry: null,
   });
 };
 
-/** How the practice arena was opened, so the activation funnel can tell them apart. */
-export type ShowcaseEntry = "welcome" | "post_signup" | "palette";
-
-/** Palette replay skips the intro pep talk and opens the first lesson. */
-const PALETTE_START_INDEX = SHOWCASE_STEP_IDS.indexOf("create");
-
 const activate = (entry: ShowcaseEntry) => {
-  const stepIndex = entry === "palette" ? PALETTE_START_INDEX : 0;
   useShortcutShowcaseStore.setState({
     isActive: true,
-    stepIndex,
     skipPending: false,
+    entry,
   });
-  persistStep(stepIndex);
+  markShowcaseInProgress();
   track("shortcut_showcase_started", { entry });
 };
 
@@ -91,48 +76,33 @@ export const shortcutShowcaseActions = {
   startFromWelcome: () => {
     activate("welcome");
   },
-  /** Palette re-entry: always allowed, always from the first lesson. */
+  /** Palette re-entry: always allowed. The how-to card is one Enter long. */
   replay: () => {
     activate("palette");
   },
   /**
-   * Restore an unfinished run after reload. Does not fire started: this is
-   * the same attempt, not a new activation.
+   * Re-offer an unfinished attempt after reload, from the how-to card. Does
+   * not fire started: this is the same attempt, not a new activation.
    */
   resumeIfInProgress: () => {
     const { isActive } = useShortcutShowcaseStore.getState();
     if (isActive) return;
     if (hasSeenShortcutShowcase()) return;
-    const saved = readShowcaseProgress();
-    if (!saved) return;
-    const stepIndex = stepIndexForSavedId(saved);
-    // Rewrite retired/unknown ids to the resolved step so reload stays stable.
-    if (stepIdAt(stepIndex) !== saved) persistStep(stepIndex);
+    if (!hasShowcaseInProgress()) return;
     useShortcutShowcaseStore.setState({
       isActive: true,
-      stepIndex,
       skipPending: false,
+      entry: null,
     });
   },
   /** Graduation persists the flag before its reveal animation finishes. */
   markSeen,
-  advance: () => {
-    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
-    if (!isActive) return;
-    track("shortcut_showcase_step_completed", { step: stepIdAt(stepIndex) });
-    if (stepIndex >= SHOWCASE_STEP_IDS.length - 1) {
-      shortcutShowcaseActions.finish();
-      return;
-    }
-    const nextIndex = stepIndex + 1;
-    useShortcutShowcaseStore.setState({
-      stepIndex: nextIndex,
-      skipPending: false,
-    });
-    persistStep(nextIndex);
+  /** The run reached its end screen; context carries outcome and score. */
+  recordRunFinished: (context: ShowcaseEventContext) => {
+    track("shortcut_showcase_finished", context);
   },
+  /** Leaving from the end screen: the finished event already fired. */
   finish: () => {
-    track("shortcut_showcase_finished");
     endShowcase();
   },
   /**
@@ -140,11 +110,14 @@ export const shortcutShowcaseActions = {
    * Escape does not dump a first-time user onto the calendar. Skip to sign
    * up still calls skip() immediately: that handoff is intentional.
    */
-  requestSkip: (exit: ShowcaseExit = "calendar") => {
+  requestSkip: (
+    exit: ShowcaseExit = "calendar",
+    context: ShowcaseEventContext = {},
+  ) => {
     const { isActive, skipPending } = useShortcutShowcaseStore.getState();
     if (!isActive) return;
     if (skipPending) {
-      shortcutShowcaseActions.skip(exit);
+      shortcutShowcaseActions.skip(exit, context);
       return;
     }
     useShortcutShowcaseStore.setState({ skipPending: true });
@@ -157,10 +130,13 @@ export const shortcutShowcaseActions = {
    * Leave immediately and fire skipped. Used by Skip to sign up and by the
    * second Skip/Esc after requestSkip arms the confirm.
    */
-  skip: (exit: ShowcaseExit = "calendar") => {
-    const { isActive, stepIndex } = useShortcutShowcaseStore.getState();
+  skip: (
+    exit: ShowcaseExit = "calendar",
+    context: ShowcaseEventContext = {},
+  ) => {
+    const { isActive } = useShortcutShowcaseStore.getState();
     if (!isActive) return;
-    track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex), exit });
+    track("shortcut_showcase_skipped", { ...context, exit });
     endShowcase();
   },
   /** Welcome-modal signup: redeem the practice after signup completes. */
@@ -178,11 +154,11 @@ export const shortcutShowcaseActions = {
 export const selectShowcaseActive = (state: ShortcutShowcaseState) =>
   state.isActive;
 
-export const selectShowcaseStepIndex = (state: ShortcutShowcaseState) =>
-  state.stepIndex;
-
 export const selectHasSeenShowcase = (state: ShortcutShowcaseState) =>
   state.hasSeenShowcase;
 
 export const selectSkipPending = (state: ShortcutShowcaseState) =>
   state.skipPending;
+
+export const selectShowcaseEntry = (state: ShortcutShowcaseState) =>
+  state.entry;
