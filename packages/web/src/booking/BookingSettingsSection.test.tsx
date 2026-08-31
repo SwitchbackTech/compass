@@ -135,6 +135,90 @@ describe("BookingSettingsSection", () => {
     );
   });
 
+  it("saves again after the first save, sending only PUT input keys", async () => {
+    const user = userEvent.setup({ delay: null });
+    const slug = "hostuser";
+    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const savedBodies: Record<string, unknown>[] = [];
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    // The saved-page shape, which is what GET really returns once a slug
+    // exists. Seeding the form from this used to poison every later save:
+    // the response-only keys rode along into the strict PUT schema.
+    const savedPage = {
+      id: createObjectIdString(),
+      slug,
+      hostUserId: createObjectIdString(),
+      enabled: false,
+      durationMinutes: 45,
+      destinationCalendarId: writableCalendar.id,
+      blockingCalendarIds: [writableCalendar.id],
+      timeZone: "America/New_York",
+      weeklyAvailability: [],
+      minNoticeHours: 4,
+      maxHorizonDays: 60,
+      bufferMinutes: null,
+      maxBookingsPerDay: null,
+      guestsCanInviteOthers: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      bookingUrl,
+    };
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) => res(ctx.json(savedPage))),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = (await req.json()) as Record<string, unknown>;
+        savedBodies.push(body);
+        return res(ctx.json({ ...savedPage, ...body }));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.selectOptions(screen.getByLabelText("Duration"), "30");
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    await waitFor(() => {
+      expect(savedBodies).toHaveLength(1);
+    });
+
+    await user.selectOptions(screen.getByLabelText("Duration"), "15");
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    await waitFor(() => {
+      expect(savedBodies).toHaveLength(2);
+    });
+    expect(savedBodies[1]).toMatchObject({ durationMinutes: 15 });
+    expect(Object.keys(savedBodies[1] ?? {}).sort()).toEqual([
+      "blockingCalendarIds",
+      "bufferMinutes",
+      "destinationCalendarId",
+      "durationMinutes",
+      "enabled",
+      "guestsCanInviteOthers",
+      "maxBookingsPerDay",
+      "maxHorizonDays",
+      "minNoticeHours",
+      "timeZone",
+      "weeklyAvailability",
+    ]);
+  });
+
   it("blocks enable without a destination calendar", async () => {
     const user = userEvent.setup({ delay: null });
 

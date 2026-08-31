@@ -77,3 +77,31 @@ export function weekdayLabel(weekday: WeeklyAvailabilityInterval["weekday"]) {
 }
 
 export const ISO_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+/**
+ * The PUT body, and only the PUT body.
+ *
+ * `GET /booking/page` answers with the saved page once a slug exists, which
+ * carries `id`, `slug`, `hostUserId`, `createdAt`, `updatedAt` and
+ * `bookingUrl` on top of the input fields. `AdminPutBookingPageInputSchema` is
+ * a `z.strictObject`, so spreading that response into form state made every
+ * save after the first throw on the unknown keys before any request went out.
+ * Pick the fields explicitly so a response-only key can never ride along.
+ */
+export function toBookingPageInput(
+  page: AdminPutBookingPageInput,
+): AdminPutBookingPageInput {
+  return {
+    enabled: page.enabled,
+    durationMinutes: page.durationMinutes,
+    destinationCalendarId: page.destinationCalendarId,
+    blockingCalendarIds: page.blockingCalendarIds,
+    timeZone: page.timeZone,
+    weeklyAvailability: page.weeklyAvailability,
+    minNoticeHours: page.minNoticeHours,
+    maxHorizonDays: page.maxHorizonDays,
+    bufferMinutes: page.bufferMinutes,
+    maxBookingsPerDay: page.maxBookingsPerDay,
+    guestsCanInviteOthers: page.guestsCanInviteOthers,
+  };
+}

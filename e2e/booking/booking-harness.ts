@@ -182,6 +182,15 @@ export async function prepareSignedInBookingSettingsPage(
     guestsCanInviteOthers: true,
   };
 
+  const savedPageFields = {
+    id: "000000000000000000000001",
+    slug,
+    hostUserId: "000000000000000000000002",
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+    bookingUrl,
+  };
+
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -196,7 +205,11 @@ export async function prepareSignedInBookingSettingsPage(
     }
 
     if (path.endsWith("/api/booking/page") && request.method() === "GET") {
-      return route.fulfill(json(bookingPagePayload));
+      // The saved-page shape, which is what the real GET returns once a slug
+      // exists. Returning the bare input shape here hid a bug where the
+      // response-only keys rode into the strict PUT schema and killed every
+      // save after the first.
+      return route.fulfill(json({ ...bookingPagePayload, ...savedPageFields }));
     }
 
     if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
@@ -205,13 +218,8 @@ export async function prepareSignedInBookingSettingsPage(
       return route.fulfill(
         json({
           ...bookingPagePayload,
+          ...savedPageFields,
           ...body,
-          id: "000000000000000000000001",
-          slug,
-          hostUserId: "000000000000000000000002",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          bookingUrl,
         }),
       );
     }
