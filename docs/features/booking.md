@@ -83,8 +83,8 @@ focus uses the accent ring. Intended Tab order on the picker:
 3. Slot buttons for that day. Enter/Space opens **Your details** and
    moves focus to that heading. **Skip to your details** is the first
    tab stop on that step.
-4. Name, email, notes, **Confirm booking**. **Change time** returns
-   focus to **Pick a time**.
+4. **Change time**, then name, email, notes, **Confirm booking**.
+   **Change time** returns focus to **Pick a time**.
 5. After confirm, `/book/confirmed/:id` focuses **You are booked with
    {host}**. Unknown, cancelled, and load-error states focus their
    headings.
