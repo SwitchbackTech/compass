@@ -1,5 +1,8 @@
 import { MongoServerError, type ObjectId } from "mongodb";
-import { computeBookingSlots } from "@core/booking/compute-booking-slots";
+import {
+  type ComputeBookingSlotsInput,
+  computeBookingSlots,
+} from "@core/booking/compute-booking-slots";
 import {
   BookingDurationMinutesSchema,
   BookingSlotsQuerySchema,
@@ -15,7 +18,10 @@ import {
   toPublicBookingPage,
 } from "@core/types/booking.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
-import { BUSY_QUERY_MAX_WINDOW_MS } from "@core/types/sync/availability.contracts";
+import {
+  BUSY_QUERY_MAX_WINDOW_MS,
+  type BusyAvailabilityResponse,
+} from "@core/types/sync/availability.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { bookingError } from "@backend/booking/booking.error";
 import {
@@ -86,6 +92,37 @@ const parseSlotsQuery = (rawQuery: unknown) => {
 const slotEndForStart = (slotStart: Date, durationMinutes: number): Date =>
   new Date(slotStart.getTime() + durationMinutes * 60_000);
 
+/**
+ * Every page-derived knob the slot engine reads, in one place.
+ *
+ * `getSlots` and `createReservation` must agree exactly on what the engine is
+ * told, or a slot the guest was offered could be rejected (or, worse, accepted)
+ * by the re-check. Building both inputs here removes the chance of the two
+ * eleven-field literals drifting apart.
+ */
+const slotEngineInputForPage = (
+  page: BookingPageRecord,
+  availability: BusyAvailabilityResponse,
+  confirmedReservationStarts: readonly Date[],
+  window: { now: Date; windowStart: Date; windowEnd: Date },
+): ComputeBookingSlotsInput => ({
+  timeZone: page.timeZone,
+  durationMinutes: page.durationMinutes,
+  weeklyAvailability: page.weeklyAvailability,
+  minNoticeHours: page.minNoticeHours,
+  maxHorizonDays: page.maxHorizonDays,
+  bufferMinutes: page.bufferMinutes,
+  maxBookingsPerDay: page.maxBookingsPerDay,
+  busyIntervals: availability.intervals.map((interval) => ({
+    start: new Date(interval.start),
+    end: new Date(interval.end),
+  })),
+  confirmedReservationStarts,
+  now: window.now,
+  windowStart: window.windowStart,
+  windowEnd: window.windowEnd,
+});
+
 export class PublicBookingService {
   constructor(private readonly calendarBookingPort?: CalendarBookingPort) {}
 
@@ -139,23 +176,13 @@ export class PublicBookingService {
 
     const confirmedStarts =
       await bookingReservationRepository.listConfirmedStartsByPageId(page._id);
-    const slotStarts = computeBookingSlots({
-      timeZone: page.timeZone,
-      durationMinutes: page.durationMinutes,
-      weeklyAvailability: page.weeklyAvailability,
-      minNoticeHours: page.minNoticeHours,
-      maxHorizonDays: page.maxHorizonDays,
-      bufferMinutes: page.bufferMinutes,
-      maxBookingsPerDay: page.maxBookingsPerDay,
-      busyIntervals: availability.intervals.map((interval) => ({
-        start: new Date(interval.start),
-        end: new Date(interval.end),
-      })),
-      confirmedReservationStarts: confirmedStarts,
-      now,
-      windowStart,
-      windowEnd,
-    });
+    const slotStarts = computeBookingSlots(
+      slotEngineInputForPage(page, availability, confirmedStarts, {
+        now,
+        windowStart,
+        windowEnd,
+      }),
+    );
 
     return BookingSlotsResponseSchema.parse({
       bookable: true,
@@ -203,23 +230,13 @@ export class PublicBookingService {
     const confirmedStarts =
       await bookingReservationRepository.listConfirmedStartsByPageId(page._id);
     const allowedStarts = new Set(
-      computeBookingSlots({
-        timeZone: page.timeZone,
-        durationMinutes: page.durationMinutes,
-        weeklyAvailability: page.weeklyAvailability,
-        minNoticeHours: page.minNoticeHours,
-        maxHorizonDays: page.maxHorizonDays,
-        bufferMinutes: page.bufferMinutes,
-        maxBookingsPerDay: page.maxBookingsPerDay,
-        busyIntervals: availability.intervals.map((interval) => ({
-          start: new Date(interval.start),
-          end: new Date(interval.end),
-        })),
-        confirmedReservationStarts: confirmedStarts,
-        now,
-        windowStart: slotStart,
-        windowEnd: slotEnd,
-      }).map((start) => Date.parse(start)),
+      computeBookingSlots(
+        slotEngineInputForPage(page, availability, confirmedStarts, {
+          now,
+          windowStart: slotStart,
+          windowEnd: slotEnd,
+        }),
+      ).map((start) => Date.parse(start)),
     );
 
     if (!allowedStarts.has(slotStart.getTime())) {

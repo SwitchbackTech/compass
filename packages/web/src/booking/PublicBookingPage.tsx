@@ -21,7 +21,6 @@ import {
   findNextAvailableBookingDate,
   formatBookingDateKey,
   formatBookingMonthKey,
-  formatBookingSlotDateKey,
   formatDurationMinutes,
   listBookingAvailableDateKeysInMonth,
   shiftBookingMonthKey,
@@ -173,7 +172,7 @@ export function PublicBookingPage() {
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
-    setSelectedDateKey(formatBookingSlotDateKey(slotStart, guestTimeZone));
+    setSelectedDateKey(formatBookingDateKey(slotStart, guestTimeZone));
     setConflictMessage(null);
     setStep("details");
   };
@@ -182,7 +181,7 @@ export function PublicBookingPage() {
     setSelectedDateKey(dateKey);
     if (
       selectedSlotStart &&
-      formatBookingSlotDateKey(selectedSlotStart, guestTimeZone) !== dateKey
+      formatBookingDateKey(selectedSlotStart, guestTimeZone) !== dateKey
     ) {
       setSelectedSlotStart(null);
     }

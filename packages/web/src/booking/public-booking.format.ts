@@ -133,18 +133,6 @@ export function formatBookingSlotTime(
   }).format(new Date(slotStart));
 }
 
-export function formatBookingSlotDateKey(
-  slotStart: string,
-  timeZone: string,
-): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(slotStart));
-}
-
 export function formatBookingSlotDateHeading(
   slotStart: string,
   timeZone: string,
@@ -164,6 +152,11 @@ export function formatDurationMinutes(minutes: number): string {
   return `${minutes} minutes`;
 }
 
+/**
+ * The one YYYY-MM-DD-in-a-timezone key. Slot starts used to go through a
+ * separate `Intl` "en-CA" formatter, which is a second way to be right about
+ * the same thing, and so a second thing to keep right.
+ */
 export function formatBookingDateKey(
   instant: Date | string | Dayjs,
   timeZone: string,
@@ -177,7 +170,7 @@ export function collectBookingAvailableDateKeys(
 ): Set<string> {
   const keys = new Set<string>();
   for (const slot of slots) {
-    keys.add(formatBookingSlotDateKey(slot.slotStart, timeZone));
+    keys.add(formatBookingDateKey(slot.slotStart, timeZone));
   }
   return keys;
 }
