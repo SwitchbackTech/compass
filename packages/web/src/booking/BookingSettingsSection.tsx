@@ -69,6 +69,29 @@ const isSavedBookingPage = (
   page: AdminPutBookingPageInput | AdminGetBookingPageResponse,
 ): page is AdminGetBookingPageResponse => "bookingUrl" in page;
 
+// Clearing a number input yields "", and Number("") is 0 - which the strict
+// PUT schema rejects after the save click with no field pointer. Hold the raw
+// text and only write parsed values into the form, so an empty field becomes
+// an inline error instead of a dead Save button mystery.
+const parseBookingCount = (
+  raw: string,
+  { min, max }: { min: number; max: number },
+): number | null => {
+  if (raw.trim() === "") {
+    return null;
+  }
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    return null;
+  }
+  return value;
+};
+
+// Bounds mirror AdminPutBookingPageInputSchema (nonnegative notice; 1-60 day
+// horizon). Notice has no schema max, so any nonnegative integer parses.
+const MIN_NOTICE_BOUNDS = { min: 0, max: Number.MAX_SAFE_INTEGER };
+const HORIZON_BOUNDS = { min: 1, max: 60 };
+
 const buildInitialForm = (
   page: HostBookingPageResponse | undefined,
   effectiveTimeZone: string,
@@ -161,7 +184,18 @@ export function BookingSettingsSection({
   );
   const [enableError, setEnableError] = useState<string | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
+  const [minNoticeText, setMinNoticeText] = useState(() =>
+    String(form.minNoticeHours),
+  );
+  const [horizonText, setHorizonText] = useState(() =>
+    String(form.maxHorizonDays),
+  );
   const sectionRef = useRef<HTMLFieldSetElement>(null);
+
+  const minNoticeInvalid =
+    parseBookingCount(minNoticeText, MIN_NOTICE_BOUNDS) === null;
+  const horizonInvalid =
+    parseBookingCount(horizonText, HORIZON_BOUNDS) === null;
 
   // ignoreAppLock because the Settings modal itself holds the lock, the same
   // reason useSettingsShortcuts sets it. Scoped to "booking" so the which-key
@@ -192,7 +226,14 @@ export function BookingSettingsSection({
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
     seededPageRef.current = serverPage;
-    setForm(buildInitialForm(serverPage, effectiveTimeZone, writableCalendars));
+    const seeded = buildInitialForm(
+      serverPage,
+      effectiveTimeZone,
+      writableCalendars,
+    );
+    setForm(seeded);
+    setMinNoticeText(String(seeded.minNoticeHours));
+    setHorizonText(String(seeded.maxHorizonDays));
   }, [effectiveTimeZone, serverPage, writableCalendars]);
 
   if (!isGoogleHealthy) {
@@ -260,6 +301,10 @@ export function BookingSettingsSection({
   const handleSave = () => {
     if (!areHoursValid) {
       setEnableError("Fix the weekly hours that could not be read.");
+      return;
+    }
+    if (minNoticeInvalid || horizonInvalid) {
+      setEnableError("Fix the highlighted number fields before saving.");
       return;
     }
     if (form.enabled && !canEnableBookingPage(form, writableCalendars)) {
@@ -447,15 +492,35 @@ export function BookingSettingsSection({
           </BookingFieldLabel>
           <input
             {...bookingFieldAttrs("notice")}
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
+            aria-describedby={
+              minNoticeInvalid ? "booking-min-notice-error" : undefined
+            }
+            aria-invalid={minNoticeInvalid || undefined}
+            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
             id="booking-min-notice"
             min={0}
-            onChange={(event) =>
-              updateForm({ minNoticeHours: Number(event.target.value) })
-            }
+            onChange={(event) => {
+              setMinNoticeText(event.target.value);
+              const parsed = parseBookingCount(
+                event.target.value,
+                MIN_NOTICE_BOUNDS,
+              );
+              if (parsed !== null) {
+                updateForm({ minNoticeHours: parsed });
+              }
+            }}
             type="number"
-            value={form.minNoticeHours}
+            value={minNoticeText}
           />
+          {minNoticeInvalid ? (
+            <p
+              className="text-error text-xs"
+              id="booking-min-notice-error"
+              role="alert"
+            >
+              Enter 0 or more hours.
+            </p>
+          ) : null}
         </div>
         <div>
           <BookingFieldLabel
@@ -467,16 +532,36 @@ export function BookingSettingsSection({
           </BookingFieldLabel>
           <input
             {...bookingFieldAttrs("horizon")}
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
+            aria-describedby={
+              horizonInvalid ? "booking-max-horizon-error" : undefined
+            }
+            aria-invalid={horizonInvalid || undefined}
+            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
             id="booking-max-horizon"
             max={60}
             min={1}
-            onChange={(event) =>
-              updateForm({ maxHorizonDays: Number(event.target.value) })
-            }
+            onChange={(event) => {
+              setHorizonText(event.target.value);
+              const parsed = parseBookingCount(
+                event.target.value,
+                HORIZON_BOUNDS,
+              );
+              if (parsed !== null) {
+                updateForm({ maxHorizonDays: parsed });
+              }
+            }}
             type="number"
-            value={form.maxHorizonDays}
+            value={horizonText}
           />
+          {horizonInvalid ? (
+            <p
+              className="text-error text-xs"
+              id="booking-max-horizon-error"
+              role="alert"
+            >
+              Enter 1 to 60 days.
+            </p>
+          ) : null}
         </div>
       </div>
 

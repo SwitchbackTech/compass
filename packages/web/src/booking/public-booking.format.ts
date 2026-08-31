@@ -97,7 +97,7 @@ export function isBookingMonthAvailable(
 
 export function formatGuestTimeZoneLabel(timeZone: string): string {
   try {
-    const parts = new Intl.DateTimeFormat("en-US", {
+    const parts = new Intl.DateTimeFormat(undefined, {
       timeZone,
       timeZoneName: "long",
     }).formatToParts(new Date());
@@ -146,10 +146,16 @@ export function formatBookingSlotDateHeading(
 }
 
 export function formatDurationMinutes(minutes: number): string {
-  if (minutes === 60) {
-    return "1 hour";
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (hours === 0) {
+    return `${minutes} minutes`;
   }
-  return `${minutes} minutes`;
+  const hourLabel = hours === 1 ? "1 hour" : `${hours} hours`;
+  if (remainder === 0) {
+    return hourLabel;
+  }
+  return `${hourLabel} ${remainder} minutes`;
 }
 
 /** Cache one formatter per timezone; constructing Intl is the expensive part. */
@@ -295,10 +301,14 @@ export function stepBookingAvailableDay(
   );
 }
 
+// Any Sunday works: the grid is Sunday-first by design (matching
+// listBookingMonthGridWeeks' padding), and only the weekday names are read.
+const REFERENCE_SUNDAY = "2026-08-02";
+
 export function listBookingWeekdayHeadings(
   timeZone: string,
 ): Array<{ short: string; long: string }> {
-  const sunday = dayjs.tz("2026-08-02", timeZone);
+  const sunday = dayjs.tz(REFERENCE_SUNDAY, timeZone);
   return Array.from({ length: 7 }, (_, index) => {
     const date = sunday.add(index, "day").toDate();
     return {

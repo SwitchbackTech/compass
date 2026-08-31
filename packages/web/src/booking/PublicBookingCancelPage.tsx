@@ -4,6 +4,7 @@ import { PublicBookingApi } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 type CancelState =
@@ -15,13 +16,14 @@ type CancelState =
 
 export function PublicBookingCancelPage() {
   const { reservationId } = useParams({ from: "/book/cancel/$reservationId" });
-  const search = useSearch({ strict: false }) as { token?: string };
+  const search = useSearch({ from: "/book/cancel/$reservationId" });
   const token = search.token ?? "";
   const [state, setState] = useState<CancelState>(
     reservationId && token ? "confirm" : "not-found",
   );
   const headingRef = useBookingHeadingFocus(state);
   const inFlightRef = useRef(false);
+  useBookingDocumentTitle("Cancel booking");
 
   const handleConfirm = async () => {
     if (!reservationId || !token || inFlightRef.current) {

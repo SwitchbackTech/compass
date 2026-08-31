@@ -3,6 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import {
   findNextAvailableBookingDate,
   formatBookingMonthKey,
+  formatDurationMinutes,
   getPublicBookingMonthWindow,
   isBookingMonthAvailable,
   listBookingAvailableDateKeysInMonth,
@@ -221,5 +222,14 @@ describe("listBookingAvailableDateKeysInMonth", () => {
         "2026-08-15",
       ),
     ).toEqual(["2026-08-17"]);
+  });
+});
+
+describe("formatDurationMinutes", () => {
+  it("formats sub-hour, exact-hour, and mixed durations", () => {
+    expect(formatDurationMinutes(30)).toBe("30 minutes");
+    expect(formatDurationMinutes(60)).toBe("1 hour");
+    expect(formatDurationMinutes(90)).toBe("1 hour 30 minutes");
+    expect(formatDurationMinutes(120)).toBe("2 hours");
   });
 });

@@ -5,6 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { ZodError } from "zod/v4";
 import {
   type AdminPutBookingPageInput,
   AdminPutBookingPageInputSchema,
@@ -38,6 +39,12 @@ function handleBookingSaveError(
   error: unknown,
   queryClient: QueryClient,
 ): void {
+  if (error instanceof ZodError) {
+    // A client-side schema rejection means a form field slipped past its
+    // inline validation - point at the fields, not at the server.
+    showErrorToast("Check the booking fields and try again.");
+    return;
+  }
   if (isApiError(error)) {
     const code = getApiErrorCode(error);
     if (code === "BILLING_REQUIRED") {
