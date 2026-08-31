@@ -116,7 +116,10 @@ export const initSupertokens = () => {
       appName: APP_NAME,
       apiBasePath: "/api",
       apiDomain: getSupertokensApiDomain(),
-      websiteBasePath: "/login",
+      // Auth is modal-only on the web (`?auth=` param); there is no /login
+      // route. Any SuperTokens-generated website link must land on a real
+      // route, and /day preserves search params through its redirect.
+      websiteBasePath: "/day",
       websiteDomain: getSupertokensWebsiteDomain(),
     },
     supertokens: {

@@ -1,7 +1,6 @@
 import { type PropsWithChildren, useEffect, useSyncExternalStore } from "react";
 import SuperTokens from "supertokens-web-js";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { APP_NAME } from "@core/constants/core.constants";
@@ -29,7 +28,8 @@ SuperTokens.init({
   recipeList: [
     ThirdParty.init(),
     EmailPassword.init(),
-    EmailVerification.init(),
+    // No EmailVerification recipe: the backend doesn't init it either, so a
+    // web-side init only produced verify links that dead-ended.
     Session.init({
       // Session lifecycle only. postAPIHook shares action names
       // (REFRESH_SESSION) with onHandleEvent but is an HTTP-hook payload,

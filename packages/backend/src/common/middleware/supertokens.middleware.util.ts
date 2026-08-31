@@ -20,7 +20,7 @@ export function getFormFieldValue(
 function buildFrontendAuthLink(
   originalLink: string,
   frontendUrl: string,
-  authView: "reset" | "verify",
+  authView: "reset",
 ): string {
   const url = new URL(originalLink);
   const token = url.searchParams.get("token");
