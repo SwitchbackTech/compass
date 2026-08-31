@@ -64,6 +64,10 @@ export interface PublicBookingStubOptions {
   confirmStatus?: number;
   /** When set, the reservation POST waits until this resolves (for in-flight UI). */
   holdConfirm?: Promise<void>;
+  /** When true, slot GETs return 500 until `slotFailGate.fail` is set false. */
+  slotFailGate?: { fail: boolean };
+  /** When set, the first slot GET waits until this resolves. */
+  holdFirstSlots?: Promise<void>;
 }
 
 export interface CapturedBookingRequests {
@@ -120,6 +124,12 @@ export async function preparePublicBookingPage(
         start: windowStart,
         end: windowEnd,
       });
+      if (options.holdFirstSlots && captured.slotGets === 1) {
+        await options.holdFirstSlots;
+      }
+      if (options.slotFailGate?.fail) {
+        return route.fulfill(json({}, 500));
+      }
       const startMs = windowStart ? Date.parse(windowStart) : Number.NaN;
       const endMs = windowEnd ? Date.parse(windowEnd) : Number.NaN;
       const slotsInWindow = slots.filter((entry) => {

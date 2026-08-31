@@ -176,7 +176,11 @@ export function PublicBookingPage() {
 
   const showDetailsStep = step === "details" && selectedSlotStart !== null;
   const showConflictForm = !showDetailsStep && conflictMessage !== null;
-  const slotsPending = slotsQuery.isLoading && !slotsQuery.data;
+  const slotsHasData = Boolean(slotsQuery.data);
+  const slotsFetching =
+    !slotsHasData && (slotsQuery.isPending || slotsQuery.isFetching);
+  const slotsError = Boolean(slotsQuery.isError && !slotsHasData);
+  const slotsPending = slotsFetching && !slotsError;
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
@@ -355,9 +359,8 @@ export function PublicBookingPage() {
             maxHorizonDays={page.maxHorizonDays}
             slots={slotsQuery.data?.slots ?? []}
             slotsPending={slotsPending}
-            slotsError={
-              slotsQuery.isError || (!slotsPending && !slotsQuery.data)
-            }
+            slotsError={slotsError}
+            slotsFetching={slotsFetching}
             selectedDateKey={selectedDateKey}
             selectedSlotStart={selectedSlotStart}
             slotsHeadingRef={pickerHeadingRef}
@@ -367,6 +370,9 @@ export function PublicBookingPage() {
             onSelectSlot={handleSelectSlot}
             onJumpToNextAvailable={() => {
               void handleJumpToNextAvailable();
+            }}
+            onRetrySlots={() => {
+              void slotsQuery.refetch();
             }}
           />
 
