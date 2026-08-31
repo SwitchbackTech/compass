@@ -8,7 +8,6 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
-import { PublicBookingFocusedStatus } from "@web/booking/PublicBookingFocusedStatus";
 import {
   type PublicBookingGuestDetails,
   PublicBookingGuestForm,
@@ -17,6 +16,7 @@ import {
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
 import { PublicBookingSkipLink } from "@web/booking/PublicBookingSkipLink";
+import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import {
   findNextAvailableBookingDate,
@@ -43,6 +43,9 @@ const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
   guestEmail: "",
   notes: "",
 };
+
+const STICKY_STEP_CLASS_NAME =
+  "sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0";
 
 export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
@@ -125,7 +128,7 @@ export function PublicBookingPage() {
 
   if (pageQuery.isLoading) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Loading booking page"
         description="One moment while we load available times."
       />
@@ -137,7 +140,7 @@ export function PublicBookingPage() {
     (pageQuery.isSuccess && !pageQuery.data.enabled)
   ) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Booking page not found"
         description="This link may be incorrect or the host has turned booking off."
       />
@@ -146,7 +149,7 @@ export function PublicBookingPage() {
 
   if (pageQuery.isError || !pageQuery.isSuccess || !pageQuery.data) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Could not load booking page"
         description="Please refresh and try again."
       />
@@ -157,7 +160,7 @@ export function PublicBookingPage() {
 
   if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Booking temporarily unavailable"
         description="The host calendar is not ready for new bookings. Please try again later."
       />
@@ -361,7 +364,7 @@ export function PublicBookingPage() {
       ) : null}
 
       {showDetailsStep && selectedSlotStart ? (
-        <div className="sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+        <div className={STICKY_STEP_CLASS_NAME}>
           <PublicBookingDetailsStep
             headingRef={detailsHeadingRef}
             slotStart={selectedSlotStart}
@@ -400,7 +403,7 @@ export function PublicBookingPage() {
           />
 
           {showConflictForm ? (
-            <div className="sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+            <div className={STICKY_STEP_CLASS_NAME}>
               <PublicBookingGuestForm
                 disabled={createReservation.isPending}
                 submitDisabled={!selectedSlotStart}
@@ -420,5 +423,3 @@ export function PublicBookingPage() {
     </PublicBookingLayout>
   );
 }
-
-export default PublicBookingPage;

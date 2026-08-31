@@ -1,8 +1,7 @@
 import { useParams, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
-import { PublicBookingFocusedStatus } from "@web/booking/PublicBookingFocusedStatus";
+import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 
 function cancelUrlFromHistory(state: unknown): string | undefined {
@@ -26,24 +25,10 @@ export function PublicBookingConfirmedPage() {
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),
   });
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-
-  const viewKey = reservationQuery.isLoading
-    ? "loading"
-    : reservationQuery.isError
-      ? reservationQuery.error instanceof PublicBookingNotFoundError
-        ? "not-found"
-        : "error"
-      : (reservationQuery.data?.status ?? "not-found");
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: viewKey is the view key
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, [viewKey]);
 
   if (reservationQuery.isLoading) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Loading booking"
         description="One moment while we load this confirmation."
       />
@@ -53,14 +38,14 @@ export function PublicBookingConfirmedPage() {
   if (reservationQuery.isError) {
     if (reservationQuery.error instanceof PublicBookingNotFoundError) {
       return (
-        <PublicBookingFocusedStatus
+        <PublicBookingStatusMessage
           title="Booking not found"
           description="This confirmation link may be incorrect or no longer available."
         />
       );
     }
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Could not load booking"
         description="Please refresh and try again."
       />
@@ -69,7 +54,7 @@ export function PublicBookingConfirmedPage() {
 
   if (!reservationQuery.data) {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="Booking not found"
         description="This confirmation link may be incorrect or no longer available."
       />
@@ -79,7 +64,7 @@ export function PublicBookingConfirmedPage() {
   const reservation = reservationQuery.data;
   if (reservation.status === "cancelled") {
     return (
-      <PublicBookingFocusedStatus
+      <PublicBookingStatusMessage
         title="This booking was canceled"
         description="The appointment is no longer on the host calendar. You can close this page."
       />
@@ -88,7 +73,6 @@ export function PublicBookingConfirmedPage() {
 
   return (
     <PublicBookingConfirmationView
-      headingRef={headingRef}
       hostDisplayName={reservation.hostDisplayName}
       durationMinutes={reservation.durationMinutes}
       slotStart={reservation.slotStart}
@@ -97,5 +81,3 @@ export function PublicBookingConfirmedPage() {
     />
   );
 }
-
-export default PublicBookingConfirmedPage;

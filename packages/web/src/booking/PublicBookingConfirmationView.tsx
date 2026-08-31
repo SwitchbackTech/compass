@@ -1,10 +1,10 @@
-import { type Ref } from "react";
 import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import {
   formatBookingSlotLabel,
   formatDurationMinutes,
 } from "@web/booking/public-booking.format";
+import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 interface PublicBookingConfirmationViewProps {
   hostDisplayName: string;
@@ -12,7 +12,6 @@ interface PublicBookingConfirmationViewProps {
   slotStart: string;
   timeZone: string;
   cancelUrl?: string;
-  headingRef?: Ref<HTMLHeadingElement>;
 }
 
 export function PublicBookingConfirmationView({
@@ -21,8 +20,8 @@ export function PublicBookingConfirmationView({
   slotStart,
   timeZone,
   cancelUrl,
-  headingRef,
 }: PublicBookingConfirmationViewProps) {
+  const headingRef = useBookingHeadingFocus(hostDisplayName);
   const when = formatBookingSlotLabel(slotStart, timeZone);
 
   return (
