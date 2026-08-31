@@ -18,7 +18,6 @@ import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principa
 import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
-const RECENT_AUTHENTICATION_MS = 15 * 60_000;
 const ACCOUNT_DELETION_RETRY_INTERVAL_MS = 10 * 60_000;
 const ACCOUNT_DELETION_RETRY_BATCH_SIZE = 100;
 
@@ -260,20 +259,6 @@ class UserService {
    * credential/cache purge succeeds.
    */
   deleteAccount = async (userId: string): Promise<Summary_Delete> => {
-    const user = await mongoService.user.findOne(
-      { _id: zObjectId.parse(userId) },
-      { projection: { lastLoggedInAt: 1 } },
-    );
-    const isRecent =
-      user?.lastLoggedInAt != null &&
-      Date.now() - user.lastLoggedInAt.getTime() <= RECENT_AUTHENTICATION_MS;
-    if (!isRecent) {
-      throw error(
-        UserError.RecentAuthenticationRequired,
-        "Recent authentication required to delete account",
-      );
-    }
-
     await mongoService.pendingAccountDeletion.updateOne(
       { _id: userId },
       { $setOnInsert: { createdAt: new Date() } },

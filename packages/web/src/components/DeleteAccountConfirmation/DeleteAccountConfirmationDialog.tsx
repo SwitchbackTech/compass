@@ -38,37 +38,48 @@ export function DeleteAccountConfirmationDialog({
       variant="modal"
       widthClassName="w-[480px]"
     >
-      <div className="flex w-full flex-col gap-2">
-        <label htmlFor={inputId} className="text-sm text-text">
-          Type <span className="text-text-muted">{DELETE_ACCOUNT_PHRASE}</span>{" "}
-          to confirm
-        </label>
-        <input
-          id={inputId}
-          type="text"
-          value={typedPhrase}
-          autoComplete="off"
-          className="w-full rounded border border-border bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-muted focus-visible:border-accent"
-          onChange={(event) => setTypedPhrase(event.target.value)}
-          // Typing the phrase out is the whole point of the confirmation,
-          // so it can't be pasted or dragged in.
-          onPaste={(event) => event.preventDefault()}
-          onDrop={(event) => event.preventDefault()}
-        />
-      </div>
+      <form
+        className="flex w-full flex-col gap-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (typedPhrase === DELETE_ACCOUNT_PHRASE) onConfirm();
+        }}
+      >
+        <div className="flex w-full flex-col gap-2">
+          <label htmlFor={inputId} className="text-sm text-text">
+            Type{" "}
+            <span className="text-text-muted">{DELETE_ACCOUNT_PHRASE}</span> to
+            confirm
+          </label>
+          <input
+            id={inputId}
+            type="text"
+            value={typedPhrase}
+            autoComplete="off"
+            className="w-full rounded border border-border bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-muted focus-visible:border-accent"
+            onChange={(event) => setTypedPhrase(event.target.value)}
+            // Typing the phrase out is the whole point of the confirmation,
+            // so it can't be pasted or dragged in.
+            onPaste={(event) => event.preventDefault()}
+            onDrop={(event) => event.preventDefault()}
+          />
+        </div>
 
-      <OverlayPanelActions align="start">
-        <OverlayPanelActionButton
-          variant="destructive"
-          disabled={typedPhrase !== DELETE_ACCOUNT_PHRASE}
-          onClick={onConfirm}
-        >
-          Delete account
-        </OverlayPanelActionButton>
-        <OverlayPanelActionButton onClick={onCancel}>
-          Cancel
-        </OverlayPanelActionButton>
-      </OverlayPanelActions>
+        <OverlayPanelActions align="start">
+          <OverlayPanelActionButton
+            type="submit"
+            variant="destructive"
+            shortcut="Enter"
+            showShortcut={typedPhrase === DELETE_ACCOUNT_PHRASE}
+            disabled={typedPhrase !== DELETE_ACCOUNT_PHRASE}
+          >
+            Delete account
+          </OverlayPanelActionButton>
+          <OverlayPanelActionButton shortcut="Esc" onClick={onCancel}>
+            Cancel
+          </OverlayPanelActionButton>
+        </OverlayPanelActions>
+      </form>
     </OverlayPanel>
   );
 }

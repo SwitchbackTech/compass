@@ -65,6 +65,21 @@ const confirmDeletion = async () => {
   await user.click(screen.getByRole("button", { name: "open" }));
   await user.type(screen.getByRole("textbox"), DELETE_ACCOUNT_PHRASE);
   await user.click(screen.getByRole("button", { name: "Delete account" }));
+  return user;
+};
+
+const flushFarewellTimer = async (run: () => Promise<void> | void) => {
+  const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+    callback: TimerHandler,
+  ) => {
+    if (typeof callback === "function") callback();
+    return 0;
+  }) as typeof setTimeout);
+  try {
+    await run();
+  } finally {
+    setTimeoutSpy.mockRestore();
+  }
 };
 
 afterEach(() => {
@@ -78,50 +93,29 @@ afterEach(() => {
 
 describe("DeleteAccountConfirmationProvider", () => {
   it("resets the analytics identity after deleting the account", async () => {
-    await confirmDeletion();
-
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      expect(posthog.reset).toHaveBeenCalledTimes(1);
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await flushFarewellTimer(async () => {
+      await confirmDeletion();
+      await waitFor(() => {
+        expect(posthog.reset).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   it("resets analytics even when browser storage cleanup fails", async () => {
     clearAllBrowserStorage.mockRejectedValueOnce(
       new Error("IndexedDB blocked"),
     );
-    await confirmDeletion();
-
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      expect(posthog.reset).toHaveBeenCalledTimes(1);
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await flushFarewellTimer(async () => {
+      await confirmDeletion();
+      await waitFor(() => {
+        expect(posthog.reset).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
-  // Deleting spans a Mongo transaction and a Google grant revocation. The
-  // farewell used to wait for that to finish, so the user sat looking at the
-  // calendar of the account they'd just deleted with nothing to say it was
-  // working.
+  // Deleting spans a Mongo transaction and a Google grant revocation. Until
+  // the working overlay covers the screen the user is looking at the calendar
+  // of the account they just asked to delete, with nothing to say it's working.
   it("covers the calendar while the account is still being deleted", async () => {
     let finishDelete = () => {};
     deleteAccount.mockImplementationOnce(
@@ -133,44 +127,63 @@ describe("DeleteAccountConfirmationProvider", () => {
 
     await confirmDeletion();
 
-    // Still in flight: the request has not resolved yet.
-    const farewell = await screen.findByRole("status");
-    expect(farewell).toHaveTextContent(/so long captain@example.com/i);
-    // aria-busy on a live region withholds the announcement until it flips
-    // false, and this one never does - it lives until the reload, so a screen
-    // reader user got silence where everyone else got the farewell.
-    expect(farewell).not.toHaveAttribute("aria-busy");
+    const deleting = await screen.findByRole("status");
+    expect(deleting).toHaveTextContent(/deleting your account/i);
+    expect(deleting).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
-    // Resolve the one production timer immediately. This keeps the production
-    // API unchanged and prevents a real timer from leaking into later files.
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (typeof callback === "function") callback();
-      return 0;
-    }) as typeof setTimeout);
-    try {
+    await flushFarewellTimer(async () => {
       finishDelete();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(assign).toHaveBeenCalled();
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+      await waitFor(() => {
+        expect(screen.getByRole("status")).toHaveTextContent(
+          /so long captain@example.com/i,
+        );
+        expect(assign).toHaveBeenCalled();
+      });
+    });
   });
 
-  it("takes the farewell back down if the account could not be deleted", async () => {
+  it("keeps the user in a keyboard dialog if the account could not be deleted", async () => {
     deleteAccount.mockImplementationOnce(
       () => Promise.reject(new Error("nope")) as never,
     );
 
-    await confirmDeletion();
+    const user = await confirmDeletion();
+
+    const failure = await screen.findByRole("dialog", {
+      name: /couldn't delete your account/i,
+    });
+    expect(failure).toHaveTextContent(/your account is still here/i);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
+
+    await flushFarewellTimer(async () => {
+      await user.keyboard("{Enter}");
+      await waitFor(() => {
+        expect(deleteAccount).toHaveBeenCalledTimes(2);
+        expect(assign).toHaveBeenCalled();
+      });
+    });
+  });
+
+  it("lets the user dismiss a failed delete with Escape", async () => {
+    deleteAccount.mockImplementationOnce(
+      () => Promise.reject(new Error("nope")) as never,
+    );
+
+    const user = await confirmDeletion();
+
+    await screen.findByRole("dialog", {
+      name: /couldn't delete your account/i,
+    });
+    await user.keyboard("{Escape}");
 
     await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", {
+          name: /couldn't delete your account/i,
+        }),
+      ).not.toBeInTheDocument();
     });
     expect(assign).not.toHaveBeenCalled();
   });
