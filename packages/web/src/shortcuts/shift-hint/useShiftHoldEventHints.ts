@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import dayjs from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isEventFormOpen } from "@web/events/stores/draft.store";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import {
+  digitPickIndex,
+  PICK_KEY_LABELS,
+} from "@web/shortcuts/digit-pick.util";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import {
   isBareLetterKey,
   keyboardKey,
@@ -17,7 +23,10 @@ import {
   pointerGridIntent,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import { KEYMAP } from "@web/shortcuts/keymap";
-import { type QuickTimeConsumer } from "@web/shortcuts/quick-time/useQuickTimeCreate";
+import {
+  canQuickTimeBufferGrow,
+  resolveQuickTimeStart,
+} from "@web/shortcuts/quick-time/quick-time.util";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
@@ -35,6 +44,7 @@ import {
 import { createKeyupSwallow } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 export type ShiftHintFocusTarget = {
   eventId: string;
@@ -48,6 +58,29 @@ export type ActiveShiftHint = DayJumpAssignment & {
 
 export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
+};
+
+/** Digit keys only: PICK_KEY_LABELS' last two entries are "-" and "=". */
+const DIGIT_PICK_COUNT = 10;
+
+const MODIFIER_KEYS = new Set(["Alt", "Control", "Meta", "Shift"]);
+
+/** Preserve the exact instant taught after a blocked empty-grid click. */
+const pointerDraftStart = (digits: string): Dayjs | null => {
+  const { pointerDraftStart: start, pointerDraftTimeKey } =
+    useEventJumpStore.getState();
+  if (!start || pointerDraftTimeKey !== digits) return null;
+
+  return dayjs(start).tz(getEffectiveTimeZone());
+};
+
+/** A click on another day retargets the typed time to that day. */
+const pointerDraftDay = (): Dayjs | null => {
+  const { pointerDraftDateKey } = useEventJumpStore.getState();
+
+  return pointerDraftDateKey
+    ? dayjs(pointerDraftDateKey).tz(getEffectiveTimeZone(), true)
+    : null;
 };
 
 /**
@@ -134,26 +167,28 @@ const buildDayJumpAssignments = (
  * Shift is what makes the day columns always available: bare `t`, `f`, and
  * `m` keep their own commands. Once jump mode is on, the labels are typed
  * bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a second `h`
- * toggles off. `s` is only the Sunday/Saturday prefix.
+ * toggles off. `s` is only the Sunday/Saturday prefix. `e` is not a day
+ * prefix: jump yields to an armed (or about-to-arm) edit sequence so `e`
+ * then `t` edits the title instead of selecting Tuesday.
  *
  * Day view uses the same scheme on the one date it shows, so a bare digit is
- * never an event label on an empty buffer in either view - that keystroke
- * belongs to `quickTime` instead, which this listener offers every key before
- * reading it as a jump label. Both features read bare digits, so they share one
- * listener with an explicit precedence rule rather than racing two whose order
- * would depend on React mount order.
+ * never an event label on an empty buffer in either view. This listener owns
+ * both digit meanings, so typed-time creation wins until a day prefix makes a
+ * digit an event index.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
+  createAtTime,
   focus,
+  getQuickTimeDay,
   listVisible,
-  quickTime,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
+  createAtTime: (start: Dayjs) => void;
   focus: (target: ShiftHintFocusTarget) => void;
+  getQuickTimeDay: () => Dayjs;
   listVisible: () => ShiftHintFocusTarget[];
-  quickTime?: QuickTimeConsumer;
   timedEvents: GridEvent[];
 }): EventJumpHintsResult {
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
@@ -166,16 +201,21 @@ export function useShiftHoldEventHints({
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const quickTimeCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const createAtTimeRef = useRef(createAtTime);
   const focusRef = useRef(focus);
+  const getQuickTimeDayRef = useRef(getQuickTimeDay);
   const listVisibleRef = useRef(listVisible);
-  const quickTimeRef = useRef(quickTime);
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
   const publishedPrefixesRef = useRef<string[]>([]);
 
+  createAtTimeRef.current = createAtTime;
   focusRef.current = focus;
+  getQuickTimeDayRef.current = getQuickTimeDay;
   listVisibleRef.current = listVisible;
-  quickTimeRef.current = quickTime;
   allDayEventsRef.current = allDayEvents;
   timedEventsRef.current = timedEvents;
   isActiveRef.current = isActive;
@@ -188,6 +228,96 @@ export function useShiftHoldEventHints({
         clearTimeout(ambiguousCommitTimerRef.current);
         ambiguousCommitTimerRef.current = null;
       }
+    };
+
+    const clearQuickTimeCommitTimer = () => {
+      if (quickTimeCommitTimerRef.current === null) return;
+      clearTimeout(quickTimeCommitTimerRef.current);
+      quickTimeCommitTimerRef.current = null;
+    };
+
+    const resetQuickTime = () => {
+      clearQuickTimeCommitTimer();
+      eventJumpActions.setQuickTimeDigits("");
+    };
+
+    const commitQuickTime = () => {
+      const digits = useEventJumpStore.getState().quickTimeDigits;
+      resetQuickTime();
+      if (!digits) return;
+
+      const now = dayjs().tz(getEffectiveTimeZone());
+      const start =
+        pointerDraftStart(digits) ??
+        resolveQuickTimeStart(
+          digits,
+          now,
+          pointerDraftDay() ?? getQuickTimeDayRef.current(),
+        );
+      if (!start) return;
+
+      eventJumpActions.setPointerDraftIntent(null);
+      // The slot placeholders have answered their question. Clear them before
+      // creating so they do not flash over the new draft.
+      eventJumpActions.setActive(false);
+      createAtTimeRef.current(start);
+    };
+
+    const tryQuickTimeKey = (event: KeyboardEvent): boolean => {
+      // A bare Shift keydown precedes every digit on layouts where the top row
+      // is shifted, so it must never abandon a half-typed time.
+      if (MODIFIER_KEYS.has(event.key)) return false;
+
+      if (
+        isAppLocked() ||
+        isEditableKeyboardTarget(event) ||
+        isEventFormOpen() ||
+        isFloatingLayerOpen() ||
+        isEditSequenceArmed()
+      ) {
+        resetQuickTime();
+        return false;
+      }
+
+      const buffered = useEventJumpStore.getState().quickTimeDigits !== "";
+
+      if (event.key === "Escape") {
+        if (!buffered) return false;
+        resetQuickTime();
+        return true;
+      }
+
+      if (event.key === "Enter") {
+        if (!buffered) return false;
+        commitQuickTime();
+        return true;
+      }
+
+      const pickIndex = digitPickIndex(event);
+      if (pickIndex === null || pickIndex >= DIGIT_PICK_COUNT) {
+        // Abandon a half-typed time while leaving the new command unclaimed.
+        if (buffered) resetQuickTime();
+        return false;
+      }
+
+      const next = `${
+        useEventJumpStore.getState().quickTimeDigits
+      }${PICK_KEY_LABELS[pickIndex]}`;
+      eventJumpActions.setQuickTimeDigits(next);
+
+      if (!canQuickTimeBufferGrow(next)) {
+        commitQuickTime();
+        return true;
+      }
+
+      clearQuickTimeCommitTimer();
+      quickTimeCommitTimerRef.current = setTimeout(() => {
+        quickTimeCommitTimerRef.current = null;
+        if (useEventJumpStore.getState().quickTimeDigits !== next) return;
+        commitQuickTime();
+      }, DIGIT_AMBIGUOUS_COMMIT_MS);
+
+      return true;
     };
 
     const clearHints = () => {
@@ -340,10 +470,13 @@ export function useShiftHoldEventHints({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
+      // Armed `e`… sequences own the follow key (`t` title vs Tuesday). Check
+      // in both on and off states: jump stays on after focusing a card, and
+      // the two capture listeners can register in either order.
+      if (isEditSequenceArmed()) return;
 
       if (!isActiveRef.current) {
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-        if (isEditSequenceArmed()) return;
 
         // An empty-grid click parks a short-lived teaching target. Escape and
         // calendar navigation abandon it without claiming the key - the digits
@@ -360,7 +493,7 @@ export function useShiftHoldEventHints({
           }
         }
 
-        if (quickTimeRef.current?.tryConsumeKey(event)) {
+        if (tryQuickTimeKey(event)) {
           event.preventDefault();
           event.stopPropagation();
           return;
@@ -408,10 +541,7 @@ export function useShiftHoldEventHints({
       // Only on an empty buffer: once a day letter is typed ("w"), the digits
       // that follow are that day's event index. Esc or a second `h` clears the
       // buffer and puts quick-time back within reach.
-      if (
-        bufferRef.current === "" &&
-        quickTimeRef.current?.tryConsumeKey(event)
-      ) {
+      if (bufferRef.current === "" && tryQuickTimeKey(event)) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -449,6 +579,12 @@ export function useShiftHoldEventHints({
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
+        // `e` is not a day prefix. Leave it unclaimed so a later-registered
+        // edit-sequence listener can still arm (`e` then `t` on a focused
+        // event). Other unmatched letters stay swallowed so j/k/c cannot fire.
+        if (key === KEYMAP.editTitle.sequence.leader) {
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         keyupSwallow.add(key);
@@ -515,6 +651,7 @@ export function useShiftHoldEventHints({
 
     return () => {
       clearAmbiguousCommitTimer();
+      resetQuickTime();
       keyupSwallow.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);

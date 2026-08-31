@@ -129,11 +129,8 @@ For an account that reached Stripe Checkout, deletion first deletes its Stripe
 Customer. That immediately cancels any trial or subscription and removes saved
 payment details; Stripe retains the financial history it is required to keep.
 If Stripe cannot confirm that deletion, Compass leaves the account intact and
-asks the user to retry, rather than risk a later charge. Previous payments are
-not refunded automatically.
-
-For security, deletion also requires a sign-in within the previous 15 minutes;
-otherwise the user must sign out and sign back in before confirming it.
+asks the user to try again from a dialog, rather than risk a later charge.
+Previous payments are not refunded automatically.
 
 Sync may be temporarily unavailable during deletion. Compass records the
 principal purge and retries it every ten minutes until Sync confirms its cached

@@ -5,7 +5,6 @@ import { type EventMutationDependencies } from "@web/events/mutations/useEventMu
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
-import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import {
   type ActiveShiftHint,
   useShiftHoldEventHints,
@@ -93,16 +92,12 @@ export function useDayEventNudgeShortcuts({
       timedEvents,
     });
 
-  const quickTime = useQuickTimeCreate({
-    createAt: createDraftAtTime,
-    getTargetDay: getQuickTimeDay,
-  });
-
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
+    createAtTime: createDraftAtTime,
     focus: targeting.focus,
+    getQuickTimeDay,
     listVisible: targeting.listNavigable,
-    quickTime,
     timedEvents,
   });
 

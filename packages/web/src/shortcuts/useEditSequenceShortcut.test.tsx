@@ -9,7 +9,10 @@ import {
   selectEditSequenceMenuVisible,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
-import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   isEditSequenceArmed,
   resetEditSequenceArm,
@@ -240,19 +243,20 @@ describe("useEditSequenceShortcut", () => {
       expect(onSequence).not.toHaveBeenCalled();
     });
 
-    it("yields to event jump mode instead of arming underneath it", () => {
-      // Event jump already stands down for an armed sequence; without the
-      // mirror check a stray `e` would arm under the jump hints and swallow
-      // the next day letter.
+    it("arms while event jump is on so e then t can still edit the title", () => {
+      // Jump stays on after focusing a card. `e` is not a day prefix, so
+      // arming (and turning jump off) is what keeps `t` on title instead of
+      // Tuesday.
       const onSequence = mock(() => {});
       eventJumpActions.setActive(true);
       renderHook(() => useEditSequenceShortcut({ onSequence }));
 
       pressKey("e");
-      expect(isEditSequenceArmed()).toBe(false);
+      expect(isEditSequenceArmed()).toBe(true);
+      expect(useEventJumpStore.getState().isActive).toBe(false);
 
       pressKey("t");
-      expect(onSequence).not.toHaveBeenCalled();
+      expect(onSequence).toHaveBeenCalledWith("title");
     });
 
     it("does not arm when canArm is false, so the next key passes through", () => {
@@ -276,6 +280,21 @@ describe("useEditSequenceShortcut", () => {
       );
 
       document.removeEventListener("keydown", seen, true);
+    });
+
+    it("leaves jump on when canArm is false, so a following t can still be a day jump", () => {
+      const onSequence = mock(() => {});
+      eventJumpActions.setActive(true);
+      renderHook(() =>
+        useEditSequenceShortcut({ canArm: () => false, onSequence }),
+      );
+
+      pressKey("e");
+      expect(isEditSequenceArmed()).toBe(false);
+      expect(useEventJumpStore.getState().isActive).toBe(true);
+
+      pressKey("t");
+      expect(onSequence).not.toHaveBeenCalled();
     });
 
     it("still fires under app lock when ignoreAppLock is set", () => {
