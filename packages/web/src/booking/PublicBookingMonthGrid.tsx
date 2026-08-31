@@ -205,7 +205,7 @@ export function PublicBookingMonthGrid({
                     className={`flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       isSelected
                         ? "bg-accent text-on-accent hover:bg-accent"
-                        : "text-text hover:bg-surface-panel"
+                        : "bg-surface-panel text-text hover:bg-surface-raised"
                     }`}
                   >
                     {day.dayOfMonth}
