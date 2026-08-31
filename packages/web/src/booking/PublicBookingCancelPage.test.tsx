@@ -58,6 +58,40 @@ describe("PublicBookingCancelPage", () => {
     expect(cancelPosts).toBe(1);
   });
 
+  it("does not POST twice if confirm is clicked while canceling", async () => {
+    const user = userEvent.setup({ delay: null });
+    let cancelPosts = 0;
+    let release!: () => void;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    server.use(
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        async (_req, res, ctx) => {
+          cancelPosts += 1;
+          await hold;
+          return res(ctx.status(Status.OK), ctx.json({ ok: true }));
+        },
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Cancel this booking" }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "Canceling..." }),
+    );
+    expect(cancelPosts).toBe(1);
+    release();
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+  });
+
   it("focuses the heading on load and tabs to the confirm button", async () => {
     const user = userEvent.setup({ delay: null });
 

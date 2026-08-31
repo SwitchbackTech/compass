@@ -20,6 +20,7 @@ export function PublicBookingCancelPage() {
     reservationId && token ? "confirm" : "not-found",
   );
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const inFlightRef = useRef(false);
 
   // The ref is attached after render; `state` is the view key so focus
   // follows confirm -> cancelled / error instead of staying on a detached node.
@@ -29,10 +30,11 @@ export function PublicBookingCancelPage() {
   }, [state]);
 
   const handleConfirm = async () => {
-    if (!reservationId || !token || state === "cancelling") {
+    if (!reservationId || !token || inFlightRef.current) {
       return;
     }
 
+    inFlightRef.current = true;
     setState("cancelling");
 
     try {
