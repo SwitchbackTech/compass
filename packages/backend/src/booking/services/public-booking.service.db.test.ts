@@ -3,16 +3,13 @@ import { Status } from "@core/errors/status.codes";
 import { AdminPutBookingPageInputSchema } from "@core/types/booking.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import * as billingGuard from "@backend/billing/billing.guard";
-import { hashCancelToken } from "@backend/booking/booking-cancel-token";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
-import { bookingPageRepository } from "@backend/booking/booking-page.repository";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
@@ -281,6 +278,56 @@ describe("PublicBookingService", () => {
     expect(JSON.stringify(response)).not.toContain("intervals");
   });
 
+  it("clamps a requested window that extends past the host horizon", async () => {
+    const userId = await createNamedUser("Short Horizon Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+        maxHorizonDays: 7,
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+    const start = new Date();
+    const end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const response = await service.getSlots(slug, {
+      start: start.toISOString(),
+      end: end.toISOString(),
+      timeZone: "UTC",
+    });
+
+    expect(response.bookable).toBe(true);
+    const horizonMs = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    for (const slot of response.slots) {
+      expect(Date.parse(slot.slotStart)).toBeLessThan(horizonMs + 1000);
+    }
+    const availabilityQuery = getAvailability.mock.calls[0]?.[1] as {
+      end: string;
+    };
+    expect(Date.parse(availabilityQuery.end)).toBeLessThanOrEqual(
+      horizonMs + 2000,
+    );
+  });
+
+  it("still rejects a slot window whose end is not after start", async () => {
+    const { slug } = await enableBookingPage();
+
+    await expect(
+      service.getSlots(slug, {
+        start: "2026-09-08T00:00:00.000Z",
+        end: "2026-09-07T00:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "INVALID_INPUT" });
+  });
+
   it("cancels idempotently", async () => {
     const { slug } = await enableBookingPage();
     const slotStart = "2026-09-07T10:00:00.000Z";
@@ -393,6 +440,7 @@ describe("Public booking routes", () => {
         hostDisplayName: "Public Host",
         durationMinutes: 30,
         enabled: true,
+        maxHorizonDays: 60,
       }),
     );
   });

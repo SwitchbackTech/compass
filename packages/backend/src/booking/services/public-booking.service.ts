@@ -105,12 +105,18 @@ export class PublicBookingService {
     const query = parseSlotsQuery(rawQuery);
     const now = new Date();
     const windowStart = new Date(query.start);
-    const windowEnd = new Date(query.end);
+    const requestedEnd = new Date(query.end);
     const horizonEnd = new Date(
       now.getTime() + page.maxHorizonDays * 24 * 60 * 60 * 1000,
     );
-    if (windowEnd.getTime() > horizonEnd.getTime()) {
-      throw bookingError("INVALID_INPUT", "window exceeds booking horizon");
+    const windowEnd =
+      requestedEnd.getTime() > horizonEnd.getTime() ? horizonEnd : requestedEnd;
+
+    if (windowEnd.getTime() <= windowStart.getTime()) {
+      return BookingSlotsResponseSchema.parse({
+        slots: [],
+        bookable: true,
+      });
     }
 
     const availability = await this.calendarBooking.getAvailability(
@@ -118,7 +124,7 @@ export class PublicBookingService {
       {
         calendarIds: page.blockingCalendarIds,
         start: query.start,
-        end: query.end,
+        end: DateTimeSchema.parse(windowEnd.toISOString()),
       },
     );
 
