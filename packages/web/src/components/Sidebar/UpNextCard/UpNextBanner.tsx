@@ -12,8 +12,10 @@ const MINUTES_BEFORE_START = 2;
 
 /**
  * A centered banner that surfaces the next timed event when it is about to
- * start, mirroring Vimcal. N opens the event's details; when the event has a
- * meeting link, the primary action switches to V for "Join" instead.
+ * start, mirroring Vimcal. N opens the event's details from anywhere. V joins
+ * the Up Next meeting whenever that event has a conference URL, not only
+ * while this banner is visible. The banner's primary action switches to Join
+ * when a link exists.
  */
 export const UpNextBanner: FC = () => {
   const { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent } =
@@ -39,7 +41,7 @@ export const UpNextBanner: FC = () => {
 
   useAppShortcutUp("N", () => openEventDetails("keyboardEdit"));
   useAppShortcutUp("V", openConference, {
-    enabled: Boolean(conferenceUrl) && isWithinWindow,
+    enabled: Boolean(conferenceUrl),
   });
   // Only active while the banner itself is showing. Fires alongside any
   // other Escape handling (e.g. useEscapeToCloseForm closing the event form)

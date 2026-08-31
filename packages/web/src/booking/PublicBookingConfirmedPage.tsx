@@ -3,6 +3,7 @@ import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
+import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 
 function cancelUrlFromHistory(state: unknown): string | undefined {
   if (
@@ -25,6 +26,7 @@ export function PublicBookingConfirmedPage() {
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),
   });
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
+  useBookingDocumentTitle("Booking confirmed");
 
   if (reservationQuery.isLoading) {
     return (

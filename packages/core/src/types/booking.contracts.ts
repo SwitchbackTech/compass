@@ -70,7 +70,8 @@ export const LocalTimeOfDaySchema = z
   .regex(HH_MM_PATTERN, { message: 'Time must be "HH:mm" in 24-hour form' });
 export type LocalTimeOfDay = z.infer<typeof LocalTimeOfDaySchema>;
 
-const localTimeToMinutes = (time: string): number => {
+/** "HH:mm" to minutes since local midnight. The one shared implementation. */
+export const localTimeToMinutes = (time: string): number => {
   const [hoursText, minutesText] = time.split(":");
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
@@ -209,23 +210,6 @@ export const BookingReservationStatusSchema = z.enum([
 export type BookingReservationStatus = z.infer<
   typeof BookingReservationStatusSchema
 >;
-
-export const ReservationSchema = z.strictObject({
-  id: BookingReservationIdSchema,
-  pageId: BookingPageIdSchema,
-  slotStart: DateTimeSchema,
-  slotEnd: DateTimeSchema,
-  guestName: z.string().trim().min(1).max(256),
-  guestEmail: z.string().trim().min(1).max(320),
-  notes: z.string().trim().max(4000).nullable(),
-  guestTimeZone: TimeZoneSchema,
-  status: BookingReservationStatusSchema,
-  calendarEventId: z.string().trim().min(1).max(256).nullable(),
-  cancelTokenHash: z.string().trim().min(1).max(256),
-  createdAt: DateTimeSchema,
-  updatedAt: DateTimeSchema,
-});
-export type Reservation = z.infer<typeof ReservationSchema>;
 
 export const PublicGetBookingPageResponseSchema = PublicBookingPageSchema;
 export type PublicGetBookingPageResponse = z.infer<

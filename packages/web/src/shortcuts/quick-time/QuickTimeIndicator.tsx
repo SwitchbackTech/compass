@@ -1,8 +1,8 @@
 import { type FC } from "react";
 import {
   selectQuickTimeDigits,
-  useQuickTimeStore,
-} from "@web/shortcuts/quick-time/quick-time.store";
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 
@@ -22,7 +22,7 @@ export const quickTimeHintParts = (
  * indicator only renders while jump mode is on.
  */
 export const QuickTimeIndicator: FC = () => {
-  const digits = useQuickTimeStore(selectQuickTimeDigits);
+  const digits = useEventJumpStore(selectQuickTimeDigits);
 
   if (!digits) return null;
 

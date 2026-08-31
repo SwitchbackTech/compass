@@ -258,7 +258,13 @@ export class PublicBookingService {
         {
           calendarId: page.destinationCalendarId,
           title: `${input.guestName} and ${hostDisplayName}`,
-          description: [input.notes?.trim(), `Cancel: ${cancelUrl}`]
+          // The cancel URL is a capability: anyone holding it can cancel. When
+          // the guest may invite others, every invitee sees the description, so
+          // keep the URL out of it — the guest gets it on the confirmation page.
+          description: [
+            input.notes?.trim(),
+            page.guestsCanInviteOthers ? null : `Cancel: ${cancelUrl}`,
+          ]
             .filter(Boolean)
             .join("\n\n"),
           start: input.slotStart,
@@ -285,6 +291,29 @@ export class PublicBookingService {
         calendarEventId,
         cancelTokenHash: hashCancelToken(cancelToken),
       });
+
+      // Close the overlap race the unique index cannot see: the index only
+      // serializes identical starts, but two concurrent confirms on adjacent
+      // grid starts (10:00 and 10:15 for a 30-minute duration) both pass the
+      // pre-insert engine check. Re-checking after our own insert guarantees
+      // the later checker sees both docs, so at most one overlapping
+      // reservation survives; in the rare symmetric case both yield 409 and
+      // the slot reopens. Deliberately not "smallest _id wins": ids are minted
+      // before the slow calendar call, so id order does not track insert order
+      // and both racers could each conclude they had won.
+      const overlapping =
+        await bookingReservationRepository.listConfirmedOverlapping(
+          page._id,
+          slotStart,
+          slotEnd,
+        );
+      if (overlapping.some((id) => !id.equals(reservationId))) {
+        await bookingReservationRepository.deleteById(reservationId);
+        throw bookingError(
+          "SLOT_UNAVAILABLE",
+          "Selected slot is no longer available",
+        );
+      }
 
       return CreateBookingReservationResponseSchema.parse({
         reservationId: reservation._id.toString(),

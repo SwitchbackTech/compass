@@ -3,6 +3,10 @@ import {
   createRoute,
   lazyRouteComponent,
 } from "@tanstack/react-router";
+import {
+  validateBookingCancelSearch,
+  validatePublicBookingSearch,
+} from "@web/booking/public-booking-search";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
@@ -38,6 +42,7 @@ export const calendarShellRoute = createRoute({
 export const publicBookRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.BOOK,
+  validateSearch: validatePublicBookingSearch,
   component: lazyRouteComponent(
     () => import("@web/booking/PublicBookingPage"),
     "PublicBookingPage",
@@ -47,6 +52,7 @@ export const publicBookRoute = createRoute({
 export const publicBookCancelRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.BOOK_CANCEL,
+  validateSearch: validateBookingCancelSearch,
   component: lazyRouteComponent(
     () => import("@web/booking/PublicBookingCancelPage"),
     "PublicBookingCancelPage",

@@ -22,7 +22,6 @@ import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewSho
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import { quickTimeTargetDay } from "@web/shortcuts/quick-time/quick-time.util";
-import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -292,16 +291,12 @@ export const useWeekShortcutOwner = ({
     [canSeedDraft, defaultTargetCalendarId],
   );
 
-  const quickTime = useQuickTimeCreate({
-    createAt: createDraftAtTime,
-    getTargetDay: getQuickTimeDay,
-  });
-
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
+    createAtTime: createDraftAtTime,
     focus: targeting.focus,
+    getQuickTimeDay,
     listVisible: targeting.listNavigable,
-    quickTime,
     timedEvents,
   });
 

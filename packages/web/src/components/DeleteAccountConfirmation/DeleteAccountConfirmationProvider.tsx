@@ -1,12 +1,12 @@
 import { type PropsWithChildren, useCallback, useState } from "react";
 import { UserApi } from "@web/api/user.api";
-import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
+import { isSessionLevelError } from "@web/api/util/api.util";
 import { getLastKnownEmail } from "@web/auth/compass/state/auth.state.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DeleteAccountConfirmationDialog } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationDialog";
+import { DeleteAccountFailureDialog } from "@web/components/DeleteAccountConfirmation/DeleteAccountFailureDialog";
 import {
   DeleteAccountConfirmationContext,
   useDeleteAccountConfirmationState,
@@ -21,66 +21,50 @@ export function DeleteAccountConfirmationProvider({
 }: PropsWithChildren) {
   const value = useDeleteAccountConfirmationState();
   const { closeDeleteAccountConfirmation, isOpen } = value;
-  const [farewell, setFarewell] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [hasFailed, setHasFailed] = useState(false);
+
+  const deleteAccount = useCallback(async () => {
+    setHasFailed(false);
+    setStatusMessage("Deleting your account.");
+
+    try {
+      await UserApi.deleteAccount();
+    } catch (e) {
+      console.error("Failed to delete account", e);
+      setStatusMessage(null);
+      // Session recovery already showed its own sign-in UI.
+      if (!isSessionLevelError(e)) setHasFailed(true);
+      return;
+    }
+
+    const email = getLastKnownEmail() ?? "friend";
+
+    try {
+      await clearAllBrowserStorage();
+    } catch {
+      // Already logged by clearAllBrowserStorage. The account is gone
+      // either way, so still send them off as an anonymous user.
+    } finally {
+      // Match deliberate logout: do not let a later anonymous visitor or
+      // newly-created account inherit this deleted account's device identity.
+      getPosthogClient()?.reset();
+    }
+
+    setStatusMessage(`Until our sails cross paths again, so long ${email}.`);
+
+    await new Promise((resolve) => setTimeout(resolve, FAREWELL_MS));
+    window.location.assign(ROOT_ROUTES.ROOT);
+  }, []);
 
   const handleConfirm = useCallback(() => {
     closeDeleteAccountConfirmation();
+    void deleteAccount();
+  }, [closeDeleteAccountConfirmation, deleteAccount]);
 
-    // Up before the request, not after it: deleting spans a Mongo
-    // transaction and a Google grant revocation, and until this covers the
-    // screen the user is looking at the calendar of the account they just
-    // deleted, with nothing to say it's working. Reading the email has to
-    // happen first too, since the cleanup below wipes it from storage.
-    setFarewell(getLastKnownEmail() ?? "friend");
-    // Monotonic: a wall clock that steps backwards mid-delete (NTP, resume
-    // from sleep) would make the wait below longer than the step.
-    const shownAt = performance.now();
-
-    void (async () => {
-      try {
-        await UserApi.deleteAccount();
-      } catch (e) {
-        console.error("Failed to delete account", e);
-        setFarewell(null);
-        if (
-          isApiError(e) &&
-          getApiErrorCode(e) === "RECENT_AUTHENTICATION_REQUIRED"
-        ) {
-          showErrorToast(
-            "For security, sign out and sign back in before deleting your account.",
-          );
-          return;
-        }
-        showErrorToast("Couldn't delete your account. Please try again.");
-        return;
-      }
-
-      try {
-        await clearAllBrowserStorage();
-      } catch {
-        // Already logged by clearAllBrowserStorage. The account is gone
-        // either way, so still send them off as an anonymous user.
-      } finally {
-        // Match deliberate logout: do not let a later anonymous visitor or
-        // newly-created account inherit this deleted account's device identity.
-        getPosthogClient()?.reset();
-      }
-
-      // Hold the farewell for its full span measured from when it appeared,
-      // so a slow delete doesn't add to the wait and a fast one doesn't
-      // flash it.
-      const remaining = FAREWELL_MS - (performance.now() - shownAt);
-      if (remaining > 0) {
-        await new Promise((resolve) => setTimeout(resolve, remaining));
-      }
-
-      // Reload rather than just flipping session state: it's the only way to
-      // be sure nothing of the deleted account survives in memory (query
-      // caches, the open IndexedDB connection). They land back in the app,
-      // anonymous.
-      window.location.assign(ROOT_ROUTES.ROOT);
-    })();
-  }, [closeDeleteAccountConfirmation]);
+  const handleFailureCancel = useCallback(() => {
+    setHasFailed(false);
+  }, []);
 
   return (
     <DeleteAccountConfirmationContext.Provider value={value}>
@@ -90,12 +74,13 @@ export function DeleteAccountConfirmationProvider({
         onCancel={closeDeleteAccountConfirmation}
         onConfirm={handleConfirm}
       />
-      {farewell && (
-        <OverlayPanel
-          role="status"
-          variant="status"
-          message={`Until our sails cross paths again, so long ${farewell}.`}
-        />
+      <DeleteAccountFailureDialog
+        isOpen={hasFailed}
+        onCancel={handleFailureCancel}
+        onRetry={deleteAccount}
+      />
+      {statusMessage && (
+        <OverlayPanel role="status" variant="status" message={statusMessage} />
       )}
     </DeleteAccountConfirmationContext.Provider>
   );

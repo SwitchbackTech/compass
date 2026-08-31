@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   dispatchClick,
+  dispatchFill,
   prepareSignedInBookingSettingsPage,
 } from "./booking-harness";
 
@@ -36,4 +37,36 @@ test("settings booking page shows a copyable public link after save", async ({
 
   await expect.poll(() => captured.putBodies.length).toBe(2);
   expect(captured.putBodies[1]).toMatchObject({ durationMinutes: 15 });
+});
+
+test("clearing the horizon field shows an inline error and blocks save", async ({
+  page,
+}) => {
+  const captured = await prepareSignedInBookingSettingsPage(page);
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const horizon = settingsDialog.getByLabel("Maximum horizon (days)");
+  await dispatchFill(horizon, "");
+
+  await expect(settingsDialog.getByText("Enter 1 to 60 days.")).toBeVisible();
+  await expect(horizon).toHaveAttribute("aria-invalid", "true");
+
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Save booking settings" }),
+  );
+  await expect(
+    settingsDialog.getByText(
+      "Fix the highlighted number fields before saving.",
+    ),
+  ).toBeVisible();
+  expect(captured.putBodies.length).toBe(0);
+
+  await dispatchFill(horizon, "30");
+  await expect(settingsDialog.getByText("Enter 1 to 60 days.")).toHaveCount(0);
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Save booking settings" }),
+  );
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]).toMatchObject({ maxHorizonDays: 30 });
 });

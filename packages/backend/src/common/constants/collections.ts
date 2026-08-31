@@ -8,7 +8,7 @@ export const Collections = {
   PENDING_ACCOUNT_DELETION: IS_DEV
     ? "_dev.pendingAccountDeletion"
     : "pendingAccountDeletion",
-  PENDING_SYNC_PRINCIPAL_DELETION: IS_DEV
+  LEGACY_PENDING_SYNC_PRINCIPAL_DELETION: IS_DEV
     ? "_dev.pendingSyncPrincipalDeletion"
     : "pendingSyncPrincipalDeletion",
   BOOKING_PAGE: IS_DEV ? "_dev.bookingPage" : "bookingPage",

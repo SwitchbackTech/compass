@@ -156,7 +156,10 @@ describe("PublicBookingService", () => {
     );
   };
 
-  const enableBookingPage = async (slugName = "Host User") => {
+  const enableBookingPage = async (
+    slugName = "Host User",
+    overrides: Record<string, unknown> = {},
+  ) => {
     const userId = await createNamedUser(slugName);
     const calendar = writableCalendar();
     mockHealthySync([calendar]);
@@ -168,11 +171,32 @@ describe("PublicBookingService", () => {
       samplePutInput({
         destinationCalendarId: calendar.id,
         blockingCalendarIds: [calendar.id],
+        ...overrides,
       }),
     );
     const slug = "slug" in page ? page.slug : "";
-    return { userId, slug, calendarId: calendar.id };
+    const pageId = "id" in page ? new ObjectId(page.id) : new ObjectId();
+    return { userId, slug, calendarId: calendar.id, pageId };
   };
+
+  const seedConfirmedReservation = async (
+    pageId: ObjectId,
+    slotStart: string,
+    slotEnd: string,
+  ) =>
+    bookingReservationRepository.insert({
+      _id: new ObjectId(),
+      pageId,
+      slotStart: new Date(slotStart),
+      slotEnd: new Date(slotEnd),
+      guestName: "Rival Guest",
+      guestEmail: "rival@example.com",
+      notes: null,
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "rival-evt",
+      cancelTokenHash: "b".repeat(64),
+    });
 
   it("returns 404-equivalent for disabled slug via PAGE_NOT_FOUND", async () => {
     const userId = await createNamedUser("Disabled Host");
@@ -440,6 +464,142 @@ describe("PublicBookingService", () => {
     await expect(
       service.getPublicReservation(new ObjectId()),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+  });
+
+  it("still returns slots when the page already has a confirmed reservation", async () => {
+    const { slug } = await enableBookingPage();
+    const booked = "2026-09-07T10:00:00.000Z";
+    await service.createReservation(slug, {
+      slotStart: booked,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.bookable).toBe(true);
+    expect(response.slots.length).toBeGreaterThan(0);
+    expect(response.slots.map((slot) => slot.slotStart)).not.toContain(booked);
+  });
+
+  it("accepts a second non-overlapping booking on the same page", async () => {
+    const { slug } = await enableBookingPage();
+    await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+
+    const second = await service.createReservation(slug, {
+      slotStart: "2026-09-07T11:00:00.000Z",
+      guestName: "Grace Hopper",
+      guestEmail: "grace@example.com",
+      guestTimeZone: "America/New_York",
+    });
+
+    expect(second.reservationId).toBeTruthy();
+    expect(createBookingEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects a concurrent overlapping confirm and compensates the event", async () => {
+    const { slug, pageId } = await enableBookingPage();
+    // Simulate the race: a rival confirms an overlapping adjacent-grid slot
+    // after our engine pre-check but before our insert (during the slow
+    // calendar call). The unique index cannot catch this (different starts).
+    createBookingEvent.mockImplementation(async () => {
+      await seedConfirmedReservation(
+        pageId,
+        "2026-09-07T10:15:00.000Z",
+        "2026-09-07T10:45:00.000Z",
+      );
+      return "our-evt";
+    });
+
+    await expect(
+      service.createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
+    expect(deleteBookingEvent.mock.calls[0]?.[1]).toMatchObject({
+      eventId: "our-evt",
+    });
+    const survivors =
+      await bookingReservationRepository.listConfirmedOverlapping(
+        pageId,
+        new Date("2026-09-07T09:00:00.000Z"),
+        new Date("2026-09-07T12:00:00.000Z"),
+      );
+    expect(survivors).toHaveLength(1);
+  });
+
+  it("translates a same-start duplicate insert into SLOT_UNAVAILABLE", async () => {
+    const { slug, pageId } = await enableBookingPage();
+    createBookingEvent.mockImplementation(async () => {
+      await seedConfirmedReservation(
+        pageId,
+        "2026-09-07T10:00:00.000Z",
+        "2026-09-07T10:30:00.000Z",
+      );
+      return "our-evt";
+    });
+
+    await expect(
+      service.createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the cancel URL out of the event description when invitees are allowed", async () => {
+    const { slug } = await enableBookingPage();
+
+    await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "Europe/London",
+    });
+
+    const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
+      description: string;
+    };
+    expect(eventInput.description).toContain("bring coffee");
+    expect(eventInput.description).not.toContain("Cancel:");
+  });
+
+  it("includes the cancel URL in the event description when invitees are off", async () => {
+    const { slug } = await enableBookingPage("Private Host", {
+      guestsCanInviteOthers: false,
+    });
+
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+
+    const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
+      description: string;
+    };
+    expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
   });
 
   it("rejects invalid guest email", async () => {

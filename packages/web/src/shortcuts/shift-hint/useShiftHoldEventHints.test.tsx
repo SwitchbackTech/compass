@@ -1,5 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
+import dayjs from "@core/util/date/dayjs";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
@@ -103,7 +104,9 @@ describe("useShiftHoldEventHints", () => {
 
     const { result } = renderHook(() =>
       useShiftHoldEventHints({
+        createAtTime: () => {},
         focus: (target) => focus(target),
+        getQuickTimeDay: () => dayjs("2026-08-05"),
         listVisible: () =>
           ids.map((id, index) => ({
             eventId: id,
@@ -216,7 +219,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("leaves a bare digit alone so quick-time create can read it", () => {
+  it("routes a bare digit to typed-time creation while jump is off", () => {
     const { focus } = mountHints();
 
     act(() => {
@@ -224,6 +227,7 @@ describe("useShiftHoldEventHints", () => {
     });
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("1");
     expect(focus).not.toHaveBeenCalled();
   });
 
@@ -476,7 +480,9 @@ describe("useShiftHoldEventHints", () => {
 
     renderHook(() =>
       useShiftHoldEventHints({
+        createAtTime: () => {},
         focus: (target) => focus(target),
+        getQuickTimeDay: () => dayjs("2026-08-05"),
         listVisible: () =>
           ids.map((id, index) => ({
             eventId: id,
@@ -576,7 +582,9 @@ describe("useShiftHoldEventHints", () => {
     const { rerender } = renderHook(
       ({ timedEvents }) =>
         useShiftHoldEventHints({
+          createAtTime: () => {},
           focus: (target) => focus(target),
+          getQuickTimeDay: () => dayjs("2026-08-05"),
           listVisible: () =>
             timedEvents.flatMap((event) => {
               const index = [EVENT_A, EVENT_B, EVENT_C, EVENT_D].indexOf(
@@ -740,6 +748,81 @@ describe("useShiftHoldEventHints", () => {
     });
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints.length).toBeGreaterThan(0);
+  });
+
+  it("edits the title with e then t after focusing a Monday event in jump mode", () => {
+    const onSequence = mock(() => {});
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "m");
+    });
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A }),
+    );
+    focus.mockClear();
+
+    act(() => {
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(onSequence).toHaveBeenCalledWith("title");
+    expect(focus).not.toHaveBeenCalled();
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+  });
+
+  it("edits the title with e then t even when jump's listener is registered first", () => {
+    const onSequence = mock(() => {});
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "m");
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(onSequence).toHaveBeenCalledWith("title");
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A }),
+    );
+    expect(focus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
+  });
+
+  it("still jumps to Tuesday with t when nothing can arm the edit sequence", () => {
+    renderHook(() =>
+      useEditSequenceShortcut({
+        canArm: () => false,
+        onSequence: mock(() => {}),
+      }),
+    );
+    const { focus } = mountHints([
+      timedFixture(EVENT_A, "2026-08-03T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-04T09:00:00.000Z"),
+    ]);
+
+    act(() => {
+      pressEventJump();
+      dispatch("keydown", "e");
+      dispatch("keydown", "t");
+    });
+
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_B }),
+    );
+    expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
   it("does not steal s while the e edit sequence is armed", () => {

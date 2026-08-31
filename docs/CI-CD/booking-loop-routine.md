@@ -45,7 +45,7 @@ Sources of truth:
 ## One-time human setup
 
 The loop stays off until these exist. After they exist, no further input is
-required for WP-01 through WP-09.
+required; the loop pulls its work from the issue queue.
 
 1. Repo variable `BOOKING_LOOP_ENABLED` = `true`.
 2. Either:
