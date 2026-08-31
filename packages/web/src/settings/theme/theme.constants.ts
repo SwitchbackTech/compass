@@ -12,7 +12,11 @@ export const THEMES = {
 
 export type ThemeName = keyof typeof THEMES;
 
-/** Dark is the default (also the index.css :root fallback). */
+/**
+ * Dark is the CSS :root fallback and the value used when
+ * `prefers-color-scheme` is dark or unavailable. Light is applied only when
+ * the visitor stored `light-beach` or the OS is light and nothing is stored.
+ */
 export const DEFAULT_THEME: ThemeName = "dark-abyss";
 
 /**

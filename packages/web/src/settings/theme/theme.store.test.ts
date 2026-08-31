@@ -2,25 +2,65 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 import { THEME_STORAGE_KEY } from "./theme.constants";
 import { themeActions, useThemeStore } from "./theme.store";
 import { readStoredTheme } from "./theme.util";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
+function stubColorScheme(light: boolean) {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: light && query.includes("prefers-color-scheme: light"),
+    media: query,
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() {
+      return true;
+    },
+  })) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
 
 describe("theme store + util", () => {
+  let restoreMatchMedia: (() => void) | undefined;
+
   beforeEach(() => {
     persistentBrowserStore.remove(THEME_STORAGE_KEY);
     document.documentElement.removeAttribute("data-theme");
     useThemeStore.setState({ theme: "dark-abyss" });
   });
 
-  it("falls back to the default theme when nothing is stored", () => {
+  afterEach(() => {
+    restoreMatchMedia?.();
+    restoreMatchMedia = undefined;
+  });
+
+  it("falls back to the default theme when nothing is stored and OS is dark", () => {
+    restoreMatchMedia = stubColorScheme(false);
     expect(readStoredTheme()).toBe("dark-abyss");
   });
 
+  it("follows prefers-color-scheme light when nothing is stored", () => {
+    restoreMatchMedia = stubColorScheme(true);
+    expect(readStoredTheme()).toBe("light-beach");
+  });
+
   it("falls back to the default theme for an unknown stored value", () => {
+    restoreMatchMedia = stubColorScheme(true);
     persistentBrowserStore.set(THEME_STORAGE_KEY, "neon-swamp");
     expect(readStoredTheme()).toBe("dark-abyss");
   });
 
   it("reads back a valid stored theme", () => {
+    restoreMatchMedia = stubColorScheme(true);
+    persistentBrowserStore.set(THEME_STORAGE_KEY, "dark-abyss");
+    expect(readStoredTheme()).toBe("dark-abyss");
+  });
+
+  it("reads a stored light theme even when OS is dark", () => {
+    restoreMatchMedia = stubColorScheme(false);
     persistentBrowserStore.set(THEME_STORAGE_KEY, "light-beach");
     expect(readStoredTheme()).toBe("light-beach");
   });

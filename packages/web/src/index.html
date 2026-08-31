@@ -7,15 +7,23 @@
     <meta name="theme-color" content="#06090f" />
 
     <!--
-      Apply the saved theme before first paint so light-theme users don't flash
-      the default dark palette while the app boots (index.tsx awaits IndexedDB
-      first). Runs pre-module, so the key + colors are hard-coded here; keep them
-      in sync with settings/theme/theme.constants.ts. Dark is the CSS default,
-      so only a non-default choice needs touching.
+      Apply the theme before first paint so light visitors don't flash the
+      default dark palette while the app boots (index.tsx awaits IndexedDB
+      first). Runs pre-module, so the key + colors are hard-coded here; keep
+      them in sync with settings/theme/theme.constants.ts and
+      settings/theme/theme.util.ts. Dark is the CSS default, so only light
+      needs touching. An explicit stored choice wins; otherwise follow
+      prefers-color-scheme.
     -->
     <script>
       try {
-        if (localStorage.getItem("compass.theme") === "light-beach") {
+        var stored = localStorage.getItem("compass.theme");
+        var useLight =
+          stored === "light-beach" ||
+          (stored === null &&
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: light)").matches);
+        if (useLight) {
           document.documentElement.setAttribute("data-theme", "light-beach");
           document
             .querySelector('meta[name="theme-color"]')
