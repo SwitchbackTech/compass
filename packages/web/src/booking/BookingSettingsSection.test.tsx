@@ -15,6 +15,7 @@ import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
@@ -27,6 +28,7 @@ mock.module("@web/billing/useAppAccess", () => ({
 
 afterEach(() => {
   isAppAccessMocked = true;
+  setPinnedTimeZone(null);
 });
 
 const writableCalendar = createMockCalendar({
@@ -36,6 +38,8 @@ const writableCalendar = createMockCalendar({
 });
 
 const bookingPageUrl = `${ENV_WEB.API_BASEURL}/booking/page`;
+
+const HOST_TIME_ZONE = "America/Chicago";
 
 const healthyGoogleMetadata = {
   google: {
@@ -217,6 +221,88 @@ describe("BookingSettingsSection", () => {
       "timeZone",
       "weeklyAvailability",
     ]);
+  });
+
+  it("seeds the booking timezone from the user's zone when never configured", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    // Pinned rather than relying on the browser zone: CI runs at TZ=UTC, where
+    // a browser-zone assertion would pass even against the "UTC" placeholder.
+    setPinnedTimeZone(HOST_TIME_ZONE);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            // The server placeholder: it has no user timezone to offer.
+            timeZone: "UTC",
+            weeklyAvailability: [],
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            isConfigured: false,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const field = await screen.findByLabelText("Booking timezone");
+    expect(field).toHaveValue(HOST_TIME_ZONE);
+  });
+
+  it("keeps a configured page's stored timezone even when it is UTC", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    setPinnedTimeZone(HOST_TIME_ZONE);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: [],
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            // Saved, never enabled. UTC here is a deliberate choice.
+            isConfigured: true,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const field = await screen.findByLabelText("Booking timezone");
+    expect(field).toHaveValue("UTC");
   });
 
   it("blocks enable without a destination calendar", async () => {

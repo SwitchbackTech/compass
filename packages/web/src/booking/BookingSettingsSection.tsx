@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type AdminGetBookingPageResponse,
   type AdminPutBookingPageInput,
@@ -6,6 +6,7 @@ import {
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
+import { type HostBookingPageResponse } from "@web/api/booking.api";
 import {
   selectGoogleConnectionState,
   selectGoogleSyncConnections,
@@ -26,6 +27,7 @@ import {
   defaultBlockingCalendarIdsForDestination,
   getAvailabilityReadableCalendars,
   isPlaceholderDestinationCalendar,
+  isUnconfiguredBookingPage,
   resolveWritableCalendars,
   toBookingPageInput,
 } from "@web/booking/booking.util";
@@ -49,7 +51,7 @@ const isSavedBookingPage = (
 ): page is AdminGetBookingPageResponse => "bookingUrl" in page;
 
 const buildInitialForm = (
-  page: AdminPutBookingPageInput | undefined,
+  page: HostBookingPageResponse | undefined,
   effectiveTimeZone: string,
   writableCalendars: Calendar[],
 ): AdminPutBookingPageInput => {
@@ -84,13 +86,21 @@ const buildInitialForm = (
           writableCalendars,
         );
 
+  // The server has no user timezone, so an unconfigured page carries a "UTC"
+  // placeholder. Seed the browser's zone there, but leave a configured page's
+  // stored zone alone - a host who deliberately picked UTC must keep it.
+  const timeZone =
+    page && !isUnconfiguredBookingPage(page)
+      ? base.timeZone
+      : effectiveTimeZone;
+
   // toBookingPageInput, not a spread: `base` may be the saved-page response,
   // whose response-only keys would make the strict PUT schema throw on save.
   return {
     ...toBookingPageInput(base),
     destinationCalendarId,
     blockingCalendarIds,
-    timeZone: TimeZoneSchema.parse(base.timeZone || effectiveTimeZone),
+    timeZone: TimeZoneSchema.parse(timeZone || effectiveTimeZone),
   };
 };
 
@@ -132,8 +142,13 @@ export function BookingSettingsSection({
   );
   const [enableError, setEnableError] = useState<string | null>(null);
 
+  // Re-seed only when the server actually answers with a different page.
+  // Keying the effect on writableCalendars/effectiveTimeZone as well meant a
+  // calendars refetch or a timezone-store change wiped edits mid-typing.
+  const seededPageRef = useRef<HostBookingPageResponse | undefined>(undefined);
   useEffect(() => {
-    if (!serverPage) return;
+    if (!serverPage || seededPageRef.current === serverPage) return;
+    seededPageRef.current = serverPage;
     setForm(buildInitialForm(serverPage, effectiveTimeZone, writableCalendars));
   }, [effectiveTimeZone, serverPage, writableCalendars]);
 

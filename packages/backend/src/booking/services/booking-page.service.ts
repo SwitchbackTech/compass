@@ -1,6 +1,7 @@
 import { MongoServerError, type ObjectId } from "mongodb";
 import {
   type AdminGetBookingPageResponse,
+  type AdminGetBookingPageSetupResponse,
   type AdminPutBookingPageInput,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
@@ -111,13 +112,15 @@ const isDuplicateSlugError = (error: unknown): boolean =>
 
 export type HostBookingPageGetResponse =
   | AdminGetBookingPageResponse
-  | AdminPutBookingPageInput;
+  | AdminGetBookingPageSetupResponse;
 
 class BookingPageService {
   async getAdminPage(userId: ObjectId): Promise<HostBookingPageGetResponse> {
     const record = await bookingPageRepository.findByUserId(userId);
     if (!record) {
-      return buildDefaultAdminPutInput();
+      // Nothing saved yet, so the timeZone below is only a placeholder - the
+      // client seeds the real one off isConfigured: false.
+      return { ...buildDefaultAdminPutInput(), isConfigured: false };
     }
 
     if (!record.bookingSlug) {
@@ -136,10 +139,15 @@ class BookingPageService {
           guestsCanInviteOthers: record.guestsCanInviteOthers,
         }),
       );
-      return AdminPutBookingPageInputSchema.parse({
-        enabled,
-        ...rest,
-      });
+      return {
+        ...AdminPutBookingPageInputSchema.parse({
+          enabled,
+          ...rest,
+        }),
+        // Saved, just never enabled, so no slug exists. The host's stored
+        // timezone is a real choice and must not be re-seeded.
+        isConfigured: true,
+      };
     }
 
     return mapBookingPageRecordToAdminResponse({
@@ -151,7 +159,7 @@ class BookingPageService {
   async putAdminPage(
     userId: ObjectId,
     rawInput: unknown,
-  ): Promise<AdminGetBookingPageResponse | AdminPutBookingPageInput> {
+  ): Promise<HostBookingPageGetResponse> {
     const input = AdminPutBookingPageInputSchema.parse(rawInput);
 
     if (input.enabled) {
@@ -180,19 +188,24 @@ class BookingPageService {
         });
 
         if (!saved.bookingSlug) {
-          return AdminPutBookingPageInputSchema.parse({
-            enabled: saved.enabled,
-            durationMinutes: saved.durationMinutes,
-            destinationCalendarId: saved.destinationCalendarId,
-            blockingCalendarIds: saved.blockingCalendarIds,
-            timeZone: saved.timeZone,
-            weeklyAvailability: saved.weeklyAvailability,
-            minNoticeHours: saved.minNoticeHours,
-            maxHorizonDays: saved.maxHorizonDays,
-            bufferMinutes: saved.bufferMinutes,
-            maxBookingsPerDay: saved.maxBookingsPerDay,
-            guestsCanInviteOthers: saved.guestsCanInviteOthers,
-          });
+          // Saved but never enabled, so no slug exists yet. Mark it configured
+          // so the client keeps the host's stored timezone.
+          return {
+            ...AdminPutBookingPageInputSchema.parse({
+              enabled: saved.enabled,
+              durationMinutes: saved.durationMinutes,
+              destinationCalendarId: saved.destinationCalendarId,
+              blockingCalendarIds: saved.blockingCalendarIds,
+              timeZone: saved.timeZone,
+              weeklyAvailability: saved.weeklyAvailability,
+              minNoticeHours: saved.minNoticeHours,
+              maxHorizonDays: saved.maxHorizonDays,
+              bufferMinutes: saved.bufferMinutes,
+              maxBookingsPerDay: saved.maxBookingsPerDay,
+              guestsCanInviteOthers: saved.guestsCanInviteOthers,
+            }),
+            isConfigured: true,
+          };
         }
 
         return mapBookingPageRecordToAdminResponse({
