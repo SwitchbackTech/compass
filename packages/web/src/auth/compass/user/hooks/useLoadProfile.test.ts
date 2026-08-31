@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import { type UseLoadProfileResult } from "@web/auth/compass/user/hooks/useLoadProfile";
 import * as errorToast from "@web/common/utils/toast/error-toast.util";
 import {
@@ -31,11 +33,15 @@ const mockProfile: UserProfile = {
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  getLastKnownEmail,
-  hasUserEverAuthenticated,
-  markUserAsAuthenticated,
-}));
+mockModuleForFile(
+  "@web/auth/compass/state/auth.state.util",
+  realAuthStateUtil,
+  {
+    getLastKnownEmail,
+    hasUserEverAuthenticated,
+    markUserAsAuthenticated,
+  },
+);
 
 // mock.module is process-wide and not reliably restorable, so the real
 // UserApi is captured up front and a flag (flipped off in afterAll) decides

@@ -1,9 +1,11 @@
 import { act, render, screen } from "@testing-library/react";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import {
   resetGoogleSyncUIStateForTests,
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
+import * as realUseversioncheck from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { viewActions } from "@web/events/stores/view.store";
 import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -17,12 +19,16 @@ const actualUseVersionCheck = (
 ).useVersionCheck;
 let isVersionCheckMocked = true;
 
-mock.module("@web/components/Sidebar/SidebarActions/useVersionCheck", () => ({
-  useVersionCheck: () =>
-    isVersionCheckMocked
-      ? { isUpdateAvailable: false }
-      : actualUseVersionCheck(),
-}));
+mockModuleForFile(
+  "@web/components/Sidebar/SidebarActions/useVersionCheck",
+  realUseversioncheck,
+  {
+    useVersionCheck: () =>
+      isVersionCheckMocked
+        ? { isUpdateAvailable: false }
+        : actualUseVersionCheck(),
+  },
+);
 
 afterAll(() => {
   isVersionCheckMocked = false;

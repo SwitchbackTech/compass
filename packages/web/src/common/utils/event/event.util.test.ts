@@ -2,7 +2,9 @@ import { ObjectId } from "bson";
 import { Status } from "@core/errors/status.codes";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { type ApiError, type ApiResponse } from "@web/api/api.types";
+import * as realPosthogBootstrap from "@web/auth/posthog/posthog.bootstrap";
 import {
   EVENT_SAVE_UNAVAILABLE_TOAST_ID,
   GENERIC_ERROR_TOAST_ID,
@@ -32,13 +34,13 @@ const mockCaptureException = mock();
 // `capture` is a no-op here (not a mock) so a `track()` call elsewhere in the
 // same test run - the module registration is process-global - doesn't crash
 // on a stubbed client shaped only for captureException.
-mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
+mockModuleForFile("@web/auth/posthog/posthog.bootstrap", realPosthogBootstrap, {
   getPosthogClient: () => ({
     captureException: mockCaptureException,
     capture: () => undefined,
     reset: () => undefined,
   }),
-}));
+});
 
 const { handleError } = await import("@web/common/utils/event/event.util");
 

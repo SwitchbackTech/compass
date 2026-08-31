@@ -1,6 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { session } from "@web/auth/compass/session/Session";
+import * as realUsesession from "@web/auth/compass/session/useSession";
 import {
   afterAll,
   afterEach,
@@ -35,9 +37,9 @@ const actualPosthogBootstrap = {
 };
 let isLogoutMocked = true;
 
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
-}));
+});
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   ...actualAuthStateUtil,

@@ -17,5 +17,7 @@ describe("Scroll", () => {
     render(<ScrollHarness />);
 
     expect(scrollSpy).toHaveBeenCalled();
+    // A prototype spy outlives this file unless it is put back.
+    scrollSpy.mockRestore();
   });
 });

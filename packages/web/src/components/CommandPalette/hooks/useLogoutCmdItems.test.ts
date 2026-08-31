@@ -1,14 +1,16 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUsesession from "@web/auth/compass/session/useSession";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenLogoutConfirmation = mock();
 const mockUseLogoutConfirmation = mock();
 const mockUseSession = mock();
 
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
-}));
+});
 
 // mock.module is process-wide, so the factory must keep the module's other
 // exports (LogoutConfirmationContext, useLogoutConfirmationState - the

@@ -66,6 +66,15 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 afterAll(() => {
   isTeardownMocked = false;
   isSessionMocked = false;
+  // bun never restores a spy on its own, and these live at module scope, so
+  // without this the toast and auth-state fakes stay installed for every
+  // later file in the run.
+  clearAuthenticationState.mockRestore();
+  showStatusToast.mockRestore();
+  showErrorToast.mockRestore();
+  settingsActionsMock.closeSettings.mockRestore();
+  settingsActionsMock.closeCmdPalette.mockRestore();
+  signOut.mockRestore();
 });
 
 const { LogoutConfirmationProvider } =

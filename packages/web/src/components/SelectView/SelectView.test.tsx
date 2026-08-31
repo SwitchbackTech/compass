@@ -1,5 +1,7 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { type ReactNode } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realShortcuthint from "@web/components/Shortcuts/ShortcutHint";
 import "@testing-library/jest-dom";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -37,13 +39,13 @@ afterAll(() => {
   isNavigateMocked = false;
 });
 
-mock.module("@web/components/Shortcuts/ShortcutHint", () => ({
+mockModuleForFile("@web/components/Shortcuts/ShortcutHint", realShortcuthint, {
   ShortcutHint: ({ children }: { children: ReactNode }) => (
     <span aria-hidden data-testid="shortcut-hint">
       {children}
     </span>
   ),
-}));
+});
 
 const { SelectView } = await import("./SelectView");
 

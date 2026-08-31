@@ -16,6 +16,7 @@ import {
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
@@ -36,7 +37,9 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { TIMED_EVENT_FAN_INDENT } from "@web/grid/grid.constants";
+import * as realUsegridmeasurements from "@web/grid/hooks/useGridMeasurements";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
+import * as realUsedateinview from "@web/views/Day/hooks/navigation/useDateInView";
 import {
   afterEach,
   beforeEach,
@@ -76,36 +79,44 @@ const measurements = {
   },
 } satisfies GridMeasurements;
 
-mock.module("@web/views/Day/hooks/navigation/useDateInView", () => ({
-  useDateInView: () => dayjs("2026-05-20T00:00:00.000"),
-}));
-
-mock.module("@web/grid/hooks/useGridMeasurements", () => ({
-  useGridMeasurements: () => {
-    const allDayColumnsRef = { current: null as HTMLDivElement | null };
-    const mainGridRef = { current: null as HTMLDivElement | null };
-    const timedColumnsRef = { current: null as HTMLDivElement | null };
-
-    return {
-      gridRefs: {
-        allDayColumnsRef,
-        allDayRef: (node: HTMLDivElement | null) => {
-          allDayColumnsRef.current = node;
-        },
-        allDayRowRef: mock(),
-        mainGridElementRef: (node: HTMLDivElement | null) => {
-          mainGridRef.current = node;
-        },
-        mainGridRef,
-        timedColumnsElementRef: (node: HTMLDivElement | null) => {
-          timedColumnsRef.current = node;
-        },
-        timedColumnsRef,
-      },
-      measurements,
-    };
+mockModuleForFile(
+  "@web/views/Day/hooks/navigation/useDateInView",
+  realUsedateinview,
+  {
+    useDateInView: () => dayjs("2026-05-20T00:00:00.000"),
   },
-}));
+);
+
+mockModuleForFile(
+  "@web/grid/hooks/useGridMeasurements",
+  realUsegridmeasurements,
+  {
+    useGridMeasurements: () => {
+      const allDayColumnsRef = { current: null as HTMLDivElement | null };
+      const mainGridRef = { current: null as HTMLDivElement | null };
+      const timedColumnsRef = { current: null as HTMLDivElement | null };
+
+      return {
+        gridRefs: {
+          allDayColumnsRef,
+          allDayRef: (node: HTMLDivElement | null) => {
+            allDayColumnsRef.current = node;
+          },
+          allDayRowRef: mock(),
+          mainGridElementRef: (node: HTMLDivElement | null) => {
+            mainGridRef.current = node;
+          },
+          mainGridRef,
+          timedColumnsElementRef: (node: HTMLDivElement | null) => {
+            timedColumnsRef.current = node;
+          },
+          timedColumnsRef,
+        },
+        measurements,
+      };
+    },
+  },
+);
 
 // Stand-in for the sidebar-docked event details panel: DayCalendarGrid no
 // longer renders any form itself — it only toggles the draft store — so the

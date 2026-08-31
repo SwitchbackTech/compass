@@ -14,6 +14,7 @@ import dayjs from "@core/util/date/dayjs";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { AuthApi } from "@web/api/auth.api";
 import { BillingApi } from "@web/api/billing.api";
 import {
@@ -39,6 +40,7 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import * as realUsessedegraded from "@web/sse/hooks/useSseDegraded";
 import {
   afterAll,
   afterEach,
@@ -101,10 +103,10 @@ let isSseDegraded = false;
 let isSseDegradedMocked = true;
 const actualUseSseDegraded = (await import("@web/sse/hooks/useSseDegraded"))
   .useSseDegraded;
-mock.module("@web/sse/hooks/useSseDegraded", () => ({
+mockModuleForFile("@web/sse/hooks/useSseDegraded", realUsessedegraded, {
   useSseDegraded: () =>
     isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
-}));
+});
 
 let access: AppAccess = { kind: "open" };
 let isAppAccessMocked = true;

@@ -1,5 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
+import * as realUsesession from "@web/auth/compass/session/useSession";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
@@ -7,9 +9,9 @@ const mockUseAuthModal = mock();
 const mockUseAuthFeatureFlag = mock();
 const mockUseSession = mock();
 
-mock.module("@web/auth/compass/session/useSession", () => ({
+mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
-}));
+});
 
 // mock.module is process-wide, not scoped to this file, and isn't reliably
 // "restorable" afterward (another file's top-level dynamic import can race
