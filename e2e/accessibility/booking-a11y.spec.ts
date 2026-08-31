@@ -18,6 +18,21 @@ test("the public booking page renders with no automatically detectable accessibi
   await expectNoAxeViolations(page, { checkpoint: "public booking page" });
 });
 
+test("the public booking details step has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  const { slotStart } = buildBookableSlot();
+  await preparePublicBookingPage(page);
+
+  await page
+    .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Your details" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, { checkpoint: "public booking details" });
+});
+
 test("the public booking conflict alert has no automatically detectable accessibility violations", async ({
   page,
 }) => {

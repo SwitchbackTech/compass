@@ -8,6 +8,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
+import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
 import {
   type PublicBookingGuestDetails,
   PublicBookingGuestForm,
@@ -70,13 +71,22 @@ export function PublicBookingPage() {
   const [confirmation, setConfirmation] =
     useState<PublicBookingConfirmation | null>(null);
   const [conflictMessage, setConflictMessage] = useState<string | null>(null);
+  const [step, setStep] = useState<"picker" | "details">("picker");
   const conflictAlertRef = useRef<HTMLParagraphElement>(null);
+  const detailsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const submitInFlightRef = useRef(false);
 
   useEffect(() => {
     if (conflictMessage) {
       conflictAlertRef.current?.focus();
     }
   }, [conflictMessage]);
+
+  useEffect(() => {
+    if (step === "details") {
+      detailsHeadingRef.current?.focus();
+    }
+  }, [step]);
 
   usePrefetchAdjacentBookingMonths(
     slug,
@@ -157,13 +167,15 @@ export function PublicBookingPage() {
     );
   }
 
-  const showGuestForm = selectedSlotStart !== null || conflictMessage !== null;
+  const showDetailsStep = step === "details" && selectedSlotStart !== null;
+  const showConflictForm = !showDetailsStep && conflictMessage !== null;
   const slotsPending = slotsQuery.isLoading && !slotsQuery.data;
 
   const handleSelectSlot = (slotStart: string) => {
     setSelectedSlotStart(slotStart);
     setSelectedDateKey(formatBookingSlotDateKey(slotStart, guestTimeZone));
     setConflictMessage(null);
+    setStep("details");
   };
 
   const handleSelectDay = (dateKey: string) => {
@@ -181,6 +193,11 @@ export function PublicBookingPage() {
     setSelectedSlotStart(null);
     setSelectedDateKey(null);
     setConflictMessage(null);
+    setStep("picker");
+  };
+
+  const handleChangeTime = () => {
+    setStep("picker");
   };
 
   const handlePrefetchMonth = (nextMonthKey: string) => {
@@ -228,6 +245,7 @@ export function PublicBookingPage() {
       if (next.dateKey) {
         setSelectedSlotStart(null);
         setConflictMessage(null);
+        setStep("picker");
         setMonthKey(next.monthKey);
         setSelectedDateKey(next.dateKey);
         return;
@@ -247,10 +265,11 @@ export function PublicBookingPage() {
   };
 
   const handleSubmit = async (values: PublicBookingGuestFormValues) => {
-    if (!selectedSlotStart) {
+    if (!selectedSlotStart || submitInFlightRef.current) {
       return;
     }
 
+    submitInFlightRef.current = true;
     setConflictMessage(null);
 
     try {
@@ -270,10 +289,13 @@ export function PublicBookingPage() {
           "This time is no longer available. Pick another slot.",
         );
         setSelectedSlotStart(null);
+        setStep("picker");
         await slotsQuery.refetch();
         return;
       }
       setConflictMessage("Could not confirm this booking. Please try again.");
+    } finally {
+      submitInFlightRef.current = false;
     }
   };
 
@@ -303,36 +325,58 @@ export function PublicBookingPage() {
         </p>
       ) : null}
 
-      <PublicBookingPicker
-        monthKey={monthKey}
-        timeZone={guestTimeZone}
-        maxHorizonDays={page.maxHorizonDays}
-        slots={slotsQuery.data?.slots ?? []}
-        slotsPending={slotsPending}
-        slotsError={slotsQuery.isError || (!slotsPending && !slotsQuery.data)}
-        selectedDateKey={selectedDateKey}
-        selectedSlotStart={selectedSlotStart}
-        onMonthChange={handleMonthChange}
-        onPrefetchMonth={handlePrefetchMonth}
-        onSelectDate={handleSelectDay}
-        onSelectSlot={handleSelectSlot}
-        onJumpToNextAvailable={() => {
-          void handleJumpToNextAvailable();
-        }}
-      />
-
-      {showGuestForm ? (
+      {showDetailsStep && selectedSlotStart ? (
         <div className="sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
-          <PublicBookingGuestForm
+          <PublicBookingDetailsStep
+            headingRef={detailsHeadingRef}
+            slotStart={selectedSlotStart}
+            durationMinutes={page.durationMinutes}
+            timeZone={guestTimeZone}
             disabled={createReservation.isPending}
-            submitDisabled={!selectedSlotStart}
             values={guestDetails}
             onChange={setGuestDetails}
             onSubmit={handleSubmit}
+            onChangeTime={handleChangeTime}
           />
         </div>
       ) : (
-        <p className="text-sm text-text-muted">Select a time to continue.</p>
+        <>
+          <PublicBookingPicker
+            monthKey={monthKey}
+            timeZone={guestTimeZone}
+            maxHorizonDays={page.maxHorizonDays}
+            slots={slotsQuery.data?.slots ?? []}
+            slotsPending={slotsPending}
+            slotsError={
+              slotsQuery.isError || (!slotsPending && !slotsQuery.data)
+            }
+            selectedDateKey={selectedDateKey}
+            selectedSlotStart={selectedSlotStart}
+            onMonthChange={handleMonthChange}
+            onPrefetchMonth={handlePrefetchMonth}
+            onSelectDate={handleSelectDay}
+            onSelectSlot={handleSelectSlot}
+            onJumpToNextAvailable={() => {
+              void handleJumpToNextAvailable();
+            }}
+          />
+
+          {showConflictForm ? (
+            <div className="sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0">
+              <PublicBookingGuestForm
+                disabled={createReservation.isPending}
+                submitDisabled={!selectedSlotStart}
+                values={guestDetails}
+                onChange={setGuestDetails}
+                onSubmit={handleSubmit}
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">
+              Select a time to continue.
+            </p>
+          )}
+        </>
       )}
     </PublicBookingLayout>
   );

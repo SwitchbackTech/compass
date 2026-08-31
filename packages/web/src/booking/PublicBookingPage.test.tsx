@@ -3,7 +3,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
 import { Status } from "@core/errors/status.codes";
@@ -13,6 +13,7 @@ import {
   formatBookingMonthDayLabel,
   formatBookingMonthHeading,
   formatBookingSlotDateKey,
+  formatBookingSlotLabel,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -177,6 +178,23 @@ describe("PublicBookingPage", () => {
         name: slotTimePattern(currentSlot.slotStart),
       }),
     );
+    const detailsHeading = screen.getByRole("heading", {
+      name: "Your details",
+    });
+    await waitFor(() => {
+      expect(detailsHeading).toHaveFocus();
+    });
+    expect(screen.getByText("When")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        formatBookingSlotLabel(currentSlot.slotStart, guestTimeZone),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Duration")).toBeInTheDocument();
+    expect(screen.getByText("Timezone")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Pick a time" }),
+    ).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
     await user.click(screen.getByRole("button", { name: "Confirm booking" }));
@@ -259,6 +277,9 @@ describe("PublicBookingPage", () => {
     await waitFor(() => {
       expect(slotRequests).toBeGreaterThan(1);
     });
+    expect(
+      screen.getByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
@@ -266,8 +287,12 @@ describe("PublicBookingPage", () => {
       }),
     );
     expect(
+      await screen.findByRole("heading", { name: "Your details" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Confirm booking" }),
     ).toBeEnabled();
+    expect(screen.getByLabelText("Name")).toHaveValue("Guest User");
   });
 
   it("does not boot the calendar shortcut overlay on public booking routes", async () => {
@@ -512,5 +537,115 @@ describe("PublicBookingPage", () => {
         name: formatBookingMonthDayLabel(nextDateKey, guestTimeZone),
       }),
     ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("returns to the picker with the day and typed fields intact", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot, laterCurrentSlot]));
+
+    renderBookingRoute("/book/tylerdane");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    );
+    await user.type(screen.getByLabelText("Name"), "Guest User");
+    await user.type(screen.getByLabelText("Email"), "guest@example.com");
+    await user.type(screen.getByLabelText("Notes (optional)"), "Bring slides");
+    await user.click(screen.getByRole("button", { name: "Change time" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    const dateKey = formatBookingSlotDateKey(
+      currentSlot.slotStart,
+      guestTimeZone,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: formatBookingMonthDayLabel(dateKey, guestTimeZone),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: slotTimePattern(laterCurrentSlot.slotStart),
+      }),
+    );
+    expect(screen.getByLabelText("Name")).toHaveValue("Guest User");
+    expect(screen.getByLabelText("Email")).toHaveValue("guest@example.com");
+    expect(screen.getByLabelText("Notes (optional)")).toHaveValue(
+      "Bring slides",
+    );
+    expect(
+      screen.getByText(
+        formatBookingSlotLabel(laterCurrentSlot.slotStart, guestTimeZone),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an in-flight confirm label and posts only once", async () => {
+    const user = userEvent.setup({ delay: null });
+    let posts = 0;
+    const delay = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
+    server.use(
+      pageHandler(),
+      slotsInWindow([currentSlot]),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
+        async (_req, res, ctx) => {
+          posts += 1;
+          await delay(80);
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              reservationId: "000000000000000000000099",
+              slotStart: currentSlot.slotStart,
+              slotEnd: currentSlot.slotEnd,
+              guestTimeZone: "UTC",
+              cancelUrl:
+                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart),
+      }),
+    );
+    await user.type(screen.getByLabelText("Name"), "Guest User");
+    await user.type(screen.getByLabelText("Email"), "guest@example.com");
+    const confirm = screen.getByRole("button", { name: "Confirm booking" });
+    await user.click(confirm);
+    const confirming = await screen.findByRole("button", {
+      name: "Confirming...",
+    });
+    expect(confirming).toHaveAttribute("aria-busy", "true");
+    expect(confirming).toBeDisabled();
+    fireEvent.submit(confirming.closest("form") as HTMLFormElement);
+    expect(posts).toBe(1);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(posts).toBe(1);
   });
 });
