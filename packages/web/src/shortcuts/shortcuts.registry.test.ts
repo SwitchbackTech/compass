@@ -205,6 +205,7 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-focus-attendees");
       expect(ids).not.toContain("edit-focus-calendar");
       expect(ids).toContain("edit-focus-color");
+      expect(ids).toContain("other-booking-jump");
     });
 
     it("excludes the in-form leader row when the form is closed and includes it when open", () => {

@@ -277,6 +277,60 @@ describe("useEditSequenceShortcut", () => {
 
       document.removeEventListener("keydown", seen, true);
     });
+
+    it("still fires under app lock when ignoreAppLock is set", () => {
+      const onSequence = mock(() => {});
+      setAppLockReason("test-lock", true);
+
+      renderHook(() =>
+        useEditSequenceShortcut({ ignoreAppLock: true, onSequence }),
+      );
+      pressKey("e");
+      pressKey("t");
+
+      expect(onSequence).toHaveBeenCalledWith("title");
+    });
+
+    it("dispatches from a custom field table", () => {
+      const onSequence = mock((_field: string) => {});
+      renderHook(() =>
+        useEditSequenceShortcut({
+          fieldByKey: { d: "duration" },
+          onSequence,
+        }),
+      );
+
+      pressKey("e");
+      pressKey("d");
+
+      expect(onSequence).toHaveBeenCalledWith("duration");
+    });
+
+    it("does not let the event-scope hook disarm a booking sequence under app lock", () => {
+      // The grid listener stays mounted while Settings is open. Both hooks
+      // must live in one render: a second renderHook unmounts the first.
+      // Use a reason SettingsModal does not own: the test wrapper mounts it
+      // closed, which would clear `settingsModal` and let the event hook arm.
+      const onEvent = mock(() => {});
+      const onBooking = mock((_field: string) => {});
+      setAppLockReason("test-lock", true);
+
+      renderHook(() => {
+        useEditSequenceShortcut({ onSequence: onEvent });
+        useEditSequenceShortcut({
+          fieldByKey: { d: "duration" },
+          ignoreAppLock: true,
+          onSequence: onBooking,
+          scope: "booking",
+        });
+      });
+
+      pressKey("e");
+      pressKey("d");
+
+      expect(onBooking).toHaveBeenCalledWith("duration");
+      expect(onEvent).not.toHaveBeenCalled();
+    });
   });
 
   it("ignores KeyboardEvents with no key instead of throwing", () => {
