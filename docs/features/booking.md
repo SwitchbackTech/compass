@@ -23,6 +23,11 @@ The username is a `bookingSlug` allocated from the Compass account. It
 is not editable in v1. Changing it later is a dedicated migration with
 redirects.
 
+The guest's selection lives in `/book/:slug` search params
+(`?month=&date=&slot=&tz=`): Back returns from the details step to the
+picker, refresh keeps the selection, and the link is shareable. Invalid
+params drop to defaults; they never error.
+
 Confirmation permalink: `/book/confirmed/:reservationId` (survives
 refresh; cancel copy is only present when the guest just confirmed).
 
@@ -128,7 +133,10 @@ screen with the booked time (guest timezone) and a cancel link.
 
 **Event title:** `{Guest name} and {Host name}`.
 
-**Event description:** guest notes (if any) plus the cancel URL.
+**Event description:** guest notes (if any). The cancel URL is included
+only when "Guest can invite others" is off: the URL is a cancel
+capability, and invitees see the description, so with invites open the
+guest keeps it from the confirmation page instead.
 
 **No reschedule in v1.** The guest cancels and rebooks. The host can
 delete the calendar event as usual.
@@ -188,7 +196,7 @@ v1 uses **Sync busy intervals**, not a new RSVP filter.
   rejected (`409`). Policy stays in Booking; Sync stays facts-only.
   See [Product Suite Boundaries](../architecture/product-suite-boundaries.md).
 
-Known gap (resolved in WP-02): occurrence projection previously forced
+Known gap (since resolved): occurrence projection previously forced
 `busy: true` (`packages/sync/src/domain/occurrence-projection.ts`). Google
 already normalizes transparency; `provider-page-applier.ts` stores
 `providerMetadata.transparency = "transparent"` for free events.
@@ -199,7 +207,8 @@ not v1.
 
 ## Guest cancel
 
-- Confirmation page and event description include a tokenized cancel URL.
+- Confirmation page includes a tokenized cancel URL; the event description
+  carries it too only when guests cannot invite others (see above).
 - Token is unguessable and stored hashed on the reservation.
 - Cancel deletes the calendar event (host as organizer) and marks the
   reservation cancelled. Idempotent: a second cancel is a no-op success.
@@ -248,7 +257,7 @@ Public API must be rate-limited (IP + slug), never leak event titles or
 attendees (busy intervals only), and must not require a SuperTokens
 session.
 
-## HTTP sketch (normative for WP-01)
+## HTTP sketch (normative)
 
 Unauthenticated:
 
@@ -296,10 +305,10 @@ Authenticated (host session + writable billing, same as event writes):
 | --- | --- |
 | Shared contracts | `packages/core/src/types/booking.contracts.ts` |
 | Slot engine | `packages/core/src/booking/compute-booking-slots.ts` |
-| Backend admin API | `packages/backend/src/booking/booking.controller.ts`, `booking-page.service.ts` |
+| Backend admin API | `packages/backend/src/booking/controllers/booking.controller.ts`, `services/booking-page.service.ts` |
 | Backend public API | `packages/backend/src/booking/services/public-booking.service.ts` |
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
-| Calendar application port | `packages/backend/src/booking/calendar-booking.port.ts`, `calendar-booking.service.ts` |
+| Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts`, `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts` |
 | Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx` |
@@ -316,6 +325,11 @@ Authenticated (host session + writable billing, same as event writes):
 - **Occupancy is busy-interval based**, not RSVP-strict (v1.1).
 - **Google-only destination** calendars; password-only hosts see a connect-Google
   prompt in Settings.
+- **A duration change re-prices in-flight confirms.** A guest who picked a
+  slot before the host changed the duration books at the new duration when
+  the engine still allows that start (the server recomputes `slotEnd` from
+  current settings); otherwise the re-check rejects with `409` and the guest
+  re-picks. Accepted for v1.
 
 ## Related docs
 

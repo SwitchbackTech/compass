@@ -699,6 +699,56 @@ describe("BookingSettingsSection", () => {
       screen.getByRole("button", { name: "Save booking settings" }),
     ).toBeInTheDocument();
   });
+
+  it("shows an inline error for a cleared horizon field and blocks save", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(ctx.json({ ...(savedBody as object), isConfigured: true }));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const horizon = await screen.findByLabelText("Maximum horizon (days)");
+    await user.clear(horizon);
+
+    expect(screen.getByText("Enter 1 to 60 days.")).toBeInTheDocument();
+    expect(horizon).toHaveAttribute("aria-invalid", "true");
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    expect(
+      screen.getByText("Fix the highlighted number fields before saving."),
+    ).toBeInTheDocument();
+    expect(savedBody).toBeUndefined();
+
+    await user.type(horizon, "30");
+    expect(screen.queryByText("Enter 1 to 60 days.")).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ maxHorizonDays: 30 });
+    });
+  });
 });
 
 describe("BOOKING_SEQUENCE_FIELDS", () => {

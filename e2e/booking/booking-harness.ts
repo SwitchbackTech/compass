@@ -514,6 +514,27 @@ export const dispatchClick = async (
   });
 };
 
+/**
+ * Sets an input's value through the prototype setter and dispatches `input`,
+ * for the same OverlayPanel re-render quirk dispatchClick works around:
+ * Playwright's fill leaves controlled inputs in this dialog unchanged.
+ */
+export const dispatchFill = async (
+  locator: import("@playwright/test").Locator,
+  value: string,
+) => {
+  await locator.waitFor({ state: "attached", timeout: 10000 });
+  await locator.evaluate((el, nextValue) => {
+    const input = el as HTMLInputElement;
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setter?.call(input, nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+};
+
 export function formatSlotButtonLabel(
   slotStart: string,
   timeZone = "UTC",
