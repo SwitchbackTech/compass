@@ -235,7 +235,15 @@ const ShowcaseTakeover: FC = () => {
 
   const seatFocus = () => {
     const root = regionRef.current;
-    if (!root || closing || root.contains(document.activeElement)) return;
+    if (!root || closing) return;
+    // Mid-run, Enter and Tab are game verbs: park focus on the region itself
+    // so no button can swallow them (a focused Skip button would otherwise
+    // turn the lock-in Enter into an exit).
+    if (gameRef.current.phase === "running") {
+      root.focus();
+      return;
+    }
+    if (root.contains(document.activeElement)) return;
     const [firstFocusable] = getFocusableElements(root);
     (firstFocusable ?? root).focus();
   };
@@ -364,11 +372,7 @@ const ShowcaseTakeover: FC = () => {
         replay();
         return;
       }
-      if (
-        isBareLetterKey(event, "n") &&
-        notificationsSupported &&
-        !focusedButton
-      ) {
+      if (isBareLetterKey(event, "n") && notificationsSupported) {
         claim(event);
         enableNotifications();
       }
