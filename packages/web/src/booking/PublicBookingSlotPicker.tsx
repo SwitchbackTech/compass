@@ -1,3 +1,4 @@
+import { type Ref } from "react";
 import {
   formatBookingDateKey,
   formatBookingSlotDateHeading,
@@ -9,6 +10,7 @@ interface PublicBookingSlotPickerProps {
   selectedDateKey: string | null;
   guestTimeZone: string;
   selectedSlotStart: string | null;
+  headingRef?: Ref<HTMLHeadingElement>;
   onSelectSlot: (slotStart: string) => void;
   onJumpToNextAvailable?: () => void;
 }
@@ -18,6 +20,7 @@ export function PublicBookingSlotPicker({
   selectedDateKey,
   guestTimeZone,
   selectedSlotStart,
+  headingRef,
   onSelectSlot,
   onJumpToNextAvailable,
 }: PublicBookingSlotPickerProps) {
@@ -33,8 +36,10 @@ export function PublicBookingSlotPicker({
     return (
       <section aria-labelledby="booking-slots-heading">
         <h2
+          ref={headingRef}
           id="booking-slots-heading"
-          className="font-medium text-base text-text"
+          tabIndex={-1}
+          className="font-medium text-base text-text focus:outline-none focus:ring-2 focus:ring-accent"
         >
           Pick a time
         </h2>
@@ -68,8 +73,10 @@ export function PublicBookingSlotPicker({
   return (
     <section aria-labelledby="booking-slots-heading">
       <h2
+        ref={headingRef}
         id="booking-slots-heading"
-        className="font-medium text-base text-text"
+        tabIndex={-1}
+        className="font-medium text-base text-text focus:outline-none focus:ring-2 focus:ring-accent"
       >
         Pick a time
       </h2>
