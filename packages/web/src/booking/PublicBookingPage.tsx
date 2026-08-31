@@ -17,13 +17,13 @@ import {
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import {
   findNextAvailableBookingDate,
   formatBookingDateKey,
   formatBookingMonthKey,
   formatBookingSlotDateKey,
   formatDurationMinutes,
-  formatGuestTimeZoneLabel,
   listBookingAvailableDateKeysInMonth,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
@@ -48,10 +48,10 @@ const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
 export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
   const slug = username ?? "";
-  const guestTimeZone = getBrowserTimeZone();
+  const [guestTimeZone, setGuestTimeZone] = useState(getBrowserTimeZone);
   const queryClient = useQueryClient();
   const [monthKey, setMonthKey] = useState(() =>
-    formatBookingMonthKey(dayjs(), guestTimeZone),
+    formatBookingMonthKey(dayjs(), getBrowserTimeZone()),
   );
 
   const pageQuery = usePublicBookingPageQuery(slug);
@@ -59,6 +59,7 @@ export function PublicBookingPage() {
     slug,
     monthKey,
     pageQuery.data?.maxHorizonDays,
+    guestTimeZone,
   );
   const createReservation = useCreatePublicBookingReservationMutation(slug);
 
@@ -207,6 +208,27 @@ export function PublicBookingPage() {
     setStep("picker");
   };
 
+  const handleTimeZoneChange = (nextTimeZone: string) => {
+    if (nextTimeZone === guestTimeZone) {
+      return;
+    }
+    const currentMonthInOldZone = formatBookingMonthKey(dayjs(), guestTimeZone);
+    setGuestTimeZone(nextTimeZone);
+    if (selectedSlotStart) {
+      const nextDateKey = formatBookingSlotDateKey(
+        selectedSlotStart,
+        nextTimeZone,
+      );
+      setSelectedDateKey(nextDateKey);
+      setMonthKey(nextDateKey.slice(0, 7));
+      return;
+    }
+    if (monthKey === currentMonthInOldZone) {
+      setMonthKey(formatBookingMonthKey(dayjs(), nextTimeZone));
+    }
+    setSelectedDateKey(null);
+  };
+
   const handleChangeTime = () => {
     pendingPickerFocusRef.current = true;
     setStep("picker");
@@ -320,10 +342,13 @@ export function PublicBookingPage() {
         <p className="text-sm text-text-muted">
           {formatDurationMinutes(page.durationMinutes)} meeting
         </p>
-        <p className="text-sm text-text-muted">
-          Times shown in your timezone (
-          {formatGuestTimeZoneLabel(guestTimeZone)}).
-        </p>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-text-muted">
+          <p>Times shown in your timezone</p>
+          <PublicBookingTimezoneControl
+            timeZone={guestTimeZone}
+            onChange={handleTimeZoneChange}
+          />
+        </div>
       </header>
 
       {conflictMessage ? (
@@ -381,6 +406,7 @@ export function PublicBookingPage() {
               <PublicBookingGuestForm
                 disabled={createReservation.isPending}
                 submitDisabled={!selectedSlotStart}
+                guestTimeZone={guestTimeZone}
                 values={guestDetails}
                 onChange={setGuestDetails}
                 onSubmit={handleSubmit}

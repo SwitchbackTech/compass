@@ -59,13 +59,22 @@ function bookableSlotInNextMonth() {
   };
 }
 
-function slotTimePattern(iso: string) {
+function slotTimePattern(iso: string, timeZone = "UTC") {
   const label = new Intl.DateTimeFormat(undefined, {
-    timeZone: "UTC",
+    timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(iso));
   return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+}
+
+async function selectGuestTimeZone(
+  user: ReturnType<typeof userEvent.setup>,
+  query: string,
+) {
+  await user.click(screen.getByRole("button", { name: /^Timezone:/ }));
+  await user.type(screen.getByRole("combobox"), query);
+  await user.keyboard("{Enter}");
 }
 
 const currentSlot = bookableSlotInCurrentMonth();
@@ -208,7 +217,214 @@ describe("PublicBookingPage", () => {
       slotStart: currentSlot.slotStart,
       guestName: "Guest User",
       guestEmail: "guest@example.com",
+      guestTimeZone: "UTC",
     });
+  });
+
+  it("overrides the guest timezone for labels, day grouping, and submit", async () => {
+    const user = userEvent.setup({ delay: null });
+    let postedBody: unknown;
+    const slotTimeZones: string[] = [];
+    const overrideZone = "Asia/Tokyo";
+    const slot = nextMonthSlot;
+
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tzhost`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tzhost/slots`,
+        (req, res, ctx) => {
+          slotTimeZones.push(req.url.searchParams.get("timeZone") ?? "");
+          const start = req.url.searchParams.get("start");
+          const end = req.url.searchParams.get("end");
+          const startMs = start ? Date.parse(start) : Number.NEGATIVE_INFINITY;
+          const endMs = end ? Date.parse(end) : Number.POSITIVE_INFINITY;
+          const slots = [slot].filter((item) => {
+            const at = Date.parse(item.slotStart);
+            return at >= startMs && at < endMs;
+          });
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ bookable: true, slots }),
+          );
+        },
+      ),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tzhost/reservations`,
+        async (req, res, ctx) => {
+          postedBody = await req.json();
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              reservationId: "000000000000000000000099",
+              slotStart: slot.slotStart,
+              slotEnd: slot.slotEnd,
+              guestTimeZone: overrideZone,
+              cancelUrl:
+                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tzhost");
+
+    expect(
+      await screen.findByText(/Times shown in your timezone/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Timezone: UTC/ }),
+    ).toBeInTheDocument();
+
+    await user.click(await screen.findByRole("button", { name: "Next month" }));
+
+    const utcDateKey = formatBookingSlotDateKey(slot.slotStart, guestTimeZone);
+    expect(
+      await screen.findByRole("button", {
+        name: formatBookingMonthDayLabel(utcDateKey, guestTimeZone),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(slot.slotStart, guestTimeZone),
+      }),
+    ).toBeInTheDocument();
+
+    await selectGuestTimeZone(user, "tokyo");
+
+    expect(
+      await screen.findByRole("button", { name: /^Timezone: Tokyo/ }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(slotTimeZones).toContain(overrideZone);
+    });
+
+    const tokyoDateKey = formatBookingSlotDateKey(slot.slotStart, overrideZone);
+    expect(tokyoDateKey).not.toBe(utcDateKey);
+    expect(
+      await screen.findByRole("button", {
+        name: formatBookingMonthDayLabel(tokyoDateKey, overrideZone),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(slot.slotStart, overrideZone),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: slotTimePattern(slot.slotStart, guestTimeZone),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: slotTimePattern(slot.slotStart, overrideZone),
+      }),
+    );
+    expect(
+      screen.getByText(formatBookingSlotLabel(slot.slotStart, overrideZone)),
+    ).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Name"), "Guest User");
+    await user.type(screen.getByLabelText("Email"), "guest@example.com");
+    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(postedBody).toMatchObject({
+      slotStart: slot.slotStart,
+      guestTimeZone: overrideZone,
+    });
+  });
+
+  it("keeps the guest timezone across month navigation and the details step", async () => {
+    const user = userEvent.setup({ delay: null });
+    const overrideZone = "Europe/Berlin";
+
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tzpersist`,
+        (_req, res, ctx) =>
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
+      ),
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tzpersist/slots`,
+        (req, res, ctx) => {
+          const start = req.url.searchParams.get("start");
+          const end = req.url.searchParams.get("end");
+          const startMs = start ? Date.parse(start) : Number.NEGATIVE_INFINITY;
+          const endMs = end ? Date.parse(end) : Number.POSITIVE_INFINITY;
+          const slots = [currentSlot, nextMonthSlot].filter((slot) => {
+            const at = Date.parse(slot.slotStart);
+            return at >= startMs && at < endMs;
+          });
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({ bookable: true, slots }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tzpersist");
+
+    await screen.findByRole("button", {
+      name: slotTimePattern(currentSlot.slotStart, guestTimeZone),
+    });
+    await selectGuestTimeZone(user, "berlin");
+    expect(
+      await screen.findByRole("button", { name: /^Timezone: Berlin/ }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next month" }));
+    const nextMonthKey = shiftBookingMonthKey(currentMonthKey, 1, overrideZone);
+    expect(
+      await screen.findByRole("heading", {
+        name: formatBookingMonthHeading(nextMonthKey, overrideZone),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Timezone: Berlin/ }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", {
+        name: slotTimePattern(nextMonthSlot.slotStart, overrideZone),
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Previous month" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotTimePattern(currentSlot.slotStart, overrideZone),
+      }),
+    );
+    expect(
+      screen.getByRole("button", { name: /^Timezone: Berlin/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        formatBookingSlotLabel(currentSlot.slotStart, overrideZone),
+      ),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Change time" }));
+    expect(
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^Timezone: Berlin/ }),
+    ).toBeInTheDocument();
   });
 
   it("shows unavailable when bookable is false", async () => {

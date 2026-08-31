@@ -58,6 +58,7 @@ export function PublicBookingDetailsStep({
         disabled={disabled}
         submitDisabled={false}
         showHeading={false}
+        guestTimeZone={timeZone}
         values={values}
         onChange={onChange}
         onSubmit={onSubmit}

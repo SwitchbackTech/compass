@@ -43,6 +43,38 @@ test.describe("public booking page", () => {
     });
   });
 
+  test("overrides the guest timezone on the reservation", async ({ page }) => {
+    const { slotStart } = buildBookableSlot();
+    const captured = await preparePublicBookingPage(page);
+
+    await expect(
+      page.getByRole("button", { name: /^Timezone:/ }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: /^Timezone:/ }).click();
+    await page.getByRole("combobox").fill("berlin");
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("button", { name: /^Timezone: Berlin/ }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", {
+        name: formatSlotButtonLabel(slotStart, "Europe/Berlin"),
+      })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    expect(captured.reservationPosts).toHaveLength(1);
+    expect(captured.reservationPosts[0]).toMatchObject({
+      slotStart,
+      guestTimeZone: "Europe/Berlin",
+    });
+  });
+
   test("does not POST when email is missing", async ({ page }) => {
     const { slotStart } = buildBookableSlot();
     const captured = await preparePublicBookingPage(page);
