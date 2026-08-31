@@ -23,7 +23,7 @@ export function PublicBookingSkipLink({
     <a
       href={href}
       onClick={handleClick}
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-30 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="c-focus-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-30 focus:rounded-md focus:border focus:border-border focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:text-text"
     >
       {label}
     </a>

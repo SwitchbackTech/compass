@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { copyText } from "@web/common/utils/clipboard/clipboard.util";
+import { useCopiedFlag } from "@web/booking/use-copied-flag";
 
 interface PublicBookingCopyCancelUrlProps {
   cancelUrl: string;
@@ -8,30 +7,20 @@ interface PublicBookingCopyCancelUrlProps {
 export function PublicBookingCopyCancelUrl({
   cancelUrl,
 }: PublicBookingCopyCancelUrlProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    void copyText(cancelUrl).then((didCopy) => {
-      if (!didCopy) {
-        return;
-      }
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    });
-  };
+  const { copied, copy } = useCopiedFlag(cancelUrl);
 
   return (
     <div className="mt-4 flex flex-col gap-2">
       <a
         href={cancelUrl}
-        className="break-all text-accent text-sm underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="c-focus-ring break-all text-accent text-sm underline"
       >
         {cancelUrl}
       </a>
       <button
         type="button"
-        onClick={handleCopy}
-        className="self-start rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        onClick={copy}
+        className="c-focus-ring self-start rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text"
       >
         {copied ? "Copied" : "Copy cancel link"}
       </button>

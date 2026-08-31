@@ -5,13 +5,18 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import { type CreateBookingReservationInput } from "@core/types/booking.contracts";
+import {
+  type BookingSlotsResponse,
+  type CreateBookingReservationInput,
+} from "@core/types/booking.contracts";
 import {
   PublicBookingApi,
   PublicBookingNotFoundError,
 } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
 import {
+  BOOKING_MONTH_SEARCH_LIMIT,
+  findNextAvailableBookingDate,
   getPublicBookingMonthWindow,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
@@ -168,6 +173,66 @@ export function usePrefetchAdjacentBookingMonths(
     slug,
     timeZone,
   ]);
+}
+
+/**
+ * Walk forward from `monthKey` looking for the next day with open times,
+ * reading cached months and prefetching uncached ones as it goes. Null means
+ * the whole horizon is empty - the caller owes the guest a message, not
+ * silence.
+ */
+export async function resolveNextAvailableBookingDate(
+  queryClient: ReturnType<typeof useQueryClient>,
+  slug: string,
+  monthKey: string,
+  afterDateKey: string | null,
+  timeZone: string,
+  todayKey: string,
+  maxHorizonDays: number,
+): Promise<{ monthKey: string; dateKey: string } | null> {
+  const slotsByMonth = new Map<
+    string,
+    BookingSlotsResponse["slots"] | undefined
+  >();
+  let cursor = monthKey;
+  for (let offset = 0; offset < BOOKING_MONTH_SEARCH_LIMIT; offset += 1) {
+    const cached = queryClient.getQueryData<BookingSlotsResponse>(
+      publicBookingQueryKeys.slots(slug, cursor, timeZone),
+    );
+    if (cached) {
+      slotsByMonth.set(cursor, cached.slots);
+    }
+    cursor = shiftBookingMonthKey(cursor, 1, timeZone);
+  }
+
+  for (let attempt = 0; attempt < BOOKING_MONTH_SEARCH_LIMIT; attempt += 1) {
+    const next = findNextAvailableBookingDate(
+      monthKey,
+      afterDateKey,
+      slotsByMonth,
+      timeZone,
+      todayKey,
+      maxHorizonDays,
+    );
+    if (!next) {
+      return null;
+    }
+    if (next.dateKey) {
+      return { monthKey: next.monthKey, dateKey: next.dateKey };
+    }
+    await prefetchPublicBookingMonth(
+      queryClient,
+      slug,
+      next.monthKey,
+      timeZone,
+      maxHorizonDays,
+    );
+    const fetched = queryClient.getQueryData<BookingSlotsResponse>(
+      publicBookingQueryKeys.slots(slug, next.monthKey, timeZone),
+    );
+    slotsByMonth.set(next.monthKey, fetched?.slots ?? []);
+  }
+  return null;
 }
 
 export function useCreatePublicBookingReservationMutation(slug: string) {

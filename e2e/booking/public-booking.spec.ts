@@ -226,15 +226,14 @@ test.describe("public booking page", () => {
     await page.setViewportSize({ width: 800, height: 480 });
 
     const origin = buildBookableSlot();
-    const originDate = origin.slotStart.slice(0, 10);
+    // Fill the origin's whole UTC day from midnight: counting forward from
+    // the origin left too few slots to scroll when the suite ran late in the
+    // UTC day (the origin can fall back to now + 2h).
+    const dayStart = new Date(origin.slotStart);
+    dayStart.setUTCHours(0, 0, 0, 0);
     const slots: Array<{ slotStart: string; slotEnd: string }> = [];
     for (let index = 0; index < 40; index += 1) {
-      const slotStart = new Date(
-        Date.parse(origin.slotStart) + index * 15 * 60 * 1000,
-      );
-      if (slotStart.toISOString().slice(0, 10) !== originDate) {
-        break;
-      }
+      const slotStart = new Date(dayStart.getTime() + index * 15 * 60 * 1000);
       slots.push({
         slotStart: slotStart.toISOString(),
         slotEnd: new Date(slotStart.getTime() + 30 * 60 * 1000).toISOString(),

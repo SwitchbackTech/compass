@@ -1,6 +1,8 @@
 import {
   type AdminGetBookingPageResponse,
+  type AdminGetBookingPageSetupResponse,
   type AdminPutBookingPageInput,
+  AdminPutBookingPageInputSchema,
   type BookingPage,
   BookingPageSchema,
 } from "@core/types/booking.contracts";
@@ -41,6 +43,43 @@ export const mapBookingPageRecordToAdminResponse = (
 ): AdminGetBookingPageResponse => ({
   ...mapBookingPageRecordToWire(record),
   bookingUrl: buildBookingUrl(record.bookingSlug),
+});
+
+/**
+ * A record that was saved but never enabled has no slug and no public URL.
+ * isConfigured: true tells the client the host's stored timezone is a real
+ * choice that must not be re-seeded from the browser.
+ */
+export const mapBookingPageRecordToSetupResponse = (
+  record: Pick<
+    BookingPageRecord,
+    | "enabled"
+    | "durationMinutes"
+    | "destinationCalendarId"
+    | "blockingCalendarIds"
+    | "timeZone"
+    | "weeklyAvailability"
+    | "minNoticeHours"
+    | "maxHorizonDays"
+    | "bufferMinutes"
+    | "maxBookingsPerDay"
+    | "guestsCanInviteOthers"
+  >,
+): AdminGetBookingPageSetupResponse => ({
+  ...AdminPutBookingPageInputSchema.parse({
+    enabled: record.enabled,
+    durationMinutes: record.durationMinutes,
+    destinationCalendarId: record.destinationCalendarId,
+    blockingCalendarIds: record.blockingCalendarIds,
+    timeZone: record.timeZone,
+    weeklyAvailability: record.weeklyAvailability,
+    minNoticeHours: record.minNoticeHours,
+    maxHorizonDays: record.maxHorizonDays,
+    bufferMinutes: record.bufferMinutes,
+    maxBookingsPerDay: record.maxBookingsPerDay,
+    guestsCanInviteOthers: record.guestsCanInviteOthers,
+  }),
+  isConfigured: true,
 });
 
 export const mapPutInputToRecordFields = (

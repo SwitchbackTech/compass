@@ -43,7 +43,7 @@ const validateGuestFields = (
 };
 
 const FIELD_CLASS_NAME =
-  "rounded-md border border-border bg-surface px-3 py-2 text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+  "c-focus-ring rounded-md border border-border bg-surface px-3 py-2 text-text";
 
 const INVALID_FIELD_CLASS_NAME = `${FIELD_CLASS_NAME} border-error`;
 
@@ -178,7 +178,7 @@ export function PublicBookingGuestForm({
         type="submit"
         disabled={disabled || submitDisabled}
         aria-busy={disabled || undefined}
-        className="rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+        className="c-focus-ring rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         {disabled ? "Confirming..." : "Confirm booking"}
       </button>

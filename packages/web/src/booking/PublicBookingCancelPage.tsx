@@ -67,7 +67,7 @@ export function PublicBookingCancelPage() {
             onClick={() => {
               void handleConfirm();
             }}
-            className="mt-6 rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="c-focus-ring mt-6 rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? "Canceling..." : "Cancel this booking"}
           </button>

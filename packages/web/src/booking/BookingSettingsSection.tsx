@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   type AdminGetBookingPageResponse,
+  type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
   type BookingDurationMinutes,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
-import { type HostBookingPageResponse } from "@web/api/booking.api";
 import {
   selectGoogleConnectionState,
   selectGoogleSyncConnections,
@@ -93,7 +93,7 @@ const MIN_NOTICE_BOUNDS = { min: 0, max: Number.MAX_SAFE_INTEGER };
 const HORIZON_BOUNDS = { min: 1, max: 60 };
 
 const buildInitialForm = (
-  page: HostBookingPageResponse | undefined,
+  page: AdminGetBookingPageResult | undefined,
   effectiveTimeZone: string,
   writableCalendars: Calendar[],
 ): AdminPutBookingPageInput => {
@@ -222,7 +222,9 @@ export function BookingSettingsSection({
   // Re-seed only when the server actually answers with a different page.
   // Keying the effect on writableCalendars/effectiveTimeZone as well meant a
   // calendars refetch or a timezone-store change wiped edits mid-typing.
-  const seededPageRef = useRef<HostBookingPageResponse | undefined>(undefined);
+  const seededPageRef = useRef<AdminGetBookingPageResult | undefined>(
+    undefined,
+  );
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
     seededPageRef.current = serverPage;

@@ -353,6 +353,13 @@ export function listBookingAvailableDateKeysInMonth(
   );
 }
 
+/**
+ * How many months forward the next-available search will look. Anything past
+ * the 60-day horizon is unavailable anyway; 14 leaves margin for timezone
+ * month-boundary skew.
+ */
+export const BOOKING_MONTH_SEARCH_LIMIT = 14;
+
 export function findNextAvailableBookingDate(
   monthKey: string,
   afterDateKey: string | null,
@@ -367,7 +374,7 @@ export function findNextAvailableBookingDate(
 ): { monthKey: string; dateKey: string | null } | null {
   let month = monthKey;
   let after = afterDateKey;
-  for (let step = 0; step < 14; step += 1) {
+  for (let step = 0; step < BOOKING_MONTH_SEARCH_LIMIT; step += 1) {
     if (!isBookingMonthAvailable(month, timeZone, maxHorizonDays, now)) {
       return null;
     }
