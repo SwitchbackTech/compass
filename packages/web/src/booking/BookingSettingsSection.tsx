@@ -5,11 +5,7 @@ import {
   type BookingDurationMinutes,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
-import {
-  type CalendarId,
-  type TimeZone,
-  TimeZoneSchema,
-} from "@core/types/domain-primitives";
+import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
 import {
   selectGoogleConnectionState,
   selectGoogleSyncConnections,
@@ -31,6 +27,7 @@ import {
   getAvailabilityReadableCalendars,
   isPlaceholderDestinationCalendar,
   resolveWritableCalendars,
+  toBookingPageInput,
 } from "@web/booking/booking.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
@@ -61,7 +58,7 @@ const buildInitialForm = (
     durationMinutes: 30 as BookingDurationMinutes,
     destinationCalendarId: BOOKING_PLACEHOLDER_CALENDAR_ID,
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
-    timeZone: effectiveTimeZone,
+    timeZone: TimeZoneSchema.parse(effectiveTimeZone),
     weeklyAvailability: [],
     minNoticeHours: 4,
     maxHorizonDays: 60,
@@ -87,8 +84,10 @@ const buildInitialForm = (
           writableCalendars,
         );
 
+  // toBookingPageInput, not a spread: `base` may be the saved-page response,
+  // whose response-only keys would make the strict PUT schema throw on save.
   return {
-    ...base,
+    ...toBookingPageInput(base),
     destinationCalendarId,
     blockingCalendarIds,
     timeZone: TimeZoneSchema.parse(base.timeZone || effectiveTimeZone),
