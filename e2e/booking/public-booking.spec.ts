@@ -105,21 +105,57 @@ test.describe("public booking page", () => {
   test("refreshes slots and shows a conflict message on 409", async ({
     page,
   }) => {
-    const { slotStart } = buildBookableSlot();
+    const first = buildBookableSlot();
+    const secondStart = new Date(
+      Date.parse(first.slotStart) + 30 * 60 * 1000,
+    ).toISOString();
+    const second = {
+      slotStart: secondStart,
+      slotEnd: new Date(Date.parse(secondStart) + 30 * 60 * 1000).toISOString(),
+    };
     const captured = await preparePublicBookingPage(page, {
       confirmStatus: 409,
+      slots: [first, second],
     });
 
     await page
-      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .getByRole("button", { name: formatSlotButtonLabel(first.slotStart) })
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByLabel("Notes (optional)").fill("Bring slides");
     await page.getByRole("button", { name: "Confirm booking" }).click();
 
-    await expect(page.getByRole("alert")).toHaveText(
+    const alert = page.getByRole("alert");
+    await expect(alert).toHaveText(
       "This time is no longer available. Pick another slot.",
     );
+    await expect(alert).toBeFocused();
+    await expect(page.getByLabel("Name")).toHaveValue("Guest User");
+    await expect(page.getByLabel("Email")).toHaveValue("guest@example.com");
+    await expect(page.getByLabel("Notes (optional)")).toHaveValue(
+      "Bring slides",
+    );
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(first.slotStart),
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await expect(
+      page.getByRole("button", { name: "Confirm booking" }),
+    ).toBeDisabled();
     await expect.poll(() => captured.slotGets).toBeGreaterThan(1);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(second.slotStart) })
+      .click();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(second.slotStart),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByRole("button", { name: "Confirm booking" }),
+    ).toBeEnabled();
   });
 });

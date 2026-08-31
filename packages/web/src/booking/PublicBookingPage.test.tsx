@@ -142,9 +142,10 @@ describe("PublicBookingPage", () => {
     expect(screen.queryByText(/week/i)).not.toBeInTheDocument();
   });
 
-  it("refreshes slots and shows a conflict message on 409", async () => {
+  it("keeps guest details and moves focus to the alert on 409", async () => {
     const user = userEvent.setup({ delay: null });
     let slotRequests = 0;
+    const laterSlotStart = "2026-09-01T15:30:00.000Z";
 
     server.use(
       rest.get(
@@ -160,7 +161,13 @@ describe("PublicBookingPage", () => {
             ctx.status(Status.OK),
             ctx.json({
               bookable: true,
-              slots: [{ slotStart, slotEnd: "2026-09-01T15:30:00.000Z" }],
+              slots: [
+                { slotStart, slotEnd: laterSlotStart },
+                {
+                  slotStart: laterSlotStart,
+                  slotEnd: "2026-09-01T16:00:00.000Z",
+                },
+              ],
             }),
           );
         },
@@ -179,14 +186,32 @@ describe("PublicBookingPage", () => {
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
+    await user.type(screen.getByLabelText("Notes (optional)"), "Bring slides");
     await user.click(screen.getByRole("button", { name: "Confirm booking" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
       "This time is no longer available. Pick another slot.",
     );
     await waitFor(() => {
+      expect(alert).toHaveFocus();
+    });
+    expect(screen.getByLabelText("Name")).toHaveValue("Guest User");
+    expect(screen.getByLabelText("Email")).toHaveValue("guest@example.com");
+    expect(screen.getByLabelText("Notes (optional)")).toHaveValue(
+      "Bring slides",
+    );
+    expect(
+      screen.getByRole("button", { name: "Confirm booking" }),
+    ).toBeDisabled();
+    await waitFor(() => {
       expect(slotRequests).toBeGreaterThan(1);
     });
+
+    await user.click(screen.getByRole("button", { name: /3:30 PM|15:30/i }));
+    expect(
+      screen.getByRole("button", { name: "Confirm booking" }),
+    ).toBeEnabled();
   });
 
   it("does not boot the calendar shortcut overlay on public booking routes", async () => {

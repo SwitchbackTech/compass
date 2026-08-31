@@ -1,32 +1,38 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent } from "react";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
-export interface PublicBookingGuestFormValues {
+export interface PublicBookingGuestDetails {
   guestName: string;
   guestEmail: string;
   notes: string;
+}
+
+export interface PublicBookingGuestFormValues
+  extends PublicBookingGuestDetails {
   guestTimeZone: string;
 }
 
 interface PublicBookingGuestFormProps {
   disabled: boolean;
+  submitDisabled: boolean;
+  values: PublicBookingGuestDetails;
+  onChange: (values: PublicBookingGuestDetails) => void;
   onSubmit: (values: PublicBookingGuestFormValues) => void;
 }
 
 export function PublicBookingGuestForm({
   disabled,
+  submitDisabled,
+  values,
+  onChange,
   onSubmit,
 }: PublicBookingGuestFormProps) {
-  const [guestName, setGuestName] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [notes, setNotes] = useState("");
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit({
-      guestName: guestName.trim(),
-      guestEmail: guestEmail.trim(),
-      notes: notes.trim(),
+      guestName: values.guestName.trim(),
+      guestEmail: values.guestEmail.trim(),
+      notes: values.notes.trim(),
       guestTimeZone: getBrowserTimeZone(),
     });
   };
@@ -46,9 +52,11 @@ export function PublicBookingGuestForm({
           required
           type="text"
           autoComplete="name"
-          value={guestName}
+          value={values.guestName}
           disabled={disabled}
-          onChange={(event) => setGuestName(event.target.value)}
+          onChange={(event) =>
+            onChange({ ...values, guestName: event.target.value })
+          }
           className="rounded-md border border-border bg-surface px-3 py-2 text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
       </label>
@@ -58,9 +66,11 @@ export function PublicBookingGuestForm({
           required
           type="email"
           autoComplete="email"
-          value={guestEmail}
+          value={values.guestEmail}
           disabled={disabled}
-          onChange={(event) => setGuestEmail(event.target.value)}
+          onChange={(event) =>
+            onChange({ ...values, guestEmail: event.target.value })
+          }
           className="rounded-md border border-border bg-surface px-3 py-2 text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
       </label>
@@ -68,15 +78,17 @@ export function PublicBookingGuestForm({
         <span className="text-text-muted">Notes (optional)</span>
         <textarea
           rows={3}
-          value={notes}
+          value={values.notes}
           disabled={disabled}
-          onChange={(event) => setNotes(event.target.value)}
+          onChange={(event) =>
+            onChange({ ...values, notes: event.target.value })
+          }
           className="rounded-md border border-border bg-surface px-3 py-2 text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         />
       </label>
       <button
         type="submit"
-        disabled={disabled}
+        disabled={disabled || submitDisabled}
         className="rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
       >
         Confirm booking
