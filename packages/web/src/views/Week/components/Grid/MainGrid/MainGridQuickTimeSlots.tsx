@@ -7,6 +7,7 @@ import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
 import {
   buildQuickTimeSlots,
   quickTimeTargetDay,
+  timedEventsToBusyIntervals,
 } from "@web/shortcuts/quick-time/quick-time.util";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -46,20 +47,11 @@ export const MainGridQuickTimeSlots = ({ measurements, weekProps }: Props) => {
       component.endOfView,
       now,
     );
-    // All-day events live in their own row, so only timed cards can collide
-    // with a placeholder.
-    const busy = timedEvents.flatMap((event) =>
-      event.startDate && event.endDate
-        ? [
-            {
-              startMs: dayjs(event.startDate).valueOf(),
-              endMs: dayjs(event.endDate).valueOf(),
-            },
-          ]
-        : [],
-    );
-
-    return buildQuickTimeSlots({ busy, now, targetDay });
+    return buildQuickTimeSlots({
+      busy: timedEventsToBusyIntervals(timedEvents),
+      now,
+      targetDay,
+    });
   }, [component.endOfView, component.startOfView, timedEvents]);
 
   return (

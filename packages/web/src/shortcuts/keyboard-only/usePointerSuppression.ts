@@ -25,15 +25,13 @@ export function usePointerSuppression() {
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: (event) => {
+        const path = event.composedPath?.() ?? [];
         const { attempt: baseAttempt, jumpEventId } =
-          teachingFromBlockedPointer(
-            event.composedPath?.() ?? [],
-            event.button ?? 0,
-          );
+          teachingFromBlockedPointer(path, event.button ?? 0);
         const gridIntent =
           baseAttempt.actionId === "unknown"
             ? pointerGridIntentFromPointer(
-                event.composedPath?.() ?? [],
+                path,
                 event.clientX ?? 0,
                 event.clientY ?? 0,
               )
@@ -67,14 +65,13 @@ export function usePointerSuppression() {
     for (const type of POINTER_BLOCK_EVENT_TYPES) {
       window.addEventListener(type, onPointerEvent, true);
     }
-    const handleKeyDown = (event: KeyboardEvent) => onKeyDown(event);
-    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keydown", onKeyDown, true);
 
     return () => {
       for (const type of POINTER_BLOCK_EVENT_TYPES) {
         window.removeEventListener(type, onPointerEvent, true);
       }
-      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, []);
 }

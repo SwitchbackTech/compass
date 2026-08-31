@@ -5,6 +5,7 @@ import {
   quickTimeSequenceForHour,
   quickTimeTargetDay,
   resolveQuickTimeStart,
+  timedEventsToBusyIntervals,
 } from "@web/shortcuts/quick-time/quick-time.util";
 import { describe, expect, it } from "bun:test";
 
@@ -149,5 +150,22 @@ describe("buildQuickTimeSlots", () => {
     expect(sequences).toContain("0900");
     expect(sequences).not.toContain("1000");
     expect(sequences).toContain("1100");
+  });
+});
+
+describe("timedEventsToBusyIntervals", () => {
+  it("keeps only events that have both ends", () => {
+    expect(
+      timedEventsToBusyIntervals([
+        { startDate: at("09:00").format(), endDate: at("10:00").format() },
+        { startDate: at("11:00").format() },
+        { endDate: at("12:00").format() },
+      ]),
+    ).toEqual([
+      {
+        startMs: at("09:00").valueOf(),
+        endMs: at("10:00").valueOf(),
+      },
+    ]);
   });
 });

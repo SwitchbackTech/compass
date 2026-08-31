@@ -1,4 +1,4 @@
-import { type Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   getDayjsByTimeValue,
   getTimeOptionByValue,
@@ -75,6 +75,26 @@ export const quickTimeTargetDay = (
     ? now.startOf("day")
     : startOfView.startOf("day");
 
+export type QuickTimeBusyInterval = {
+  startMs: number;
+  endMs: number;
+};
+
+/** Timed cards that can overlap a placeholder; all-day events live in another row. */
+export const timedEventsToBusyIntervals = (
+  events: readonly { startDate?: string; endDate?: string }[],
+): QuickTimeBusyInterval[] =>
+  events.flatMap((event) =>
+    event.startDate && event.endDate
+      ? [
+          {
+            startMs: dayjs(event.startDate).valueOf(),
+            endMs: dayjs(event.endDate).valueOf(),
+          },
+        ]
+      : [],
+  );
+
 export type QuickTimeSlot = {
   /** Offset-formatted, so getBusyPeriodPosition can place it like any segment. */
   start: string;
@@ -93,7 +113,7 @@ export function buildQuickTimeSlots({
   now,
   targetDay,
 }: {
-  busy: readonly { startMs: number; endMs: number }[];
+  busy: readonly QuickTimeBusyInterval[];
   now: Dayjs;
   targetDay: Dayjs;
 }): QuickTimeSlot[] {

@@ -120,12 +120,12 @@ export const buildCalendarPageJumpTargets = (
 export const CALENDAR_PAGE_JUMP_TARGETS: PageJumpTargets =
   buildCalendarPageJumpTargets();
 
-export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = [
-  { digit: "1", id: "view-select", label: "View dropdown" },
-  { digit: "2", id: "life-grid", label: "Current week" },
-  { digit: "3", id: "life-variation", label: "Life variation" },
-  { digit: "4", id: "life-details", label: "Life details" },
-];
+export const LIFE_PAGE_JUMP_TARGETS: PageJumpTargets = withPickDigits([
+  { id: "view-select", label: "View dropdown" },
+  { id: "life-grid", label: "Current week" },
+  { id: "life-variation", label: "Life variation" },
+  { id: "life-details", label: "Life details" },
+]);
 
 export type DayColumnJumpCalendar = {
   id: string;

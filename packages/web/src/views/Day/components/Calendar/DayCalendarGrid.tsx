@@ -42,7 +42,10 @@ import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu"
 import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { buildDayPageJumpTargets } from "@web/shortcuts/page-jump/page-jump.targets";
 import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
-import { buildQuickTimeSlots } from "@web/shortcuts/quick-time/quick-time.util";
+import {
+  buildQuickTimeSlots,
+  timedEventsToBusyIntervals,
+} from "@web/shortcuts/quick-time/quick-time.util";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -349,18 +352,11 @@ export function DayCalendarGrid() {
   // chips off cards regardless of which column they are in.
   const quickTimeSlots = useMemo(() => {
     const now = dayjs().tz(getEffectiveTimeZone());
-    const busy = displayedTimedEvents.flatMap((event) =>
-      event.startDate && event.endDate
-        ? [
-            {
-              startMs: dayjs(event.startDate).valueOf(),
-              endMs: dayjs(event.endDate).valueOf(),
-            },
-          ]
-        : [],
-    );
-
-    return buildQuickTimeSlots({ busy, now, targetDay: dateInView });
+    return buildQuickTimeSlots({
+      busy: timedEventsToBusyIntervals(displayedTimedEvents),
+      now,
+      targetDay: dateInView,
+    });
   }, [dateInView, displayedTimedEvents]);
 
   const quickTimeCalendarId = resolveShortcutCalendarId();
@@ -371,14 +367,20 @@ export function DayCalendarGrid() {
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity
   // changes is safe — no latest-ref mirror needed.
-  useEffect(
-    () => onViewCommand("CREATE_ALLDAY_DRAFT", createAllDayDraftFromShortcut),
-    [createAllDayDraftFromShortcut],
-  );
-  useEffect(
-    () => onViewCommand("CREATE_TIMED_DRAFT", createTimedDraftFromShortcut),
-    [createTimedDraftFromShortcut],
-  );
+  useEffect(() => {
+    const unsubscribeCreateAllDayDraft = onViewCommand(
+      "CREATE_ALLDAY_DRAFT",
+      createAllDayDraftFromShortcut,
+    );
+    const unsubscribeCreateTimedDraft = onViewCommand(
+      "CREATE_TIMED_DRAFT",
+      createTimedDraftFromShortcut,
+    );
+    return () => {
+      unsubscribeCreateAllDayDraft();
+      unsubscribeCreateTimedDraft();
+    };
+  }, [createAllDayDraftFromShortcut, createTimedDraftFromShortcut]);
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
