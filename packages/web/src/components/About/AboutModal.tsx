@@ -6,6 +6,7 @@ import {
 import { type FC, useState } from "react";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
+import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import {
   selectIsAboutOpen,
@@ -34,7 +35,8 @@ export const AboutModal: FC = () => {
   if (!isOpen) return null;
 
   const handleCopyVersion = () => {
-    void navigator.clipboard.writeText(APP_VERSION).then(() => {
+    void copyText(APP_VERSION).then((didCopy) => {
+      if (!didCopy) return;
       setCopied(true);
       window.setTimeout(() => setCopied(false), COPIED_LABEL_DURATION_MS);
     });

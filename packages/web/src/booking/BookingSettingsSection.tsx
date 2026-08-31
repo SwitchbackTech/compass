@@ -45,6 +45,8 @@ import {
   groupCalendarsByAccount,
 } from "@web/calendars/calendar.util";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
+import { copyText } from "@web/common/utils/clipboard/clipboard.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
   OverlayPanelActionButton,
   OverlayPanelActions,
@@ -254,7 +256,29 @@ export function BookingSettingsSection({
       return;
     }
     setEnableError(null);
-    saveMutation.mutate(form);
+    // Auto-copy lives here, not in the mutation: the mutation owns the query
+    // cache, and putting clipboard UX there would also bury the no-link case.
+    saveMutation.mutate(form, {
+      onSuccess: (page) => {
+        if (!("bookingUrl" in page)) {
+          // No slug is allocated until the page is enabled, so there is no
+          // link to copy yet - say so rather than claiming one was copied.
+          showStatusToast(
+            "booking-link-copied",
+            "Saved. Enable booking to get your link.",
+          );
+          return;
+        }
+        void copyText(page.bookingUrl).then((didCopy) => {
+          showStatusToast(
+            "booking-link-copied",
+            didCopy
+              ? "Saved. Booking link copied."
+              : "Saved. Press e then l to copy your link.",
+          );
+        });
+      },
+    });
   };
 
   return (
