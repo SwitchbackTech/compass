@@ -323,7 +323,7 @@ export const openEventForEditingWithKeyboard = async (
 };
 
 /**
- * Deletes the event whose form is open, driving the action toolbar above the
+ * Deletes the event whose form is open, driving the action row above the
  * title by keyboard (focus + Enter on a native button, so this doubles as
  * coverage that keyboard activation works).
  */
@@ -332,7 +332,7 @@ export const deleteEventWithKeyboard = async (page: Page) => {
   await expect(form).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   const deleteButton = form
-    .getByRole("toolbar", { name: "Event actions" })
+    .getByRole("group", { name: "Event actions" })
     .getByRole("button", { name: "Delete" });
   await deleteButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
   await deleteButton.focus();

@@ -62,14 +62,15 @@ describe("SidebarEventDetails", () => {
     const title = await screen.findByPlaceholderText("Title");
     await waitFor(() => expect(title).toHaveFocus());
 
-    // The toolbar renders above the title, so it sits behind Shift+Tab
+    // The action row renders above the title, so it sits behind Shift+Tab
     // instead of taking the first forward Tab out of the title. Each action
     // is its own tab stop so Delete and Close are reachable without arrows.
-    const toolbar = screen.getByRole("toolbar", { name: "Event actions" });
+    const actionRow = screen.getByRole("group", { name: "Event actions" });
     expect(
-      toolbar.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+      actionRow.compareDocumentPosition(title) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    const actionButtons = within(toolbar).getAllByRole("button");
+    const actionButtons = within(actionRow).getAllByRole("button");
     expect(actionButtons.length).toBeGreaterThan(1);
     expect(
       actionButtons.every((button) => button.getAttribute("tabindex") !== "-1"),

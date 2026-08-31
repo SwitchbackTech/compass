@@ -14,8 +14,8 @@ const renderRow = (props: Partial<Parameters<typeof FormActionsRow>[0]> = {}) =>
     />,
   );
 
-const toolbar = () => screen.getByRole("toolbar", { name: "Event actions" });
-const buttons = () => within(toolbar()).getAllByRole("button");
+const actionRow = () => screen.getByRole("group", { name: "Event actions" });
+const buttons = () => within(actionRow()).getAllByRole("button");
 
 afterEach(cleanup);
 

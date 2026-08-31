@@ -98,7 +98,7 @@ const buildForm = () => {
   // focuses the first one, which is the one FIELD_SELECTORS resolves to.
   const actions = document.createElement("div");
   actions.id = "event-form-actions";
-  actions.setAttribute("role", "toolbar");
+  actions.setAttribute("role", "group");
   const duplicate = document.createElement("button");
   actions.append(duplicate);
   form.append(actions);

@@ -26,8 +26,8 @@ type ActionItem = {
 };
 
 /**
- * Always-visible event-form toolbar above the title. Sits before the title in
- * the DOM so opening the form still lands on the title; Shift+Tab reaches
+ * Always-visible event-form action row above the title. Sits before the title
+ * in the DOM so opening the form still lands on the title; Shift+Tab reaches
  * these actions. Each action is its own tab stop. Mod+0 jumps here.
  */
 export const FormActionsRow: React.FC<Props> = ({
@@ -66,7 +66,7 @@ export const FormActionsRow: React.FC<Props> = ({
       aria-label="Event actions"
       className="flex items-center justify-end gap-1"
       id={EVENT_FORM_ACTIONS_ID}
-      role="toolbar"
+      role="group"
     >
       {items.map((item) => (
         <TooltipWrapper
