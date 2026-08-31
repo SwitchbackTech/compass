@@ -44,69 +44,30 @@ describe("FormActionsRow", () => {
     ).toEqual(["Duplicate", "Close"]);
   });
 
-  it("is a single tab stop: exactly one button is tabbable", () => {
+  it("puts every action in the tab order", () => {
     renderRow();
 
-    const tabbable = buttons().filter(
-      (button) => button.getAttribute("tabindex") === "0",
-    );
-    expect(tabbable).toHaveLength(1);
-    expect(tabbable[0]).toHaveAttribute("aria-label", "Duplicate");
+    expect(buttons().map((button) => button.getAttribute("tabindex"))).toEqual([
+      null,
+      null,
+      null,
+    ]);
   });
 
-  it("moves focus with arrow keys, wrapping at both ends", async () => {
+  it("tabs through duplicate, delete, and close in DOM order", async () => {
     const user = userEvent.setup();
     renderRow();
     const [duplicate, deleteButton, close] = buttons();
 
     duplicate.focus();
-    await user.keyboard("{ArrowRight}");
+    await user.tab();
     expect(deleteButton).toHaveFocus();
 
-    await user.keyboard("{ArrowRight}{ArrowRight}");
-    expect(duplicate).toHaveFocus();
-
-    await user.keyboard("{ArrowLeft}");
-    expect(close).toHaveFocus();
-  });
-
-  it("jumps to the ends with Home and End", async () => {
-    const user = userEvent.setup();
-    renderRow();
-    const [duplicate, , close] = buttons();
-
-    duplicate.focus();
-    await user.keyboard("{End}");
+    await user.tab();
     expect(close).toHaveFocus();
 
-    await user.keyboard("{Home}");
-    expect(duplicate).toHaveFocus();
-  });
-
-  it("keeps the roving index in range when duplicate disappears", async () => {
-    const user = userEvent.setup();
-    const { rerender } = renderRow();
-
-    buttons()[2].focus();
-    await user.keyboard("{ArrowLeft}");
-    expect(buttons()[1]).toHaveFocus();
-
-    // A saved event reverting to a draft drops Duplicate, shortening the row
-    // under a roving index that was pointing at the old last item.
-    rerender(
-      <FormActionsRow
-        isExistingEvent={false}
-        onClose={mock()}
-        onDelete={mock()}
-        onDuplicate={mock()}
-      />,
-    );
-
-    const remaining = buttons();
-    expect(remaining).toHaveLength(2);
-    expect(
-      remaining.filter((button) => button.getAttribute("tabindex") === "0"),
-    ).toHaveLength(1);
+    await user.tab({ shift: true });
+    expect(deleteButton).toHaveFocus();
   });
 
   it("calls the matching handler when a button is activated", async () => {
