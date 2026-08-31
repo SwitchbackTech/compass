@@ -137,6 +137,11 @@ test.describe("public booking page", () => {
       "Bring slides",
     );
     await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(first.slotStart),
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await expect(
       page.getByRole("button", { name: "Confirm booking" }),
     ).toBeDisabled();
     await expect.poll(() => captured.slotGets).toBeGreaterThan(1);
@@ -144,6 +149,11 @@ test.describe("public booking page", () => {
     await page
       .getByRole("button", { name: formatSlotButtonLabel(second.slotStart) })
       .click();
+    await expect(
+      page.getByRole("button", {
+        name: formatSlotButtonLabel(second.slotStart),
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
     await expect(
       page.getByRole("button", { name: "Confirm booking" }),
     ).toBeEnabled();
