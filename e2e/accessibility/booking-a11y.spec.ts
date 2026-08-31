@@ -7,30 +7,51 @@ import {
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
-test("the public booking page renders with no automatically detectable accessibility violations", async ({
-  page,
-}) => {
-  await preparePublicBookingPage(page);
+test.describe("public booking page color scheme", () => {
+  (["light", "dark"] as const).forEach((colorScheme) => {
+    test.describe(`${colorScheme} OS`, () => {
+      test.use({ colorScheme });
 
-  await expect(
-    page.getByRole("heading", { name: "Pick a time" }),
-  ).toBeVisible();
-  await expectNoAxeViolations(page, { checkpoint: "public booking page" });
-});
+      test("the picker has no automatically detectable accessibility violations", async ({
+        page,
+      }) => {
+        await preparePublicBookingPage(page);
+        await expect(
+          page.getByRole("heading", { name: "Pick a time" }),
+        ).toBeVisible();
+        if (colorScheme === "light") {
+          await expect(page.locator("html")).toHaveAttribute(
+            "data-theme",
+            "light-beach",
+          );
+        } else {
+          await expect(page.locator("html")).not.toHaveAttribute(
+            "data-theme",
+            "light-beach",
+          );
+        }
+        await expectNoAxeViolations(page, {
+          checkpoint: `public booking page ${colorScheme}`,
+        });
+      });
 
-test("the public booking details step has no automatically detectable accessibility violations", async ({
-  page,
-}) => {
-  const { slotStart } = buildBookableSlot();
-  await preparePublicBookingPage(page);
-
-  await page
-    .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Your details" }),
-  ).toBeVisible();
-  await expectNoAxeViolations(page, { checkpoint: "public booking details" });
+      test("the details step has no automatically detectable accessibility violations", async ({
+        page,
+      }) => {
+        const { slotStart } = buildBookableSlot();
+        await preparePublicBookingPage(page);
+        await page
+          .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+          .click();
+        await expect(
+          page.getByRole("heading", { name: "Your details" }),
+        ).toBeVisible();
+        await expectNoAxeViolations(page, {
+          checkpoint: `public booking details ${colorScheme}`,
+        });
+      });
+    });
+  });
 });
 
 test("the public booking slots error has no automatically detectable accessibility violations", async ({

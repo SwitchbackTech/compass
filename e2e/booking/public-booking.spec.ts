@@ -516,3 +516,39 @@ test.describe("public booking page", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("public booking theme", () => {
+  test("uses the light theme when OS is light and nothing is stored", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await preparePublicBookingPage(page);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-theme",
+      "light-beach",
+    );
+  });
+
+  test("keeps the dark default when OS is dark and nothing is stored", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await preparePublicBookingPage(page);
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-theme",
+      "light-beach",
+    );
+  });
+
+  test("keeps a stored dark theme when OS is light", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("compass.theme", "dark-abyss");
+    });
+    await page.emulateMedia({ colorScheme: "light" });
+    await preparePublicBookingPage(page);
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-theme",
+      "light-beach",
+    );
+  });
+});
