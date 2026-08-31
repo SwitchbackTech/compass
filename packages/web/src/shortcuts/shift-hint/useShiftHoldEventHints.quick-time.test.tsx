@@ -5,16 +5,12 @@ import {
   clearFloatingLayerReasons,
   setFloatingLayerReason,
 } from "@web/shortcuts/floating-layer";
-import {
-  quickTimeActions,
-  useQuickTimeStore,
-} from "@web/shortcuts/quick-time/quick-time.store";
-import { useQuickTimeCreate } from "@web/shortcuts/quick-time/useQuickTimeCreate";
 import { DIGIT_AMBIGUOUS_COMMIT_MS } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const TARGET_DAY = dayjs().startOf("day");
@@ -30,161 +26,172 @@ const keydown = (key: string, init: KeyboardEventInit = {}) =>
 /** Digits are matched by physical code, so a digit press must carry one. */
 const digit = (value: string) => keydown(value, { code: `Digit${value}` });
 
-const mountConsumer = () => {
+const dispatch = (event: KeyboardEvent) => {
+  act(() => {
+    document.dispatchEvent(event);
+  });
+  return event;
+};
+
+const mountOwner = () => {
   const createAt = mock((_start: Dayjs) => {});
-  const { result } = renderHook(() =>
-    useQuickTimeCreate({
-      createAt: (start) => createAt(start),
-      getTargetDay: () => TARGET_DAY,
+  renderHook(() =>
+    useShiftHoldEventHints({
+      createAtTime: (start) => createAt(start),
+      focus: () => {},
+      getQuickTimeDay: () => TARGET_DAY,
+      listVisible: () => [],
+      timedEvents: [],
     }),
   );
 
-  const type = (keys: string[]) =>
-    act(() => {
-      for (const key of keys) result.current.tryConsumeKey(digit(key));
-    });
+  const type = (keys: string[]) => {
+    for (const key of keys) dispatch(digit(key));
+  };
 
-  return { createAt, result, type };
+  return { createAt, type };
 };
 
 const startedAt = (createAt: ReturnType<typeof mock>) =>
   (createAt.mock.calls[0]?.[0] as Dayjs | undefined)?.format("HH:mm") ?? null;
 
-describe("useQuickTimeCreate", () => {
+describe("typed-time ownership", () => {
   beforeEach(() => {
     clearAppLockReasons();
     clearFloatingLayerReasons();
-    quickTimeActions.clear();
+    eventJumpActions.reset();
   });
 
   afterEach(() => {
     cleanup();
     clearAppLockReasons();
     clearFloatingLayerReasons();
-    quickTimeActions.clear();
+    eventJumpActions.reset();
   });
 
   it("creates on the fourth digit, which cannot grow further", () => {
-    const { createAt, type } = mountConsumer();
+    const { createAt, type } = mountOwner();
 
     type(["1", "7", "0", "0"]);
 
     expect(createAt).toHaveBeenCalledTimes(1);
     expect(startedAt(createAt)).toBe("17:00");
-    expect(useQuickTimeStore.getState().digits).toBe("");
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
   });
 
   it("consumes each digit so it reaches no other handler", () => {
-    const { result } = mountConsumer();
+    mountOwner();
 
-    act(() => {
-      expect(result.current.tryConsumeKey(digit("1"))).toBe(true);
-    });
-    expect(useQuickTimeStore.getState().digits).toBe("1");
+    const event = dispatch(digit("1"));
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("1");
   });
 
   it("commits a short sequence on Enter without waiting", () => {
-    const { createAt, result, type } = mountConsumer();
+    const { createAt, type } = mountOwner();
 
     type(["1", "7"]);
-    act(() => {
-      expect(result.current.tryConsumeKey(keydown("Enter"))).toBe(true);
-    });
+    const event = dispatch(keydown("Enter"));
 
+    expect(event.defaultPrevented).toBe(true);
     expect(startedAt(createAt)).toBe("17:00");
   });
 
   it("abandons the sequence on Escape", () => {
-    const { createAt, result, type } = mountConsumer();
+    const { createAt, type } = mountOwner();
 
     type(["1", "7"]);
-    act(() => {
-      expect(result.current.tryConsumeKey(keydown("Escape"))).toBe(true);
-    });
+    const event = dispatch(keydown("Escape"));
 
+    expect(event.defaultPrevented).toBe(true);
     expect(createAt).not.toHaveBeenCalled();
-    expect(useQuickTimeStore.getState().digits).toBe("");
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
   });
 
-  it("leaves Escape alone when nothing is buffered, so jump mode still exits", () => {
-    const { result } = mountConsumer();
+  it("leaves Escape alone when nothing is buffered", () => {
+    mountOwner();
 
-    act(() => {
-      expect(result.current.tryConsumeKey(keydown("Escape"))).toBe(false);
-    });
+    const event = dispatch(keydown("Escape"));
+
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("lets another command run after abandoning a half-typed time", () => {
-    const { createAt, result, type } = mountConsumer();
+    const { createAt, type } = mountOwner();
 
     type(["1", "1"]);
-    act(() => {
-      expect(result.current.tryConsumeKey(keydown("h"))).toBe(false);
-    });
+    const event = dispatch(keydown("h"));
 
+    expect(event.defaultPrevented).toBe(true);
     expect(createAt).not.toHaveBeenCalled();
-    expect(useQuickTimeStore.getState().digits).toBe("");
+    expect(useEventJumpStore.getState()).toMatchObject({
+      isActive: true,
+      quickTimeDigits: "",
+    });
   });
 
   it("ignores a bare Shift so shifted digit layouts still buffer", () => {
-    const { result, type } = mountConsumer();
+    const { type } = mountOwner();
 
     type(["1"]);
-    act(() => {
-      expect(
-        result.current.tryConsumeKey(keydown("Shift", { shiftKey: true })),
-      ).toBe(false);
-    });
+    const event = dispatch(keydown("Shift", { shiftKey: true }));
 
-    expect(useQuickTimeStore.getState().digits).toBe("1");
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("1");
   });
 
   it("stands down while the app is locked", () => {
-    const { result } = mountConsumer();
+    mountOwner();
 
     setAppLockReason("commandPalette", true);
-    act(() => {
-      expect(result.current.tryConsumeKey(digit("1"))).toBe(false);
-    });
+    const event = dispatch(digit("1"));
 
-    expect(useQuickTimeStore.getState().digits).toBe("");
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
   });
 
   it("stands down while a floating layer owns the keyboard", () => {
-    const { result } = mountConsumer();
+    mountOwner();
 
     setFloatingLayerReason("contextMenu", true);
-    act(() => {
-      expect(result.current.tryConsumeKey(digit("1"))).toBe(false);
-    });
+    const event = dispatch(digit("1"));
 
-    expect(useQuickTimeStore.getState().digits).toBe("");
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
   });
 
   it("ignores a Mod chord, which belongs to page jump", () => {
-    const { result } = mountConsumer();
+    mountOwner();
 
-    act(() => {
-      expect(
-        result.current.tryConsumeKey(
-          keydown("1", { code: "Digit1", metaKey: true }),
-        ),
-      ).toBe(false);
+    const event = dispatch(keydown("1", { code: "Digit1", metaKey: true }));
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
+  });
+
+  it("keeps digit precedence while event jump is active with no day prefix", () => {
+    mountOwner();
+    dispatch(keydown("h"));
+
+    const event = dispatch(digit("1"));
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState()).toMatchObject({
+      isActive: true,
+      quickTimeDigits: "1",
     });
-
-    expect(useQuickTimeStore.getState().digits).toBe("");
   });
 });
 
-describe("useQuickTimeCreate deferred commit", () => {
+describe("typed-time deferred commit", () => {
   afterEach(() => {
     cleanup();
-    quickTimeActions.clear();
-    eventJumpActions.setPointerDraftIntent(null);
+    eventJumpActions.reset();
   });
 
   it("commits a still-growable sequence once the window lapses", async () => {
-    const { createAt, type } = mountConsumer();
+    const { createAt, type } = mountOwner();
 
     type(["0"]);
     expect(createAt).not.toHaveBeenCalled();
@@ -210,11 +217,8 @@ describe("useQuickTimeCreate deferred commit", () => {
       });
 
     it("lands on the clicked instant, not a re-resolved one", () => {
-      // 1130 clicked in the evening parks 23:30. Re-resolving those digits
-      // could pick the morning instead, moving the draft off the slot the
-      // hint pointed at.
       parkIntent("1130", 23);
-      const { createAt, type } = mountConsumer();
+      const { createAt, type } = mountOwner();
 
       type(["1", "1", "3", "0"]);
 
@@ -224,7 +228,7 @@ describe("useQuickTimeCreate deferred commit", () => {
 
     it("retargets a different sequence to the clicked day", () => {
       parkIntent("1130", 23);
-      const { createAt, type } = mountConsumer();
+      const { createAt, type } = mountOwner();
 
       type(["1", "7", "0", "0"]);
 

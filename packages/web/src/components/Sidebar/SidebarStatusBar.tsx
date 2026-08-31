@@ -21,14 +21,11 @@ import {
 import { KeyboardPlaceIndicator } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
 import { QuickTimeIndicator } from "@web/shortcuts/quick-time/QuickTimeIndicator";
-import {
-  selectQuickTimeDigits,
-  useQuickTimeStore,
-} from "@web/shortcuts/quick-time/quick-time.store";
 import { EventJumpIndicator } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
   selectEventJumpActive,
   selectEventJumpAnnouncement,
+  selectQuickTimeDigits,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { ShortcutTipIndicator } from "@web/shortcuts/tips/ShortcutTipIndicator";
@@ -50,7 +47,7 @@ import { useTimeTravelZone } from "@web/timezone/time-travel.store";
  */
 export const SidebarStatusBar: FC = () => {
   const hint = useShortcutHintContext();
-  const quickTimeDigits = useQuickTimeStore(selectQuickTimeDigits);
+  const quickTimeDigits = useEventJumpStore(selectQuickTimeDigits);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);

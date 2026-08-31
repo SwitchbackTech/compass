@@ -5,6 +5,8 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
 
 export type EventJumpState = {
   isActive: boolean;
+  /** Digits typed toward a start time so far; "" when idle. */
+  quickTimeDigits: string;
   /** YYYY-MM-DD keys for highlighted day column(s). */
   activeDayKeys: string[];
   /** Polite live-region message for mode / day selection. */
@@ -24,6 +26,7 @@ export type EventJumpState = {
 
 export const initialEventJumpState: EventJumpState = {
   isActive: false,
+  quickTimeDigits: "",
   activeDayKeys: [],
   announcement: "",
   pointerHintKey: null,
@@ -58,6 +61,13 @@ export const eventJumpActions = {
       false,
       { type: "setActive" },
     );
+  },
+  setQuickTimeDigits: (quickTimeDigits: string) => {
+    if (useEventJumpStore.getState().quickTimeDigits === quickTimeDigits)
+      return;
+    useEventJumpStore.setState({ quickTimeDigits }, false, {
+      type: "setQuickTimeDigits",
+    });
   },
   /** Clear a lingering exit announcement after the live region has spoken. */
   clearAnnouncement: () =>
@@ -111,6 +121,9 @@ export const eventJumpActions = {
 };
 
 export const selectEventJumpActive = (state: EventJumpState) => state.isActive;
+
+export const selectQuickTimeDigits = (state: EventJumpState) =>
+  state.quickTimeDigits;
 
 /** Imperative read for plain event handlers outside React, mirroring
  * `isEditSequenceArmed` so the two keyboard modes can yield to each other. */

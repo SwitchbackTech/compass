@@ -21,7 +21,6 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import { syncPrincipalDeletionRetry } from "@backend/user/services/sync-principal-deletion-retry.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -445,10 +444,15 @@ describe("UserService", () => {
 
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
       expect(
-        await mongoService.pendingSyncPrincipalDeletion.findOne({
+        await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
-      ).toEqual(expect.objectContaining({ attempts: 1 }));
+      ).toEqual(
+        expect.objectContaining({
+          compassDataDeletedAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
     });
 
     it("retries a deferred Sync purge after the account has been deleted", async () => {
@@ -489,14 +493,198 @@ describe("UserService", () => {
       );
 
       await userService.deleteAccount(user._id.toString());
-      await syncPrincipalDeletionRetry.retryPending();
+      const localCleanup = spyOn(userService, "deleteCompassDataForUser");
+      deleteAccountSpies.push(localCleanup);
+      await userService.retryPendingAccountDeletions();
 
       expect(calls).toBe(2);
+      expect(localCleanup).not.toHaveBeenCalled();
       expect(
-        await mongoService.pendingSyncPrincipalDeletion.findOne({
+        await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
       ).toBeNull();
+    });
+
+    it("adopts legacy Sync purge rows without repeating account cleanup", async () => {
+      const userId = mongoService.objectId().toString();
+      const requestedAt = new Date(Date.now() - 60_000);
+      await UserDriver.createLegacyPendingSyncPrincipalDeletion({
+        _id: userId,
+        requestedAt,
+        lastAttemptAt: requestedAt,
+        attempts: 2,
+      });
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() =>
+            Promise.resolve({
+              ok: false as const,
+              error: {
+                kind: "unavailable" as const,
+                correlationId: "corr-legacy-down",
+              },
+            }),
+          ),
+        } as never),
+      );
+      const localCleanup = spyOn(userService, "deleteCompassDataForUser");
+      deleteAccountSpies.push(localCleanup);
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(localCleanup).not.toHaveBeenCalled();
+      expect(
+        await UserDriver.findLegacyPendingSyncPrincipalDeletion(userId),
+      ).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({ _id: userId }),
+      ).toEqual(
+        expect.objectContaining({
+          stripeCustomerDeletedAt: requestedAt,
+          compassDataDeletedAt: requestedAt,
+          syncPurgeAttempts: 3,
+        }),
+      );
+    });
+
+    it("idempotently drains a legacy row already adopted by the unified queue", async () => {
+      const userId = mongoService.objectId().toString();
+      const requestedAt = new Date(Date.now() - 60_000);
+      await UserDriver.createLegacyPendingSyncPrincipalDeletion({
+        _id: userId,
+        requestedAt,
+        lastAttemptAt: requestedAt,
+        attempts: 1,
+      });
+      await mongoService.pendingAccountDeletion.insertOne({
+        _id: userId,
+        createdAt: requestedAt,
+        stripeCustomerDeletedAt: requestedAt,
+        compassDataDeletedAt: requestedAt,
+        syncPurgeAttempts: 1,
+      });
+      const purgePrincipal = mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            connections: 0,
+            credentials: 0,
+            calendars: 0,
+            events: 0,
+            eventOccurrences: 0,
+            syncResources: 0,
+            commands: 0,
+            jobs: 0,
+            deletionMarkers: 0,
+            invalidations: 0,
+          },
+          correlationId: "corr-legacy-purge",
+        }),
+      );
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal,
+        } as never),
+      );
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(purgePrincipal).toHaveBeenCalledTimes(1);
+      expect(
+        await UserDriver.findLegacyPendingSyncPrincipalDeletion(userId),
+      ).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({ _id: userId }),
+      ).toBeNull();
+    });
+
+    it("prioritizes newer local cleanup over a full batch of Sync-only retries", async () => {
+      const oldStage = new Date(Date.now() - 120_000);
+      await UserDriver.createPendingAccountDeletions(100, (index) => ({
+        createdAt: new Date(oldStage.getTime() + index),
+        stripeCustomerDeletedAt: oldStage,
+        compassDataDeletedAt: oldStage,
+      }));
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      await UserDriver.createPendingAccountDeletions(1, () => ({
+        _id: userId,
+        createdAt: new Date(),
+        stripeCustomerDeletedAt: new Date(),
+      }));
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() =>
+            Promise.resolve({
+              ok: false as const,
+              error: {
+                kind: "unavailable" as const,
+                correlationId: "corr-batch-down",
+              },
+            }),
+          ),
+        } as never),
+      );
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({ _id: userId }),
+      ).toEqual(
+        expect.objectContaining({
+          compassDataDeletedAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
+    });
+
+    it("rotates Sync-only failures beyond the first retry batch", async () => {
+      const stage = new Date(Date.now() - 120_000);
+      await UserDriver.createPendingAccountDeletions(101, (index) => ({
+        createdAt: new Date(stage.getTime() + index),
+        stripeCustomerDeletedAt: stage,
+        compassDataDeletedAt: stage,
+      }));
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() =>
+            Promise.resolve({
+              ok: false as const,
+              error: {
+                kind: "unavailable" as const,
+                correlationId: "corr-rotation-down",
+              },
+            }),
+          ),
+        } as never),
+      );
+
+      await userService.retryPendingAccountDeletions();
+      const [notYetAttempted] = await mongoService.pendingAccountDeletion
+        .find({ lastSyncPurgeAttemptAt: { $exists: false } })
+        .toArray();
+
+      expect(notYetAttempted).toBeDefined();
+      expect(
+        await mongoService.pendingAccountDeletion.countDocuments({
+          lastSyncPurgeAttemptAt: { $exists: false },
+        }),
+      ).toBe(1);
+
+      await userService.retryPendingAccountDeletions();
+
+      expect(
+        await mongoService.pendingAccountDeletion.findOne({
+          _id: notYetAttempted!._id,
+        }),
+      ).toEqual(
+        expect.objectContaining({
+          lastSyncPurgeAttemptAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
     });
 
     it("keeps the account intact when Stripe cannot cancel its customer", async () => {
@@ -575,7 +763,12 @@ describe("UserService", () => {
         await mongoService.pendingAccountDeletion.findOne({
           _id: user._id.toString(),
         }),
-      ).toBeNull();
+      ).toEqual(
+        expect.objectContaining({
+          compassDataDeletedAt: expect.any(Date),
+          syncPurgeAttempts: 1,
+        }),
+      );
     });
 
     it("keeps the deletion marker when recording Stripe success fails", async () => {

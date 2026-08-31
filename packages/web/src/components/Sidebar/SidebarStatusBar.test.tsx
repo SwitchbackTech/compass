@@ -23,6 +23,7 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { KEYBOARD_PLACE_HINT_PARTS } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
+import { quickTimeHintParts } from "@web/shortcuts/quick-time/QuickTimeIndicator";
 import { EVENT_JUMP_IDLE_HINT_PARTS } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
   eventJumpActions,
@@ -119,6 +120,7 @@ const seedKeyboardPlaceDraft = () => {
 const KEYBOARD_PLACE_HINT = getPartsPlainText(KEYBOARD_PLACE_HINT_PARTS);
 const TIME_TRAVEL_HINT = getPartsPlainText(TIME_TRAVEL_HINT_PARTS);
 const EVENT_JUMP_IDLE_HINT = getPartsPlainText(EVENT_JUMP_IDLE_HINT_PARTS);
+const QUICK_TIME_HINT = getPartsPlainText(quickTimeHintParts("11"));
 const CREATE_EVENT_HINT = getHintPlainText(getShortcutHint("create-event"));
 const FIRST_EVENT_SAVE_HINT = getHintPlainText(
   getShortcutHint("first-event-save"),
@@ -412,6 +414,17 @@ describe("SidebarStatusBar", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(EVENT_JUMP_IDLE_HINT);
     expect(screen.queryByText(CREATE_EVENT_HINT)).not.toBeInTheDocument();
+  });
+
+  it("gives a half-typed time priority over event jump", () => {
+    eventJumpActions.setActive(true);
+    eventJumpActions.setQuickTimeDigits("11");
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(QUICK_TIME_HINT);
+    expect(screen.queryByText(EVENT_JUMP_IDLE_HINT)).not.toBeInTheDocument();
   });
 
   it("yields the keyboardPlace hint to event jump", () => {
