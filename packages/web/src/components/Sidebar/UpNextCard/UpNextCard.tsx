@@ -48,7 +48,8 @@ export function formatEventStatus(
  * for them.
  */
 export const UpNextCard: FC = () => {
-  const { now, openEventDetails, upNext, isCurrentEvent } = useUpNextEvent();
+  const { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent } =
+    useUpNextEvent();
   const countdown = upNext
     ? formatEventStatus(
         dayjs(upNext.startDate),
@@ -80,7 +81,7 @@ export const UpNextCard: FC = () => {
               .group), not .group itself, so a plain :focus-visible variant
               on the group never matches. */}
           <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100">
-            N
+            {conferenceUrl ? "V" : "N"}
           </ShortcutHint>
           <span className="min-w-0 truncate font-medium text-sm text-text">
             {upNext.title}

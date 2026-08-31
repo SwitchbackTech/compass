@@ -227,6 +227,8 @@ describe("UpNextCard", () => {
     );
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(screen.getByText("V")).toBeInTheDocument();
+    expect(screen.queryByText("N")).toBeNull();
   });
 
   it("shows no Join link when the event has no conference", () => {
@@ -235,6 +237,7 @@ describe("UpNextCard", () => {
     });
 
     expect(screen.queryByRole("link", { name: "Join" })).toBeNull();
+    expect(screen.getByText("N")).toBeInTheDocument();
   });
 });
 
