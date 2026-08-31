@@ -139,9 +139,47 @@ describe("BookingPageService", () => {
         enabled: false,
         durationMinutes: 30,
         weeklyAvailability: [],
+        // Nothing saved, so the timeZone is a placeholder the client replaces.
+        isConfigured: false,
       }),
     );
     expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
+  });
+
+  it("reports a saved-but-never-enabled page as configured", async () => {
+    const userId = await createNamedUser("Draft User");
+
+    // Saved while disabled, so no slug is allocated and the response is the
+    // bare input shape - indistinguishable from "never saved" without the
+    // flag. The stored timezone here is a real choice the client must keep.
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({ enabled: false }),
+    );
+
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect("bookingUrl" in page).toBe(false);
+    expect(page).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        timeZone: "America/Denver",
+      }),
+    );
+  });
+
+  it("marks a disabled PUT response as configured too", async () => {
+    const userId = await createNamedUser("Disabled Saver");
+
+    // The PUT answer for a page with no slug is the same bare shape as GET's,
+    // so it needs the flag as well - the client parses both with one schema.
+    const saved = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({ enabled: false }),
+    );
+
+    expect("bookingUrl" in saved).toBe(false);
+    expect(saved).toEqual(expect.objectContaining({ isConfigured: true }));
   });
 
   it("allocates a slug once and keeps it on later PUTs", async () => {

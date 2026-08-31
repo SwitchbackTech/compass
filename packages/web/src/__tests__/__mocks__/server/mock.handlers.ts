@@ -93,6 +93,7 @@ export const globalHandlers = [
         bufferMinutes: null,
         maxBookingsPerDay: null,
         guestsCanInviteOthers: true,
+        isConfigured: false,
       }),
     );
   }),

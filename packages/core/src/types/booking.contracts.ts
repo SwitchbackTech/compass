@@ -297,6 +297,25 @@ export type AdminPutBookingPageInput = z.infer<
   typeof AdminPutBookingPageInputSchema
 >;
 
+/**
+ * GET response for a page with no public link yet: either never saved, or
+ * saved but never enabled (so no slug was allocated). `isConfigured` tells
+ * those two apart, which the wire otherwise could not - both came back as a
+ * bare input object. The client needs the distinction to know whether it may
+ * seed the timezone from the browser: the server has no user timezone and can
+ * only fill in a placeholder.
+ */
+export const AdminGetBookingPageSetupResponseSchema =
+  AdminPutBookingPageInputSchema.extend({ isConfigured: z.boolean() });
+export type AdminGetBookingPageSetupResponse = z.infer<
+  typeof AdminGetBookingPageSetupResponseSchema
+>;
+
+/** Everything `GET /booking/page` can answer with. */
+export type AdminGetBookingPageResult =
+  | AdminGetBookingPageResponse
+  | AdminGetBookingPageSetupResponse;
+
 const slugifyBookingCandidate = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]/g, "");
 

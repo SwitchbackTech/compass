@@ -1,4 +1,5 @@
 import {
+  type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
   type WeeklyAvailabilityInterval,
 } from "@core/types/booking.contracts";
@@ -104,4 +105,16 @@ export function toBookingPageInput(
     maxBookingsPerDay: page.maxBookingsPerDay,
     guestsCanInviteOthers: page.guestsCanInviteOthers,
   };
+}
+
+/**
+ * A page the host has never saved. `GET /booking/page` answers with the same
+ * bare input shape whether the host never saved or saved without ever
+ * enabling, so the explicit flag is the only way to tell them apart - and the
+ * difference decides whether the client may overwrite the timezone.
+ */
+export function isUnconfiguredBookingPage(
+  page: AdminGetBookingPageResult,
+): boolean {
+  return "isConfigured" in page && page.isConfigured === false;
 }
