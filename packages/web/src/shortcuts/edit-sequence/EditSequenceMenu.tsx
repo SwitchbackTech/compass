@@ -11,17 +11,28 @@ import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { EDIT_SEQUENCE_LETTER_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import {
+  type EditSequenceScope,
   selectEditSequenceMenuVisible,
+  selectEditSequenceScope,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
 
 const MENU_WIDTH = 260;
 const GAP = 8;
 
+export interface EditSequenceMenuOption {
+  key: string;
+  label: string;
+}
+
 /** Screen-reader copy, so the visible chips can stay aria-hidden. */
-const SR_TEXT = `Edit which field? ${EDIT_SEQUENCE_LETTER_FIELDS.map(
-  (option) => `${option.key.toUpperCase()} for ${option.label.toLowerCase()}`,
-).join(", ")}. Escape to cancel.`;
+const srText = (options: readonly EditSequenceMenuOption[]) =>
+  `Edit which field? ${options
+    .map(
+      (option) =>
+        `${option.key.toUpperCase()} for ${option.label.toLowerCase()}`,
+    )
+    .join(", ")}. Escape to cancel.`;
 
 /** Zero-size reference low in the viewport, used when the anchor is gone or
  * scrolled out of sight. Mirrors the `cursorReference` trick the context menu
@@ -53,10 +64,18 @@ const isOffscreen = (element: HTMLElement) => {
  */
 export function EditSequenceMenu({
   getAnchor,
+  options = EDIT_SEQUENCE_LETTER_FIELDS,
+  scope = "event",
 }: {
   getAnchor: () => HTMLElement | null;
+  /** Defaults to the event form's letter rows. */
+  options?: readonly EditSequenceMenuOption[];
+  /** Render only while this surface owns the armed sequence. */
+  scope?: EditSequenceScope;
 }) {
-  const isVisible = useEditSequenceStore(selectEditSequenceMenuVisible);
+  const menuVisible = useEditSequenceStore(selectEditSequenceMenuVisible);
+  const armedScope = useEditSequenceStore(selectEditSequenceScope);
+  const isVisible = menuVisible && armedScope === scope;
   // Read through a ref: the owners rebuild `getAnchor` every render, so using
   // it as an effect dependency would re-seat the reference constantly.
   const getAnchorRef = useRef(getAnchor);
@@ -105,13 +124,13 @@ export function EditSequenceMenu({
         className="rounded border border-border bg-surface-raised p-2 shadow-[0_4px_6px_var(--color-shadow-default)]"
         role="status"
       >
-        <span className="sr-only">{SR_TEXT}</span>
+        <span className="sr-only">{srText(options)}</span>
         <div aria-hidden className="flex flex-col gap-1">
           <span className="px-0.5 text-text-muted text-xs">
             Edit which field?
           </span>
           <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-            {EDIT_SEQUENCE_LETTER_FIELDS.map((option) => (
+            {options.map((option) => (
               <span
                 key={option.key}
                 className="flex items-center gap-1.5 text-text text-xs"

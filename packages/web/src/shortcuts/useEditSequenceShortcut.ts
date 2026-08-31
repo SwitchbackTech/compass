@@ -5,11 +5,9 @@ import {
   isEditableKeyboardTarget,
 } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import { EDIT_SEQUENCE_FIELD_BY_KEY } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import {
-  EDIT_SEQUENCE_FIELD_BY_KEY,
-  type EditSequenceSecondKey,
-} from "@web/shortcuts/edit-sequence/edit-sequence.fields";
-import {
+  type EditSequenceScope,
   editSequenceActions,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
@@ -59,19 +57,35 @@ const hasModifier = (event: KeyboardEvent) =>
  * Capture-phase listeners suppress the follow key's keyup so existing keyup
  * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
  */
-export function useEditSequenceShortcut({
+export function useEditSequenceShortcut<
+  TField extends string = EventFormFocusField,
+>({
   canArm,
   onSequence,
+  fieldByKey = EDIT_SEQUENCE_FIELD_BY_KEY as unknown as Record<string, TField>,
+  scope = "event",
+  ignoreAppLock = false,
 }: {
   /** Gate arming on there being something to edit, so a stray `e` does not
    * swallow the next keystroke. */
   canArm?: () => boolean;
-  onSequence: (field: EventFormFocusField) => void;
+  onSequence: (field: TField) => void;
+  /** Second key -> field. Defaults to the event form's table. */
+  fieldByKey?: Record<string, TField>;
+  scope?: EditSequenceScope;
+  /**
+   * Run while the app is locked. Surfaces that live inside a modal need this:
+   * the modal itself holds the lock, so the default bail would make the leader
+   * dead exactly where it is wanted.
+   */
+  ignoreAppLock?: boolean;
 }) {
   const onSequenceRef = useRef(onSequence);
   onSequenceRef.current = onSequence;
   const canArmRef = useRef(canArm);
   canArmRef.current = canArm;
+  const fieldByKeyRef = useRef(fieldByKey);
+  fieldByKeyRef.current = fieldByKey;
 
   useEffect(() => {
     const isMac = resolveModifier("Mod") === "Meta";
@@ -93,7 +107,7 @@ export function useEditSequenceShortcut({
 
     const arm = () => {
       disarm();
-      editSequenceActions.arm();
+      editSequenceActions.arm(scope);
       menuTimeoutId = setTimeout(() => {
         menuTimeoutId = null;
         if (isEditSequenceArmed()) {
@@ -112,7 +126,7 @@ export function useEditSequenceShortcut({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (isAppLocked()) {
+      if (!ignoreAppLock && isAppLocked()) {
         disarm();
         return;
       }
@@ -132,10 +146,7 @@ export function useEditSequenceShortcut({
         }
 
         const key = normalizedKeyboardKey(event);
-        const field =
-          key in EDIT_SEQUENCE_FIELD_BY_KEY
-            ? EDIT_SEQUENCE_FIELD_BY_KEY[key as EditSequenceSecondKey]
-            : null;
+        const field = fieldByKeyRef.current[key] ?? null;
 
         if (field) {
           event.preventDefault();
@@ -196,5 +207,5 @@ export function useEditSequenceShortcut({
       document.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("blur", onWindowBlur);
     };
-  }, []);
+  }, [ignoreAppLock, scope]);
 }
