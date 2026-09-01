@@ -121,7 +121,7 @@ export const getNavigationCommandItems = ({
   if (onPracticeShortcuts) {
     calendarItems.push({
       id: "practice-shortcuts",
-      label: "Play Schedule Rush (practice shortcuts)",
+      label: "Play Block Party (practice shortcuts)",
       icon: CompassIcon,
       keywords: [
         "onboarding",
@@ -134,7 +134,7 @@ export const getNavigationCommandItems = ({
         "practice",
         "shortcuts",
         "game",
-        "schedule rush",
+        "block party",
       ],
       onClick: onPracticeShortcuts,
     });

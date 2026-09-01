@@ -27,13 +27,17 @@ import {
 } from "@web/components/ShortcutShowcase/practice.state";
 
 /**
- * The Schedule Rush reducer. Every function is pure and every timestamp
- * arrives as an argument — no Date.now() in here — so a full run scripts
+ * The Block Party reducer. Every function is pure and every timestamp
+ * arrives as an argument (no Date.now() in here), so a full run scripts
  * cleanly in tests without fake timers.
  */
 
 export type GamePhase = "howto" | "running" | "ended";
-export type GameOutcome = "cleared" | "time_up";
+/** Overtime: the queue was finished after a timed run's clock hit zero. */
+export type GameOutcome = "cleared" | "overtime";
+
+/** A simulated overlay for the discovery tasks; never the real component. */
+export type GameSimOverlay = "legend" | "pagejump" | "palette";
 
 /** Keyboard input, already translated from the DOM event by the component. */
 export type GameKey =
@@ -43,7 +47,15 @@ export type GameKey =
   | { type: "tab"; backward: boolean }
   | { type: "enter" }
   | { type: "delete" }
-  | { type: "undo" };
+  | { type: "undo" }
+  | { type: "legend" }
+  | { type: "palette" }
+  | { type: "jump" }
+  | { type: "letter"; letter: string }
+  | { type: "modHoldReveal" }
+  | { type: "modHoldEnd" }
+  | { type: "pageJumpDigit"; digit: string }
+  | { type: "closeOverlay" };
 
 export type GameAward = {
   seq: number;
@@ -73,9 +85,24 @@ export type GameState = {
   /** Seq bumps on every award so the UI can key the score popup. */
   lastAward: GameAward | null;
   runCount: number;
+  /** False on a practice run: no clock, no time bonus. */
+  timed: boolean;
+  /** Timed-run score frozen the moment the clock hit zero. */
+  buzzer: { score: number; tasksDone: number } | null;
+  /** Tasks skipped with Esc; shown on the end screen, worth no points. */
+  tasksSkipped: number;
+  /** Simulated overlay for the discovery tasks. */
+  simOverlay: GameSimOverlay | null;
+  /** True once the current task's reveal step happened; reset per task. */
+  simOverlayOpened: boolean;
+  /** Jump-letter chips visible on the practice blocks (the H task). */
+  jumpChipsShown: boolean;
 };
 
-export const createInitialGameState = (runCount = 1): GameState => ({
+export const createInitialGameState = (
+  runCount = 1,
+  timed = false,
+): GameState => ({
   phase: "howto",
   outcome: null,
   practice: createPracticeState(
@@ -93,6 +120,12 @@ export const createInitialGameState = (runCount = 1): GameState => ({
   taskStartedAtMs: 0,
   lastAward: null,
   runCount,
+  timed,
+  buzzer: null,
+  tasksSkipped: 0,
+  simOverlay: null,
+  simOverlayOpened: false,
+  jumpChipsShown: false,
 });
 
 export const currentTask = (state: GameState): GameTask | null =>
@@ -101,8 +134,20 @@ export const currentTask = (state: GameState): GameTask | null =>
 /** Pin focus to a task's target so Shift+Arrow/Delete land without hunting. */
 const enterTask = (state: GameState): GameState => {
   const task = currentTask(state);
-  const next = { ...state, digitBuffer: "" };
-  if (task && "targetEventId" in task && task.type !== "undo") {
+  const next = {
+    ...state,
+    digitBuffer: "",
+    simOverlay: null,
+    simOverlayOpened: false,
+    jumpChipsShown: false,
+  };
+  // undo needs the block gone; eventJump would self-complete if pre-focused.
+  if (
+    task &&
+    "targetEventId" in task &&
+    task.type !== "undo" &&
+    task.type !== "eventJump"
+  ) {
     return { ...next, practice: focusEvent(next.practice, task.targetEventId) };
   }
   return next;
@@ -114,19 +159,50 @@ export const startRun = (state: GameState, nowMs: number): GameState => {
     ...state,
     phase: "running",
     startedAtMs: nowMs,
-    endsAtMs: nowMs + RUN_DURATION_MS,
+    endsAtMs: state.timed ? nowMs + RUN_DURATION_MS : 0,
     taskStartedAtMs: nowMs,
   });
 };
 
-/** Time-up is a soft landing: the score stands and the end screen shows. */
+/**
+ * The buzzer is a soft landing, not an exit: when a timed run's clock hits
+ * zero the score freezes into `buzzer` and play continues untimed, so the
+ * player never loses their run to the clock.
+ */
 export const tick = (state: GameState, nowMs: number): GameState =>
-  state.phase === "running" && nowMs >= state.endsAtMs
-    ? { ...state, phase: "ended", outcome: "time_up", endedAtMs: nowMs }
+  state.phase === "running" &&
+  state.timed &&
+  !state.buzzer &&
+  nowMs >= state.endsAtMs
+    ? { ...state, buzzer: { score: state.score, tasksDone: state.tasksDone } }
     : state;
 
 const blockById = (practice: PracticeState, id: string) =>
   practice.events.find((event) => event.id === id);
+
+/**
+ * Letters shown on the blocks while jump chips are up, keyed by event id and
+ * ordered by board position. The pool avoids letters the takeover already
+ * binds (c create, h jump, u signup, plus the end screen's o/p and the e/t
+ * edit sequence).
+ */
+const JUMP_LETTER_POOL = "asdfgjkl";
+
+export const getJumpLetters = (
+  practice: PracticeState,
+): Record<string, string> => {
+  const ordered = [...practice.events].sort(
+    (a, b) =>
+      a.dayIndex - b.dayIndex ||
+      a.startMin - b.startMin ||
+      a.id.localeCompare(b.id),
+  );
+  const letters: Record<string, string> = {};
+  ordered.slice(0, JUMP_LETTER_POOL.length).forEach((event, index) => {
+    letters[event.id] = JUMP_LETTER_POOL[index] as string;
+  });
+  return letters;
+};
 
 const matchesSlot = (
   block: { dayIndex: number; startMin: number; endMin: number },
@@ -136,10 +212,8 @@ const matchesSlot = (
   block.startMin === slot.startMin &&
   block.endMin === slot.endMin;
 
-export const isTaskComplete = (
-  task: GameTask,
-  practice: PracticeState,
-): boolean => {
+export const isTaskComplete = (task: GameTask, state: GameState): boolean => {
+  const { practice } = state;
   switch (task.type) {
     case "place":
     case "quickTime": {
@@ -163,6 +237,17 @@ export const isTaskComplete = (
       return !blockById(practice, task.targetEventId);
     case "undo":
       return Boolean(blockById(practice, task.targetEventId));
+    // Opened, then closed: the reveal-and-dismiss is the whole lesson.
+    case "legend":
+    case "pageJump":
+    case "palette":
+      return state.simOverlayOpened && state.simOverlay === null;
+    case "eventJump":
+      return (
+        state.simOverlayOpened &&
+        !state.jumpChipsShown &&
+        practice.focusedId === task.targetEventId
+      );
   }
 };
 
@@ -295,12 +380,66 @@ const applyKey = (state: GameState, key: GameKey): GameState => {
       const next = undoDelete(practice);
       return next === practice ? state : { ...state, practice: next };
     }
+    case "legend": {
+      if (state.simOverlay === "legend") return { ...state, simOverlay: null };
+      if (task.type !== "legend" || state.simOverlay) return state;
+      return { ...state, simOverlay: "legend", simOverlayOpened: true };
+    }
+    case "palette": {
+      if (state.simOverlay === "palette") return { ...state, simOverlay: null };
+      if (task.type !== "palette" || state.simOverlay) return state;
+      return { ...state, simOverlay: "palette", simOverlayOpened: true };
+    }
+    case "jump": {
+      if (task.type !== "eventJump") return state;
+      return {
+        ...state,
+        jumpChipsShown: !state.jumpChipsShown,
+        simOverlayOpened: true,
+      };
+    }
+    case "letter": {
+      if (!state.jumpChipsShown) return state;
+      const letters = getJumpLetters(practice);
+      const targetId = Object.keys(letters).find(
+        (id) => letters[id] === key.letter,
+      );
+      if (!targetId) return state;
+      return {
+        ...state,
+        jumpChipsShown: false,
+        practice: focusEvent(practice, targetId),
+      };
+    }
+    case "modHoldReveal": {
+      if (task.type !== "pageJump" || state.simOverlay) return state;
+      return { ...state, simOverlay: "pagejump", simOverlayOpened: true };
+    }
+    case "modHoldEnd": {
+      // Releasing Mod without a digit closes the reveal and resets the
+      // opened flag: the taught gesture is hold, then digit.
+      if (state.simOverlay !== "pagejump") return state;
+      return { ...state, simOverlay: null, simOverlayOpened: false };
+    }
+    case "pageJumpDigit": {
+      if (state.simOverlay !== "pagejump") return state;
+      if (key.digit !== "1" && key.digit !== "2") return state;
+      return { ...state, simOverlay: null };
+    }
+    case "closeOverlay": {
+      if (!state.simOverlay) return state;
+      // Esc aborts the page-jump reveal (Mod is still held); on the legend
+      // and palette it is a taught way to close them, so it completes.
+      return state.simOverlay === "pagejump"
+        ? { ...state, simOverlay: null, simOverlayOpened: false }
+        : { ...state, simOverlay: null };
+    }
   }
 };
 
 const completeIfDone = (state: GameState, nowMs: number): GameState => {
   const task = currentTask(state);
-  if (!task || !isTaskComplete(task, state.practice)) return state;
+  if (!task || !isTaskComplete(task, state)) return state;
 
   const elapsed = nowMs - state.taskStartedAtMs;
   const speedy = elapsed <= SPEED_BONUS_MS;
@@ -326,18 +465,45 @@ const completeIfDone = (state: GameState, nowMs: number): GameState => {
   };
 
   if (advanced.taskIndex >= RUN_TASKS.length) {
-    const remainingSeconds = Math.max(
-      0,
-      Math.floor((state.endsAtMs - nowMs) / 1000),
-    );
+    // The time bonus needs a timed run finished before the buzzer with no
+    // skips, or Esc-ing through tasks would farm remaining seconds.
+    const fullClear =
+      state.timed && !state.buzzer && advanced.tasksDone === RUN_TASKS.length;
+    const remainingSeconds = fullClear
+      ? Math.max(0, Math.floor((state.endsAtMs - nowMs) / 1000))
+      : 0;
     const timeBonus = remainingSeconds * TIME_BONUS_PER_SECOND;
     return {
       ...advanced,
       phase: "ended",
-      outcome: "cleared",
+      outcome: state.buzzer ? "overtime" : "cleared",
       endedAtMs: nowMs,
       timeBonus,
       score: advanced.score + timeBonus,
+    };
+  }
+  return enterTask(advanced);
+};
+
+/**
+ * Esc mid-run: advance past the current task with no points. Skipping the
+ * last task ends the run through the same outcome logic as a clear.
+ */
+export const skipCurrentTask = (state: GameState, nowMs: number): GameState => {
+  if (state.phase !== "running" || !currentTask(state)) return state;
+  const advanced: GameState = {
+    ...state,
+    taskIndex: state.taskIndex + 1,
+    tasksSkipped: state.tasksSkipped + 1,
+    streak: 0,
+    taskStartedAtMs: nowMs,
+  };
+  if (advanced.taskIndex >= RUN_TASKS.length) {
+    return {
+      ...advanced,
+      phase: "ended",
+      outcome: state.buzzer ? "overtime" : "cleared",
+      endedAtMs: nowMs,
     };
   }
   return enterTask(advanced);
@@ -352,4 +518,47 @@ export const handleGameKey = (
   const next = applyKey(state, key);
   if (next === state) return state;
   return completeIfDone(next, nowMs);
+};
+
+/**
+ * Which chip in `task.keycaps` the player should press next, so the task
+ * card can dim what's done and pulse what's expected. Derived entirely from
+ * the board, so a wrong turn self-corrects. `keycaps.length` means every
+ * chip is behind the player (e.g. the H task, where the next key is the
+ * letter on a block, not a card chip).
+ */
+export const getNextKeycapIndex = (
+  task: GameTask,
+  state: GameState,
+): number => {
+  const { practice } = state;
+  switch (task.type) {
+    case "place": {
+      const block = blockById(practice, task.piece.id);
+      if (!block) return 0;
+      if (
+        practice.placingId === task.piece.id &&
+        !matchesSlot(block, task.target)
+      ) {
+        return 1;
+      }
+      return task.keycaps.length - 1;
+    }
+    case "quickTime": {
+      const enterIndex = task.keycaps.length - 1;
+      if (blockById(practice, task.piece.id)) return enterIndex;
+      return Math.min(state.digitBuffer.length, enterIndex - 1);
+    }
+    case "resize":
+      return practice.focusedId === task.targetEventId &&
+        practice.edge === "end"
+        ? 1
+        : 0;
+    case "eventJump":
+      return state.jumpChipsShown ? task.keycaps.length : 0;
+    case "pageJump":
+      return state.simOverlay === "pagejump" ? 1 : 0;
+    default:
+      return 0;
+  }
 };

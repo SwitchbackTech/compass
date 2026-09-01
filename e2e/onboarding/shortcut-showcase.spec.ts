@@ -16,14 +16,17 @@ const leaveWelcome = async (page: Page) => {
   await expect(welcomeDialog).toBeHidden();
 };
 
-const startTheClock = async (page: Page) => {
+const startPracticing = async (page: Page) => {
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Schedule Rush");
+  await expect(showcase).toContainText("Block Party");
   await expect(
-    showcase.getByRole("button", { name: "Start the clock" }),
+    showcase.getByRole("button", { name: "Start practicing" }),
   ).toBeVisible();
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 1/10");
+  await expect(showcase).toContainText("Task 1/14");
+  // The first run is untimed practice: no countdown anywhere.
+  await expect(showcase.getByRole("timer")).toHaveCount(0);
+  await expect(showcase).toContainText("Practice");
 };
 
 const holdModAndPress = async (page: Page, key: string) => {
@@ -42,7 +45,7 @@ const pressTimes = async (page: Page, key: string, times: number) => {
   }
 };
 
-/** The winning script: clears all ten tasks with the taught keys. */
+/** The winning script: clears all fourteen tasks with the taught keys. */
 const clearTheQueue = async (page: Page) => {
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
 
@@ -50,43 +53,69 @@ const clearTheQueue = async (page: Page) => {
   await page.keyboard.press("c");
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 2/10");
+  await expect(showcase).toContainText("Task 2/14");
 
   // quicktime-lunch: type the time, lock.
   await page.keyboard.type("1230");
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 3/10");
+  await expect(showcase).toContainText("Task 3/14");
 
   // place-review: two days right, lock.
   await page.keyboard.press("c");
   await pressTimes(page, "ArrowRight", 2);
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 4/10");
+  await expect(showcase).toContainText("Task 4/14");
 
   // nudge-standup: 9:00 -> 10:00 in 15-minute steps.
   await pressTimes(page, "Shift+ArrowDown", 4);
-  await expect(showcase).toContainText("Task 5/10");
+  await expect(showcase).toContainText("Task 5/14");
 
   // resize-one-on-one: Tab to the end edge, stretch 10:30 -> 11:00.
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await pressTimes(page, "Shift+ArrowDown", 2);
-  await expect(showcase).toContainText("Task 6/10");
+  await expect(showcase).toContainText("Task 6/14");
 
   // quicktime-focus
   await page.keyboard.type("1600");
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 7/10");
+  await expect(showcase).toContainText("Task 7/14");
 
   // delete-gym, undo-gym
   await page.keyboard.press("Delete");
-  await expect(showcase).toContainText("Task 8/10");
+  await expect(showcase).toContainText("Task 8/14");
   await holdModAndPress(page, "z");
-  await expect(showcase).toContainText("Task 9/10");
+  await expect(showcase).toContainText("Task 9/14");
+
+  // legend-peek: ? opens the practice legend, ? closes it again.
+  await page.keyboard.press("?");
+  await expect(showcase).toContainText("Shortcuts");
+  await page.keyboard.press("?");
+  await expect(showcase).toContainText("Task 10/14");
+
+  // jump-to-kickoff: H reveals jump letters, S is on Team kickoff.
+  await page.keyboard.press("h");
+  await page.keyboard.press("s");
+  await expect(showcase).toContainText("Task 11/14");
+
+  // page-jump-peek: hold Mod alone until the numbers appear, then Mod+1.
+  await page.keyboard.down("Control");
+  await page.keyboard.down("Meta");
+  await page.waitForTimeout(800);
+  await page.keyboard.press("1");
+  await page.keyboard.up("Meta");
+  await page.keyboard.up("Control");
+  await expect(showcase).toContainText("Task 12/14");
+
+  // palette-peek: Mod+K opens the practice palette, Esc closes it.
+  await holdModAndPress(page, "k");
+  await expect(showcase).toContainText("Type a command...");
+  await page.keyboard.press("Escape");
+  await expect(showcase).toContainText("Task 13/14");
 
   // nudge-review: one day left.
   await page.keyboard.press("Shift+ArrowLeft");
-  await expect(showcase).toContainText("Task 10/10");
+  await expect(showcase).toContainText("Task 14/14");
 
   // place-party: down to 5pm, lock.
   await page.keyboard.press("c");
@@ -103,7 +132,7 @@ test("exploring without an account offers the game's how-to card", async ({
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(showcase).toBeVisible();
-  await expect(showcase).toContainText("Schedule Rush");
+  await expect(showcase).toContainText("Block Party");
   await expect(showcase).toContainText("keyboard-only");
 });
 
@@ -112,19 +141,27 @@ test("a full run clears the queue, shows the score, and graduates", async ({
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await startTheClock(page);
+  await startPracticing(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase.getByRole("timer")).toBeVisible();
-  await expect(showcase.getByRole("button", { name: /^Skip$/ })).toBeVisible();
+  await expect(
+    showcase.getByRole("button", { name: "Leave practice" }),
+  ).toBeVisible();
 
   await clearTheQueue(page);
 
-  await expect(showcase).toContainText("10/10 tasks cleared");
+  await expect(showcase).toContainText("14/14 tasks cleared");
   await expect(showcase).toContainText("Moves you learned");
   await expect(
     showcase.getByRole("button", { name: /Sign up to keep your calendar/ }),
   ).toBeVisible();
+  // The untimed run's rematch is the timed challenge; reminders are gone.
+  await expect(
+    showcase.getByRole("button", { name: /Race the clock/ }),
+  ).toBeVisible();
+  await expect(
+    showcase.getByRole("button", { name: /Enable reminders/ }),
+  ).toHaveCount(0);
 
   // O opens the calendar for anonymous players; Enter belongs to signup.
   await page.keyboard.press("o");
@@ -135,33 +172,20 @@ test("a full run clears the queue, shows the score, and graduates", async ({
   ).toBeVisible();
 });
 
-test("the end screen's reminders button opts in without leaving", async ({
+test("T races the clock and the buzzer never ends the run", async ({
   page,
-  context,
 }) => {
-  // Granted up front so the offer resolves without a real browser prompt,
-  // which Playwright cannot click.
-  await context.grantPermissions(["notifications"]);
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await startTheClock(page);
-  await clearTheQueue(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(
-    showcase.getByRole("button", { name: /Enable reminders/ }),
+    showcase.getByRole("button", { name: "Race the clock" }),
   ).toBeVisible();
-  // Keyboard, not click: pointer events are suppressed app-wide.
-  await page.keyboard.press("n");
-
-  await expect(showcase).toContainText("You cleared the week!");
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        localStorage.getItem("compass.notifications.enabled"),
-      ),
-    )
-    .toBe("true");
+  await page.keyboard.press("t");
+  await expect(showcase).toContainText("Task 1/14");
+  await expect(showcase.getByRole("timer")).toBeVisible();
+  await expect(showcase.getByRole("timer")).toContainText("2:00");
 });
 
 test("Enter on the end screen hands an anonymous player to signup", async ({
@@ -169,7 +193,7 @@ test("Enter on the end screen hands an anonymous player to signup", async ({
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await startTheClock(page);
+  await startPracticing(page);
   await clearTheQueue(page);
 
   await page.keyboard.press("Enter");
@@ -186,7 +210,7 @@ test("Skip to sign up leaves the game for the signup form", async ({
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Schedule Rush");
+  await expect(showcase).toContainText("Block Party");
 
   await expect(
     showcase.getByRole("button", { name: /Skip to sign up/ }),
@@ -196,12 +220,28 @@ test("Skip to sign up leaves the game for the signup form", async ({
   await expect(page).toHaveURL(/auth=signup/);
 });
 
-test("Escape leaves the game and it never auto-replays", async ({ page }) => {
+test("Escape mid-run skips one task and keeps the game up", async ({
+  page,
+}) => {
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+  await startPracticing(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  // Mid-run, Escape skips the current task and the game stays up.
+  await page.keyboard.press("Escape");
+  await expect(showcase).toContainText("Task 2/14");
+  await expect(showcase).toBeVisible();
+});
+
+test("Escape leaves from the how-to card and it never auto-replays", async ({
+  page,
+}) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toContainText("Schedule Rush");
+  await expect(showcase).toContainText("Block Party");
 
   await page.keyboard.press("Escape");
   await expect(showcase).toBeVisible();
@@ -224,23 +264,38 @@ test("reloading mid-game re-offers a fresh run from the how-to card", async ({
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
-  await startTheClock(page);
+  await startPracticing(page);
 
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await page.keyboard.press("c");
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("Enter");
-  await expect(showcase).toContainText("Task 2/10");
+  await expect(showcase).toContainText("Task 2/14");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   const resumed = page.getByRole("region", { name: "Shortcut practice" });
   await expect(resumed).toBeVisible();
-  // A 90-second run has no mid-run resume: the attempt re-offers whole.
-  await expect(resumed).toContainText("Schedule Rush");
+  // A run has no mid-run resume: the attempt re-offers whole.
+  await expect(resumed).toContainText("Block Party");
   await expect(
-    resumed.getByRole("button", { name: "Start the clock" }),
+    resumed.getByRole("button", { name: "Start practicing" }),
   ).toBeVisible();
   await expect(
     page.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
   ).toBeHidden();
+});
+
+test("a ?play=1 link starts the game directly, skipping the welcome modal", async ({
+  page,
+}) => {
+  await page.goto("/week?play=1", { waitUntil: "domcontentloaded" });
+
+  await expect(
+    page.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+  ).toBeHidden();
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(showcase).toBeVisible();
+  await expect(showcase).toContainText("Block Party");
+  // Consumed and stripped, so a reload does not restart the run.
+  await expect(page).not.toHaveURL(/play=/);
 });

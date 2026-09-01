@@ -26,9 +26,9 @@ export function markShortcutShowcaseSeen(): void {
 }
 
 /**
- * A 90-second game has no mid-run resume point: any stored value under the
- * old step key — the sentinel below, or a lesson step id written before the
- * game shipped — just means "an unfinished attempt exists", and a reload
+ * A single-sitting game has no mid-run resume point: any stored value under the
+ * old step key (the sentinel below, or a lesson step id written before the
+ * game shipped) just means "an unfinished attempt exists", and a reload
  * re-offers the game from its how-to card.
  */
 export function hasShowcaseInProgress(): boolean {

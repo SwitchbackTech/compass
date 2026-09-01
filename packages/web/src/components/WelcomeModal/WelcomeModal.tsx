@@ -9,6 +9,7 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { hasPlayDeepLink } from "@web/components/ShortcutShowcase/play-link";
 import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
@@ -28,8 +29,11 @@ export function WelcomeModal() {
   const isGoogleAvailable = useIsGoogleAvailable();
   const { loading: isGoogleAuthLoading, startGoogleAuthorization } =
     useStartGoogleAuthorization({ intent: "signIn" });
+  // A ?play= deep link goes straight to the practice game. This initializer
+  // runs before ShowcasePlayLink's consume effect can mark welcome seen, so
+  // the param itself has to keep this modal closed.
   const [isOpen, setIsOpen] = useState(
-    () => !authenticated && !hasSeenWelcome(),
+    () => !authenticated && !hasSeenWelcome() && !hasPlayDeepLink(),
   );
   const { closing, beginDismiss, cancelDismiss } =
     useDismissTransition(MODAL_DISMISS_MS);

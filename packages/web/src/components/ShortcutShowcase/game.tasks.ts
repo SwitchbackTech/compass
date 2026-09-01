@@ -3,13 +3,14 @@ import { type PracticeEventBlock } from "@web/components/ShortcutShowcase/practi
 import { KEYMAP } from "@web/shortcuts/keymap";
 
 /**
- * Schedule Rush: one 90-second run against a fixed, authored queue of
- * scheduling tasks. Deterministic on purpose — ramped difficulty, and every
- * run is scriptable in tests. Keycaps derive from KEYMAP so a remap
- * propagates to the cards.
+ * Block Party: one run against a fixed, authored queue of scheduling tasks.
+ * The first run is untimed practice; replays can race the clock.
+ * Deterministic on purpose: ramped difficulty, and every run is scriptable
+ * in tests. Keycaps derive from KEYMAP so a remap propagates to the cards.
  */
 
-export const RUN_DURATION_MS = 90_000;
+/** The clock for a timed run. Expiry snapshots the score; it never ends the run. */
+export const RUN_DURATION_MS = 120_000;
 export const TASK_BASE_POINTS = 100;
 /** Clear a task this fast to earn the speed bonus and grow the streak. */
 export const SPEED_BONUS_MS = 8_000;
@@ -28,7 +29,11 @@ export type GameTaskType =
   | "nudge"
   | "resize"
   | "delete"
-  | "undo";
+  | "undo"
+  | "legend"
+  | "eventJump"
+  | "pageJump"
+  | "palette";
 
 type GameTaskBase = {
   id: string;
@@ -65,7 +70,11 @@ export type GameTask =
       targetEventId: string;
       /** Where the restored block lands, so the ghost can show it. */
       target: GameSlot;
-    });
+    })
+  // Discovery beats: open a simulated overlay (legend / page-jump numbers /
+  // command palette) or jump to a block by its letter chip. No board change.
+  | (GameTaskBase & { type: "legend" | "pageJump" | "palette" })
+  | (GameTaskBase & { type: "eventJump"; targetEventId: string });
 
 const t = (hour: number, minute = 0) => hour * 60 + minute;
 
@@ -131,7 +140,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     id: "nudge-standup",
     type: "nudge",
     title: "Standup moved",
-    instruction: "Push it down to 10:00 — hold Shift, tap the arrow.",
+    instruction: "Push it down to 10:00. Hold Shift and tap the arrow.",
     keycaps: ["Shift", "ArrowDown"],
     targetEventId: "piece-standup",
     target: { dayIndex: 0, startMin: t(10), endMin: t(10, 30) },
@@ -140,8 +149,9 @@ export const RUN_TASKS: readonly GameTask[] = [
     id: "resize-one-on-one",
     type: "resize",
     title: "1:1 running long",
-    instruction: "Tab to its end edge, then stretch it to 11:00.",
-    keycaps: [KEYMAP.edgeFocus.hotkey, ...KEYMAP.moveEvent.timedEdgeKeycaps],
+    instruction:
+      "Press Tab until the bottom edge lights up, then hold Shift and tap Down to reach 11:00.",
+    keycaps: [KEYMAP.edgeFocus.hotkey, "Shift", "ArrowDown"],
     targetEventId: "game-one-on-one",
     target: { dayIndex: 1, startMin: t(10), endMin: t(11) },
   },
@@ -149,7 +159,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     id: "quicktime-focus",
     type: "quickTime",
     title: "Focus block",
-    instruction: "Guard Tuesday at 4 — type the time.",
+    instruction: "Guard Tuesday at 4. Just type the time.",
     keycaps: ["1", "6", "0", "0", "Enter"],
     piece: { id: "piece-focus", title: "Deep work", color: "slate" },
     target: { dayIndex: 1, startMin: t(16), endMin: t(17) },
@@ -165,11 +175,42 @@ export const RUN_TASKS: readonly GameTask[] = [
   {
     id: "undo-gym",
     type: "undo",
-    title: "Wait — it's back on",
+    title: "Wait, it's back on",
     instruction: "Undo brings it right back.",
     keycaps: KEYMAP.undo.keycaps,
     targetEventId: "game-gym",
     target: { dayIndex: 2, startMin: t(12), endMin: t(13) },
+  },
+  {
+    id: "legend-peek",
+    type: "legend",
+    title: "Blanking on a move?",
+    instruction: "The legend lists every shortcut. Open it, then close it.",
+    keycaps: ["?"],
+  },
+  {
+    id: "jump-to-kickoff",
+    type: "eventJump",
+    title: "Fly across the board",
+    instruction:
+      "Press H to reveal jump letters, then type the one on Team kickoff.",
+    keycaps: KEYMAP.eventJump.keycaps,
+    targetEventId: "game-kickoff",
+  },
+  {
+    id: "page-jump-peek",
+    type: "pageJump",
+    title: "Numbers jump anywhere",
+    instruction:
+      "Hold Cmd or Ctrl until the jump numbers appear, then press 1.",
+    keycaps: ["Mod", "1"],
+  },
+  {
+    id: "palette-peek",
+    type: "palette",
+    title: "One palette, every command",
+    instruction: "Open the command palette, then close it with Esc.",
+    keycaps: KEYMAP.commandPalette.keycaps,
   },
   {
     id: "nudge-review",
@@ -194,13 +235,14 @@ export const RUN_TASKS: readonly GameTask[] = [
 
 /** Dashed outline shown on the grid for the current task, if it has one. */
 export const getTaskGhost = (task: GameTask): GameSlot | null =>
-  task.type === "delete" ? null : task.target;
+  "target" in task ? task.target : null;
 
 /** The block a completed task touched, so the lock-in flash can find it. */
 export const getTaskBlockId = (taskId: string): string | null => {
   const task = RUN_TASKS.find((candidate) => candidate.id === taskId);
   if (!task || task.type === "delete") return null;
-  return "piece" in task ? task.piece.id : task.targetEventId;
+  if ("piece" in task) return task.piece.id;
+  return "targetEventId" in task ? task.targetEventId : null;
 };
 
 export type LearnedMove = { label: string; keys: readonly string[] };
@@ -225,6 +267,10 @@ const MOVE_LABELS: Record<GameTaskType, LearnedMove> = {
   },
   delete: { label: "Delete", keys: ["Delete"] },
   undo: { label: "Undo", keys: KEYMAP.undo.keycaps },
+  legend: { label: "Shortcut legend", keys: ["?"] },
+  eventJump: { label: "Jump to an event", keys: KEYMAP.eventJump.keycaps },
+  pageJump: { label: "Jump anywhere", keys: KEYMAP.jumpPageTarget.keycaps },
+  palette: { label: "Command palette", keys: KEYMAP.commandPalette.keycaps },
 };
 
 /** The distinct moves the player actually used, in the order they met them. */

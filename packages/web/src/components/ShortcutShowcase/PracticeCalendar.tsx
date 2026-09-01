@@ -14,7 +14,6 @@ import {
   SHOWCASE_GRID_END_HOUR,
   SHOWCASE_GRID_START_HOUR,
 } from "@web/components/ShortcutShowcase/practice.state";
-import { eventEdgeFocusShadow } from "@web/grid/components/calendar-accent.util";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
@@ -41,7 +40,9 @@ const PracticeBlock: FC<{
   state: PracticeState;
   flashing: boolean;
   pulsing: boolean;
-}> = ({ block, state, flashing, pulsing }) => {
+  jumpLetter?: string;
+  jumpLetterActive?: boolean;
+}> = ({ block, state, flashing, pulsing, jumpLetter, jumpLetterActive }) => {
   const { base } = useEventPalette(block.color);
   const contentColor = theme.getContrastText(base);
   const isFocused = state.focusedId === block.id;
@@ -49,14 +50,18 @@ const PracticeBlock: FC<{
   const focusedEdge = isFocused ? state.edge : null;
   const height = ((block.endMin - block.startMin) / TOTAL_MIN) * 100;
 
+  // With an edge focused, the edge bar carries the focus: the whole-block
+  // ring dims so a thick border cannot be mistaken for the focused edge.
   const focusShadow = isFocused
-    ? "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)"
+    ? focusedEdge
+      ? "0 0 0 1px color-mix(in srgb, var(--text) 35%, transparent)"
+      : "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)"
     : "";
   const edgeFocusShadow =
     focusedEdge === "start"
-      ? eventEdgeFocusShadow("startDate", "vertical", "var(--text)")
+      ? "0 -4px 0 0 var(--color-accent)"
       : focusedEdge === "end"
-        ? eventEdgeFocusShadow("endDate", "vertical", "var(--text)")
+        ? "0 4px 0 0 var(--color-accent)"
         : "";
   const edgeFocusAttr =
     focusedEdge === "start"
@@ -69,7 +74,7 @@ const PracticeBlock: FC<{
     <div
       className={`absolute inset-x-1 rounded-md px-2 py-1 text-xs transition-all duration-200 ${
         flashing ? "c-game-lock-flash" : ""
-      } ${pulsing && isFocused ? "c-game-focus-pulse" : ""} ${
+      } ${pulsing && isFocused && !focusedEdge ? "c-game-focus-pulse" : ""} ${
         isPlacing ? "opacity-90" : ""
       }`}
       data-practice-event-id={block.id}
@@ -90,6 +95,17 @@ const PracticeBlock: FC<{
         <div className="truncate opacity-80">
           {formatTime(block.startMin)} to {formatTime(block.endMin)}
         </div>
+      )}
+      {jumpLetter && (
+        <span
+          aria-hidden
+          className={`c-keycap absolute top-1 right-1 ${
+            jumpLetterActive ? "c-keycap-next" : ""
+          }`}
+          data-practice-jump-letter={jumpLetter}
+        >
+          {jumpLetter.toUpperCase()}
+        </span>
       )}
     </div>
   );
@@ -131,7 +147,18 @@ export const PracticeCalendar: FC<{
   flash?: PracticeFlash | null;
   /** Pulse the focused block so an auto-focused task target stands out. */
   pulseFocused?: boolean;
-}> = ({ state, targetSlot = null, flash = null, pulseFocused = false }) => {
+  /** Jump-letter chips by event id, shown while the H reveal is active. */
+  jumpLetters?: Record<string, string> | null;
+  /** The event whose chip pulses as the exact next key to press. */
+  jumpTargetId?: string | null;
+}> = ({
+  state,
+  targetSlot = null,
+  flash = null,
+  pulseFocused = false,
+  jumpLetters = null,
+  jumpTargetId = null,
+}) => {
   const hours: number[] = [];
   for (let h = SHOWCASE_GRID_START_HOUR; h < SHOWCASE_GRID_END_HOUR; h += 1) {
     hours.push(h);
@@ -200,6 +227,8 @@ export const PracticeCalendar: FC<{
                   state={state}
                   flashing={flash?.eventId === block.id}
                   pulsing={pulseFocused}
+                  jumpLetter={jumpLetters?.[block.id]}
+                  jumpLetterActive={block.id === jumpTargetId}
                 />
               ))}
           </div>

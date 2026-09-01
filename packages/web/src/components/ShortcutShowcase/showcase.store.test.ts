@@ -39,6 +39,17 @@ describe("shortcutShowcaseActions", () => {
     ).not.toBe("true");
   });
 
+  it("activates from a shared link even after the showcase was seen", () => {
+    shortcutShowcaseActions.startFromWelcome();
+    shortcutShowcaseActions.finish();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+
+    shortcutShowcaseActions.startFromLink();
+    const state = useShortcutShowcaseStore.getState();
+    expect(state.isActive).toBe(true);
+    expect(state.entry).toBe("link");
+  });
+
   it("finish leaves, marks seen, and clears the in-progress marker", () => {
     shortcutShowcaseActions.startFromWelcome();
     shortcutShowcaseActions.finish();

@@ -15,6 +15,7 @@ export type ProductEvent =
   | "shortcut_game_run_started"
   | "shortcut_game_task_shown"
   | "shortcut_game_task_completed"
+  | "shortcut_game_task_skipped"
   | "shortcut_game_replayed"
   | "first_event_prompt_shown"
   | "first_event_prompt_completed"

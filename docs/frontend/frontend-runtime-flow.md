@@ -81,20 +81,25 @@ Welcome → signup → first-event contract:
   returning user is not handed the practice or the first-event prompt
 - signing up (either route) defers a showcase offer via `showcase.storage.ts`;
   `offerAfterSignupIfPending()` redeems it once, right after signup completes
-- the Shortcut Showcase is **Schedule Rush**: an always-escapable, practice-only
-  game whose state never reaches real calendar storage. One 90-second run
-  clears a fixed queue of ten scheduling tasks (create, typed quick-times,
-  nudge, edge resize, delete, undo) against a ghost target slot, with scoring
-  and streaks; task keycaps derive from the application's keymap. Time-up and
-  a full clear land on the same end screen, where anonymous players get signup
-  as the primary CTA and graduation hands off to `FirstEventPrompt`. A reload
-  mid-run re-offers a fresh run from the one-screen how-to card (the old
-  per-lesson resume point is now just an in-progress marker)
+- the Shortcut Showcase is **Block Party**: a practice-only game whose state
+  never reaches real calendar storage. A run clears a fixed queue of
+  scheduling tasks (create, typed quick-times, nudge, edge resize, delete,
+  undo, plus discovery beats for the `?` legend, `H` event jump, Mod-hold
+  page jump, and `Mod+K` palette, all simulated inside the arena) against a
+  ghost target slot, with scoring and streaks; task keycaps derive from the
+  application's keymap and the exact next key pulses on the task card. The
+  first run is untimed; the end screen offers a timed rematch, and a timed
+  run whose clock expires keeps going with the score frozen at the buzzer.
+  Esc skips the current task (leaving mid-run is the two-click Leave button),
+  anonymous players get signup as the end screen's primary CTA, and
+  graduation hands off to `FirstEventPrompt`. A reload mid-run re-offers a
+  fresh run from the one-screen how-to card, and `?play=1` on any URL is a
+  shareable deep link straight into the game (consumed, then stripped)
 - `FirstEventPrompt` is a non-blocking real-calendar card. It stays hidden
   while the auth modal is open and retires after the first genuine create.
   Users who finished or dismissed the retired onboarding checklist are read
   as already done via a legacy storage key, so they never see it
-- command palette can reopen practice (“Play Schedule Rush”) or the welcome
+- command palette can reopen practice (“Play Block Party”) or the welcome
   guide (“Show welcome guide”)
 - users who already finished or skipped the retired guided tour are treated as
   having seen the showcase so it does not ambush them

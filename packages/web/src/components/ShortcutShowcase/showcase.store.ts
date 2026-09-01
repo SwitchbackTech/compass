@@ -11,7 +11,7 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.storage";
 
 /** How the practice arena was opened, so the activation funnel can tell them apart. */
-export type ShowcaseEntry = "welcome" | "post_signup" | "palette";
+export type ShowcaseEntry = "welcome" | "post_signup" | "palette" | "link";
 
 /** Where a user who left early went next, so the funnel can tell them apart. */
 export type ShowcaseExit = "calendar" | "signup";
@@ -23,7 +23,7 @@ export type ShortcutShowcaseState = {
   isActive: boolean;
   /**
    * True once markSeen ran this session, so components re-render when the
-   * flag flips — a localStorage write notifies nobody. Storage stays the
+   * flag flips (a localStorage write notifies nobody). Storage stays the
    * durable source; readers check this OR the stored flag.
    */
   hasSeenShowcase: boolean;
@@ -79,6 +79,10 @@ export const shortcutShowcaseActions = {
   /** Palette re-entry: always allowed. The how-to card is one Enter long. */
   replay: () => {
     activate("palette");
+  },
+  /** A shared ?play=1 link: an explicit request, so no seen-flag gating. */
+  startFromLink: () => {
+    activate("link");
   },
   /**
    * Re-offer an unfinished attempt after reload, from the how-to card. Does

@@ -20,6 +20,7 @@ import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import { PointerHint } from "@web/components/PointerHint/PointerHint";
+import { ShowcasePlayLink } from "@web/components/ShortcutShowcase/play-link";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
@@ -95,6 +96,7 @@ export function RootShell() {
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
       <CheckoutCelebrationModal />
       {showCalendarOnboarding && <WelcomeModal />}
+      {showCalendarOnboarding && <ShowcasePlayLink />}
       {showCalendarOnboarding && <ShortcutShowcase />}
       {showCalendarOnboarding && <FirstEventPrompt />}
       {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
