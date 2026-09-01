@@ -101,6 +101,31 @@ describe("teachingFromBlockedPointer", () => {
       attempt: { actionId: POINTER_ACTIONS.goToToday },
     });
   });
+
+  it("teaches start-trial and reconnect from annotated banner CTAs", () => {
+    const trial = document.createElement("button");
+    trial.setAttribute(POINTER_ACTION_ATTRIBUTE, POINTER_ACTIONS.startTrial);
+    trial.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "S");
+    expect(teachingFromBlockedPointer([trial, document], 0)).toEqual({
+      attempt: {
+        actionId: POINTER_ACTIONS.startTrial,
+        shortcutKey: "S",
+      },
+    });
+
+    const reconnect = document.createElement("button");
+    reconnect.setAttribute(
+      POINTER_ACTION_ATTRIBUTE,
+      POINTER_ACTIONS.reconnectGoogle,
+    );
+    reconnect.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "1");
+    expect(teachingFromBlockedPointer([reconnect, document], 0)).toEqual({
+      attempt: {
+        actionId: POINTER_ACTIONS.reconnectGoogle,
+        shortcutKey: "1",
+      },
+    });
+  });
 });
 
 describe("pointerGridIntentFromPointer", () => {

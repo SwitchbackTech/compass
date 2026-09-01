@@ -52,6 +52,8 @@ const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
   attempt?.actionId === POINTER_ACTIONS.goToToday ||
   attempt?.actionId === POINTER_ACTIONS.eventOpen ||
+  attempt?.actionId === POINTER_ACTIONS.startTrial ||
+  attempt?.actionId === POINTER_ACTIONS.reconnectGoogle ||
   attempt?.actionId === "grid.timed" ||
   attempt?.actionId === "grid.all-day" ||
   Boolean(attempt?.shortcutKey);
@@ -125,7 +127,23 @@ const pointerHintMessage = ({
     );
   }
 
-  if (welcomeOpen && attempt?.shortcutKey) {
+  if (attempt?.actionId === POINTER_ACTIONS.startTrial) {
+    return (
+      <>
+        Press <Key>S</Key> to start your trial.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.reconnectGoogle) {
+    return (
+      <>
+        Press <Key>1</Key> to reconnect Google Calendar.
+      </>
+    );
+  }
+
+  if (attempt?.shortcutKey) {
     return (
       <>
         Press <Key>{attempt.shortcutKey}</Key>

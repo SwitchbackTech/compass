@@ -1,19 +1,11 @@
 import { type ReactNode } from "react";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
+import {
+  NOTICE_PRIMARY_ACTION_KEY,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
-export const TOAST_PRIMARY_ACTION_KEY = "1";
-
-const canHandleShortcut = (event: KeyboardEvent) =>
-  !event.isComposing &&
-  !event.metaKey &&
-  !event.ctrlKey &&
-  !event.altKey &&
-  !event.shiftKey &&
-  !isEventJumpActive() &&
-  !isEditSequenceArmed();
+export const TOAST_PRIMARY_ACTION_KEY = NOTICE_PRIMARY_ACTION_KEY;
 
 export function ToastActionButton({
   children,
@@ -22,20 +14,7 @@ export function ToastActionButton({
   children: ReactNode;
   onClick: () => void;
 }) {
-  // Digit 1 runs this toast CTA while mounted. Yields to typing (ignoreInputs),
-  // app-lock, event-jump, and an armed `e`… sequence.
-  useAppShortcut(
-    TOAST_PRIMARY_ACTION_KEY,
-    (event) => {
-      if (!canHandleShortcut(event)) return;
-      onClick();
-    },
-    {
-      ignoreInputs: true,
-      preventDefault: true,
-      stopPropagation: true,
-    },
-  );
+  useNoticeActionShortcut(TOAST_PRIMARY_ACTION_KEY, onClick);
 
   return (
     <button
