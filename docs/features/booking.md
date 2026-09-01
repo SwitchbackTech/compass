@@ -9,7 +9,9 @@ creates the calendar event with `invitation: "all"`.
 ## Status
 
 v1 is implemented in the Compass monorepo (public `/book/:username`, host
-Settings, backend APIs). A standalone Compass Booking product (separate
+Settings, backend APIs). It is enabled in development and staging
+(`runtime.nodeEnv` other than `production`) and disabled in production.
+A standalone Compass Booking product (separate
 brand, domain, or deployable) is **explicitly deferred**. The seams below
 are the extraction path; they are not a second service in v1.
 
@@ -107,9 +109,11 @@ focus uses the accent ring. Intended Tab order on the picker:
    skipping the month grid.
 2. Timezone control, then previous/next month, then one tab stop on the
    selected day (arrow keys move among days).
-3. Slot buttons for that day. Enter/Space opens **Your details** and
-   moves focus to that heading. **Skip to your details** is the first
-   tab stop on that step.
+3. One tab stop on that day's times (arrow keys move among slots, Home
+   and End jump to first and last). Enter or Space on a day moves focus
+   to the first slot. Enter or Space on a slot opens **Your details**
+   and moves focus to that heading. **Skip to your details** is the
+   first tab stop on that step.
 4. **Change time**, then name, email, notes, **Confirm booking**.
    **Change time** returns focus to **Pick a time**.
 5. After confirm, `/book/confirmed/:id` focuses **You are booked with

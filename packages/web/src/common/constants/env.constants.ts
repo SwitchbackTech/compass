@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { isDev } from "@core/util/env.util";
+import { isBookingEnabled, isDev } from "@core/util/env.util";
 
 export const getApiBaseUrl = (apiBaseUrl?: string, port?: string): string => {
   if (apiBaseUrl) {
@@ -41,3 +41,4 @@ export const ENV_WEB = webEnvSchema.parse({
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
+export const IS_BOOKING_ENABLED = isBookingEnabled(ENV_WEB.NODE_ENV);

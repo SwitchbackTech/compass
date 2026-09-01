@@ -7,7 +7,10 @@ import {
   validateBookingCancelSearch,
   validatePublicBookingSearch,
 } from "@web/booking/public-booking-search";
-import { IS_DEV } from "@web/common/constants/env.constants";
+import {
+  IS_BOOKING_ENABLED,
+  IS_DEV,
+} from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
@@ -170,8 +173,8 @@ const calendarShellChildren = calendarShellRoute.addChildren([
 
 export const routeTree = rootRoute.addChildren([
   calendarShellChildren,
-  publicBookConfirmedRoute,
-  publicBookCancelRoute,
-  publicBookRoute,
+  ...(IS_BOOKING_ENABLED
+    ? [publicBookConfirmedRoute, publicBookCancelRoute, publicBookRoute]
+    : []),
   googleAuthCallbackRoute,
 ]);

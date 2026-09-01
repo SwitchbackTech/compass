@@ -608,6 +608,18 @@ describe("SettingsModal", () => {
     expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
   });
 
+  it("shows Booking for a signed-in user", () => {
+    renderSettings({ authenticated: true });
+
+    expect(screen.getByRole("button", { name: "Booking" })).toBeInTheDocument();
+  });
+
+  it("hides Booking for a signed-out session", () => {
+    renderSettings({ authenticated: false });
+
+    expect(screen.queryByRole("button", { name: "Booking" })).toBeNull();
+  });
+
   it("says nothing about a plan on an install without billing", () => {
     renderSettings({ authenticated: true });
 

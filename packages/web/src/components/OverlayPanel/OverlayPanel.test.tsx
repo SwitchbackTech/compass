@@ -18,6 +18,14 @@ describe("OverlayPanel", () => {
     expect(document.body.dataset.appLocked).toBeUndefined();
   });
 
+  it("keeps modal dialogs from overflowing the viewport", () => {
+    render(<OverlayPanel title="Settings" onDismiss={() => {}} />);
+
+    const dialog = screen.getByRole("dialog", { name: "Settings" });
+    expect(dialog.className).toContain("max-h-[90vh]");
+    expect(dialog.className).toContain("overflow-y-auto");
+  });
+
   it("keeps the app locked when multiple panels are stacked", () => {
     const { unmount: unmountFirst } = render(
       <OverlayPanel title="First" onDismiss={() => {}} />,

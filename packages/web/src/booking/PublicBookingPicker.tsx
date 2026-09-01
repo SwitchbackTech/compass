@@ -73,6 +73,8 @@ export function PublicBookingPicker({
   );
   const showGridSkeleton = slotsPending && !hasRenderedGrid;
   const restoreFocusAfterError = useRef(false);
+  const pendingSlotFocusDateRef = useRef<string | null>(null);
+  const slotPaneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!slotsPending) {
@@ -96,12 +98,35 @@ export function PublicBookingPicker({
     }
   }, [slotsError, slotsHeadingRef, slotsPending]);
 
+  const focusFirstSlot = () => {
+    slotPaneRef.current
+      ?.querySelector<HTMLButtonElement>("[data-booking-slot]")
+      ?.focus();
+  };
+
+  useEffect(() => {
+    const pendingDate = pendingSlotFocusDateRef.current;
+    if (pendingDate === null || pendingDate !== selectedDateKey) {
+      return;
+    }
+    pendingSlotFocusDateRef.current = null;
+    focusFirstSlot();
+  }, [selectedDateKey]);
+
+  const handleKeyboardActivateDay = (dateKey: string) => {
+    if (dateKey === selectedDateKey) {
+      focusFirstSlot();
+      return;
+    }
+    pendingSlotFocusDateRef.current = dateKey;
+  };
+
   return (
-    <div className="flex w-full min-w-0 flex-col gap-3">
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3">
       <p aria-live="polite" className="sr-only" role="status">
         {liveMessage}
       </p>
-      <div className="grid w-full min-w-0 gap-6 sm:grid-cols-2 sm:items-start">
+      <div className="grid min-h-0 w-full min-w-0 flex-1 gap-6 sm:grid-cols-2">
         <div className="min-w-0">
           {showGridSkeleton ? (
             <PublicBookingMonthGridSkeleton
@@ -117,10 +142,14 @@ export function PublicBookingPicker({
               onMonthChange={onMonthChange}
               onPrefetchMonth={onPrefetchMonth}
               onSelectDate={onSelectDate}
+              onKeyboardActivateDay={handleKeyboardActivateDay}
             />
           )}
         </div>
-        <div className="min-h-64 min-w-0 sm:max-h-96 sm:overflow-y-auto">
+        <div
+          ref={slotPaneRef}
+          className="min-h-64 min-w-0 sm:min-h-0 sm:overflow-y-auto"
+        >
           {slotsPending ? (
             <PublicBookingSlotPaneSkeleton />
           ) : slotsError ? (

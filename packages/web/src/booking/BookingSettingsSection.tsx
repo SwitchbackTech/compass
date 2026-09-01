@@ -610,19 +610,21 @@ export function BookingSettingsSection({
         </BookingCheckboxRow>
       </fieldset>
 
-      <OverlayPanelActions align="start">
-        <OverlayPanelActionButton
-          aria-busy={saveMutation.isPending || undefined}
-          disabled={saveMutation.isPending}
-          onClick={handleSave}
-          shortcut="S"
-          showShortcut={showShortcuts}
-          variant="primary"
-          {...settingsShortcutAttrs("save-booking")}
-        >
-          {saveMutation.isPending ? "Saving…" : "Save booking settings"}
-        </OverlayPanelActionButton>
-      </OverlayPanelActions>
+      <div className="sticky bottom-0 z-10 bg-surface-panel pt-3">
+        <OverlayPanelActions align="start">
+          <OverlayPanelActionButton
+            aria-busy={saveMutation.isPending || undefined}
+            disabled={saveMutation.isPending}
+            onClick={handleSave}
+            shortcut="S"
+            showShortcut={showShortcuts}
+            variant="primary"
+            {...settingsShortcutAttrs("save-booking")}
+          >
+            {saveMutation.isPending ? "Saving…" : "Save booking settings"}
+          </OverlayPanelActionButton>
+        </OverlayPanelActions>
+      </div>
 
       <p className="text-text-muted text-xs">
         Press <kbd>e</kbd> then a letter to jump to a field. <kbd>S</kbd> saves.

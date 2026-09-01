@@ -162,7 +162,10 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    const save = await screen.findByRole("button", {
+      name: "Save booking settings",
+    });
+    expect(save.parentElement?.parentElement?.className).toContain("sticky");
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(

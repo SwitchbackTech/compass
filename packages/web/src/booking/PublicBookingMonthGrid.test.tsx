@@ -117,6 +117,27 @@ describe("PublicBookingMonthGrid", () => {
     expect(selected).toEqual([availableB]);
   });
 
+  it("notifies keyboard day activation and ignores pointer clicks", async () => {
+    const user = userEvent.setup({ delay: null });
+    const keyboard: string[] = [];
+    const { selected } = renderGrid({
+      onKeyboardActivateDay: (dateKey) => {
+        keyboard.push(dateKey);
+      },
+    });
+
+    const seventeenth = screen.getByRole("button", {
+      name: formatBookingMonthDayLabel(availableA, timeZone),
+    });
+    await user.click(seventeenth);
+    expect(selected).toEqual([availableA]);
+    expect(keyboard).toEqual([]);
+
+    seventeenth.focus();
+    await user.keyboard("{Enter}");
+    expect(keyboard).toEqual([availableA]);
+  });
+
   it("disables next when the following month is past the horizon", () => {
     renderGrid({
       monthKey: "2026-09",

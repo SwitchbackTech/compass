@@ -28,6 +28,7 @@ interface PublicBookingMonthGridProps {
   onMonthChange: (monthKey: string) => void;
   onPrefetchMonth: (monthKey: string) => void;
   onSelectDate: (dateKey: string) => void;
+  onKeyboardActivateDay?: (dateKey: string) => void;
 }
 
 export function PublicBookingMonthGrid({
@@ -40,6 +41,7 @@ export function PublicBookingMonthGrid({
   onMonthChange,
   onPrefetchMonth,
   onSelectDate,
+  onKeyboardActivateDay,
 }: PublicBookingMonthGridProps) {
   const resolvedTodayKey = todayKey ?? formatBookingDateKey(dayjs(), timeZone);
   const availableDateKeys = useMemo(
@@ -197,9 +199,14 @@ export function PublicBookingMonthGrid({
                     aria-pressed={isSelected}
                     aria-current={day.isToday ? "date" : undefined}
                     tabIndex={tabStopDateKey === day.dateKey ? 0 : -1}
-                    onClick={() => {
+                    onClick={(event) => {
                       setFocusedDateKey(day.dateKey);
                       onSelectDate(day.dateKey);
+                      // Keyboard activation (Enter/Space) reports detail 0.
+                      // Pointer clicks must not steal focus to the slot list.
+                      if (event.detail === 0) {
+                        onKeyboardActivateDay?.(day.dateKey);
+                      }
                     }}
                     onKeyDown={(event) => handleDayKeyDown(event, day.dateKey)}
                     className={`c-focus-ring flex h-10 w-full items-center justify-center rounded-md font-medium text-sm transition-colors ${
