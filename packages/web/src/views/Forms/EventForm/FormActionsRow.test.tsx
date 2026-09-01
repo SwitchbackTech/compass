@@ -70,6 +70,20 @@ describe("FormActionsRow", () => {
     expect(deleteButton).toHaveFocus();
   });
 
+  it("activates the focused action with Enter after tabbing to it", async () => {
+    const user = userEvent.setup();
+    const onDelete = mock();
+    renderRow({ onDelete });
+    const [duplicate, deleteButton] = buttons();
+
+    duplicate.focus();
+    await user.tab();
+    expect(deleteButton).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
   it("calls the matching handler when a button is activated", async () => {
     const user = userEvent.setup();
     const onDuplicate = mock();
