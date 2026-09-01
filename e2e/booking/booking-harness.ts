@@ -639,13 +639,13 @@ export const dispatchFill = async (
 ) => {
   await locator.waitFor({ state: "attached", timeout: 10000 });
   await locator.evaluate((el, nextValue) => {
-    const input = el as HTMLInputElement;
-    const setter = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )?.set;
-    setter?.call(input, nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
+    const proto =
+      el instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    setter?.call(el, nextValue);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
   }, value);
 };
 
