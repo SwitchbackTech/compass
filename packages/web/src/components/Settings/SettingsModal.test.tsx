@@ -25,6 +25,7 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import * as realEnvConstants from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   ACCOUNT_DISCONNECTED_TOAST_ID,
@@ -108,6 +109,20 @@ mockModuleForFile("@web/sse/hooks/useSseDegraded", realUsessedegraded, {
     isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
 });
 
+const bookingGate = { enabled: true, mocked: true };
+mock.module("@web/common/constants/env.constants", () => {
+  const wrapped: Record<string, unknown> = { ...realEnvConstants };
+  Object.defineProperty(wrapped, "IS_BOOKING_ENABLED", {
+    configurable: true,
+    enumerable: true,
+    get: () =>
+      bookingGate.mocked
+        ? bookingGate.enabled
+        : realEnvConstants.IS_BOOKING_ENABLED,
+  });
+  return wrapped;
+});
+
 let access: AppAccess = { kind: "open" };
 let isAppAccessMocked = true;
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
@@ -122,6 +137,8 @@ afterAll(() => {
   isSessionMocked = false;
   isSseDegradedMocked = false;
   isAppAccessMocked = false;
+  bookingGate.mocked = false;
+  bookingGate.enabled = true;
 });
 
 afterEach(() => {
@@ -129,6 +146,7 @@ afterEach(() => {
   resetGoogleReconnectRequiredForTests();
   isSseDegraded = false;
   access = { kind: "open" };
+  bookingGate.enabled = true;
 });
 
 const settingsModalUrl = new URL(
@@ -616,6 +634,13 @@ describe("SettingsModal", () => {
 
   it("hides Booking for a signed-out session", () => {
     renderSettings({ authenticated: false });
+
+    expect(screen.queryByRole("button", { name: "Booking" })).toBeNull();
+  });
+
+  it("hides Booking when the production gate is off", () => {
+    bookingGate.enabled = false;
+    renderSettings({ authenticated: true });
 
     expect(screen.queryByRole("button", { name: "Booking" })).toBeNull();
   });
