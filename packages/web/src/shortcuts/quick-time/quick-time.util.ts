@@ -14,16 +14,24 @@ const DIGITS_ONLY = /^\d{1,4}$/;
 export const canQuickTimeBufferGrow = (digits: string) =>
   digits.length < QUICK_TIME_MAX_DIGITS;
 
+/** True when the typed digits name 12 o'clock, not 00 (midnight). */
+const isTwelveOClockDigits = (digits: string) => {
+  const hour =
+    digits.length <= 2
+      ? Number.parseInt(digits, 10)
+      : Number.parseInt(digits.slice(0, -2), 10);
+  return hour === 12;
+};
+
 /**
  * Resolve a typed digit sequence to a start time on `targetDay`.
  *
  * The 12-hour ambiguity ("1130" at 9am vs 9pm) is settled by `parseUserTime`'s
  * meridiem inheritance: passing `now` as its current value shifts an hour in
- * 1-12 into PM when now is PM, and leaves 13-23 ("1700") alone. Reusing it
- * keeps a typed time on the grid identical to the same digits typed into the
- * event form's time field, warts included - notably that "1200" typed in the
- * morning resolves to 12 AM, not noon (see quickTimeSequenceForHour, which
- * declines to advertise a sequence that would not land where its chip says).
+ * 1-11 into PM when now is PM, and leaves 13-23 ("1700") alone. "12" / "1200"
+ * is the exception: parseUserTime would pull those to midnight while the
+ * current time is AM, but the shortcut always lands them at noon. Midnight
+ * has no advertised sequence.
  */
 export function resolveQuickTimeStart(
   digits: string,
@@ -38,7 +46,10 @@ export function resolveQuickTimeStart(
   const time = getDayjsByTimeValue(parsed.value);
   if (!time.isValid()) return null;
 
-  return targetDay.startOf("day").hour(time.hour()).minute(time.minute());
+  const hour =
+    time.hour() === 0 && isTwelveOClockDigits(digits) ? 12 : time.hour();
+
+  return targetDay.startOf("day").hour(hour).minute(time.minute());
 }
 
 /**
@@ -55,6 +66,8 @@ export function quickTimeSequenceForHour(
   now: Dayjs,
   targetDay: Dayjs,
 ): string | null {
+  if (hour === 0) return null;
+
   const sequence = `${String(hour).padStart(2, "0")}00`;
   const resolved = resolveQuickTimeStart(sequence, now, targetDay);
 
@@ -104,9 +117,10 @@ export type QuickTimeSlot = {
 };
 
 /**
- * One placeholder per open hour of `targetDay`: hours already covered by an
- * event are dropped so chips never pile onto a card, and hours with no
- * reachable sequence are dropped by quickTimeSequenceForHour.
+ * One placeholder per open hour of `targetDay` except midnight, which has no
+ * useful shortcut: hours already covered by an event are dropped so chips
+ * never pile onto a card, and hours with no reachable sequence are dropped
+ * by quickTimeSequenceForHour.
  */
 export function buildQuickTimeSlots({
   busy,
@@ -120,7 +134,7 @@ export function buildQuickTimeSlots({
   const day = targetDay.startOf("day");
   const slots: QuickTimeSlot[] = [];
 
-  for (let hour = 0; hour < 24; hour += 1) {
+  for (let hour = 1; hour < 24; hour += 1) {
     const sequence = quickTimeSequenceForHour(hour, now, day);
     if (!sequence) continue;
 
