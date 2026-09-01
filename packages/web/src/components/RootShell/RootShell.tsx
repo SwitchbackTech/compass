@@ -49,7 +49,8 @@ export function RootShell() {
   const deferCalendarOnboarding = isLifePathname(pathname);
   // The keyboard onboarding overlays paint over MobileGate (they're fixed
   // full-screen), so a phone user would finish the whole walkthrough only to
-  // land on "open this on a computer". Gate them up front instead.
+  // land on "open this on a computer". Gate them up front instead. Pointer
+  // suppression is skipped on the same check so Copy / Waitlist can be tapped.
   const isMobile = useMemo(() => isMobileOS(), []);
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const access = useAppAccess();
@@ -100,7 +101,7 @@ export function RootShell() {
       {showCalendarOnboarding && <ShortcutShowcase />}
       {showCalendarOnboarding && <FirstEventPrompt />}
       {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
-      <PointerHint />
+      {!isMobile && <PointerHint />}
     </AuthModalProvider>
   );
 }

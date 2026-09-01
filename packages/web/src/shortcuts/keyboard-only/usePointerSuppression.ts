@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { isMobileOS } from "@web/common/utils/device/device.util";
 import {
   type BlockedPointerAttempt,
   pointerGridIntentFromPointer,
@@ -20,9 +21,14 @@ import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
  * shouldBlockPointerEvent passes keyboard-activation clicks (Enter/Space on a
  * native button), keyboard contextmenu (Shift+F10), and synthetic .click()
  * calls through. Blocked gestures pulse the store so PointerHint can teach.
+ *
+ * Phone sessions skip this: they only see MobileGate, and those Copy /
+ * Waitlist buttons have to receive the tap.
  */
 export function usePointerSuppression() {
   useEffect(() => {
+    if (isMobileOS()) return;
+
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
       onBlockedGesture: (event) => {
         const path = event.composedPath?.() ?? [];

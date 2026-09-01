@@ -104,7 +104,7 @@ Welcome → signup → first-event contract:
 - users who already finished or skipped the retired guided tour are treated as
   having seen the showcase so it does not ambush them
 
-Pointer suppression (always on, mounted from `RootShell`):
+Pointer suppression (mounted from `RootShell`, skipped on mobile OS):
 
 - blocks pointer clicks, right-clicks, and double-clicks everywhere; scroll
   and hover remain
@@ -113,6 +113,8 @@ Pointer suppression (always on, mounted from `RootShell`):
 - blocked clicks pulse `PointerHint`, a transient pill: known targets get
   the matching shortcut (including HHMM digits for an empty timed-grid
   click), and unannotated controls fall back to "keyboard only"
+- phone sessions skip suppression and `PointerHint` so MobileGate's Copy
+  and Waitlist buttons can be tapped
 
 See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
 [Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for
