@@ -25,6 +25,9 @@ test("settings booking page shows a copyable public link after save", async ({
   await expect(settingsDialog.getByLabel("Public booking link")).toHaveValue(
     bookingUrl,
   );
+  await expect(
+    settingsDialog.getByRole("link", { name: "Open booking page" }),
+  ).toHaveAttribute("href", bookingUrl);
   expect(captured.putBodies[0]).toMatchObject({ durationMinutes: 30 });
 
   // A second save has to reach the network too. Seeding the form from the
