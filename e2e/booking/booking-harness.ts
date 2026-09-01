@@ -138,6 +138,7 @@ export interface PublicBookingStubOptions {
   slug?: string;
   hostDisplayName?: string;
   durationMinutes?: number;
+  welcomeText?: string | null;
   slots?: Array<{ slotStart: string; slotEnd: string }>;
   bookable?: boolean;
   /** When set, POST /reservations returns this status instead of 200. */
@@ -194,6 +195,7 @@ export async function preparePublicBookingPage(
           timeZone: "America/Chicago",
           enabled: true,
           maxHorizonDays: 60,
+          welcomeText: options.welcomeText ?? null,
         }),
       );
     }
@@ -420,6 +422,8 @@ export async function prepareSignedInBookingSettingsPage(
     blockingCalendarIds: [BOOKING_CALENDAR_ID],
     timeZone: "America/New_York",
     weeklyAvailability: [],
+    dateOverrides: [],
+    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
     bufferMinutes: null,

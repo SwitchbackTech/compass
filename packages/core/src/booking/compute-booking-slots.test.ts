@@ -165,6 +165,98 @@ describe("computeBookingSlots", () => {
     expect(new Set(slots).size).toBe(slots.length);
   });
 
+  it("removes every start on a blocked weekday that would otherwise be open", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        dateOverrides: [{ kind: "blocked", date: "2026-09-07" }],
+      }),
+    );
+
+    expect(slots.filter((slot) => slot.startsWith("2026-09-07"))).toEqual([]);
+    expect(slots.some((slot) => slot.startsWith("2026-09-09"))).toBe(true);
+  });
+
+  it("offers Saturday starts from a hours override when Saturday has no weekly hours", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        dateOverrides: [
+          {
+            kind: "hours",
+            date: "2026-09-12",
+            intervals: [{ start: "09:00", end: "10:00" }],
+          },
+        ],
+      }),
+    );
+
+    expect(slots.filter((slot) => slot.startsWith("2026-09-12"))).toEqual([
+      "2026-09-12T15:00:00Z",
+      "2026-09-12T15:15:00Z",
+      "2026-09-12T15:30:00Z",
+    ]);
+  });
+
+  it("replaces Monday weekly hours with a hours override", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        dateOverrides: [
+          {
+            kind: "hours",
+            date: "2026-09-07",
+            intervals: [{ start: "13:00", end: "17:00" }],
+          },
+        ],
+        windowStart: new Date("2026-09-07T06:00:00.000Z"),
+        windowEnd: new Date("2026-09-08T06:00:00.000Z"),
+      }),
+    );
+
+    expect(slots[0]).toBe("2026-09-07T19:00:00Z");
+    expect(slots.some((slot) => slot.startsWith("2026-09-07T15:"))).toBe(false);
+  });
+
+  it("offers override hours when weekly availability is otherwise empty", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        weeklyAvailability: [],
+        dateOverrides: [
+          {
+            kind: "hours",
+            date: "2026-09-12",
+            intervals: [{ start: "09:00", end: "10:00" }],
+          },
+        ],
+      }),
+    );
+
+    expect(slots).toEqual([
+      "2026-09-12T15:00:00Z",
+      "2026-09-12T15:15:00Z",
+      "2026-09-12T15:30:00Z",
+    ]);
+  });
+
+  it("skips invalid local times on a DST spring-forward override date", () => {
+    const slots = computeBookingSlots(
+      baseInput({
+        now: new Date("2026-03-01T00:00:00.000Z"),
+        windowStart: new Date("2026-03-08T07:00:00.000Z"),
+        windowEnd: new Date("2026-03-09T07:00:00.000Z"),
+        weeklyAvailability: [],
+        dateOverrides: [
+          {
+            kind: "hours",
+            date: "2026-03-08",
+            intervals: [{ start: "02:00", end: "04:00" }],
+          },
+        ],
+        durationMinutes: 15,
+      }),
+    );
+
+    expect(slots.every((slot) => !slot.includes("T08:30:00"))).toBe(true);
+  });
+
   it("skips invalid local times on DST spring-forward", () => {
     const slots = computeBookingSlots(
       baseInput({

@@ -81,8 +81,11 @@ export function PublicBookingPage() {
           Book with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">
-          {formatDurationMinutes(page.durationMinutes)} meeting
+          {formatDurationMinutes(page.durationMinutes)} Google Meet
         </p>
+        {page.welcomeText ? (
+          <p className="text-sm text-text">{page.welcomeText}</p>
+        ) : null}
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-text-muted">
           <p>Times shown in your timezone</p>
           <PublicBookingTimezoneControl

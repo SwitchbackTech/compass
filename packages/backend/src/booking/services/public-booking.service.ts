@@ -3,6 +3,7 @@ import {
   type ComputeBookingSlotsInput,
   computeBookingSlots,
 } from "@core/booking/compute-booking-slots";
+import { occupiesBookingSlot } from "@core/booking/occupies-booking-slot";
 import {
   BookingDurationMinutesSchema,
   BookingSlotsQuerySchema,
@@ -108,14 +109,17 @@ const slotEngineInputForPage = (
   timeZone: page.timeZone,
   durationMinutes: page.durationMinutes,
   weeklyAvailability: page.weeklyAvailability,
+  dateOverrides: page.dateOverrides ?? [],
   minNoticeHours: page.minNoticeHours,
   maxHorizonDays: page.maxHorizonDays,
   bufferMinutes: page.bufferMinutes,
   maxBookingsPerDay: page.maxBookingsPerDay,
-  busyIntervals: availability.intervals.map((interval) => ({
-    start: new Date(interval.start),
-    end: new Date(interval.end),
-  })),
+  busyIntervals: availability.intervals
+    .filter((interval) => occupiesBookingSlot(interval))
+    .map((interval) => ({
+      start: new Date(interval.start),
+      end: new Date(interval.end),
+    })),
   confirmedReservationStarts,
   now: window.now,
   windowStart: window.windowStart,

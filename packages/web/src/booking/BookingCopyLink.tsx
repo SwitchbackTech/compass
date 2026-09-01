@@ -33,6 +33,14 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
         >
           {copied ? "Copied" : "Copy"}
         </button>
+        <a
+          className="c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text transition-colors hover:bg-surface-panel"
+          href={bookingUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Open booking page
+        </a>
       </div>
     </div>
   );

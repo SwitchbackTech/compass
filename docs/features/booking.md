@@ -1,19 +1,22 @@
-# Compass Calendar Booking (v1)
+# Compass Calendar Booking (v1 / v1.1)
 
 Locked product spec for public scheduling on Compass Cloud
-(`https://compasscalendar.com`). Approved 2026-08-30.
+(`https://compasscalendar.com`). Approved 2026-08-30. v1.1 (availability
+exceptions, RSVP-strict occupancy, and public page identity) is the
+current staging milestone.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1 is implemented in the Compass monorepo (public `/book/:username`, host
-Settings, backend APIs). It is enabled in development and staging
-(`runtime.nodeEnv` other than `production`) and disabled in production.
-A standalone Compass Booking product (separate
-brand, domain, or deployable) is **explicitly deferred**. The seams below
-are the extraction path; they are not a second service in v1.
+v1 and v1.1 are implemented in the Compass monorepo (public
+`/book/:username`, host Settings, backend APIs). Booking is enabled in
+development and staging (`runtime.nodeEnv` other than `production`) and
+disabled in production. Do not flip `isBookingEnabled`. A standalone
+Compass Booking product (separate brand, domain, or deployable) is
+**explicitly deferred**. The seams below are the extraction path; they
+are not a second service in v1.
 
 ## Public URL
 
@@ -155,6 +158,8 @@ One booking-page record per user.
 | Destination calendar | Writable Google calendar (`canWrite`). Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
 | General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default timezone: the timezone currently in the host's calendar view when they first enable booking. |
+| Date overrides | Per host-timezone date, capped at 60. **Blocked** offers no slots that day. **Extra hours** replace that day's weekly template (they do not add to it). |
+| Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
 | Scheduling window | Minimum notice default **4 hours**. Maximum horizon default **60 days**. The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 | Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
 | Max bookings per day | Off by default. When on, default **4**. Counts confirmed booking reservations that day in the host timezone, not every calendar event. |
@@ -175,39 +180,39 @@ timezone `<select>` plus a checkbox and two time inputs per weekday.
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
 - **Jump:** `e` then a letter focuses a field (`e` enable, `d` duration,
-  `c` destination, `b` blocking, `z` timezone, `h` hours, `n` notice,
-  `x` horizon, `o` buffer and limits, `l` link). Settings owns `s` (save)
-  and digits `1/2/3` (nav) on this page, which is why the leader is `e`
-  rather than `Mod+digit`. Focus uses `data-booking-field` and does not
-  click, so jumping onto a checkbox does not toggle it.
+  `c` destination, `b` blocking, `z` timezone, `h` hours including date
+  overrides, `w` welcome, `n` notice, `x` horizon, `o` buffer and limits,
+  `l` link). Settings owns `s` (save) and digits `1/2/3` (nav) on this
+  page, which is why the leader is `e` rather than `Mod+digit`. Focus
+  uses `data-booking-field` and does not click, so jumping onto a
+  checkbox does not toggle it.
 - **Save:** a successful save that returns a booking URL copies it. A
   page that has never been enabled has no slug yet, so the toast says to
   enable booking instead. Safari can drop a copy that follows the save
   round trip; the toast then names `e` then `l`, and the Copy button
   stays.
+- **Open booking page** sits next to Copy and opens the public URL in a
+  new tab. There is no authenticated preview iframe.
 
 ## Busy occupancy
 
-v1 uses **Sync busy intervals**, not a new RSVP filter.
+v1.1 occupancy is RSVP-strict. Sync still returns facts only; Booking
+decides whether a busy interval occupies a slot
+(`packages/core/src/booking/occupies-booking-slot.ts`).
 
-- Occupied = an occurrence with `busy: true` and `cancelled: false`
-  (`listBusyOverlapping` in
-  `packages/sync/src/storage/repositories/event-occurrence.repository.ts`).
-- Transparent / free events do not block. Google typically marks
-  declined events transparent.
+- Occupied = an occurrence with `busy: true` and `cancelled: false`,
+  **and** the host is the organizer **or** has accepted.
+- `needsAction`, declined, and tentative invites do not occupy.
+- Transparent / free events do not block. Cancelled occurrences stay
+  excluded.
+- Legacy busy intervals with no occupancy facts still occupy (fail
+  closed to the pre-v1.1 busy-only behavior).
 - Confirm **fail-closed**: if Sync returns `bookable: false` (stale,
   unhealthy, or incomplete), the slot is not offered and confirm is
-  rejected (`409`). Policy stays in Booking; Sync stays facts-only.
-  See [Product Suite Boundaries](../architecture/product-suite-boundaries.md).
-
-Known gap (since resolved): occurrence projection previously forced
-`busy: true` (`packages/sync/src/domain/occurrence-projection.ts`). Google
-already normalizes transparency; `provider-page-applier.ts` stores
-`providerMetadata.transparency = "transparent"` for free events.
-Occurrences now honor that flag. Cancelled occurrences stay excluded.
-
-RSVP-strict "only organized or accepted invites block" is **v1.1**,
-not v1.
+  rejected (`409`). See
+  [Product Suite Boundaries](../architecture/product-suite-boundaries.md).
+- The public busy wire never includes titles, attendees, or emails.
+  Optional facts are `hostIsOrganizer` and `hostResponseStatus` only.
 
 ## Guest cancel
 
@@ -266,7 +271,8 @@ session.
 Unauthenticated:
 
 - `GET /api/booking/pages/:slug` — public page (host display name,
-  duration, timezone, enabled). `404` when missing or disabled.
+  duration, timezone, enabled, optional welcome text). `404` when
+  missing or disabled. Date overrides stay host-only.
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
   instants in the guest timezone for that window. The guest UI requests
   **one month at a time** (plus prefetch of adjacent months). Window
@@ -285,7 +291,7 @@ Authenticated (host session + writable billing, same as event writes):
   enable.
 - Enabling without a healthy Google connection is a typed `403`.
 
-## Out of v1
+## Out of v1 / v1.1
 
 - Multiple event types / appointment types
 - Custom intake questions
@@ -294,12 +300,15 @@ Authenticated (host session + writable billing, same as event writes):
 - Guest reschedule
 - Compass-sent email or SMS
 - `guestsCanModify`
-- RSVP-strict occupancy
 - Editable slug
 - Standalone booking brand, domain, or deployable
 - Production billing packaging specific to booking (uses the existing
   calendar write gate)
 - Non-Google destination calendars
+- Flipping the production gate
+- Host reservation inbox
+- Meet URL on the confirmation screen (Google creates conference
+  asynchronously; the invite email already has it)
 
 ## Implementation
 
@@ -309,12 +318,13 @@ Authenticated (host session + writable billing, same as event writes):
 | --- | --- |
 | Shared contracts | `packages/core/src/types/booking.contracts.ts` |
 | Slot engine | `packages/core/src/booking/compute-booking-slots.ts` |
+| Occupancy policy | `packages/core/src/booking/occupies-booking-slot.ts` |
 | Backend admin API | `packages/backend/src/booking/controllers/booking.controller.ts`, `services/booking-page.service.ts` |
 | Backend public API | `packages/backend/src/booking/services/public-booking.service.ts` |
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts`, `services/calendar-booking.service.ts` |
-| Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingDateOverridesEditor.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts` |
@@ -326,7 +336,6 @@ Authenticated (host session + writable billing, same as event writes):
 - **No guest reschedule.** Cancel and rebook, or the host deletes the event.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
-- **Occupancy is busy-interval based**, not RSVP-strict (v1.1).
 - **Google-only destination** calendars; password-only hosts see a connect-Google
   prompt in Settings.
 - **A duration change re-prices in-flight confirms.** A guest who picked a

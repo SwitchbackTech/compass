@@ -118,10 +118,11 @@ describe("PublicBookingPageSchema", () => {
       "timeZone",
       "enabled",
       "maxHorizonDays",
+      "welcomeText",
     ]);
   });
 
-  it("projects an admin page without calendar ids", () => {
+  it("projects an admin page without calendar ids or date overrides", () => {
     const admin = BookingPageSchema.parse(fullAdminPage());
     const pub = toPublicBookingPage(admin, "Tyler Dane");
 
@@ -132,9 +133,150 @@ describe("PublicBookingPageSchema", () => {
       timeZone: "America/Denver",
       enabled: true,
       maxHorizonDays: 60,
+      welcomeText: null,
     });
     expect(Object.keys(pub)).not.toContain("destinationCalendarId");
     expect(Object.keys(pub)).not.toContain("blockingCalendarIds");
+    expect(Object.keys(pub)).not.toContain("dateOverrides");
+  });
+});
+
+describe("date overrides and welcome text", () => {
+  it("defaults missing dateOverrides and welcomeText", () => {
+    const page = BookingPageSchema.parse(fullAdminPage());
+    expect(page.dateOverrides).toEqual([]);
+    expect(page.welcomeText).toBeNull();
+  });
+
+  it("parses a blocked date and a Saturday hours override", () => {
+    const parsed = AdminPutBookingPageInputSchema.safeParse({
+      enabled: true,
+      durationMinutes: 30,
+      destinationCalendarId: calendarId(),
+      blockingCalendarIds: [calendarId()],
+      timeZone: "America/Denver",
+      weeklyAvailability: [{ weekday: 1, start: "09:00", end: "12:00" }],
+      dateOverrides: [
+        { kind: "blocked", date: "2026-09-07" },
+        {
+          kind: "hours",
+          date: "2026-09-12",
+          intervals: [{ start: "09:00", end: "12:00" }],
+        },
+      ],
+      welcomeText: "30 minutes to talk through Compass Calendar.",
+      minNoticeHours: 4,
+      maxHorizonDays: 60,
+      bufferMinutes: null,
+      maxBookingsPerDay: null,
+      guestsCanInviteOthers: true,
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.welcomeText).toBe(
+        "30 minutes to talk through Compass Calendar.",
+      );
+    }
+  });
+
+  it("rejects duplicate override dates", () => {
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        enabled: false,
+        durationMinutes: 30,
+        destinationCalendarId: calendarId(),
+        blockingCalendarIds: [calendarId()],
+        timeZone: "UTC",
+        weeklyAvailability: [],
+        dateOverrides: [
+          { kind: "blocked", date: "2026-09-07" },
+          {
+            kind: "hours",
+            date: "2026-09-07",
+            intervals: [{ start: "09:00", end: "10:00" }],
+          },
+        ],
+        minNoticeHours: 4,
+        maxHorizonDays: 60,
+        bufferMinutes: null,
+        maxBookingsPerDay: null,
+        guestsCanInviteOthers: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects overlapping hours on one date, empty hours, and 61 overrides", () => {
+    const base = {
+      enabled: false,
+      durationMinutes: 30 as const,
+      destinationCalendarId: calendarId(),
+      blockingCalendarIds: [calendarId()],
+      timeZone: "UTC",
+      weeklyAvailability: [],
+      minNoticeHours: 4,
+      maxHorizonDays: 60,
+      bufferMinutes: null,
+      maxBookingsPerDay: null,
+      guestsCanInviteOthers: true,
+    };
+
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        dateOverrides: [
+          {
+            kind: "hours",
+            date: "2026-09-12",
+            intervals: [
+              { start: "09:00", end: "12:00" },
+              { start: "11:00", end: "13:00" },
+            ],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        dateOverrides: [{ kind: "hours", date: "2026-09-12", intervals: [] }],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        dateOverrides: Array.from({ length: 61 }, (_, index) => {
+          const date = new Date(Date.UTC(2026, 0, 1 + index));
+          const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+          const day = String(date.getUTCDate()).padStart(2, "0");
+          return {
+            kind: "blocked" as const,
+            date: `${date.getUTCFullYear()}-${month}-${day}`,
+          };
+        }),
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects welcome text longer than 500 characters", () => {
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        enabled: false,
+        durationMinutes: 30,
+        destinationCalendarId: calendarId(),
+        blockingCalendarIds: [calendarId()],
+        timeZone: "UTC",
+        weeklyAvailability: [],
+        welcomeText: "w".repeat(501),
+        minNoticeHours: 4,
+        maxHorizonDays: 60,
+        bufferMinutes: null,
+        maxBookingsPerDay: null,
+        guestsCanInviteOthers: true,
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -204,6 +346,7 @@ describe("HTTP booking contracts", () => {
         timeZone: admin.timeZone,
         enabled: admin.enabled,
         maxHorizonDays: admin.maxHorizonDays,
+        welcomeText: null,
       }).success,
     ).toBe(true);
 

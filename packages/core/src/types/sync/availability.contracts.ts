@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { DateTimeSchema } from "@core/types/domain-primitives";
+import { AttendeeResponseStatusSchema } from "@core/types/event-attendance.contracts";
 import { ConnectionStateSchema } from "@core/types/sync/connection.contracts";
 import { SyncEventCalendarIdSchema } from "@core/types/sync/event.contracts";
 import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
@@ -41,9 +42,13 @@ export type BusyAvailabilityRequest = z.infer<
 >;
 
 // A normalized half-open busy interval on the wire (ISO instants).
+// Occupancy facts are optional so display callers can keep {start,end} only.
+// Booking uses hostIsOrganizer / hostResponseStatus; emails never appear.
 export const BusyIntervalSchema = z.strictObject({
   start: DateTimeSchema,
   end: DateTimeSchema,
+  hostIsOrganizer: z.boolean().optional(),
+  hostResponseStatus: AttendeeResponseStatusSchema.nullable().optional(),
 });
 
 // Why a requested calendar's busy data could not be freshly included.

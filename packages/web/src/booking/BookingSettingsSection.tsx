@@ -16,6 +16,7 @@ import { useAppAccess } from "@web/billing/useAppAccess";
 import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
+import { BookingDateOverridesEditor } from "@web/booking/BookingDateOverridesEditor";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
@@ -104,6 +105,8 @@ const buildInitialForm = (
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
     timeZone: TimeZoneSchema.parse(effectiveTimeZone),
     weeklyAvailability: [],
+    dateOverrides: [],
+    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
     bufferMinutes: null,
@@ -184,6 +187,7 @@ export function BookingSettingsSection({
   );
   const [enableError, setEnableError] = useState<string | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
+  const [areOverridesValid, setAreOverridesValid] = useState(true);
   const [minNoticeText, setMinNoticeText] = useState(() =>
     String(form.minNoticeHours),
   );
@@ -303,6 +307,14 @@ export function BookingSettingsSection({
   const handleSave = () => {
     if (!areHoursValid) {
       setEnableError("Fix the weekly hours that could not be read.");
+      return;
+    }
+    if (!areOverridesValid) {
+      setEnableError("Fix the date overrides that could not be read.");
+      return;
+    }
+    if ((form.welcomeText?.length ?? 0) > 500) {
+      setEnableError("Welcome text must be 500 characters or fewer.");
       return;
     }
     if (minNoticeInvalid || horizonInvalid) {
@@ -474,13 +486,49 @@ export function BookingSettingsSection({
         />
       </div>
 
-      <div {...bookingFieldAttrs("hours")}>
+      <div className="flex flex-col gap-4" {...bookingFieldAttrs("hours")}>
         <BookingWeeklyHoursEditor
           onChange={(weeklyAvailability) => updateForm({ weeklyAvailability })}
           onValidityChange={setAreHoursValid}
           shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
           value={form.weeklyAvailability}
         />
+        <BookingDateOverridesEditor
+          onChange={(dateOverrides) => updateForm({ dateOverrides })}
+          onValidityChange={setAreOverridesValid}
+          value={form.dateOverrides ?? []}
+        />
+      </div>
+
+      <div>
+        <BookingFieldLabel
+          field="welcome"
+          htmlFor="booking-welcome"
+          showShortcuts={showShortcuts}
+        >
+          Welcome text
+        </BookingFieldLabel>
+        <textarea
+          {...bookingFieldAttrs("welcome")}
+          aria-invalid={
+            (form.welcomeText?.length ?? 0) > 500 ? true : undefined
+          }
+          className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
+          id="booking-welcome"
+          maxLength={500}
+          onChange={(event) =>
+            updateForm({
+              welcomeText:
+                event.target.value.trim() === "" ? null : event.target.value,
+            })
+          }
+          value={form.welcomeText ?? ""}
+        />
+        {(form.welcomeText?.length ?? 0) > 500 ? (
+          <p className="text-error text-xs" role="alert">
+            Welcome text must be 500 characters or fewer.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

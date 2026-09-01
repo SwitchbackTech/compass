@@ -17,6 +17,7 @@ export const BOOKING_SEQUENCE_FIELDS = [
   { key: "b", field: "blocking", label: "Blocking calendars" },
   { key: "z", field: "timezone", label: "Booking timezone" },
   { key: "h", field: "hours", label: "Weekly hours" },
+  { key: "w", field: "welcome", label: "Welcome text" },
   { key: "n", field: "notice", label: "Minimum notice" },
   { key: "x", field: "horizon", label: "Maximum horizon" },
   { key: "o", field: "options", label: "Buffer and limits" },

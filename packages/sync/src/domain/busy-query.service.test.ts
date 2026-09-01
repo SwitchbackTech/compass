@@ -78,6 +78,27 @@ describe("mergeBusyIntervals", () => {
     ]);
   });
 
+  it("does not merge touching intervals with different occupancy facts", () => {
+    const out = mergeBusyIntervals([
+      {
+        start: new Date("2026-07-14T09:00Z"),
+        end: new Date("2026-07-14T10:00Z"),
+        hostIsOrganizer: true,
+        hostResponseStatus: null,
+      },
+      {
+        start: new Date("2026-07-14T10:00Z"),
+        end: new Date("2026-07-14T11:00Z"),
+        hostIsOrganizer: false,
+        hostResponseStatus: "needsAction",
+      },
+    ]);
+
+    expect(out).toHaveLength(2);
+    expect(out[0]?.hostIsOrganizer).toBe(true);
+    expect(out[1]?.hostResponseStatus).toBe("needsAction");
+  });
+
   it("drops empty (zero-length) intervals", () => {
     const out = mergeBusyIntervals([
       iv("2026-07-14T09:00Z", "2026-07-14T09:00Z"),

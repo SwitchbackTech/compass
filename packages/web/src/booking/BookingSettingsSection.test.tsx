@@ -179,6 +179,9 @@ describe("BookingSettingsSection", () => {
     expect(await screen.findByLabelText("Public booking link")).toHaveValue(
       bookingUrl,
     );
+    const openLink = screen.getByRole("link", { name: "Open booking page" });
+    expect(openLink).toHaveAttribute("href", bookingUrl);
+    expect(openLink).toHaveAttribute("target", "_blank");
   });
 
   it("saves again after the first save, sending only PUT input keys", async () => {
@@ -253,6 +256,7 @@ describe("BookingSettingsSection", () => {
     expect(Object.keys(savedBodies[1] ?? {}).sort()).toEqual([
       "blockingCalendarIds",
       "bufferMinutes",
+      "dateOverrides",
       "destinationCalendarId",
       "durationMinutes",
       "enabled",
@@ -262,6 +266,7 @@ describe("BookingSettingsSection", () => {
       "minNoticeHours",
       "timeZone",
       "weeklyAvailability",
+      "welcomeText",
     ]);
   });
 
@@ -380,6 +385,33 @@ describe("BookingSettingsSection", () => {
     await user.keyboard("h");
 
     expect(document.activeElement).toBe(screen.getByLabelText("Monday"));
+  });
+
+  it("jumps to welcome text with e then w", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.keyboard("e");
+    await user.keyboard("w");
+
+    expect(document.activeElement).toBe(screen.getByLabelText("Welcome text"));
   });
 
   it("jumps to the timezone trigger with e then z", async () => {
@@ -517,6 +549,96 @@ describe("BookingSettingsSection", () => {
     expect(putCount).toBe(0);
     expect(
       screen.getByText("Fix the weekly hours that could not be read."),
+    ).toBeInTheDocument();
+  });
+
+  it("saves welcome text and a blocked date override", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    let savedBody: unknown;
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(ctx.json(savedBody as object));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.type(
+      screen.getByLabelText("Welcome text"),
+      "30 minutes to talk through Compass.",
+    );
+    await user.click(screen.getByRole("button", { name: "Add date override" }));
+    await user.type(screen.getByLabelText("Override date"), "2026-09-07");
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({
+        welcomeText: "30 minutes to talk through Compass.",
+        dateOverrides: [{ kind: "blocked", date: "2026-09-07" }],
+      });
+    });
+  });
+
+  it("blocks the save while extra hours on a date override cannot be read", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    let putCount = 0;
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        putCount += 1;
+        return res(ctx.json(await req.json()));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: "Save booking settings" });
+
+    await user.click(screen.getByRole("button", { name: "Add date override" }));
+    await user.type(screen.getByLabelText("Override date"), "2026-09-12");
+    await user.selectOptions(screen.getByLabelText("Override kind"), "hours");
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    expect(putCount).toBe(0);
+    expect(
+      screen.getByText("Fix the date overrides that could not be read."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Check override dates and hours. Extra hours cannot be blank.",
+      ),
     ).toBeInTheDocument();
   });
 

@@ -59,6 +59,7 @@ export interface BusyOverlapQuery {
 export interface OccurrenceInterval {
   startAt: Date;
   endAt: Date;
+  eventId: EventId;
 }
 
 // Repository for `event_occurrences`. Rebuilding a series' window
@@ -273,7 +274,12 @@ export class EventOccurrenceRepository {
     };
     return this.collection
       .find(filter)
-      .project<OccurrenceInterval>({ startAt: 1, endAt: 1, _id: 0 })
+      .project<OccurrenceInterval>({
+        startAt: 1,
+        endAt: 1,
+        eventId: 1,
+        _id: 0,
+      })
       .sort({ startAt: 1 })
       .toArray();
   }

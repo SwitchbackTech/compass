@@ -9,8 +9,17 @@ import {
 
 test.describe("public booking page", () => {
   test("loads without login and shows the host heading", async ({ page }) => {
-    await preparePublicBookingPage(page);
+    await preparePublicBookingPage(page, {
+      welcomeText: "30 minutes to talk through Compass Calendar.",
+    });
 
+    await expect(
+      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeVisible();
+    await expect(page.getByText("30 minutes Google Meet")).toBeVisible();
+    await expect(
+      page.getByText("30 minutes to talk through Compass Calendar."),
+    ).toBeVisible();
     await expect(page.getByText(/Times shown in your timezone/)).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
@@ -65,6 +74,9 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
+    await expect(
+      page.getByText(/A Google Meet invite is on its way to your email/),
+    ).toBeVisible();
     expect(captured.reservationPosts).toHaveLength(1);
     expect(captured.reservationPosts[0]).toMatchObject({
       slotStart,

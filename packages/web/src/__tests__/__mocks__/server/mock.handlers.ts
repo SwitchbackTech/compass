@@ -88,6 +88,8 @@ export const globalHandlers = [
         blockingCalendarIds: ["000000000000000000000001"],
         timeZone: "UTC",
         weeklyAvailability: [],
+        dateOverrides: [],
+        welcomeText: null,
         minNoticeHours: 4,
         maxHorizonDays: 60,
         bufferMinutes: null,
