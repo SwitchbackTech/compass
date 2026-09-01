@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
   buildSameDaySiblingSlot,
+  buildUpcomingSaturdaySlot,
   formatSlotButtonLabel,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
@@ -24,6 +25,37 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
     ).toBeVisible();
+  });
+
+  test("shows Saturday times when that day is only available via a date override", async ({
+    page,
+  }) => {
+    const saturday = buildUpcomingSaturdaySlot();
+    await preparePublicBookingPage(page, { slots: [saturday] });
+
+    const slotButton = page.getByRole("button", {
+      name: formatSlotButtonLabel(saturday.slotStart),
+    });
+    if (await page.getByText("No open times this month.").isVisible()) {
+      await page
+        .getByRole("button", { name: "Jump to next available day" })
+        .click();
+    }
+
+    await expect(slotButton).toBeVisible();
+    const saturdayName = await page.evaluate((iso) => {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return new Intl.DateTimeFormat(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone,
+      }).format(new Date(iso));
+    }, saturday.slotStart);
+    await expect(
+      page.getByRole("button", { name: saturdayName }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   test("walks the picker with the keyboard via the skip link", async ({

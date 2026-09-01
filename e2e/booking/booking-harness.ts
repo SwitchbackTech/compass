@@ -134,6 +134,44 @@ export function buildSameDaySiblingSlot(
   };
 }
 
+/**
+ * Next Saturday at 15:00 UTC. Stands in for extra-hours date overrides on a
+ * weekday with no weekly template. 15:00 UTC stays Saturday in US and
+ * European Playwright timezones.
+ */
+export function buildUpcomingSaturdaySlot(durationMinutes = 30): {
+  slotStart: string;
+  slotEnd: string;
+} {
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      15,
+      0,
+      0,
+      0,
+    ),
+  );
+  const daysUntilSaturday = (6 - start.getUTCDay() + 7) % 7;
+  if (daysUntilSaturday === 0 && start.getTime() <= now.getTime()) {
+    start.setUTCDate(start.getUTCDate() + 7);
+  } else {
+    start.setUTCDate(start.getUTCDate() + daysUntilSaturday);
+  }
+  if (start.getTime() <= now.getTime()) {
+    start.setUTCDate(start.getUTCDate() + 7);
+  }
+  return {
+    slotStart: start.toISOString(),
+    slotEnd: new Date(
+      start.getTime() + durationMinutes * 60 * 1000,
+    ).toISOString(),
+  };
+}
+
 export interface PublicBookingStubOptions {
   slug?: string;
   hostDisplayName?: string;
