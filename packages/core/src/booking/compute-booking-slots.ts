@@ -1,4 +1,5 @@
 import {
+  type BookingDateOverrides,
   type BookingDurationMinutes,
   localTimeToMinutes,
   type WeeklyAvailability,
@@ -17,6 +18,7 @@ export interface ComputeBookingSlotsInput {
   timeZone: string;
   durationMinutes: BookingDurationMinutes;
   weeklyAvailability: WeeklyAvailability;
+  dateOverrides?: BookingDateOverrides;
   minNoticeHours: number;
   maxHorizonDays: number;
   bufferMinutes: number | null;
@@ -121,9 +123,26 @@ const availabilityForWeekday = (
   weekday: number,
 ) => weeklyAvailability.filter((interval) => interval.weekday === weekday);
 
+const availabilityForLocalDate = (
+  weeklyAvailability: WeeklyAvailability,
+  dateOverrides: BookingDateOverrides,
+  localDate: string,
+  weekday: number,
+): readonly { start: string; end: string }[] | null => {
+  const override = dateOverrides.find((entry) => entry.date === localDate);
+  if (override?.kind === "blocked") {
+    return null;
+  }
+  if (override?.kind === "hours") {
+    return override.intervals;
+  }
+  return availabilityForWeekday(weeklyAvailability, weekday);
+};
+
 /**
- * Pure slot engine: weekly hours, busy/reservation buffers, min notice,
- * horizon, and max-per-day caps. Returns UTC instants valid as slot starts.
+ * Pure slot engine: weekly hours, date overrides, busy/reservation buffers,
+ * min notice, horizon, and max-per-day caps. Returns UTC instants valid as
+ * slot starts.
  */
 export const computeBookingSlots = (
   input: ComputeBookingSlotsInput,
@@ -132,6 +151,7 @@ export const computeBookingSlots = (
     timeZone,
     durationMinutes,
     weeklyAvailability,
+    dateOverrides = [],
     minNoticeHours,
     maxHorizonDays,
     bufferMinutes,
@@ -143,7 +163,7 @@ export const computeBookingSlots = (
     windowEnd,
   } = input;
 
-  if (weeklyAvailability.length === 0) {
+  if (weeklyAvailability.length === 0 && dateOverrides.length === 0) {
     return [];
   }
 
@@ -176,8 +196,17 @@ export const computeBookingSlots = (
 
   while (dayCursor.isSameOrBefore(lastDay, "day")) {
     const weekday = toIsoWeekday(dayCursor);
-    const dayAvailability = availabilityForWeekday(weeklyAvailability, weekday);
     const localDate = dayCursor.format("YYYY-MM-DD");
+    const dayAvailability = availabilityForLocalDate(
+      weeklyAvailability,
+      dateOverrides,
+      localDate,
+      weekday,
+    );
+    if (dayAvailability === null) {
+      dayCursor = dayCursor.add(1, "day");
+      continue;
+    }
 
     if (
       maxBookingsPerDay !== null &&

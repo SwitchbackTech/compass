@@ -143,6 +143,124 @@ export const WeeklyAvailabilitySchema = z
   });
 export type WeeklyAvailability = z.infer<typeof WeeklyAvailabilitySchema>;
 
+const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const isRealLocalDate = (value: string): boolean => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    return false;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+};
+
+/** Host-timezone calendar date `YYYY-MM-DD`. */
+export const BookingLocalDateSchema = z
+  .string()
+  .trim()
+  .regex(LOCAL_DATE_PATTERN, { message: "Date must be YYYY-MM-DD" })
+  .refine(isRealLocalDate, { message: "Date must be a real calendar date" });
+export type BookingLocalDate = z.infer<typeof BookingLocalDateSchema>;
+
+export const DateHoursIntervalSchema = z
+  .strictObject({
+    start: LocalTimeOfDaySchema,
+    end: LocalTimeOfDaySchema,
+  })
+  .refine(
+    ({ start, end }) => localTimeToMinutes(end) > localTimeToMinutes(start),
+    { message: "Availability end must be after start", path: ["end"] },
+  );
+export type DateHoursInterval = z.infer<typeof DateHoursIntervalSchema>;
+
+const dateHoursOverlap = (
+  left: DateHoursInterval,
+  right: DateHoursInterval,
+): boolean => {
+  const leftStart = localTimeToMinutes(left.start);
+  const leftEnd = localTimeToMinutes(left.end);
+  const rightStart = localTimeToMinutes(right.start);
+  const rightEnd = localTimeToMinutes(right.end);
+  return leftStart < rightEnd && rightStart < leftEnd;
+};
+
+export const BookingBlockedDateOverrideSchema = z.strictObject({
+  kind: z.literal("blocked"),
+  date: BookingLocalDateSchema,
+});
+
+export const BookingHoursDateOverrideSchema = z
+  .strictObject({
+    kind: z.literal("hours"),
+    date: BookingLocalDateSchema,
+    intervals: z.array(DateHoursIntervalSchema).min(1).readonly(),
+  })
+  .superRefine((override, ctx) => {
+    for (let i = 0; i < override.intervals.length; i += 1) {
+      const left = override.intervals[i];
+      if (!left) {
+        continue;
+      }
+      for (let j = i + 1; j < override.intervals.length; j += 1) {
+        const right = override.intervals[j];
+        if (!right) {
+          continue;
+        }
+        if (dateHoursOverlap(left, right)) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Date override hours must not overlap",
+            path: ["intervals", j],
+          });
+        }
+      }
+    }
+  });
+
+export const BookingDateOverrideSchema = z.discriminatedUnion("kind", [
+  BookingBlockedDateOverrideSchema,
+  BookingHoursDateOverrideSchema,
+]);
+export type BookingDateOverride = z.infer<typeof BookingDateOverrideSchema>;
+
+export const BookingDateOverridesSchema = z
+  .array(BookingDateOverrideSchema)
+  .max(60)
+  .readonly()
+  .superRefine((overrides, ctx) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < overrides.length; i += 1) {
+      const override = overrides[i];
+      if (!override) {
+        continue;
+      }
+      if (seen.has(override.date)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Date overrides must be unique",
+          path: [i, "date"],
+        });
+      }
+      seen.add(override.date);
+    }
+  });
+export type BookingDateOverrides = z.infer<typeof BookingDateOverridesSchema>;
+
+export const BookingWelcomeTextSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .nullable()
+  .transform((value) => (value === "" ? null : value));
+export type BookingWelcomeText = z.infer<typeof BookingWelcomeTextSchema>;
+
 export const BookingBufferMinutesSchema = z
   .int()
   .positive()
@@ -169,6 +287,8 @@ export const BookingPageSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
+  dateOverrides: BookingDateOverridesSchema.default([]),
+  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z.number().int().nonnegative().default(4),
   maxHorizonDays: z.number().int().positive().max(60).default(60),
   bufferMinutes: BookingBufferMinutesSchema,
@@ -185,13 +305,18 @@ export const PublicBookingPageSchema = z.strictObject({
   timeZone: TimeZoneSchema,
   enabled: z.boolean(),
   maxHorizonDays: z.number().int().positive().max(60),
+  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
 });
 export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 
 export const toPublicBookingPage = (
   page: Pick<
     BookingPage,
-    "durationMinutes" | "timeZone" | "enabled" | "maxHorizonDays"
+    | "durationMinutes"
+    | "timeZone"
+    | "enabled"
+    | "maxHorizonDays"
+    | "welcomeText"
   >,
   hostDisplayName: string,
 ): PublicBookingPage =>
@@ -201,6 +326,7 @@ export const toPublicBookingPage = (
     timeZone: page.timeZone,
     enabled: page.enabled,
     maxHorizonDays: page.maxHorizonDays,
+    welcomeText: page.welcomeText ?? null,
   });
 
 export const BookingReservationStatusSchema = z.enum([
@@ -295,6 +421,8 @@ export const AdminPutBookingPageInputSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
+  dateOverrides: BookingDateOverridesSchema.default([]),
+  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z.number().int().nonnegative().default(4),
   maxHorizonDays: z.number().int().positive().max(60).default(60),
   bufferMinutes: BookingBufferMinutesSchema,
