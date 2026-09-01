@@ -53,6 +53,10 @@ export const EndsOnDate = ({
                 setUntil(date);
                 setOpen(false);
               }}
+              // With no end chosen there is no selection, and react-datepicker
+              // would open at today's month — possibly months away from the
+              // event being extended. Open at the event's own month instead.
+              openToDate={until ? undefined : miniDate.toDate()}
               selected={until}
               title="Select recurrence end date"
               view="grid"

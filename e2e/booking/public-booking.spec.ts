@@ -371,8 +371,23 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Previous month" }),
     ).toBeEnabled();
     await expect(page.getByText("Loading open times")).toHaveCount(0);
-    await expect.poll(() => captured.slotGets).toBeGreaterThanOrEqual(3);
+    // Arriving here prefetches the month after next only while that month
+    // still starts inside the 60-day horizon — early in a calendar month it
+    // does not (e.g. Sep 1 + 60d lands before Nov 1), so a fixed ">= 3"
+    // fetch count is date-dependent. Let any in-flight arrival prefetch
+    // settle so the no-new-request checks below cannot race it.
+    await expect
+      .poll(
+        async () => {
+          const before = captured.slotGets;
+          await page.waitForTimeout(500);
+          return captured.slotGets === before;
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
     const afterArrive = captured.slotGets;
+    expect([2, 3]).toContain(afterArrive);
 
     await page.getByRole("button", { name: "Previous month" }).click();
     await next.click();
