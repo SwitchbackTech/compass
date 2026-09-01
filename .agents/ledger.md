@@ -13,6 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 3065 | high | Verifier | verifying | e2e/booking/public-booking.spec.ts | bunx playwright test e2e/booking (pending) | 2026-09-01T20:00:00Z | 0 | none |
 | simplify-recent-3040 | medium | Manager | verifying | .agents/handoffs/simplify-recent-3040.md | focused web 46 pass; core/backend error+contracts pass; verify package checks pass; review: no confirmed findings | 2026-09-01T06:00:00Z | 1 | none |
 | 2980 | high | Manager | waiting | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2980 | verify PASS (web, type-check, lint, knip, a11y, e2e); review: no confirmed findings | 2026-08-31T00:00:00Z | 1 | none |
 | 2878 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2878 | bun run verify: web, type-check, lint, knip passed; bun test:a11y 7 passed | 2026-08-26T03:00:00Z | 0 | none |
