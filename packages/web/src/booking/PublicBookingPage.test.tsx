@@ -191,6 +191,7 @@ const publicPagePayload = (overrides: Record<string, unknown> = {}) => ({
   timeZone: "America/Chicago",
   enabled: true,
   maxHorizonDays: 60,
+  welcomeText: null,
   ...overrides,
 });
 
@@ -311,6 +312,34 @@ describe("PublicBookingPage", () => {
     expect(screen.getByRole("heading", { name: "Your details" })).toHaveFocus();
   });
 
+  it("shows host-authored welcome text under the Google Meet line", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json(
+              publicPagePayload({
+                welcomeText: "30 minutes to talk through Compass Calendar.",
+              }),
+            ),
+          ),
+      ),
+      slotsInWindow([currentSlot]),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("30 minutes Google Meet")).toBeInTheDocument();
+    expect(
+      screen.getByText("30 minutes to talk through Compass Calendar."),
+    ).toBeInTheDocument();
+  });
+
   it("labels times in the guest timezone and confirms a booking", async () => {
     const user = userEvent.setup({ delay: null });
     let postedBody: unknown;
@@ -343,6 +372,7 @@ describe("PublicBookingPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("30 minutes Google Meet")).toBeInTheDocument();
     expect(screen.getByRole("main").parentElement).toHaveAttribute(
       "data-document-scroll",
     );
@@ -1228,7 +1258,10 @@ describe("PublicBookingConfirmedPage", () => {
         name: "You are booked with Tyler Dane",
       }),
     ).toHaveFocus();
-    expect(screen.getByText(/30 minutes/)).toBeInTheDocument();
+    expect(screen.getByText(/30 minutes Google Meet/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/A Google Meet invite is on its way to your email/),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Copy cancel link" }),
     ).not.toBeInTheDocument();

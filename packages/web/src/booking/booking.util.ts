@@ -99,6 +99,8 @@ export function toBookingPageInput(
     blockingCalendarIds: page.blockingCalendarIds,
     timeZone: page.timeZone,
     weeklyAvailability: page.weeklyAvailability,
+    dateOverrides: page.dateOverrides ?? [],
+    welcomeText: page.welcomeText ?? null,
     minNoticeHours: page.minNoticeHours,
     maxHorizonDays: page.maxHorizonDays,
     bufferMinutes: page.bufferMinutes,

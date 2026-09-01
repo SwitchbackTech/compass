@@ -36,11 +36,11 @@ export function PublicBookingConfirmationView({
           You are booked with {hostDisplayName}
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          {when} ({formatDurationMinutes(durationMinutes)})
+          {when} ({formatDurationMinutes(durationMinutes)} Google Meet)
         </p>
         <p className="mt-4 text-sm text-text">
-          A calendar invite is on its way to your email. To cancel, use the link
-          in that invite
+          A Google Meet invite is on its way to your email. To cancel, use the
+          link in that invite
           {cancelUrl ? " or copy it here:" : "."}
         </p>
         {cancelUrl ? (

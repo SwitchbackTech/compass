@@ -25,6 +25,16 @@ describe("BookingCopyLink", () => {
       expect(mockWriteText).toHaveBeenCalledWith(bookingUrl);
     });
   });
+
+  it("opens the public booking page in a new tab", () => {
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    render(<BookingCopyLink bookingUrl={bookingUrl} />);
+
+    const openLink = screen.getByRole("link", { name: "Open booking page" });
+    expect(openLink).toHaveAttribute("href", bookingUrl);
+    expect(openLink).toHaveAttribute("target", "_blank");
+    expect(openLink).toHaveAttribute("rel", "noreferrer");
+  });
 });
 
 const originalClipboard = navigator.clipboard;
