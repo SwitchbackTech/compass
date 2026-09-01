@@ -1,4 +1,9 @@
-import { parallelArgsFor, testArgvFor } from "./test-parallel";
+import {
+  parallelArgsFor,
+  shardTargets,
+  testArgvFor,
+  webSuiteShardCount,
+} from "./test-parallel";
 import { describe, expect, it } from "bun:test";
 
 const argvOpts = {
@@ -31,5 +36,38 @@ describe("testArgvFor", () => {
         targets: ["./packages/core/src"],
       }),
     ).toContain("--parallel");
+  });
+});
+
+describe("shardTargets", () => {
+  it("keeps a single shard when count is 1", () => {
+    expect(shardTargets(["a", "b", "c"], 1)).toEqual([["a", "b", "c"]]);
+  });
+
+  it("splits files into contiguous shards", () => {
+    expect(shardTargets(["a", "b", "c", "d"], 2)).toEqual([
+      ["a", "b"],
+      ["c", "d"],
+    ]);
+  });
+
+  it("does not emit empty shards when the count exceeds the file count", () => {
+    expect(shardTargets(["a", "b"], 4)).toEqual([["a"], ["b"]]);
+  });
+});
+
+describe("webSuiteShardCount", () => {
+  it("stays on one process for an explicit path focus", () => {
+    expect(webSuiteShardCount({ explicitPathCount: 1 })).toBe(1);
+  });
+
+  it("defaults the full suite to two processes", () => {
+    expect(webSuiteShardCount({ explicitPathCount: 0 })).toBe(2);
+  });
+
+  it("honors WEB_TEST_SHARDS when focusing the full suite", () => {
+    expect(webSuiteShardCount({ explicitPathCount: 0, envShards: "3" })).toBe(
+      3,
+    );
   });
 });

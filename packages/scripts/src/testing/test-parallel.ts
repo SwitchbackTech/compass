@@ -9,6 +9,7 @@
 import { backendTestSpawnEnv } from "./backend-test-env";
 import {
   formatDuration,
+  parseExtraArgs,
   resolveTestTargets,
   warnIfBunVersionMismatch,
 } from "./runner-utils";
@@ -57,9 +58,46 @@ const PROFILES: Record<
 
 // Web uses jsdom + MSW XHR patching + module singletons that Bun's parallel
 // `--isolate` clears between files (MSW's oldXMLHttpRequest becomes undefined).
-// One process, sequential files is still far faster than the old per-file launcher.
+// Sequential files in one process is still far faster than the old per-file
+// launcher. The full web suite then runs as a few sequential processes so
+// jsdom/MSW RSS is released between shards — a single 3k-test process has
+// been SIGKILL'd (exit 137) on 7 GB GitHub runners.
 export function parallelArgsFor(profile: ProfileName): string[] {
   return profile === "web" ? [] : ["--parallel"];
+}
+
+export function shardTargets(
+  targets: string[],
+  shardCount: number,
+): string[][] {
+  if (targets.length === 0 || shardCount <= 1) {
+    return [targets];
+  }
+  const count = Math.min(Math.floor(shardCount), targets.length);
+  const size = Math.ceil(targets.length / count);
+  const shards: string[][] = [];
+  for (let i = 0; i < targets.length; i += size) {
+    shards.push(targets.slice(i, i + size));
+  }
+  return shards;
+}
+
+export function webSuiteShardCount(opts: {
+  explicitPathCount: number;
+  envShards?: string;
+}): number {
+  if (opts.explicitPathCount > 0) {
+    return 1;
+  }
+  const raw = opts.envShards;
+  if (raw === undefined || raw === "") {
+    return 2;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 2;
+  }
+  return Math.floor(parsed);
 }
 
 export function testArgvFor(
@@ -109,32 +147,51 @@ async function runCli(): Promise<void> {
   const { targets, bunFlags } = resolveTestTargets(scan, extraArgs, {
     expandDirectory: true,
   });
+  const { explicitPaths } = parseExtraArgs(extraArgs);
+  const shards =
+    profile === "web"
+      ? shardTargets(
+          targets,
+          webSuiteShardCount({
+            explicitPathCount: explicitPaths.length,
+            envShards: process.env.WEB_TEST_SHARDS,
+          }),
+        )
+      : [targets];
 
   const started = Date.now();
-  const testTargets = testArgvFor(profile, {
-    preloadPath,
-    bunFlags,
-    targets,
-  });
-
-  console.log(`Running ${label}...`);
-
   const spawnEnv =
     profile === "backend-fast" || profile === "scripts-fast"
       ? backendTestSpawnEnv(FAST_MONGO_URI)
       : { ...process.env, TZ: "Etc/UTC", NODE_ENV: "test" };
 
-  const proc = Bun.spawn(testTargets, {
-    env: spawnEnv,
-    stdout: "inherit",
-    stderr: "inherit",
-  });
-  const code = await proc.exited;
-  console.log(`\n${label}: finished in ${formatDuration(started)}s`);
+  for (const [index, shard] of shards.entries()) {
+    const shardLabel =
+      shards.length > 1
+        ? `${label} shard ${index + 1}/${shards.length} (${shard.length} files)`
+        : label;
+    console.log(`Running ${shardLabel}...`);
 
-  if (code !== 0) {
-    process.exit(code ?? 1);
+    const proc = Bun.spawn(
+      testArgvFor(profile, {
+        preloadPath,
+        bunFlags,
+        targets: shard,
+      }),
+      {
+        env: spawnEnv,
+        stdout: "inherit",
+        stderr: "inherit",
+      },
+    );
+    const code = await proc.exited;
+    if (code !== 0) {
+      console.log(`\n${shardLabel}: finished in ${formatDuration(started)}s`);
+      process.exit(code ?? 1);
+    }
   }
+
+  console.log(`\n${label}: finished in ${formatDuration(started)}s`);
 }
 
 if (import.meta.main) {

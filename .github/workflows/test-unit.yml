@@ -203,6 +203,19 @@ jobs:
           path: ~/.cache/mongodb-binaries
           key: ${{ runner.os }}-mongodb-memory-server
 
+      # jsdom + MSW in one long-lived process can push a 7 GB hosted runner
+      # into the OOM killer (exit 137 / "runner has received a shutdown
+      # signal"). Extra swap keeps the suite from taking the runner down.
+      - name: Add swap space
+        if: needs.changes.outputs.code == 'true' && (matrix.project == 'web')
+        run: |
+          sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+          free -h
+
       - name: Run web tests
         if: needs.changes.outputs.code == 'true' && (matrix.project == 'web')
         timeout-minutes: 5
