@@ -1109,6 +1109,7 @@ describe("Shortcut hints", () => {
       ),
     ).toBeTruthy();
 
+    screen.getByRole("dialog").focus();
     await user.keyboard("u");
 
     await waitFor(() => {
@@ -1125,7 +1126,7 @@ describe("Shortcut hints", () => {
     await waitForAuthModal();
 
     const email = screen.getByLabelText(/email/i);
-    await user.click(email);
+    expect(email).toHaveFocus();
     await user.keyboard("user@example.com");
 
     expect(email).toHaveValue("user@example.com");
@@ -1143,6 +1144,7 @@ describe("Shortcut hints", () => {
       within(screen.getByRole("button", { name: /^log in$/i })).getByText("i"),
     ).toBeTruthy();
 
+    screen.getByRole("dialog").focus();
     await user.keyboard("i");
 
     await waitFor(() => {
@@ -1158,9 +1160,56 @@ describe("Shortcut hints", () => {
     await user.click(screen.getByRole("button", { name: /open modal/i }));
     await waitForAuthModal();
 
+    screen.getByRole("dialog").focus();
     await user.keyboard("g");
 
     expect(mockGoogleLogin).toHaveBeenCalled();
+  });
+});
+
+describe("Initial focus", () => {
+  beforeEach(() => {
+    installAuthModalTestSeams();
+  });
+
+  it("focuses email on login so typing can start immediately", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<div />, "/?auth=login");
+    await waitForAuthModal();
+
+    const email = screen.getByLabelText(/email/i);
+    expect(email).toHaveFocus();
+    await user.keyboard("returning@example.com");
+    expect(email).toHaveValue("returning@example.com");
+    expect(
+      screen.getByRole("heading", { name: /hey, welcome back/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("focuses email on signup so typing can start immediately", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<div />, "/?auth=signup");
+    await waitForAuthModal(/nice to meet you/i);
+
+    const email = screen.getByLabelText(/email/i);
+    expect(email).toHaveFocus();
+    await user.keyboard("new@example.com");
+    expect(email).toHaveValue("new@example.com");
+    expect(screen.getByLabelText(/name/i)).toHaveValue("");
+  });
+
+  it("reseats email when switching from login to signup", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<div />, "/?auth=login");
+    await waitForAuthModal();
+
+    await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /nice to meet you/i }),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText(/email/i)).toHaveFocus();
   });
 });
 

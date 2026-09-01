@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, type Ref } from "react";
 import {
   type LogInFormData,
   LogInSchema,
@@ -17,6 +17,8 @@ interface SignInFormProps {
   isSubmitting?: boolean;
   /** Optional status message shown above the form */
   statusMessage?: string | null;
+  /** Seats dialog focus on email so typing can start immediately. */
+  emailInputRef?: Ref<HTMLInputElement>;
 }
 
 /**
@@ -29,6 +31,7 @@ export const LogInForm: FC<SignInFormProps> = ({
   onForgotPassword,
   isSubmitting,
   statusMessage,
+  emailInputRef,
 }) => {
   const form = useZodForm({
     schema: LogInSchema,
@@ -45,6 +48,7 @@ export const LogInForm: FC<SignInFormProps> = ({
       ) : null}
 
       <AuthInput
+        ref={emailInputRef}
         type="email"
         placeholder="Email"
         ariaLabel="Email"
