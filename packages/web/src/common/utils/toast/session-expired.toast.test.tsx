@@ -25,7 +25,7 @@ describe("SessionExpiredToast", () => {
     registerToastPort(port);
   });
 
-  it("shows a 1 keycap and signs in when 1 is pressed", () => {
+  it("shows an S keycap and signs in when S is pressed", () => {
     render(
       <HotkeysProvider>
         <SessionExpiredToast toastId="session-expired-api" />
@@ -33,12 +33,12 @@ describe("SessionExpiredToast", () => {
     );
 
     expect(
-      within(screen.getByRole("button", { name: "Sign in" })).getByText("1"),
+      within(screen.getByRole("button", { name: "Sign in" })).getByText("S"),
     ).toBeTruthy();
     expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
-    pressKey("1");
+    pressKey("S");
 
     expect(mocks.dismiss).toHaveBeenCalledWith("session-expired-api");
   });

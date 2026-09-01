@@ -1,0 +1,18 @@
+/*
+ * react-toastify ships unlayered light/dark chrome (#fff / #121212). Toast
+ * body copy uses Compass `text-*` tokens, so a light panel on dark-abyss (or
+ * the reverse) fails contrast. Bind toast chrome to the active [data-theme].
+ * Imported after ReactToastify.css so source order wins at equal specificity.
+ */
+.Toastify__toast-theme--dark,
+.Toastify__toast-theme--light,
+.Toastify__toast-theme--colored.Toastify__toast--default {
+  background: var(--background);
+  color: var(--text);
+  box-shadow: 0 4px 12px var(--shadow-default);
+}
+
+.Toastify__progress-bar-theme--light,
+.Toastify__progress-bar-theme--dark {
+  background: var(--text-muted);
+}

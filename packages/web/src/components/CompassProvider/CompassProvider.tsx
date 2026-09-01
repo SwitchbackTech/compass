@@ -10,6 +10,7 @@ import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { TOAST_CHROME_STYLE } from "@web/common/constants/toast.constants";
 import { useEscapeToDismissToast } from "@web/common/utils/toast/useEscapeToDismissToast";
 import { AboutModal } from "@web/components/About/AboutModal";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
@@ -48,6 +49,7 @@ function ThemeAwareToastContainer() {
       draggable
       pauseOnHover
       theme={theme === "dark-abyss" ? "dark" : "light"}
+      toastStyle={TOAST_CHROME_STYLE}
       limit={1}
       transition={Slide}
     />

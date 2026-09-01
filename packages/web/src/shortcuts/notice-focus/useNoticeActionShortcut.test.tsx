@@ -37,6 +37,7 @@ describe("useNoticeActionShortcut", () => {
     const onClick = mock();
     renderHook(() => useNoticeActionShortcut(undefined, onClick), { wrapper });
     pressKey("1");
+    pressKey("S");
     expect(onClick).not.toHaveBeenCalled();
 
     renderHook(

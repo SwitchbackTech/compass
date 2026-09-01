@@ -59,7 +59,7 @@ describe("AnonymousSaveToast", () => {
     registerToastPort(port);
   });
 
-  it("shows a 1 keycap and signs up when 1 is pressed", () => {
+  it("shows an S keycap and signs up when S is pressed", () => {
     render(
       <HotkeysProvider>
         <AnonymousSaveToast toastId="anonymous-save-toast" />
@@ -67,13 +67,25 @@ describe("AnonymousSaveToast", () => {
     );
 
     expect(
-      within(screen.getByRole("button", { name: "Sign up" })).getByText("1"),
+      within(screen.getByRole("button", { name: "Sign up" })).getByText("S"),
     ).toBeTruthy();
     expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
-    pressKey("1");
+    pressKey("S");
 
     expect(mocks.dismiss).toHaveBeenCalledWith("anonymous-save-toast");
+  });
+
+  it("leaves digit 1 for quick-time create", () => {
+    render(
+      <HotkeysProvider>
+        <AnonymousSaveToast toastId="anonymous-save-toast" />
+      </HotkeysProvider>,
+    );
+
+    pressKey("1");
+
+    expect(mocks.dismiss).not.toHaveBeenCalled();
   });
 });

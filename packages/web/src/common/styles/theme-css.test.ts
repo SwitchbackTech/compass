@@ -133,6 +133,32 @@ describe("Tailwind theme CSS", () => {
     }
   });
 
+  it("keeps body text readable on the background both themes paint", () => {
+    expect(readability(colors.text, colors.background)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(
+      readability(colors.textMuted, colors.background),
+    ).toBeGreaterThanOrEqual(4.5);
+
+    const block = indexCss.match(/\[data-theme="light-beach"\]\s*\{([^}]*)\}/);
+    const body = block?.[1] ?? "";
+    const lightText = body.match(/--text:\s*(#[0-9a-fA-F]{6});/)?.[1];
+    const lightMuted = body.match(/--text-muted:\s*(#[0-9a-fA-F]{6});/)?.[1];
+    const lightBackground = body.match(
+      /--background:\s*(#[0-9a-fA-F]{6});/,
+    )?.[1];
+    expect(lightText).toBeDefined();
+    expect(lightMuted).toBeDefined();
+    expect(lightBackground).toBeDefined();
+    expect(readability(lightText!, lightBackground!)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(readability(lightMuted!, lightBackground!)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+  });
+
   it("keeps on-accent readable on accent-secondary fills", () => {
     // Up Next and toast CTAs paint --on-accent on --accent-secondary.
     // Axe fails the page scan when that pair is below WCAG AA 4.5:1.

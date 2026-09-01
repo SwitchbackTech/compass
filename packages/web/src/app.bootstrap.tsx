@@ -1,6 +1,7 @@
 import "react-datepicker/dist/react-datepicker.css";
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
+import "./common/styles/toastify-theme.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
 import {
   readGoogleConnectStatus,
