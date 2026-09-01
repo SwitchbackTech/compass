@@ -2,15 +2,21 @@ import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
-/** Digit on standing notice CTAs and action toasts while they are mounted. */
+/** Digit on action toasts while they are mounted. Standing banners must not
+ * use digits: they collide with quick-time create (`1` = 1:00). */
 export const NOTICE_PRIMARY_ACTION_KEY = "1" as const;
 
 /** Start-trial banner CTA. Same letter as the billing gate overlay. */
 export const START_TRIAL_SHORTCUT_KEY = "S" as const;
 
+/** Google connection banner CTA (Reconnect / Retry / Refresh). `G` matches
+ * Continue with Google on the welcome and auth overlays. */
+export const CONNECTION_BANNER_SHORTCUT_KEY = "G" as const;
+
 export type NoticeActionKey =
   | typeof NOTICE_PRIMARY_ACTION_KEY
-  | typeof START_TRIAL_SHORTCUT_KEY;
+  | typeof START_TRIAL_SHORTCUT_KEY
+  | typeof CONNECTION_BANNER_SHORTCUT_KEY;
 
 const canHandleNoticeAction = (event: KeyboardEvent) =>
   !event.isComposing &&

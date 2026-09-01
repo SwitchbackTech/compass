@@ -7,7 +7,7 @@ import {
   pointerShortcutAttributes,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
-  NOTICE_PRIMARY_ACTION_KEY,
+  CONNECTION_BANNER_SHORTCUT_KEY,
   useNoticeActionShortcut,
 } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
@@ -43,7 +43,7 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
   const pointerAction =
     kind === "reconnect" ? POINTER_ACTIONS.reconnectGoogle : undefined;
 
-  useNoticeActionShortcut(NOTICE_PRIMARY_ACTION_KEY, onAction);
+  useNoticeActionShortcut(CONNECTION_BANNER_SHORTCUT_KEY, onAction);
 
   return (
     <div
@@ -60,13 +60,13 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
         className="c-focus-ring inline-flex shrink-0 items-center gap-2 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
         onClick={onAction}
         type="button"
-        {...pointerShortcutAttributes(NOTICE_PRIMARY_ACTION_KEY)}
+        {...pointerShortcutAttributes(CONNECTION_BANNER_SHORTCUT_KEY)}
         {...(pointerAction
           ? { [POINTER_ACTION_ATTRIBUTE]: pointerAction }
           : {})}
       >
         {action}
-        <ShortcutKeys keys={NOTICE_PRIMARY_ACTION_KEY} />
+        <ShortcutKeys keys={CONNECTION_BANNER_SHORTCUT_KEY} />
       </button>
     </div>
   );

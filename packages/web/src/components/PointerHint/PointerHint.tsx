@@ -17,6 +17,7 @@ import {
   selectPointerBlockPulse,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { CONNECTION_BANNER_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import {
   selectEventJumpPointerHintKey,
   useEventJumpStore,
@@ -138,7 +139,8 @@ const pointerHintMessage = ({
   if (attempt?.actionId === POINTER_ACTIONS.reconnectGoogle) {
     return (
       <>
-        Press <Key>1</Key> to reconnect Google Calendar.
+        Press <Key>{CONNECTION_BANNER_SHORTCUT_KEY}</Key> to reconnect Google
+        Calendar.
       </>
     );
   }

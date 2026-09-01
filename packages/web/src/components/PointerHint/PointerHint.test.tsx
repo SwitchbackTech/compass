@@ -102,12 +102,12 @@ describe("PointerHint", () => {
     act(() => {
       pointerBlockActions.pulseBlockedClick({
         actionId: POINTER_ACTIONS.reconnectGoogle,
-        shortcutKey: "1",
+        shortcutKey: "G",
       });
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Press 1 to reconnect Google Calendar.",
+      "Press G to reconnect Google Calendar.",
     );
   });
 
