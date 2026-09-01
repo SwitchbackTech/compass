@@ -56,6 +56,16 @@ const navigateToBillingUrl = (
   popup.location.replace(url);
 };
 
+const openPortalPopup = (): Window | null => {
+  try {
+    return window.open("about:blank", "_blank");
+  } catch {
+    // A restrictive browser or extension can throw before any network request
+    // starts. Treat it like a blocked popup so the portal still has a route.
+    return null;
+  }
+};
+
 /**
  * The one way out of Compass and into Stripe. Owns the in-flight latch (a
  * double click would otherwise open two Checkout sessions) and the failure
@@ -72,8 +82,7 @@ export function useBillingRedirect() {
     if (isRedirecting) return;
     setIsRedirecting(true);
     track("billing_gate_cta_clicked", { cta });
-    const popup =
-      kind === "portal" ? window.open("about:blank", "_blank") : null;
+    const popup = kind === "portal" ? openPortalPopup() : null;
     try {
       const { url } =
         kind === "checkout"

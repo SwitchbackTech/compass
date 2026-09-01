@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { act, type ReactElement } from "react";
-import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { render, screen, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { BillingApi } from "@web/api/billing.api";
@@ -12,6 +12,10 @@ import {
   initialBillingPreviewState,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
+import {
+  initialCheckoutCelebrationState,
+  useCheckoutCelebrationStore,
+} from "@web/billing/checkout-celebration.store";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -86,6 +90,7 @@ describe("RootShell billing gates", () => {
   afterEach(() => {
     access = { kind: "open" };
     useBillingPreviewStore.setState(initialBillingPreviewState);
+    useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState);
     useSettingsStore.setState({
       isSettingsOpen: false,
       settingsPage: "accounts",
@@ -239,6 +244,48 @@ describe("RootShell billing gates", () => {
     expect(
       (router.state.location.search as { checkout?: string }).checkout,
     ).toBeUndefined();
+  });
+
+  it("dismisses the checkout celebration with Start planning", async () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: "2026-09-08T00:00:00.000Z",
+    };
+    await renderShell("/week?checkout=success");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Start planning" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "You're aboard!" }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("dismisses the checkout celebration with Enter", async () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: "2026-09-08T00:00:00.000Z",
+    };
+    await renderShell("/week?checkout=success");
+    const user = userEvent.setup();
+
+    expect(
+      screen.getByRole("button", { name: "Start planning" }),
+    ).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "You're aboard!" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });
 

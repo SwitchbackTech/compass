@@ -6,8 +6,6 @@ import {
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
 import { type AppAccess, useAppAccess } from "@web/billing/useAppAccess";
-import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
-import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
@@ -41,7 +39,6 @@ const getBody = (access: AppAccess): string => {
 export const CheckoutCelebrationModal: FC = () => {
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
   const access = useAppAccess();
-  const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
   const shownRef = useRef(false);
 
@@ -55,15 +52,15 @@ export const CheckoutCelebrationModal: FC = () => {
 
   if (!isCelebrating) return null;
 
-  const dismiss = () => {
-    beginDismiss(checkoutCelebrationActions.dismiss);
-  };
+  // This is a blocking acknowledgement, not a dialog-to-dialog handoff. Keep
+  // its one exit path synchronous so a timer cannot strand a user after
+  // Checkout returns.
+  const dismiss = checkoutCelebrationActions.dismiss;
 
   return (
     <OverlayPanel
       align="center"
       ariaLabel={TITLE}
-      closing={closing}
       initialFocusRef={primaryButtonRef}
       onDismiss={dismiss}
       panelClassName={PANEL_CLASSNAME}

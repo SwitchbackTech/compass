@@ -820,6 +820,74 @@ describe("SettingsModal", () => {
     assign.mockRestore();
   });
 
+  it("falls back to the same tab when opening the portal popup throws", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
+    const open = spyOn(window, "open").mockImplementation(() => {
+      throw new Error("Popup unavailable");
+    });
+    const assign = spyOn(window.location, "assign").mockImplementation(
+      () => {},
+    );
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+    };
+    const user = userEvent.setup();
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.click(screen.getByRole("button", { name: "Manage billing" }));
+
+    await waitFor(() => {
+      expect(createPortalSession).toHaveBeenCalled();
+      expect(assign).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
+    });
+    createPortalSession.mockRestore();
+    open.mockRestore();
+    assign.mockRestore();
+  });
+
+  it("restores Manage billing and reports a portal-session failure", async () => {
+    const createPortalSession = spyOn(
+      BillingApi,
+      "createPortalSession",
+    ).mockRejectedValue(new Error("Stripe unavailable"));
+    const close = mock(() => {});
+    const popup = { close, closed: false, location: { replace: mock() } };
+    const open = spyOn(window, "open").mockReturnValue(
+      popup as unknown as Window,
+    );
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+    };
+    const user = userEvent.setup();
+    renderSettings({ authenticated: true, page: "billing" });
+
+    await user.click(screen.getByRole("button", { name: "Manage billing" }));
+
+    await waitFor(() => {
+      expect(close).toHaveBeenCalled();
+      expect(
+        screen.getByRole("button", { name: "Manage billing" }),
+      ).toBeEnabled();
+      expect(mocks.error).toHaveBeenCalledWith(
+        "Couldn't open billing. Please try again.",
+        expect.any(Object),
+      );
+    });
+    createPortalSession.mockRestore();
+    open.mockRestore();
+  });
+
   it("jumps to Billing with 2 and back to Accounts with 1", async () => {
     access = {
       kind: "server",
