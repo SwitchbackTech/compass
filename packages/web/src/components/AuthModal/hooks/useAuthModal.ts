@@ -39,6 +39,8 @@ export interface AuthSearch {
   token?: string;
   checkout?: string;
   settings?: string;
+  /** ?play=1 launches the Block Party practice game directly (any value). */
+  play?: string | number | boolean;
 }
 
 export function validateAuthSearch(
@@ -49,6 +51,14 @@ export function validateAuthSearch(
     token: typeof search.token === "string" ? search.token : undefined,
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     settings: search.settings === "billing" ? "billing" : undefined,
+    // The router JSON-parses search values, so ?play=1 arrives as a number
+    // and ?play as a boolean. Any present value counts.
+    play:
+      typeof search.play === "string" ||
+      typeof search.play === "number" ||
+      typeof search.play === "boolean"
+        ? search.play
+        : undefined,
   };
 }
 

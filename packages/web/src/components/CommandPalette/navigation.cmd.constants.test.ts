@@ -31,7 +31,7 @@ describe("getNavigationCommandItems", () => {
       onShowWelcomeGuide: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toContain("Play Schedule Rush (practice shortcuts)");
+    expect(labels).toContain("Play Block Party (practice shortcuts)");
     expect(labels).toContain("Show welcome guide");
     expect(labels.indexOf("Practice shortcuts")).toBeLessThan(
       labels.indexOf("Show welcome guide"),
