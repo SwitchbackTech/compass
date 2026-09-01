@@ -8,14 +8,14 @@ import {
 import { describe, expect, it } from "bun:test";
 
 const timeZone = "UTC";
-const monthKey = "2026-08";
-const selectedDateKey = "2026-08-17";
-const firstSlot = "2026-08-17T15:00:00.000Z";
-const secondSlot = "2026-08-17T16:00:00.000Z";
+const monthKey = "2026-09";
+const selectedDateKey = "2026-09-17";
+const firstSlot = "2026-09-17T15:00:00.000Z";
+const secondSlot = "2026-09-17T16:00:00.000Z";
 
 const slots = [
-  { slotStart: firstSlot, slotEnd: "2026-08-17T15:30:00.000Z" },
-  { slotStart: secondSlot, slotEnd: "2026-08-17T16:30:00.000Z" },
+  { slotStart: firstSlot, slotEnd: "2026-09-17T15:30:00.000Z" },
+  { slotStart: secondSlot, slotEnd: "2026-09-17T16:30:00.000Z" },
 ];
 
 function renderPicker() {
