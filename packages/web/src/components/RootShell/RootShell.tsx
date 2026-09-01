@@ -46,7 +46,8 @@ import { isLifePathname } from "./isLifePathname";
  */
 export function RootShell() {
   const { pathname } = useLocation();
-  const deferCalendarOnboarding = isLifePathname(pathname);
+  const isLifeView = isLifePathname(pathname);
+  const deferCalendarOnboarding = isLifeView;
   // The keyboard onboarding overlays paint over MobileGate (they're fixed
   // full-screen), so a phone user would finish the whole walkthrough only to
   // land on "open this on a computer". Gate them up front instead.
@@ -59,7 +60,7 @@ export function RootShell() {
   usePlanChangeToasts();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
-  usePointerSuppression();
+  usePointerSuppression(!isLifeView);
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
@@ -100,7 +101,7 @@ export function RootShell() {
       {showCalendarOnboarding && <ShortcutShowcase />}
       {showCalendarOnboarding && <FirstEventPrompt />}
       {gateStatus === null && isWelcomeGuideOpen && <WelcomeGuideModal />}
-      <PointerHint />
+      {!isLifeView && <PointerHint />}
     </AuthModalProvider>
   );
 }

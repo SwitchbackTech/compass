@@ -24,6 +24,7 @@ import {
   selectSettingsPage,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.store";
 import {
   afterAll,
   afterEach,
@@ -264,6 +265,18 @@ describe("RootShell calendar onboarding on /life", () => {
     expect(persistentBrowserStore.get(STORAGE_KEYS.FIRST_EVENT_DONE)).toBe(
       null,
     );
+  });
+
+  it("does not mount the keyboard-only pointer hint on /life", async () => {
+    await renderShell("/life", { anonymous: true });
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick();
+    });
+
+    expect(
+      screen.queryByText(/Compass is keyboard only/i),
+    ).not.toBeInTheDocument();
   });
 
   it("still shows welcome on /week for a first-time anonymous visitor", async () => {

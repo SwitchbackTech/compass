@@ -23,6 +23,9 @@ of a generic legend. Acceptance coverage lives in
 
 Unannotated controls keep the generic keyboard-only fallback.
 
+`/life` does not suppress pointer events. Visitors who land on that page as a
+lead magnet can click controls normally; `PointerHint` is not mounted there.
+
 ## Adding a target
 
 - Add a `POINTER_ACTIONS` id.

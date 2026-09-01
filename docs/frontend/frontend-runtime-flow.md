@@ -65,7 +65,9 @@ Files:
 prompt, global navigation / calendar-shell shortcuts, and pointer suppression.
 Those calendar-onboarding overlays are skipped on `/life` and on mobile OSes
 (the overlays would paint over `MobileGate`, so a phone user sees the gate
-first instead of a walkthrough they cannot use).
+first instead of a walkthrough they cannot use). Pointer suppression is also
+skipped on `/life` so first-time visitors can click the page like a normal
+site; the calendar views stay keyboard-only.
 
 Welcome → signup → first-event contract:
 
