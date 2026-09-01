@@ -1,11 +1,9 @@
 import { type ReactNode } from "react";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
-  NOTICE_PRIMARY_ACTION_KEY,
+  TOAST_PRIMARY_ACTION_KEY,
   useNoticeActionShortcut,
 } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
-
-export const TOAST_PRIMARY_ACTION_KEY = NOTICE_PRIMARY_ACTION_KEY;
 
 export function ToastActionButton({
   children,

@@ -1,5 +1,5 @@
+import { type CSSProperties } from "react";
 import { type Id, type ToastOptions } from "react-toastify";
-import { colors, lightColors } from "@web/common/styles/colors";
 import { type ThemeName } from "@web/settings/theme/theme.constants";
 import { useThemeStore } from "@web/settings/theme/theme.store";
 
@@ -22,43 +22,30 @@ export const BILLING_SUBSCRIBED_TOAST_ID: Id = "billing-subscribed";
 export const BILLING_CHECKOUT_CANCELED_TOAST_ID: Id =
   "billing-checkout-canceled";
 
-const toastPalette: Record<
-  ThemeName,
-  { background: string; text: string; textMuted: string; shadow: string }
-> = {
-  "dark-abyss": {
-    background: colors.background,
-    text: colors.text,
-    textMuted: colors.textMuted,
-    shadow: "0 4px 12px hsl(0 0 0 / 50%)",
-  },
-  "light-beach": {
-    background: lightColors.background,
-    text: lightColors.text,
-    textMuted: lightColors.textMuted,
-    shadow: "0 4px 12px hsl(40 25% 25% / 18%)",
-  },
+/**
+ * Toast chrome follows `[data-theme]` instead of a JS hex snapshot, so body
+ * copy that uses `text-text` / `text-text-muted` cannot land on react-toastify's
+ * default light (#fff) or dark (#121212) panel.
+ */
+export const TOAST_CHROME_STYLE: CSSProperties = {
+  backgroundColor: "var(--background)",
+  color: "var(--text)",
+  boxShadow: "0 4px 12px var(--shadow-default)",
 };
 
 /** Theme-aware toast defaults. Read the store at call time so toasts match the active palette. */
 export function getToastDefaultOptions(
   theme: ThemeName = useThemeStore.getState().theme,
 ): ToastOptions {
-  const palette = toastPalette[theme];
-
   return {
     autoClose: 5000,
     position: "bottom-left",
     closeButton: false,
     closeOnClick: true,
     theme: theme === "dark-abyss" ? "dark" : "light",
-    style: {
-      backgroundColor: palette.background,
-      color: palette.text,
-      boxShadow: palette.shadow,
-    },
+    style: TOAST_CHROME_STYLE,
     progressStyle: {
-      background: palette.textMuted,
+      background: "var(--text-muted)",
     },
   };
 }

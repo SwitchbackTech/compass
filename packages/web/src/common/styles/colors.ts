@@ -1,10 +1,10 @@
 // Dark Abyss role palette. Mirrors the [data-theme="dark-abyss"] block in
 // packages/web/src/index.css (guarded by theme-css.test.ts value-parity
 // assertions). These hex copies exist only where real hex is required —
-// tinycolor math, <canvas>, and third-party inline style objects (react-select,
-// react-toastify) — and do NOT react to a [data-theme] switch. When a second
-// theme lands, those specific consumers need to move to getComputedStyle
-// reads instead of importing this map directly.
+// tinycolor math, <canvas>, and third-party inline style objects
+// (react-select) — and do NOT react to a [data-theme] switch. Toasts bind
+// chrome to CSS variables instead. Remaining hex consumers need
+// getComputedStyle reads rather than importing this map directly.
 export const colors = {
   background: "#06090F",
   surface: "#0C1219",
