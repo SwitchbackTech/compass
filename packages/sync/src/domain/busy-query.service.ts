@@ -1,3 +1,5 @@
+import { type EventId } from "@core/types/domain-primitives";
+import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
 import { type ConnectionState } from "@core/types/sync/connection.contracts";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
@@ -5,6 +7,9 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { occupancyFactsForEvent } from "@sync/domain/booking-occupancy-facts";
+import { type EventRecord } from "@sync/storage/contracts/event.contracts";
+import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import {
   type CalendarGeneration,
   type EventOccurrenceRepository,
@@ -16,6 +21,8 @@ import { type SyncResourceRepository } from "@sync/storage/repositories/sync-res
 export interface BusyInterval {
   start: Date;
   end: Date;
+  hostIsOrganizer?: boolean;
+  hostResponseStatus?: AttendeeResponseStatus | null;
 }
 
 // Merge half-open [start, end) intervals into the minimal set of
@@ -24,6 +31,9 @@ export interface BusyInterval {
 // so availability must treat them as one busy block [9,11). Empty intervals
 // (start >= end) contribute no busy time and are dropped. Pure and input-order
 // independent.
+const occupancyKey = (interval: BusyInterval): string =>
+  `${interval.hostIsOrganizer ?? ""}:${interval.hostResponseStatus ?? ""}`;
+
 export function mergeBusyIntervals(
   intervals: readonly BusyInterval[],
 ): BusyInterval[] {
@@ -38,12 +48,16 @@ export function mergeBusyIntervals(
   const merged: BusyInterval[] = [];
   for (const current of sorted) {
     const last = merged[merged.length - 1];
-    if (last && current.start.getTime() <= last.end.getTime()) {
+    if (
+      last &&
+      occupancyKey(last) === occupancyKey(current) &&
+      current.start.getTime() <= last.end.getTime()
+    ) {
       // Overlapping or touching: extend the open block if this one reaches
       // further (a fully-nested interval leaves the end unchanged).
       if (current.end.getTime() > last.end.getTime()) last.end = current.end;
     } else {
-      merged.push({ start: current.start, end: current.end });
+      merged.push({ ...current });
     }
   }
   return merged;
@@ -68,10 +82,16 @@ export interface BusyQueryInput {
 // spills past either edge contributes only its in-window busy time. This returns
 // intervals only; freshness/completeness/bookability evidence is layered on by a
 // later slice.
-export async function queryBusyIntervals(
+export interface BusyOccurrenceInterval {
+  start: Date;
+  end: Date;
+  eventId: EventId;
+}
+
+export async function queryBusyOccurrences(
   deps: BusyQueryDeps,
   input: BusyQueryInput,
-): Promise<BusyInterval[]> {
+): Promise<BusyOccurrenceInterval[]> {
   const occurrences = await deps.occurrences.listBusyOverlapping({
     tenantId: input.tenantId,
     principalId: input.principalId,
@@ -82,12 +102,24 @@ export async function queryBusyIntervals(
 
   const windowStart = input.start.getTime();
   const windowEnd = input.end.getTime();
-  const clamped = occurrences.map((o) => ({
-    start: o.startAt.getTime() > windowStart ? o.startAt : input.start,
-    end: o.endAt.getTime() < windowEnd ? o.endAt : input.end,
-  }));
+  return occurrences
+    .map((occurrence) => ({
+      start:
+        occurrence.startAt.getTime() > windowStart
+          ? occurrence.startAt
+          : input.start,
+      end:
+        occurrence.endAt.getTime() < windowEnd ? occurrence.endAt : input.end,
+      eventId: occurrence.eventId,
+    }))
+    .filter((interval) => interval.end.getTime() > interval.start.getTime());
+}
 
-  return mergeBusyIntervals(clamped);
+export async function queryBusyIntervals(
+  deps: BusyQueryDeps,
+  input: BusyQueryInput,
+): Promise<BusyInterval[]> {
+  return mergeBusyIntervals(await queryBusyOccurrences(deps, input));
 }
 
 // Why a requested calendar's busy data could not be freshly included.
@@ -133,6 +165,7 @@ export interface BusyAvailability {
 
 export interface BusyAvailabilityDeps {
   occurrences: EventOccurrenceRepository;
+  events?: EventRepository;
   resources: SyncResourceRepository;
   connections: ProviderConnectionRepository;
 }
@@ -196,8 +229,8 @@ export async function computeBusyAvailability(
     }
   }
 
-  const intervals = present.length
-    ? await queryBusyIntervals(
+  const rawIntervals = present.length
+    ? await queryBusyOccurrences(
         { occurrences: deps.occurrences },
         {
           tenantId: input.tenantId,
@@ -208,6 +241,21 @@ export async function computeBusyAvailability(
         },
       )
     : [];
+
+  const eventsById = new Map<string, EventRecord>();
+  if (deps.events && rawIntervals.length > 0) {
+    const eventIds = [
+      ...new Set(rawIntervals.map((interval) => interval.eventId)),
+    ];
+    const events = await deps.events.findByIds(
+      input.tenantId,
+      input.principalId,
+      eventIds,
+    );
+    for (const event of events) {
+      eventsById.set(event._id, event);
+    }
+  }
 
   // Freshness for exactly the connections backing the requested calendars.
   const allConnections = await deps.connections.listByPrincipal(
@@ -230,6 +278,31 @@ export async function computeBusyAvailability(
     connections.length === backingConnectionIds.size &&
     connections.every((c) => c.state === "healthy");
   const bookable = complete && allBackingHealthy;
+
+  const emailByConnectionId = new Map(
+    allConnections
+      .filter((connection) => backingConnectionIds.has(connection._id))
+      .map((connection) => [connection._id, connection.account.email]),
+  );
+  const fallbackEmail =
+    [...emailByConnectionId.values()].find((email) => email !== null) ?? null;
+
+  const intervals = mergeBusyIntervals(
+    rawIntervals.map((interval) => {
+      const event = eventsById.get(interval.eventId);
+      const accountEmail =
+        (event?.connectionId
+          ? emailByConnectionId.get(event.connectionId)
+          : undefined) ?? fallbackEmail;
+      const facts = occupancyFactsForEvent(event, accountEmail);
+      return {
+        start: interval.start,
+        end: interval.end,
+        hostIsOrganizer: facts.hostIsOrganizer,
+        hostResponseStatus: facts.hostResponseStatus,
+      };
+    }),
+  );
 
   return {
     intervals,

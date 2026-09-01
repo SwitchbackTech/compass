@@ -204,6 +204,8 @@ describe("POST /internal/availability/busy", () => {
       {
         start: "2026-07-14T09:00:00.000Z",
         end: "2026-07-14T11:00:00.000Z",
+        hostIsOrganizer: true,
+        hostResponseStatus: null,
       },
     ]);
     expect(body.complete).toBe(true);

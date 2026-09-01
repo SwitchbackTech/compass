@@ -417,6 +417,7 @@ export function registerConnectionRoutes(
         const availability = await computeBusyAvailability(
           {
             occurrences: repos.eventOccurrences,
+            events: repos.events,
             resources: repos.syncResources,
             connections: repos.connections,
           },
@@ -960,6 +961,8 @@ function toBusyAvailabilityResponse(
     intervals: availability.intervals.map((i) => ({
       start: i.start.toISOString(),
       end: i.end.toISOString(),
+      hostIsOrganizer: i.hostIsOrganizer,
+      hostResponseStatus: i.hostResponseStatus,
     })),
     computedAt: availability.computedAt.toISOString(),
     connections: availability.connections.map((c) => ({
