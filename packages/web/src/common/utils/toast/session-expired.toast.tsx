@@ -18,7 +18,7 @@ interface SessionExpiredToastProps {
 // dynamically to avoid a module cycle: this file sits on the API error path
 // (api.util -> error-toast.util -> here), and the router's root route
 // renders AuthModal, which pulls that same API/error-toast chain back in.
-async function openAuthModalFromOutsideRouter(
+export async function openAuthModalFromOutsideRouter(
   view: AuthView = "login",
 ): Promise<void> {
   const { router } = await import("@web/routers");

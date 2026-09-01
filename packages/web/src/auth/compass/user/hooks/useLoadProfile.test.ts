@@ -5,6 +5,7 @@ import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import { type UseLoadProfileResult } from "@web/auth/compass/user/hooks/useLoadProfile";
 import * as errorToast from "@web/common/utils/toast/error-toast.util";
+import * as sessionExpiredToast from "@web/common/utils/toast/session-expired.toast";
 import {
   afterAll,
   afterEach,
@@ -166,6 +167,10 @@ describe("useLoadProfile", () => {
       errorToast,
       "showSessionExpiredToast",
     ).mockReturnValue("toast-id");
+    const openAuthModal = spyOn(
+      sessionExpiredToast,
+      "openAuthModalFromOutsideRouter",
+    ).mockResolvedValue(undefined);
     const { useLoadProfile } = await importHook();
 
     renderHook(() => useLoadProfile(true));
@@ -174,10 +179,12 @@ describe("useLoadProfile", () => {
       expect(getProfile).toHaveBeenCalledTimes(1);
     });
     expect(showSessionExpiredToast).not.toHaveBeenCalled();
+    expect(openAuthModal).not.toHaveBeenCalled();
     showSessionExpiredToast.mockRestore();
+    openAuthModal.mockRestore();
   });
 
-  it("shows a signed-out toast when a returning visitor's profile request is unauthorized", async () => {
+  it("shows a signed-out toast and opens the login modal when a returning visitor's profile request is unauthorized", async () => {
     hasUserEverAuthenticated.mockReturnValue(true);
     const error = Object.assign(new Error("Request failed with status 401"), {
       response: { status: Status.UNAUTHORIZED },
@@ -187,6 +194,10 @@ describe("useLoadProfile", () => {
       errorToast,
       "showSessionExpiredToast",
     ).mockReturnValue("toast-id");
+    const openAuthModal = spyOn(
+      sessionExpiredToast,
+      "openAuthModalFromOutsideRouter",
+    ).mockResolvedValue(undefined);
     const { useLoadProfile } = await importHook();
 
     renderHook(() => useLoadProfile(true));
@@ -194,6 +205,8 @@ describe("useLoadProfile", () => {
     await waitFor(() => {
       expect(showSessionExpiredToast).toHaveBeenCalledTimes(1);
     });
+    expect(openAuthModal).toHaveBeenCalledWith("login");
     showSessionExpiredToast.mockRestore();
+    openAuthModal.mockRestore();
   });
 });
