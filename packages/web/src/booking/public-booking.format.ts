@@ -7,6 +7,63 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * Constructing an `Intl.DateTimeFormat` is the expensive part, and the guest
+ * page formats one label per open slot and per day cell in the month grid.
+ * Build each formatter once per timezone and reuse it. Guests only ever see a
+ * handful of zones, so the per-formatter cache stays small.
+ */
+const perTimeZoneFormatter = (
+  options: Omit<Intl.DateTimeFormatOptions, "timeZone">,
+  locale?: string,
+): ((timeZone: string) => Intl.DateTimeFormat) => {
+  const cache = new Map<string, Intl.DateTimeFormat>();
+  return (timeZone: string) => {
+    const cached = cache.get(timeZone);
+    if (cached) {
+      return cached;
+    }
+    const formatter = new Intl.DateTimeFormat(locale, { ...options, timeZone });
+    cache.set(timeZone, formatter);
+    return formatter;
+  };
+};
+
+const monthHeadingFormatter = perTimeZoneFormatter({
+  month: "long",
+  year: "numeric",
+});
+const timeZoneNameFormatter = perTimeZoneFormatter({ timeZoneName: "long" });
+const slotLabelFormatter = perTimeZoneFormatter({
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+const slotTimeFormatter = perTimeZoneFormatter({
+  hour: "numeric",
+  minute: "2-digit",
+});
+const slotDateHeadingFormatter = perTimeZoneFormatter({
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+});
+const monthDayLabelFormatter = perTimeZoneFormatter({
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+const weekdayShortFormatter = perTimeZoneFormatter({ weekday: "short" });
+const weekdayLongFormatter = perTimeZoneFormatter({ weekday: "long" });
+/** `en-CA` prints ISO date order, which is what a YYYY-MM-DD key needs. */
+const dateKeyFormatter = perTimeZoneFormatter(
+  { year: "numeric", month: "2-digit", day: "2-digit" },
+  "en-CA",
+);
+
 export const isBookingMonthKey = (value: string): boolean =>
   MONTH_KEY_PATTERN.test(value);
 
@@ -40,11 +97,7 @@ export function formatBookingMonthHeading(
   if (!monthStart) {
     return monthKey;
   }
-  return new Intl.DateTimeFormat(undefined, {
-    month: "long",
-    year: "numeric",
-    timeZone,
-  }).format(monthStart.toDate());
+  return monthHeadingFormatter(timeZone).format(monthStart.toDate());
 }
 
 function parseBookingMonthStart(
@@ -104,10 +157,7 @@ export function isBookingMonthAvailable(
 
 export function formatGuestTimeZoneLabel(timeZone: string): string {
   try {
-    const parts = new Intl.DateTimeFormat(undefined, {
-      timeZone,
-      timeZoneName: "long",
-    }).formatToParts(new Date());
+    const parts = timeZoneNameFormatter(timeZone).formatToParts(new Date());
     const name = parts.find((part) => part.type === "timeZoneName")?.value;
     return name ?? timeZone;
   } catch {
@@ -119,37 +169,21 @@ export function formatBookingSlotLabel(
   slotStart: string,
   timeZone: string,
 ): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(slotStart));
+  return slotLabelFormatter(timeZone).format(new Date(slotStart));
 }
 
 export function formatBookingSlotTime(
   slotStart: string,
   timeZone: string,
 ): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(slotStart));
+  return slotTimeFormatter(timeZone).format(new Date(slotStart));
 }
 
 export function formatBookingSlotDateHeading(
   slotStart: string,
   timeZone: string,
 ): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(slotStart));
+  return slotDateHeadingFormatter(timeZone).format(new Date(slotStart));
 }
 
 export function formatDurationMinutes(minutes: number): string {
@@ -165,25 +199,7 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hourLabel} ${remainder} minutes`;
 }
 
-/** Cache one formatter per timezone; constructing Intl is the expensive part. */
-const dateKeyFormatters = new Map<string, Intl.DateTimeFormat>();
-
-const dateKeyFormatter = (timeZone: string): Intl.DateTimeFormat => {
-  const cached = dateKeyFormatters.get(timeZone);
-  if (cached) {
-    return cached;
-  }
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  dateKeyFormatters.set(timeZone, formatter);
-  return formatter;
-};
-
-/** YYYY-MM-DD in `timeZone`. `en-CA` prints ISO date order. */
+/** YYYY-MM-DD in `timeZone`. */
 export function formatBookingDateKey(
   instant: Date | string | Dayjs,
   timeZone: string,
@@ -319,14 +335,8 @@ export function listBookingWeekdayHeadings(
   return Array.from({ length: 7 }, (_, index) => {
     const date = sunday.add(index, "day").toDate();
     return {
-      short: new Intl.DateTimeFormat(undefined, {
-        weekday: "short",
-        timeZone,
-      }).format(date),
-      long: new Intl.DateTimeFormat(undefined, {
-        weekday: "long",
-        timeZone,
-      }).format(date),
+      short: weekdayShortFormatter(timeZone).format(date),
+      long: weekdayLongFormatter(timeZone).format(date),
     };
   });
 }
@@ -335,13 +345,9 @@ export function formatBookingMonthDayLabel(
   dateKey: string,
   timeZone: string,
 ): string {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone,
-  }).format(dayjs.tz(dateKey, timeZone).toDate());
+  return monthDayLabelFormatter(timeZone).format(
+    dayjs.tz(dateKey, timeZone).toDate(),
+  );
 }
 
 export function listBookingAvailableDateKeysInMonth(

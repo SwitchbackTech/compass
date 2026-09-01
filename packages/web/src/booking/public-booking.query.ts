@@ -26,23 +26,24 @@ const PUBLIC_BOOKING_SLOTS_STALE_TIME_MS = 60_000;
 
 export const publicBookingQueryKeys = {
   page: (slug: string) => ["public-booking", "page", slug] as const,
+  /** Prefix covering every month and timezone of one host's slots. */
+  slotsAll: (slug: string) => ["public-booking", "slots", slug] as const,
   slots: (slug: string, monthKey: string, timeZone: string) =>
-    ["public-booking", "slots", slug, monthKey, timeZone] as const,
+    [...publicBookingQueryKeys.slotsAll(slug), monthKey, timeZone] as const,
   reservation: (reservationId: string) =>
     ["public-booking", "reservation", reservationId] as const,
 };
+
+/** A page or reservation that is gone stays gone; retry once for anything else. */
+const retryUnlessNotFound = (failureCount: number, error: Error): boolean =>
+  !(error instanceof PublicBookingNotFoundError) && failureCount < 1;
 
 function publicBookingPageQueryOptions(slug: string) {
   return queryOptions({
     queryKey: publicBookingQueryKeys.page(slug),
     queryFn: () => PublicBookingApi.getPage(slug),
     staleTime: PUBLIC_BOOKING_PAGE_STALE_TIME_MS,
-    retry: (failureCount, error) => {
-      if (error instanceof PublicBookingNotFoundError) {
-        return false;
-      }
-      return failureCount < 1;
-    },
+    retry: retryUnlessNotFound,
   });
 }
 
@@ -55,12 +56,7 @@ function publicBookingReservationQueryOptions(reservationId: string) {
     queryKey: publicBookingQueryKeys.reservation(reservationId),
     queryFn: () => PublicBookingApi.getReservation(reservationId),
     staleTime: PUBLIC_BOOKING_PAGE_STALE_TIME_MS,
-    retry: (failureCount, error) => {
-      if (error instanceof PublicBookingNotFoundError) {
-        return false;
-      }
-      return failureCount < 1;
-    },
+    retry: retryUnlessNotFound,
     enabled: Boolean(reservationId),
   });
 }
@@ -243,7 +239,7 @@ export function useCreatePublicBookingReservationMutation(slug: string) {
       PublicBookingApi.createReservation(slug, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["public-booking", "slots", slug],
+        queryKey: publicBookingQueryKeys.slotsAll(slug),
       });
     },
   });
