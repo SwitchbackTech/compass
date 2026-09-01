@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { copyText } from "@web/common/utils/clipboard/clipboard.util";
+import { useCopiedFlag } from "@web/booking/use-copied-flag";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 interface BookingCopyLinkProps {
@@ -7,22 +6,14 @@ interface BookingCopyLinkProps {
 }
 
 export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    void copyText(bookingUrl).then((didCopy) => {
-      if (!didCopy) {
-        showStatusToast(
-          "booking-link-copied",
-          "Could not copy. Select the link to copy it.",
-        );
-        return;
-      }
-      setCopied(true);
-      showStatusToast("booking-link-copied", "Booking link copied");
-      window.setTimeout(() => setCopied(false), 2000);
-    });
-  };
+  const { copied, copy } = useCopiedFlag(bookingUrl, (didCopy) => {
+    showStatusToast(
+      "booking-link-copied",
+      didCopy
+        ? "Booking link copied"
+        : "Could not copy. Select the link to copy it.",
+    );
+  });
 
   return (
     <div>
@@ -37,7 +28,7 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
         <button
           aria-label="Copy booking link"
           className="c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text transition-colors hover:bg-surface-panel"
-          onClick={handleCopy}
+          onClick={copy}
           type="button"
         >
           {copied ? "Copied" : "Copy"}

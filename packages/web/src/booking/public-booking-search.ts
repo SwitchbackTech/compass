@@ -1,5 +1,8 @@
-const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
-const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+import {
+  isBookingDateKey,
+  isBookingMonthKey,
+} from "@web/booking/public-booking.format";
+import { isValidTimeZone } from "@web/timezone/browser-timezone";
 
 export interface PublicBookingSearch {
   month?: string;
@@ -7,15 +10,6 @@ export interface PublicBookingSearch {
   slot?: string;
   tz?: string;
 }
-
-const isValidTimeZone = (timeZone: string): boolean => {
-  try {
-    new Intl.DateTimeFormat(undefined, { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 /**
  * Search params are the guest's shareable selection state (month in view,
@@ -26,12 +20,11 @@ export function validatePublicBookingSearch(
   search: Record<string, unknown>,
 ): PublicBookingSearch {
   const month =
-    typeof search["month"] === "string" &&
-    MONTH_KEY_PATTERN.test(search["month"])
+    typeof search["month"] === "string" && isBookingMonthKey(search["month"])
       ? search["month"]
       : undefined;
   const date =
-    typeof search["date"] === "string" && DATE_KEY_PATTERN.test(search["date"])
+    typeof search["date"] === "string" && isBookingDateKey(search["date"])
       ? search["date"]
       : undefined;
   const slot =

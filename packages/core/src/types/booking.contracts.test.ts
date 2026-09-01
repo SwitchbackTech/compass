@@ -6,6 +6,7 @@ import {
   BookingPageSchema,
   BookingSlugSchema,
   CreateBookingReservationInputSchema,
+  isGuestEmail,
   PublicBookingPageSchema,
   PublicGetBookingPageResponseSchema,
   PublicGetBookingReservationResponseSchema,
@@ -224,6 +225,12 @@ describe("HTTP booking contracts", () => {
     );
     expect(id).toBeDefined();
     expect(slug).toBeDefined();
+  });
+
+  it("accepts a simple guest email and rejects missing domains", () => {
+    expect(isGuestEmail("ada@example.com")).toBe(true);
+    expect(isGuestEmail("not-an-email")).toBe(false);
+    expect(isGuestEmail("missing@domain")).toBe(false);
   });
 
   it("parses create reservation input", () => {

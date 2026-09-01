@@ -1,4 +1,5 @@
 import { type FormEvent, useRef, useState } from "react";
+import { isGuestEmail } from "@core/types/booking.contracts";
 
 export interface PublicBookingGuestDetails {
   guestName: string;
@@ -26,9 +27,6 @@ interface GuestFieldErrors {
   guestEmail?: string;
 }
 
-// Same shape the backend enforces; the real gate stays server-side.
-const GUEST_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const validateGuestFields = (
   values: PublicBookingGuestDetails,
 ): GuestFieldErrors => {
@@ -36,7 +34,7 @@ const validateGuestFields = (
   if (!values.guestName.trim()) {
     errors.guestName = "Enter your name.";
   }
-  if (!GUEST_EMAIL_PATTERN.test(values.guestEmail.trim())) {
+  if (!isGuestEmail(values.guestEmail.trim())) {
     errors.guestEmail = "Enter a valid email address.";
   }
   return errors;

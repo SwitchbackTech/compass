@@ -13,6 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| simplify-recent-3040 | medium | Manager | verifying | .agents/handoffs/simplify-recent-3040.md | focused web 46 pass; core/backend error+contracts pass; verify package checks pass; review: no confirmed findings | 2026-09-01T06:00:00Z | 1 | none |
 | 2980 | high | Manager | waiting | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2980 | verify PASS (web, type-check, lint, knip, a11y, e2e); review: no confirmed findings | 2026-08-31T00:00:00Z | 1 | none |
 | 2878 | medium | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2878 | bun run verify: web, type-check, lint, knip passed; bun test:a11y 7 passed | 2026-08-26T03:00:00Z | 0 | none |
 | 2879 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2879 | bun run verify PASS; review: no confirmed findings | 2026-08-26T06:00:00Z | 0 | none |

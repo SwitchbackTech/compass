@@ -235,6 +235,12 @@ export const BookingSlotsResponseSchema = z.strictObject({
 });
 export type BookingSlotsResponse = z.infer<typeof BookingSlotsResponseSchema>;
 
+/** Same shape the guest form and public reservation service enforce. */
+export const GUEST_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const isGuestEmail = (email: string): boolean =>
+  GUEST_EMAIL_PATTERN.test(email);
+
 export const CreateBookingReservationInputSchema = z.strictObject({
   slotStart: DateTimeSchema,
   guestName: z.string().trim().min(1).max(256),

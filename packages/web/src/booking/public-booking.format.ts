@@ -5,6 +5,13 @@ import {
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export const isBookingMonthKey = (value: string): boolean =>
+  MONTH_KEY_PATTERN.test(value);
+
+export const isBookingDateKey = (value: string): boolean =>
+  DATE_KEY_PATTERN.test(value);
 
 export function formatBookingMonthKey(
   instant: Date | string | Dayjs,
@@ -44,7 +51,7 @@ function parseBookingMonthStart(
   monthKey: string,
   timeZone: string,
 ): Dayjs | null {
-  if (!MONTH_KEY_PATTERN.test(monthKey)) {
+  if (!isBookingMonthKey(monthKey)) {
     return null;
   }
   const monthStart = dayjs.tz(`${monthKey}-01`, timeZone).startOf("month");
