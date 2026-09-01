@@ -563,7 +563,7 @@ describe("BookingSettingsSection", () => {
       ),
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
-        return res(ctx.json(savedBody));
+        return res(ctx.json(savedBody as object));
       }),
     );
 

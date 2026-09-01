@@ -90,7 +90,10 @@ export const ISO_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
  * Pick the fields explicitly so a response-only key can never ride along.
  */
 export function toBookingPageInput(
-  page: AdminPutBookingPageInput,
+  page: Omit<AdminPutBookingPageInput, "dateOverrides" | "welcomeText"> & {
+    dateOverrides?: AdminPutBookingPageInput["dateOverrides"];
+    welcomeText?: AdminPutBookingPageInput["welcomeText"];
+  },
 ): AdminPutBookingPageInput {
   return {
     enabled: page.enabled,

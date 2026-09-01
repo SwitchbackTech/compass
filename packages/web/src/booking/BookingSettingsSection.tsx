@@ -105,6 +105,8 @@ const buildInitialForm = (
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
     timeZone: TimeZoneSchema.parse(effectiveTimeZone),
     weeklyAvailability: [],
+    dateOverrides: [],
+    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
     bufferMinutes: null,

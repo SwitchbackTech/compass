@@ -322,9 +322,9 @@ describe("PublicBookingService", () => {
 
     expect(response.bookable).toBe(true);
     expect(response.slots.map((slot) => slot.slotStart)).toEqual([
-      "2026-09-12T09:00:00.000Z",
-      "2026-09-12T09:15:00.000Z",
-      "2026-09-12T09:30:00.000Z",
+      "2026-09-12T09:00:00Z",
+      "2026-09-12T09:15:00Z",
+      "2026-09-12T09:30:00Z",
     ]);
   });
 
@@ -350,7 +350,8 @@ describe("PublicBookingService", () => {
 
     expect(
       response.slots.some(
-        (slot) => slot.slotStart === "2026-09-07T10:00:00.000Z",
+        (slot) =>
+          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
       ),
     ).toBe(true);
   });
@@ -377,7 +378,8 @@ describe("PublicBookingService", () => {
 
     expect(
       response.slots.some(
-        (slot) => slot.slotStart === "2026-09-07T10:00:00.000Z",
+        (slot) =>
+          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
       ),
     ).toBe(false);
   });
