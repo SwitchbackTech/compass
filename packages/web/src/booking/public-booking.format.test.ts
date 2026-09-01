@@ -5,7 +5,9 @@ import {
   formatBookingMonthKey,
   formatDurationMinutes,
   getPublicBookingMonthWindow,
+  isBookingDateKey,
   isBookingMonthAvailable,
+  isBookingMonthKey,
   listBookingAvailableDateKeysInMonth,
   listBookingAvailableDayKeys,
   listBookingMonthGridWeeks,
@@ -231,5 +233,17 @@ describe("formatDurationMinutes", () => {
     expect(formatDurationMinutes(60)).toBe("1 hour");
     expect(formatDurationMinutes(90)).toBe("1 hour 30 minutes");
     expect(formatDurationMinutes(120)).toBe("2 hours");
+  });
+});
+
+describe("booking key validators", () => {
+  it("accepts YYYY-MM and YYYY-MM-DD keys", () => {
+    expect(isBookingMonthKey("2026-09")).toBe(true);
+    expect(isBookingDateKey("2026-09-07")).toBe(true);
+  });
+
+  it("rejects garbage that the URL search used to drop", () => {
+    expect(isBookingMonthKey("next-month")).toBe(false);
+    expect(isBookingDateKey("2026-9-7")).toBe(false);
   });
 });
