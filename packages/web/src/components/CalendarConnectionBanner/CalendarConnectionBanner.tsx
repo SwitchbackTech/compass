@@ -1,5 +1,15 @@
 import { type FC } from "react";
 import { type CalendarConnectionBannerKind } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  POINTER_ACTION_ATTRIBUTE,
+  POINTER_ACTIONS,
+  pointerShortcutAttributes,
+} from "@web/shortcuts/keyboard-only/pointer-action";
+import {
+  NOTICE_PRIMARY_ACTION_KEY,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
 const COPY: Record<
   CalendarConnectionBannerKind,
@@ -30,6 +40,10 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
 }) => {
   const { message, action } = COPY[kind];
   const isError = kind === "reconnect" || kind === "importFailed";
+  const pointerAction =
+    kind === "reconnect" ? POINTER_ACTIONS.reconnectGoogle : undefined;
+
+  useNoticeActionShortcut(NOTICE_PRIMARY_ACTION_KEY, onAction);
 
   return (
     <div
@@ -43,11 +57,16 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
     >
       <p>{message}</p>
       <button
-        className="c-focus-ring shrink-0 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
+        className="c-focus-ring inline-flex shrink-0 items-center gap-2 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
         onClick={onAction}
         type="button"
+        {...pointerShortcutAttributes(NOTICE_PRIMARY_ACTION_KEY)}
+        {...(pointerAction
+          ? { [POINTER_ACTION_ATTRIBUTE]: pointerAction }
+          : {})}
       >
         {action}
+        <ShortcutKeys keys={NOTICE_PRIMARY_ACTION_KEY} />
       </button>
     </div>
   );

@@ -81,6 +81,49 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).not.toHaveTextContent("Press");
   });
 
+  it("teaches the start-trial shortcut for the banner CTA", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.startTrial,
+        shortcutKey: "S",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press S to start your trial.",
+    );
+  });
+
+  it("teaches the reconnect shortcut for the banner CTA", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.reconnectGoogle,
+        shortcutKey: "1",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press 1 to reconnect Google Calendar.",
+    );
+  });
+
+  it("teaches a bound shortcut key outside the welcome modal", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: "S",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Press S");
+  });
+
   it("teaches the matching welcome shortcut for the attempted control", () => {
     welcomeGuideActions.setFirstVisitOpen(true);
     render(<PointerHint />);
