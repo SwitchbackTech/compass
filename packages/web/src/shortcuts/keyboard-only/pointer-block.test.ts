@@ -228,4 +228,40 @@ describe("createPointerBlockListener", () => {
     expect(click.preventDefault).not.toHaveBeenCalled();
     expect(onBlockedGesture).not.toHaveBeenCalled();
   });
+
+  it("passes trusted pointer gestures when isEnabled returns false", () => {
+    const onBlockedGesture = mock(() => {});
+    const { onPointerEvent } = createPointerBlockListener({
+      isEnabled: () => false,
+      onBlockedGesture,
+    });
+
+    const down = fakeEvent({ type: "pointerdown" });
+    const click = fakeEvent({ type: "click", detail: 1 });
+    onPointerEvent(down.event);
+    onPointerEvent(click.event);
+
+    expect(down.preventDefault).not.toHaveBeenCalled();
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(onBlockedGesture).not.toHaveBeenCalled();
+  });
+
+  it("starts blocking again as soon as isEnabled returns true", () => {
+    let enabled = false;
+    const onBlockedGesture = mock(() => {});
+    const { onPointerEvent } = createPointerBlockListener({
+      isEnabled: () => enabled,
+      onBlockedGesture,
+    });
+
+    const allowed = fakeEvent({ type: "pointerdown" });
+    onPointerEvent(allowed.event);
+    expect(allowed.preventDefault).not.toHaveBeenCalled();
+
+    enabled = true;
+    const blocked = fakeEvent({ type: "pointerdown" });
+    onPointerEvent(blocked.event);
+    expect(blocked.preventDefault).toHaveBeenCalledTimes(1);
+    expect(onBlockedGesture).toHaveBeenCalledTimes(1);
+  });
 });

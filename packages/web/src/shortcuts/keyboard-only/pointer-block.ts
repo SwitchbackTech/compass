@@ -10,6 +10,9 @@ import { POINTER_PASS_ATTRIBUTE } from "@web/shortcuts/keyboard-only/pointer-act
  * keyboard activation of every native button - the one thing a keyboard-only
  * app depends on. Synthetic .click() calls (react-datepicker's open path, the
  * Life view's derived clicks) are untrusted and must also pass.
+ *
+ * `/life` is a public lead magnet, so the listener can also no-op while
+ * `isEnabled` is false and let pointer gestures reach the page normally.
  */
 
 export const POINTER_BLOCK_EVENT_TYPES = [
@@ -74,10 +77,13 @@ export interface PointerBlockEvent {
  */
 export const createPointerBlockListener = (options: {
   onBlockedGesture: (event: PointerBlockEvent) => void;
+  /** When this returns false, pointer gestures pass through unblocked. */
+  isEnabled?: () => boolean;
 }) => {
   let lastBlockedPointerDownAt: number | null = null;
 
   const onPointerEvent = (event: PointerBlockEvent): void => {
+    if (options.isEnabled?.() === false) return;
     if (pathAllowsPointer(event.composedPath?.() ?? [])) return;
 
     const msSinceBlockedPointerDown =

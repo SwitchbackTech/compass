@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FC, useCallback } from "react";
+import { type ChangeEvent, type FC, type Ref, useCallback } from "react";
 import {
   type SignUpFormData,
   SignUpSchema,
@@ -15,6 +15,8 @@ interface SignUpFormProps {
   onNameChange?: (name: string) => void;
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
+  /** Seats dialog focus on email so typing can start immediately. */
+  emailInputRef?: Ref<HTMLInputElement>;
 }
 
 /**
@@ -26,6 +28,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({
   onSubmit,
   onNameChange,
   isSubmitting,
+  emailInputRef,
 }) => {
   const form = useZodForm({
     schema: SignUpSchema,
@@ -56,6 +59,7 @@ export const SignUpForm: FC<SignUpFormProps> = ({
       />
 
       <AuthInput
+        ref={emailInputRef}
         type="email"
         placeholder="Email"
         ariaLabel="Email"
