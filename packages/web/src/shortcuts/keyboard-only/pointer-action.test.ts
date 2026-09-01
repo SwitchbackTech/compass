@@ -11,7 +11,9 @@ import {
   POINTER_ACTIONS,
   POINTER_EVENT_ID_ATTRIBUTE,
   POINTER_SHORTCUT_ATTRIBUTE,
+  parsePointerShortcut,
   pointerGridIntentFromPointer,
+  pointerShortcutAttributes,
   resolveBlockedPointerAttempt,
   teachingFromBlockedPointer,
 } from "@web/shortcuts/keyboard-only/pointer-action";
@@ -48,6 +50,21 @@ describe("resolveBlockedPointerAttempt", () => {
       actionId: "unknown",
       shortcutKey: "1",
     });
+  });
+
+  it("decodes a chord shortcut encoded as JSON", () => {
+    const target = document.createElement("button");
+    target.setAttribute(
+      POINTER_SHORTCUT_ATTRIBUTE,
+      pointerShortcutAttributes(["Mod", "K"])[POINTER_SHORTCUT_ATTRIBUTE],
+    );
+
+    expect(resolveBlockedPointerAttempt([target, document])).toEqual({
+      actionId: "unknown",
+      shortcutKey: ["Mod", "K"],
+    });
+    expect(parsePointerShortcut('["Mod",","]')).toEqual(["Mod", ","]);
+    expect(parsePointerShortcut("z")).toBe("z");
   });
 
   it("keeps an action and a shortcut from different ancestors", () => {

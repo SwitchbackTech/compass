@@ -33,9 +33,9 @@ describe("getNavigationCommandItems", () => {
 
     expect(labels).toContain("Play Block Party (practice shortcuts)");
     expect(labels).toContain("Show welcome guide");
-    expect(labels.indexOf("Practice shortcuts")).toBeLessThan(
-      labels.indexOf("Show welcome guide"),
-    );
+    expect(
+      labels.indexOf("Play Block Party (practice shortcuts)"),
+    ).toBeLessThan(labels.indexOf("Show welcome guide"));
   });
 
   it("can list only view navigation for non-calendar surfaces", () => {

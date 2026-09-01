@@ -14,6 +14,7 @@ import { getFocusableElements } from "@web/common/utils/focusable-elements";
 import { useOverlayEscape } from "@web/components/OverlayPanel/overlay-escape";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 
 interface Props {
   /** Icon or element displayed at the top of the panel */
@@ -301,6 +302,7 @@ export const OverlayPanelActionButton = forwardRef<
         onPointerEnter?.(event);
       }}
       {...buttonProps}
+      {...(shortcut ? pointerShortcutAttributes(shortcut) : {})}
     >
       {children}
       {shortcut && showShortcut ? (

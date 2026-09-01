@@ -31,6 +31,8 @@ export const useShowAccountsCmdItems = (): CommandItem[] => {
         "options",
         "add account",
         "connect google",
+        "multiple google",
+        "google accounts",
         "disconnect account",
         "remove account",
         "export data",

@@ -101,6 +101,32 @@ describe("TooltipWrapper", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  it("annotates a single-key shortcut for blocked-click teaching", () => {
+    render(
+      <TooltipWrapper shortcut="?">
+        <button type="button">Shortcuts</button>
+      </TooltipWrapper>,
+    );
+
+    expect(screen.getByRole("button", { name: /shortcuts/i })).toHaveAttribute(
+      "data-pointer-shortcut",
+      "?",
+    );
+  });
+
+  it("annotates a chord shortcut as JSON for blocked-click teaching", () => {
+    render(
+      <TooltipWrapper shortcut={["Mod", "K"]}>
+        <button type="button">Palette</button>
+      </TooltipWrapper>,
+    );
+
+    expect(screen.getByRole("button", { name: /palette/i })).toHaveAttribute(
+      "data-pointer-shortcut",
+      '["Mod","K"]',
+    );
+  });
+
   it("does not render tooltip content until opened", async () => {
     const user = userEvent.setup();
     render(

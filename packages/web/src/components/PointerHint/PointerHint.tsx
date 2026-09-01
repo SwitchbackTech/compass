@@ -4,6 +4,7 @@ import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   selectWelcomeSurfaceOpen,
   useWelcomeGuideStore,
@@ -148,7 +149,7 @@ const pointerHintMessage = ({
   if (attempt?.shortcutKey) {
     return (
       <>
-        Press <Key>{attempt.shortcutKey}</Key>
+        Press <ShortcutKeys keys={attempt.shortcutKey} />
       </>
     );
   }

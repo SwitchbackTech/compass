@@ -43,6 +43,7 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { useTimezoneCmdItems } from "@web/timezone/useTimezoneCmdItems";
 import { filterSections, getLabelMatchRanges } from "./command-palette.search";
@@ -258,6 +259,7 @@ const CommandPaletteContent = ({
                         aria-selected={isActive}
                         disabled={item.disabled}
                         className={rowClassName}
+                        {...pointerShortcutAttributes("Enter")}
                       >
                         {content}
                       </button>

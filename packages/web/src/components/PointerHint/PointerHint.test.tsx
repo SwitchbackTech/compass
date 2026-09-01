@@ -124,6 +124,21 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Press S");
   });
 
+  it("teaches a chord shortcut as separate keycaps", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "unknown",
+        shortcutKey: ["Mod", "K"],
+      });
+    });
+
+    const hint = screen.getByRole("status");
+    expect(hint).toHaveTextContent("Press");
+    expect(hint).toHaveTextContent("K");
+  });
+
   it("teaches the matching welcome shortcut for the attempted control", () => {
     welcomeGuideActions.setFirstVisitOpen(true);
     render(<PointerHint />);

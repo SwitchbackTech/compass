@@ -1,5 +1,5 @@
 import type React from "react";
-import { type ReactNode } from "react";
+import { isValidElement, type ReactNode } from "react";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { type TooltipOptions } from "@web/components/Tooltip/tooltip.types";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { ShortcutHint } from "../Shortcuts/ShortcutHint";
 import { TooltipDescription } from "./Description/TooltipDescription";
 
@@ -28,11 +29,19 @@ export const TooltipWrapper: React.FC<Props> = ({
   placement,
   shortcut,
 }) => {
+  const pointerAttrs =
+    typeof shortcut === "string" || Array.isArray(shortcut)
+      ? pointerShortcutAttributes(shortcut)
+      : {};
+  const annotateChild = isValidElement(children);
+
   return (
     <Tooltip placement={placement}>
       <TooltipTrigger
+        asChild={annotateChild}
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : onClick}
+        {...pointerAttrs}
       >
         {children}
       </TooltipTrigger>

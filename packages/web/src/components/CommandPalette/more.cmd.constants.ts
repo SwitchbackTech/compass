@@ -21,11 +21,13 @@ export function getCommandPalettePlaceholder(
 
   if (currentView === "day") {
     return feedbackEnabled
-      ? "Try: 'week', 'today', or 'feedback'"
-      : "Try: 'week' or 'today'";
+      ? "Try: 'play', 'week', or 'feedback'"
+      : "Try: 'play' or 'week'";
   }
 
-  return feedbackEnabled ? "Try: 'create' or 'feedback'" : "Try: 'create'";
+  return feedbackEnabled
+    ? "Try: 'play', 'create', or 'feedback'"
+    : "Try: 'play' or 'create'";
 }
 
 export function getMoreCommandPaletteSections(

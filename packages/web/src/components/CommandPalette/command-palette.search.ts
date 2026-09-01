@@ -2,6 +2,20 @@ import { type CommandItem, type CommandSection } from "./command-palette.types";
 
 const MIN_SUBSEQUENCE_TOKEN_LENGTH = 3;
 
+/** Strip wrapping quotes and trailing sentence punctuation so "play." still matches Play. */
+function normalizeSearchToken(token: string): string {
+  return token.replace(/^['"]+|['"]+$/g, "").replace(/[.!?]+$/g, "");
+}
+
+function tokenizeQuery(query: string): string[] {
+  return query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map(normalizeSearchToken)
+    .filter(Boolean);
+}
+
 /** Every word of the haystack starts with the token, e.g. "day" in "Go to Day". */
 function hasWordStartingWith(haystack: string, token: string): boolean {
   return haystack.split(/[\s-]+/).some((word) => word.startsWith(token));
@@ -70,7 +84,7 @@ export function scoreCommandItem(
   item: Pick<CommandItem, "label" | "keywords">,
   query: string,
 ): number {
-  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tokens = tokenizeQuery(query);
   if (tokens.length === 0) return 0;
   return scoreAgainstTokens(item, tokens);
 }
@@ -88,7 +102,7 @@ export function getLabelMatchRanges(
   label: string,
   query: string,
 ): Array<[number, number]> {
-  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tokens = tokenizeQuery(query);
   if (tokens.length === 0) return [];
 
   const lowerLabel = label.toLowerCase();
@@ -124,7 +138,7 @@ export function filterSections(
   sections: CommandSection[],
   search: string,
 ): CommandSection[] {
-  const tokens = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const tokens = tokenizeQuery(search);
   if (tokens.length === 0) return sections;
 
   return sections
