@@ -49,6 +49,26 @@ function slotAround(start: Date) {
   };
 }
 
+/** Distinct sibling on the same UTC date, stepping backward when +gap would leave the day. */
+function slotOnSameUtcDay(
+  current: { slotStart: string; slotEnd: string },
+  gapMinutes: number,
+) {
+  const currentMs = Date.parse(current.slotStart);
+  const day = current.slotStart.slice(0, 10);
+  const dayStart = Date.parse(`${day}T00:00:00.000Z`);
+  const lastStart = Date.parse(`${day}T23:59:00.000Z`);
+  const after = currentMs + gapMinutes * 60 * 1000;
+  if (after <= lastStart && after !== currentMs) {
+    return slotAround(new Date(after));
+  }
+  const before = currentMs - gapMinutes * 60 * 1000;
+  if (before >= dayStart && before !== currentMs) {
+    return slotAround(new Date(before));
+  }
+  return slotAround(new Date(dayStart));
+}
+
 function utcTodayAt(now: Date, hours: number, minutes: number) {
   return new Date(
     Date.UTC(
@@ -153,16 +173,13 @@ async function selectGuestTimeZone(
 const currentSlot = bookableSlotInCurrentMonth();
 const laterCurrentSlot = (() => {
   const later = bookableSlotInCurrentMonth(30);
-  if (later.slotStart.slice(0, 10) === currentSlot.slotStart.slice(0, 10)) {
+  if (
+    later.slotStart !== currentSlot.slotStart &&
+    later.slotStart.slice(0, 10) === currentSlot.slotStart.slice(0, 10)
+  ) {
     return later;
   }
-  const currentMs = Date.parse(currentSlot.slotStart);
-  const endOfUtcDay = Date.parse(
-    `${currentSlot.slotStart.slice(0, 10)}T23:59:00.000Z`,
-  );
-  return slotAround(
-    new Date(Math.min(currentMs + 15 * 60 * 1000, endOfUtcDay)),
-  );
+  return slotOnSameUtcDay(currentSlot, 15);
 })();
 const nextMonthSlot = bookableSlotInNextMonth();
 const guestTimeZone = "UTC";
@@ -227,7 +244,30 @@ function reservationGetHandler(
   );
 }
 
+describe("slotOnSameUtcDay", () => {
+  it("steps forward when the gap still fits on the UTC day", () => {
+    const current = slotAround(new Date("2026-08-31T20:00:00.000Z"));
+    expect(slotOnSameUtcDay(current, 30).slotStart).toBe(
+      "2026-08-31T20:30:00.000Z",
+    );
+  });
+
+  it("steps backward instead of collapsing onto 23:59 at month-end midnight", () => {
+    const current = slotAround(new Date("2026-08-31T23:59:00.000Z"));
+    const sibling = slotOnSameUtcDay(current, 15);
+    expect(sibling.slotStart).toBe("2026-08-31T23:44:00.000Z");
+    expect(sibling.slotStart).not.toBe(current.slotStart);
+  });
+});
+
 describe("PublicBookingPage", () => {
+  it("uses two distinct same-day slots in the current UTC month", () => {
+    expect(laterCurrentSlot.slotStart).not.toBe(currentSlot.slotStart);
+    expect(laterCurrentSlot.slotStart.slice(0, 10)).toBe(
+      currentSlot.slotStart.slice(0, 10),
+    );
+  });
+
   it("shows a generic not-found state for an unknown slug", async () => {
     renderBookingRoute("/book/unknown-host");
 

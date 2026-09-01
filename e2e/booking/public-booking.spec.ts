@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
+  buildSameDaySiblingSlot,
   formatSlotButtonLabel,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
@@ -302,13 +303,7 @@ test.describe("public booking page", () => {
     page,
   }) => {
     const first = buildBookableSlot();
-    const secondStart = new Date(
-      Date.parse(first.slotStart) + 30 * 60 * 1000,
-    ).toISOString();
-    const second = {
-      slotStart: secondStart,
-      slotEnd: new Date(Date.parse(secondStart) + 30 * 60 * 1000).toISOString(),
-    };
+    const second = buildSameDaySiblingSlot(first);
     const captured = await preparePublicBookingPage(page, {
       confirmStatus: 409,
       slots: [first, second],
@@ -418,15 +413,7 @@ test.describe("public booking page", () => {
     page,
   }) => {
     const today = buildBookableSlot();
-    const laterTodayStart = new Date(
-      Date.parse(today.slotStart) + 30 * 60 * 1000,
-    ).toISOString();
-    const laterToday = {
-      slotStart: laterTodayStart,
-      slotEnd: new Date(
-        Date.parse(laterTodayStart) + 30 * 60 * 1000,
-      ).toISOString(),
-    };
+    const laterToday = buildSameDaySiblingSlot(today);
     const otherDayStart = new Date(
       Date.parse(today.slotStart) + 25 * 60 * 60 * 1000,
     ).toISOString();
