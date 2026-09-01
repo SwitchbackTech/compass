@@ -11,6 +11,7 @@ import {
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { getFocusableElements } from "@web/common/utils/focusable-elements";
+import { useOverlayEscape } from "@web/components/OverlayPanel/overlay-escape";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
@@ -88,6 +89,7 @@ export const OverlayPanel = ({
   const messageId = `${baseId}-message`;
   // Unique per instance: app-lock reasons are a Set, not refcounted.
   useAppLockReason(`overlayPanel:${baseId}`, true);
+  useOverlayEscape({ onDismiss, onShiftEscape });
 
   useEffect(() => {
     if (role !== "dialog") return;
@@ -181,7 +183,7 @@ export const OverlayPanel = ({
   };
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the panel.
+    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks, Tab/Mod+Enter, and in-tree Escape. Document Escape (useOverlayEscape) covers the case where focus is on body.
     <div
       className={backdropClasses}
       data-closing={closing || undefined}

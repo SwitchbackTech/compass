@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
+import { flushDeferredGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
+import { flushDeferredGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
 
 export type BillingPreviewState = {
   /**
@@ -23,6 +26,12 @@ export const useBillingPreviewStore = create<BillingPreviewState>()(() => ({
 export const billingPreviewActions = {
   enter: () => {
     useBillingPreviewStore.setState({ isPreviewing: true });
+    // Release the gate's exclusive hold before flush so the pending reconnect
+    // toast is actually allowed to appear. The modal unmounts on the next
+    // render; this must not wait for that effect.
+    setBillingGateOwnsScreen(false);
+    flushDeferredGoogleReconnectToast();
+    flushDeferredGoogleDelayedToast();
   },
   /**
    * Bring the gate back. Called when a write is refused with

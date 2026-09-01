@@ -13,6 +13,7 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError } from "@web/api/api.types";
 import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
 import {
   initialBillingPreviewState,
   useBillingPreviewStore,
@@ -66,6 +67,7 @@ describe("BillingGateModal", () => {
   afterEach(() => {
     assign.mockClear();
     useBillingPreviewStore.setState(initialBillingPreviewState);
+    resetBillingGateAttentionForTests();
   });
 
   it("redirects to Stripe Checkout from Start trial", async () => {

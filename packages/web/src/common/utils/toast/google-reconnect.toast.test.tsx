@@ -5,12 +5,28 @@ import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
+  isBillingGateOwningScreen,
+  resetBillingGateAttentionForTests,
+  setBillingGateOwnsScreen,
+} from "@web/billing/billing-gate-attention";
+import {
+  billingPreviewActions,
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
+import {
+  checkoutCelebrationActions,
+  initialCheckoutCelebrationState,
+  useCheckoutCelebrationStore,
+} from "@web/billing/checkout-celebration.store";
+import {
   GoogleReconnectToast,
+  resetGoogleReconnectToastStateForTests,
   showGoogleReconnectToast,
 } from "@web/common/utils/toast/google-reconnect.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockConnect = mock();
 const mockUseConnectGoogle = mock(() => ({ connect: mockConnect }));
@@ -122,8 +138,20 @@ describe("showGoogleReconnectToast", () => {
 
   beforeEach(() => {
     mocks.error.mockClear();
+    mocks.dismiss.mockClear();
     mocks.isActive.mockReturnValue(false);
     registerToastPort(port);
+    resetGoogleReconnectToastStateForTests();
+    resetBillingGateAttentionForTests();
+    useBillingPreviewStore.setState(initialBillingPreviewState);
+    useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState);
+  });
+
+  afterEach(() => {
+    resetGoogleReconnectToastStateForTests();
+    resetBillingGateAttentionForTests();
+    useBillingPreviewStore.setState(initialBillingPreviewState);
+    useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState);
   });
 
   it("does not stack a second toast while one is already visible", () => {
@@ -141,5 +169,35 @@ describe("showGoogleReconnectToast", () => {
     });
 
     expect(mocks.error).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show while the billing gate owns the screen", () => {
+    setBillingGateOwnsScreen(true);
+
+    showGoogleReconnectToast({ accountEmail: "lance@example.com" });
+
+    expect(mocks.error).not.toHaveBeenCalled();
+  });
+
+  it("shows the deferred toast after Look around first", () => {
+    setBillingGateOwnsScreen(true);
+    showGoogleReconnectToast({
+      accountEmail: "lance@example.com",
+      connectionId: "conn-1",
+    });
+    expect(mocks.error).not.toHaveBeenCalled();
+
+    billingPreviewActions.enter();
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(isBillingGateOwningScreen()).toBe(false);
+  });
+
+  it("does not show during checkout celebration", () => {
+    checkoutCelebrationActions.celebrate();
+
+    showGoogleReconnectToast({ accountEmail: "lance@example.com" });
+
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 });

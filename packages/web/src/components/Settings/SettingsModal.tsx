@@ -179,6 +179,16 @@ export const SettingsModal: FC = () => {
       initialFocusRef={initialFocusRef}
       onDismiss={handleDismiss}
       title="Settings"
+      titleAction={
+        <OverlayPanelActionButton
+          className="shrink-0"
+          onClick={handleDismiss}
+          shortcut="Esc"
+          variant="ghost"
+        >
+          Close
+        </OverlayPanelActionButton>
+      }
       variant="modal"
       widthClassName="w-[640px]"
     >

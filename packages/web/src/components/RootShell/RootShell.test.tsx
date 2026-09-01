@@ -6,6 +6,7 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
 import {
   billingPreviewActions,
   initialBillingPreviewState,
@@ -89,6 +90,7 @@ describe("RootShell billing gates", () => {
       isSettingsOpen: false,
       settingsPage: "accounts",
     });
+    resetBillingGateAttentionForTests();
     resetToastPort();
   });
 

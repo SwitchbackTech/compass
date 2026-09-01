@@ -7,6 +7,11 @@ import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import {
+  rememberPendingReconnect,
+  shouldDeferAttentionToasts,
+  takePendingReconnect,
+} from "@web/billing/billing-gate-attention";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   ErrorToastSeverity,
@@ -17,6 +22,7 @@ import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
 let hasShownReconnectToastThisLoad = false;
+let lastReconnectTarget: GoogleReconnectTarget = {};
 
 /** True after any path has already raised the reconnect toast this page load. */
 export const hasShownGoogleReconnectToastThisLoad = (): boolean =>
@@ -25,6 +31,11 @@ export const hasShownGoogleReconnectToastThisLoad = (): boolean =>
 export const clearGoogleReconnectToastGate = (): void => {
   hasShownReconnectToastThisLoad = false;
 };
+
+export function resetGoogleReconnectToastStateForTests(): void {
+  hasShownReconnectToastThisLoad = false;
+  lastReconnectTarget = {};
+}
 
 interface GoogleReconnectToastProps {
   toastId: Id;
@@ -102,6 +113,12 @@ export const GoogleReconnectToast = ({
 export function showGoogleReconnectToast(
   target: GoogleReconnectTarget = {},
 ): Id {
+  lastReconnectTarget = target;
+  if (shouldDeferAttentionToasts()) {
+    rememberPendingReconnect(target);
+    return GOOGLE_REVOKED_TOAST_ID;
+  }
+
   hasShownReconnectToastThisLoad = true;
   return showErrorToast(
     createElement(GoogleReconnectToast, {
@@ -114,6 +131,22 @@ export function showGoogleReconnectToast(
       severity: ErrorToastSeverity.CRITICAL,
     },
   );
+}
+
+export function deferGoogleReconnectToastIfVisible(): void {
+  const toast = getToast();
+  const visible = toast.isActive?.(GOOGLE_REVOKED_TOAST_ID) === true;
+  if (!visible && !hasShownReconnectToastThisLoad) return;
+
+  rememberPendingReconnect(lastReconnectTarget);
+  hasShownReconnectToastThisLoad = false;
+  dismissGoogleReconnectToast();
+}
+
+export function flushDeferredGoogleReconnectToast(): void {
+  const pending = takePendingReconnect();
+  if (!pending) return;
+  showGoogleReconnectToast(pending);
 }
 
 export function dismissGoogleReconnectToast(): void {

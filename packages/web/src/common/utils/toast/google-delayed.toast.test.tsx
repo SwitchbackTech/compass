@@ -4,9 +4,21 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { GoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
+import {
+  resetBillingGateAttentionForTests,
+  setBillingGateOwnsScreen,
+} from "@web/billing/billing-gate-attention";
+import {
+  billingPreviewActions,
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
+import {
+  GoogleDelayedToast,
+  showGoogleDelayedToast,
+} from "@web/common/utils/toast/google-delayed.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockRefresh = mock();
 
@@ -46,5 +58,38 @@ describe("GoogleDelayedToast", () => {
 
     expect(mocks.dismiss).toHaveBeenCalledWith("google-delayed");
     expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("showGoogleDelayedToast", () => {
+  const { port, mocks } = createTestToastPort();
+
+  beforeEach(() => {
+    mocks.error.mockClear();
+    mocks.isActive.mockReturnValue(false);
+    registerToastPort(port);
+    resetBillingGateAttentionForTests();
+    useBillingPreviewStore.setState(initialBillingPreviewState);
+  });
+
+  afterEach(() => {
+    resetBillingGateAttentionForTests();
+    useBillingPreviewStore.setState(initialBillingPreviewState);
+  });
+
+  it("does not show while the billing gate owns the screen", () => {
+    setBillingGateOwnsScreen(true);
+    showGoogleDelayedToast();
+    expect(mocks.error).not.toHaveBeenCalled();
+  });
+
+  it("shows the deferred toast after Look around first", () => {
+    setBillingGateOwnsScreen(true);
+    showGoogleDelayedToast();
+    expect(mocks.error).not.toHaveBeenCalled();
+
+    billingPreviewActions.enter();
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
   });
 });

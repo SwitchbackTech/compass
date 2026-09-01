@@ -5,9 +5,14 @@ import {
   OverlayPanel,
   OverlayPanelActionButton,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { describe, expect, it, mock } from "bun:test";
+import { clearOverlayEscapeStack } from "@web/components/OverlayPanel/overlay-escape";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 describe("OverlayPanel", () => {
+  afterEach(() => {
+    clearOverlayEscapeStack();
+  });
+
   it("locks app shortcuts while mounted and clears on unmount", () => {
     const { unmount } = render(
       <OverlayPanel title="Confirm" onDismiss={() => {}} />,
@@ -251,6 +256,60 @@ describe("OverlayPanel", () => {
     await user.keyboard("{Shift>}{Escape}{/Shift}");
     expect(shifted).toBe(1);
     expect(dismissed).toBe(1);
+  });
+
+  it("dismisses on Escape when focus is on document.body", async () => {
+    const user = userEvent.setup();
+    let dismissed = 0;
+
+    render(
+      <OverlayPanel
+        title="Confirm"
+        onDismiss={() => {
+          dismissed += 1;
+        }}
+      >
+        <button type="button">Inside</button>
+      </OverlayPanel>,
+    );
+
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    await user.keyboard("{Escape}");
+    expect(dismissed).toBe(1);
+  });
+
+  it("peels only the topmost dismissible panel on Escape", async () => {
+    const user = userEvent.setup();
+    let firstDismissed = 0;
+    let secondDismissed = 0;
+
+    render(
+      <>
+        <OverlayPanel
+          title="First"
+          onDismiss={() => {
+            firstDismissed += 1;
+          }}
+        >
+          <button type="button">First stay</button>
+        </OverlayPanel>
+        <OverlayPanel
+          title="Second"
+          onDismiss={() => {
+            secondDismissed += 1;
+          }}
+        >
+          <button type="button">Second stay</button>
+        </OverlayPanel>
+      </>,
+    );
+
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard("{Escape}");
+
+    expect(secondDismissed).toBe(1);
+    expect(firstDismissed).toBe(0);
   });
 
   it("does not dismiss on Escape when onDismiss is omitted", async () => {

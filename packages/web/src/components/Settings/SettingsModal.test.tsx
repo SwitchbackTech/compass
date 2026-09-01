@@ -432,6 +432,27 @@ describe("SettingsModal", () => {
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
   });
 
+  it("closes on Escape even when focus is on document.body", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings();
+
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+  });
+
+  it("shows a Close control with an Esc chip", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings();
+
+    const close = screen.getByRole("button", { name: /Close/ });
+    expect(within(close).getByText("Esc")).toBeTruthy();
+
+    await user.click(close);
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+  });
+
   it("shows the derived default calendar in the picker when nothing is stored", () => {
     const primary = createMockCalendar({ name: "Personal", isPrimary: true });
     const side = createMockCalendar({ name: "Side project" });
