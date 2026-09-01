@@ -40,21 +40,21 @@ test("the all-day event form is accessible when open", async ({ page }) => {
   await expectNoAxeViolations(page, { checkpoint: "all-day event form open" });
 });
 
-test("the event action toolbar is accessible", async ({ page }) => {
+test("the event action row is accessible", async ({ page }) => {
   await prepareCalendarPage(page);
   const title = createEventTitle("A11y Checkpoint");
   await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await openEventForEditingWithKeyboard(page, title);
 
-  const toolbar = page
+  const actionRow = page
     .getByRole("form")
-    .getByRole("toolbar", { name: "Event actions" });
-  await expect(toolbar).toBeVisible();
-  await toolbar.getByRole("button", { name: "Duplicate" }).focus();
+    .getByRole("group", { name: "Event actions" });
+  await expect(actionRow).toBeVisible();
+  await actionRow.getByRole("button", { name: "Duplicate" }).focus();
 
   await expectNoAxeViolations(page, {
-    checkpoint: "event action toolbar",
+    checkpoint: "event action row",
   });
 });
 

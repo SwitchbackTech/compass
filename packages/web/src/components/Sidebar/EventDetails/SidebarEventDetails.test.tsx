@@ -62,18 +62,19 @@ describe("SidebarEventDetails", () => {
     const title = await screen.findByPlaceholderText("Title");
     await waitFor(() => expect(title).toHaveFocus());
 
-    // The toolbar renders above the title, so it sits behind Shift+Tab
-    // instead of taking the first forward Tab out of the title, and its
-    // roving tabindex makes the whole row one stop.
-    const toolbar = screen.getByRole("toolbar", { name: "Event actions" });
+    // The action row renders above the title, so it sits behind Shift+Tab
+    // instead of taking the first forward Tab out of the title. Each action
+    // is its own tab stop so Delete and Close are reachable without arrows.
+    const actionRow = screen.getByRole("group", { name: "Event actions" });
     expect(
-      toolbar.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+      actionRow.compareDocumentPosition(title) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    const actionButtons = within(actionRow).getAllByRole("button");
+    expect(actionButtons.length).toBeGreaterThan(1);
     expect(
-      within(toolbar)
-        .getAllByRole("button")
-        .filter((button) => button.getAttribute("tabindex") === "0"),
-    ).toHaveLength(1);
+      actionButtons.every((button) => button.getAttribute("tabindex") !== "-1"),
+    ).toBe(true);
   });
 
   it("prompts before discarding a dirty existing event from the Close action", async () => {

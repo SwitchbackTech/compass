@@ -36,8 +36,8 @@ const findFirstMatch = (selectors: string[]): HTMLElement | null => {
  * input is often 2px wide — too small for a hint chip — so combobox fields
  * put the id on the wrapper. */
 const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
-  // The action toolbar above the title. Its roving tabindex means exactly one
-  // button is tabbable at a time, which is the one FOCUSABLE_SELECTOR finds.
+  // The action toolbar above the title. FOCUSABLE_SELECTOR lands on the
+  // first button (Duplicate when present, otherwise Delete or Close).
   actions: [`${EVENT_FORM_SELECTOR} #event-form-actions`],
   title: [`${EVENT_FORM_SELECTOR} input[name="Event Title"]`],
   location: [
