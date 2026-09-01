@@ -11,6 +11,7 @@ import {
   CancelBookingReservationInputSchema,
   CreateBookingReservationInputSchema,
   CreateBookingReservationResponseSchema,
+  isGuestEmail,
   type PublicBookingPage,
   PublicBookingPageSchema,
   type PublicGetBookingReservationResponse,
@@ -37,8 +38,6 @@ import { CalendarBookingService } from "@backend/booking/services/calendar-booki
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 
-const GUEST_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
 
@@ -49,7 +48,7 @@ const buildCancelUrl = (reservationId: string, token: string): string =>
   ).href;
 
 const assertGuestEmail = (email: string): void => {
-  if (!GUEST_EMAIL_PATTERN.test(email)) {
+  if (!isGuestEmail(email)) {
     throw bookingError("INVALID_INPUT", "Invalid guest email");
   }
 };

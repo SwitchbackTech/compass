@@ -49,7 +49,7 @@ export const toBookingErrorResponse = (
 ): { status: Status; body: { code: BookingErrorCode; message: string } } => {
   if (e instanceof BookingException) {
     return {
-      status: STATUS_BY_CODE[e.bookingCode],
+      status: e.statusCode,
       body: { code: e.bookingCode, message: e.message },
     };
   }

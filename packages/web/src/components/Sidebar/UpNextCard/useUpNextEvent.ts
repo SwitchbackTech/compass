@@ -74,10 +74,7 @@ export function useUpNextEvent() {
     [sourceEvent],
   );
 
-  const conferenceUrl =
-    sourceEvent?.content.kind === "details"
-      ? sourceEvent.content.conference?.url
-      : undefined;
+  const conferenceUrl = upNext?.conference?.url;
 
   return { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent };
 }
