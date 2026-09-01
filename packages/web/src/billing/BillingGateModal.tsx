@@ -10,6 +10,11 @@ import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import {
+  POINTER_ACTION_ATTRIBUTE,
+  POINTER_ACTIONS,
+  pointerShortcutAttributes,
+} from "@web/shortcuts/keyboard-only/pointer-action";
 import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
@@ -129,6 +134,10 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             onClick={() => void redirectTo("checkout")}
             onPointerEnter={focusOnPointerEnter}
             type="button"
+            {...pointerShortcutAttributes("S")}
+            {...(isAwaitingCheckout
+              ? { [POINTER_ACTION_ATTRIBUTE]: POINTER_ACTIONS.startTrial }
+              : {})}
           >
             {isRedirecting
               ? "Opening Stripe…"
@@ -144,6 +153,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             onClick={secondary.onClick}
             onPointerEnter={focusOnPointerEnter}
             type="button"
+            {...pointerShortcutAttributes(secondary.key)}
           >
             {isRedirecting && secondary.key === "M"
               ? "Opening Stripe…"

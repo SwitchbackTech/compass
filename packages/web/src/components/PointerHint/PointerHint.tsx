@@ -4,6 +4,7 @@ import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   selectWelcomeSurfaceOpen,
   useWelcomeGuideStore,
@@ -52,6 +53,7 @@ const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
   attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
   attempt?.actionId === POINTER_ACTIONS.goToToday ||
+  attempt?.actionId === POINTER_ACTIONS.switchView ||
   attempt?.actionId === POINTER_ACTIONS.eventOpen ||
   attempt?.actionId === POINTER_ACTIONS.startTrial ||
   attempt?.actionId === POINTER_ACTIONS.reconnectGoogle ||
@@ -91,6 +93,14 @@ const pointerHintMessage = ({
     return (
       <>
         Press <Key>T</Key> to go to today.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.switchView) {
+    return (
+      <>
+        Press <Key>W</Key>, <Key>D</Key>, or <Key>L</Key> to switch views.
       </>
     );
   }
@@ -148,7 +158,7 @@ const pointerHintMessage = ({
   if (attempt?.shortcutKey) {
     return (
       <>
-        Press <Key>{attempt.shortcutKey}</Key>
+        Press <ShortcutKeys keys={attempt.shortcutKey} />
       </>
     );
   }

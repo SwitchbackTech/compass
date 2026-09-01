@@ -98,6 +98,7 @@ describe("SelectView", () => {
       expect(button).toBeInTheDocument();
       expect(button.textContent).toBe("July 2026");
       expect(button).toHaveAttribute("aria-expanded", "false");
+      expect(button).toHaveAttribute("data-pointer-action", "calendar.view");
     });
 
     it("renders the label as the page heading", async () => {
@@ -128,6 +129,9 @@ describe("SelectView", () => {
       expect(shortcutHints[1]).toHaveTextContent("D");
       expect(shortcutHints[2]).toHaveTextContent("W");
       expect(shortcutHints[3]).toHaveTextContent("L");
+      expect(
+        withinDropdown.getByRole("option", { name: /^week/i }),
+      ).toHaveAttribute("data-pointer-shortcut", "w");
     });
   });
 

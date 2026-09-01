@@ -23,6 +23,7 @@ export const POINTER_GRID_CREATE_REQUEST = "compass:pointer-grid-create";
 export const POINTER_ACTIONS = {
   eventOpen: "event.open",
   goToToday: "calendar.today",
+  switchView: "calendar.view",
   sidebarClose: "sidebar.close",
   sidebarOpen: "sidebar.open",
   startTrial: "billing.start-trial",
@@ -32,10 +33,12 @@ export const POINTER_ACTIONS = {
 export type PointerActionId =
   (typeof POINTER_ACTIONS)[keyof typeof POINTER_ACTIONS];
 
+export type PointerShortcutKey = string | string[];
+
 export type BlockedPointerAttempt = {
   actionId: PointerActionId | "grid.timed" | "grid.all-day" | "unknown";
   eventId?: string;
-  shortcutKey?: string;
+  shortcutKey?: PointerShortcutKey;
   gridDate?: string;
   gridTimeKey?: string;
   gridTimeLabel?: string;
@@ -51,7 +54,7 @@ export const resolveBlockedPointerAttempt = (
 ): BlockedPointerAttempt => {
   let actionId: PointerActionId | "unknown" = "unknown";
   let eventId: string | undefined;
-  let shortcutKey: string | undefined;
+  let shortcutKey: PointerShortcutKey | undefined;
 
   for (const target of path) {
     if (!(target instanceof HTMLElement)) continue;
@@ -64,7 +67,7 @@ export const resolveBlockedPointerAttempt = (
     }
     if (shortcutKey === undefined) {
       const shortcut = target.getAttribute(POINTER_SHORTCUT_ATTRIBUTE);
-      if (shortcut) shortcutKey = shortcut;
+      if (shortcut) shortcutKey = parsePointerShortcut(shortcut);
     }
     if (actionId !== "unknown" && shortcutKey !== undefined) break;
   }
@@ -76,9 +79,35 @@ export const resolveBlockedPointerAttempt = (
   };
 };
 
-export const pointerShortcutAttributes = (key: string) => ({
-  [POINTER_SHORTCUT_ATTRIBUTE]: key,
+/** Encode a one-key or chord shortcut onto `data-pointer-shortcut`. */
+export const pointerShortcutAttributes = (
+  key: string | readonly string[],
+): { readonly [POINTER_SHORTCUT_ATTRIBUTE]: string } => ({
+  [POINTER_SHORTCUT_ATTRIBUTE]:
+    typeof key === "string" ? key : JSON.stringify(key),
 });
+
+/**
+ * Reverse `pointerShortcutAttributes`. A JSON array is a chord (`Mod+K`);
+ * anything else is a single key, including a literal that happens to start
+ * with `[`.
+ */
+export const parsePointerShortcut = (raw: string): PointerShortcutKey => {
+  if (!raw.startsWith("[")) return raw;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      Array.isArray(parsed) &&
+      parsed.length > 0 &&
+      parsed.every((item) => typeof item === "string")
+    ) {
+      return parsed;
+    }
+  } catch {
+    // A single-key annotation that starts with `[`.
+  }
+  return raw;
+};
 
 export const pointerPassAttributes = {
   [POINTER_PASS_ATTRIBUTE]: "",

@@ -19,11 +19,16 @@ export function useFlashedWelcomeShortcut(): string | null {
   useEffect(() => {
     if (pulse === lastPulseRef.current) return;
     lastPulseRef.current = pulse;
-    if (!attempt?.shortcutKey) {
+    const shortcut = attempt?.shortcutKey;
+    const flashKey =
+      typeof shortcut === "string"
+        ? shortcut
+        : (shortcut?.[shortcut.length - 1] ?? null);
+    if (!flashKey) {
       setFlashedKey(null);
       return;
     }
-    setFlashedKey(attempt.shortcutKey);
+    setFlashedKey(flashKey);
     const timer = window.setTimeout(() => setFlashedKey(null), KEYCAP_FLASH_MS);
     return () => window.clearTimeout(timer);
   }, [pulse, attempt?.shortcutKey]);

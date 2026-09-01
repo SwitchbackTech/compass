@@ -134,6 +134,7 @@ export const getNavigationCommandItems = ({
         "practice",
         "shortcuts",
         "game",
+        "play",
         "block party",
       ],
       onClick: onPracticeShortcuts,

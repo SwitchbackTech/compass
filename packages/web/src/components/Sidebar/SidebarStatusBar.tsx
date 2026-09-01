@@ -20,6 +20,7 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { KeyboardPlaceIndicator } from "@web/grid/shortcuts/KeyboardPlaceIndicator";
 import { settingsActions } from "@web/settings/settings.store";
+import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { QuickTimeIndicator } from "@web/shortcuts/quick-time/QuickTimeIndicator";
 import { EventJumpIndicator } from "@web/shortcuts/shift-hint/EventJumpIndicator";
 import {
@@ -119,6 +120,7 @@ export const SidebarStatusBar: FC = () => {
           onClick={() => settingsActions.openSettings()}
           title={text || undefined}
           type="button"
+          {...pointerShortcutAttributes(["Mod", ","])}
         >
           <span
             aria-live="polite"

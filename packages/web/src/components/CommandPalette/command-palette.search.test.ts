@@ -47,6 +47,29 @@ describe("filterSections", () => {
     expect(result[0].items[0].label).toBe("Create Event");
   });
 
+  it("strips trailing sentence punctuation so play. still matches Play", () => {
+    const withPlay = [
+      {
+        id: "nav",
+        heading: "Navigation",
+        items: [
+          {
+            id: "practice-shortcuts",
+            label: "Play Block Party (practice shortcuts)",
+            icon: PlusIcon,
+            keywords: ["play", "game"],
+          },
+          { id: "create", label: "Create event", icon: PlusIcon },
+        ],
+      },
+    ];
+
+    const result = filterSections(withPlay, "play.");
+    expect(result).toHaveLength(1);
+    expect(result[0].items).toHaveLength(1);
+    expect(result[0].items[0].id).toBe("practice-shortcuts");
+  });
+
   it("matches a synonym via keywords, not just the label", () => {
     const withKeywords = [
       {

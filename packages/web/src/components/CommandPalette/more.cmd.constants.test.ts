@@ -39,6 +39,8 @@ describe("getMoreCommandPaletteSections", () => {
     expect(getCommandPalettePlaceholder("week", false)).not.toContain(
       "feedback",
     );
+    expect(getCommandPalettePlaceholder("week", false)).toContain("play");
+    expect(getCommandPalettePlaceholder("day", false)).toContain("play");
   });
 
   it("opens the feedback request from the cloud command", () => {
@@ -56,6 +58,7 @@ describe("getMoreCommandPaletteSections", () => {
       view: "day",
     });
     expect(getCommandPalettePlaceholder("day", true)).toContain("feedback");
+    expect(getCommandPalettePlaceholder("day", true)).toContain("play");
     expect(getCommandPalettePlaceholder("day", true)).not.toContain("bug");
   });
 
