@@ -119,6 +119,14 @@ describe("teachingFromBlockedPointer", () => {
     });
   });
 
+  it("teaches view switching from the annotated date heading", () => {
+    const target = document.createElement("button");
+    target.setAttribute(POINTER_ACTION_ATTRIBUTE, POINTER_ACTIONS.switchView);
+    expect(teachingFromBlockedPointer([target, document], 0)).toEqual({
+      attempt: { actionId: POINTER_ACTIONS.switchView },
+    });
+  });
+
   it("teaches start-trial and reconnect from annotated banner CTAs", () => {
     const trial = document.createElement("button");
     trial.setAttribute(POINTER_ACTION_ATTRIBUTE, POINTER_ACTIONS.startTrial);

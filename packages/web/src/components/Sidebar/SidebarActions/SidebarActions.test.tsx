@@ -68,6 +68,9 @@ describe("SidebarActions", () => {
     expect(
       screen.getByRole("button", { name: "Open command palette" }),
     ).toHaveAttribute("data-pointer-shortcut", '["Mod","K"]');
+    expect(
+      screen.getByRole("button", { name: "Open settings" }),
+    ).toHaveAttribute("data-pointer-shortcut", '["Mod",","]');
   });
 
   it("labels the shortcuts button as a close action when shortcuts are open", () => {

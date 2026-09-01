@@ -33,7 +33,7 @@ describe("TimezonePickerDialog", () => {
 
     expect(
       screen.getByRole("option", { name: /Use browser timezone \(Auto\)/ }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("data-pointer-shortcut", "Enter");
 
     await user.type(
       screen.getByRole("combobox", { name: "Search timezones" }),

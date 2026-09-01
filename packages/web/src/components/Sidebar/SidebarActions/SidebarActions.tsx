@@ -1,4 +1,4 @@
-import { CommandIcon, KeyboardIcon } from "@phosphor-icons/react";
+import { CommandIcon, GearIcon, KeyboardIcon } from "@phosphor-icons/react";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
@@ -8,6 +8,7 @@ import {
 } from "@web/events/stores/view.store";
 import {
   selectIsCmdPaletteOpen,
+  selectIsSettingsOpen,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
@@ -15,6 +16,7 @@ import {
 export const SidebarActions = () => {
   const isShortcutsOpen = useViewStore(selectIsShortcutsOpen);
   const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
+  const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
   const googleState = useGoogleUiState();
   const isCalendarSyncing = googleState === "IMPORTING";
 
@@ -53,6 +55,23 @@ export const SidebarActions = () => {
       </div>
 
       <div className="flex items-center gap-2">
+        <TooltipWrapper
+          description="Open settings"
+          shortcut={["Mod", ","]}
+          onClick={() => settingsActions.openSettings()}
+        >
+          <button
+            aria-label="Open settings"
+            className="flex size-9 items-center justify-center rounded-default text-text-muted transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            type="button"
+          >
+            <GearIcon
+              aria-hidden="true"
+              size={16}
+              weight={isSettingsOpen ? "fill" : "regular"}
+            />
+          </button>
+        </TooltipWrapper>
         <TooltipWrapper
           description="Open command palette"
           shortcut={["Mod", "K"]}

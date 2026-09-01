@@ -209,6 +209,20 @@ describe("PointerHint", () => {
     );
   });
 
+  it("teaches view shortcuts for the date heading", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.switchView,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press W, D, or L to switch views.",
+    );
+  });
+
   it("teaches the assigned sequence for the attempted event", () => {
     render(<PointerHint />);
 
@@ -264,6 +278,21 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Press T to go to today.",
+    );
+  });
+
+  it("keeps the view-switch sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.switchView,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press W, D, or L to switch views.",
     );
   });
 
