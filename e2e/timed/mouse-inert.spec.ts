@@ -11,6 +11,20 @@ import {
 // Compass is the keyboard calendar: the mouse is permanently inert. These
 // tests are the behavioral contract for the always-on pointer suppression.
 
+test("empty timed-grid clicks teach the matching HHMM shortcut", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+
+  const { x, y } = await getMainGridPoint(page, { xRatio: 0.6, yRatio: 0.6 });
+  await page.mouse.click(x, y);
+
+  await expect(page.getByLabel("Title")).toHaveCount(0);
+  await expect(page.locator("[data-pointer-hint]")).toContainText(
+    /Type \d{4} to create an event at/,
+  );
+});
+
 test("mouse clicks are inert and show the keyboard-only hint", async ({
   page,
 }) => {

@@ -222,7 +222,42 @@ describe("PointerHint", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Press 1130 to create at 11:30 AM.",
+      "Type 1130 to create an event at 11:30 AM.",
+    );
+  });
+
+  it("names an evening quarter-hour in 24-hour digits", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "grid.timed",
+        gridDate: "2026-08-29",
+        gridTimeKey: "1830",
+        gridTimeLabel: "6:30 PM",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Type 1830 to create an event at 6:30 PM.",
+    );
+  });
+
+  it("keeps the timed-grid shortcut sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: "grid.timed",
+        gridDate: "2026-08-29",
+        gridTimeKey: "1200",
+        gridTimeLabel: "12:00 PM",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Type 1200 to create an event at 12:00 PM.",
     );
   });
 

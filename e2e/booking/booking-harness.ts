@@ -106,6 +106,34 @@ export function buildBookableSlot(durationMinutes = 30): {
   return { slotStart: start.toISOString(), slotEnd: end.toISOString() };
 }
 
+/** Distinct sibling on the same UTC date. Steps backward when +gap would cross midnight. */
+export function buildSameDaySiblingSlot(
+  slot: { slotStart: string; slotEnd: string },
+  gapMinutes = 30,
+  durationMinutes = 30,
+): { slotStart: string; slotEnd: string } {
+  const currentMs = Date.parse(slot.slotStart);
+  const day = slot.slotStart.slice(0, 10);
+  const dayStart = Date.parse(`${day}T00:00:00.000Z`);
+  const lastStart = Date.parse(`${day}T23:59:00.000Z`);
+  let siblingMs = currentMs + gapMinutes * 60 * 1000;
+  if (siblingMs > lastStart || siblingMs === currentMs) {
+    siblingMs = currentMs - gapMinutes * 60 * 1000;
+  }
+  if (siblingMs < dayStart) {
+    siblingMs = dayStart;
+  }
+  const siblingStart = new Date(siblingMs);
+  siblingStart.setUTCSeconds(0, 0);
+  siblingStart.setUTCMilliseconds(0);
+  return {
+    slotStart: siblingStart.toISOString(),
+    slotEnd: new Date(
+      siblingStart.getTime() + durationMinutes * 60 * 1000,
+    ).toISOString(),
+  };
+}
+
 export interface PublicBookingStubOptions {
   slug?: string;
   hostDisplayName?: string;

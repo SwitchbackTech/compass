@@ -12,11 +12,14 @@ of a generic legend. Acceptance coverage lives in
    `composedPath()` and stores that attempt on the pointer-block store.
 3. `PointerHint` renders copy for the attempt. Sidebar open/close teach `]`.
    Event open teaches the current jump token plus Enter, or `S` if no token is
-   available.
+   available. An empty timed-grid click teaches the matching HHMM digits
+   (`1200`, `1830`) so the same create can be typed. An empty all-day-row
+   click teaches `Shift+C`.
 4. A primary event click also dispatches `compass:pointer-event-jump` so the
    mounted grid's event-jump owner can assign tokens and activate leaderless
    sequences. Right-clicks stay on the generic fallback so `M` still opens
-   the context menu.
+   the context menu. An empty-grid click parks that HHMM as a short-lived
+   teaching target so typing the shown digits creates at the clicked instant.
 
 Unannotated controls keep the generic keyboard-only fallback.
 

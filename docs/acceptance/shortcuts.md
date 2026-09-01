@@ -347,6 +347,8 @@ Compass is the keyboard calendar: pointer clicks, right-clicks, and double-click
 
 - Clicking an event does not open it, but jump chips appear, the event is selected, and the hint identifies that event's exact token plus `Enter`; the shown sequence opens the event without an initial `H`.
 - Clicking either sidebar control does not toggle the sidebar; the hint says to press `]` and uses open/close language matching the current state.
+- Clicking an empty timed-grid slot does not open a draft; the hint shows the matching HHMM digits (`1200`, `1830`) and typing those digits creates an event at that time.
+- Clicking the all-day row teaches `Shift+C`.
 - Unannotated controls retain the generic keyboard-only fallback while contextual coverage is expanded.
 - Right-click does not open the context menu; `M` (or Shift+F10) on a focused event does.
 - Keyboard shortcuts and Enter/Space activation of buttons continue to work.
