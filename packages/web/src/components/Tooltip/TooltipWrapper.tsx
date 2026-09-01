@@ -1,5 +1,10 @@
 import type React from "react";
-import { isValidElement, type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
@@ -32,18 +37,22 @@ export const TooltipWrapper: React.FC<Props> = ({
   const pointerAttrs =
     typeof shortcut === "string" || Array.isArray(shortcut)
       ? pointerShortcutAttributes(shortcut)
-      : {};
-  const annotateChild = isValidElement(children);
+      : undefined;
+  // Stamp the child, not the trigger. `asChild` would merge a ref onto
+  // function-component children (IconButton) that do not forward refs, and
+  // hover would never open. The wrapper trigger still owns hover/focus.
+  const triggerChild =
+    pointerAttrs && isValidElement(children)
+      ? cloneElement(children as ReactElement, pointerAttrs)
+      : children;
 
   return (
     <Tooltip placement={placement}>
       <TooltipTrigger
-        asChild={annotateChild}
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : onClick}
-        {...pointerAttrs}
       >
-        {children}
+        {triggerChild}
       </TooltipTrigger>
 
       <TooltipContent>

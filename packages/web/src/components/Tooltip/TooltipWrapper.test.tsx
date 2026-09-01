@@ -2,6 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type ButtonHTMLAttributes } from "react";
 import { TooltipWrapper } from "./TooltipWrapper";
 
 describe("TooltipWrapper", () => {
@@ -124,6 +125,32 @@ describe("TooltipWrapper", () => {
     expect(screen.getByRole("button", { name: /palette/i })).toHaveAttribute(
       "data-pointer-shortcut",
       '["Mod","K"]',
+    );
+  });
+
+  it("still opens on hover when the child is a function component without forwardRef", async () => {
+    const user = userEvent.setup();
+    const BareButton = ({
+      children,
+      ...props
+    }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+      <button type="button" {...props}>
+        {children}
+      </button>
+    );
+
+    render(
+      <TooltipWrapper description="Duplicate" shortcut={["Mod", "D"]}>
+        <BareButton aria-label="Duplicate">Dup</BareButton>
+      </TooltipWrapper>,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "Duplicate" }));
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip.textContent).toBe("DuplicateD");
+    expect(screen.getByRole("button", { name: "Duplicate" })).toHaveAttribute(
+      "data-pointer-shortcut",
+      '["Mod","D"]',
     );
   });
 
