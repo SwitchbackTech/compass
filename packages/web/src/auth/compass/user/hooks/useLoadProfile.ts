@@ -9,6 +9,7 @@ import {
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
+import { openAuthModalFromOutsideRouter } from "@web/common/utils/toast/session-expired.toast";
 
 export type UseLoadProfileResult = {
   email: string | null;
@@ -58,6 +59,10 @@ export function useLoadProfile(
         if (isUnauthorized) {
           if (hasUserEverAuthenticated()) {
             showSessionExpiredToast();
+            // The calendar behind the toast shows local demo events, which a
+            // returning user reads as lost data — and a dismissed toast would
+            // strand them there. Seat the login form front and center instead.
+            void openAuthModalFromOutsideRouter("login");
           }
           return;
         }
