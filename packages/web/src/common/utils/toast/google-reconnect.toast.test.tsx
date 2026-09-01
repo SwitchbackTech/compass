@@ -106,18 +106,18 @@ describe("GoogleReconnectToast", () => {
     expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a G keycap and reconnects when G is pressed", () => {
+  it("shows an S keycap and reconnects when S is pressed", () => {
     renderToast("lance@example.com");
 
     expect(
       within(
         screen.getByRole("button", { name: "Reconnect Google Calendar" }),
-      ).getByText("G"),
+      ).getByText("S"),
     ).toBeTruthy();
     expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
-    pressKey("G");
+    pressKey("S");
 
     expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
     expect(mockConnect).toHaveBeenCalledTimes(1);
@@ -131,11 +131,11 @@ describe("GoogleReconnectToast", () => {
     expect(mockConnect).not.toHaveBeenCalled();
   });
 
-  it("does not reconnect with G while event jump is active", () => {
+  it("does not reconnect with S while event jump is active", () => {
     eventJumpActions.setActive(true);
     renderToast();
 
-    pressKey("G");
+    pressKey("S");
 
     expect(mockConnect).not.toHaveBeenCalled();
   });

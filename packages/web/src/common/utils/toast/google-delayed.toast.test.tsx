@@ -39,7 +39,7 @@ describe("GoogleDelayedToast", () => {
     registerToastPort(port);
   });
 
-  it("shows a G keycap and refreshes when G is pressed", () => {
+  it("shows an S keycap and refreshes when S is pressed", () => {
     render(
       <HotkeysProvider>
         <GoogleDelayedToast toastId="google-delayed" />
@@ -49,12 +49,12 @@ describe("GoogleDelayedToast", () => {
     expect(
       within(
         screen.getByRole("button", { name: "Refresh calendar" }),
-      ).getByText("G"),
+      ).getByText("S"),
     ).toBeTruthy();
     expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
-    pressKey("G");
+    pressKey("S");
 
     expect(mocks.dismiss).toHaveBeenCalledWith("google-delayed");
     expect(mockRefresh).toHaveBeenCalledTimes(1);
