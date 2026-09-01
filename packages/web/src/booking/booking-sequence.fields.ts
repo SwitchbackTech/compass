@@ -6,9 +6,10 @@
  *
  * Data-only on purpose, mirroring edit-sequence.fields.ts.
  *
- * `s` is deliberately absent: Settings owns bare `s` for Save on this page.
- * Digits are unavailable too - Settings nav owns Mod+1/2/3 - which is why this
- * surface reuses the letter leader rather than the event form's Mod+digit jump.
+ * `s` is deliberately absent so it can type in hours and welcome fields.
+ * Save is Mod+Enter, owned by Settings. Digits are unavailable too - Settings
+ * nav owns 1/2/3 - which is why this surface reuses the letter leader rather
+ * than the event form's Mod+digit jump.
  */
 export const BOOKING_SEQUENCE_FIELDS = [
   { key: "e", field: "enabled", label: "Enable booking" },

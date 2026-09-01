@@ -662,9 +662,10 @@ export function BookingSettingsSection({
         <OverlayPanelActions align="start">
           <OverlayPanelActionButton
             aria-busy={saveMutation.isPending || undefined}
+            aria-keyshortcuts="Meta+Enter Control+Enter"
             disabled={saveMutation.isPending}
             onClick={handleSave}
-            shortcut="S"
+            shortcut={["Mod", "Enter"]}
             showShortcut={showShortcuts}
             variant="primary"
             {...settingsShortcutAttrs("save-booking")}
@@ -674,8 +675,9 @@ export function BookingSettingsSection({
         </OverlayPanelActions>
       </div>
 
-      <p className="text-text-muted text-xs">
-        Press <kbd>e</kbd> then a letter to jump to a field. <kbd>S</kbd> saves.
+      <p className="flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
+        Press <kbd>e</kbd> then a letter to jump to a field.
+        <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
       </p>
 
       <EditSequenceMenu

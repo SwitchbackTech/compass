@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
@@ -23,6 +23,7 @@ import {
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { useSettingsShortcuts } from "@web/settings/useSettingsShortcuts";
 import {
   clearAppLockReasons,
   isAppLocked,
@@ -86,6 +87,35 @@ const healthyGoogleMetadata = {
     connections: [createMockConnection("host@example.com")],
   },
 };
+
+function BookingSettingsWithShortcuts({
+  showShortcuts = false,
+}: {
+  showShortcuts?: boolean;
+}) {
+  useSettingsShortcuts({
+    enabled: true,
+    hasBilling: false,
+    hasBooking: true,
+    page: "booking",
+  });
+  return <BookingSettingsSection showShortcuts={showShortcuts} />;
+}
+
+function dispatchModKey(target: HTMLElement, key: string) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+  target.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ctrlKey: isControl,
+      key,
+      metaKey: !isControl,
+    }),
+  );
+}
 
 describe("BookingSettingsSection", () => {
   it("shows connect Google prompt when Google is not healthy", () => {
@@ -597,6 +627,75 @@ describe("BookingSettingsSection", () => {
     });
   });
 
+  it("saves with Mod+Enter while welcome text is focused, and ignores bare s", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    let putCount = 0;
+    let savedBody: unknown;
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        putCount += 1;
+        savedBody = await req.json();
+        return res(ctx.json(savedBody as object));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsWithShortcuts />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const welcome = await screen.findByLabelText("Welcome text");
+    await user.type(welcome, "s");
+    expect(putCount).toBe(0);
+    expect(welcome).toHaveValue("s");
+
+    dispatchModKey(welcome, "Enter");
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ welcomeText: "s" });
+    });
+    expect(putCount).toBe(1);
+  });
+
+  it("advertises Mod+Enter on the save button when shortcut chips are shown", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const save = await screen.findByRole("button", {
+      name: /Save booking settings/,
+    });
+    expect(save).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Meta+Enter Control+Enter",
+    );
+    expect(within(save).getByText("Enter")).toBeInTheDocument();
+  });
+
   it("blocks the save while extra hours on a date override cannot be read", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
@@ -883,7 +982,8 @@ describe("BOOKING_SEQUENCE_FIELDS", () => {
   });
 
   it("leaves Settings' own booking-page keys alone", () => {
-    // Settings owns bare `s` for Save on this page. Digits are nav.
+    // Save is Mod+Enter; `s` stays free so it can type in hours and welcome.
+    // Digits are Settings nav.
     const keys = BOOKING_SEQUENCE_FIELDS.map((entry) => entry.key);
     expect(keys).not.toContain("s");
     for (const key of keys) expect(key).not.toMatch(/^\d$/);

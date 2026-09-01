@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { type SettingsPage } from "@web/settings/settings.store";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
-import { normalizedKeyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import {
+  keyboardKey,
+  normalizedKeyboardKey,
+} from "@web/shortcuts/is-bare-letter-key";
 import { useModHoldHintShortcut } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
 
 export const SETTINGS_SHORTCUT_ATTR = "data-settings-shortcut";
@@ -23,10 +26,21 @@ const clickSettingsShortcut = (id: string): boolean => {
   return true;
 };
 
+const isModEnter = (event: KeyboardEvent) =>
+  keyboardKey(event) === "Enter" &&
+  (event.metaKey || event.ctrlKey) &&
+  !event.altKey &&
+  !event.shiftKey;
+
 /**
  * Maps a key to a Settings control. Nav digits 1/2 always win over in-page
  * actions so a user looking at Accounts can still jump to Billing. Disconnect
  * rows therefore have no digit shortcut (hover + Enter activates them).
+ *
+ * Booking save is Mod+Enter, matching the event form, so it still fires while
+ * focus is in an input. OverlayPanel's onModEnter is not wired on Settings,
+ * and should stay unwired: this capture-phase chord is the save path, and
+ * both together would double-fire.
  */
 const shortcutIdForEvent = (
   event: KeyboardEvent,
@@ -43,7 +57,7 @@ const shortcutIdForEvent = (
 
   const key = normalizedKeyboardKey(event);
   if (page === "billing" && key === "m") return "manage-billing";
-  if (page === "booking" && key === "s") return "save-booking";
+  if (page === "booking" && isModEnter(event)) return "save-booking";
   if (page !== "accounts") return null;
   if (key === "a") return "add-account";
   if (key === "e") return "export";

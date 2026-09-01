@@ -182,8 +182,8 @@ timezone `<select>` plus a checkbox and two time inputs per weekday.
 - **Jump:** `e` then a letter focuses a field (`e` enable, `d` duration,
   `c` destination, `b` blocking, `z` timezone, `h` hours including date
   overrides, `w` welcome, `n` notice, `x` horizon, `o` buffer and limits,
-  `l` link). Settings owns `s` (save) and digits `1/2/3` (nav) on this
-  page, which is why the leader is `e` rather than `Mod+digit`. Focus
+  `l` link). Settings owns Mod+Enter (save) and digits `1/2/3` (nav) on
+  this page, which is why the leader is `e` rather than `Mod+digit`. Focus
   uses `data-booking-field` and does not click, so jumping onto a
   checkbox does not toggle it.
 - **Save:** a successful save that returns a booking URL copies it. A
