@@ -173,7 +173,14 @@ describe("RecurrenceSection", () => {
     await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
     await user.click(await screen.findByRole("textbox"));
 
-    const ownDate = await screen.findByLabelText(/Monday, August 3rd, 2026/);
+    // The picker opens on today. Walk back to the event's month so the
+    // assertion does not depend on this test running in August.
+    const ownDateLabel = /Monday, August 3rd, 2026/;
+    for (let i = 0; i < 12 && !screen.queryByLabelText(ownDateLabel); i += 1) {
+      await user.click(screen.getByRole("button", { name: "Previous month" }));
+    }
+
+    const ownDate = await screen.findByLabelText(ownDateLabel);
     expect(ownDate.getAttribute("aria-label")).toMatch(/^Choose /);
     expect(ownDate).not.toHaveClass("react-datepicker__day--disabled");
     expect(ownDate.getAttribute("aria-disabled")).not.toBe("true");

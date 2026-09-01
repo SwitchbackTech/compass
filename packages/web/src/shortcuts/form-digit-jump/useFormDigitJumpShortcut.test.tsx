@@ -94,13 +94,12 @@ const buildForm = () => {
   // Real usage sets this id on TipTap's contenteditable root, which is what
   // makes it focusable; jsdom doesn't treat contenteditable as focusable on
   // its own, so tabIndex is also set to reproduce that here.
-  // The action toolbar above the title, with a roving tabindex: exactly one
-  // button is tabbable, which is the one FIELD_SELECTORS resolves to.
+  // The action toolbar above the title. Each button is tabbable; Mod+0
+  // focuses the first one, which is the one FIELD_SELECTORS resolves to.
   const actions = document.createElement("div");
   actions.id = "event-form-actions";
-  actions.setAttribute("role", "toolbar");
+  actions.setAttribute("role", "group");
   const duplicate = document.createElement("button");
-  duplicate.tabIndex = 0;
   actions.append(duplicate);
   form.append(actions);
 

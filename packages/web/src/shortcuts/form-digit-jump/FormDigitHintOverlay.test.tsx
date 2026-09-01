@@ -82,7 +82,7 @@ const buildForm = () => {
 
   const actions = document.createElement("div");
   actions.id = "event-form-actions";
-  actions.setAttribute("role", "toolbar");
+  actions.setAttribute("role", "group");
   form.append(actions);
 
   const elements = [

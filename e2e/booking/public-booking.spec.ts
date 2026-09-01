@@ -371,7 +371,9 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Previous month" }),
     ).toBeEnabled();
     await expect(page.getByText("Loading open times")).toHaveCount(0);
-    await expect.poll(() => captured.slotGets).toBeGreaterThanOrEqual(3);
+    // Horizon can omit the month after next (60 days from 1 Sep does not
+    // cover November), so do not require a third fetch. Revisiting the
+    // prefetched month must not issue another request.
     const afterArrive = captured.slotGets;
 
     await page.getByRole("button", { name: "Previous month" }).click();

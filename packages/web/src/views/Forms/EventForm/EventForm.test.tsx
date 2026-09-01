@@ -293,22 +293,23 @@ describe("EventForm", () => {
     );
 
     const title = screen.getByPlaceholderText("Title");
-    const toolbar = screen.getByRole("toolbar", { name: "Event actions" });
+    const actionRow = screen.getByRole("group", { name: "Event actions" });
 
     // Above the title in DOM order, so the title keeps the form's opening
-    // focus and the toolbar sits behind Shift+Tab rather than stealing the
+    // focus and the action row sits behind Shift+Tab rather than stealing the
     // first forward Tab the way the old kebab menu did.
     expect(
-      toolbar.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+      actionRow.compareDocumentPosition(title) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      within(toolbar).getByRole("button", { name: "Duplicate" }),
+      within(actionRow).getByRole("button", { name: "Duplicate" }),
     ).toBeInTheDocument();
     expect(
-      within(toolbar).getByRole("button", { name: "Delete" }),
+      within(actionRow).getByRole("button", { name: "Delete" }),
     ).toBeInTheDocument();
     expect(
-      within(toolbar).getByRole("button", { name: "Close" }),
+      within(actionRow).getByRole("button", { name: "Close" }),
     ).toBeInTheDocument();
   });
 

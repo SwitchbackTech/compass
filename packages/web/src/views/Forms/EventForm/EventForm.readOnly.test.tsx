@@ -100,7 +100,7 @@ describe("EventForm read-only gate", () => {
     // The action toolbar stays, minus Delete: read-only events can be
     // duplicated (that creates a new, independent event) and closed, but
     // never mutated in place.
-    const actions = screen.getByRole("toolbar", { name: "Event actions" });
+    const actions = screen.getByRole("group", { name: "Event actions" });
     expect(
       within(actions).queryByRole("button", { name: "Delete" }),
     ).not.toBeInTheDocument();
@@ -198,7 +198,7 @@ describe("EventForm read-only gate", () => {
       screen.getByRole("toolbar", { name: "Description formatting" }),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole("toolbar", { name: "Event actions" })).getByRole(
+      within(screen.getByRole("group", { name: "Event actions" })).getByRole(
         "button",
         { name: "Delete" },
       ),
