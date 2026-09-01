@@ -782,7 +782,11 @@ describe("SettingsModal", () => {
     const user = userEvent.setup();
     renderSettings({ authenticated: true, page: "billing" });
 
-    await user.click(screen.getByRole("button", { name: "Manage billing" }));
+    const manageBilling = screen.getByRole("button", {
+      name: "Manage billing",
+    });
+    expect(manageBilling).toHaveAttribute("data-pointer-pass", "");
+    await user.click(manageBilling);
 
     await waitFor(() => {
       expect(open).toHaveBeenCalledWith("about:blank", "_blank");
