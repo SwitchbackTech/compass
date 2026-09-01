@@ -7,7 +7,11 @@ import { useEffect } from "react";
  */
 export function createReasonRegistry(onChange?: (anyActive: boolean) => void) {
   const reasons = new Set<string>();
-  const sync = () => onChange?.(reasons.size > 0);
+  const listeners = new Set<() => void>();
+  const sync = () => {
+    onChange?.(reasons.size > 0);
+    for (const listener of listeners) listener();
+  };
 
   const set = (reason: string, active: boolean) => {
     if (active) {
@@ -34,6 +38,12 @@ export function createReasonRegistry(onChange?: (anyActive: boolean) => void) {
       sync();
     },
     isAnyActive: () => reasons.size > 0,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     useReason,
   };
 }

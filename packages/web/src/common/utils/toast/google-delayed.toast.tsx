@@ -1,6 +1,11 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import {
+  rememberPendingDelayed,
+  shouldDeferAttentionToasts,
+  takePendingDelayed,
+} from "@web/billing/billing-gate-attention";
 import { GOOGLE_DELAYED_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   ErrorToastSeverity,
@@ -42,6 +47,11 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
 };
 
 export function showGoogleDelayedToast(): Id {
+  if (shouldDeferAttentionToasts()) {
+    rememberPendingDelayed();
+    return GOOGLE_DELAYED_TOAST_ID;
+  }
+
   return showErrorToast(
     createElement(GoogleDelayedToast, { toastId: GOOGLE_DELAYED_TOAST_ID }),
     {
@@ -49,6 +59,19 @@ export function showGoogleDelayedToast(): Id {
       severity: ErrorToastSeverity.CRITICAL,
     },
   );
+}
+
+export function deferGoogleDelayedToastIfVisible(): void {
+  const toast = getToast();
+  if (toast.isActive?.(GOOGLE_DELAYED_TOAST_ID) !== true) return;
+
+  rememberPendingDelayed();
+  dismissGoogleDelayedToast();
+}
+
+export function flushDeferredGoogleDelayedToast(): void {
+  if (!takePendingDelayed()) return;
+  showGoogleDelayedToast();
 }
 
 // The toast is CRITICAL severity (autoClose: false, closeOnClick: false) so

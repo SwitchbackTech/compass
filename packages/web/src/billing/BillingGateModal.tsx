@@ -1,8 +1,11 @@
 import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
+import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
+import { deferGoogleDelayedToastIfVisible } from "@web/common/utils/toast/google-delayed.toast";
+import { deferGoogleReconnectToastIfVisible } from "@web/common/utils/toast/google-reconnect.toast";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
@@ -52,6 +55,13 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
       track("billing_gate_shown", { status });
     }
   }, [status]);
+
+  useEffect(() => {
+    setBillingGateOwnsScreen(true);
+    deferGoogleReconnectToastIfVisible();
+    deferGoogleDelayedToastIfVisible();
+    return () => setBillingGateOwnsScreen(false);
+  }, []);
 
   const lookAround = () => {
     track("billing_gate_cta_clicked", { cta: "preview" });

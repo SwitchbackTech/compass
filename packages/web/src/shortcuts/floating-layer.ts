@@ -9,6 +9,8 @@ const registry = createReasonRegistry();
 
 export const setFloatingLayerReason = registry.set;
 
+export const subscribeFloatingLayer = registry.subscribe;
+
 /** Clears every reason — used by tests between cases. */
 export const clearFloatingLayerReasons = registry.clear;
 

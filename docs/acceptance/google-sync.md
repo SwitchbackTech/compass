@@ -42,6 +42,14 @@ Do not wait for a failed create/edit/delete (for example HTTP `410` with
 `GOOGLE_REVOKED`) to reveal the problem. Prefer steering the user toward
 reconnect before they invest time writing an event that will not save.
 
+The one exception is the billing gate. While `BillingGateModal` owns the
+screen (signed-in, read-only, not looking around, not celebrating checkout),
+do not show the reconnect or delayed-sync toast: Start trial is the only
+primary action. After "Look around first", or on a refused write, show the
+toast as usual. Sidebar and Settings status may still say reconnect is
+required during the gate; only the toast waits so it cannot compete with
+the conversion surface.
+
 ### One story across the UI
 
 Toast, sidebar status, Settings / Accounts status, and any other sync or auth

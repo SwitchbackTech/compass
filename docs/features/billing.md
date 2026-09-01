@@ -90,6 +90,8 @@ production.
   `BILLING_REQUIRED` branch in `useEventMutations` exits the preview, so the
   first refused save brings the gate straight back. That refusal does not
   show the catch-all "something went wrong" toast — the gate is the feedback.
+  Google reconnect and delayed-sync toasts also wait until Look around (or a
+  write): they must not sit on top of Start trial.
 - **Trialing:** writable, with a days-left badge in the sidebar month picker
   header (`TrialBadge.tsx`, via `DatePicker`'s `headerEndContent` slot). The
   badge carries no `tabindex`: `getPageJumpFocusElement` seats Mod+2 on the

@@ -86,6 +86,12 @@ Escape closes the open listbox, then the form, then event-jump, then the
 palette. A shortcut that swallows Escape while a floating layer is open
 is a bug. Floating layers register with `useFloatingLayer`.
 
+Dismissible `OverlayPanel`s (Settings, confirmations, About) listen for
+Escape on `document`, last-in-wins, so the key still peels the top overlay
+when focus has fallen to `document.body`. Panels that omit `onDismiss`
+(the billing gate) stay undismissible. Toasts advertise Esc only when no
+higher owner holds the key.
+
 ---
 
 ## Adding a jump target

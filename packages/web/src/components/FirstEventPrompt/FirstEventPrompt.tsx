@@ -17,6 +17,11 @@ import {
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  selectIsAboutOpen,
+  selectIsSettingsOpen,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import { KEYMAP } from "@web/shortcuts/keymap";
 
 /** How long the celebration copy holds before it fades out for good. */
@@ -97,12 +102,17 @@ export const FirstEventPrompt: FC = () => {
   // the storage read covers earlier sessions and the legacy tour key.
   const seenThisSession = useShortcutShowcaseStore(selectHasSeenShowcase);
   const isDone = useFirstEventPromptStore(selectFirstEventDone);
+  const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
+  const isAboutOpen = useSettingsStore(selectIsAboutOpen);
   // Without storage (private mode), completion and dismissal can never
   // persist, so the card would haunt every reload; better to not show it.
   // Sit above the auth modal in z-index, so stay hidden while login/signup
-  // is open even if the showcase flag is already set.
+  // is open even if the showcase flag is already set. Settings and About
+  // paint below this tooltip layer, so hide rather than compete.
   const isLive =
     !isAuthModalOpen &&
+    !isSettingsOpen &&
+    !isAboutOpen &&
     !isDone &&
     persistentBrowserStore.isAvailable() &&
     isShowcaseHandoffEligible(isShowcaseActive, seenThisSession);

@@ -13,6 +13,11 @@ import {
   initialShortcutShowcaseState,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import {
+  initialSettingsState,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const markShowcaseSeen = () => {
@@ -23,6 +28,7 @@ describe("FirstEventPrompt", () => {
   beforeEach(() => {
     useFirstEventPromptStore.setState({ ...initialFirstEventPromptState });
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
+    useSettingsStore.setState(initialSettingsState);
     persistentBrowserStore.set(STORAGE_KEYS.FIRST_EVENT_DONE, "");
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "");
     localStorage.setItem("compass.onboarding.checklist-done", "");
@@ -31,6 +37,7 @@ describe("FirstEventPrompt", () => {
   afterEach(() => {
     useFirstEventPromptStore.setState({ ...initialFirstEventPromptState });
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
+    useSettingsStore.setState(initialSettingsState);
   });
 
   it("stays hidden before the showcase has ever been seen", () => {
@@ -63,6 +70,15 @@ describe("FirstEventPrompt", () => {
   it("stays hidden while the showcase takeover is active", () => {
     markShowcaseSeen();
     useShortcutShowcaseStore.setState({ isActive: true });
+    render(<FirstEventPrompt />);
+    expect(
+      screen.queryByRole("complementary", { name: "Create your first event" }),
+    ).toBeNull();
+  });
+
+  it("stays hidden while Settings is open", () => {
+    markShowcaseSeen();
+    settingsActions.openSettings();
     render(<FirstEventPrompt />);
     expect(
       screen.queryByRole("complementary", { name: "Create your first event" }),

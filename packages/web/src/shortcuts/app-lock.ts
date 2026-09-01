@@ -16,6 +16,8 @@ const registry = createReasonRegistry((locked) => {
 
 export const setAppLockReason = registry.set;
 
+export const subscribeAppLock = registry.subscribe;
+
 /** Clears every reason — used by tests between cases. */
 export const clearAppLockReasons = registry.clear;
 
