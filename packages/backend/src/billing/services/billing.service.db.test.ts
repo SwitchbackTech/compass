@@ -57,6 +57,7 @@ describe("BillingService (db)", () => {
       subscriptionStatus: "active",
       trialEndsAt: null,
       isReadOnly: false,
+      cancelAtPeriodEnd: false,
     });
 
     const stored = await mongoService.user.findOne({ _id: userId });

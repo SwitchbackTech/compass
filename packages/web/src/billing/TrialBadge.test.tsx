@@ -91,6 +91,22 @@ describe("TrialBadge", () => {
     ).toHaveTextContent("Last day");
   });
 
+  it("says the trial will not renew when a cancel is scheduled", () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: trialEndingIn(5),
+      cancelAtPeriodEnd: true,
+    };
+    render(<TrialBadge />);
+
+    const badge = screen.getByRole("button", {
+      name: "5 days left in your trial. It will not renew. Subscribe now.",
+    });
+    expect(badge).toHaveTextContent("5d");
+  });
+
   it("carries no tabindex, so Mod+2 still lands on the day grid", () => {
     access = {
       kind: "server",

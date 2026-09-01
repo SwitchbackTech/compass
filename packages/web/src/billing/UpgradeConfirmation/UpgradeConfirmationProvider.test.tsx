@@ -84,6 +84,7 @@ describe("UpgradeConfirmationProvider", () => {
       subscriptionStatus: "active",
       trialEndsAt: null,
       isReadOnly: false,
+      cancelAtPeriodEnd: false,
     });
     await openDialog();
 
@@ -112,6 +113,7 @@ describe("UpgradeConfirmationProvider", () => {
       subscriptionStatus: "past_due",
       trialEndsAt: null,
       isReadOnly: false,
+      cancelAtPeriodEnd: false,
     });
     await openDialog();
 

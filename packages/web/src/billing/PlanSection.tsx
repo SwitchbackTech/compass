@@ -36,6 +36,8 @@ export const PlanSection: FC<{
     access.kind === "server" && access.status === "trialing"
       ? access.trialEndsAt
       : null;
+  const cancelScheduled =
+    access.kind === "server" && access.cancelAtPeriodEnd === true;
 
   return (
     <div>
@@ -49,7 +51,8 @@ export const PlanSection: FC<{
           </span>
           {trialEndsAt ? (
             <p className="mt-1 text-text-muted text-xs">
-              Your trial ends {dayjs(trialEndsAt).format("MMM D, YYYY")}. Press{" "}
+              Your trial ends {dayjs(trialEndsAt).format("MMM D, YYYY")}
+              {cancelScheduled ? " and will not renew" : ""}. Press{" "}
               <ShortcutKeys keys="B" /> to subscribe now.
             </p>
           ) : null}

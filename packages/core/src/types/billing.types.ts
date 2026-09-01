@@ -17,6 +17,11 @@ export const BillingStatusResponseSchema = z.object({
   trialEndsAt: z.string().nullable(),
   /** True when the account must not mutate events. */
   isReadOnly: z.boolean(),
+  /**
+   * True when the subscription is set to cancel at period end instead of
+   * renewing. Defaulted so a response from an older server still parses.
+   */
+  cancelAtPeriodEnd: z.boolean().default(false),
 });
 export type BillingStatusResponse = z.infer<typeof BillingStatusResponseSchema>;
 

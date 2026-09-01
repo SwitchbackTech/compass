@@ -217,6 +217,7 @@ describe("RootShell billing gates", () => {
       subscriptionStatus: "active",
       trialEndsAt: null,
       isReadOnly: false,
+      cancelAtPeriodEnd: false,
     });
     await renderShell("/week?settings=billing");
 
