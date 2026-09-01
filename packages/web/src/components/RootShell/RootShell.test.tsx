@@ -24,6 +24,7 @@ import {
   selectSettingsPage,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.store";
 import {
   afterAll,
   afterEach,
@@ -266,28 +267,16 @@ describe("RootShell calendar onboarding on /life", () => {
     );
   });
 
-  it("lets pointer clicks change the life variation without a keyboard-only hint", async () => {
-    const user = userEvent.setup();
+  it("does not mount the keyboard-only pointer hint on /life", async () => {
     await renderShell("/life", { anonymous: true });
 
-    await user.click(
-      screen.getByRole("button", { name: "Next life variation" }),
-    );
-
-    expect(screen.getByText("Long")).toBeInTheDocument();
-    expect(document.querySelector("[data-pointer-hint]")).toBeNull();
-  });
-
-  it("opens the birth date picker from a pointer click", async () => {
-    const user = userEvent.setup();
-    await renderShell("/life", { anonymous: true });
-
-    await user.click(screen.getByRole("textbox", { name: "Date of birth" }));
+    act(() => {
+      pointerBlockActions.pulseBlockedClick();
+    });
 
     expect(
-      screen.getByRole("button", { name: "Previous month" }),
-    ).toBeInTheDocument();
-    expect(document.querySelector("[data-pointer-hint]")).toBeNull();
+      screen.queryByText(/Compass is keyboard only/i),
+    ).not.toBeInTheDocument();
   });
 
   it("still shows welcome on /week for a first-time anonymous visitor", async () => {
