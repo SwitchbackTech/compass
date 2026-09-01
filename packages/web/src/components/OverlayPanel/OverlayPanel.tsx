@@ -147,6 +147,20 @@ export const OverlayPanel = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      if (e.shiftKey && onShiftEscape) {
+        e.preventDefault();
+        e.stopPropagation();
+        onShiftEscape();
+        return;
+      }
+      if (onDismiss) {
+        e.preventDefault();
+        e.stopPropagation();
+        onDismiss();
+        return;
+      }
+    }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && onModEnter) {
       // Prevent the focused button (often Cancel) from activating on Enter.
       e.preventDefault();
@@ -169,7 +183,7 @@ export const OverlayPanel = ({
   };
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Tab/Mod+Enter. Escape is a document listener (useOverlayEscape) so it still works when focus is on body.
+    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks, Tab/Mod+Enter, and in-tree Escape. Document Escape (useOverlayEscape) covers the case where focus is on body.
     <div
       className={backdropClasses}
       data-closing={closing || undefined}

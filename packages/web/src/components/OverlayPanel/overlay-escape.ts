@@ -48,7 +48,8 @@ const releaseListener = () => {
  * Document-level Escape for OverlayPanel. Last-in-wins so stacked panels peel
  * one at a time, and the listener does not depend on focus sitting inside the
  * overlay (React onKeyDown on the backdrop misses Escape when focus is on
- * document.body).
+ * document.body). In-tree keydowns still go through OverlayPanel's React
+ * handler, which preventDefaults so this listener does not double-fire.
  *
  * Panels that omit `onDismiss` (the billing gate) never join the stack.
  */
