@@ -16,8 +16,6 @@ export type PracticeEventBlock = {
   startMin: number;
   endMin: number;
   color?: EventColorSlot;
-  /** Letter shown while event-jump hints are visible. */
-  jumpKey: string;
 };
 
 export type PracticeNudgeDirection = "up" | "down" | "left" | "right";
@@ -28,14 +26,14 @@ export type PracticeEdge = "start" | "end" | null;
 export type PracticeState = {
   events: PracticeEventBlock[];
   focusedId: string | null;
-  /** Open title editor; `isNew` marks the create-step draft. */
-  editor: { eventId: string; isNew: boolean } | null;
-  jumpHintsVisible: boolean;
-  /** `e` leader is armed; `t` opens the title field. */
-  editArmed: boolean;
+  /**
+   * A spawned-but-unlocked piece. While set, plain arrows move it (the real
+   * grid moves an open draft the same way); Enter locks it via lockPlacing.
+   */
+  placingId: string | null;
   /** Tab-cycled edge on the focused event; `null` is the whole block. */
   edge: PracticeEdge;
-  /** Last deleted block, so the delete/undo lesson can restore it. */
+  /** Last deleted block, so undo can restore it. */
   lastDeleted: PracticeEventBlock | null;
 };
 
@@ -43,103 +41,39 @@ export const SHOWCASE_GRID_START_HOUR = 8;
 export const SHOWCASE_GRID_END_HOUR = 18;
 export const SHOWCASE_DAY_COUNT = 3;
 export const PRACTICE_NUDGE_MIN = 15;
-export const PRACTICE_TEAM_SYNC_ID = "practice-team-sync";
 
-const PRACTICE_DRAFT_ID = "practice-draft";
-const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
-const GRID_END_MIN = SHOWCASE_GRID_END_HOUR * 60;
+export const PRACTICE_GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
+export const PRACTICE_GRID_END_MIN = SHOWCASE_GRID_END_HOUR * 60;
 
-export const initialPracticeState: PracticeState = {
-  events: [
-    {
-      id: "practice-breakfast",
-      title: "Breakfast with Sam",
-      dayIndex: 0,
-      startMin: 9 * 60,
-      endMin: 10 * 60,
-      jumpKey: "a",
-    },
-    {
-      id: PRACTICE_TEAM_SYNC_ID,
-      title: "Team sync",
-      dayIndex: 1,
-      startMin: 10 * 60,
-      endMin: 11 * 60,
-      color: "blue",
-      jumpKey: "f",
-    },
-    {
-      id: "practice-gym",
-      title: "Gym",
-      dayIndex: 2,
-      startMin: 12 * 60,
-      endMin: 12 * 60 + 45,
-      color: "green",
-      jumpKey: "g",
-    },
-  ],
+export const createPracticeState = (
+  events: PracticeEventBlock[],
+): PracticeState => ({
+  events,
   focusedId: null,
-  editor: null,
-  jumpHintsVisible: false,
-  editArmed: false,
+  placingId: null,
   edge: null,
   lastDeleted: null,
-};
-
-export const createDraft = (state: PracticeState): PracticeState => {
-  if (state.editor) return state;
-  const draft: PracticeEventBlock = {
-    id: PRACTICE_DRAFT_ID,
-    title: "",
-    dayIndex: 1,
-    startMin: 13 * 60,
-    endMin: 14 * 60,
-    jumpKey: "n",
-  };
-  return {
-    ...state,
-    events: [...state.events.filter((event) => event.id !== draft.id), draft],
-    focusedId: draft.id,
-    editor: { eventId: draft.id, isNew: true },
-    editArmed: false,
-    edge: null,
-  };
-};
-
-export const commitTitle = (
-  state: PracticeState,
-  title: string,
-): PracticeState => {
-  if (!state.editor) return state;
-  const { eventId } = state.editor;
-  const events = state.events.map((event) =>
-    event.id === eventId
-      ? { ...event, title: title.trim() || "New event" }
-      : event,
-  );
-  return { ...state, events, editor: null, editArmed: false, edge: null };
-};
-
-export const toggleJumpHints = (state: PracticeState): PracticeState => ({
-  ...state,
-  jumpHintsVisible: !state.jumpHintsVisible,
 });
 
-export const jumpToEvent = (
+/** Drop a piece on the board, focused and unlocked. Same-id spawns replace. */
+export const spawnPiece = (
   state: PracticeState,
-  jumpKey: string,
-): PracticeState => {
-  if (!state.jumpHintsVisible) return state;
-  const match = state.events.find(
-    (event) => event.jumpKey === jumpKey.toLowerCase(),
-  );
-  if (!match) return state;
-  return {
-    ...state,
-    focusedId: match.id,
-    jumpHintsVisible: false,
-    edge: null,
-  };
+  piece: PracticeEventBlock,
+): PracticeState => ({
+  ...state,
+  events: [...state.events.filter((event) => event.id !== piece.id), piece],
+  focusedId: piece.id,
+  placingId: piece.id,
+  edge: null,
+});
+
+/** Enter on a placing piece: it stays focused but stops following arrows. */
+export const lockPlacing = (state: PracticeState): PracticeState =>
+  state.placingId ? { ...state, placingId: null } : state;
+
+export const focusEvent = (state: PracticeState, id: string): PracticeState => {
+  if (!state.events.some((event) => event.id === id)) return state;
+  return { ...state, focusedId: id, placingId: null, edge: null };
 };
 
 export const ensureFocused = (state: PracticeState): PracticeState => {
@@ -149,9 +83,7 @@ export const ensureFocused = (state: PracticeState): PracticeState => {
   ) {
     return state;
   }
-  const fallback =
-    state.events.find((event) => event.id === PRACTICE_TEAM_SYNC_ID) ??
-    state.events[0];
+  const fallback = state.events[0];
   if (!fallback) return state;
   return { ...state, focusedId: fallback.id, edge: null };
 };
@@ -167,14 +99,14 @@ const nudgeFocusedEdge = (
   const delta = direction === "down" ? PRACTICE_NUDGE_MIN : -PRACTICE_NUDGE_MIN;
   if (edge === "start") {
     const startMin = Math.max(
-      GRID_START_MIN,
+      PRACTICE_GRID_START_MIN,
       Math.min(event.endMin - PRACTICE_NUDGE_MIN, event.startMin + delta),
     );
     if (startMin === event.startMin) return null;
     return { ...event, startMin };
   }
   const endMin = Math.min(
-    GRID_END_MIN,
+    PRACTICE_GRID_END_MIN,
     Math.max(event.startMin + PRACTICE_NUDGE_MIN, event.endMin + delta),
   );
   if (endMin === event.endMin) return null;
@@ -213,8 +145,8 @@ export const nudgeFocused = (
     const delta =
       direction === "down" ? PRACTICE_NUDGE_MIN : -PRACTICE_NUDGE_MIN;
     const startMin = Math.max(
-      GRID_START_MIN,
-      Math.min(GRID_END_MIN - duration, event.startMin + delta),
+      PRACTICE_GRID_START_MIN,
+      Math.min(PRACTICE_GRID_END_MIN - duration, event.startMin + delta),
     );
     if (startMin === event.startMin) return event;
     moved = true;
@@ -254,10 +186,9 @@ export const deleteFocused = (state: PracticeState): PracticeState => {
     ...focused,
     events,
     focusedId: events[0]?.id ?? null,
+    placingId: null,
     lastDeleted: deleted,
     edge: null,
-    editor: null,
-    editArmed: false,
   };
 };
 
@@ -272,22 +203,3 @@ export const undoDelete = (state: PracticeState): PracticeState => {
     edge: null,
   };
 };
-
-export const armEdit = (state: PracticeState): PracticeState => {
-  const focused = ensureFocused(state);
-  if (!focused.focusedId || focused.editor) return state;
-  return { ...focused, editArmed: true, edge: null };
-};
-
-export const openTitleFromEdit = (state: PracticeState): PracticeState => {
-  if (!state.editArmed || !state.focusedId) return state;
-  return {
-    ...state,
-    editArmed: false,
-    editor: { eventId: state.focusedId, isNew: false },
-    edge: null,
-  };
-};
-
-export const disarmEdit = (state: PracticeState): PracticeState =>
-  state.editArmed ? { ...state, editArmed: false } : state;

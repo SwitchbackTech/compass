@@ -1,14 +1,12 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { SHOWCASE_STEP_IDS } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
-  readShowcaseProgress,
-  writeShowcaseProgress,
+  hasShowcaseInProgress,
+  markShowcaseInProgress,
 } from "@web/components/ShortcutShowcase/showcase.storage";
 import {
   initialShortcutShowcaseState,
   shortcutShowcaseActions,
-  stepIdAt,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -30,36 +28,25 @@ describe("shortcutShowcaseActions", () => {
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
   });
 
-  it("starts and advances through every step, finishing at the end", () => {
+  it("activates from the welcome modal and records the entry", () => {
     shortcutShowcaseActions.startFromWelcome();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
-    expect(stepIdAt(0)).toBe("intro");
+    const state = useShortcutShowcaseStore.getState();
+    expect(state.isActive).toBe(true);
+    expect(state.entry).toBe("welcome");
+    expect(hasShowcaseInProgress()).toBe(true);
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
+    ).not.toBe("true");
+  });
 
-    for (let i = 1; i < SHOWCASE_STEP_IDS.length; i += 1) {
-      shortcutShowcaseActions.advance();
-      expect(useShortcutShowcaseStore.getState().stepIndex).toBe(i);
-    }
-
-    expect(readShowcaseProgress()).toBe(
-      SHOWCASE_STEP_IDS[SHOWCASE_STEP_IDS.length - 1],
-    );
-
-    // Advancing off the last step finishes and marks seen.
-    shortcutShowcaseActions.advance();
+  it("finish leaves, marks seen, and clears the in-progress marker", () => {
+    shortcutShowcaseActions.startFromWelcome();
+    shortcutShowcaseActions.finish();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
-    expect(readShowcaseProgress()).toBeNull();
-  });
-
-  it("replay skips the intro and opens the first lesson", () => {
-    shortcutShowcaseActions.replay();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "create",
-    );
+    expect(hasShowcaseInProgress()).toBe(false);
   });
 
   it("never offers itself twice after signup, but replay always works", () => {
@@ -73,10 +60,9 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
     shortcutShowcaseActions.replay();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "create",
-    );
+    const state = useShortcutShowcaseStore.getState();
+    expect(state.isActive).toBe(true);
+    expect(state.entry).toBe("palette");
   });
 
   it("treats legacy tour finishers as having seen the showcase", () => {
@@ -86,17 +72,15 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("skip() leaves immediately, from any step and either exit", () => {
+  it("skip() leaves immediately and marks seen; skipping inactive is a no-op", () => {
     shortcutShowcaseActions.replay();
-    shortcutShowcaseActions.advance();
-    shortcutShowcaseActions.skip("signup");
+    shortcutShowcaseActions.skip("signup", { phase: "running", tasks_done: 2 });
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
-    expect(readShowcaseProgress()).toBeNull();
+    expect(hasShowcaseInProgress()).toBe(false);
 
-    // Skipping an inactive showcase is a no-op, not a second skip event.
     shortcutShowcaseActions.skip();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
@@ -109,7 +93,7 @@ describe("shortcutShowcaseActions", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");
-    expect(readShowcaseProgress()).toBe("create");
+    expect(hasShowcaseInProgress()).toBe(true);
 
     shortcutShowcaseActions.requestSkip();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
@@ -117,7 +101,6 @@ describe("shortcutShowcaseActions", () => {
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).toBe("true");
-    expect(readShowcaseProgress()).toBeNull();
   });
 
   it("requestSkip on an inactive showcase is a no-op", () => {
@@ -126,64 +109,35 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().skipPending).toBe(false);
   });
 
-  it("advance clears a pending skip and keeps the practice running", () => {
+  it("re-offers an unfinished attempt after reload without marking seen", () => {
     shortcutShowcaseActions.startFromWelcome();
-    shortcutShowcaseActions.requestSkip();
-    expect(useShortcutShowcaseStore.getState().skipPending).toBe(true);
-
-    shortcutShowcaseActions.advance();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(useShortcutShowcaseStore.getState().skipPending).toBe(false);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "create",
-    );
-  });
-
-  it("persists the current step and resumes it without marking seen", () => {
-    shortcutShowcaseActions.startFromWelcome();
-    expect(readShowcaseProgress()).toBe("intro");
-    shortcutShowcaseActions.advance();
-    expect(readShowcaseProgress()).toBe("create");
 
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
     shortcutShowcaseActions.resumeIfInProgress();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "create",
-    );
+    const state = useShortcutShowcaseStore.getState();
+    expect(state.isActive).toBe(true);
+    // A resumed attempt is the same attempt: no entry, no started event.
+    expect(state.entry).toBeNull();
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");
   });
 
-  it("falls back to intro for an unknown saved step", () => {
-    writeShowcaseProgress("retiredStep");
+  it("re-offers a legacy saved lesson step as a fresh game attempt", () => {
+    persistentBrowserStore.set(
+      STORAGE_KEYS.SHORTCUT_SHOWCASE_STEP,
+      "edgeResize",
+    );
     shortcutShowcaseActions.resumeIfInProgress();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "intro",
-    );
-    expect(readShowcaseProgress()).toBe("intro");
   });
 
   it("does not resume after the showcase has been seen", () => {
     shortcutShowcaseActions.replay();
     shortcutShowcaseActions.skip();
-    writeShowcaseProgress("create");
+    markShowcaseInProgress();
     shortcutShowcaseActions.resumeIfInProgress();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-  });
-
-  it("replay overwrites saved progress with the first lesson", () => {
-    shortcutShowcaseActions.startFromWelcome();
-    shortcutShowcaseActions.advance();
-    expect(readShowcaseProgress()).toBe("create");
-
-    shortcutShowcaseActions.replay();
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "create",
-    );
-    expect(readShowcaseProgress()).toBe("create");
   });
 
   it("defers the offer through signup and redeems it exactly once", () => {
@@ -193,22 +147,13 @@ describe("shortcutShowcaseActions", () => {
     ).not.toBe("true");
 
     shortcutShowcaseActions.offerAfterSignupIfPending();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    const state = useShortcutShowcaseStore.getState();
+    expect(state.isActive).toBe(true);
+    expect(state.entry).toBe("post_signup");
 
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
     shortcutShowcaseActions.offerAfterSignupIfPending();
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
-  });
-
-  it("starts from welcome on the intro without marking the practice seen", () => {
-    shortcutShowcaseActions.startFromWelcome();
-    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "intro",
-    );
-    expect(
-      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
-    ).not.toBe("true");
   });
 
   it("does not start the practice until the pending signup offer is redeemed", () => {

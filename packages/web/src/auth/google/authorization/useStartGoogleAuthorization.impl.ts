@@ -3,6 +3,7 @@ import {
   useGoogleLogin as useGoogleLoginBase,
 } from "@react-oauth/google";
 import { useCallback, useMemo, useState } from "react";
+import { track } from "@web/auth/posthog/track";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "./google-authorization.constants";
 import {
   type GoogleAuthorizationIntent,
@@ -66,6 +67,10 @@ export const useStartGoogleAuthorizationImpl = ({
         returnPath: getSafeGoogleAuthReturnPath(),
         createdAt: Date.now(),
       });
+      // PostHog loses the session at the redirect; this marks "left for
+      // Google" so abandoned round trips are distinguishable from silent
+      // failures on return.
+      track("google_oauth_redirect_started", { intent });
       return startGoogleAuthorization();
     }, [intent, onStart, startGoogleAuthorization, state]),
   };

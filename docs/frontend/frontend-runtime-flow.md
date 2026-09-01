@@ -63,7 +63,9 @@ Files:
 
 `RootShell` mounts the welcome modal, Shortcut Showcase, the first-event
 prompt, global navigation / calendar-shell shortcuts, and pointer suppression.
-Those calendar-onboarding overlays are skipped on `/life`.
+Those calendar-onboarding overlays are skipped on `/life` and on mobile OSes
+(the overlays would paint over `MobileGate`, so a phone user sees the gate
+first instead of a walkthrough they cannot use).
 
 Welcome → signup → first-event contract:
 
@@ -79,14 +81,20 @@ Welcome → signup → first-event contract:
   returning user is not handed the practice or the first-event prompt
 - signing up (either route) defers a showcase offer via `showcase.storage.ts`;
   `offerAfterSignupIfPending()` redeems it once, right after signup completes
-- the Shortcut Showcase is an always-escapable, practice-only calendar whose
-  state never reaches real calendar storage. Its ordered lesson metadata uses
-  the application's keymap; graduation hands off to `FirstEventPrompt`
+- the Shortcut Showcase is **Schedule Rush**: an always-escapable, practice-only
+  game whose state never reaches real calendar storage. One 90-second run
+  clears a fixed queue of ten scheduling tasks (create, typed quick-times,
+  nudge, edge resize, delete, undo) against a ghost target slot, with scoring
+  and streaks; task keycaps derive from the application's keymap. Time-up and
+  a full clear land on the same end screen, where anonymous players get signup
+  as the primary CTA and graduation hands off to `FirstEventPrompt`. A reload
+  mid-run re-offers a fresh run from the one-screen how-to card (the old
+  per-lesson resume point is now just an in-progress marker)
 - `FirstEventPrompt` is a non-blocking real-calendar card. It stays hidden
   while the auth modal is open and retires after the first genuine create.
   Users who finished or dismissed the retired onboarding checklist are read
   as already done via a legacy storage key, so they never see it
-- command palette can reopen practice (“Practice shortcuts”) or the welcome
+- command palette can reopen practice (“Play Schedule Rush”) or the welcome
   guide (“Show welcome guide”)
 - users who already finished or skipped the retired guided tour are treated as
   having seen the showcase so it does not ambush them
@@ -129,7 +137,7 @@ When a user re-authenticates with Google, auth-state utilities also clear any in
 
 Google sign-in/up and Google Calendar connect/reconnect leave Compass through a full-page Google redirect and return through `/auth/google/callback`.
 
-Before redirecting, the web app stores a short-lived authorization intent in `sessionStorage` keyed by OAuth `state`. The callback validates that state, finishes the saved intent, removes it, and returns the user to the original same-origin path or `/day`.
+Before redirecting, the web app stores a short-lived authorization intent in `sessionStorage` keyed by OAuth `state`. The callback validates that state, finishes the saved intent, removes it, and returns the user to the original same-origin path or the default calendar route (`/week`).
 
 The old blocking overlay is not used for Google authorization.
 

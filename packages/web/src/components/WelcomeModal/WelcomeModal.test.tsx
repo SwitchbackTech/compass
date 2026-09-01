@@ -65,7 +65,7 @@ const { WelcomeModal } =
 const { STORAGE_KEYS } =
   require("@web/common/constants/storage.constants") as typeof import("@web/common/constants/storage.constants");
 
-const { useShortcutShowcaseStore, initialShortcutShowcaseState, stepIdAt } =
+const { useShortcutShowcaseStore, initialShortcutShowcaseState } =
   require("@web/components/ShortcutShowcase/showcase.store") as typeof import("@web/components/ShortcutShowcase/showcase.store");
 
 describe("WelcomeModal", () => {
@@ -242,9 +242,7 @@ describe("WelcomeModal", () => {
     await waitFor(() => {
       expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
     });
-    expect(stepIdAt(useShortcutShowcaseStore.getState().stepIndex)).toBe(
-      "intro",
-    );
+    expect(useShortcutShowcaseStore.getState().entry).toBe("welcome");
     expect(
       localStorage.getItem(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE),
     ).not.toBe("true");

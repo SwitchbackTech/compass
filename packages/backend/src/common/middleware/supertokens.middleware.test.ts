@@ -127,7 +127,7 @@ describe("supertokens.middleware", () => {
         appName: APP_NAME,
         apiBasePath: "/api",
         apiDomain: new URL(CONFIG.BASEURL).origin,
-        websiteBasePath: "/login",
+        websiteBasePath: "/day",
         websiteDomain: new URL(CONFIG.FRONTEND_URL).origin,
       });
 

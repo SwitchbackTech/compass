@@ -24,7 +24,7 @@ import { type AuthSearch, useAuthModal } from "./hooks/useAuthModal";
 function getInitialAuthToken(search: AuthSearch): string | undefined {
   const authParam = search.auth?.toLowerCase();
 
-  if (authParam !== "reset" && authParam !== "verify") {
+  if (authParam !== "reset") {
     return undefined;
   }
 
