@@ -15,6 +15,8 @@ import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 export const POINTER_ACTION_ATTRIBUTE = "data-pointer-action";
 export const POINTER_EVENT_ID_ATTRIBUTE = "data-pointer-event-id";
 export const POINTER_SHORTCUT_ATTRIBUTE = "data-pointer-shortcut";
+/** Opt a subtree out of capture-phase pointer suppression (MobileGate). */
+export const POINTER_PASS_ATTRIBUTE = "data-pointer-pass";
 export const POINTER_EVENT_JUMP_REQUEST = "compass:pointer-event-jump";
 export const POINTER_GRID_CREATE_REQUEST = "compass:pointer-grid-create";
 
@@ -75,6 +77,10 @@ export const resolveBlockedPointerAttempt = (
 export const pointerShortcutAttributes = (key: string) => ({
   [POINTER_SHORTCUT_ATTRIBUTE]: key,
 });
+
+export const pointerPassAttributes = {
+  [POINTER_PASS_ATTRIBUTE]: "",
+};
 
 const PRIMARY_POINTER_BUTTON = 0;
 

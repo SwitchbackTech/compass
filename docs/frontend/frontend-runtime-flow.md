@@ -115,6 +115,8 @@ Pointer suppression (always on, mounted from `RootShell`):
 - blocked clicks pulse `PointerHint`, a transient pill: known targets get
   the matching shortcut (including HHMM digits for an empty timed-grid
   click), and unannotated controls fall back to "keyboard only"
+- `MobileGate` opts its subtree out (`data-pointer-pass`) so Copy and
+  Waitlist can be tapped on a phone
 
 See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
 [Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for

@@ -333,7 +333,7 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ### UX
 
-Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do not perform the clicked action (scroll and hover still work). A blocked click on a known action shows a transient, contextual hint with the keyboard path for that action. Clicking an event also activates its jump assignments and selects that event, so the displayed token plus Enter works immediately without first pressing `H`. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly.
+Compass is the keyboard calendar: pointer clicks, right-clicks, and double-clicks do not perform the clicked action (scroll and hover still work). A blocked click on a known action shows a transient, contextual hint with the keyboard path for that action. Clicking an event also activates its jump assignments and selects that event, so the displayed token plus Enter works immediately without first pressing `H`. Keyboard activation is unaffected: Enter/Space on a native button still works, Shift+F10 still opens the focused event's context menu, and `M` opens it directly. Phone sessions are the exception: MobileGate opts out of pointer suppression so Copy and Waitlist can be tapped.
 
 `/life` is the exception: it is a public lead magnet, so pointer clicks work there like a normal page. The calendar views stay keyboard-only.
 

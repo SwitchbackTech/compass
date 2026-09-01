@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { pointerPassAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 
@@ -40,7 +41,10 @@ export const MobileGate: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background p-4">
+    <div
+      className="flex min-h-dvh items-center justify-center bg-background p-4"
+      {...pointerPassAttributes}
+    >
       <div className="flex w-[400px] max-w-[90vw] flex-col items-center rounded border border-border bg-surface p-8 text-center">
         <h1 className="mb-6 font-medium font-sans text-2xl text-text">
           Open Compass on a computer

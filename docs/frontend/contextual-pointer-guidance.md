@@ -21,7 +21,9 @@ of a generic legend. Acceptance coverage lives in
    the context menu. An empty-grid click parks that HHMM as a short-lived
    teaching target so typing the shown digits creates at the clicked instant.
 
-Unannotated controls keep the generic keyboard-only fallback.
+Unannotated controls keep the generic keyboard-only fallback. A subtree
+can opt out with `data-pointer-pass` (MobileGate) so those taps reach the
+control instead of teaching.
 
 `/life` does not suppress pointer events. Visitors who land on that page as a
 lead magnet can click controls normally; `PointerHint` is not mounted there.

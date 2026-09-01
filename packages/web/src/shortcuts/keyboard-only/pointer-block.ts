@@ -1,3 +1,5 @@
+import { POINTER_PASS_ATTRIBUTE } from "@web/shortcuts/keyboard-only/pointer-action";
+
 /**
  * Pure decision logic for keyboard-only click suppression.
  *
@@ -82,6 +84,7 @@ export const createPointerBlockListener = (options: {
 
   const onPointerEvent = (event: PointerBlockEvent): void => {
     if (options.isEnabled?.() === false) return;
+    if (pathAllowsPointer(event.composedPath?.() ?? [])) return;
 
     const msSinceBlockedPointerDown =
       lastBlockedPointerDownAt === null
@@ -115,6 +118,13 @@ export const createPointerBlockListener = (options: {
 
   return { onPointerEvent, onKeyDown };
 };
+
+const pathAllowsPointer = (path: EventTarget[]): boolean =>
+  path.some(
+    (target) =>
+      target instanceof HTMLElement &&
+      target.hasAttribute(POINTER_PASS_ATTRIBUTE),
+  );
 
 export const shouldBlockPointerEvent = (
   event: PointerBlockCandidate,

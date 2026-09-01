@@ -1,3 +1,4 @@
+import { POINTER_PASS_ATTRIBUTE } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
   CONTEXTMENU_POINTER_WINDOW_MS,
   createPointerBlockListener,
@@ -201,6 +202,31 @@ describe("createPointerBlockListener", () => {
     });
     onPointerEvent(keyboardMenu.event);
     expect(keyboardMenu.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("passes a trusted mouse gesture whose path includes a pointer-pass host", () => {
+    const host = document.createElement("div");
+    host.setAttribute(POINTER_PASS_ATTRIBUTE, "");
+    const child = document.createElement("button");
+    host.append(child);
+
+    const onBlockedGesture = mock(() => {});
+    const { onPointerEvent } = createPointerBlockListener({ onBlockedGesture });
+    const down = fakeEvent({
+      type: "pointerdown",
+      composedPath: () => [child, host],
+    });
+    const click = fakeEvent({
+      type: "click",
+      detail: 1,
+      composedPath: () => [child, host],
+    });
+    onPointerEvent(down.event);
+    onPointerEvent(click.event);
+
+    expect(down.preventDefault).not.toHaveBeenCalled();
+    expect(click.preventDefault).not.toHaveBeenCalled();
+    expect(onBlockedGesture).not.toHaveBeenCalled();
   });
 
   it("passes trusted pointer gestures when isEnabled returns false", () => {
