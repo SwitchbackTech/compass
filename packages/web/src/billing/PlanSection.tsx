@@ -9,6 +9,7 @@ import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
+import { pointerPassAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring inline-flex shrink-0 items-center rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
@@ -59,6 +60,7 @@ export const PlanSection: FC<{
           onClick={() => void redirectTo("portal", "settings_portal")}
           onPointerEnter={focusOnPointerEnter}
           type="button"
+          {...pointerPassAttributes}
           {...settingsShortcutAttrs("manage-billing")}
         >
           {isRedirecting ? "Opening Stripe…" : "Manage billing"}

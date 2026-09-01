@@ -255,9 +255,11 @@ describe("RootShell billing gates", () => {
     };
     await renderShell("/week?checkout=success");
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Start planning" }),
-    );
+    const startPlanning = screen.getByRole("button", {
+      name: "Start planning",
+    });
+    expect(startPlanning).toHaveAttribute("data-pointer-pass", "");
+    await userEvent.click(startPlanning);
 
     await waitFor(() => {
       expect(
