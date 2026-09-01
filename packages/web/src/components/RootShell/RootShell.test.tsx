@@ -266,6 +266,30 @@ describe("RootShell calendar onboarding on /life", () => {
     );
   });
 
+  it("lets pointer clicks change the life variation without a keyboard-only hint", async () => {
+    const user = userEvent.setup();
+    await renderShell("/life", { anonymous: true });
+
+    await user.click(
+      screen.getByRole("button", { name: "Next life variation" }),
+    );
+
+    expect(screen.getByText("Long")).toBeInTheDocument();
+    expect(document.querySelector("[data-pointer-hint]")).toBeNull();
+  });
+
+  it("opens the birth date picker from a pointer click", async () => {
+    const user = userEvent.setup();
+    await renderShell("/life", { anonymous: true });
+
+    await user.click(screen.getByRole("textbox", { name: "Date of birth" }));
+
+    expect(
+      screen.getByRole("button", { name: "Previous month" }),
+    ).toBeInTheDocument();
+    expect(document.querySelector("[data-pointer-hint]")).toBeNull();
+  });
+
   it("still shows welcome on /week for a first-time anonymous visitor", async () => {
     await renderShell("/week", { anonymous: true });
 

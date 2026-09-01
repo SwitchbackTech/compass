@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   type BlockedPointerAttempt,
   pointerGridIntentFromPointer,
@@ -14,16 +14,22 @@ import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 
 /**
- * Compass is the keyboard calendar: the mouse does nothing, permanently.
+ * Compass is the keyboard calendar: the mouse does nothing, permanently,
+ * except on `/life`. That page is a lead magnet for visitors who may not have
+ * an account and do not know Compass is keyboard-only, so clicks work there.
  * Window capture listeners run before React's delegated root listeners, so
  * pointer gestures never reach any handler. Scroll and hover stay live, and
  * shouldBlockPointerEvent passes keyboard-activation clicks (Enter/Space on a
  * native button), keyboard contextmenu (Shift+F10), and synthetic .click()
  * calls through. Blocked gestures pulse the store so PointerHint can teach.
  */
-export function usePointerSuppression() {
+export function usePointerSuppression(enabled = true) {
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+
   useEffect(() => {
     const { onPointerEvent, onKeyDown } = createPointerBlockListener({
+      isEnabled: () => enabledRef.current,
       onBlockedGesture: (event) => {
         const path = event.composedPath?.() ?? [];
         const { attempt: baseAttempt, jumpEventId } =
