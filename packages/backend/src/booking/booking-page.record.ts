@@ -1,9 +1,11 @@
 import { z } from "zod/v4";
 import {
   BookingBufferMinutesSchema,
+  BookingDateOverridesSchema,
   BookingDurationMinutesSchema,
   BookingMaxBookingsPerDaySchema,
   BookingSlugSchema,
+  BookingWelcomeTextSchema,
   WeeklyAvailabilitySchema,
 } from "@core/types/booking.contracts";
 import {
@@ -24,6 +26,8 @@ export const BookingPageRecordSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
+  dateOverrides: BookingDateOverridesSchema.default([]),
+  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z.number().int().nonnegative(),
   maxHorizonDays: z.number().int().positive().max(60),
   bufferMinutes: BookingBufferMinutesSchema,

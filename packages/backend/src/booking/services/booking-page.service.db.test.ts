@@ -203,6 +203,42 @@ describe("BookingPageService", () => {
     expect("durationMinutes" in updated && updated.durationMinutes).toBe(45);
   });
 
+  it("persists date overrides and welcome text", async () => {
+    const userId = await createNamedUser("Override Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+      dateOverrides: [
+        { kind: "blocked", date: "2026-09-07" },
+        {
+          kind: "hours",
+          date: "2026-09-12",
+          intervals: [{ start: "09:00", end: "12:00" }],
+        },
+      ],
+      welcomeText: "30 minutes to talk through Compass Calendar.",
+    });
+
+    await bookingPageService.putAdminPage(userId, input);
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        dateOverrides: [
+          { kind: "blocked", date: "2026-09-07" },
+          {
+            kind: "hours",
+            date: "2026-09-12",
+            intervals: [{ start: "09:00", end: "12:00" }],
+          },
+        ],
+        welcomeText: "30 minutes to talk through Compass Calendar.",
+      }),
+    );
+  });
+
   it("suffixes reserved slug collisions", async () => {
     const firstUserId = await createNamedUser("Week");
     const secondUserId = await createNamedUser("Week");
