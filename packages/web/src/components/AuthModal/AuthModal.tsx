@@ -1,6 +1,13 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { useSearch } from "@tanstack/react-router";
-import { type FC, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
@@ -82,6 +89,8 @@ export const AuthModal: FC = () => {
 
   const [signUpName, setSignUpName] = useState("");
   const prevViewRef = useRef(currentView);
+  // OverlayPanel would otherwise seat the view-switch chip (first focusable).
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (prevViewRef.current !== "signUp" && currentView === "signUp") {
@@ -89,6 +98,18 @@ export const AuthModal: FC = () => {
     }
     prevViewRef.current = currentView;
   }, [currentView]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    if (
+      currentView !== "login" &&
+      currentView !== "loginAfterReset" &&
+      currentView !== "signUp"
+    ) {
+      return;
+    }
+    emailInputRef.current?.focus();
+  }, [currentView, isOpen]);
 
   const handleSwitchAuth = useCallback(
     () => setView(currentView === "signUp" ? "login" : "signUp"),
@@ -185,6 +206,7 @@ export const AuthModal: FC = () => {
           </button>
         ) : null
       }
+      initialFocusRef={emailInputRef}
       onDismiss={closeModal}
       variant="modal"
       widthClassName="w-120"
@@ -196,6 +218,7 @@ export const AuthModal: FC = () => {
             onSubmit={handleSignUp}
             onNameChange={setSignUpName}
             isSubmitting={isSubmitting}
+            emailInputRef={emailInputRef}
           />
         )}
         {isLoginView && (
@@ -203,6 +226,7 @@ export const AuthModal: FC = () => {
             onSubmit={handleLogin}
             onForgotPassword={navigateToForgotPassword}
             isSubmitting={isSubmitting}
+            emailInputRef={emailInputRef}
             statusMessage={
               currentView === "loginAfterReset"
                 ? "Password reset successful. Log in with your new password."
