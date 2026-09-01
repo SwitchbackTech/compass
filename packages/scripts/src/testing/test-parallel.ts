@@ -154,7 +154,7 @@ async function runCli(): Promise<void> {
           targets,
           webSuiteShardCount({
             explicitPathCount: explicitPaths.length,
-            envShards: process.env.WEB_TEST_SHARDS,
+            envShards: process.env["WEB_TEST_SHARDS"],
           }),
         )
       : [targets];
