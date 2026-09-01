@@ -118,11 +118,11 @@ describe("teachingFromBlockedPointer", () => {
       POINTER_ACTION_ATTRIBUTE,
       POINTER_ACTIONS.reconnectGoogle,
     );
-    reconnect.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "1");
+    reconnect.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "G");
     expect(teachingFromBlockedPointer([reconnect, document], 0)).toEqual({
       attempt: {
         actionId: POINTER_ACTIONS.reconnectGoogle,
-        shortcutKey: "1",
+        shortcutKey: "G",
       },
     });
   });

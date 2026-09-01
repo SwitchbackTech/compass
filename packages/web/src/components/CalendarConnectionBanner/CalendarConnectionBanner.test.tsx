@@ -9,7 +9,7 @@ import {
   POINTER_ACTIONS,
   POINTER_SHORTCUT_ATTRIBUTE,
 } from "@web/shortcuts/keyboard-only/pointer-action";
-import { NOTICE_PRIMARY_ACTION_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
+import { CONNECTION_BANNER_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import { CalendarConnectionBanner } from "./CalendarConnectionBanner";
 
@@ -48,32 +48,41 @@ describe("CalendarConnectionBanner", () => {
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a 1 keycap and reconnects when 1 is pressed", () => {
+  it("shows a G keycap and reconnects when G is pressed", () => {
     const onAction = mock();
     renderBanner("reconnect", onAction);
 
     const button = screen.getByRole("button", { name: "Reconnect" });
-    expect(within(button).getByText("1")).toBeTruthy();
+    expect(within(button).getByText("G")).toBeTruthy();
     expect(button).toHaveAttribute(
       POINTER_SHORTCUT_ATTRIBUTE,
-      NOTICE_PRIMARY_ACTION_KEY,
+      CONNECTION_BANNER_SHORTCUT_KEY,
     );
     expect(button).toHaveAttribute(
       POINTER_ACTION_ATTRIBUTE,
       POINTER_ACTIONS.reconnectGoogle,
     );
 
-    pressKey("1");
+    pressKey("G");
 
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
-  it("does not reconnect with 1 while event jump is active", () => {
+  it("leaves digit 1 for quick-time create", () => {
+    const onAction = mock();
+    renderBanner("reconnect", onAction);
+
+    pressKey("1");
+
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it("does not reconnect with G while event jump is active", () => {
     const onAction = mock();
     eventJumpActions.setActive(true);
     renderBanner("reconnect", onAction);
 
-    pressKey("1");
+    pressKey("G");
 
     expect(onAction).not.toHaveBeenCalled();
   });
@@ -101,6 +110,15 @@ describe("CalendarConnectionBanner", () => {
       "Calendar updates are delayed.",
     );
     await user.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs Refresh with G", () => {
+    const onAction = mock();
+    renderBanner("delayed", onAction);
+
+    pressKey("G");
+
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 });

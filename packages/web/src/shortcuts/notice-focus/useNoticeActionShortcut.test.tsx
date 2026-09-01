@@ -51,15 +51,15 @@ describe("useNoticeActionShortcut", () => {
 
   it("yields while app-locked or event jump is active", () => {
     const onClick = mock();
-    renderHook(() => useNoticeActionShortcut("1", onClick), { wrapper });
+    renderHook(() => useNoticeActionShortcut("G", onClick), { wrapper });
 
     setAppLockReason("commandPalette", true);
-    pressKey("1");
+    pressKey("G");
     expect(onClick).not.toHaveBeenCalled();
     clearAppLockReasons();
 
     eventJumpActions.setActive(true);
-    pressKey("1");
+    pressKey("G");
     expect(onClick).not.toHaveBeenCalled();
   });
 });
