@@ -192,14 +192,39 @@ describe("ShortcutShowcase", () => {
     expect(screen.getByText("Practice")).toBeTruthy();
   });
 
-  it("T races the clock from the how-to card", () => {
+  it("offers no timed start from the how-to card", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.startFromWelcome());
 
+    // The clock is only offered on the end screen, after a practice run.
+    expect(screen.queryByRole("button", { name: /Race the clock/ })).toBeNull();
     pressKey("t");
-    expect(screen.getByText(`Task 1/${RUN_TASKS.length}`)).toBeTruthy();
-    expect(screen.getByRole("timer")).toBeTruthy();
-    expect(screen.getByRole("timer").textContent).toBe("2:00");
+    expect(screen.queryByText(/^Task 1\//)).toBeNull();
+  });
+
+  it("swaps the task card's chips as the move unfolds", () => {
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.startFromWelcome());
+    pressKey("Enter");
+
+    // Esc-skip to the jump task. With every board task skipped, letters run
+    // over the three seed events alone, so kickoff's chip is A here.
+    for (let i = 0; i < 9; i += 1) pressKey("Escape");
+    expect(screen.getByText("Fly across the board")).toBeTruthy();
+    expect(screen.getByText("A")).toBeTruthy();
+    pressKey("h");
+    // The chips on the blocks join the one already on the card.
+    expect(screen.getAllByText("A").length).toBe(2);
+
+    // Skip past the jump and page-jump tasks to reach the palette task:
+    // its Mod+K hint becomes Esc once the palette opens.
+    pressKey("Escape");
+    pressKey("Escape");
+    expect(screen.getByText("One palette, every command")).toBeTruthy();
+    expect(screen.getByText("K")).toBeTruthy();
+    pressKey("k", modInit());
+    expect(screen.queryByText("K")).toBeNull();
+    expect(screen.getAllByText("Esc").length).toBe(2);
   });
 
   it("clears the queue with the taught keys and reaches the end screen", async () => {

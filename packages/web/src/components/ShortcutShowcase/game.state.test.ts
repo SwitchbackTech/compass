@@ -3,6 +3,7 @@ import {
   currentTask,
   type GameKey,
   type GameState,
+  getDisplayKeycaps,
   getJumpLetters,
   getNextKeycapIndex,
   handleGameKey,
@@ -401,6 +402,41 @@ describe("keycap progress", () => {
 
     state = playKeys(state, [key.tab, key.tab], T0);
     expect(getNextKeycapIndex(task, state)).toBe(1);
+  });
+
+  it("shows the jump target's live letter on the card and pulses it after H", () => {
+    let state = playKeys(
+      startRun(createInitialGameState(), T0),
+      WINNING_SCRIPT.slice(0, 29),
+      T0,
+    );
+    const task = currentTask(state) as NonNullable<
+      ReturnType<typeof currentTask>
+    >;
+    expect(task.id).toBe("jump-to-kickoff");
+    // The full sequence is on the card up front: H, then kickoff's letter.
+    expect(getDisplayKeycaps(task, state)).toEqual(["H", "S"]);
+    expect(getNextKeycapIndex(task, state)).toBe(0);
+
+    state = handleGameKey(state, key.jump, T0);
+    expect(getNextKeycapIndex(task, state)).toBe(1);
+  });
+
+  it("swaps the palette card's hint to Esc while the sim palette is open", () => {
+    let state = playKeys(
+      startRun(createInitialGameState(), T0),
+      WINNING_SCRIPT.slice(0, 33),
+      T0,
+    );
+    const task = currentTask(state) as NonNullable<
+      ReturnType<typeof currentTask>
+    >;
+    expect(task.id).toBe("palette-peek");
+    expect(getDisplayKeycaps(task, state)).toEqual(task.keycaps);
+
+    state = handleGameKey(state, key.palette, T0);
+    expect(getDisplayKeycaps(task, state)).toEqual(["Esc"]);
+    expect(getNextKeycapIndex(task, state)).toBe(0);
   });
 });
 
