@@ -12,6 +12,7 @@ describe("deriveBillingStatus", () => {
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     });
   });
 
@@ -20,6 +21,7 @@ describe("deriveBillingStatus", () => {
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     });
   });
 
@@ -32,6 +34,7 @@ describe("deriveBillingStatus", () => {
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: null,
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     });
   });
 
@@ -47,6 +50,7 @@ describe("deriveBillingStatus", () => {
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: trialEndsAt.toISOString(),
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     });
   });
 
@@ -62,7 +66,20 @@ describe("deriveBillingStatus", () => {
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: trialEndsAt.toISOString(),
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     });
+  });
+
+  it("surfaces a scheduled cancel on a Stripe-backed trial", () => {
+    const status = deriveBillingStatus({
+      subscriptionStatus: "trialing",
+      trialEndsAt: new Date("2026-09-08T00:00:00.000Z"),
+      stripeSubscriptionId: "sub_123",
+      cancelAtPeriodEnd: true,
+    });
+
+    expect(status.subscriptionStatus).toBe("trialing");
+    expect(status.cancelAtPeriodEnd).toBe(true);
   });
 
   it("does not self-expire a Stripe-backed trialing record past trialEndsAt", () => {

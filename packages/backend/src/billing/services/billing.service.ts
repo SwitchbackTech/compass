@@ -31,6 +31,7 @@ export const deriveBillingStatus = (
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: billing?.trialEndsAt?.toISOString() ?? null,
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -42,6 +43,7 @@ export const deriveBillingStatus = (
       subscriptionStatus: "awaiting_checkout",
       trialEndsAt: billing.trialEndsAt?.toISOString() ?? null,
       isReadOnly: true,
+      cancelAtPeriodEnd: false,
     };
   }
 
@@ -49,6 +51,7 @@ export const deriveBillingStatus = (
     subscriptionStatus: billing.subscriptionStatus,
     trialEndsAt: billing.trialEndsAt?.toISOString() ?? null,
     isReadOnly: !WRITE_ACCESS_BY_STATUS[billing.subscriptionStatus],
+    cancelAtPeriodEnd: billing.cancelAtPeriodEnd === true,
   };
 };
 
@@ -77,6 +80,7 @@ class BillingService {
         subscriptionStatus: "active",
         trialEndsAt: null,
         isReadOnly: false,
+        cancelAtPeriodEnd: false,
       };
     }
 

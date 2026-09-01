@@ -182,6 +182,10 @@ class StripeService {
    * If the charge fails Stripe moves the subscription to `past_due`, which
    * stays writable and raises the dunning banner. The caller is told the
    * resulting status rather than a blanket success.
+   *
+   * A cancel scheduled from the Billing Portal is cleared here: subscribing
+   * now and cancelling at period end are contradictory instructions, and the
+   * one the user just gave wins.
    */
   endTrialNow = async (userId: string): Promise<BillingStatusResponse> => {
     if (!isStripeConfigured(CONFIG)) {
@@ -203,8 +207,14 @@ class StripeService {
     const subscription = await stripe.subscriptions
       .update(
         subscriptionId,
-        { trial_end: "now", proration_behavior: "none" },
-        { idempotencyKey: `compass-end-trial-${subscriptionId}` },
+        {
+          trial_end: "now",
+          proration_behavior: "none",
+          cancel_at_period_end: false,
+        },
+        // v2 when cancel_at_period_end was added, same reason as the
+        // checkout prefix: a param change must not replay as the old call.
+        { idempotencyKey: `compass-end-trial-v2-${subscriptionId}` },
       )
       .catch(wrapStripeFailure);
 

@@ -763,6 +763,23 @@ describe("SettingsModal", () => {
     ).toBeTruthy();
   });
 
+  it("says a cancel-scheduled trial will not renew", () => {
+    access = {
+      kind: "server",
+      status: "trialing",
+      isReadOnly: false,
+      trialEndsAt: dayjs().add(3, "day").toISOString(),
+      cancelAtPeriodEnd: true,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(
+      screen.getByText(/to subscribe now/).closest("p") as HTMLElement,
+    ).toHaveTextContent(
+      `Your trial ends ${dayjs().add(3, "day").format("MMM D, YYYY")} and will not renew. Press B to subscribe now.`,
+    );
+  });
+
   it("opens the billing portal from Manage billing in a new tab", async () => {
     const createPortalSession = spyOn(
       BillingApi,

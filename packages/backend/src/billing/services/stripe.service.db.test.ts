@@ -419,14 +419,16 @@ describe("StripeService", () => {
         subscriptionStatus: "active",
         trialEndsAt: new Date(1_756_200_000 * 1000).toISOString(),
         isReadOnly: false,
+        cancelAtPeriodEnd: false,
       });
       expect(update.mock.calls[0]?.[0]).toBe("sub_trial");
       expect(update.mock.calls[0]?.[1]).toEqual({
         trial_end: "now",
         proration_behavior: "none",
+        cancel_at_period_end: false,
       });
       expect(update.mock.calls[0]?.[2]).toEqual({
-        idempotencyKey: "compass-end-trial-sub_trial",
+        idempotencyKey: "compass-end-trial-v2-sub_trial",
       });
 
       const stored = await mongoService.user.findOne({ _id: userId });
@@ -450,25 +452,24 @@ describe("StripeService", () => {
       expect(result.isReadOnly).toBe(false);
     });
 
-    it("still charges a trial that is set to cancel at period end", async () => {
+    it("clears a scheduled cancel while charging the trial", async () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedTrialingUser({ cancelAtPeriodEnd: true });
 
+      const update = mock(() => Promise.resolve(stripeSubscription("active")));
       setStripeClientForTests({
-        subscriptions: {
-          update: mock(() =>
-            Promise.resolve(
-              stripeSubscription("active", { cancel_at_period_end: true }),
-            ),
-          ),
-        },
+        subscriptions: { update },
       } as unknown as Stripe);
 
       const result = await stripeService.endTrialNow(userId.toString());
 
       expect(result.subscriptionStatus).toBe("active");
+      expect(result.cancelAtPeriodEnd).toBe(false);
+      expect(update.mock.calls[0]?.[1]).toMatchObject({
+        cancel_at_period_end: false,
+      });
       const stored = await mongoService.user.findOne({ _id: userId });
-      expect(stored?.billing?.cancelAtPeriodEnd).toBe(true);
+      expect(stored?.billing?.cancelAtPeriodEnd).toBe(false);
     });
 
     it("rejects with 409 when the account is not trialing", async () => {

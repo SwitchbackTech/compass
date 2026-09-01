@@ -45,6 +45,7 @@ const stubBilling = (body: {
   subscriptionStatus: string;
   trialEndsAt: string | null;
   isReadOnly: boolean;
+  cancelAtPeriodEnd?: boolean;
 }) => {
   server.use(
     rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) =>
@@ -86,6 +87,30 @@ describe("useAppAccess", () => {
         status: "trialing",
         isReadOnly: false,
         trialEndsAt: "2026-09-03T00:00:00.000Z",
+        // The schema defaults an absent cancelAtPeriodEnd to false, so an
+        // older server response still parses.
+        cancelAtPeriodEnd: false,
+      });
+    });
+  });
+
+  it("passes through a scheduled cancel on a trialing account", async () => {
+    stubConfig(true);
+    stubBilling({
+      subscriptionStatus: "trialing",
+      trialEndsAt: "2026-09-03T00:00:00.000Z",
+      isReadOnly: false,
+      cancelAtPeriodEnd: true,
+    });
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(true),
+    });
+    await waitFor(() => {
+      expect(result.current).toMatchObject({
+        kind: "server",
+        status: "trialing",
+        cancelAtPeriodEnd: true,
       });
     });
   });
@@ -155,6 +180,7 @@ describe("useAppAccess", () => {
         status: "active",
         isReadOnly: false,
         trialEndsAt: null,
+        cancelAtPeriodEnd: false,
       });
     });
   });

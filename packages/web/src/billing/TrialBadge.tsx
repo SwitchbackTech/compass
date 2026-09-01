@@ -29,7 +29,9 @@ export function TrialBadge() {
   }
 
   const daysLeft = getTrialDaysLeft(access.trialEndsAt);
-  const description = formatTrialBadgeDescription(daysLeft);
+  const description = access.cancelAtPeriodEnd
+    ? `${formatTrialBadgeDescription(daysLeft)}. It will not renew`
+    : formatTrialBadgeDescription(daysLeft);
 
   return (
     <TooltipWrapper description={description} shortcut="B">

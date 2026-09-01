@@ -13,6 +13,12 @@ export type AppAccess =
       status: BillingSubscriptionStatus;
       isReadOnly: boolean;
       trialEndsAt: string | null;
+      /**
+       * True when the subscription is set to cancel at period end instead of
+       * renewing. Optional so the many test fixtures that predate it stay
+       * valid; absent reads as false.
+       */
+      cancelAtPeriodEnd?: boolean;
     }
   | { kind: "open" };
 
@@ -62,5 +68,6 @@ export function useAppAccess(): AppAccess {
     status: billingQuery.data.subscriptionStatus,
     isReadOnly: billingQuery.data.isReadOnly,
     trialEndsAt: billingQuery.data.trialEndsAt,
+    cancelAtPeriodEnd: billingQuery.data.cancelAtPeriodEnd,
   };
 }
