@@ -74,7 +74,9 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
-    await expect(page.getByText(/Google Meet/)).toBeVisible();
+    await expect(
+      page.getByText(/A Google Meet invite is on its way to your email/),
+    ).toBeVisible();
     expect(captured.reservationPosts).toHaveLength(1);
     expect(captured.reservationPosts[0]).toMatchObject({
       slotStart,
