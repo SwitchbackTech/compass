@@ -28,6 +28,18 @@ describe("resolveQuickTimeStart", () => {
     expect(resolve("1700", "21:00")).toBe("17:00");
   });
 
+  it("reads 1200 as noon, not midnight, whatever the time of day", () => {
+    expect(resolve("1200", "09:00")).toBe("12:00");
+    expect(resolve("1200", "21:00")).toBe("12:00");
+    expect(resolve("12", "09:00")).toBe("12:00");
+    expect(resolve("1230", "09:00")).toBe("12:30");
+  });
+
+  it("still takes an explicit midnight sequence literally", () => {
+    expect(resolve("0000", "09:00")).toBe("00:00");
+    expect(resolve("0", "00:30")).toBe("00:00");
+  });
+
   it("expands one and two digits to the top of the hour", () => {
     expect(resolve("9", "08:00")).toBe("09:00");
     expect(resolve("11", "08:00")).toBe("11:00");
@@ -69,6 +81,16 @@ describe("quickTimeSequenceForHour", () => {
     // morning hour has no sequence of its own.
     expect(quickTimeSequenceForHour(9, at("21:00"), DAY)).toBeNull();
   });
+
+  it("skips midnight, which has no useful shortcut", () => {
+    expect(quickTimeSequenceForHour(0, at("09:00"), DAY)).toBeNull();
+    expect(quickTimeSequenceForHour(0, at("21:00"), DAY)).toBeNull();
+  });
+
+  it("advertises noon as 1200 even in the morning", () => {
+    expect(quickTimeSequenceForHour(12, at("09:00"), DAY)).toBe("1200");
+    expect(quickTimeSequenceForHour(12, at("21:00"), DAY)).toBe("1200");
+  });
 });
 
 describe("quickTimeTargetDay", () => {
@@ -99,16 +121,15 @@ describe("buildQuickTimeSlots", () => {
     const slots = buildQuickTimeSlots({ busy: [], now, targetDay: DAY });
     const sequences = slots.map((slot) => slot.sequence);
 
-    expect(sequences[0]).toBe("0000");
+    expect(sequences[0]).toBe("0100");
     expect(sequences.at(-1)).toBe("2300");
     expect(sequences).toContain("0900");
+    expect(sequences).toContain("1200");
     expect(sequences).toContain("1700");
+    expect(sequences).not.toContain("0000");
   });
 
-  it("skips noon in the morning, which no sequence reaches", () => {
-    // parseUserTime reads "1200" as 12 AM while the current time is AM (the
-    // event form's time field behaves the same way), so noon has no sequence
-    // of its own before midday and gets no chip rather than a lying one.
+  it("advertises noon as 1200 and omits the midnight slot", () => {
     const morning = buildQuickTimeSlots({ busy: [], now, targetDay: DAY });
     const afternoon = buildQuickTimeSlots({
       busy: [],
@@ -116,8 +137,10 @@ describe("buildQuickTimeSlots", () => {
       targetDay: DAY,
     });
 
-    expect(morning.map((slot) => slot.sequence)).not.toContain("1200");
+    expect(morning.map((slot) => slot.sequence)).toContain("1200");
     expect(afternoon.map((slot) => slot.sequence)).toContain("1200");
+    expect(morning.map((slot) => slot.sequence)).not.toContain("0000");
+    expect(afternoon.map((slot) => slot.sequence)).not.toContain("0000");
   });
 
   it("drops the hours an event already covers", () => {

@@ -79,6 +79,15 @@ describe("typed-time ownership", () => {
     expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
   });
 
+  it("creates at noon when 1200 is typed", () => {
+    const { createAt, type } = mountOwner();
+
+    type(["1", "2", "0", "0"]);
+
+    expect(createAt).toHaveBeenCalledTimes(1);
+    expect(startedAt(createAt)).toBe("12:00");
+  });
+
   it("consumes each digit so it reaches no other handler", () => {
     mountOwner();
 
