@@ -3,10 +3,14 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 /** Digit on standing notice CTAs and action toasts while they are mounted. */
-export const NOTICE_PRIMARY_ACTION_KEY = "1";
+export const NOTICE_PRIMARY_ACTION_KEY = "1" as const;
 
 /** Start-trial banner CTA. Same letter as the billing gate overlay. */
-export const START_TRIAL_SHORTCUT_KEY = "S";
+export const START_TRIAL_SHORTCUT_KEY = "S" as const;
+
+export type NoticeActionKey =
+  | typeof NOTICE_PRIMARY_ACTION_KEY
+  | typeof START_TRIAL_SHORTCUT_KEY;
 
 const canHandleNoticeAction = (event: KeyboardEvent) =>
   !event.isComposing &&
@@ -23,12 +27,12 @@ const canHandleNoticeAction = (event: KeyboardEvent) =>
  * stand-down as toast `1` and focus-notice `f`.
  */
 export function useNoticeActionShortcut(
-  key: string | undefined,
+  key: NoticeActionKey | undefined,
   onClick: () => void,
   options: { enabled?: boolean } = {},
 ) {
   useAppShortcut(
-    key || NOTICE_PRIMARY_ACTION_KEY,
+    key ?? NOTICE_PRIMARY_ACTION_KEY,
     (event) => {
       if (!canHandleNoticeAction(event)) return;
       onClick();

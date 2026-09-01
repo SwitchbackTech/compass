@@ -5,14 +5,17 @@ import {
   type PointerActionId,
   pointerShortcutAttributes,
 } from "@web/shortcuts/keyboard-only/pointer-action";
-import { useNoticeActionShortcut } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
+import {
+  type NoticeActionKey,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
 type BillingBannerProps = {
   message: string;
   ctaLabel: string;
   disabled?: boolean;
   onCta: () => void;
-  shortcutKey?: string;
+  shortcutKey?: NoticeActionKey;
   pointerAction?: PointerActionId;
 };
 
