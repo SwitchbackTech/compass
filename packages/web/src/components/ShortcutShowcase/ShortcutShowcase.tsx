@@ -16,6 +16,7 @@ import {
   createInitialGameState,
   currentTask,
   type GameKey,
+  getDisplayKeycaps,
   getJumpLetters,
   getNextKeycapIndex,
   handleGameKey,
@@ -108,9 +109,11 @@ const ShowcaseTakeover: FC = () => {
     setGame((state) => handleGameKey(state, key, Date.now()));
   };
 
-  const begin = (timed: boolean) => {
+  // The how-to card only starts practice runs; the timed challenge waits on
+  // the end screen, once the player has actually met the moves.
+  const begin = () => {
     setRemainingSeconds(RUN_DURATION_MS / 1000);
-    setGame((state) => startRun({ ...state, timed }, Date.now()));
+    setGame((state) => startRun(state, Date.now()));
   };
 
   const replay = (timed: boolean) => {
@@ -399,12 +402,7 @@ const ShowcaseTakeover: FC = () => {
     if (phase === "howto") {
       if (event.key === "Enter" && !event.repeat && !focusedButton) {
         claim(event);
-        begin(false);
-        return;
-      }
-      if (isBareLetterKey(event, "t") && !event.repeat) {
-        claim(event);
-        begin(true);
+        begin();
         return;
       }
       if (isBareLetterKey(event, "u") && !authenticated) {
@@ -563,26 +561,16 @@ const ShowcaseTakeover: FC = () => {
   const skipControls = (
     <div className="flex flex-wrap items-center gap-2 pt-2">
       {game.phase === "howto" && (
-        <>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={PRIMARY_BUTTON_CLASS}
-              onClick={() => begin(false)}
-            >
-              Start practicing
-            </button>
-            <ShortcutHint className="shrink-0">Enter</ShortcutHint>
-          </div>
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className={SECONDARY_BUTTON_CLASS}
-            onClick={() => begin(true)}
+            className={PRIMARY_BUTTON_CLASS}
+            onClick={begin}
           >
-            Race the clock
-            <ShortcutHint className="shrink-0">T</ShortcutHint>
+            Start practicing
           </button>
-        </>
+          <ShortcutHint className="shrink-0">Enter</ShortcutHint>
+        </div>
       )}
       {!authenticated && (
         <button
@@ -689,6 +677,7 @@ const ShowcaseTakeover: FC = () => {
             ) : (
               <GameTaskQueue
                 taskIndex={game.taskIndex}
+                keycaps={task ? getDisplayKeycaps(task, game) : []}
                 nextKeycapIndex={task ? getNextKeycapIndex(task, game) : 0}
               />
             )}

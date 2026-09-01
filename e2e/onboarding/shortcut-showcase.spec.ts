@@ -172,17 +172,27 @@ test("a full run clears the queue, shows the score, and graduates", async ({
   ).toBeVisible();
 });
 
-test("T races the clock and the buzzer never ends the run", async ({
+test("the end screen's rematch races the clock with a full timer", async ({
   page,
 }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await leaveWelcome(page);
 
+  // The how-to card only starts practice: no timed option up front.
   const showcase = page.getByRole("region", { name: "Shortcut practice" });
   await expect(
-    showcase.getByRole("button", { name: "Race the clock" }),
+    showcase.getByRole("button", { name: "Start practicing" }),
   ).toBeVisible();
-  await page.keyboard.press("t");
+  await expect(
+    showcase.getByRole("button", { name: /Race the clock/ }),
+  ).toHaveCount(0);
+  await startPracticing(page);
+
+  // Esc-skip the whole queue: the fastest road to the end screen.
+  await pressTimes(page, "Escape", 14);
+  await expect(showcase).toContainText("You cleared the week!");
+
+  await page.keyboard.press("p");
   await expect(showcase).toContainText("Task 1/14");
   await expect(showcase.getByRole("timer")).toBeVisible();
   await expect(showcase.getByRole("timer")).toContainText("2:00");

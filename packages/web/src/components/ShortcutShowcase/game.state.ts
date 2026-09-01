@@ -521,11 +521,30 @@ export const handleGameKey = (
 };
 
 /**
- * Which chip in `task.keycaps` the player should press next, so the task
- * card can dim what's done and pulse what's expected. Derived entirely from
- * the board, so a wrong turn self-corrects. `keycaps.length` means every
- * chip is behind the player (e.g. the H task, where the next key is the
- * letter on a block, not a card chip).
+ * The chips the task card shows. Usually the task's static keycaps, but a
+ * card can change chips as the move unfolds: the jump card carries the
+ * target's live letter (assigned by board order, so it shifts with skips),
+ * and the palette card's hint becomes the Esc that closes it.
+ */
+export const getDisplayKeycaps = (
+  task: GameTask,
+  state: GameState,
+): readonly string[] => {
+  if (task.type === "eventJump") {
+    const letter = getJumpLetters(state.practice)[task.targetEventId];
+    return letter ? [...task.keycaps, letter.toUpperCase()] : task.keycaps;
+  }
+  if (task.type === "palette" && state.simOverlay === "palette") {
+    return ["Esc"];
+  }
+  return task.keycaps;
+};
+
+/**
+ * Which display chip the player should press next, so the task card can dim
+ * what's done and pulse what's expected. Derived entirely from the board,
+ * so a wrong turn self-corrects. Indexes into `getDisplayKeycaps`: for the
+ * H task, `task.keycaps.length` is the appended letter chip.
  */
 export const getNextKeycapIndex = (
   task: GameTask,

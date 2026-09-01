@@ -87,20 +87,22 @@ export const GameHud: FC<{
 
 /**
  * The piece queue: the current task as a big card with its keycaps, and the
- * next two peeking underneath (the "next piece" preview). Chips ahead of
- * `nextKeycapIndex` are still to come, the chip at it pulses as the exact
- * next key, and chips behind it dim as done.
+ * next two peeking underneath (the "next piece" preview). `keycaps` comes in
+ * as a prop (getDisplayKeycaps) because a card's chips can change mid-task.
+ * Chips ahead of `nextKeycapIndex` are still to come, the chip at it pulses
+ * as the exact next key, and chips behind it dim as done.
  */
 export const GameTaskQueue: FC<{
   taskIndex: number;
+  keycaps: readonly string[];
   nextKeycapIndex: number;
-}> = ({ taskIndex, nextKeycapIndex }) => {
+}> = ({ taskIndex, keycaps, nextKeycapIndex }) => {
   const task: GameTask | undefined = RUN_TASKS[taskIndex];
   if (!task) return null;
   const upNext = RUN_TASKS.slice(taskIndex + 1, taskIndex + 3);
   // Shift/Mod lead a chord, so their partner chip pulses too. The page-jump
   // task is the exception: Mod is held alone first, the digit comes later.
-  const nextKey = task.keycaps[nextKeycapIndex];
+  const nextKey = keycaps[nextKeycapIndex];
   const chordPartnerIndex =
     task.type !== "pageJump" && (nextKey === "Shift" || nextKey === "Mod")
       ? nextKeycapIndex + 1
@@ -118,7 +120,7 @@ export const GameTaskQueue: FC<{
         <h3 className="font-semibold text-lg text-text">{task.title}</h3>
         <p className="pt-1 text-sm text-text-muted">{task.instruction}</p>
         <div className="flex items-center gap-1 pt-3">
-          {task.keycaps.map((key, index) => (
+          {keycaps.map((key, index) => (
             <ShortcutHint
               key={`${key}-${index}`}
               variant="keycap"
