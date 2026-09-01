@@ -1,4 +1,4 @@
-import { type FC, type RefObject } from "react";
+import { type FC, type Ref } from "react";
 import {
   type LogInFormData,
   LogInSchema,
@@ -18,7 +18,7 @@ interface SignInFormProps {
   /** Optional status message shown above the form */
   statusMessage?: string | null;
   /** Seats dialog focus on email so typing can start immediately. */
-  emailInputRef?: RefObject<HTMLInputElement | null>;
+  emailInputRef?: Ref<HTMLInputElement>;
 }
 
 /**

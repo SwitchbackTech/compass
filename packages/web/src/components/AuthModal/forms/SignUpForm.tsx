@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FC, type RefObject, useCallback } from "react";
+import { type ChangeEvent, type FC, type Ref, useCallback } from "react";
 import {
   type SignUpFormData,
   SignUpSchema,
@@ -16,7 +16,7 @@ interface SignUpFormProps {
   /** Whether form submission is in progress */
   isSubmitting?: boolean;
   /** Seats dialog focus on email so typing can start immediately. */
-  emailInputRef?: RefObject<HTMLInputElement | null>;
+  emailInputRef?: Ref<HTMLInputElement>;
 }
 
 /**
