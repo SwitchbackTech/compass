@@ -36,6 +36,7 @@ export const EndsOnDate = ({
               calendarClassName="recurrenceUntilDatePicker"
               isOpen={open}
               minDate={miniDate.toDate()}
+              openToDate={until ?? miniDate.toDate()}
               onCalendarClose={() => setOpen(false)}
               onCalendarOpen={() => setOpen(true)}
               onChange={() => null}

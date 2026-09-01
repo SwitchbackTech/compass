@@ -5,10 +5,11 @@ interface PublicBookingLayoutProps extends PropsWithChildren {
 }
 
 /**
- * Public booking is a document-height page. The calendar shell clips
- * `html`/`body`/`#root` with `overflow: hidden`; `data-document-scroll`
- * opts this tree into native page scrolling so guests can reach later
- * time slots (see `index.css`).
+ * Public booking is a viewport-height page. The calendar shell clips
+ * `html`/`body`/`#root` with `overflow: hidden`; this layout is itself
+ * the scrollport (`h-dvh` + `overflow-y-auto` on `main`) so guests can
+ * reach later time slots without the page overflowing the window.
+ * `data-document-scroll` remains a fallback (see `index.css`).
  */
 export function PublicBookingLayout({
   children,
@@ -17,10 +18,10 @@ export function PublicBookingLayout({
   return (
     <div
       data-document-scroll
-      className="relative min-h-dvh bg-background text-text"
+      className="relative flex h-dvh flex-col overflow-hidden bg-background text-text"
     >
       <main
-        className={`mx-auto flex w-full min-w-0 flex-col gap-6 px-4 py-10 ${
+        className={`mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-10 ${
           wide ? "max-w-3xl" : "max-w-lg"
         }`}
       >

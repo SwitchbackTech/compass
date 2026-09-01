@@ -1,8 +1,10 @@
 import type express from "express";
 import rateLimit from "express-rate-limit";
+import { isBookingEnabled } from "@core/util/env.util";
 import { verifySession } from "@backend/auth/session/session.middleware";
 import bookingController from "@backend/booking/controllers/booking.controller";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const bookingSlugKey = (req: express.Request): string =>
   `${req.ip ?? "unknown"}:${req.params["slug"] ?? "unknown"}`;
@@ -59,6 +61,10 @@ export class BookingRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
+    if (!isBookingEnabled(CONFIG.NODE_ENV)) {
+      return this.app;
+    }
+
     this.app
       .route(`/api/booking/page`)
       .all(verifySession())

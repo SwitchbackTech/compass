@@ -120,7 +120,7 @@ export const OverlayPanel = ({
     align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
       widthClassName,
-      "max-w-[90vw] rounded-xl p-8",
+      "max-h-[90vh] max-w-[90vw] overflow-y-auto rounded-xl p-8",
       "transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none",
       panelClassName ??
         "gap-6 bg-surface-panel shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",

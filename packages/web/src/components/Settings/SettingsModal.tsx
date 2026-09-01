@@ -36,6 +36,7 @@ import {
   useConnectedAccountEmails,
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
+import { IS_BOOKING_ENABLED } from "@web/common/constants/env.constants";
 import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
@@ -95,7 +96,7 @@ export const SettingsModal: FC = () => {
   const { areHintsVisible } = useSettingsShortcuts({
     enabled: isOpen && !isUpgradeOpen,
     hasBilling,
-    hasBooking: authenticated,
+    hasBooking: authenticated && IS_BOOKING_ENABLED,
     page,
   });
 
@@ -209,7 +210,7 @@ export const SettingsModal: FC = () => {
               {areHintsVisible ? <ShortcutKeys keys="2" /> : null}
             </button>
           ) : null}
-          {authenticated ? (
+          {authenticated && IS_BOOKING_ENABLED ? (
             <button
               aria-current={page === "booking" ? "true" : undefined}
               className={navButtonClassName(page === "booking")}
@@ -227,7 +228,7 @@ export const SettingsModal: FC = () => {
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (
             <PlanSection showShortcuts={areHintsVisible} />
-          ) : page === "booking" ? (
+          ) : page === "booking" && IS_BOOKING_ENABLED ? (
             <BookingSettingsSection showShortcuts={areHintsVisible} />
           ) : (
             <>

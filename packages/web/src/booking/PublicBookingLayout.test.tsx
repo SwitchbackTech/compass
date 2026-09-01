@@ -3,7 +3,7 @@ import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { describe, expect, it } from "bun:test";
 
 describe("PublicBookingLayout", () => {
-  it("opts the public booking page into document scrolling", () => {
+  it("keeps the public booking page inside the viewport and scrolls main", () => {
     render(
       <PublicBookingLayout>
         <p>Booking content</p>
@@ -13,6 +13,9 @@ describe("PublicBookingLayout", () => {
     const main = screen.getByRole("main");
     expect(main).toHaveTextContent("Booking content");
     expect(main.parentElement).toHaveAttribute("data-document-scroll");
+    expect(main.parentElement?.className).toContain("h-dvh");
+    expect(main.parentElement?.className).toContain("overflow-hidden");
+    expect(main.className).toContain("overflow-y-auto");
     expect(main.className).toContain("max-w-lg");
   });
 
