@@ -178,7 +178,6 @@ export function PublicBookingMonthGrid({
                 }
                 const { day } = cell;
                 const isSelected = selectedDateKey === day.dateKey;
-                const label = formatBookingMonthDayLabel(day.dateKey, timeZone);
                 if (!day.available) {
                   return (
                     <div
@@ -195,7 +194,10 @@ export function PublicBookingMonthGrid({
                     key={day.dateKey}
                     type="button"
                     id={bookingDayButtonId(monthKey, day.dateKey)}
-                    aria-label={label}
+                    aria-label={formatBookingMonthDayLabel(
+                      day.dateKey,
+                      timeZone,
+                    )}
                     aria-pressed={isSelected}
                     aria-current={day.isToday ? "date" : undefined}
                     tabIndex={tabStopDateKey === day.dateKey ? 0 : -1}
