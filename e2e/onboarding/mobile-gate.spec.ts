@@ -71,9 +71,13 @@ test("phone users can drag the first event into place and score", async ({
     cardBox.y + cardBox.height / 2,
   );
   await page.mouse.down();
-  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 16, {
-    steps: 8,
-  });
+  await page.mouse.move(
+    board.x + board.width / 2,
+    board.y + board.height / 16,
+    {
+      steps: 8,
+    },
+  );
   await expect(page.locator("[data-game-slot-hover]")).toBeVisible();
   await page.mouse.up();
 
