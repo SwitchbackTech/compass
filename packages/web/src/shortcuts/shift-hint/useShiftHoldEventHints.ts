@@ -79,11 +79,7 @@ const pointerDraftStart = (digits: string): Dayjs | null => {
 const focusedColumnDay = (): Dayjs | null => {
   const { pointerDraftDateKey, activeDayKeys } = useEventJumpStore.getState();
 
-  return quickTimeFocusedColumnDay(
-    pointerDraftDateKey,
-    activeDayKeys,
-    (dateKey) => dayjs(dateKey).tz(getEffectiveTimeZone(), true),
-  );
+  return quickTimeFocusedColumnDay(pointerDraftDateKey, activeDayKeys);
 };
 
 /**

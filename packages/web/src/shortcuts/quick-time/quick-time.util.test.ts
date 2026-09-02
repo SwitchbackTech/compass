@@ -138,11 +138,9 @@ describe("quickTimeTargetDay", () => {
 });
 
 describe("quickTimeFocusedColumnDay", () => {
-  const parse = (key: string) => dayjs(`${key}T00:00:00`);
-
   it("prefers a parked click over the jump-highlighted column", () => {
     expect(
-      quickTimeFocusedColumnDay("2026-08-04", ["2026-08-05"], parse)?.format(
+      quickTimeFocusedColumnDay("2026-08-04", ["2026-08-05"])?.format(
         "YYYY-MM-DD",
       ),
     ).toBe("2026-08-04");
@@ -150,16 +148,14 @@ describe("quickTimeFocusedColumnDay", () => {
 
   it("uses a single jump-highlighted column", () => {
     expect(
-      quickTimeFocusedColumnDay(null, ["2026-08-07"], parse)?.format(
-        "YYYY-MM-DD",
-      ),
+      quickTimeFocusedColumnDay(null, ["2026-08-07"])?.format("YYYY-MM-DD"),
     ).toBe("2026-08-07");
   });
 
   it("stays unset when jump has not chosen one day", () => {
-    expect(quickTimeFocusedColumnDay(null, [], parse)).toBeNull();
+    expect(quickTimeFocusedColumnDay(null, [])).toBeNull();
     expect(
-      quickTimeFocusedColumnDay(null, ["2026-08-02", "2026-08-08"], parse),
+      quickTimeFocusedColumnDay(null, ["2026-08-02", "2026-08-08"]),
     ).toBeNull();
   });
 });

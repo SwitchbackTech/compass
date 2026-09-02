@@ -22,6 +22,7 @@ import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewSho
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import {
+  quickTimeDayFromEventStart,
   quickTimeFocusedColumnDay,
   quickTimeTargetDay,
 } from "@web/shortcuts/quick-time/quick-time.util";
@@ -277,23 +278,22 @@ export const useWeekShortcutOwner = ({
     const focusedColumn = quickTimeFocusedColumnDay(
       pointerDraftDateKey,
       activeDayKeys,
-      (dateKey) => dayjs(dateKey).tz(getEffectiveTimeZone(), true),
     );
     const focusedEvent =
       weekEventTargeting.getFocusedNavigableGridEventTarget() ??
       weekEventTargeting.getFocusedGridEventTarget();
-    const focusedStart = focusedEvent
-      ? [...allDayEvents, ...timedEvents].find(
-          (event) => event._id === focusedEvent.eventId,
-        )?.startDate
-      : undefined;
-
     return quickTimeTargetDay(
       startOfView,
       endOfView,
       now,
       focusedColumn ??
-        (focusedStart ? dayjs(focusedStart).tz(getEffectiveTimeZone()) : null),
+        quickTimeDayFromEventStart(
+          focusedEvent
+            ? [...allDayEvents, ...timedEvents].find(
+                (event) => event._id === focusedEvent.eventId,
+              )?.startDate
+            : undefined,
+        ),
     );
   }, [allDayEvents, endOfView, startOfView, timedEvents]);
 

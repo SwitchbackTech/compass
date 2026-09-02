@@ -4,6 +4,7 @@ import {
   getTimeOptionByValue,
   parseUserTime,
 } from "@web/common/utils/datetime/web.date.util";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 /** Longest sequence a typed time can be: HHMM. */
 export const QUICK_TIME_MAX_DIGITS = 4;
@@ -103,12 +104,19 @@ export const quickTimeTargetDay = (
 export const quickTimeFocusedColumnDay = (
   pointerDateKey: string | null,
   activeDayKeys: readonly string[],
-  parseDateKey: (dateKey: string) => Dayjs,
 ): Dayjs | null => {
-  if (pointerDateKey) return parseDateKey(pointerDateKey);
-  const dayKey = activeDayKeys.length === 1 ? activeDayKeys[0] : undefined;
-  return dayKey ? parseDateKey(dayKey) : null;
+  const dateKey =
+    pointerDateKey ??
+    (activeDayKeys.length === 1 ? activeDayKeys[0] : undefined);
+  return dateKey
+    ? dayjs(dateKey).tz(getEffectiveTimeZone(), true).startOf("day")
+    : null;
 };
+
+export const quickTimeDayFromEventStart = (
+  startDate: string | undefined,
+): Dayjs | null =>
+  startDate ? dayjs(startDate).tz(getEffectiveTimeZone()) : null;
 
 export type QuickTimeBusyInterval = {
   startMs: number;

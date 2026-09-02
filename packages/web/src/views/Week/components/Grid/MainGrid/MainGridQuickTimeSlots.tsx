@@ -6,6 +6,7 @@ import { type GridVisibleDate } from "@web/grid/types/grid.types";
 import { QuickTimeSlots } from "@web/shortcuts/quick-time/QuickTimeSlots";
 import {
   buildQuickTimeSlots,
+  quickTimeDayFromEventStart,
   quickTimeFocusedColumnDay,
   quickTimeTargetDay,
   timedEventsToBusyIntervals,
@@ -58,20 +59,20 @@ export const MainGridQuickTimeSlots = ({ measurements, weekProps }: Props) => {
     const focusedColumn = quickTimeFocusedColumnDay(
       pointerDraftDateKey,
       activeDayKeys,
-      (dateKey) => dayjs(dateKey).tz(getEffectiveTimeZone(), true),
     );
     const focusedEvent = weekEventTargeting.getFocusedGridEventTarget();
-    const focusedStart = focusedEvent
-      ? [...allDayEvents, ...timedEvents].find(
-          (event) => event._id === focusedEvent.eventId,
-        )?.startDate
-      : undefined;
     const targetDay = quickTimeTargetDay(
       component.startOfView,
       component.endOfView,
       now,
       focusedColumn ??
-        (focusedStart ? dayjs(focusedStart).tz(getEffectiveTimeZone()) : null),
+        quickTimeDayFromEventStart(
+          focusedEvent
+            ? [...allDayEvents, ...timedEvents].find(
+                (event) => event._id === focusedEvent.eventId,
+              )?.startDate
+            : undefined,
+        ),
     );
     return buildQuickTimeSlots({
       busy: timedEventsToBusyIntervals(timedEvents),
