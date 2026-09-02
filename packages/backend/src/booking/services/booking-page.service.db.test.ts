@@ -203,21 +203,13 @@ describe("BookingPageService", () => {
     expect("durationMinutes" in updated && updated.durationMinutes).toBe(45);
   });
 
-  it("persists date overrides and welcome text", async () => {
-    const userId = await createNamedUser("Override Host");
+  it("persists welcome text", async () => {
+    const userId = await createNamedUser("Welcome Host");
     const calendar = writableCalendar();
     mockHealthySync([calendar]);
     const input = samplePutInput({
       destinationCalendarId: calendar.id,
       blockingCalendarIds: [calendar.id],
-      dateOverrides: [
-        { kind: "blocked", date: "2026-09-07" },
-        {
-          kind: "hours",
-          date: "2026-09-12",
-          intervals: [{ start: "09:00", end: "12:00" }],
-        },
-      ],
       welcomeText: "30 minutes to talk through Compass Calendar.",
     });
 
@@ -226,14 +218,6 @@ describe("BookingPageService", () => {
 
     expect(page).toEqual(
       expect.objectContaining({
-        dateOverrides: [
-          { kind: "blocked", date: "2026-09-07" },
-          {
-            kind: "hours",
-            date: "2026-09-12",
-            intervals: [{ start: "09:00", end: "12:00" }],
-          },
-        ],
         welcomeText: "30 minutes to talk through Compass Calendar.",
       }),
     );

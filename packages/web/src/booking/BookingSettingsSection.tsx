@@ -16,7 +16,6 @@ import { useAppAccess } from "@web/billing/useAppAccess";
 import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
-import { BookingDateOverridesEditor } from "@web/booking/BookingDateOverridesEditor";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
@@ -105,7 +104,6 @@ const buildInitialForm = (
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
     timeZone: TimeZoneSchema.parse(effectiveTimeZone),
     weeklyAvailability: [],
-    dateOverrides: [],
     welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
@@ -187,7 +185,6 @@ export function BookingSettingsSection({
   );
   const [enableError, setEnableError] = useState<string | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
-  const [areOverridesValid, setAreOverridesValid] = useState(true);
   const [minNoticeText, setMinNoticeText] = useState(() =>
     String(form.minNoticeHours),
   );
@@ -309,10 +306,6 @@ export function BookingSettingsSection({
   const handleSave = () => {
     if (!areHoursValid) {
       setEnableError("Fix the weekly hours that could not be read.");
-      return;
-    }
-    if (!areOverridesValid) {
-      setEnableError("Fix the date overrides that could not be read.");
       return;
     }
     if ((form.welcomeText?.length ?? 0) > 500) {
@@ -506,11 +499,6 @@ export function BookingSettingsSection({
           onValidityChange={setAreHoursValid}
           shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
           value={form.weeklyAvailability}
-        />
-        <BookingDateOverridesEditor
-          onChange={(dateOverrides) => updateForm({ dateOverrides })}
-          onValidityChange={setAreOverridesValid}
-          value={form.dateOverrides ?? []}
         />
       </div>
 

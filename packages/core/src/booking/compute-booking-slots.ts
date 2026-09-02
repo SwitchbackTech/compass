@@ -1,6 +1,4 @@
 import {
-  type BookingDateOverride,
-  type BookingDateOverrides,
   type BookingDurationMinutes,
   localTimeToMinutes,
   type WeeklyAvailability,
@@ -19,7 +17,6 @@ export interface ComputeBookingSlotsInput {
   timeZone: string;
   durationMinutes: BookingDurationMinutes;
   weeklyAvailability: WeeklyAvailability;
-  dateOverrides?: BookingDateOverrides;
   minNoticeHours: number;
   maxHorizonDays: number;
   bufferMinutes: number | null;
@@ -124,26 +121,9 @@ const availabilityForWeekday = (
   weekday: number,
 ) => weeklyAvailability.filter((interval) => interval.weekday === weekday);
 
-const availabilityForLocalDate = (
-  weeklyAvailability: WeeklyAvailability,
-  dateOverrideByDate: ReadonlyMap<string, BookingDateOverride>,
-  localDate: string,
-  weekday: number,
-): readonly { start: string; end: string }[] | null => {
-  const override = dateOverrideByDate.get(localDate);
-  if (override?.kind === "blocked") {
-    return null;
-  }
-  if (override?.kind === "hours") {
-    return override.intervals;
-  }
-  return availabilityForWeekday(weeklyAvailability, weekday);
-};
-
 /**
- * Pure slot engine: weekly hours, date overrides, busy/reservation buffers,
- * min notice, horizon, and max-per-day caps. Returns UTC instants valid as
- * slot starts.
+ * Pure slot engine: weekly hours, busy/reservation buffers, min notice,
+ * horizon, and max-per-day caps. Returns UTC instants valid as slot starts.
  */
 export const computeBookingSlots = (
   input: ComputeBookingSlotsInput,
@@ -152,7 +132,6 @@ export const computeBookingSlots = (
     timeZone,
     durationMinutes,
     weeklyAvailability,
-    dateOverrides = [],
     minNoticeHours,
     maxHorizonDays,
     bufferMinutes,
@@ -164,7 +143,7 @@ export const computeBookingSlots = (
     windowEnd,
   } = input;
 
-  if (weeklyAvailability.length === 0 && dateOverrides.length === 0) {
+  if (weeklyAvailability.length === 0) {
     return [];
   }
 
@@ -189,10 +168,6 @@ export const computeBookingSlots = (
       ? null
       : countReservationsByLocalDate(confirmedReservationStarts, timeZone);
 
-  const dateOverrideByDate = new Map(
-    dateOverrides.map((override) => [override.date, override]),
-  );
-
   const slots: string[] = [];
   const seenStarts = new Set<number>();
 
@@ -202,16 +177,7 @@ export const computeBookingSlots = (
   while (dayCursor.isSameOrBefore(lastDay, "day")) {
     const weekday = toIsoWeekday(dayCursor);
     const localDate = dayCursor.format("YYYY-MM-DD");
-    const dayAvailability = availabilityForLocalDate(
-      weeklyAvailability,
-      dateOverrideByDate,
-      localDate,
-      weekday,
-    );
-    if (dayAvailability === null) {
-      dayCursor = dayCursor.add(1, "day");
-      continue;
-    }
+    const dayAvailability = availabilityForWeekday(weeklyAvailability, weekday);
 
     if (
       maxBookingsPerDay !== null &&

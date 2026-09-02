@@ -141,14 +141,13 @@ describe("PublicBookingPageSchema", () => {
   });
 });
 
-describe("date overrides and welcome text", () => {
-  it("defaults missing dateOverrides and welcomeText", () => {
+describe("welcome text", () => {
+  it("defaults missing welcomeText", () => {
     const page = BookingPageSchema.parse(fullAdminPage());
-    expect(page.dateOverrides).toEqual([]);
     expect(page.welcomeText).toBeNull();
   });
 
-  it("parses a blocked date and a Saturday hours override", () => {
+  it("parses welcome text on admin put input", () => {
     const parsed = AdminPutBookingPageInputSchema.safeParse({
       enabled: true,
       durationMinutes: 30,
@@ -156,14 +155,6 @@ describe("date overrides and welcome text", () => {
       blockingCalendarIds: [calendarId()],
       timeZone: "America/Denver",
       weeklyAvailability: [{ weekday: 1, start: "09:00", end: "12:00" }],
-      dateOverrides: [
-        { kind: "blocked", date: "2026-09-07" },
-        {
-          kind: "hours",
-          date: "2026-09-12",
-          intervals: [{ start: "09:00", end: "12:00" }],
-        },
-      ],
       welcomeText: "30 minutes to talk through Compass Calendar.",
       minNoticeHours: 4,
       maxHorizonDays: 60,
@@ -178,86 +169,6 @@ describe("date overrides and welcome text", () => {
         "30 minutes to talk through Compass Calendar.",
       );
     }
-  });
-
-  it("rejects duplicate override dates", () => {
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        enabled: false,
-        durationMinutes: 30,
-        destinationCalendarId: calendarId(),
-        blockingCalendarIds: [calendarId()],
-        timeZone: "UTC",
-        weeklyAvailability: [],
-        dateOverrides: [
-          { kind: "blocked", date: "2026-09-07" },
-          {
-            kind: "hours",
-            date: "2026-09-07",
-            intervals: [{ start: "09:00", end: "10:00" }],
-          },
-        ],
-        minNoticeHours: 4,
-        maxHorizonDays: 60,
-        bufferMinutes: null,
-        maxBookingsPerDay: null,
-        guestsCanInviteOthers: true,
-      }).success,
-    ).toBe(false);
-  });
-
-  it("rejects overlapping hours on one date, empty hours, and 61 overrides", () => {
-    const base = {
-      enabled: false,
-      durationMinutes: 30 as const,
-      destinationCalendarId: calendarId(),
-      blockingCalendarIds: [calendarId()],
-      timeZone: "UTC",
-      weeklyAvailability: [],
-      minNoticeHours: 4,
-      maxHorizonDays: 60,
-      bufferMinutes: null,
-      maxBookingsPerDay: null,
-      guestsCanInviteOthers: true,
-    };
-
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        ...base,
-        dateOverrides: [
-          {
-            kind: "hours",
-            date: "2026-09-12",
-            intervals: [
-              { start: "09:00", end: "12:00" },
-              { start: "11:00", end: "13:00" },
-            ],
-          },
-        ],
-      }).success,
-    ).toBe(false);
-
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        ...base,
-        dateOverrides: [{ kind: "hours", date: "2026-09-12", intervals: [] }],
-      }).success,
-    ).toBe(false);
-
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        ...base,
-        dateOverrides: Array.from({ length: 61 }, (_, index) => {
-          const date = new Date(Date.UTC(2026, 0, 1 + index));
-          const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-          const day = String(date.getUTCDate()).padStart(2, "0");
-          return {
-            kind: "blocked" as const,
-            date: `${date.getUTCFullYear()}-${month}-${day}`,
-          };
-        }),
-      }).success,
-    ).toBe(false);
   });
 
   it("rejects welcome text longer than 500 characters", () => {

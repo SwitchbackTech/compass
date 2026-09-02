@@ -157,7 +157,6 @@ One booking-page record per user.
 | Destination calendar | Writable Google calendar (`canWrite`). Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
 | General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default timezone: the timezone currently in the host's calendar view when they first enable booking. |
-| Date overrides | Per host-timezone date, capped at 60. **Blocked** offers no slots that day. **Extra hours** replace that day's weekly template (they do not add to it). |
 | Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
 | Scheduling window | Minimum notice default **4 hours**. Maximum horizon default **60 days**. The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 | Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
@@ -179,12 +178,12 @@ timezone `<select>` plus a checkbox and two time inputs per weekday.
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
 - **Jump:** `e` then a letter focuses a field (`e` enable, `d` duration,
-  `c` destination, `b` blocking, `z` timezone, `h` hours including date
-  overrides, `w` welcome, `n` notice, `x` horizon, `o` buffer and limits,
-  `l` link). Settings owns Mod+Enter (save) and digits `1/2/3` (nav) on
-  this page, which is why the leader is `e` rather than `Mod+digit`. Focus
-  uses `data-booking-field` and does not click, so jumping onto a
-  checkbox does not toggle it.
+  `c` destination, `b` blocking, `z` timezone, `h` hours, `w` welcome,
+  `n` notice, `x` horizon, `o` buffer and limits, `l` link). Settings
+  owns Mod+Enter (save) and digits `1/2/3` (nav) on this page, which is
+  why the leader is `e` rather than `Mod+digit`. Focus uses
+  `data-booking-field` and does not click, so jumping onto a checkbox
+  does not toggle it.
 - **Save:** a successful save that returns a booking URL copies it. A
   page that has never been enabled has no slug yet, so the toast says to
   enable booking instead. Safari can drop a copy that follows the save
@@ -271,7 +270,7 @@ Unauthenticated:
 
 - `GET /api/booking/pages/:slug` — public page (host display name,
   duration, timezone, enabled, optional welcome text). `404` when
-  missing or disabled. Date overrides stay host-only.
+  missing or disabled.
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
   instants in the guest timezone for that window. The guest UI requests
   **one month at a time** (plus prefetch of adjacent months). Window
@@ -323,7 +322,7 @@ Authenticated (host session + writable billing, same as event writes):
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts`, `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingDateOverridesEditor.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts` |

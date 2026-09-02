@@ -302,32 +302,6 @@ describe("PublicBookingService", () => {
     expect(JSON.stringify(response)).not.toContain("intervals");
   });
 
-  it("offers Saturday starts from a persisted hours override", async () => {
-    const { slug } = await enableBookingPage("Saturday Host", {
-      weeklyAvailability: [],
-      dateOverrides: [
-        {
-          kind: "hours",
-          date: "2026-09-12",
-          intervals: [{ start: "09:00", end: "10:00" }],
-        },
-      ],
-    });
-
-    const response = await service.getSlots(slug, {
-      start: "2026-09-12T00:00:00.000Z",
-      end: "2026-09-13T00:00:00.000Z",
-      timeZone: "UTC",
-    });
-
-    expect(response.bookable).toBe(true);
-    expect(response.slots.map((slot) => slot.slotStart)).toEqual([
-      "2026-09-12T09:00:00Z",
-      "2026-09-12T09:15:00Z",
-      "2026-09-12T09:30:00Z",
-    ]);
-  });
-
   it("does not occupy a slot for a needsAction invite", async () => {
     const { slug } = await enableBookingPage();
     getAvailability.mockImplementation(async () => ({
@@ -387,7 +361,6 @@ describe("PublicBookingService", () => {
   it("returns welcome text on the public page without date overrides", async () => {
     const { slug } = await enableBookingPage("Welcome Host", {
       welcomeText: "30 minutes to talk through Compass Calendar.",
-      dateOverrides: [{ kind: "blocked", date: "2026-09-07" }],
     });
 
     const page = await service.getPublicPage(slug);
