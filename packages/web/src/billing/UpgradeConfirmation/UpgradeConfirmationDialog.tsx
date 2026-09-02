@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { OVERLAY_LETTER_SHORTCUT } from "@web/billing/overlay-letter-shortcut";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -33,9 +34,7 @@ export function UpgradeConfirmationDialog({
   const manageBillingRef = useRef<HTMLButtonElement>(null);
   const overlayShortcut = {
     enabled: isOpen,
-    ignoreAppLock: true,
-    ignoreInputs: false,
-    preventDefault: true,
+    ...OVERLAY_LETTER_SHORTCUT,
   } as const;
 
   useAppShortcut(

@@ -424,9 +424,11 @@ test.describe("public booking page", () => {
       })
       .toBe(true);
     const afterArrive = captured.slotGets;
+    expect(afterArrive).toBeGreaterThanOrEqual(2);
 
     await page.getByRole("button", { name: "Previous month" }).click();
     await next.click();
+    await page.waitForLoadState("networkidle");
     expect(captured.slotGets).toBe(afterArrive);
 
     const firstWindow = captured.slotQueries[0];
