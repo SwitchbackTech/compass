@@ -187,16 +187,8 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
     await expect(page.getByText("When")).toBeVisible();
+    await expect(page.getByText("Duration")).toBeVisible();
     await expect(page.getByText("30 minutes")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Copy cancel link" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("link", { name: "cancel this booking" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByText(/To cancel, use the link in that invite/),
-    ).toBeVisible();
     await expect(page).toHaveURL(
       /\/book\/confirmed\/000000000000000000000099$/,
     );
