@@ -151,6 +151,21 @@ describe("teachingFromBlockedPointer", () => {
       },
     });
   });
+
+  it("teaches Escape from the annotated up-next dismiss control", () => {
+    const dismiss = document.createElement("button");
+    dismiss.setAttribute(
+      POINTER_ACTION_ATTRIBUTE,
+      POINTER_ACTIONS.upNextDismiss,
+    );
+    dismiss.setAttribute(POINTER_SHORTCUT_ATTRIBUTE, "Esc");
+    expect(teachingFromBlockedPointer([dismiss, document], 0)).toEqual({
+      attempt: {
+        actionId: POINTER_ACTIONS.upNextDismiss,
+        shortcutKey: "Esc",
+      },
+    });
+  });
 });
 
 describe("pointerGridIntentFromPointer", () => {

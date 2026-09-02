@@ -57,6 +57,7 @@ const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
   attempt?.actionId === POINTER_ACTIONS.eventOpen ||
   attempt?.actionId === POINTER_ACTIONS.startTrial ||
   attempt?.actionId === POINTER_ACTIONS.reconnectGoogle ||
+  attempt?.actionId === POINTER_ACTIONS.upNextDismiss ||
   attempt?.actionId === "grid.timed" ||
   attempt?.actionId === "grid.all-day" ||
   Boolean(attempt?.shortcutKey);
@@ -151,6 +152,14 @@ const pointerHintMessage = ({
       <>
         Press <Key>{CONNECTION_BANNER_SHORTCUT_KEY}</Key> to reconnect Google
         Calendar.
+      </>
+    );
+  }
+
+  if (attempt?.actionId === POINTER_ACTIONS.upNextDismiss) {
+    return (
+      <>
+        Press <Key>Esc</Key> to dismiss.
       </>
     );
   }

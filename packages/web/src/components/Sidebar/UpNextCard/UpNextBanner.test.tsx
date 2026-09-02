@@ -11,6 +11,11 @@ import {
 } from "@web/__tests__/__mocks__/mock.render";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  POINTER_ACTION_ATTRIBUTE,
+  POINTER_ACTIONS,
+  POINTER_SHORTCUT_ATTRIBUTE,
+} from "@web/shortcuts/keyboard-only/pointer-action";
 import { UpNextBanner } from "./UpNextBanner";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -211,5 +216,18 @@ describe("UpNextBanner", () => {
       expect(screen.queryByText("Soon Event")).toBeNull();
       expect(screen.queryByRole("status")).toBeNull();
     });
+  });
+
+  it("annotates dismiss so a blocked click teaches Escape", () => {
+    render(<UpNextBanner />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
+    });
+
+    const dismiss = screen.getByRole("button", { name: "Dismiss" });
+    expect(dismiss).toHaveAttribute(
+      POINTER_ACTION_ATTRIBUTE,
+      POINTER_ACTIONS.upNextDismiss,
+    );
+    expect(dismiss).toHaveAttribute(POINTER_SHORTCUT_ATTRIBUTE, "Esc");
   });
 });
