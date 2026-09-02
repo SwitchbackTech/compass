@@ -267,23 +267,16 @@ describe("addId", () => {
   });
 });
 
-describe("focusCalendarEventElement", () => {
-  const EVENT_ID = "507f1f77bcf86cd799439011";
-  let pendingFrames: FrameRequestCallback[];
+const EVENT_ID = "507f1f77bcf86cd799439011";
+
+/**
+ * The three focus helpers all retry across animation frames, so every suite
+ * below needs the same seam: a stubbed `requestAnimationFrame` whose queue the
+ * test drains by hand, plus a way to mount an event card mid-retry.
+ */
+const setupFocusRetryHarness = () => {
+  let pendingFrames: FrameRequestCallback[] = [];
   let originalRequestAnimationFrame: typeof requestAnimationFrame;
-
-  const addEventElement = () => {
-    const element = document.createElement("div");
-    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
-    element.tabIndex = 0;
-    document.body.appendChild(element);
-    return element;
-  };
-
-  const flushFrame = () => {
-    const frames = pendingFrames.splice(0);
-    frames.forEach((frame) => frame(performance.now()));
-  };
 
   beforeEach(() => {
     pendingFrames = [];
@@ -297,13 +290,33 @@ describe("focusCalendarEventElement", () => {
     document.body.innerHTML = "";
   });
 
+  return {
+    addEventElement: () => {
+      const element = document.createElement("div");
+      element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
+      element.tabIndex = 0;
+      document.body.appendChild(element);
+      return element;
+    },
+    flushFrame: () => {
+      const frames = pendingFrames.splice(0);
+      frames.forEach((frame) => frame(performance.now()));
+    },
+    pendingFrameCount: () => pendingFrames.length,
+  };
+};
+
+describe("focusCalendarEventElement", () => {
+  const { addEventElement, flushFrame, pendingFrameCount } =
+    setupFocusRetryHarness();
+
   it("focuses the event element when it already exists", () => {
     const element = addEventElement();
 
     focusCalendarEventElement(EVENT_ID);
 
     expect(document.activeElement).toBe(element);
-    expect(pendingFrames).toHaveLength(0);
+    expect(pendingFrameCount()).toBe(0);
   });
 
   it("retries until the event element appears", () => {
@@ -317,37 +330,25 @@ describe("focusCalendarEventElement", () => {
 
     expect(document.activeElement).toBe(element);
   });
+
+  it("gives up once the retry budget is spent", () => {
+    focusCalendarEventElement(EVENT_ID);
+
+    let flushes = 0;
+    while (pendingFrameCount() > 0 && flushes < 100) {
+      flushFrame();
+      flushes += 1;
+    }
+
+    expect(flushes).toBeLessThan(100);
+    const element = addEventElement();
+    flushFrame();
+    expect(document.activeElement).not.toBe(element);
+  });
 });
 
 describe("focusCalendarEventElementAfterDiscard", () => {
-  const EVENT_ID = "507f1f77bcf86cd799439011";
-  let pendingFrames: FrameRequestCallback[];
-  let originalRequestAnimationFrame: typeof requestAnimationFrame;
-
-  const addEventElement = () => {
-    const element = document.createElement("div");
-    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
-    element.tabIndex = 0;
-    document.body.appendChild(element);
-    return element;
-  };
-
-  const flushFrame = () => {
-    const frames = pendingFrames.splice(0);
-    frames.forEach((frame) => frame(performance.now()));
-  };
-
-  beforeEach(() => {
-    pendingFrames = [];
-    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
-    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
-      pendingFrames.push(frame)) as typeof requestAnimationFrame;
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
-    document.body.innerHTML = "";
-  });
+  const { addEventElement, flushFrame } = setupFocusRetryHarness();
 
   it("skips a draft portal and focuses the saved card", () => {
     const draftPortal = addEventElement();
@@ -378,34 +379,8 @@ describe("focusCalendarEventElementAfterDiscard", () => {
 });
 
 describe("refocusEventElement", () => {
-  const EVENT_ID = "507f1f77bcf86cd799439011";
-  let pendingFrames: FrameRequestCallback[];
-  let originalRequestAnimationFrame: typeof requestAnimationFrame;
-
-  const addEventElement = () => {
-    const element = document.createElement("div");
-    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
-    element.tabIndex = 0;
-    document.body.appendChild(element);
-    return element;
-  };
-
-  const flushFrame = () => {
-    const frames = pendingFrames.splice(0);
-    frames.forEach((frame) => frame(performance.now()));
-  };
-
-  beforeEach(() => {
-    pendingFrames = [];
-    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
-    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
-      pendingFrames.push(frame)) as typeof requestAnimationFrame;
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
-    document.body.innerHTML = "";
-  });
+  const { addEventElement, flushFrame, pendingFrameCount } =
+    setupFocusRetryHarness();
 
   it("focuses the event's element once it is replaced", () => {
     const staleElement = addEventElement();
@@ -430,7 +405,7 @@ describe("refocusEventElement", () => {
     refocusEventElement(EVENT_ID);
 
     let flushes = 0;
-    while (pendingFrames.length > 0 && flushes < 100) {
+    while (pendingFrameCount() > 0 && flushes < 100) {
       flushFrame();
       flushes += 1;
     }
