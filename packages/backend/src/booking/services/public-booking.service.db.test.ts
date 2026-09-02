@@ -366,6 +366,7 @@ describe("PublicBookingService", () => {
     spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
       undefined,
     );
+    await calendarService.ensureLocalCalendar(userId);
     const localCalendar = await calendarService.getLocalCalendar(userId);
     if (!localCalendar) {
       throw new Error("expected Compass-local calendar after user create");

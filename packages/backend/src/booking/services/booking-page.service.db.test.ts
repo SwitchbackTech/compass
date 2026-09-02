@@ -315,6 +315,7 @@ describe("BookingPageService", () => {
     const userId = await createNamedUser("Local Blocker");
     const calendar = writableCalendar();
     mockHealthySync([calendar]);
+    await calendarService.ensureLocalCalendar(userId);
     const localCalendar = await calendarService.getLocalCalendar(userId);
     if (!localCalendar) {
       throw new Error("expected Compass-local calendar after user create");
