@@ -195,7 +195,9 @@ describe("BookingSettingsSection", () => {
     const save = await screen.findByRole("button", {
       name: "Save booking settings",
     });
-    expect(save.parentElement?.parentElement?.className).toContain("sticky");
+    const stickyBar = save.parentElement?.parentElement;
+    expect(stickyBar?.className).toContain("sticky");
+    expect(stickyBar).toHaveTextContent("then a letter to jump to a field");
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
