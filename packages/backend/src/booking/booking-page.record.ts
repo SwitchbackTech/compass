@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import {
   BookingBufferMinutesSchema,
-  BookingDateOverridesSchema,
   BookingDurationMinutesSchema,
   BookingMaxBookingsPerDaySchema,
   BookingSlugSchema,
@@ -16,7 +15,10 @@ import { zObjectId } from "@core/types/type.utils";
 
 const ObjectIdSchema = zObjectId;
 
-export const BookingPageRecordSchema = z.strictObject({
+// Existing documents may still store a leftover `dateOverrides` array from
+// the removed host-only feature; it is unused leftover storage, not a live
+// field. `z.object` strips unknown keys so those documents still parse.
+export const BookingPageRecordSchema = z.object({
   _id: ObjectIdSchema,
   userId: ObjectIdSchema,
   bookingSlug: BookingSlugSchema.optional(),
@@ -26,7 +28,6 @@ export const BookingPageRecordSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
-  dateOverrides: BookingDateOverridesSchema.default([]),
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z.number().int().nonnegative(),
   maxHorizonDays: z.number().int().positive().max(60),

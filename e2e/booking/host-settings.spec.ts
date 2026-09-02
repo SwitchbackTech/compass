@@ -74,19 +74,13 @@ test("clearing the horizon field shows an inline error and blocks save", async (
   expect(captured.putBodies[0]).toMatchObject({ maxHorizonDays: 30 });
 });
 
-test("saves a date override and welcome text", async ({ page }) => {
+test("saves welcome text", async ({ page }) => {
   const bookingUrl = "https://compasscalendar.com/book/hostuser";
   const captured = await prepareSignedInBookingSettingsPage(page, {
     bookingUrl,
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Add date override" }),
-  );
-  await dispatchFill(settingsDialog.getByLabel("Override date"), "2026-09-12");
-  await settingsDialog.getByLabel("Override kind").selectOption("hours");
-  await dispatchFill(settingsDialog.getByLabel("Extra hours"), "9-12");
   await dispatchFill(
     settingsDialog.getByLabel("Welcome text"),
     "30 minutes to talk through Compass.",
@@ -98,13 +92,6 @@ test("saves a date override and welcome text", async ({ page }) => {
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({
     welcomeText: "30 minutes to talk through Compass.",
-    dateOverrides: [
-      {
-        kind: "hours",
-        date: "2026-09-12",
-        intervals: [{ start: "09:00", end: "12:00" }],
-      },
-    ],
   });
   await expect(
     settingsDialog.getByRole("link", { name: "Open booking page" }),

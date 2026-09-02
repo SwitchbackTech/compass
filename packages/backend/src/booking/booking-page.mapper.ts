@@ -29,7 +29,6 @@ export const mapBookingPageRecordToWire = (
     blockingCalendarIds: record.blockingCalendarIds,
     timeZone: record.timeZone,
     weeklyAvailability: record.weeklyAvailability,
-    dateOverrides: record.dateOverrides ?? [],
     welcomeText: record.welcomeText ?? null,
     minNoticeHours: record.minNoticeHours,
     maxHorizonDays: record.maxHorizonDays,
@@ -61,7 +60,6 @@ export const mapBookingPageRecordToSetupResponse = (
     | "blockingCalendarIds"
     | "timeZone"
     | "weeklyAvailability"
-    | "dateOverrides"
     | "welcomeText"
     | "minNoticeHours"
     | "maxHorizonDays"
@@ -77,7 +75,6 @@ export const mapBookingPageRecordToSetupResponse = (
     blockingCalendarIds: record.blockingCalendarIds,
     timeZone: record.timeZone,
     weeklyAvailability: record.weeklyAvailability,
-    dateOverrides: record.dateOverrides ?? [],
     welcomeText: record.welcomeText ?? null,
     minNoticeHours: record.minNoticeHours,
     maxHorizonDays: record.maxHorizonDays,
@@ -100,7 +97,6 @@ export const mapPutInputToRecordFields = (
   blockingCalendarIds: input.blockingCalendarIds,
   timeZone: input.timeZone,
   weeklyAvailability: input.weeklyAvailability,
-  dateOverrides: input.dateOverrides ?? [],
   welcomeText: input.welcomeText ?? null,
   minNoticeHours: input.minNoticeHours,
   maxHorizonDays: input.maxHorizonDays,
@@ -120,7 +116,6 @@ export const buildDefaultAdminPutInput = (): AdminPutBookingPageInput => ({
   blockingCalendarIds: [PLACEHOLDER_CALENDAR_ID],
   timeZone: TimeZoneSchema.parse("UTC"),
   weeklyAvailability: [],
-  dateOverrides: [],
   welcomeText: null,
   minNoticeHours: 4,
   maxHorizonDays: 60,

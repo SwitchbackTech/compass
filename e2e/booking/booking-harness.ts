@@ -135,8 +135,7 @@ export function buildSameDaySiblingSlot(
 }
 
 /**
- * Next Saturday at 15:00 UTC. Stands in for extra-hours date overrides on a
- * weekday with no weekly template. 15:00 UTC stays Saturday in US and
+ * Next Saturday at 15:00 UTC. 15:00 UTC stays Saturday in US and
  * European Playwright timezones.
  */
 export function buildUpcomingSaturdaySlot(durationMinutes = 30): {
@@ -460,7 +459,6 @@ export async function prepareSignedInBookingSettingsPage(
     blockingCalendarIds: [BOOKING_CALENDAR_ID],
     timeZone: "America/New_York",
     weeklyAvailability: [],
-    dateOverrides: [],
     welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,

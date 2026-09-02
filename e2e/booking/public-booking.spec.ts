@@ -27,7 +27,7 @@ test.describe("public booking page", () => {
     ).toBeVisible();
   });
 
-  test("shows Saturday times when that day is only available via a date override", async ({
+  test("shows Saturday times when Saturday has bookable slots", async ({
     page,
   }) => {
     const saturday = buildUpcomingSaturdaySlot();

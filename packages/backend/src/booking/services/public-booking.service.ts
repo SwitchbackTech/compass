@@ -98,7 +98,7 @@ const slotEndForStart = (slotStart: Date, durationMinutes: number): Date =>
  * `getSlots` and `createReservation` must agree exactly on what the engine is
  * told, or a slot the guest was offered could be rejected (or, worse, accepted)
  * by the re-check. Building both inputs here removes the chance of the two
- * eleven-field literals drifting apart.
+ * field literals drifting apart.
  */
 const slotEngineInputForPage = (
   page: BookingPageRecord,
@@ -109,7 +109,6 @@ const slotEngineInputForPage = (
   timeZone: page.timeZone,
   durationMinutes: page.durationMinutes,
   weeklyAvailability: page.weeklyAvailability,
-  dateOverrides: page.dateOverrides ?? [],
   minNoticeHours: page.minNoticeHours,
   maxHorizonDays: page.maxHorizonDays,
   bufferMinutes: page.bufferMinutes,
