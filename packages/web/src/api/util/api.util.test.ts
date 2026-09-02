@@ -159,6 +159,23 @@ describe("getApiErrorMessage", () => {
     ).toBeUndefined();
     expect(getApiErrorMessage(new Error("nope"))).toBeUndefined();
   });
+
+  it("returns the message string from a { code, message } envelope", () => {
+    const error = createApiError({
+      data: {
+        code: "BLOCKING_CALENDAR_INVALID",
+        message: "Calendar is not readable",
+      },
+    });
+    expect(getApiErrorMessage(error)).toBe("Calendar is not readable");
+  });
+
+  it("prefers data.error over data.message when both exist", () => {
+    const error = createApiError({
+      data: { error: "Billing copy", message: "Ignored envelope" },
+    });
+    expect(getApiErrorMessage(error)).toBe("Billing copy");
+  });
 });
 
 describe("getApiErrorCode", () => {

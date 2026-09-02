@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import {
   createMockCalendar,
@@ -23,6 +24,10 @@ import {
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import {
+  registerToastPort,
+  resetToastPort,
+} from "@web/common/utils/toast/toast.port";
 import { useSettingsShortcuts } from "@web/settings/useSettingsShortcuts";
 import {
   clearAppLockReasons,
@@ -45,6 +50,7 @@ afterEach(() => {
   setPinnedTimeZone(null);
   clearAppLockReasons();
   setClipboard(originalClipboard);
+  resetToastPort();
 });
 
 const writableCalendar = createMockCalendar({
@@ -915,6 +921,8 @@ describe("BookingSettingsSection", () => {
 
   it("shows an error on PUT 403 without crashing Settings", async () => {
     const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
 
     userMetadataActions.set(healthyGoogleMetadata);
 
@@ -965,6 +973,77 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByRole("button", { name: "Save booking settings" }),
     ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mocks.error).toHaveBeenCalledWith(
+        "Could not save booking settings. Please try again.",
+        expect.any(Object),
+      );
+    });
+    expect(String(mocks.error.mock.calls[0]?.[0])).not.toMatch(
+      /Request failed for/,
+    );
+  });
+
+  it("explains a blocking-calendar save failure without transport text", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: [],
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+          }),
+        ),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(400),
+          ctx.json({
+            code: "BLOCKING_CALENDAR_INVALID",
+            message: "Calendar is not readable",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.error).toHaveBeenCalledWith(
+        "One of your blocking calendars can't be checked for busy times. Uncheck it and save again.",
+        expect.any(Object),
+      );
+    });
+    expect(String(mocks.error.mock.calls[0]?.[0])).not.toMatch(
+      /Request failed for/,
+    );
   });
 
   it("shows an inline error for a cleared horizon field and blocks save", async () => {
