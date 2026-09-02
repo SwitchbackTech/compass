@@ -3,9 +3,7 @@ import {
   BookingSlotsQuerySchema,
 } from "@core/types/booking.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-
-const MONTH_KEY_PATTERN = /^\d{4}-\d{2}$/;
-const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+import { isBookingMonthKey } from "@web/booking/public-booking.keys";
 
 /**
  * Constructing an `Intl.DateTimeFormat` is the expensive part, and the guest
@@ -63,12 +61,6 @@ const dateKeyFormatter = perTimeZoneFormatter(
   { year: "numeric", month: "2-digit", day: "2-digit" },
   "en-CA",
 );
-
-export const isBookingMonthKey = (value: string): boolean =>
-  MONTH_KEY_PATTERN.test(value);
-
-export const isBookingDateKey = (value: string): boolean =>
-  DATE_KEY_PATTERN.test(value);
 
 export function formatBookingMonthKey(
   instant: Date | string | Dayjs,

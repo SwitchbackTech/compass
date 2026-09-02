@@ -5,15 +5,17 @@ import {
   formatBookingMonthKey,
   formatDurationMinutes,
   getPublicBookingMonthWindow,
-  isBookingDateKey,
   isBookingMonthAvailable,
-  isBookingMonthKey,
   listBookingAvailableDateKeysInMonth,
   listBookingAvailableDayKeys,
   listBookingMonthGridWeeks,
   shiftBookingMonthKey,
   stepBookingAvailableDay,
 } from "@web/booking/public-booking.format";
+import {
+  isBookingDateKey,
+  isBookingMonthKey,
+} from "@web/booking/public-booking.keys";
 import { describe, expect, it } from "bun:test";
 
 const utc = TimeZoneSchema.parse("UTC");
