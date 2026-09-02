@@ -1,7 +1,9 @@
 import { ArrowSquareOut, Check, Copy } from "@phosphor-icons/react";
 import { useCopiedFlag } from "@web/booking/use-copied-flag";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
-import IconButton from "@web/components/IconButton/IconButton";
+import IconButton, {
+  iconButtonClassName,
+} from "@web/components/IconButton/IconButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface BookingCopyLinkProps {
@@ -30,9 +32,7 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
           readOnly
           value={bookingUrl}
         />
-        <TooltipWrapper
-          description={copied ? "Copied" : "Copy booking link"}
-        >
+        <TooltipWrapper description={copied ? "Copied" : "Copy booking link"}>
           <IconButton
             aria-label="Copy booking link"
             onClick={copy}
@@ -44,7 +44,7 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
         <TooltipWrapper description="Open booking page">
           <a
             aria-label="Open booking page"
-            className="flex cursor-pointer items-center justify-center rounded border-2 border-transparent bg-transparent p-0 text-xl text-inherit outline-[inherit] transition-[background-color,box-shadow,transform] duration-300 hover:scale-105 hover:bg-border focus-visible:shadow-[0_0_0_2px_var(--color-border-strong)] active:scale-95"
+            className={iconButtonClassName("small")}
             href={bookingUrl}
             rel="noreferrer"
             target="_blank"

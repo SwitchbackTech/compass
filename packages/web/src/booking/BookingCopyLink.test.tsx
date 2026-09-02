@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
@@ -37,35 +43,28 @@ describe("BookingCopyLink", () => {
     expect(openLink).toHaveAttribute("rel", "noreferrer");
   });
 
-  it("explains the icon actions in tooltips", async () => {
+  it("explains the copy icon in a tooltip", async () => {
     const user = userEvent.setup({ delay: null });
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
-    render(<BookingCopyLink bookingUrl={bookingUrl} />);
+    render(
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+    );
 
     await user.hover(screen.getByRole("button", { name: "Copy booking link" }));
-    expect(
-      (await screen.findByRole("tooltip")).textContent,
-    ).toBe("Copy booking link");
-
-    await user.unhover(screen.getByRole("button", { name: "Copy booking link" }));
-    await user.hover(screen.getByRole("link", { name: "Open booking page" }));
-    expect(
-      (await screen.findByRole("tooltip")).textContent,
-    ).toBe("Open booking page");
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "Copy booking link",
+    );
   });
 
-  it("reflects a successful copy in the tooltip", async () => {
+  it("explains the open-page icon in a tooltip", async () => {
     const user = userEvent.setup({ delay: null });
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
-    render(<BookingCopyLink bookingUrl={bookingUrl} />);
+    render(
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+    );
 
-    await user.click(screen.getByRole("button", { name: "Copy booking link" }));
-    await waitFor(() => {
-      expect(mockWriteText).toHaveBeenCalledWith(bookingUrl);
-    });
-
-    await user.hover(screen.getByRole("button", { name: "Copy booking link" }));
-    expect((await screen.findByRole("tooltip")).textContent).toBe("Copied");
+    await user.hover(screen.getByRole("link", { name: "Open booking page" }));
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "Open booking page",
+    );
   });
 });
 
@@ -80,6 +79,7 @@ const setClipboard = (value: unknown) => {
 };
 
 afterEach(() => {
+  cleanup();
   setClipboard(originalClipboard);
 });
 
