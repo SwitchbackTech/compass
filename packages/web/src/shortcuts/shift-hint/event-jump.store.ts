@@ -132,6 +132,9 @@ export const isEventJumpActive = () => useEventJumpStore.getState().isActive;
 export const selectEventJumpActiveDayKeys = (state: EventJumpState) =>
   state.activeDayKeys;
 
+export const selectPointerDraftDateKey = (state: EventJumpState) =>
+  state.pointerDraftDateKey;
+
 export const selectEventJumpAnnouncement = (state: EventJumpState) =>
   state.announcement;
 
