@@ -161,6 +161,7 @@
   --animate-game-score-pop: gameScorePop 900ms ease-out forwards;
   --animate-game-lock-flash: gameLockFlash 450ms ease-out both;
   --animate-game-focus-pulse: gameFocusPulse 1.4s ease-in-out infinite;
+  --animate-game-shake: gameShake 300ms ease-in-out both;
 
   @keyframes loaderSpin {
     from {
@@ -263,6 +264,23 @@
     to {
       opacity: 0;
       transform: translateY(-1.5rem);
+    }
+  }
+
+  /* A missed drop shakes the tray card sideways: wrong, but recoverable. */
+  @keyframes gameShake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-4px);
+    }
+    50% {
+      transform: translateX(4px);
+    }
+    75% {
+      transform: translateX(-2px);
     }
   }
 
@@ -531,6 +549,14 @@
 
 @utility c-game-lock-flash {
   animation: var(--animate-game-lock-flash);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility c-game-shake {
+  animation: var(--animate-game-shake);
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
