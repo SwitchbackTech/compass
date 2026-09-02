@@ -16,8 +16,12 @@ export const TASK_BASE_POINTS = 100;
 export const SPEED_BONUS_MS = 8_000;
 export const SPEED_BONUS_POINTS = 50;
 /** Consecutive speed clears multiply the award: x2 at 3, x3 at 6. */
-export const STREAK_X2_AT = 3;
-export const STREAK_X3_AT = 6;
+const STREAK_X2_AT = 3;
+const STREAK_X3_AT = 6;
+
+export const streakMultiplier = (streak: number): 1 | 2 | 3 =>
+  streak >= STREAK_X3_AT ? 3 : streak >= STREAK_X2_AT ? 2 : 1;
+
 /** Clearing the whole queue converts remaining seconds into points. */
 export const TIME_BONUS_PER_SECOND = 10;
 

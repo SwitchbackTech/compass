@@ -1,4 +1,5 @@
 import {
+  type BookingDateOverride,
   type BookingDateOverrides,
   type BookingDurationMinutes,
   localTimeToMinutes,
@@ -125,11 +126,11 @@ const availabilityForWeekday = (
 
 const availabilityForLocalDate = (
   weeklyAvailability: WeeklyAvailability,
-  dateOverrides: BookingDateOverrides,
+  dateOverrideByDate: ReadonlyMap<string, BookingDateOverride>,
   localDate: string,
   weekday: number,
 ): readonly { start: string; end: string }[] | null => {
-  const override = dateOverrides.find((entry) => entry.date === localDate);
+  const override = dateOverrideByDate.get(localDate);
   if (override?.kind === "blocked") {
     return null;
   }
@@ -188,6 +189,10 @@ export const computeBookingSlots = (
       ? null
       : countReservationsByLocalDate(confirmedReservationStarts, timeZone);
 
+  const dateOverrideByDate = new Map(
+    dateOverrides.map((override) => [override.date, override]),
+  );
+
   const slots: string[] = [];
   const seenStarts = new Set<number>();
 
@@ -199,7 +204,7 @@ export const computeBookingSlots = (
     const localDate = dayCursor.format("YYYY-MM-DD");
     const dayAvailability = availabilityForLocalDate(
       weeklyAvailability,
-      dateOverrides,
+      dateOverrideByDate,
       localDate,
       weekday,
     );

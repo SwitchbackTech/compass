@@ -5,8 +5,7 @@ import {
   RUN_TASKS,
   SPEED_BONUS_MS,
   SPEED_BONUS_POINTS,
-  STREAK_X2_AT,
-  STREAK_X3_AT,
+  streakMultiplier,
   TASK_BASE_POINTS,
   TIME_BONUS_PER_SECOND,
 } from "@web/components/ShortcutShowcase/game.tasks";
@@ -380,16 +379,10 @@ const applyKey = (state: GameState, key: GameKey): GameState => {
       const next = undoDelete(practice);
       return next === practice ? state : { ...state, practice: next };
     }
-    case "legend": {
-      if (state.simOverlay === "legend") return { ...state, simOverlay: null };
-      if (task.type !== "legend" || state.simOverlay) return state;
-      return { ...state, simOverlay: "legend", simOverlayOpened: true };
-    }
-    case "palette": {
-      if (state.simOverlay === "palette") return { ...state, simOverlay: null };
-      if (task.type !== "palette" || state.simOverlay) return state;
-      return { ...state, simOverlay: "palette", simOverlayOpened: true };
-    }
+    case "legend":
+      return toggleDiscoveryOverlay(state, "legend", task);
+    case "palette":
+      return toggleDiscoveryOverlay(state, "palette", task);
     case "jump": {
       if (task.type !== "eventJump") return state;
       return {
@@ -437,6 +430,50 @@ const applyKey = (state: GameState, key: GameKey): GameState => {
   }
 };
 
+const toggleDiscoveryOverlay = (
+  state: GameState,
+  kind: Extract<GameSimOverlay, "legend" | "palette">,
+  task: GameTask,
+): GameState => {
+  if (state.simOverlay === kind) return { ...state, simOverlay: null };
+  if (task.type !== kind || state.simOverlay) return state;
+  return { ...state, simOverlay: kind, simOverlayOpened: true };
+};
+
+const finishRun = (
+  state: GameState,
+  nowMs: number,
+  { applyTimeBonus }: { applyTimeBonus: boolean },
+): GameState => {
+  // The time bonus needs a timed run finished before the buzzer with no
+  // skips, or Esc-ing through tasks would farm remaining seconds.
+  const fullClear =
+    applyTimeBonus &&
+    state.timed &&
+    !state.buzzer &&
+    state.tasksDone === RUN_TASKS.length;
+  const remainingSeconds = fullClear
+    ? Math.max(0, Math.floor((state.endsAtMs - nowMs) / 1000))
+    : 0;
+  const timeBonus = remainingSeconds * TIME_BONUS_PER_SECOND;
+  return {
+    ...state,
+    phase: "ended",
+    outcome: state.buzzer ? "overtime" : "cleared",
+    endedAtMs: nowMs,
+    ...(applyTimeBonus ? { timeBonus, score: state.score + timeBonus } : {}),
+  };
+};
+
+const advanceOrFinish = (
+  advanced: GameState,
+  nowMs: number,
+  options: { applyTimeBonus: boolean },
+): GameState =>
+  advanced.taskIndex >= RUN_TASKS.length
+    ? finishRun(advanced, nowMs, options)
+    : enterTask(advanced);
+
 const completeIfDone = (state: GameState, nowMs: number): GameState => {
   const task = currentTask(state);
   if (!task || !isTaskComplete(task, state)) return state;
@@ -444,8 +481,7 @@ const completeIfDone = (state: GameState, nowMs: number): GameState => {
   const elapsed = nowMs - state.taskStartedAtMs;
   const speedy = elapsed <= SPEED_BONUS_MS;
   const streak = speedy ? state.streak + 1 : 0;
-  const multiplier =
-    streak >= STREAK_X3_AT ? 3 : streak >= STREAK_X2_AT ? 2 : 1;
+  const multiplier = streakMultiplier(streak);
   const points =
     (TASK_BASE_POINTS + (speedy ? SPEED_BONUS_POINTS : 0)) * multiplier;
 
@@ -464,25 +500,7 @@ const completeIfDone = (state: GameState, nowMs: number): GameState => {
     },
   };
 
-  if (advanced.taskIndex >= RUN_TASKS.length) {
-    // The time bonus needs a timed run finished before the buzzer with no
-    // skips, or Esc-ing through tasks would farm remaining seconds.
-    const fullClear =
-      state.timed && !state.buzzer && advanced.tasksDone === RUN_TASKS.length;
-    const remainingSeconds = fullClear
-      ? Math.max(0, Math.floor((state.endsAtMs - nowMs) / 1000))
-      : 0;
-    const timeBonus = remainingSeconds * TIME_BONUS_PER_SECOND;
-    return {
-      ...advanced,
-      phase: "ended",
-      outcome: state.buzzer ? "overtime" : "cleared",
-      endedAtMs: nowMs,
-      timeBonus,
-      score: advanced.score + timeBonus,
-    };
-  }
-  return enterTask(advanced);
+  return advanceOrFinish(advanced, nowMs, { applyTimeBonus: true });
 };
 
 /**
@@ -498,15 +516,7 @@ export const skipCurrentTask = (state: GameState, nowMs: number): GameState => {
     streak: 0,
     taskStartedAtMs: nowMs,
   };
-  if (advanced.taskIndex >= RUN_TASKS.length) {
-    return {
-      ...advanced,
-      phase: "ended",
-      outcome: state.buzzer ? "overtime" : "cleared",
-      endedAtMs: nowMs,
-    };
-  }
-  return enterTask(advanced);
+  return advanceOrFinish(advanced, nowMs, { applyTimeBonus: false });
 };
 
 export const handleGameKey = (

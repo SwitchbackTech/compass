@@ -39,6 +39,11 @@ import {
   shortcutShowcaseActions,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
+import {
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+  TEXT_BUTTON_CLASS,
+} from "@web/components/ShortcutShowcase/showcase-buttons";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { hasSeenWelcome } from "@web/components/WelcomeModal/welcome.modal.util";
@@ -49,13 +54,6 @@ import {
   keyboardKey,
 } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
-
-const TEXT_BUTTON_CLASS =
-  "c-focus-ring inline-flex items-center gap-2 rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
-const PRIMARY_BUTTON_CLASS =
-  "c-button c-button-primary inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs";
-const SECONDARY_BUTTON_CLASS =
-  "c-button c-button-secondary inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs";
 
 /** `?` is Shift+/ on common layouts; some browsers report the physical slash. */
 const isLegendToggleKey = (event: KeyboardEvent) =>
@@ -165,70 +163,66 @@ const ShowcaseTakeover: FC = () => {
     openModal("signUp");
   };
 
-  // Run-started, per-task, and finished events fire from effects (not the
-  // setState updater) keyed by run count so each fires exactly once per run.
-  const reportedRunRef = useRef(0);
+  // Run-started, per-task, and finished events fire from one effect (not the
+  // setState updater) so each fires exactly once per run/task/award.
+  const reportedRef = useRef({ run: 0, task: "", award: 0, end: 0 });
   useEffect(() => {
-    if (game.phase !== "running") return;
-    if (reportedRunRef.current === game.runCount) return;
-    reportedRunRef.current = game.runCount;
-    track("shortcut_game_run_started", {
-      entry: entry ?? "resume",
-      run_count: game.runCount,
-      timed: game.timed,
-    });
-  }, [game.phase, game.runCount, game.timed, entry]);
+    const reported = reportedRef.current;
+    if (game.phase === "running" && reported.run !== game.runCount) {
+      reported.run = game.runCount;
+      track("shortcut_game_run_started", {
+        entry: entry ?? "resume",
+        run_count: game.runCount,
+        timed: game.timed,
+      });
+    }
 
-  const reportedTaskRef = useRef("");
-  useEffect(() => {
-    if (game.phase !== "running") return;
-    const task = currentTask(game);
-    if (!task) return;
-    const marker = `${game.runCount}:${task.id}`;
-    if (reportedTaskRef.current === marker) return;
-    reportedTaskRef.current = marker;
-    track("shortcut_game_task_shown", {
-      task_id: task.id,
-      task_type: task.type,
-      index: game.taskIndex,
-    });
-  }, [game]);
+    if (game.phase === "running") {
+      const task = currentTask(game);
+      if (task) {
+        const marker = `${game.runCount}:${task.id}`;
+        if (reported.task !== marker) {
+          reported.task = marker;
+          track("shortcut_game_task_shown", {
+            task_id: task.id,
+            task_type: task.type,
+            index: game.taskIndex,
+          });
+        }
+      }
+    }
 
-  const reportedAwardRef = useRef(0);
-  useEffect(() => {
     const award = game.lastAward;
-    if (!award || reportedAwardRef.current === award.seq) return;
-    reportedAwardRef.current = award.seq;
-    track("shortcut_game_task_completed", {
-      task_id: award.taskId,
-      points: award.points,
-      ms: award.elapsedMs,
-      streak: game.streak,
-      score: game.score,
-    });
-  }, [game]);
+    if (award && reported.award !== award.seq) {
+      reported.award = award.seq;
+      track("shortcut_game_task_completed", {
+        task_id: award.taskId,
+        points: award.points,
+        ms: award.elapsedMs,
+        streak: game.streak,
+        score: game.score,
+      });
+    }
 
-  const reportedEndRef = useRef(0);
-  useEffect(() => {
-    if (game.phase !== "ended") return;
-    if (reportedEndRef.current === game.runCount) return;
-    reportedEndRef.current = game.runCount;
-    shortcutShowcaseActions.recordRunFinished({
-      outcome: game.outcome ?? "cleared",
-      score: game.score,
-      tasks_done: game.tasksDone,
-      tasks_skipped: game.tasksSkipped,
-      timed: game.timed,
-      ...(game.buzzer
-        ? {
-            buzzer_score: game.buzzer.score,
-            buzzer_tasks_done: game.buzzer.tasksDone,
-          }
-        : {}),
-      duration_ms: game.endedAtMs - game.startedAtMs,
-      run_count: game.runCount,
-    });
-  }, [game]);
+    if (game.phase === "ended" && reported.end !== game.runCount) {
+      reported.end = game.runCount;
+      shortcutShowcaseActions.recordRunFinished({
+        outcome: game.outcome ?? "cleared",
+        score: game.score,
+        tasks_done: game.tasksDone,
+        tasks_skipped: game.tasksSkipped,
+        timed: game.timed,
+        ...(game.buzzer
+          ? {
+              buzzer_score: game.buzzer.score,
+              buzzer_tasks_done: game.buzzer.tasksDone,
+            }
+          : {}),
+        duration_ms: game.endedAtMs - game.startedAtMs,
+        run_count: game.runCount,
+      });
+    }
+  }, [game, entry]);
 
   // The countdown, for timed runs only. The reducer stays pure: the interval
   // feeds it wall-clock timestamps and keeps a display clock for the HUD,

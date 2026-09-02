@@ -3,8 +3,7 @@ import { type GameAward } from "@web/components/ShortcutShowcase/game.state";
 import {
   type GameTask,
   RUN_TASKS,
-  STREAK_X2_AT,
-  STREAK_X3_AT,
+  streakMultiplier,
 } from "@web/components/ShortcutShowcase/game.tasks";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortCutLabel } from "@web/components/Shortcuts/ShortcutLabel";
@@ -29,8 +28,7 @@ export const GameHud: FC<{
 }> = ({ remainingSeconds, score, streak, award, timed, overtime }) => {
   const warning =
     timed && !overtime && remainingSeconds <= TIMER_WARNING_SECONDS;
-  const multiplier =
-    streak >= STREAK_X3_AT ? 3 : streak >= STREAK_X2_AT ? 2 : null;
+  const multiplier = streakMultiplier(streak);
 
   return (
     <div className="flex items-center justify-between pb-3">
@@ -60,7 +58,7 @@ export const GameHud: FC<{
         </span>
       )}
       <div className="relative flex items-center gap-2">
-        {multiplier && (
+        {multiplier > 1 && (
           <span className="rounded-full bg-accent px-2 py-0.5 font-semibold text-background text-xs">
             x{multiplier} streak
           </span>
