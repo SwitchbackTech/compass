@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -35,6 +42,30 @@ describe("BookingCopyLink", () => {
     expect(openLink).toHaveAttribute("target", "_blank");
     expect(openLink).toHaveAttribute("rel", "noreferrer");
   });
+
+  it("explains the copy icon in a tooltip", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "Copy booking link" }));
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "Copy booking link",
+    );
+  });
+
+  it("explains the open-page icon in a tooltip", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+    );
+
+    await user.hover(screen.getByRole("link", { name: "Open booking page" }));
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "Open booking page",
+    );
+  });
 });
 
 const originalClipboard = navigator.clipboard;
@@ -48,6 +79,7 @@ const setClipboard = (value: unknown) => {
 };
 
 afterEach(() => {
+  cleanup();
   setClipboard(originalClipboard);
 });
 
