@@ -37,6 +37,7 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   getWeekInteractionTargetAttributes,
   weekEventRegistry,
@@ -188,6 +189,7 @@ afterEach(() => {
   useViewStore.setState(initialViewState);
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
   useEventClipboardStore.setState(initialEventClipboardState, true);
+  eventJumpActions.reset();
   draftActions.discard();
   setSystemTime();
   // Drain leftover swallowNextKeyup capture listeners from Mod+C / Mod+V.
@@ -1165,6 +1167,26 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     pressKey("ArrowRight", shiftKey);
 
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("creates a typed time on the focused event's day instead of today", async () => {
+    setSystemTime(new Date("2026-05-18T15:00:00.000Z"));
+    renderShortcuts();
+    addCalendarTarget().focus();
+
+    pressKey("1", { keyDownInit: { code: "Digit1" } });
+    pressKey("2", { keyDownInit: { code: "Digit2" } });
+    pressKey("3", { keyDownInit: { code: "Digit3" } });
+    pressKey("0", { keyDownInit: { code: "Digit0" } });
+
+    await waitFor(() => {
+      const draft = useDraftStore.getState().gridDraft;
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+      expect(dayjs(draft?.values.schedule.start).format("YYYY-MM-DD")).toBe(
+        "2026-05-20",
+      );
+      expect(dayjs(draft?.values.schedule.start).format("HH:mm")).toBe("12:30");
+    });
   });
 
   it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", async () => {

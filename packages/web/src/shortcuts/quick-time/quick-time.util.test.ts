@@ -2,6 +2,7 @@ import dayjs from "@core/util/date/dayjs";
 import {
   buildQuickTimeSlots,
   canQuickTimeBufferGrow,
+  quickTimeFocusedColumnDay,
   quickTimeSequenceForHour,
   quickTimeTargetDay,
   resolveQuickTimeStart,
@@ -111,6 +112,55 @@ describe("quickTimeTargetDay", () => {
     expect(
       quickTimeTargetDay(startOfView, endOfView, now).format("YYYY-MM-DD"),
     ).toBe("2026-08-02");
+  });
+
+  it("uses a focused column in the view instead of today", () => {
+    const now = dayjs("2026-08-05T09:00:00");
+    const focused = dayjs("2026-08-04T00:00:00");
+
+    expect(
+      quickTimeTargetDay(startOfView, endOfView, now, focused).format(
+        "YYYY-MM-DD",
+      ),
+    ).toBe("2026-08-04");
+  });
+
+  it("ignores a focused day outside the view", () => {
+    const now = dayjs("2026-08-05T09:00:00");
+    const focused = dayjs("2026-09-01T00:00:00");
+
+    expect(
+      quickTimeTargetDay(startOfView, endOfView, now, focused).format(
+        "YYYY-MM-DD",
+      ),
+    ).toBe("2026-08-05");
+  });
+});
+
+describe("quickTimeFocusedColumnDay", () => {
+  const parse = (key: string) => dayjs(`${key}T00:00:00`);
+
+  it("prefers a parked click over the jump-highlighted column", () => {
+    expect(
+      quickTimeFocusedColumnDay("2026-08-04", ["2026-08-05"], parse)?.format(
+        "YYYY-MM-DD",
+      ),
+    ).toBe("2026-08-04");
+  });
+
+  it("uses a single jump-highlighted column", () => {
+    expect(
+      quickTimeFocusedColumnDay(null, ["2026-08-07"], parse)?.format(
+        "YYYY-MM-DD",
+      ),
+    ).toBe("2026-08-07");
+  });
+
+  it("stays unset when jump has not chosen one day", () => {
+    expect(quickTimeFocusedColumnDay(null, [], parse)).toBeNull();
+    expect(
+      quickTimeFocusedColumnDay(null, ["2026-08-02", "2026-08-08"], parse),
+    ).toBeNull();
   });
 });
 

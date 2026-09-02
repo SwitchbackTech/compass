@@ -21,7 +21,10 @@ import {
 import { useCalendarViewShortcuts } from "@web/grid/shortcuts/useCalendarViewShortcuts";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
-import { quickTimeTargetDay } from "@web/shortcuts/quick-time/quick-time.util";
+import {
+  quickTimeFocusedColumnDay,
+  quickTimeTargetDay,
+} from "@web/shortcuts/quick-time/quick-time.util";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -266,15 +269,33 @@ export const useWeekShortcutOwner = ({
 
   // Typed-time create. Same guards and same form-closed/card-focused landing
   // as Shift+Arrow place-create, so the two gestures produce the same draft.
-  const getQuickTimeDay = useCallback(
-    () =>
-      quickTimeTargetDay(
-        startOfView,
-        endOfView,
-        dayjs().tz(getEffectiveTimeZone()),
-      ),
-    [endOfView, startOfView],
-  );
+  // A focused column (parked click, jump-selected day, or focused event)
+  // wins over today so 1230 lands where the user is looking.
+  const getQuickTimeDay = useCallback(() => {
+    const now = dayjs().tz(getEffectiveTimeZone());
+    const { pointerDraftDateKey, activeDayKeys } = useEventJumpStore.getState();
+    const focusedColumn = quickTimeFocusedColumnDay(
+      pointerDraftDateKey,
+      activeDayKeys,
+      (dateKey) => dayjs(dateKey).tz(getEffectiveTimeZone(), true),
+    );
+    const focusedEvent =
+      weekEventTargeting.getFocusedNavigableGridEventTarget() ??
+      weekEventTargeting.getFocusedGridEventTarget();
+    const focusedStart = focusedEvent
+      ? [...allDayEvents, ...timedEvents].find(
+          (event) => event._id === focusedEvent.eventId,
+        )?.startDate
+      : undefined;
+
+    return quickTimeTargetDay(
+      startOfView,
+      endOfView,
+      now,
+      focusedColumn ??
+        (focusedStart ? dayjs(focusedStart).tz(getEffectiveTimeZone()) : null),
+    );
+  }, [allDayEvents, endOfView, startOfView, timedEvents]);
 
   const createDraftAtTime = useCallback(
     (start: Dayjs) => {

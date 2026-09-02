@@ -1,11 +1,17 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
+import { EventIdSchema } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   clearFloatingLayerReasons,
   setFloatingLayerReason,
 } from "@web/shortcuts/floating-layer";
-import { DIGIT_AMBIGUOUS_COMMIT_MS } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
+import {
+  DAY_JUMP_PREFIX_BY_WEEKDAY,
+  type DayJumpWeekday,
+  DIGIT_AMBIGUOUS_COMMIT_MS,
+} from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import {
   eventJumpActions,
   useEventJumpStore,
@@ -244,6 +250,65 @@ describe("typed-time deferred commit", () => {
       const start = createAt.mock.calls[0]?.[0] as Dayjs;
       expect(start.format("YYYY-MM-DD HH:mm")).toBe(
         `${CLICKED_DAY.format("YYYY-MM-DD")} 17:00`,
+      );
+    });
+  });
+
+  describe("with a jump-selected column", () => {
+    const COLUMN_EVENT_ID = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
+    const COLUMN_DAY =
+      TARGET_DAY.day() === 3 ? TARGET_DAY.add(1, "day") : TARGET_DAY.day(3);
+    const columnLetter =
+      DAY_JUMP_PREFIX_BY_WEEKDAY[COLUMN_DAY.day() as DayJumpWeekday];
+
+    const mountColumn = () => {
+      const createAt = mock((_start: Dayjs) => {});
+      const event = {
+        _id: COLUMN_EVENT_ID,
+        startDate: COLUMN_DAY.hour(9).format(),
+        endDate: COLUMN_DAY.hour(10).format(),
+        title: "Column event",
+        isAllDay: false,
+      } as GridEvent;
+      const el = document.createElement("button");
+      el.textContent = COLUMN_EVENT_ID;
+      document.body.appendChild(el);
+
+      renderHook(() =>
+        useShiftHoldEventHints({
+          createAtTime: (start) => createAt(start),
+          focus: () => {},
+          getQuickTimeDay: () => TARGET_DAY,
+          listVisible: () => [
+            { eventId: COLUMN_EVENT_ID, eventType: "timed", element: el },
+          ],
+          timedEvents: [event],
+        }),
+      );
+
+      const type = (keys: string[]) => {
+        for (const key of keys) dispatch(digit(key));
+      };
+
+      return { createAt, type };
+    };
+
+    it("creates 1230 on the focused day, not today", () => {
+      const { createAt, type } = mountColumn();
+
+      act(() => {
+        dispatch(
+          keydown(columnLetter.toUpperCase(), {
+            shiftKey: true,
+          }),
+        );
+        type(["1", "2", "3", "0"]);
+      });
+
+      const start = createAt.mock.calls[0]?.[0] as Dayjs;
+      expect(createAt).toHaveBeenCalledTimes(1);
+      expect(start.format("YYYY-MM-DD HH:mm")).toBe(
+        `${COLUMN_DAY.format("YYYY-MM-DD")} 12:30`,
       );
     });
   });

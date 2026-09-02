@@ -74,19 +74,41 @@ export function quickTimeSequenceForHour(
   return resolved?.hour() === hour ? sequence : null;
 }
 
+const dayIsInView = (day: Dayjs, startOfView: Dayjs, endOfView: Dayjs) =>
+  day.isBetween(startOfView, endOfView, "day", "[]");
+
 /**
- * The day a typed time lands on: today when the view contains it, else the
- * first day of the view. Mirrors createAlldayDraft's fallback so "create an
- * event" means the same day whichever gesture started it.
+ * The day a typed time lands on. A focused column (jump-selected day, parked
+ * empty-grid click, or the day of the focused event) wins when it is still in
+ * view. Otherwise today when the view contains it, else the first visible
+ * day, the same fallback createAlldayDraft uses so "create an event" means
+ * the same day whichever gesture started it.
  */
 export const quickTimeTargetDay = (
   startOfView: Dayjs,
   endOfView: Dayjs,
   now: Dayjs,
-): Dayjs =>
-  now.isBetween(startOfView, endOfView, "day", "[]")
+  focusedDay?: Dayjs | null,
+): Dayjs => {
+  if (focusedDay && dayIsInView(focusedDay, startOfView, endOfView)) {
+    return focusedDay.startOf("day");
+  }
+
+  return dayIsInView(now, startOfView, endOfView)
     ? now.startOf("day")
     : startOfView.startOf("day");
+};
+
+/** A parked click, then a single jump-highlighted column. */
+export const quickTimeFocusedColumnDay = (
+  pointerDateKey: string | null,
+  activeDayKeys: readonly string[],
+  parseDateKey: (dateKey: string) => Dayjs,
+): Dayjs | null => {
+  if (pointerDateKey) return parseDateKey(pointerDateKey);
+  const dayKey = activeDayKeys.length === 1 ? activeDayKeys[0] : undefined;
+  return dayKey ? parseDateKey(dayKey) : null;
+};
 
 export type QuickTimeBusyInterval = {
   startMs: number;

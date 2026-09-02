@@ -25,6 +25,7 @@ import {
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   canQuickTimeBufferGrow,
+  quickTimeFocusedColumnDay,
   resolveQuickTimeStart,
 } from "@web/shortcuts/quick-time/quick-time.util";
 import {
@@ -74,13 +75,15 @@ const pointerDraftStart = (digits: string): Dayjs | null => {
   return dayjs(start).tz(getEffectiveTimeZone());
 };
 
-/** A click on another day retargets the typed time to that day. */
-const pointerDraftDay = (): Dayjs | null => {
-  const { pointerDraftDateKey } = useEventJumpStore.getState();
+/** Parked click, then a single jump-highlighted column. */
+const focusedColumnDay = (): Dayjs | null => {
+  const { pointerDraftDateKey, activeDayKeys } = useEventJumpStore.getState();
 
-  return pointerDraftDateKey
-    ? dayjs(pointerDraftDateKey).tz(getEffectiveTimeZone(), true)
-    : null;
+  return quickTimeFocusedColumnDay(
+    pointerDraftDateKey,
+    activeDayKeys,
+    (dateKey) => dayjs(dateKey).tz(getEffectiveTimeZone(), true),
+  );
 };
 
 /**
@@ -204,6 +207,7 @@ export function useShiftHoldEventHints({
   const quickTimeCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const columnTimeBurstRef = useRef<{ digit: string; at: number }[]>([]);
   const createAtTimeRef = useRef(createAtTime);
   const focusRef = useRef(focus);
   const getQuickTimeDayRef = useRef(getQuickTimeDay);
@@ -241,9 +245,23 @@ export function useShiftHoldEventHints({
       eventJumpActions.setQuickTimeDigits("");
     };
 
+    const resetColumnTimeBurst = () => {
+      columnTimeBurstRef.current = [];
+    };
+
+    const recentColumnTimeDigits = () => {
+      const at = performance.now();
+      columnTimeBurstRef.current = columnTimeBurstRef.current.filter(
+        (entry) => at - entry.at < DIGIT_AMBIGUOUS_COMMIT_MS * 2,
+      );
+      return columnTimeBurstRef.current.map((entry) => entry.digit).join("");
+    };
+
     const commitQuickTime = () => {
       const digits = useEventJumpStore.getState().quickTimeDigits;
       resetQuickTime();
+      resetColumnTimeBurst();
+      clearAmbiguousCommitTimer();
       if (!digits) return;
 
       const now = dayjs().tz(getEffectiveTimeZone());
@@ -252,7 +270,7 @@ export function useShiftHoldEventHints({
         resolveQuickTimeStart(
           digits,
           now,
-          pointerDraftDay() ?? getQuickTimeDayRef.current(),
+          focusedColumnDay() ?? getQuickTimeDayRef.current(),
         );
       if (!start) return;
 
@@ -362,6 +380,7 @@ export function useShiftHoldEventHints({
       const assignments = rebuildAssignments();
       isActiveRef.current = true;
       bufferRef.current = "";
+      resetColumnTimeBurst();
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([]);
       setHints(toActiveHints(assignments, visibleByIdRef.current));
@@ -370,6 +389,7 @@ export function useShiftHoldEventHints({
     const deactivate = () => {
       isActiveRef.current = false;
       bufferRef.current = "";
+      resetColumnTimeBurst();
       clearHints();
       eventJumpActions.setPointerDraftIntent(null);
       eventJumpActions.setActive(false);
@@ -441,6 +461,7 @@ export function useShiftHoldEventHints({
 
       if (match.kind === "selectDay") {
         clearAmbiguousCommitTimer();
+        resetColumnTimeBurst();
         bufferRef.current = match.buffer;
         shortcutHintProgressActions.demonstrate("week-day-focus");
         const dayName = dayNameForPrefix(match.dayPrefix);
@@ -538,10 +559,23 @@ export function useShiftHoldEventHints({
         return;
       }
 
-      // Only on an empty buffer: once a day letter is typed ("w"), the digits
-      // that follow are that day's event index. Esc or a second `h` clears the
-      // buffer and puts quick-time back within reach.
+      // Empty buffer: digits are times. Once a day letter is typed ("w"),
+      // 1-2 digits still index that day's events. A four-digit HHMM still
+      // creates on the selected column so focusing Tuesday then 1230 lands
+      // there instead of today.
       if (bufferRef.current === "" && tryQuickTimeKey(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (
+        event.key === "Enter" &&
+        recentColumnTimeDigits() &&
+        bufferRef.current !== ""
+      ) {
+        eventJumpActions.setQuickTimeDigits(recentColumnTimeDigits());
+        commitQuickTime();
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -558,6 +592,7 @@ export function useShiftHoldEventHints({
       // Arrows keep mode on so letter-then-arrows can move focus.
       if (keyboardKey(event).startsWith("Arrow")) {
         clearAmbiguousCommitTimer();
+        resetColumnTimeBurst();
         stripDigitBuffer();
         return;
       }
@@ -569,6 +604,29 @@ export function useShiftHoldEventHints({
       const key = normalizedKeyboardKey(event);
       if (key.length !== 1) return;
 
+      const pickIndex = digitPickIndex(event);
+      const daySelected =
+        useEventJumpStore.getState().activeDayKeys.length === 1;
+      if (daySelected && pickIndex !== null && pickIndex < DIGIT_PICK_COUNT) {
+        const at = performance.now();
+        columnTimeBurstRef.current = [
+          ...columnTimeBurstRef.current.filter(
+            (entry) => at - entry.at < DIGIT_AMBIGUOUS_COMMIT_MS * 2,
+          ),
+          { digit: PICK_KEY_LABELS[pickIndex], at },
+        ];
+        const burst = columnTimeBurstRef.current
+          .map((entry) => entry.digit)
+          .join("");
+        if (!canQuickTimeBufferGrow(burst)) {
+          eventJumpActions.setQuickTimeDigits(burst);
+          commitQuickTime();
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+      }
+
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
@@ -577,6 +635,13 @@ export function useShiftHoldEventHints({
       });
 
       if (!match) {
+        if (recentColumnTimeDigits()) {
+          clearAmbiguousCommitTimer();
+          event.preventDefault();
+          event.stopPropagation();
+          keyupSwallow.add(key);
+          return;
+        }
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
         // `e` is not a day prefix. Leave it unclaimed so a later-registered
