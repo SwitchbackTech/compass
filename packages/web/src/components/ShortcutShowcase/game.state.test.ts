@@ -17,6 +17,7 @@ import {
   RUN_DURATION_MS,
   RUN_TASKS,
   SPEED_BONUS_POINTS,
+  streakMultiplier,
   TASK_BASE_POINTS,
   TIME_BONUS_PER_SECOND,
 } from "@web/components/ShortcutShowcase/game.tasks";
@@ -208,6 +209,14 @@ describe("task skip", () => {
 });
 
 describe("scoring", () => {
+  it("maps consecutive speed clears onto x2 then x3", () => {
+    expect(streakMultiplier(0)).toBe(1);
+    expect(streakMultiplier(2)).toBe(1);
+    expect(streakMultiplier(3)).toBe(2);
+    expect(streakMultiplier(5)).toBe(2);
+    expect(streakMultiplier(6)).toBe(3);
+  });
+
   it("pays the speed bonus and multiplies streaks of fast clears", () => {
     let state = startRun(createInitialGameState(), T0);
     // Three instant clears: 150, 150, then streak hits 3 -> x2.
