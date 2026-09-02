@@ -311,5 +311,22 @@ describe("typed-time deferred commit", () => {
         `${COLUMN_DAY.format("YYYY-MM-DD")} 12:30`,
       );
     });
+
+    it("still toggles jump off with h after a half-typed column time", () => {
+      const { createAt, type } = mountColumn();
+
+      act(() => {
+        dispatch(
+          keydown(columnLetter.toUpperCase(), {
+            shiftKey: true,
+          }),
+        );
+        type(["9"]);
+        dispatch(keydown("h"));
+      });
+
+      expect(createAt).not.toHaveBeenCalled();
+      expect(useEventJumpStore.getState().isActive).toBe(false);
+    });
   });
 });

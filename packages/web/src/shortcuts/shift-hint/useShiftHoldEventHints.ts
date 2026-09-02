@@ -631,7 +631,7 @@ export function useShiftHoldEventHints({
       });
 
       if (!match) {
-        if (recentColumnTimeDigits()) {
+        if (pickIndex !== null && recentColumnTimeDigits()) {
           clearAmbiguousCommitTimer();
           event.preventDefault();
           event.stopPropagation();
