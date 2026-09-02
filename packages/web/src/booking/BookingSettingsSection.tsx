@@ -257,6 +257,8 @@ export function BookingSettingsSection({
     availabilityCalendars,
     connections,
   );
+  const { groups: writableGroups, ungrouped: writableUngrouped } =
+    groupCalendarsByAccount(writableCalendars, connections);
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
     setEnableError(null);
@@ -439,12 +441,24 @@ export function BookingSettingsSection({
               No writable calendars
             </option>
           ) : (
-            writableCalendars.map((calendar) => (
-              <option key={calendar.id} value={calendar.id}>
-                {calendar.name}
-                {calendar.accountEmail ? ` (${calendar.accountEmail})` : ""}
-              </option>
-            ))
+            <>
+              {writableGroups
+                .filter((group) => group.calendars.length > 0)
+                .map((group) => (
+                  <optgroup key={group.accountEmail} label={group.accountEmail}>
+                    {group.calendars.map((calendar) => (
+                      <option key={calendar.id} value={calendar.id}>
+                        {calendar.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              {writableUngrouped.map((calendar) => (
+                <option key={calendar.id} value={calendar.id}>
+                  {calendar.name}
+                </option>
+              ))}
+            </>
           )}
         </select>
       </div>
