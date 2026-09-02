@@ -18,7 +18,11 @@ import {
   selectPointerBlockPulse,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
-import { CONNECTION_BANNER_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
+import { KEYMAP } from "@web/shortcuts/keymap";
+import {
+  CONNECTION_BANNER_SHORTCUT_KEY,
+  START_TRIAL_SHORTCUT_KEY,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import {
   selectEventJumpPointerHintKey,
   useEventJumpStore,
@@ -49,18 +53,15 @@ const Key = ({ children }: { children: string }) => (
   <kbd className="c-keycap">{children}</kbd>
 );
 
+/**
+ * A named action (or a bound shortcut) earns the full display time; only the
+ * anonymous "keyboard only" pulse shortens. Derived from the attempt rather
+ * than enumerated, so a new pointer action does not have to be registered
+ * here as well as in `pointerHintMessage`.
+ */
 const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
-  attempt?.actionId === POINTER_ACTIONS.sidebarClose ||
-  attempt?.actionId === POINTER_ACTIONS.sidebarOpen ||
-  attempt?.actionId === POINTER_ACTIONS.goToToday ||
-  attempt?.actionId === POINTER_ACTIONS.switchView ||
-  attempt?.actionId === POINTER_ACTIONS.eventOpen ||
-  attempt?.actionId === POINTER_ACTIONS.startTrial ||
-  attempt?.actionId === POINTER_ACTIONS.reconnectGoogle ||
-  attempt?.actionId === POINTER_ACTIONS.upNextDismiss ||
-  attempt?.actionId === "grid.timed" ||
-  attempt?.actionId === "grid.all-day" ||
-  Boolean(attempt?.shortcutKey);
+  attempt != null &&
+  (attempt.actionId !== "unknown" || Boolean(attempt.shortcutKey));
 
 const pointerHintMessage = ({
   attempt,
@@ -110,7 +111,8 @@ const pointerHintMessage = ({
     if (!eventJumpKey) {
       return (
         <>
-          Press <Key>S</Key> to reveal event shortcuts.
+          Press <ShortcutKeys keys={[...KEYMAP.eventJump.keycaps]} /> to reveal
+          event shortcuts.
         </>
       );
     }
@@ -142,7 +144,7 @@ const pointerHintMessage = ({
   if (attempt?.actionId === POINTER_ACTIONS.startTrial) {
     return (
       <>
-        Press <Key>S</Key> to start your trial.
+        Press <Key>{START_TRIAL_SHORTCUT_KEY}</Key> to start your trial.
       </>
     );
   }

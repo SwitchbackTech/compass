@@ -116,6 +116,41 @@ export const getCalendarEventIdFromElement = (element: HTMLElement) =>
   readCalendarEventIdFromElement(element);
 
 /**
+ * How many frames a focus retry waits for its target. Roughly half a second
+ * at 60fps: long enough for React to commit a remount, short enough that a
+ * card which never arrives stops spinning.
+ */
+const FOCUS_RETRY_FRAMES = 30;
+
+/**
+ * Focuses the element `findTarget` returns, retrying once per animation frame
+ * until it appears or the budget runs out. `startOnNextFrame` defers the first
+ * look by a frame, for callers that must let a pending unmount commit first.
+ */
+const focusAcrossFrames = (
+  findTarget: () => HTMLElement | null | undefined,
+  { startOnNextFrame = false }: { startOnNextFrame?: boolean } = {},
+) => {
+  let attemptsLeft = FOCUS_RETRY_FRAMES;
+
+  const tryFocus = () => {
+    const element = findTarget();
+    if (element) {
+      element.focus();
+      return;
+    }
+    attemptsLeft -= 1;
+    if (attemptsLeft > 0) requestAnimationFrame(tryFocus);
+  };
+
+  if (startOnNextFrame) {
+    requestAnimationFrame(tryFocus);
+    return;
+  }
+  tryFocus();
+};
+
+/**
  * Focuses a calendar event's DOM node as soon as it exists. Retries across
  * animation frames when the card is not mounted yet (e.g. after form close or
  * undo restore). Unlike `refocusEventElement`, this focuses an in-place node
@@ -123,18 +158,7 @@ export const getCalendarEventIdFromElement = (element: HTMLElement) =>
  */
 export const focusCalendarEventElement = (eventId: string) => {
   const selector = calendarEventIdValueSelector(eventId);
-  let attempts = 0;
-
-  const tryFocus = () => {
-    const element = document.querySelector<HTMLElement>(selector);
-    if (element) {
-      element.focus();
-      return;
-    }
-    if (++attempts < 30) requestAnimationFrame(tryFocus);
-  };
-
-  tryFocus();
+  focusAcrossFrames(() => document.querySelector<HTMLElement>(selector));
 };
 
 const isGridDraftEventSurface = (element: HTMLElement) =>
@@ -147,21 +171,13 @@ const isGridDraftEventSurface = (element: HTMLElement) =>
  */
 export const focusCalendarEventElementAfterDiscard = (eventId: string) => {
   const selector = calendarEventIdValueSelector(eventId);
-  let attempts = 0;
-
-  const tryFocus = () => {
-    attempts += 1;
-    const element = [...document.querySelectorAll<HTMLElement>(selector)].find(
-      (candidate) => !isGridDraftEventSurface(candidate),
-    );
-    if (element) {
-      element.focus();
-      return;
-    }
-    if (attempts < 30) requestAnimationFrame(tryFocus);
-  };
-
-  requestAnimationFrame(tryFocus);
+  focusAcrossFrames(
+    () =>
+      [...document.querySelectorAll<HTMLElement>(selector)].find(
+        (candidate) => !isGridDraftEventSurface(candidate),
+      ),
+    { startOnNextFrame: true },
+  );
 };
 
 /**
@@ -171,18 +187,10 @@ export const focusCalendarEventElementAfterDiscard = (eventId: string) => {
 export const refocusEventElement = (eventId: string) => {
   const selector = calendarEventIdValueSelector(eventId);
   const staleElement = document.querySelector(selector);
-  let attemptsLeft = 30;
-
-  const tryFocus = () => {
+  focusAcrossFrames(() => {
     const element = document.querySelector<HTMLElement>(selector);
-    if (element && element !== staleElement) {
-      element.focus();
-    } else if (attemptsLeft-- > 0) {
-      requestAnimationFrame(tryFocus);
-    }
-  };
-
-  tryFocus();
+    return element && element !== staleElement ? element : null;
+  });
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {

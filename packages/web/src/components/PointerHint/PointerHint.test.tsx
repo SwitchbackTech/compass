@@ -12,6 +12,7 @@ import {
   pointerBlockActions,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   eventJumpActions,
   initialEventJumpState,
@@ -251,6 +252,21 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Press W2, then Enter to open this event.",
+    );
+  });
+
+  it("teaches the event-jump key when no sequence is assigned yet", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.eventOpen,
+        eventId: "event-1",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `Press ${KEYMAP.eventJump.keycaps.join("")} to reveal event shortcuts.`,
     );
   });
 
