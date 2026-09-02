@@ -10,28 +10,11 @@ export const isThemeName = (value: string | null): value is ThemeName =>
   value !== null && value in THEMES;
 
 /**
- * OS light/dark when the visitor has never stored a theme. Guests on public
- * pages hit this path; signed-in users who picked a theme do not.
- */
-export const readPreferredColorSchemeTheme = (): ThemeName => {
-  if (typeof window.matchMedia !== "function") {
-    return DEFAULT_THEME;
-  }
-  return window.matchMedia("(prefers-color-scheme: light)").matches
-    ? "light-beach"
-    : DEFAULT_THEME;
-};
-
-/**
  * The persisted theme. An explicit stored choice always wins. When the key is
- * missing, follow `prefers-color-scheme`. Unknown stored values keep the
- * dark default so a corrupt key does not flip the palette on every visit.
+ * missing or unknown, use the light default.
  */
 export const readStoredTheme = (): ThemeName => {
   const stored = persistentBrowserStore.get(THEME_STORAGE_KEY);
-  if (stored === null) {
-    return readPreferredColorSchemeTheme();
-  }
   return isThemeName(stored) ? stored : DEFAULT_THEME;
 };
 

@@ -13,11 +13,11 @@ export const THEMES = {
 export type ThemeName = keyof typeof THEMES;
 
 /**
- * Dark is the CSS :root fallback and the value used when
- * `prefers-color-scheme` is dark or unavailable. Light is applied only when
- * the visitor stored `light-beach` or the OS is light and nothing is stored.
+ * Light is the CSS :root fallback and the value used when nothing is stored
+ * or the stored value is unknown. Dark is applied only when the visitor
+ * stored `dark-abyss`.
  */
-export const DEFAULT_THEME: ThemeName = "dark-abyss";
+export const DEFAULT_THEME: ThemeName = "light-beach";
 
 /**
  * localStorage key for the persisted choice, registered in the app-wide

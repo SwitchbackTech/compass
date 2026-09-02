@@ -18,9 +18,9 @@ export default defineConfig({
   },
   use: {
     baseURL: `http://localhost:${TEST_PORT}`,
-    // Historic app tests assume Dark Abyss tokens. Guest booking specs that
-    // cover prefers-color-scheme override this per test.
-    colorScheme: "dark",
+    // Product default is Light Beach. Specs that need Dark Abyss set
+    // compass.theme in localStorage.
+    colorScheme: "light",
     trace: "on-first-retry",
   },
   projects: [

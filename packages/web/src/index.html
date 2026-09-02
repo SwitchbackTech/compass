@@ -1,33 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light-beach">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#06090f" />
+    <meta name="theme-color" content="#f3eee2" />
 
     <!--
-      Apply the theme before first paint so light visitors don't flash the
-      default dark palette while the app boots (index.tsx awaits IndexedDB
-      first). Runs pre-module, so the key + colors are hard-coded here; keep
-      them in sync with settings/theme/theme.constants.ts and
-      settings/theme/theme.util.ts. Dark is the CSS default, so only light
-      needs touching. An explicit stored choice wins; otherwise follow
-      prefers-color-scheme.
+      Apply a stored dark theme before first paint so those visitors don't
+      flash the default light palette while the app boots (index.tsx awaits
+      IndexedDB first). Runs pre-module, so the key + colors are hard-coded
+      here; keep them in sync with settings/theme/theme.constants.ts and
+      settings/theme/theme.util.ts. Light is the CSS default, so only dark
+      needs touching. An explicit stored choice wins.
     -->
     <script>
       try {
         const stored = localStorage.getItem("compass.theme");
-        const useLight =
-          stored === "light-beach" ||
-          (stored === null &&
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: light)").matches);
-        if (useLight) {
-          document.documentElement.setAttribute("data-theme", "light-beach");
+        if (stored === "dark-abyss") {
+          document.documentElement.setAttribute("data-theme", "dark-abyss");
           document
             .querySelector('meta[name="theme-color"]')
-            .setAttribute("content", "#f3eee2");
+            .setAttribute("content", "#06090f");
         }
       } catch {}
     </script>

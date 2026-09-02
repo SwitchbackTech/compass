@@ -700,23 +700,12 @@ test.describe("public booking page", () => {
 });
 
 test.describe("public booking theme", () => {
-  test("uses the light theme when OS is light and nothing is stored", async ({
-    page,
-  }) => {
-    await page.emulateMedia({ colorScheme: "light" });
-    await preparePublicBookingPage(page);
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-theme",
-      "light-beach",
-    );
-  });
-
-  test("keeps the dark default when OS is dark and nothing is stored", async ({
+  test("uses the light default when nothing is stored, even if OS is dark", async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await preparePublicBookingPage(page);
-    await expect(page.locator("html")).not.toHaveAttribute(
+    await expect(page.locator("html")).toHaveAttribute(
       "data-theme",
       "light-beach",
     );
@@ -728,9 +717,9 @@ test.describe("public booking theme", () => {
     });
     await page.emulateMedia({ colorScheme: "light" });
     await preparePublicBookingPage(page);
-    await expect(page.locator("html")).not.toHaveAttribute(
+    await expect(page.locator("html")).toHaveAttribute(
       "data-theme",
-      "light-beach",
+      "dark-abyss",
     );
   });
 });

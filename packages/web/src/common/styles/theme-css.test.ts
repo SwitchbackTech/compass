@@ -98,6 +98,10 @@ describe("Tailwind theme CSS", () => {
     }
   });
 
+  it("declares Light Beach as the :root default", () => {
+    expect(indexCss).toMatch(/:root,\s*\[data-theme="light-beach"\]/);
+  });
+
   it("declares the Light Beach theme scope", () => {
     expect(indexCss).toContain('[data-theme="light-beach"]');
     expect(indexCss).toContain("color-scheme: light");
@@ -122,10 +126,14 @@ describe("Tailwind theme CSS", () => {
     }
   });
 
-  it("keeps colors.ts hex values in sync with index.css role values", () => {
+  it("keeps colors.ts hex values in sync with the dark-abyss block", () => {
+    const block = indexCss.match(/\[data-theme="dark-abyss"\]\s*\{([^}]*)\}/);
+    expect(block).not.toBeNull();
+    const body = block?.[1] ?? "";
+
     for (const [jsKey, cssToken] of Object.entries(jsColorKeyToCssToken)) {
       const hex = colors[jsKey as keyof typeof colors];
-      const match = indexCss.match(
+      const match = body.match(
         new RegExp(`--${cssToken}:\\s*(#[0-9a-fA-F]{6});`),
       );
       expect(match).not.toBeNull();
