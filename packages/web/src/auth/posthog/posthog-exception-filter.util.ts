@@ -2,9 +2,29 @@ import { type CaptureResult } from "posthog-js";
 import { isTransientBrowserNetworkMessage } from "@web/api/util/backend-unavailable-error.util";
 
 /**
+ * posthog-js does not hand `before_send` the raw rejection value: when a
+ * promise rejects with a non-Error (or a primitive), the SDK stringifies it
+ * behind one of these prefixes. Every message comparison below has to run on
+ * the unwrapped value, or an anchored pattern silently never matches in
+ * production while passing against a hand-written bare string in a test.
+ */
+const SDK_WRAPPER_PREFIXES = [
+  "Non-Error promise rejection captured with value: ",
+  "Primitive value captured as exception: ",
+];
+
+const unwrapSdkMessage = (value: string): string => {
+  const prefix = SDK_WRAPPER_PREFIXES.find((candidate) =>
+    value.startsWith(candidate),
+  );
+  return prefix ? value.slice(prefix.length) : value;
+};
+
+/**
  * Unhandledrejection signature emitted by CefSharp / embedded WebView
  * automation scanners. No app frames, not actionable. The numeric id varies
  * per scan (seen Id:1, Id:2, ...), so match the shape rather than one value.
+ * Anchored against the unwrapped message - see `unwrapSdkMessage`.
  */
 const CEFSHARP_SCANNER_MESSAGE_PATTERN =
   /^Object Not Found Matching Id:\d+, MethodName:update, ParamCount:4$/;
@@ -71,13 +91,15 @@ const hasStackFrames = (entry: ExceptionEntry): boolean => {
 const isDroppableException = (entry: ExceptionEntry): boolean => {
   if (typeof entry.value !== "string") return false;
 
-  if (CEFSHARP_SCANNER_MESSAGE_PATTERN.test(entry.value)) return true;
+  const message = unwrapSdkMessage(entry.value);
 
-  if (RESIZE_OBSERVER_LOOP_MESSAGES.has(entry.value)) return true;
+  if (CEFSHARP_SCANNER_MESSAGE_PATTERN.test(message)) return true;
+
+  if (RESIZE_OBSERVER_LOOP_MESSAGES.has(message)) return true;
 
   // Opaque cross-origin errors. Keep the rare case where frames somehow
   // survived sanitization so a real stack is never discarded.
-  if (entry.value === SCRIPT_ERROR_MESSAGE && !hasStackFrames(entry)) {
+  if (message === SCRIPT_ERROR_MESSAGE && !hasStackFrames(entry)) {
     return true;
   }
 
@@ -86,7 +108,7 @@ const isDroppableException = (entry: ExceptionEntry): boolean => {
   // only creates noise. SuperTokens' session fetch often rejects outside our
   // `doesSessionExist` try/catch, so client-side catch alone can't cover it.
   return (
-    entry.type === "TypeError" && isTransientBrowserNetworkMessage(entry.value)
+    entry.type === "TypeError" && isTransientBrowserNetworkMessage(message)
   );
 };
 
