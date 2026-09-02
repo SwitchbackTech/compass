@@ -15,6 +15,25 @@ import { describe, expect, it } from "bun:test";
 
 const reservationId = "000000000000000000000099";
 const cancelPath = `/book/cancel/${reservationId}?token=abc`;
+const slotStart = "2026-09-15T15:00:00.000Z";
+
+function reservationGetHandler(overrides: Record<string, unknown> = {}) {
+  return rest.get(
+    `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}`,
+    (_req, res, ctx) =>
+      res(
+        ctx.status(Status.OK),
+        ctx.json({
+          slotStart,
+          guestTimeZone: "UTC",
+          durationMinutes: 30,
+          hostDisplayName: "Tyler Dane",
+          status: "confirmed",
+          ...overrides,
+        }),
+      ),
+  );
+}
 
 function renderCancelRoute(path: string) {
   const router = createRouter({
@@ -32,6 +51,7 @@ describe("PublicBookingCancelPage", () => {
     let cancelPosts = 0;
 
     server.use(
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
         async (_req, res, ctx) => {
@@ -67,6 +87,7 @@ describe("PublicBookingCancelPage", () => {
     });
 
     server.use(
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
         async (_req, res, ctx) => {
@@ -94,6 +115,7 @@ describe("PublicBookingCancelPage", () => {
 
   it("focuses the heading on load and tabs to the confirm button", async () => {
     const user = userEvent.setup({ delay: null });
+    server.use(reservationGetHandler());
 
     renderCancelRoute(cancelPath);
 
@@ -114,6 +136,7 @@ describe("PublicBookingCancelPage", () => {
     const user = userEvent.setup({ delay: null });
 
     server.use(
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
         (_req, res, ctx) =>
@@ -138,6 +161,7 @@ describe("PublicBookingCancelPage", () => {
   it("shows not-found without posting when the token is missing", async () => {
     let cancelPosts = 0;
     server.use(
+      reservationGetHandler(),
       rest.post(
         `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
         (_req, res, ctx) => {
@@ -152,6 +176,47 @@ describe("PublicBookingCancelPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Booking not found" }),
     ).toBeInTheDocument();
+    expect(cancelPosts).toBe(0);
+  });
+
+  it("shows host and slot details before confirm", async () => {
+    server.use(reservationGetHandler());
+
+    renderCancelRoute(cancelPath);
+
+    expect(
+      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("You are canceling a booking with Tyler Dane."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("When")).toBeInTheDocument();
+    expect(screen.getByText("Duration")).toBeInTheDocument();
+    expect(screen.getByText("Timezone")).toBeInTheDocument();
+    expect(screen.getByText("30 minutes")).toBeInTheDocument();
+  });
+
+  it("skips confirmation when the reservation is already cancelled", async () => {
+    let cancelPosts = 0;
+    server.use(
+      reservationGetHandler({ status: "cancelled" }),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        (_req, res, ctx) => {
+          cancelPosts += 1;
+          return res(ctx.status(Status.OK), ctx.json({ ok: true }));
+        },
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cancel this booking" }),
+    ).not.toBeInTheDocument();
     expect(cancelPosts).toBe(0);
   });
 });

@@ -10,20 +10,20 @@ export function PublicBookingCopyCancelUrl({
   const { copied, copy } = useCopiedFlag(cancelUrl);
 
   return (
-    <div className="mt-4 flex flex-col gap-2">
-      <a
-        href={cancelUrl}
-        className="c-focus-ring break-all text-accent text-sm underline"
-      >
-        {cancelUrl}
-      </a>
+    <div className="flex flex-col items-start gap-3">
       <button
         type="button"
         onClick={copy}
-        className="c-focus-ring self-start rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text"
+        className="c-button c-button-secondary"
       >
         {copied ? "Copied" : "Copy cancel link"}
       </button>
+      <a
+        href={cancelUrl}
+        className="c-focus-ring text-accent text-sm underline"
+      >
+        cancel this booking
+      </a>
       <p role="status" className="sr-only">
         {copied ? "Copied" : ""}
       </p>

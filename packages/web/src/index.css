@@ -476,6 +476,10 @@
   @apply c-focus-ring inline-flex items-center font-medium transition-[background-color] duration-150 ease-out disabled:pointer-events-none disabled:opacity-60;
 }
 
+@utility c-field {
+  @apply c-focus-ring rounded-md border border-border bg-surface px-3 py-2 text-text;
+}
+
 @utility c-disclosure-content {
   @apply invisible grid grid-rows-[0fr] overflow-hidden opacity-0 transition-[grid-template-rows,opacity,visibility] duration-200 ease-out motion-reduce:transition-none;
   transition-behavior: allow-discrete;

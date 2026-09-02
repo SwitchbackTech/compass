@@ -428,6 +428,9 @@ describe("PublicBookingPage", () => {
     expect(
       screen.getByRole("button", { name: "Copy cancel link" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "cancel this booking" }),
+    ).toBeInTheDocument();
   });
 
   it("overrides the guest timezone for labels, day grouping, and submit", async () => {
@@ -1292,7 +1295,12 @@ describe("PublicBookingConfirmedPage", () => {
         name: "You are booked with Tyler Dane",
       }),
     ).toHaveFocus();
-    expect(screen.getByText(/30 minutes Google Meet/)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/30 minutes Google Meet/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("When")).toBeInTheDocument();
+    expect(screen.getByText("Duration")).toBeInTheDocument();
+    expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(
       screen.getByText(/A Google Meet invite is on its way to your email/),
     ).toBeInTheDocument();
@@ -1383,6 +1391,17 @@ describe("PublicBookingConfirmedPage", () => {
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
     await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    expect(
+      await screen.findByRole("link", { name: "cancel this booking" }),
+    ).toHaveAttribute(
+      "href",
+      "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+    );
+    expect(
+      screen.queryByRole("link", {
+        name: "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      }),
+    ).not.toBeInTheDocument();
     await user.click(
       await screen.findByRole("button", { name: "Copy cancel link" }),
     );

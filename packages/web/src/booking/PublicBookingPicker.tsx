@@ -160,7 +160,7 @@ export function PublicBookingPicker({
                 disabled={slotsFetching}
                 aria-busy={slotsFetching || undefined}
                 onClick={onRetrySlots}
-                className="c-focus-ring rounded-md bg-surface-panel px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
+                className="c-button c-button-secondary"
               >
                 Retry
               </button>
