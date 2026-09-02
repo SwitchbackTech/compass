@@ -349,3 +349,5 @@ Authenticated (host session + writable billing, same as event writes):
 - [Attendees, Contacts, And RSVP](./attendees.md)
 - [Google Sync And SSE Flow](./google-sync-and-sse-flow.md)
 - [Billing And Trial](./billing.md)
+- Product audit prompt (next-milestone recommendations, not the booking loop):
+  [`.github/prompts/booking-product-audit.md`](../../.github/prompts/booking-product-audit.md)
