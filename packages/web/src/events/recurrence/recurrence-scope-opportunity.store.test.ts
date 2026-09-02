@@ -1,6 +1,7 @@
 import { type EventId } from "@core/types/domain-primitives";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
+  isRecurrenceScopeAskReady,
   isRecurrenceScopeEditAskDeclined,
   recurrenceScopeOpportunityActions,
   useRecurrenceScopeOpportunityStore,
@@ -15,6 +16,21 @@ const original = createMockEvent({
 });
 
 describe("recurrenceScopeOpportunityActions", () => {
+  it("is ready only while the series-scope toast can still promote", () => {
+    recurrenceScopeOpportunityActions.reset();
+    expect(isRecurrenceScopeAskReady()).toBe(false);
+
+    const id = recurrenceScopeOpportunityActions.begin({
+      kind: "delete",
+      original,
+      source: "local",
+    });
+    expect(isRecurrenceScopeAskReady()).toBe(true);
+
+    recurrenceScopeOpportunityActions.requestPromotion(id, "all");
+    expect(isRecurrenceScopeAskReady()).toBe(false);
+  });
+
   it("only promotes the currently-live opportunity once", () => {
     recurrenceScopeOpportunityActions.reset();
     const id = recurrenceScopeOpportunityActions.begin({

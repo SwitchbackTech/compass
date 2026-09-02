@@ -1,59 +1,62 @@
 import { useEffect } from "react";
+import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
   showRecurrenceScopePromotionToast,
   showRecurrenceScopeToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
+  isRecurrenceScopeAskReady,
   recurrenceScopeOpportunityActions,
   selectRecurrenceScopeOpportunity,
   useRecurrenceScopeOpportunityStore,
 } from "@web/events/recurrence/recurrence-scope-opportunity.store";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import { isAppLocked } from "@web/shortcuts/app-lock";
+import { digitPickIndex } from "@web/shortcuts/digit-pick.util";
+import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
-const canHandleShortcut = (event: KeyboardEvent) =>
-  !event.isComposing &&
-  !event.metaKey &&
-  !event.ctrlKey &&
-  !event.altKey &&
-  !event.shiftKey;
+const scopeForToastDigit = (
+  event: KeyboardEvent,
+): "thisAndFollowing" | "all" | null => {
+  if (
+    event.isComposing ||
+    isAppLocked() ||
+    isEditableKeyboardTarget(event) ||
+    isEditSequenceArmed()
+  ) {
+    return null;
+  }
+
+  const pickIndex = digitPickIndex(event);
+  if (pickIndex === 0) return "thisAndFollowing";
+  if (pickIndex === 1) return "all";
+  return null;
+};
 
 export function RecurrenceScopeOpportunityHost() {
   const opportunity = useRecurrenceScopeOpportunityStore(
     selectRecurrenceScopeOpportunity,
   );
   const { promoteRecurring } = useEventMutations();
-  const isReady = opportunity?.status === "ready";
 
-  useAppShortcut(
-    "1",
-    (event) => {
-      if (!opportunity || !canHandleShortcut(event)) return;
-      recurrenceScopeOpportunityActions.requestPromotion(
-        opportunity.id,
-        "thisAndFollowing",
-      );
-    },
-    {
-      enabled: isReady,
-      ignoreInputs: true,
-      preventDefault: true,
-      stopPropagation: true,
-    },
-  );
-  useAppShortcut(
-    "2",
-    (event) => {
-      if (!opportunity || !canHandleShortcut(event)) return;
-      recurrenceScopeOpportunityActions.requestPromotion(opportunity.id, "all");
-    },
-    {
-      enabled: isReady,
-      ignoreInputs: true,
-      preventDefault: true,
-      stopPropagation: true,
-    },
-  );
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (!isRecurrenceScopeAskReady()) return;
+      const scope = scopeForToastDigit(event);
+      if (!scope) return;
+
+      const current = useRecurrenceScopeOpportunityStore.getState().opportunity;
+      if (!current || current.status !== "ready") return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      recurrenceScopeOpportunityActions.requestPromotion(current.id, scope);
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 
   useEffect(() => {
     if (opportunity?.status !== "ready") return;

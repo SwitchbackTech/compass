@@ -3,7 +3,8 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 /** Action-toast CTA (Sign up / Sign in). Letter keys only: digits belong to
- * quick-time create (`1` = 1:00). Same letter as the start-trial banner. */
+ * quick-time create (`1` = 1:00), except the series-scope toast which owns
+ * 1/2 while it is visible. Same letter as the start-trial banner. */
 export const TOAST_PRIMARY_ACTION_KEY = "S" as const;
 
 /** Start-trial banner CTA. Same letter as the billing gate overlay. */
