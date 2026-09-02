@@ -410,10 +410,19 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Previous month" }),
     ).toBeEnabled();
     await expect(page.getByText("Loading open times")).toHaveCount(0);
-    // From 2 Sep a 60-day horizon includes 1 Nov, so landing on October
-    // prefetches November. Wait for that GET (or its absence earlier in
-    // the month) before asserting that going back and forth is cached.
-    await page.waitForLoadState("networkidle");
+    // Adjacent prefetch of the month after next may still be in flight when
+    // the 60-day horizon reaches that month (from 2 Sep, 1 Nov is in range).
+    // Do not require a third fetch; snapshot only after the count is stable
+    // so revisiting the prefetched month is not blamed for that request.
+    let previousGets = -1;
+    await expect
+      .poll(() => {
+        const n = captured.slotGets;
+        const stable = n >= 2 && n === previousGets;
+        previousGets = n;
+        return stable;
+      })
+      .toBe(true);
     const afterArrive = captured.slotGets;
     expect(afterArrive).toBeGreaterThanOrEqual(2);
 
