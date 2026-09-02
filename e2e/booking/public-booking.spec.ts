@@ -410,9 +410,19 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Previous month" }),
     ).toBeEnabled();
     await expect(page.getByText("Loading open times")).toHaveCount(0);
-    // Horizon can omit the month after next (60 days from 1 Sep does not
-    // cover November), so do not require a third fetch. Revisiting the
-    // prefetched month must not issue another request.
+    // Adjacent prefetch of the month after next may still be in flight when
+    // the 60-day horizon reaches that month (from 2 Sep, 1 Nov is in range).
+    // Do not require a third fetch; snapshot only after the count is stable
+    // so revisiting the prefetched month is not blamed for that request.
+    let previousGets = -1;
+    await expect
+      .poll(() => {
+        const n = captured.slotGets;
+        const stable = n >= 2 && n === previousGets;
+        previousGets = n;
+        return stable;
+      })
+      .toBe(true);
     const afterArrive = captured.slotGets;
 
     await page.getByRole("button", { name: "Previous month" }).click();
