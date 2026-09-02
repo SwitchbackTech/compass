@@ -1,4 +1,4 @@
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, type RefObject, useId, useState } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -9,6 +9,7 @@ interface FeedbackDialogProps {
   isSubmitting?: boolean;
   onDismiss: () => void;
   restoreFocus?: () => void;
+  skipFocusRestoreRef?: RefObject<boolean>;
   onSubmit: (details: string) => void | Promise<void>;
 }
 
@@ -16,6 +17,7 @@ export function FeedbackDialog({
   isSubmitting = false,
   onDismiss,
   restoreFocus,
+  skipFocusRestoreRef,
   onSubmit,
 }: FeedbackDialogProps) {
   const [details, setDetails] = useState("");
@@ -37,6 +39,7 @@ export function FeedbackDialog({
       message="Send feedback without leaving Compass."
       onDismiss={handleDismiss}
       restoreFocus={restoreFocus}
+      skipFocusRestoreRef={skipFocusRestoreRef}
       align="start"
       variant="modal"
       widthClassName="w-[480px]"

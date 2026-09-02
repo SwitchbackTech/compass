@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { type RefObject, useMemo, useRef } from "react";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 import {
@@ -24,12 +24,14 @@ interface TimezonePickerDialogProps {
   onDismiss: () => void;
   purpose?: TimezoneDialogPurpose;
   restoreFocus?: () => void;
+  skipFocusRestoreRef?: RefObject<boolean>;
 }
 
 export function TimezonePickerDialog({
   onDismiss,
   purpose = "pin",
   restoreFocus,
+  skipFocusRestoreRef,
 }: TimezonePickerDialogProps) {
   const isTimeTravel = purpose === "time-travel";
   const effectiveTimeZone = useEffectiveTimeZone();
@@ -94,6 +96,7 @@ export function TimezonePickerDialog({
       }
       onDismiss={onDismiss}
       restoreFocus={restoreFocus}
+      skipFocusRestoreRef={skipFocusRestoreRef}
       initialFocusRef={searchRef}
       align="start"
       variant="modal"

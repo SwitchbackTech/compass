@@ -4,11 +4,17 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 
 export type SettingsPage = "accounts" | "billing" | "booking";
 
+export type OpenFromPaletteOptions = {
+  fromPalette?: boolean;
+};
+
 interface SettingsState {
   isCmdPaletteOpen: boolean;
   isSettingsOpen: boolean;
   isAboutOpen: boolean;
   settingsPage: SettingsPage;
+  /** True when the current overlay was opened from the command palette. */
+  overlayOpenedFromPalette: boolean;
 }
 
 export const initialSettingsState: SettingsState = {
@@ -16,6 +22,7 @@ export const initialSettingsState: SettingsState = {
   isSettingsOpen: false,
   isAboutOpen: false,
   settingsPage: "accounts",
+  overlayOpenedFromPalette: false,
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -44,15 +51,26 @@ export const settingsActions = {
     ),
   closeSettings: () =>
     useSettingsStore.setState(
-      { isSettingsOpen: false, settingsPage: "accounts" },
+      {
+        isSettingsOpen: false,
+        settingsPage: "accounts",
+        overlayOpenedFromPalette: false,
+      },
       false,
       {
         type: "closeSettings",
       },
     ),
-  openSettings: (page: SettingsPage = "accounts") =>
+  openSettings: (
+    page: SettingsPage = "accounts",
+    { fromPalette = false }: OpenFromPaletteOptions = {},
+  ) =>
     useSettingsStore.setState(
-      { isSettingsOpen: true, settingsPage: page },
+      {
+        isSettingsOpen: true,
+        settingsPage: page,
+        overlayOpenedFromPalette: fromPalette,
+      },
       false,
       {
         type: "openSettings",
@@ -66,19 +84,59 @@ export const settingsActions = {
     useSettingsStore.setState(
       (state) =>
         state.isSettingsOpen
-          ? { isSettingsOpen: false, settingsPage: "accounts" }
-          : { isSettingsOpen: true, settingsPage: "accounts" },
+          ? {
+              isSettingsOpen: false,
+              settingsPage: "accounts",
+              overlayOpenedFromPalette: false,
+            }
+          : {
+              isSettingsOpen: true,
+              settingsPage: "accounts",
+              overlayOpenedFromPalette: false,
+            },
       false,
       { type: "toggleSettings" },
     ),
   closeAbout: () =>
-    useSettingsStore.setState({ isAboutOpen: false }, false, {
-      type: "closeAbout",
+    useSettingsStore.setState(
+      { isAboutOpen: false, overlayOpenedFromPalette: false },
+      false,
+      {
+        type: "closeAbout",
+      },
+    ),
+  openAbout: ({ fromPalette = false }: OpenFromPaletteOptions = {}) =>
+    useSettingsStore.setState(
+      { isAboutOpen: true, overlayOpenedFromPalette: fromPalette },
+      false,
+      {
+        type: "openAbout",
+      },
+    ),
+  markOverlayOpenedFromPalette: () =>
+    useSettingsStore.setState({ overlayOpenedFromPalette: true }, false, {
+      type: "markOverlayOpenedFromPalette",
     }),
-  openAbout: () =>
-    useSettingsStore.setState({ isAboutOpen: true }, false, {
-      type: "openAbout",
+  clearOverlayOpenedFromPalette: () =>
+    useSettingsStore.setState({ overlayOpenedFromPalette: false }, false, {
+      type: "clearOverlayOpenedFromPalette",
     }),
+};
+
+/**
+ * Reopen the command palette after dismissing an overlay that was opened from
+ * it. Reads the origin flag before `close` so close handlers can clear it.
+ */
+export const reopenCommandPaletteIfNeeded = (close: () => void) => {
+  const fromPalette = useSettingsStore.getState().overlayOpenedFromPalette;
+  close();
+  if (fromPalette) {
+    useSettingsStore.setState(
+      { overlayOpenedFromPalette: false, isCmdPaletteOpen: true },
+      false,
+      { type: "reopenCommandPaletteIfNeeded" },
+    );
+  }
 };
 
 export const selectIsCmdPaletteOpen = (state: SettingsState) =>
@@ -90,3 +148,6 @@ export const selectIsSettingsOpen = (state: SettingsState) =>
 export const selectIsAboutOpen = (state: SettingsState) => state.isAboutOpen;
 
 export const selectSettingsPage = (state: SettingsState) => state.settingsPage;
+
+export const selectOverlayOpenedFromPalette = (state: SettingsState) =>
+  state.overlayOpenedFromPalette;

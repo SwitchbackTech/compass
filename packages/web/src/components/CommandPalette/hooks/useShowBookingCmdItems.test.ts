@@ -1,4 +1,4 @@
-import { UsersIcon } from "@phosphor-icons/react";
+import { CalendarIcon } from "@phosphor-icons/react";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
@@ -17,13 +17,14 @@ mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
   useSession: mockUseSession,
 });
 
-const { useShowAccountsCmdItems } = await import("./useShowAccountsCmdItems");
+const { useShowBookingCmdItems } = await import("./useShowBookingCmdItems");
 
-describe("useShowAccountsCmdItems", () => {
+describe("useShowBookingCmdItems", () => {
   beforeEach(() => {
     useSettingsStore.setState({
       isSettingsOpen: false,
       settingsPage: "accounts",
+      overlayOpenedFromPalette: false,
     });
     mockUseSession.mockReset();
     mockUseSession.mockReturnValue({
@@ -38,25 +39,31 @@ describe("useShowAccountsCmdItems", () => {
       setAuthenticated: mock(),
     });
 
-    const { result } = renderHook(() => useShowAccountsCmdItems());
+    const { result } = renderHook(() => useShowBookingCmdItems());
 
     expect(result.current).toEqual([]);
   });
 
-  it("opens Settings on Accounts from the command palette item", () => {
-    const { result } = renderHook(() => useShowAccountsCmdItems());
+  it("returns no items when booking is disabled", () => {
+    const { result } = renderHook(() => useShowBookingCmdItems(false));
 
-    expect(result.current[0].label).toBe("Manage Accounts");
-    expect(result.current[0].icon).toBe(UsersIcon);
-    expect(result.current[0].keywords).toContain("accounts");
-    expect(result.current[0].keywords).not.toContain("billing");
+    expect(result.current).toEqual([]);
+  });
+
+  it("opens Settings on Booking from the command palette item", () => {
+    const { result } = renderHook(() => useShowBookingCmdItems());
+
+    expect(result.current[0].label).toBe("Booking settings");
+    expect(result.current[0].icon).toBe(CalendarIcon);
+    expect(result.current[0].keywords).toContain("availability");
+    expect(result.current[0].keywords).toContain("meeting link");
 
     act(() => {
       result.current[0].onClick?.();
     });
 
     expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
-    expect(selectSettingsPage(useSettingsStore.getState())).toBe("accounts");
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("booking");
     expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
       true,
     );

@@ -31,7 +31,8 @@ export const useShowBillingCmdItems = (): CommandItem[] => {
         "card",
       ],
       badge: badge.label,
-      onClick: () => settingsActions.openSettings("billing"),
+      onClick: () =>
+        settingsActions.openSettings("billing", { fromPalette: true }),
     },
   ];
 };

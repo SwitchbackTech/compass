@@ -36,6 +36,7 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import {
+  selectIsCmdPaletteOpen,
   selectSettingsPage,
   settingsActions,
   useSettingsStore,
@@ -159,12 +160,14 @@ const renderSettings = ({
   calendars = [],
   open = true,
   page = "accounts",
+  fromPalette = false,
 }: {
   authenticated?: boolean;
   connections?: GoogleSyncConnectionSummary[];
   calendars?: Calendar[];
   open?: boolean;
-  page?: "accounts" | "billing";
+  page?: "accounts" | "billing" | "booking";
+  fromPalette?: boolean;
 } = {}) => {
   authenticated = isAuthenticated;
   userMetadataActions.set({
@@ -172,7 +175,7 @@ const renderSettings = ({
   });
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
-  if (open) settingsActions.openSettings(page);
+  if (open) settingsActions.openSettings(page, { fromPalette });
 
   return {
     queryClient,
@@ -430,6 +433,26 @@ describe("SettingsModal", () => {
 
     await user.keyboard("{Escape}");
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+  });
+
+  it("returns to the command palette on Escape when opened from it", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ fromPalette: true });
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(true);
+  });
+
+  it("does not open the command palette on Escape when opened directly", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(false);
   });
 
   it("closes on Escape even when focus is on document.body", async () => {

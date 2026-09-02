@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePostHog } from "@web/auth/posthog/posthog-react";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
@@ -9,6 +9,11 @@ import {
   selectFeedbackRequest,
   useFeedbackStore,
 } from "@web/components/Feedback/feedback.store";
+import {
+  reopenCommandPaletteIfNeeded,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 
 export const restoreCommandPaletteFocus = () => {
   document
@@ -22,8 +27,19 @@ export function FeedbackDialogHost() {
   const request = useFeedbackStore(selectFeedbackRequest);
   const posthog = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const skipFocusRestoreRef = useRef(false);
+
+  useEffect(() => {
+    if (request) skipFocusRestoreRef.current = false;
+  }, [request]);
 
   if (!request || !posthog) return null;
+
+  const handleDismiss = () => {
+    skipFocusRestoreRef.current =
+      useSettingsStore.getState().overlayOpenedFromPalette;
+    reopenCommandPaletteIfNeeded(feedbackActions.close);
+  };
 
   const handleSubmit = async (details: string) => {
     if (isSubmitting) return;
@@ -39,14 +55,16 @@ export function FeedbackDialogHost() {
 
     setIsSubmitting(false);
     feedbackActions.close();
+    settingsActions.clearOverlayOpenedFromPalette();
     showStatusToast("feedback-sent", "Feedback sent to the big boss, thanks!");
   };
 
   return (
     <FeedbackDialog
       isSubmitting={isSubmitting}
-      onDismiss={feedbackActions.close}
+      onDismiss={handleDismiss}
       restoreFocus={restoreCommandPaletteFocus}
+      skipFocusRestoreRef={skipFocusRestoreRef}
       onSubmit={handleSubmit}
     />
   );

@@ -38,7 +38,8 @@ export const useShowAccountsCmdItems = (): CommandItem[] => {
         "export data",
         "delete account",
       ],
-      onClick: () => settingsActions.openSettings("accounts"),
+      onClick: () =>
+        settingsActions.openSettings("accounts", { fromPalette: true }),
     },
   ];
 };
