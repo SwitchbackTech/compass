@@ -112,9 +112,11 @@ try {
         console.error(
           `\n${pkg}: tests stopped reporting but 'bun test' has not exited after ` +
             `${formatDuration(started)}s. This is an open-handle leak in a test ` +
-            `worker, not a slow suite - a worker is still holding something ` +
-            `(usually a Mongo connection; see the afterAll in backend.preload.ts). ` +
-            `Killing it so the failure is visible rather than silent.`,
+            `worker, not a slow suite - a worker has finished its tests but is ` +
+            `still holding something open (a Mongo connection is the usual ` +
+            `culprit: cleanupTestDb deliberately never disconnects, and the ` +
+            `shared-mongod path makes stopMemoryMongo a no-op). Killing it so ` +
+            `the failure is visible rather than a silent step timeout.`,
         );
         proc.kill();
         resolve(1);

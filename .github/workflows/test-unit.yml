@@ -219,8 +219,9 @@ jobs:
       # because a worker leaked an open Mongo handle and never exited. The same
       # commit re-ran in 5s. Raising the number would only have made that hang
       # cost ten minutes instead of five, while blinding the step to a real
-      # regression. The leak is fixed in backend.preload.ts, and
-      # test-mongo-env.ts now kills a wedged run at 4 minutes with a diagnosis.
+      # regression. The leak itself is not fixed here - see test-mongo-env.ts,
+      # which now kills a wedged run at 4 minutes and names the likely cause
+      # instead of letting this timeout fire with no output.
       - name: Run ${{ matrix.project }} tests
         if: needs.changes.outputs.code == 'true' && (matrix.project != 'web')
         timeout-minutes: 5
