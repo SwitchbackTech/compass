@@ -4,6 +4,8 @@ import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { formatEventStatus } from "./UpNextCard";
 import { useUpNextEvent } from "./useUpNextEvent";
@@ -89,14 +91,17 @@ export const UpNextBanner: FC = () => {
         {conferenceUrl ? "Join" : "Open"}
         <ShortcutHint>{conferenceUrl ? "V" : "N"}</ShortcutHint>
       </button>
-      <button
-        aria-label="Dismiss"
-        className="c-focus-ring shrink-0 rounded-xs px-1 text-text-muted hover:text-text"
-        onClick={dismiss}
-        type="button"
-      >
-        &times;
-      </button>
+      <TooltipWrapper shortcut="Esc">
+        <button
+          aria-label="Dismiss"
+          className="c-focus-ring shrink-0 rounded-xs px-1 text-text-muted hover:text-text"
+          data-pointer-action={POINTER_ACTIONS.upNextDismiss}
+          onClick={dismiss}
+          type="button"
+        >
+          &times;
+        </button>
+      </TooltipWrapper>
     </div>
   );
 };

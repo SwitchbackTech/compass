@@ -111,6 +111,21 @@ describe("PointerHint", () => {
     );
   });
 
+  it("teaches Escape for the up-next banner dismiss control", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.upNextDismiss,
+        shortcutKey: "Esc",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press Esc to dismiss.",
+    );
+  });
+
   it("teaches a bound shortcut key outside the welcome modal", () => {
     render(<PointerHint />);
 
@@ -293,6 +308,22 @@ describe("PointerHint", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent(
       "Press W, D, or L to switch views.",
+    );
+  });
+
+  it("keeps the up-next dismiss sentence after the session reminder threshold", () => {
+    sessionStorage.setItem(HINT_COUNT_KEY, "3");
+    render(<PointerHint />);
+
+    act(() => {
+      pointerBlockActions.pulseBlockedClick({
+        actionId: POINTER_ACTIONS.upNextDismiss,
+        shortcutKey: "Esc",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press Esc to dismiss.",
     );
   });
 

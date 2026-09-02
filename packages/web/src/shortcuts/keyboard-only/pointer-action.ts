@@ -28,6 +28,7 @@ export const POINTER_ACTIONS = {
   sidebarOpen: "sidebar.open",
   startTrial: "billing.start-trial",
   reconnectGoogle: "google.reconnect",
+  upNextDismiss: "up-next.dismiss",
 } as const;
 
 export type PointerActionId =
