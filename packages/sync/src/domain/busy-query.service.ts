@@ -14,8 +14,13 @@ import {
   type CalendarGeneration,
   type EventOccurrenceRepository,
 } from "@sync/storage/repositories/event-occurrence.repository";
+import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+
+// Cloud-only Compass events (`connectionId: null`) always persist at
+// generation 0. See `buildCloudEventRecord` in cloud-command.service.ts.
+const UNBACKED_CALENDAR_GENERATION = 0;
 
 // A normalized, half-open [start, end) busy interval on the UTC instant axis.
 export interface BusyInterval {
@@ -168,6 +173,7 @@ export interface BusyAvailabilityDeps {
   events?: EventRepository;
   resources: SyncResourceRepository;
   connections: ProviderConnectionRepository;
+  calendars: ProviderCalendarRepository;
 }
 
 export interface BusyAvailabilityInput {
@@ -202,6 +208,13 @@ export async function computeBusyAvailability(
     input.principalId,
     input.calendarIds,
   );
+  const providerCalendars = await deps.calendars.listByPrincipal(
+    input.tenantId,
+    input.principalId,
+  );
+  const providerCalendarIds = new Set(
+    providerCalendars.map((calendar) => calendar._id as string),
+  );
 
   const present: CalendarGeneration[] = [];
   const issues: CalendarIssue[] = [];
@@ -210,7 +223,18 @@ export async function computeBusyAvailability(
   for (const calendarId of input.calendarIds) {
     const resource = freshness.get(calendarId);
     if (!resource) {
-      issues.push({ calendarId, reason: "notImported" });
+      if (providerCalendarIds.has(calendarId)) {
+        issues.push({ calendarId, reason: "notImported" });
+        continue;
+      }
+      // Compass-local calendar: events live in Sync with no provider resource.
+      // Generation 0 is the only generation those writes ever use. Missing
+      // occurrences are empty busy, not a freshness miss — fail closed only
+      // when this query itself throws.
+      present.push({
+        calendarId,
+        generation: UNBACKED_CALENDAR_GENERATION,
+      });
       continue;
     }
     backingConnectionIds.add(resource.connectionId);

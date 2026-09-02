@@ -229,10 +229,13 @@ describe("R-SEC-03 isolation matrix", () => {
         connections: unknown[];
         bookable: boolean;
       };
+      // A calendar id this principal does not own is indistinguishable from
+      // Compass-local (no provider_calendars row). Return empty busy for
+      // *this* principal, never the owner's intervals.
       expect(body.intervals).toEqual([]);
       expect(body.connections).toEqual([]);
-      expect(body.bookable).toBe(false);
-      expect(body.issues).toEqual([{ calendarId, reason: "notImported" }]);
+      expect(body.issues).toEqual([]);
+      expect(body.bookable).toBe(true);
       expect(JSON.stringify(body)).not.toContain("owner-secret-meeting");
     });
 

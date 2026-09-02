@@ -14,6 +14,7 @@ import { bookingReservationRepository } from "@backend/booking/booking-reservati
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { PublicBookingService } from "@backend/booking/services/public-booking.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import userService from "@backend/user/services/user.service";
 import {
@@ -356,6 +357,74 @@ describe("PublicBookingService", () => {
           Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
       ),
     ).toBe(false);
+  });
+
+  it("occupies a Compass-local busy interval and fail-closes confirmation", async () => {
+    const userId = await createNamedUser("Compass Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const localCalendar = await calendarService.getLocalCalendar(userId);
+    if (!localCalendar) {
+      throw new Error("expected Compass-local calendar after user create");
+    }
+    const localId = localCalendar._id.toHexString();
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id, localId],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    getAvailability.mockImplementation(async (_userId, query) => {
+      expect(query.calendarIds).toEqual(
+        expect.arrayContaining([calendar.id, localId]),
+      );
+      return {
+        ...busyResponse(true),
+        intervals: [
+          {
+            start: "2026-09-07T10:00:00.000Z",
+            end: "2026-09-07T11:00:00.000Z",
+            hostIsOrganizer: true,
+            hostResponseStatus: null,
+          },
+        ],
+      };
+    });
+
+    const slots = await service.getSlots(slug, {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+    expect(
+      slots.slots.some(
+        (slot) =>
+          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
+      ),
+    ).toBe(false);
+
+    getAvailability.mockImplementation(async (_userId, query) => {
+      expect(query.calendarIds).toEqual(
+        expect.arrayContaining([calendar.id, localId]),
+      );
+      return busyResponse(false);
+    });
+
+    await expect(
+      service.createReservation(slug, {
+        slotStart: "2026-09-07T12:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+    expect(createBookingEvent).not.toHaveBeenCalled();
   });
 
   it("returns welcome text on the public page without date overrides", async () => {

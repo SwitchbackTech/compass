@@ -420,6 +420,7 @@ export function registerConnectionRoutes(
             events: repos.events,
             resources: repos.syncResources,
             connections: repos.connections,
+            calendars: repos.calendars,
           },
           {
             tenantId: auth.tenantId,

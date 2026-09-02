@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+  BOOKING_CALENDAR_ID,
+  COMPASS_CALENDAR_ID,
   dispatchClick,
   dispatchFill,
   prepareSignedInBookingSettingsPage,
@@ -96,4 +98,22 @@ test("saves welcome text", async ({ page }) => {
   await expect(
     settingsDialog.getByRole("link", { name: "Open booking page" }),
   ).toHaveAttribute("href", bookingUrl);
+});
+
+test("saves with Compass checked as a blocking calendar", async ({ page }) => {
+  const captured = await prepareSignedInBookingSettingsPage(page);
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const compass = settingsDialog.getByRole("checkbox", { name: "Compass" });
+  await expect(compass).toBeVisible();
+  await compass.check();
+
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Save booking settings" }),
+  );
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]?.blockingCalendarIds).toEqual(
+    expect.arrayContaining([BOOKING_CALENDAR_ID, COMPASS_CALENDAR_ID]),
+  );
 });

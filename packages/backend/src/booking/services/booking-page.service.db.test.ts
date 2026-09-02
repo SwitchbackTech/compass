@@ -13,6 +13,7 @@ import * as billingGuard from "@backend/billing/billing.guard";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { eventMutationError } from "@backend/event/event.error";
 import userService from "@backend/user/services/user.service";
@@ -307,6 +308,49 @@ describe("BookingPageService", () => {
       ),
     ).rejects.toMatchObject({
       bookingCode: "DESTINATION_NOT_WRITABLE",
+    });
+  });
+
+  it("accepts the Compass-local calendar as a blocking calendar", async () => {
+    const userId = await createNamedUser("Local Blocker");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const localCalendar = await calendarService.getLocalCalendar(userId);
+    if (!localCalendar) {
+      throw new Error("expected Compass-local calendar after user create");
+    }
+    const localId = localCalendar._id.toHexString();
+
+    const saved = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id, localId],
+      }),
+    );
+
+    expect(saved).toEqual(
+      expect.objectContaining({
+        blockingCalendarIds: expect.arrayContaining([calendar.id, localId]),
+      }),
+    );
+  });
+
+  it("rejects enable when a blocking calendar is unknown", async () => {
+    const userId = await createNamedUser("Bad Blocker");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+
+    await expect(
+      bookingPageService.putAdminPage(
+        userId,
+        samplePutInput({
+          destinationCalendarId: calendar.id,
+          blockingCalendarIds: [calendar.id, new ObjectId().toString()],
+        }),
+      ),
+    ).rejects.toMatchObject({
+      bookingCode: "BLOCKING_CALENDAR_INVALID",
     });
   });
 });

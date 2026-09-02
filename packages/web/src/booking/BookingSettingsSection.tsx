@@ -96,6 +96,7 @@ const buildInitialForm = (
   page: AdminGetBookingPageResult | undefined,
   effectiveTimeZone: string,
   writableCalendars: Calendar[],
+  availabilityCalendars: Calendar[],
 ): AdminPutBookingPageInput => {
   const base = page ?? {
     enabled: false,
@@ -126,7 +127,7 @@ const buildInitialForm = (
       ? base.blockingCalendarIds
       : defaultBlockingCalendarIdsForDestination(
           destinationCalendarId,
-          writableCalendars,
+          availabilityCalendars,
         );
 
   // The server has no user timezone, so an unconfigured page carries a "UTC"
@@ -181,7 +182,12 @@ export function BookingSettingsSection({
   const { data: serverPage, isPending } = useBookingPageQuery(isGoogleHealthy);
   const saveMutation = useSaveBookingPageMutation();
   const [form, setForm] = useState<AdminPutBookingPageInput>(() =>
-    buildInitialForm(undefined, effectiveTimeZone, writableCalendars),
+    buildInitialForm(
+      undefined,
+      effectiveTimeZone,
+      writableCalendars,
+      availabilityCalendars,
+    ),
   );
   const [enableError, setEnableError] = useState<string | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
@@ -233,11 +239,12 @@ export function BookingSettingsSection({
       serverPage,
       effectiveTimeZone,
       writableCalendars,
+      availabilityCalendars,
     );
     setForm(seeded);
     setMinNoticeText(String(seeded.minNoticeHours));
     setHorizonText(String(seeded.maxHorizonDays));
-  }, [effectiveTimeZone, serverPage, writableCalendars]);
+  }, [availabilityCalendars, effectiveTimeZone, serverPage, writableCalendars]);
 
   if (!isGoogleHealthy) {
     return <BookingConnectGooglePrompt />;
