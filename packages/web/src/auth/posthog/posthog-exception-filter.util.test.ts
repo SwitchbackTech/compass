@@ -62,6 +62,24 @@ describe("filterPosthogBeforeSend", () => {
     ).toBeNull();
   });
 
+  // The shape production actually sends: posthog-js wraps a non-Error
+  // rejection value in its own prefix before before_send sees it. Asserting
+  // the bare string alone let an anchored pattern pass here and never match
+  // a real payload.
+  it("drops the CefSharp scanner signature as posthog-js wraps it", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([
+          {
+            type: "UnhandledRejection",
+            value:
+              "Non-Error promise rejection captured with value: Object Not Found Matching Id:4, MethodName:update, ParamCount:4",
+          },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
   it("drops the CefSharp scanner signature regardless of the scan id", () => {
     expect(
       filterPosthogBeforeSend(
@@ -74,6 +92,31 @@ describe("filterPosthogBeforeSend", () => {
         ]),
       ),
     ).toBeNull();
+  });
+
+  it("drops a primitive-wrapped ResizeObserver warning", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([
+          {
+            type: "UnhandledRejection",
+            value:
+              "Primitive value captured as exception: ResizeObserver loop limit exceeded",
+          },
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps a wrapped rejection that carries app stack frames", () => {
+    const event = exceptionEvent([
+      {
+        type: "UnhandledRejection",
+        value: "Non-Error promise rejection captured with value: Script error.",
+        stacktrace: { frames: [{ filename: "/index.js", function: "boot" }] },
+      },
+    ]);
+    expect(filterPosthogBeforeSend(event)).toBe(event);
   });
 
   it("drops opaque browser Script error. with no stack frames", () => {
