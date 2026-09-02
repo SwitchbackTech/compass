@@ -1,9 +1,14 @@
+import { ArrowSquareOut, Check, Copy } from "@phosphor-icons/react";
 import { useCopiedFlag } from "@web/booking/use-copied-flag";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import IconButton from "@web/components/IconButton/IconButton";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface BookingCopyLinkProps {
   bookingUrl: string;
 }
+
+const ICON_SIZE = 18;
 
 export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
   const { copied, copy } = useCopiedFlag(bookingUrl, (didCopy) => {
@@ -18,29 +23,35 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
   return (
     <div>
       <p className="mb-1 text-sm text-text">Public booking link</p>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <input
           aria-label="Public booking link"
           className="c-focus-ring min-w-0 flex-1 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
           readOnly
           value={bookingUrl}
         />
-        <button
-          aria-label="Copy booking link"
-          className="c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text transition-colors hover:bg-surface-panel"
-          onClick={copy}
-          type="button"
+        <TooltipWrapper
+          description={copied ? "Copied" : "Copy booking link"}
         >
-          {copied ? "Copied" : "Copy"}
-        </button>
-        <a
-          className="c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text transition-colors hover:bg-surface-panel"
-          href={bookingUrl}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Open booking page
-        </a>
+          <IconButton
+            aria-label="Copy booking link"
+            onClick={copy}
+            size="small"
+          >
+            {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
+          </IconButton>
+        </TooltipWrapper>
+        <TooltipWrapper description="Open booking page">
+          <a
+            aria-label="Open booking page"
+            className="flex cursor-pointer items-center justify-center rounded border-2 border-transparent bg-transparent p-0 text-xl text-inherit outline-[inherit] transition-[background-color,box-shadow,transform] duration-300 hover:scale-105 hover:bg-border focus-visible:shadow-[0_0_0_2px_var(--color-border-strong)] active:scale-95"
+            href={bookingUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <ArrowSquareOut size={ICON_SIZE} />
+          </a>
+        </TooltipWrapper>
       </div>
     </div>
   );
