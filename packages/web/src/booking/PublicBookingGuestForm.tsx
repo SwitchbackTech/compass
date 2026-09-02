@@ -40,10 +40,7 @@ const validateGuestFields = (
   return errors;
 };
 
-const FIELD_CLASS_NAME =
-  "c-focus-ring rounded-md border border-border bg-surface px-3 py-2 text-text";
-
-const INVALID_FIELD_CLASS_NAME = `${FIELD_CLASS_NAME} border-error`;
+const INVALID_FIELD_CLASS_NAME = "c-field border-error";
 
 export function PublicBookingGuestForm({
   disabled,
@@ -115,9 +112,7 @@ export function PublicBookingGuestForm({
             onChange({ ...values, guestName: event.target.value });
             setErrors((current) => ({ ...current, guestName: undefined }));
           }}
-          className={
-            errors.guestName ? INVALID_FIELD_CLASS_NAME : FIELD_CLASS_NAME
-          }
+          className={errors.guestName ? INVALID_FIELD_CLASS_NAME : "c-field"}
         />
         {errors.guestName ? (
           <span
@@ -146,9 +141,7 @@ export function PublicBookingGuestForm({
             onChange({ ...values, guestEmail: event.target.value });
             setErrors((current) => ({ ...current, guestEmail: undefined }));
           }}
-          className={
-            errors.guestEmail ? INVALID_FIELD_CLASS_NAME : FIELD_CLASS_NAME
-          }
+          className={errors.guestEmail ? INVALID_FIELD_CLASS_NAME : "c-field"}
         />
         {errors.guestEmail ? (
           <span
@@ -169,14 +162,14 @@ export function PublicBookingGuestForm({
           onChange={(event) =>
             onChange({ ...values, notes: event.target.value })
           }
-          className={FIELD_CLASS_NAME}
+          className="c-field"
         />
       </label>
       <button
         type="submit"
         disabled={disabled || submitDisabled}
         aria-busy={disabled || undefined}
-        className="c-focus-ring rounded-md bg-accent px-4 py-2 font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+        className="c-button c-button-primary"
       >
         {disabled ? "Confirming..." : "Confirm booking"}
       </button>

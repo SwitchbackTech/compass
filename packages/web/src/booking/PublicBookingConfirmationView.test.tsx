@@ -1,0 +1,96 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
+import {
+  formatBookingSlotLabel,
+  formatDurationMinutes,
+} from "@web/booking/public-booking.format";
+import { describe, expect, it, mock } from "bun:test";
+
+const slotStart = "2026-09-15T15:00:00.000Z";
+const timeZone = "UTC";
+const cancelUrl =
+  "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc";
+
+describe("PublicBookingConfirmationView", () => {
+  it("shows the slot summary instead of a raw cancel URL", () => {
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("When")).toBeInTheDocument();
+    expect(
+      screen.getByText(formatBookingSlotLabel(slotStart, timeZone)),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Duration")).toBeInTheDocument();
+    expect(screen.getByText(formatDurationMinutes(30))).toBeInTheDocument();
+    expect(screen.getByText("Timezone")).toBeInTheDocument();
+    expect(screen.queryByText(cancelUrl)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "cancel this booking" }),
+    ).toHaveAttribute("href", cancelUrl);
+    expect(
+      screen.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides copy and cancel controls without a cancel URL", () => {
+    render(
+      <PublicBookingConfirmationView
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Copy cancel link" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "cancel this booking" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/To cancel, use the link in that invite/),
+    ).toBeInTheDocument();
+  });
+
+  it("copies the cancel URL from the secondary button", async () => {
+    const user = userEvent.setup({ delay: null });
+    const written: string[] = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: mock((value: string) => {
+          written.push(value);
+          return Promise.resolve();
+        }),
+      },
+    });
+
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Copy cancel link" }));
+
+    expect(written).toEqual([cancelUrl]);
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Copied");
+  });
+});

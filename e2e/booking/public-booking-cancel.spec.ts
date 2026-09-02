@@ -10,6 +10,12 @@ test.describe("public booking cancel page", () => {
     await expect(
       page.getByRole("heading", { name: "Cancel this booking?" }),
     ).toBeVisible();
+    await expect(
+      page.getByText("You are canceling a booking with Tyler Dane."),
+    ).toBeVisible();
+    await expect(page.getByText("When")).toBeVisible();
+    await expect(page.getByText("Duration")).toBeVisible();
+    await expect(page.getByText("Timezone")).toBeVisible();
     expect(captured.cancelPosts).toHaveLength(0);
 
     await page.getByRole("button", { name: "Cancel this booking" }).click();
@@ -33,6 +39,22 @@ test.describe("public booking cancel page", () => {
     await expect(
       page.getByRole("button", { name: "Cancel this booking" }),
     ).toBeFocused();
+  });
+
+  test("skips confirmation when the reservation is already cancelled", async ({
+    page,
+  }) => {
+    const captured = await preparePublicBookingCancelPage(page, {
+      reservationStatus: "cancelled",
+    });
+
+    await expect(
+      page.getByRole("heading", { name: "Booking canceled" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Cancel this booking" }),
+    ).toHaveCount(0);
+    expect(captured.cancelPosts).toHaveLength(0);
   });
 
   test("shows a distinct error heading from the canceled state", async ({

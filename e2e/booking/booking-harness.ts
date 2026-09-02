@@ -379,6 +379,16 @@ export interface PublicBookingCancelStubOptions {
   cancelStatus?: number;
   /** When set, the cancel POST waits until this resolves (for in-flight UI). */
   holdCancel?: Promise<void>;
+  durationMinutes?: number;
+  slotStart?: string;
+  guestTimeZone?: string;
+  hostDisplayName?: string;
+  /** Public GET reservation status. Defaults to confirmed. */
+  reservationStatus?: "confirmed" | "cancelled";
+  /** When true, GET /reservations/:id returns 404. */
+  reservationNotFound?: boolean;
+  /** When set, GET /reservations/:id returns this status instead of 200. */
+  reservationGetStatus?: number;
 }
 
 export interface CapturedCancelRequests {
@@ -397,6 +407,28 @@ export async function preparePublicBookingCancelPage(
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
+
+    if (
+      path === `/api/booking/reservations/${reservationId}` &&
+      request.method() === "GET"
+    ) {
+      if (options.reservationNotFound) {
+        return route.fulfill(jsonResponse({}, 404));
+      }
+      if (options.reservationGetStatus) {
+        return route.fulfill(jsonResponse({}, options.reservationGetStatus));
+      }
+      const slot = buildBookableSlot(options.durationMinutes ?? 30);
+      return route.fulfill(
+        jsonResponse({
+          slotStart: options.slotStart ?? slot.slotStart,
+          guestTimeZone: options.guestTimeZone ?? "UTC",
+          durationMinutes: options.durationMinutes ?? 30,
+          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
+          status: options.reservationStatus ?? "confirmed",
+        }),
+      );
+    }
 
     if (
       path === `/api/booking/reservations/${reservationId}/cancel` &&
