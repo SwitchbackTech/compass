@@ -32,6 +32,9 @@ const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
   notes: "",
 };
 
+const SLOT_CONFLICT_ALERT =
+  "This time is no longer available. Pick another slot.";
+
 /**
  * All state and behavior of the guest booking flow. The URL is the source of
  * truth for the selection (month, day, slot, timezone): Back returns from the
@@ -128,7 +131,10 @@ export function usePublicBookingFlow() {
     availableDateKeys[0] ??
     null;
 
-  const showConflictForm = !showDetailsStep && alertMessage !== null;
+  // 409 only: keep typed details while they pick another slot. Other alerts
+  // (empty horizon, confirm failure) must not open the guest form.
+  const showConflictForm =
+    !showDetailsStep && alertMessage === SLOT_CONFLICT_ALERT;
   const slotsHasData = Boolean(slotsQuery.data);
   const slotsFetching =
     !slotsHasData && (slotsQuery.isPending || slotsQuery.isFetching);
@@ -262,7 +268,7 @@ export function usePublicBookingFlow() {
       });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {
-        setAlertMessage("This time is no longer available. Pick another slot.");
+        setAlertMessage(SLOT_CONFLICT_ALERT);
         setChangingTime(false);
         updateSearch({ slot: undefined });
         await slotsQuery.refetch();

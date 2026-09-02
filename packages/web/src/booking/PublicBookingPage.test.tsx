@@ -974,6 +974,40 @@ describe("PublicBookingPage", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("does not open Your details when jump finds no times in the horizon", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([]));
+
+    renderBookingRoute("/book/tylerdane");
+
+    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    expect(
+      await screen.findByText("No open times this month."),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Jump to next available day" }),
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(
+      "No open times in the next 60 days. Check back later.",
+    );
+    await waitFor(() => {
+      expect(alert).toHaveFocus();
+    });
+    expect(
+      screen.getByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Your details" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Confirm booking" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Select a time to continue.")).toBeInTheDocument();
+  });
+
   it("returns to the picker with the day and typed fields intact", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot, laterCurrentSlot]));
