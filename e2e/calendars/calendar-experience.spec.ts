@@ -389,8 +389,16 @@ test("day view separates visible calendars into distinct columns", async ({
 
   await expect(primaryHeader).toBeVisible();
   await expect(readerHeader).toBeVisible();
-  await expect(primaryHeader).toHaveCSS("color", "rgb(198, 208, 217)");
-  await expect(readerHeader).toHaveCSS("color", "rgb(198, 208, 217)");
+  const themeTextColor = await page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--text)";
+    document.documentElement.appendChild(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  await expect(primaryHeader).toHaveCSS("color", themeTextColor);
+  await expect(readerHeader).toHaveCSS("color", themeTextColor);
   await expect(primaryEvent).toBeVisible();
   await expect(readerEvent).toBeVisible();
 

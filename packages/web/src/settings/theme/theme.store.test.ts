@@ -37,20 +37,20 @@ describe("theme store + util", () => {
     restoreMatchMedia = undefined;
   });
 
-  it("falls back to the default theme when nothing is stored and OS is dark", () => {
+  it("uses the light default when nothing is stored, even if OS is dark", () => {
     restoreMatchMedia = stubColorScheme(false);
-    expect(readStoredTheme()).toBe("dark-abyss");
+    expect(readStoredTheme()).toBe("light-beach");
   });
 
-  it("follows prefers-color-scheme light when nothing is stored", () => {
+  it("uses the light default when nothing is stored and OS is light", () => {
     restoreMatchMedia = stubColorScheme(true);
     expect(readStoredTheme()).toBe("light-beach");
   });
 
-  it("falls back to the default theme for an unknown stored value", () => {
-    restoreMatchMedia = stubColorScheme(true);
+  it("falls back to the light default for an unknown stored value", () => {
+    restoreMatchMedia = stubColorScheme(false);
     persistentBrowserStore.set(THEME_STORAGE_KEY, "neon-swamp");
-    expect(readStoredTheme()).toBe("dark-abyss");
+    expect(readStoredTheme()).toBe("light-beach");
   });
 
   it("reads back a valid stored theme", () => {

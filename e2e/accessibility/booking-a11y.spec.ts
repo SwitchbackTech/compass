@@ -11,36 +11,39 @@ import {
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
 test.describe("public booking page color scheme", () => {
-  (["light", "dark"] as const).forEach((colorScheme) => {
-    test.describe(`${colorScheme} OS`, () => {
-      test.use({ colorScheme });
-
+  (
+    [
+      { name: "light", theme: "light-beach", stored: null },
+      { name: "dark", theme: "dark-abyss", stored: "dark-abyss" },
+    ] as const
+  ).forEach(({ name, theme, stored }) => {
+    test.describe(`${name} theme`, () => {
       test("the picker has no automatically detectable accessibility violations", async ({
         page,
       }) => {
+        if (stored) {
+          await page.addInitScript((value) => {
+            localStorage.setItem("compass.theme", value);
+          }, stored);
+        }
         await preparePublicBookingPage(page);
         await expect(
           page.getByRole("heading", { name: "Pick a time" }),
         ).toBeVisible();
-        if (colorScheme === "light") {
-          await expect(page.locator("html")).toHaveAttribute(
-            "data-theme",
-            "light-beach",
-          );
-        } else {
-          await expect(page.locator("html")).not.toHaveAttribute(
-            "data-theme",
-            "light-beach",
-          );
-        }
+        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
         await expectNoAxeViolations(page, {
-          checkpoint: `public booking page ${colorScheme}`,
+          checkpoint: `public booking page ${name}`,
         });
       });
 
       test("the details step has no automatically detectable accessibility violations", async ({
         page,
       }) => {
+        if (stored) {
+          await page.addInitScript((value) => {
+            localStorage.setItem("compass.theme", value);
+          }, stored);
+        }
         const { slotStart } = buildBookableSlot();
         await preparePublicBookingPage(page);
         await page
@@ -50,7 +53,7 @@ test.describe("public booking page color scheme", () => {
           page.getByRole("heading", { name: "Your details" }),
         ).toBeVisible();
         await expectNoAxeViolations(page, {
-          checkpoint: `public booking details ${colorScheme}`,
+          checkpoint: `public booking details ${name}`,
         });
       });
     });

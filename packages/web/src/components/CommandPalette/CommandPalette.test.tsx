@@ -264,7 +264,7 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
     expect(activeRowText(container)).toBe("Create all-day event");
     fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Undo last change
-    expect(activeRowText(container)).toBe("Switch to light theme");
+    expect(activeRowText(container)).toBe("Switch to dark theme");
   });
 
   it("runs the active item's onClick and closes on Enter", async () => {
@@ -324,7 +324,7 @@ describe("CommandPalette", () => {
 
     fireEvent.change(input, { target: { value: "ligh" } });
     expect(input).toHaveValue("ligh");
-    expect(rowLabel("Switch to light theme")).toBeInTheDocument();
+    expect(rowLabel("Switch to dark theme")).toBeInTheDocument();
     expect(screen.queryByText("Go to Today")).not.toBeInTheDocument();
 
     fireEvent.keyDown(input, { key: "Escape" });

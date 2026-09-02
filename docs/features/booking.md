@@ -99,9 +99,8 @@ flowchart TD
   permalink -->|tokenized cancel URL| cancel
 ```
 
-Public booking follows `prefers-color-scheme` when `compass.theme` is
-unset: a light OS uses `light-beach`, a dark OS keeps the app dark
-default. A stored theme wins over the OS.
+Public booking uses `light-beach` when `compass.theme` is unset. A
+stored theme wins.
 
 ### Guest keyboard path
 
