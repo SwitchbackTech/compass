@@ -827,6 +827,47 @@ describe("BookingSettingsSection", () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 
+  it("labels a Google primary destination calendar with the calendar name only", async () => {
+    const primary = createMockCalendar({
+      name: "host@example.com",
+      accountEmail: "host@example.com",
+      isPrimary: true,
+    });
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: primary.id,
+            blockingCalendarIds: [primary.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [primary]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const combobox = await screen.findByRole("combobox", {
+      name: "Destination calendar",
+    });
+    const option = within(combobox).getByRole("option");
+    expect(option.textContent).toBe("host@example.com");
+    expect(
+      within(combobox).getByRole("group", { name: "host@example.com" }),
+    ).toBeInTheDocument();
+  });
+
   it("blocks enable without a destination calendar", async () => {
     const user = userEvent.setup({ delay: null });
 
