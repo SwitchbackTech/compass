@@ -45,9 +45,15 @@ type GameTaskBase = {
   title: string;
   /** One-line instruction under the headline. */
   instruction: string;
-  /** Keycap chips for the move this task teaches. */
+  /** Keycap chips for the move this task teaches, one chip per press. */
   keycaps: readonly string[];
+  /** Shown on the card when the player stalls; more explicit than `instruction`. */
+  hint: string;
 };
+
+/** Second idle beat: after the hint, offer the exit. */
+export const STUCK_SKIP_HINT =
+  "Still stuck? Esc skips this task and the run keeps going.";
 
 export type GameTask =
   | (GameTaskBase & {
@@ -116,6 +122,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "place",
     title: "Standup",
     instruction: "Get it into the outline on Monday, then lock it in.",
+    hint: "Press C and a Standup piece drops onto the board. Tap Left to reach Monday, then Enter locks it.",
     keycaps: [...KEYMAP.createEvent.keycaps, "ArrowLeft", "Enter"],
     piece: { id: "piece-standup", title: "Standup", color: "gold" },
     spawn: { dayIndex: 1, startMin: t(9), endMin: t(9, 30) },
@@ -126,6 +133,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "quickTime",
     title: "Lunch",
     instruction: "Just type the time, then lock it in.",
+    hint: "Type 1 2 3 0 and the piece appears at 12:30. Enter locks it.",
     keycaps: ["1", "2", "3", "0", "Enter"],
     piece: { id: "piece-lunch", title: "Lunch", color: "mint" },
     target: { dayIndex: 0, startMin: t(12, 30), endMin: t(13) },
@@ -135,7 +143,13 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "place",
     title: "Design review",
     instruction: "Wednesday afternoon. You know the drill.",
-    keycaps: [...KEYMAP.createEvent.keycaps, "ArrowRight", "Enter"],
+    hint: "Each Right tap moves the piece one day. Two taps reach Wednesday.",
+    keycaps: [
+      ...KEYMAP.createEvent.keycaps,
+      "ArrowRight",
+      "ArrowRight",
+      "Enter",
+    ],
     piece: { id: "piece-review", title: "Design review", color: "indigo" },
     spawn: { dayIndex: 0, startMin: t(14), endMin: t(15) },
     target: { dayIndex: 2, startMin: t(14), endMin: t(15) },
@@ -145,7 +159,8 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "nudge",
     title: "Standup moved",
     instruction: "Push it down to 10:00. Hold Shift and tap the arrow.",
-    keycaps: ["Shift", "ArrowDown"],
+    hint: "Keep tapping. Each Shift Down tap moves it 15 minutes; four taps reach 10:00.",
+    keycaps: ["Shift", "ArrowDown", "ArrowDown", "ArrowDown", "ArrowDown"],
     targetEventId: "piece-standup",
     target: { dayIndex: 0, startMin: t(10), endMin: t(10, 30) },
   },
@@ -155,7 +170,14 @@ export const RUN_TASKS: readonly GameTask[] = [
     title: "1:1 running long",
     instruction:
       "Press Tab until the bottom edge lights up, then hold Shift and tap Down to reach 11:00.",
-    keycaps: [KEYMAP.edgeFocus.hotkey, "Shift", "ArrowDown"],
+    hint: "Tab cycles what your arrows grab: whole block, top edge, bottom edge. Tab again until the bottom edge lights up, then Shift Down twice.",
+    keycaps: [
+      KEYMAP.edgeFocus.hotkey,
+      KEYMAP.edgeFocus.hotkey,
+      "Shift",
+      "ArrowDown",
+      "ArrowDown",
+    ],
     targetEventId: "game-one-on-one",
     target: { dayIndex: 1, startMin: t(10), endMin: t(11) },
   },
@@ -164,6 +186,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "quickTime",
     title: "Focus block",
     instruction: "Guard Tuesday at 4. Just type the time.",
+    hint: "Times here are 24-hour. Type 1 6 0 0 for 4:00 pm, then Enter.",
     keycaps: ["1", "6", "0", "0", "Enter"],
     piece: { id: "piece-focus", title: "Deep work", color: "slate" },
     target: { dayIndex: 1, startMin: t(16), endMin: t(17) },
@@ -173,6 +196,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "delete",
     title: "Gym got cancelled",
     instruction: "Clear it off the board.",
+    hint: "The Gym block is already selected. One press of Delete clears it.",
     keycaps: ["Delete"],
     targetEventId: "game-gym",
   },
@@ -181,6 +205,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "undo",
     title: "Wait, it's back on",
     instruction: "Undo brings it right back.",
+    hint: "Hold Cmd or Ctrl and press Z. The block comes right back.",
     keycaps: KEYMAP.undo.keycaps,
     targetEventId: "game-gym",
     target: { dayIndex: 2, startMin: t(12), endMin: t(13) },
@@ -190,6 +215,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "legend",
     title: "Blanking on a move?",
     instruction: "The legend lists every shortcut. Open it, then close it.",
+    hint: "The ? key is Shift and /. Open the legend, take a peek, then Esc closes it.",
     keycaps: ["?"],
   },
   {
@@ -198,6 +224,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     title: "Fly across the board",
     instruction:
       "Press H to reveal jump letters, then type the one on Team kickoff.",
+    hint: "Press H and letters appear on every block. Type the letter sitting on Team kickoff.",
     keycaps: KEYMAP.eventJump.keycaps,
     targetEventId: "game-kickoff",
   },
@@ -207,6 +234,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     title: "Numbers jump anywhere",
     instruction:
       "Hold Cmd or Ctrl until the jump numbers appear, then press 1.",
+    hint: "Hold Cmd or Ctrl alone and wait a beat. When the numbers appear, press 1 while still holding.",
     keycaps: ["Mod", "1"],
   },
   {
@@ -214,6 +242,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "palette",
     title: "One palette, every command",
     instruction: "Open the command palette, then close it with Esc.",
+    hint: "Hold Cmd or Ctrl and press K to open it, then Esc to close it.",
     keycaps: KEYMAP.commandPalette.keycaps,
   },
   {
@@ -221,6 +250,7 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "nudge",
     title: "Review slid to Tuesday",
     instruction: "Walk it one day left.",
+    hint: "Hold Shift and tap Left once. Sideways moves shift whole days.",
     keycaps: ["Shift", "ArrowLeft"],
     targetEventId: "piece-review",
     target: { dayIndex: 1, startMin: t(14), endMin: t(15) },
@@ -230,9 +260,10 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "place",
     title: "Ship-it party",
     instruction: "Wednesday at 5. Bring it home.",
-    keycaps: [...KEYMAP.createEvent.keycaps, "ArrowDown", "Enter"],
+    hint: "Press C to drop it, tap Down to reach 5:00, then Enter. Last one.",
+    keycaps: [...KEYMAP.createEvent.keycaps, "ArrowDown", "ArrowDown", "Enter"],
     piece: { id: "piece-party", title: "Ship-it party", color: "coral" },
-    spawn: { dayIndex: 2, startMin: t(16), endMin: t(17) },
+    spawn: { dayIndex: 2, startMin: t(16, 30), endMin: t(17, 30) },
     target: { dayIndex: 2, startMin: t(17), endMin: t(18) },
   },
 ];
