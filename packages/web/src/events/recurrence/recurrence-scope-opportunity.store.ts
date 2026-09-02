@@ -139,3 +139,7 @@ export const isRecurrenceScopeEditAskDeclined = (instanceId: string): boolean =>
   useRecurrenceScopeOpportunityStore
     .getState()
     .declinedEditInstanceIds.has(instanceId);
+
+/** True while the "Apply to series?" toast is live and 1/2 should promote. */
+export const isRecurrenceScopeAskReady = (): boolean =>
+  useRecurrenceScopeOpportunityStore.getState().opportunity?.status === "ready";

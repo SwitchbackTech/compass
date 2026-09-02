@@ -1,7 +1,9 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { EventIdSchema } from "@core/types/domain-primitives";
+import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   clearFloatingLayerReasons,
@@ -20,6 +22,18 @@ import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEv
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const TARGET_DAY = dayjs().startOf("day");
+
+const beginSeriesAsk = () =>
+  recurrenceScopeOpportunityActions.begin({
+    kind: "delete",
+    original: createMockEvent({
+      recurrence: {
+        kind: "occurrence",
+        seriesId: "0123456789abcdef11111111" as EventId,
+      },
+    }),
+    source: "local",
+  });
 
 const keydown = (key: string, init: KeyboardEventInit = {}) =>
   new KeyboardEvent("keydown", {
@@ -66,6 +80,7 @@ describe("typed-time ownership", () => {
     clearAppLockReasons();
     clearFloatingLayerReasons();
     eventJumpActions.reset();
+    recurrenceScopeOpportunityActions.reset();
   });
 
   afterEach(() => {
@@ -73,6 +88,7 @@ describe("typed-time ownership", () => {
     clearAppLockReasons();
     clearFloatingLayerReasons();
     eventJumpActions.reset();
+    recurrenceScopeOpportunityActions.reset();
   });
 
   it("creates on the fourth digit, which cannot grow further", () => {
@@ -183,6 +199,42 @@ describe("typed-time ownership", () => {
 
     expect(event.defaultPrevented).toBe(false);
     expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
+  });
+
+  it("leaves 1 and 2 unclaimed while the series-scope toast is live", () => {
+    beginSeriesAsk();
+    const { createAt } = mountOwner();
+
+    const one = dispatch(digit("1"));
+    expect(one.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
+    expect(createAt).not.toHaveBeenCalled();
+
+    const two = dispatch(digit("2"));
+    expect(two.defaultPrevented).toBe(false);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("");
+    expect(createAt).not.toHaveBeenCalled();
+  });
+
+  it("still claims other digits while the series-scope toast is live", () => {
+    beginSeriesAsk();
+    mountOwner();
+
+    const event = dispatch(digit("3"));
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("3");
+  });
+
+  it("claims 1 again after the series-scope toast is dismissed", () => {
+    const id = beginSeriesAsk();
+    mountOwner();
+    recurrenceScopeOpportunityActions.dismiss(id);
+
+    const event = dispatch(digit("1"));
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().quickTimeDigits).toBe("1");
   });
 
   it("keeps digit precedence while event jump is active with no day prefix", () => {
