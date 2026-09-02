@@ -687,12 +687,11 @@ export function BookingSettingsSection({
             {saveMutation.isPending ? "Saving…" : "Save booking settings"}
           </OverlayPanelActionButton>
         </OverlayPanelActions>
+        <p className="mt-2 flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
+          Press <kbd>e</kbd> then a letter to jump to a field.
+          <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
+        </p>
       </div>
-
-      <p className="flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
-        Press <kbd>e</kbd> then a letter to jump to a field.
-        <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
-      </p>
 
       <EditSequenceMenu
         getAnchor={() => sectionRef.current}
