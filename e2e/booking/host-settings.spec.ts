@@ -106,7 +106,13 @@ test("saves with Compass checked as a blocking calendar", async ({ page }) => {
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   const compass = settingsDialog.getByRole("checkbox", { name: "Compass" });
   await expect(compass).toBeVisible();
-  await compass.check();
+  // Placeholder defaults check Compass first; the saved-page seed then
+  // unchecks it. Wait for that before checking it for the PUT.
+  await expect.poll(async () => compass.isChecked()).toBe(false);
+  await compass.evaluate((el) => {
+    (el as HTMLInputElement).click();
+  });
+  await expect(compass).toBeChecked();
 
   await dispatchClick(
     settingsDialog.getByRole("button", { name: "Save booking settings" }),
