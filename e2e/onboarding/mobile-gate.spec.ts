@@ -20,12 +20,19 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("phone users can copy the desktop link and join the waitlist", async ({
+test("phone users can skip the game, copy the desktop link, and join the waitlist", async ({
   page,
   context,
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  // The game intro is the mobile landing page; the skip link goes straight
+  // to the desktop handoff.
+  await expect(
+    page.getByRole("heading", { name: "Time Block Party" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Skip to desktop link" }).click();
 
   await expect(
     page.getByRole("heading", { name: "Open Compass on a computer" }),
@@ -42,4 +49,35 @@ test("phone users can copy the desktop link and join the waitlist", async ({
   expect(popup.url()).toContain("tylerdane.kit.com/compass-mobile");
   await expect(page.locator("[data-pointer-hint]")).toHaveCount(0);
   await popup.close();
+});
+
+test("phone users can drag the first event into place and score", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByText("Level 1 of 3")).toBeVisible();
+
+  // Level 1's first piece is Standup at 9:00 AM, the top hour of the
+  // 9am-5pm grid: drag the tray card onto that slot's vertical center.
+  const card = page.locator("[data-game-piece]");
+  const cardBox = await card.boundingBox();
+  const board = await page.locator("[data-game-board]").boundingBox();
+  if (!cardBox || !board) throw new Error("game surfaces not laid out");
+
+  await page.mouse.move(
+    cardBox.x + cardBox.width / 2,
+    cardBox.y + cardBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(board.x + board.width / 2, board.y + board.height / 16, {
+    steps: 8,
+  });
+  await expect(page.locator("[data-game-slot-hover]")).toBeVisible();
+  await page.mouse.up();
+
+  // 100 base + 50 speed bonus.
+  await expect(page.locator("[data-game-score]")).toHaveText("150");
+  await expect(page.locator("[data-game-block='standup']")).toBeVisible();
 });
