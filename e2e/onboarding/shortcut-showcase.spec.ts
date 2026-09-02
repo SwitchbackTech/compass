@@ -119,7 +119,7 @@ const clearTheQueue = async (page: Page) => {
 
   // place-party: down to 5pm, lock.
   await page.keyboard.press("c");
-  await pressTimes(page, "ArrowDown", 4);
+  await pressTimes(page, "ArrowDown", 2);
   await page.keyboard.press("Enter");
   await expect(showcase).toContainText("You cleared the week!");
 };
@@ -134,6 +134,24 @@ test("exploring without an account offers the game's how-to card", async ({
   await expect(showcase).toBeVisible();
   await expect(showcase).toContainText("Block Party");
   await expect(showcase).toContainText("keyboard-only");
+});
+
+test("stalling on a task surfaces its hint, and progress clears it", async ({
+  page,
+}) => {
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await leaveWelcome(page);
+  await startPracticing(page);
+
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  const hint = "Tap Left to reach Monday";
+  await expect(showcase).not.toContainText(hint);
+  // The hint lands after 7 idle seconds on the task.
+  await expect(showcase).toContainText(hint, { timeout: 9_000 });
+
+  // Real progress resets the stall and the hint goes away.
+  await page.keyboard.press("c");
+  await expect(showcase).not.toContainText(hint);
 });
 
 test("a full run clears the queue, shows the score, and graduates", async ({
