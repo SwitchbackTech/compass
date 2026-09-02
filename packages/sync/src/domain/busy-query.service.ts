@@ -181,6 +181,10 @@ export interface BusyAvailabilityInput {
   principalId: PrincipalId;
   // The blocking calendars whose busy data is requested.
   calendarIds: readonly SyncEventCalendarId[];
+  // Compass-local ids the caller has already identified. Missing resources
+  // outside this set stay notImported so a purged Google calendar cannot
+  // fail open as empty Compass busy.
+  unbackedCalendarIds?: readonly SyncEventCalendarId[];
   // Half-open query window [start, end).
   start: Date;
   end: Date;
@@ -215,6 +219,7 @@ export async function computeBusyAvailability(
   const providerCalendarIds = new Set(
     providerCalendars.map((calendar) => calendar._id as string),
   );
+  const unbackedCalendarIds = new Set(input.unbackedCalendarIds ?? []);
 
   const present: CalendarGeneration[] = [];
   const issues: CalendarIssue[] = [];
@@ -223,18 +228,21 @@ export async function computeBusyAvailability(
   for (const calendarId of input.calendarIds) {
     const resource = freshness.get(calendarId);
     if (!resource) {
-      if (providerCalendarIds.has(calendarId)) {
-        issues.push({ calendarId, reason: "notImported" });
+      if (
+        unbackedCalendarIds.has(calendarId) &&
+        !providerCalendarIds.has(calendarId)
+      ) {
+        // Compass-local calendar: events live in Sync with no provider resource.
+        // Generation 0 is the only generation those writes ever use. Missing
+        // occurrences are empty busy, not a freshness miss — fail closed only
+        // when this query itself throws.
+        present.push({
+          calendarId,
+          generation: UNBACKED_CALENDAR_GENERATION,
+        });
         continue;
       }
-      // Compass-local calendar: events live in Sync with no provider resource.
-      // Generation 0 is the only generation those writes ever use. Missing
-      // occurrences are empty busy, not a freshness miss — fail closed only
-      // when this query itself throws.
-      present.push({
-        calendarId,
-        generation: UNBACKED_CALENDAR_GENERATION,
-      });
+      issues.push({ calendarId, reason: "notImported" });
       continue;
     }
     backingConnectionIds.add(resource.connectionId);

@@ -1,8 +1,17 @@
 import { faker } from "@faker-js/faker";
 import { BOOKING_CONFIRMATION_MAX_AGE_MS } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
-import { describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const userId = () => faker.database.mongodbObjectId();
 const calendarId = () => faker.database.mongodbObjectId();
@@ -17,6 +26,13 @@ const busyResponse = {
 };
 
 describe("CalendarBookingService", () => {
+  beforeEach(() => {
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+  });
+  afterEach(() => {
+    mock.restore();
+  });
+
   it("queries busy availability with booking_confirmation purpose and short maxAge", async () => {
     const queryBusyAvailability = mock(async () => ({
       ok: true as const,
@@ -39,6 +55,35 @@ describe("CalendarBookingService", () => {
       expect.objectContaining({
         purpose: "booking_confirmation",
         maxAgeMs: BOOKING_CONFIRMATION_MAX_AGE_MS,
+      }),
+    );
+  });
+
+  it("allowlists the Compass-local calendar as unbacked busy", async () => {
+    mock.restore();
+    const localId = calendarId();
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue({
+      _id: { toHexString: () => localId },
+    } as never);
+    const queryBusyAvailability = mock(async () => ({
+      ok: true as const,
+      value: busyResponse,
+    }));
+    const service = new CalendarBookingService({
+      queryBusyAvailability,
+      submitCommand: mock(async () => ({ ok: true as const, value: {} })),
+    } as unknown as SyncServiceClient);
+
+    await service.getAvailability(userId(), {
+      calendarIds: [localId, calendarId()],
+      start: "2026-09-01T12:00:00.000Z",
+      end: "2026-09-02T12:00:00.000Z",
+    });
+
+    expect(queryBusyAvailability).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        unbackedCalendarIds: [localId],
       }),
     );
   });

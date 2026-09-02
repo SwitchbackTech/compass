@@ -14,6 +14,7 @@ import {
   type CalendarBookingGetAvailabilityInput,
   type CalendarBookingPort,
 } from "@backend/booking/services/calendar-booking.port";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import {
   throwSyncCommandSubmitFailure,
@@ -87,6 +88,13 @@ export class CalendarBookingService implements CalendarBookingPort {
     userId: string,
     input: CalendarBookingGetAvailabilityInput,
   ) {
+    const localCalendar = await calendarService.getLocalCalendar(userId);
+    const localId = localCalendar?._id.toHexString();
+    const unbackedCalendarIds =
+      localId !== undefined &&
+      input.calendarIds.some((calendarId) => calendarId === localId)
+        ? [SyncEventCalendarIdSchema.parse(localId)]
+        : undefined;
     const result = await this.client.queryBusyAvailability(
       toSyncPrincipal(userId),
       {
@@ -95,6 +103,7 @@ export class CalendarBookingService implements CalendarBookingPort {
         end: input.end,
         maxAgeMs: input.maxAgeMs ?? BOOKING_CONFIRMATION_MAX_AGE_MS,
         purpose: "booking_confirmation",
+        ...(unbackedCalendarIds ? { unbackedCalendarIds } : {}),
       },
     );
     if (!result.ok) {
