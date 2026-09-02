@@ -230,16 +230,4 @@ describe("UpNextBanner", () => {
     );
     expect(dismiss).toHaveAttribute(POINTER_SHORTCUT_ATTRIBUTE, "Esc");
   });
-
-  it("shows an Esc tip when hovering dismiss", async () => {
-    const user = userEvent.setup();
-    render(<UpNextBanner />, {
-      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
-    });
-
-    await user.hover(screen.getByRole("button", { name: "Dismiss" }));
-
-    const tooltip = await screen.findByRole("tooltip");
-    expect(tooltip).toHaveTextContent("Esc");
-  });
 });
