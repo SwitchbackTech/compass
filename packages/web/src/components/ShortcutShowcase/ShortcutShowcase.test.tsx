@@ -100,7 +100,7 @@ const playWinningRun = async () => {
   pressKey("ArrowLeft", { shiftKey: true });
   // place-party
   pressKey("c");
-  for (let i = 0; i < 4; i += 1) pressKey("ArrowDown");
+  for (let i = 0; i < 2; i += 1) pressKey("ArrowDown");
   pressKey("Enter");
 };
 

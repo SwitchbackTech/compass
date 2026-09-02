@@ -45,7 +45,6 @@ import {
   TEXT_BUTTON_CLASS,
 } from "@web/components/ShortcutShowcase/showcase-buttons";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { hasSeenWelcome } from "@web/components/WelcomeModal/welcome.modal.util";
 import { settingsActions } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
@@ -71,6 +70,11 @@ const HUD_TICK_MS = 250;
 
 /** How long a bare Mod hold takes to reveal the practice page-jump numbers. */
 const MOD_HOLD_REVEAL_MS = 600;
+
+/** Stall this long on a task and its card shows the more explicit hint. */
+const IDLE_HINT_MS = 7_000;
+/** Stall the same again and the card also offers the Esc escape hatch. */
+const IDLE_ESCALATE_MS = 7_000;
 
 /**
  * Block Party: the full-screen practice arena shown before a new user ever
@@ -241,6 +245,33 @@ const ShowcaseTakeover: FC = () => {
     }, HUD_TICK_MS);
     return () => window.clearInterval(id);
   }, [game.phase, game.timed, game.buzzer]);
+
+  // Stall detection for the task card's hint. Keyed on the game object
+  // itself: handleGameKey/tick return the SAME reference on no-op input, so
+  // only real progress (or a task change) resets the idle clock. Wrong-key
+  // mashing still counts as stuck.
+  const [hintStage, setHintStage] = useState<0 | 1 | 2>(0);
+  useEffect(() => {
+    setHintStage(0);
+    if (game.phase !== "running") return;
+    const t1 = window.setTimeout(() => setHintStage(1), IDLE_HINT_MS);
+    const t2 = window.setTimeout(
+      () => setHintStage(2),
+      IDLE_HINT_MS + IDLE_ESCALATE_MS,
+    );
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [game]);
+
+  useEffect(() => {
+    if (hintStage === 0) return;
+    track("shortcut_game_hint_shown", {
+      task_id: currentTask(gameRef.current)?.id ?? "none",
+      stage: hintStage,
+    });
+  }, [hintStage]);
 
   const seatFocus = () => {
     const root = regionRef.current;
@@ -639,7 +670,9 @@ const ShowcaseTakeover: FC = () => {
         <div
           className={`flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8 ${closing ? "c-showcase-enter-stage" : ""}`}
         >
-          <aside className="flex w-80 shrink-0 flex-col justify-center gap-4">
+          <aside
+            className={`flex w-80 shrink-0 flex-col justify-center gap-4 ${game.phase === "howto" ? "c-showcase-howto-in" : ""}`}
+          >
             {game.phase === "howto" ? (
               <>
                 <p className="font-medium text-accent text-xs uppercase tracking-wide">
@@ -649,35 +682,24 @@ const ShowcaseTakeover: FC = () => {
                   Compass is keyboard-only. Ready?
                 </h2>
                 <p className="text-sm text-text-muted">
-                  Your week needs scheduling. Work through the queue of tasks;
-                  each card teaches the move as it comes, and nothing here is
-                  saved. No clock on your first run.
+                  Schedule a practice week one task at a time. Each card shows
+                  the exact keys to press, and nothing is saved. No clock on
+                  your first run.
                 </p>
-                <div className="flex flex-col gap-1.5 text-sm text-text">
-                  <span className="flex items-center gap-2">
-                    <ShortcutKeys keys={[...KEYMAP.createEvent.keycaps]} />
-                    drops the next piece
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <ShortcutKeys keys={["ArrowLeft", "ArrowDown"]} />
-                    move it into the outline
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <ShortcutKeys keys={[...KEYMAP.saveDraft.keycaps]} />
-                    locks it in
-                  </span>
-                </div>
               </>
             ) : (
               <GameTaskQueue
                 taskIndex={game.taskIndex}
                 keycaps={task ? getDisplayKeycaps(task, game) : []}
                 nextKeycapIndex={task ? getNextKeycapIndex(task, game) : 0}
+                hintStage={hintStage}
               />
             )}
             {skipControls}
           </aside>
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div
+            className={`flex min-w-0 flex-1 flex-col transition-opacity duration-500 motion-reduce:transition-none ${game.phase === "howto" ? "opacity-25" : "opacity-100"}`}
+          >
             {isRunning && (
               <GameHud
                 remainingSeconds={remainingSeconds}

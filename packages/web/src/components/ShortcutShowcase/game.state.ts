@@ -1,5 +1,6 @@
 import {
   GAME_SEED_EVENTS,
+  type GameSlot,
   type GameTask,
   RUN_DURATION_MS,
   RUN_TASKS,
@@ -550,11 +551,20 @@ export const getDisplayKeycaps = (
   return task.keycaps;
 };
 
+/** Whole-block presses left to reach a slot: day taps plus 15-minute taps. */
+const pressesRemaining = (
+  block: { dayIndex: number; startMin: number },
+  target: GameSlot,
+): number =>
+  Math.abs(block.dayIndex - target.dayIndex) +
+  Math.abs(block.startMin - target.startMin) / PRACTICE_NUDGE_MIN;
+
 /**
  * Which display chip the player should press next, so the task card can dim
- * what's done and pulse what's expected. Derived entirely from the board,
- * so a wrong turn self-corrects. Indexes into `getDisplayKeycaps`: for the
- * H task, `task.keycaps.length` is the appended letter chip.
+ * what's done and pulse what's expected. Chips are authored one per press,
+ * and progress is derived entirely from the board, so a wrong turn
+ * self-corrects. Indexes into `getDisplayKeycaps`: for the H task,
+ * `task.keycaps.length` is the appended letter chip.
  */
 export const getNextKeycapIndex = (
   task: GameTask,
@@ -569,7 +579,10 @@ export const getNextKeycapIndex = (
         practice.placingId === task.piece.id &&
         !matchesSlot(block, task.target)
       ) {
-        return 1;
+        // Walk the arrow chips (indexes 1..arrowCount) as the piece closes in.
+        const arrowCount = task.keycaps.length - 2;
+        const remaining = pressesRemaining(block, task.target);
+        return Math.min(1 + Math.max(arrowCount - remaining, 0), arrowCount);
       }
       return task.keycaps.length - 1;
     }
@@ -578,11 +591,36 @@ export const getNextKeycapIndex = (
       if (blockById(practice, task.piece.id)) return enterIndex;
       return Math.min(state.digitBuffer.length, enterIndex - 1);
     }
-    case "resize":
-      return practice.focusedId === task.targetEventId &&
-        practice.edge === "end"
-        ? 1
-        : 0;
+    case "nudge": {
+      const block = blockById(practice, task.targetEventId);
+      if (!block) return 1;
+      // Index 0 is the held Shift; the arrow chips behind it count presses.
+      const remaining = pressesRemaining(block, task.target);
+      return Math.min(
+        Math.max(task.keycaps.length - remaining, 1),
+        task.keycaps.length - 1,
+      );
+    }
+    case "resize": {
+      const onEndEdge =
+        practice.focusedId === task.targetEventId && practice.edge === "end";
+      if (!onEndEdge) {
+        // Walk the Tab chips: second Tab once the start edge is focused.
+        return practice.focusedId === task.targetEventId &&
+          practice.edge === "start"
+          ? 1
+          : 0;
+      }
+      const block = blockById(practice, task.targetEventId);
+      const shiftIndex = task.keycaps.indexOf("Shift");
+      if (!block) return shiftIndex + 1;
+      const remaining =
+        Math.abs(block.endMin - task.target.endMin) / PRACTICE_NUDGE_MIN;
+      return Math.min(
+        Math.max(task.keycaps.length - remaining, shiftIndex + 1),
+        task.keycaps.length - 1,
+      );
+    }
     case "eventJump":
       return state.jumpChipsShown ? task.keycaps.length : 0;
     case "pageJump":

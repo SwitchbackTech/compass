@@ -3,6 +3,7 @@ import { type GameAward } from "@web/components/ShortcutShowcase/game.state";
 import {
   type GameTask,
   RUN_TASKS,
+  STUCK_SKIP_HINT,
   streakMultiplier,
 } from "@web/components/ShortcutShowcase/game.tasks";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
@@ -94,17 +95,21 @@ export const GameTaskQueue: FC<{
   taskIndex: number;
   keycaps: readonly string[];
   nextKeycapIndex: number;
-}> = ({ taskIndex, keycaps, nextKeycapIndex }) => {
+  /** 0 none, 1 the task's hint, 2 hint plus the Esc escape hatch. */
+  hintStage: 0 | 1 | 2;
+}> = ({ taskIndex, keycaps, nextKeycapIndex, hintStage }) => {
   const task: GameTask | undefined = RUN_TASKS[taskIndex];
   if (!task) return null;
   const upNext = RUN_TASKS.slice(taskIndex + 1, taskIndex + 3);
-  // Shift/Mod lead a chord, so their partner chip pulses too. The page-jump
-  // task is the exception: Mod is held alone first, the digit comes later.
+  // Mod leads a chord (undo, palette): its partner pulses with it. The
+  // page-jump task is the exception: Mod is held alone first.
   const nextKey = keycaps[nextKeycapIndex];
   const chordPartnerIndex =
-    task.type !== "pageJump" && (nextKey === "Shift" || nextKey === "Mod")
-      ? nextKeycapIndex + 1
-      : -1;
+    task.type !== "pageJump" && nextKey === "Mod" ? nextKeycapIndex + 1 : -1;
+  // Shift stays held through the arrow run: it pulses with the arrows behind
+  // it instead of dimming as done.
+  const shiftIndex = keycaps.indexOf("Shift");
+  const shiftHeld = shiftIndex !== -1 && nextKeycapIndex > shiftIndex;
 
   return (
     <div className="flex flex-col gap-3">
@@ -117,13 +122,28 @@ export const GameTaskQueue: FC<{
       >
         <h3 className="font-semibold text-lg text-text">{task.title}</h3>
         <p className="pt-1 text-sm text-text-muted">{task.instruction}</p>
+        {hintStage > 0 && (
+          <p className="c-game-hint-in pt-2 text-accent text-sm" role="status">
+            {task.hint}
+          </p>
+        )}
+        {hintStage > 1 && (
+          <p
+            className="c-game-hint-in pt-1 text-text-muted text-xs"
+            role="status"
+          >
+            {STUCK_SKIP_HINT}
+          </p>
+        )}
         <div className="flex items-center gap-1 pt-3">
           {keycaps.map((key, index) => (
             <ShortcutHint
               key={`${key}-${index}`}
               variant="keycap"
               className={
-                index === nextKeycapIndex || index === chordPartnerIndex
+                index === nextKeycapIndex ||
+                index === chordPartnerIndex ||
+                (shiftHeld && index === shiftIndex)
                   ? "c-keycap-next"
                   : index < nextKeycapIndex
                     ? "opacity-40"

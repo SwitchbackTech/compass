@@ -96,10 +96,8 @@ const WINNING_SCRIPT: GameKey[] = [
   key.closeOverlay,
   // nudge-review: Wed -> Tue
   key.arrow("left", true),
-  // place-party: spawn Wed 4pm, walk down to 5pm, lock
+  // place-party: spawn Wed 4:30pm, walk down to 5pm, lock
   key.create,
-  key.arrow("down"),
-  key.arrow("down"),
   key.arrow("down"),
   key.arrow("down"),
   key.enter,
@@ -397,7 +395,7 @@ describe("keycap progress", () => {
     expect(getNextKeycapIndex(task, state)).toBe(task.keycaps.length - 1);
   });
 
-  it("moves from Tab to Shift+Down once the resize edge is focused", () => {
+  it("walks both Tab chips, then the Shift+Down chips, on the resize card", () => {
     let state = playKeys(
       startRun(createInitialGameState(), T0),
       WINNING_SCRIPT.slice(0, 16),
@@ -409,8 +407,67 @@ describe("keycap progress", () => {
     expect(task.id).toBe("resize-one-on-one");
     expect(getNextKeycapIndex(task, state)).toBe(0);
 
-    state = playKeys(state, [key.tab, key.tab], T0);
+    state = handleGameKey(state, key.tab, T0);
+    // Start edge focused: the second Tab chip is next.
     expect(getNextKeycapIndex(task, state)).toBe(1);
+
+    state = handleGameKey(state, key.tab, T0);
+    // End edge focused: first Down chip, past the held Shift at index 2.
+    expect(getNextKeycapIndex(task, state)).toBe(3);
+
+    state = handleGameKey(state, key.arrow("down", true), T0);
+    expect(getNextKeycapIndex(task, state)).toBe(4);
+  });
+
+  it("walks the doubled arrow chips on place-review and self-corrects", () => {
+    let state = playKeys(
+      startRun(createInitialGameState(), T0),
+      WINNING_SCRIPT.slice(0, 8),
+      T0,
+    );
+    const task = currentTask(state) as NonNullable<
+      ReturnType<typeof currentTask>
+    >;
+    expect(task.id).toBe("place-review");
+    expect(getNextKeycapIndex(task, state)).toBe(0);
+
+    state = handleGameKey(state, key.create, T0);
+    expect(getNextKeycapIndex(task, state)).toBe(1);
+
+    state = handleGameKey(state, key.arrow("right"), T0);
+    expect(getNextKeycapIndex(task, state)).toBe(2);
+
+    // A wrong turn walks the pulse back: distance, not press count.
+    state = handleGameKey(state, key.arrow("left"), T0);
+    expect(getNextKeycapIndex(task, state)).toBe(1);
+
+    state = playKeys(state, [key.arrow("right"), key.arrow("right")], T0);
+    // On target: Enter is the last chip.
+    expect(getNextKeycapIndex(task, state)).toBe(task.keycaps.length - 1);
+  });
+
+  it("counts the nudge presses across the doubled Down chips", () => {
+    let state = playKeys(
+      startRun(createInitialGameState(), T0),
+      WINNING_SCRIPT.slice(0, 12),
+      T0,
+    );
+    const task = currentTask(state) as NonNullable<
+      ReturnType<typeof currentTask>
+    >;
+    expect(task.id).toBe("nudge-standup");
+    // Four presses to go: the first Down chip, past the held Shift.
+    expect(getNextKeycapIndex(task, state)).toBe(1);
+
+    state = handleGameKey(state, key.arrow("down", true), T0);
+    expect(getNextKeycapIndex(task, state)).toBe(2);
+
+    state = playKeys(
+      state,
+      [key.arrow("down", true), key.arrow("down", true)],
+      T0,
+    );
+    expect(getNextKeycapIndex(task, state)).toBe(4);
   });
 
   it("shows the jump target's live letter on the card and pulses it after H", () => {
@@ -498,6 +555,12 @@ describe("winning script sanity", () => {
         // Only already-satisfied tasks would be undo of something present.
         task.type === "undo",
       );
+    }
+  });
+
+  it("every task carries a stall hint", () => {
+    for (const task of RUN_TASKS) {
+      expect(task.hint.length).toBeGreaterThan(0);
     }
   });
 });
