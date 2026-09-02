@@ -35,6 +35,15 @@ export function useBookingPageQuery(enabled: boolean) {
   });
 }
 
+const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
+  BLOCKING_CALENDAR_INVALID:
+    "One of your blocking calendars can't be checked for busy times. Uncheck it and save again.",
+  DESTINATION_NOT_WRITABLE:
+    "The destination calendar can't accept new events. Choose a different calendar and save again.",
+  INVALID_INPUT:
+    "Some settings couldn't be saved. Check the highlighted fields and try again.",
+};
+
 function handleBookingSaveError(
   error: unknown,
   queryClient: QueryClient,
@@ -54,8 +63,9 @@ function handleBookingSaveError(
       });
       return;
     }
-    if (error.message) {
-      showErrorToast(error.message);
+    const copy = code ? BOOKING_SAVE_ERROR_COPY[code] : undefined;
+    if (copy) {
+      showErrorToast(copy);
       return;
     }
   }
