@@ -4,6 +4,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isRecurrenceScopeAskReady } from "@web/events/recurrence/recurrence-scope-opportunity.store";
+import { recurrenceScopeForToastDigit } from "@web/events/recurrence/recurrence-scope-toast-digit";
 import { isEventFormOpen } from "@web/events/stores/draft.store";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import {
@@ -496,10 +497,8 @@ export function useShiftHoldEventHints({
       // The series-scope toast owns 1 (following) and 2 (all). Leave those
       // keys unclaimed so RecurrenceScopeOpportunityHost can promote, including
       // while jump-mode column digits would otherwise seed a 1:00/2:00 draft.
-      if (isRecurrenceScopeAskReady()) {
-        const pickIndex = digitPickIndex(event);
-        const digit = pickIndex === null ? null : PICK_KEY_LABELS[pickIndex];
-        if (digit === "1" || digit === "2") return;
+      if (isRecurrenceScopeAskReady() && recurrenceScopeForToastDigit(event)) {
+        return;
       }
 
       if (!isActiveRef.current) {
