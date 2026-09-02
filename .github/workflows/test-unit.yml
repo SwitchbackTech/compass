@@ -211,6 +211,16 @@ jobs:
         run: |
           bun run test:web
 
+      # 5 minutes is deliberate, and deliberately not raised. These suites run in
+      # seconds on ubuntu-latest - scripts ~5s, backend ~13s, core ~2s, sync
+      # ~105s at its slowest - so the budget is already an order of magnitude
+      # clear of the slowest of them. When `scripts` tripped this on #3101 it was
+      # not slow: every test passed, then the runner sat silent for five minutes
+      # because a worker leaked an open Mongo handle and never exited. The same
+      # commit re-ran in 5s. Raising the number would only have made that hang
+      # cost ten minutes instead of five, while blinding the step to a real
+      # regression. The leak is fixed in backend.preload.ts, and
+      # test-mongo-env.ts now kills a wedged run at 4 minutes with a diagnosis.
       - name: Run ${{ matrix.project }} tests
         if: needs.changes.outputs.code == 'true' && (matrix.project != 'web')
         timeout-minutes: 5
