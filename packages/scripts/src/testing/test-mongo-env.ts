@@ -84,13 +84,47 @@ const testTargets = [
 
 console.log(`Running ${label} (${pkg})...`);
 
+/**
+ * How long to wait for `bun test` to exit before declaring it wedged.
+ *
+ * A worker that ends still holding an open handle never exits, and
+ * `await proc.exited` then blocks forever - the run dies on the CI step's own
+ * `timeout-minutes` with no output after the last passing test, which reads as
+ * a mystery rather than a diagnosis. The slowest of these suites (sync) runs in
+ * about 105s on ubuntu-latest, so four minutes is well clear of a legitimately
+ * slow run while still landing inside the step timeout, where this can say what
+ * actually happened and name the processes still alive.
+ */
+const EXIT_TIMEOUT_MS = 4 * 60 * 1000;
+
 try {
   const proc = Bun.spawn(testTargets, {
     env,
     stdout: "inherit",
     stderr: "inherit",
   });
-  const code = await proc.exited;
+
+  let wedged: ReturnType<typeof setTimeout> | undefined;
+  const code = await Promise.race([
+    proc.exited,
+    new Promise<number>((resolve) => {
+      wedged = setTimeout(() => {
+        console.error(
+          `\n${pkg}: tests stopped reporting but 'bun test' has not exited after ` +
+            `${formatDuration(started)}s. This is an open-handle leak in a test ` +
+            `worker, not a slow suite - a worker has finished its tests but is ` +
+            `still holding something open (a Mongo connection is the usual ` +
+            `culprit: cleanupTestDb deliberately never disconnects, and the ` +
+            `shared-mongod path makes stopMemoryMongo a no-op). Killing it so ` +
+            `the failure is visible rather than a silent step timeout.`,
+        );
+        proc.kill();
+        resolve(1);
+      }, EXIT_TIMEOUT_MS);
+    }),
+  ]);
+  clearTimeout(wedged);
+
   console.log(`\n${pkg}: finished in ${formatDuration(started)}s`);
 
   if (code !== 0) {
