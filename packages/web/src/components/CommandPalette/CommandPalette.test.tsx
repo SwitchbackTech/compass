@@ -160,6 +160,19 @@ describe("CommandPalette", () => {
     expect(screen.queryByText("Manage Billing")).toBeNull();
   });
 
+  it("shows Booking settings when signed in", () => {
+    authenticated = true;
+    renderPalette();
+
+    expect(rowLabel("Booking settings")).toBeInTheDocument();
+  });
+
+  it("hides Booking settings when signed out", () => {
+    renderPalette();
+
+    expect(screen.queryByText("Booking settings")).toBeNull();
+  });
+
   it("renders all sections with items and focuses the input on mount", () => {
     const { container } = renderPalette();
 

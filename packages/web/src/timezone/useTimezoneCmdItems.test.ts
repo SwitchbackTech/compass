@@ -1,6 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import {
+  selectOverlayOpenedFromPalette,
+  useSettingsStore,
+} from "@web/settings/settings.store";
+import {
   resetEffectiveTimeZoneStoreForTests,
   setPinnedTimeZone,
 } from "@web/timezone/effective-timezone.store";
@@ -19,6 +23,7 @@ describe("useTimezoneCmdItems", () => {
     act(() => {
       resetEffectiveTimeZoneStoreForTests();
       timezoneDialogActions.close();
+      useSettingsStore.setState({ overlayOpenedFromPalette: false });
     });
   });
 
@@ -41,6 +46,9 @@ describe("useTimezoneCmdItems", () => {
     expect(selectTimezoneDialogOpen(useTimezoneDialogStore.getState())).toBe(
       true,
     );
+    expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
+      true,
+    );
   });
 
   it("opens the time-travel picker from the Time travel command", () => {
@@ -53,6 +61,9 @@ describe("useTimezoneCmdItems", () => {
     );
     expect(selectTimezoneDialogPurpose(useTimezoneDialogStore.getState())).toBe(
       "time-travel",
+    );
+    expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
+      true,
     );
   });
 });

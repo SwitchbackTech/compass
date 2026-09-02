@@ -84,6 +84,11 @@ export function useOverlayEscape({
   }, [enabled]);
 }
 
+/** True when an OverlayPanel is registered to peel Escape before lower owners. */
+export function isOverlayEscapeArmed(): boolean {
+  return stack.length > 0;
+}
+
 /** Test-only: drop every registered overlay so cases cannot leak a listener. */
 export function clearOverlayEscapeStack() {
   stack.length = 0;

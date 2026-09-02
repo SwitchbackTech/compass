@@ -1,6 +1,6 @@
 import { GlobeIcon } from "@phosphor-icons/react";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
-import { restoreCommandPaletteFocus } from "@web/components/Feedback/FeedbackDialogHost";
+import { settingsActions } from "@web/settings/settings.store";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
@@ -15,7 +15,10 @@ export function useTimezoneCmdItems(): CommandItem[] {
       label: `Change default timezone (${abbreviation})`,
       icon: GlobeIcon,
       keywords: ["timezone", "time zone", "tz", abbreviation],
-      onClick: () => timezoneDialogActions.open(restoreCommandPaletteFocus),
+      onClick: () => {
+        settingsActions.markOverlayOpenedFromPalette();
+        timezoneDialogActions.open();
+      },
     },
     {
       id: "time-travel",
@@ -23,8 +26,10 @@ export function useTimezoneCmdItems(): CommandItem[] {
       icon: GlobeIcon,
       shortcut: ["Z"],
       keywords: ["timezone", "time zone", "tz", "secondary"],
-      onClick: () =>
-        timezoneDialogActions.open(restoreCommandPaletteFocus, "time-travel"),
+      onClick: () => {
+        settingsActions.markOverlayOpenedFromPalette();
+        timezoneDialogActions.open(undefined, "time-travel");
+      },
     },
   ];
 }

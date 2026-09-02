@@ -6,6 +6,7 @@ import * as realUseappaccess from "@web/billing/useAppAccess";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import {
   selectIsSettingsOpen,
+  selectOverlayOpenedFromPalette,
   selectSettingsPage,
   useSettingsStore,
 } from "@web/settings/settings.store";
@@ -74,5 +75,8 @@ describe("useShowBillingCmdItems", () => {
 
     expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
     expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
+      true,
+    );
   });
 });

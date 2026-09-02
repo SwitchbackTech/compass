@@ -1,6 +1,7 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
+import { isOverlayEscapeArmed } from "@web/components/OverlayPanel/overlay-escape";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { viewActions } from "@web/events/stores/view.store";
 import {
@@ -98,19 +99,19 @@ export function useNavigationShortcuts() {
     },
   );
 
-  // Armed only while the palette is open. The handler ignoreAppLocks (so
-  // Escape can close the palette over a modal) and blurs on trigger. If it
-  // stayed registered while closed, every Escape would blur the focused
-  // overlay control and advertised Esc actions would no-op.
+  // Armed only while the palette is open and no OverlayPanel owns Escape.
+  // Overlay dismiss and this shortcut both fire on the same key otherwise,
+  // which would close the overlay and the palette in one press.
   useAppShortcut(
     "Escape",
     () => {
+      if (isOverlayEscapeArmed()) return;
+      (document.activeElement as HTMLElement | null)?.blur?.();
       settingsActions.closeCmdPalette();
     },
     {
       enabled: isCmdPaletteOpen,
       ignoreInputs: false,
-      blurOnTrigger: true,
       ignoreAppLock: true,
     },
   );

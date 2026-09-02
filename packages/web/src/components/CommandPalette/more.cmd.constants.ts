@@ -41,7 +41,10 @@ export function getMoreCommandPaletteSections(
           label: "Share Feedback",
           icon: ChatsIcon,
           keywords: ["bug", "report", "issue", "problem", "suggest", "contact"],
-          onClick: () => feedbackActions.open(currentView),
+          onClick: () => {
+            settingsActions.markOverlayOpenedFromPalette();
+            feedbackActions.open(currentView);
+          },
         },
       ]
     : [];
@@ -86,7 +89,7 @@ export function getMoreCommandPaletteSections(
             "github",
             "links",
           ],
-          onClick: settingsActions.openAbout,
+          onClick: () => settingsActions.openAbout({ fromPalette: true }),
         },
       ],
     },

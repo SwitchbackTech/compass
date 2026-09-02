@@ -10,6 +10,7 @@ import {
 } from "@web/components/Feedback/feedback.store";
 import {
   selectIsAboutOpen,
+  selectOverlayOpenedFromPalette,
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -20,7 +21,10 @@ describe("getMoreCommandPaletteSections", () => {
 
   beforeEach(() => {
     feedbackActions.close();
-    useSettingsStore.setState({ isAboutOpen: false });
+    useSettingsStore.setState({
+      isAboutOpen: false,
+      overlayOpenedFromPalette: false,
+    });
     mockWindowOpen.mockClear();
     window.open = mockWindowOpen;
   });
@@ -57,6 +61,9 @@ describe("getMoreCommandPaletteSections", () => {
     expect(selectFeedbackRequest(useFeedbackStore.getState())).toEqual({
       view: "day",
     });
+    expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
+      true,
+    );
     expect(getCommandPalettePlaceholder("day", true)).toContain("feedback");
     expect(getCommandPalettePlaceholder("day", true)).toContain("play");
     expect(getCommandPalettePlaceholder("day", true)).not.toContain("bug");
@@ -81,6 +88,9 @@ describe("getMoreCommandPaletteSections", () => {
     about?.onClick?.();
 
     expect(selectIsAboutOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
+      true,
+    );
   });
 
   it("opens the personal onboarding Calendly link in a new tab", () => {

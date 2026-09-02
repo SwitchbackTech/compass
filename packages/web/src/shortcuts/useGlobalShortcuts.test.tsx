@@ -7,6 +7,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  clearOverlayEscapeStack,
+  useOverlayEscape,
+} from "@web/components/OverlayPanel/overlay-escape";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   selectIsSidebarOpen,
@@ -272,6 +276,34 @@ describe("useGlobalShortcuts", () => {
     act(() => {
       unmount();
     });
+  });
+
+  it("does not close the command palette on Escape while an overlay owns it", () => {
+    useSettingsStore.setState({ isCmdPaletteOpen: true });
+    const keepFocus = document.createElement("button");
+    keepFocus.textContent = "Keep overlay focus";
+    document.body.appendChild(keepFocus);
+    keepFocus.focus();
+    const { unmount } = renderHook(
+      () => {
+        useGlobalShortcuts();
+        useOverlayEscape({ onDismiss: () => {} });
+      },
+      { wrapper },
+    );
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(true);
+    expect(document.activeElement).toBe(keepFocus);
+
+    keepFocus.remove();
+    act(() => {
+      unmount();
+    });
+    clearOverlayEscapeStack();
   });
 
   it("does not blur the focused control on Escape when the palette is closed", () => {

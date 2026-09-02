@@ -4,6 +4,7 @@ import { renderWithStore } from "@web/__tests__/render-with-store";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import {
   selectIsAboutOpen,
+  selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { AboutModal } from "./AboutModal";
@@ -54,5 +55,17 @@ describe("AboutModal", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
 
     expect(selectIsAboutOpen(useSettingsStore.getState())).toBe(false);
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(false);
+  });
+
+  it("returns to the command palette on Escape when opened from it", () => {
+    renderWithStore(<AboutModal />, {
+      settings: { isAboutOpen: true, overlayOpenedFromPalette: true },
+    });
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+
+    expect(selectIsAboutOpen(useSettingsStore.getState())).toBe(false);
+    expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(true);
   });
 });
