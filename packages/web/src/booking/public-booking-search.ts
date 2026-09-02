@@ -1,7 +1,7 @@
 import {
   isBookingDateKey,
   isBookingMonthKey,
-} from "@web/booking/public-booking.format";
+} from "@web/booking/public-booking.keys";
 import { isValidTimeZone } from "@web/timezone/browser-timezone";
 
 export interface PublicBookingSearch {

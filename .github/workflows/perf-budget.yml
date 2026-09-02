@@ -30,7 +30,9 @@ concurrency:
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # Two Lighthouse profiles x 3 runs each; the mobile profile is the slower
+    # of the two. Sized with headroom for a cold npx download of Lighthouse.
+    timeout-minutes: 20
 
     steps:
       - name: Check out Git repository

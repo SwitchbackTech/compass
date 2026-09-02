@@ -17,12 +17,17 @@ interface Metafile {
 // Dynamic imports made from deeper chunks are normally the lazy route views
 // and excluded from preloading, but some of them always execute on boot. Each
 // source file listed here gets its containing chunk (plus that chunk's static
-// closure) preloaded as well. RootShell is the root route's component - kept
-// a lazy import only so route-shape tests can mock its auth stack (see
-// router.routes.tsx) - and renders on every page load, 404s included.
+// closure) preloaded as well. AppRoot is the root route's component and
+// RootShell the pathless calendar-shell route beneath it - both kept lazy
+// imports only so route-shape tests can mock their auth stack (see
+// router.routes.tsx) - and both render on every page load, 404s included.
+// Missing one costs a whole round-trip, since they load in series.
 // Metafile input keys are relative to the build's cwd, so entries here are
 // matched by path suffix.
-export const ALWAYS_BOOT_SOURCES = ["src/components/RootShell/RootShell.tsx"];
+export const ALWAYS_BOOT_SOURCES = [
+  "src/components/RootShell/AppRoot.tsx",
+  "src/components/RootShell/RootShell.tsx",
+];
 
 /**
  * Injects `<link rel="modulepreload">` tags for every boot-critical chunk into

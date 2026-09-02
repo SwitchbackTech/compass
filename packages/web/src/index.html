@@ -89,16 +89,19 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      One combined stylesheet, not three: each render-blocking cross-origin
+      <link> costs its own round-trip before first paint, which dominates for
+      the distant cold-cache visitors who see the worst LCP. css2 requires the
+      family params in alphabetical order.
+
+      Rubik is the body font (and so the LCP text); its axis is capped at 700
+      because nothing uses 800/900 (heaviest in use: font-bold). Italic stays
+      - LifeQuote renders one, and the description editor can mark any text
+      italic.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Rubik:ital,wght@0,300..700;1,300..700&family=VT323&display=swap"
       rel="stylesheet"
     />
 

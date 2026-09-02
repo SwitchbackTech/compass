@@ -1,4 +1,4 @@
-import { type FC, useEffect, useRef, useState } from "react";
+import { type FC, Suspense, useEffect, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
@@ -20,7 +20,7 @@ import { PlanSection } from "@web/billing/PlanSection";
 import { getPlanBadge } from "@web/billing/planBadge";
 import { useUpgradeConfirmation } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { useAppAccess } from "@web/billing/useAppAccess";
-import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
+import { LazyBookingSettingsSection as BookingSettingsSection } from "@web/booking/BookingSettingsSection.lazy";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -239,7 +239,9 @@ export const SettingsModal: FC = () => {
           {page === "billing" ? (
             <PlanSection showShortcuts={areHintsVisible} />
           ) : page === "booking" && IS_BOOKING_ENABLED ? (
-            <BookingSettingsSection showShortcuts={areHintsVisible} />
+            <Suspense fallback={null}>
+              <BookingSettingsSection showShortcuts={areHintsVisible} />
+            </Suspense>
           ) : (
             <>
               <DefaultTimezonePicker />

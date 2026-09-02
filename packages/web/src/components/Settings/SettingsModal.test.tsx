@@ -164,7 +164,7 @@ const renderSettings = ({
   connections?: GoogleSyncConnectionSummary[];
   calendars?: Calendar[];
   open?: boolean;
-  page?: "accounts" | "billing";
+  page?: "accounts" | "billing" | "booking";
 } = {}) => {
   authenticated = isAuthenticated;
   userMetadataActions.set({
@@ -1053,6 +1053,19 @@ describe("SettingsModal", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+  });
+
+  // The booking section is lazily imported (BookingSettingsSection.lazy) to
+  // keep the booking admin stack off the boot chunk, behind a Suspense
+  // fallback of null. A chunk that never resolves would render an empty
+  // settings pane rather than throwing, so assert the section actually
+  // arrives instead of trusting the boundary.
+  it("resolves the lazily loaded booking section", async () => {
+    renderSettings({ authenticated: true, page: "booking" });
+
+    expect(
+      await screen.findByText("Loading booking settings\u2026"),
     ).toBeInTheDocument();
   });
 });
