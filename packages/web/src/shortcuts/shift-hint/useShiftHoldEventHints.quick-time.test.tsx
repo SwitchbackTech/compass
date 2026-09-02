@@ -269,7 +269,7 @@ describe("typed-time deferred commit", () => {
         endDate: COLUMN_DAY.hour(10).format(),
         title: "Column event",
         isAllDay: false,
-      } as GridEvent;
+      } as unknown as GridEvent;
       const el = document.createElement("button");
       el.textContent = COLUMN_EVENT_ID;
       document.body.appendChild(el);

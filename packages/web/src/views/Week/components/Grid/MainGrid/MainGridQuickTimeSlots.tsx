@@ -60,7 +60,9 @@ export const MainGridQuickTimeSlots = ({ measurements, weekProps }: Props) => {
       pointerDraftDateKey,
       activeDayKeys,
     );
-    const focusedEvent = weekEventTargeting.getFocusedGridEventTarget();
+    const focusedEvent = isJumpActive
+      ? weekEventTargeting.getFocusedGridEventTarget()
+      : null;
     const targetDay = quickTimeTargetDay(
       component.startOfView,
       component.endOfView,
