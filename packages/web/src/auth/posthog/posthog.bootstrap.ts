@@ -2,6 +2,7 @@ import { type PostHog } from "posthog-js";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { filterPosthogDeadClick } from "@web/auth/posthog/posthog-dead-click-filter.util";
 import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
+import { filterPosthogWebVitals } from "@web/auth/posthog/posthog-web-vitals-filter.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
 let client: PostHog | undefined;
@@ -39,8 +40,38 @@ export function initPosthog(): PostHog | undefined {
     // Drop known-unactionable exception signatures (SuperTokens/browser
     // network blips, CefSharp scanner noise, opaque "Script error.") before
     // they become issues, then the dead clicks posthog's own mutation clock
-    // mis-scores on our static onboarding overlays.
-    before_send: [filterPosthogBeforeSend, filterPosthogDeadClick],
+    // mis-scores on our static onboarding overlays, then the web vitals that
+    // report a zero where a timing should be.
+    before_send: [
+      filterPosthogBeforeSend,
+      filterPosthogDeadClick,
+      filterPosthogWebVitals,
+    ],
+    // Web vitals were running entirely on PostHog's server-side default
+    // (`$web_vitals_enabled_server_side` was true on every event, and
+    // `$web_vitals_allowed_metrics` was null, so the project was not
+    // restricting metrics). Stating it here instead means the setting is
+    // reviewable in the diff and cannot be changed out from under a deploy by
+    // a remote-config edit - client config wins over remote config in
+    // posthog-js's `allowedMetrics` resolution.
+    capture_performance: {
+      web_vitals: true,
+      web_vitals_allowed_metrics: ["LCP", "CLS", "FCP", "INP"],
+      // posthog-js buffers metrics and flushes on exactly three triggers: a URL
+      // change, the buffer reaching `web_vitals_allowed_metrics.length`, or
+      // this timer. There is deliberately no pagehide flush, so anything still
+      // buffered when the page unloads is simply lost. LCP and INP are only
+      // reported by the web-vitals library on first interaction or page hide,
+      // which is why they miss far more often than FCP.
+      //
+      // Shortening the window from posthog's 5000ms default does not rescue a
+      // metric that arrives during unload - nothing can, short of a pagehide
+      // flush upstream - but it does shrink the window in which an already
+      // complete measurement sits unsent, which is where short visits lose
+      // theirs. The cost is up to four `$web_vitals` events per pageview
+      // instead of two, which is noise at this traffic volume.
+      web_vitals_delayed_flush_ms: 1000,
+    },
     // Product events are queued and sent in batches by the SDK. Keyboard
     // handlers only enqueue meaningful outcomes and never wait on transport.
     request_batching: true,
