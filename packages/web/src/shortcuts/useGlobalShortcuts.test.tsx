@@ -280,6 +280,10 @@ describe("useGlobalShortcuts", () => {
 
   it("does not close the command palette on Escape while an overlay owns it", () => {
     useSettingsStore.setState({ isCmdPaletteOpen: true });
+    const keepFocus = document.createElement("button");
+    keepFocus.textContent = "Keep overlay focus";
+    document.body.appendChild(keepFocus);
+    keepFocus.focus();
     const { unmount } = renderHook(
       () => {
         useGlobalShortcuts();
@@ -293,7 +297,9 @@ describe("useGlobalShortcuts", () => {
     });
 
     expect(selectIsCmdPaletteOpen(useSettingsStore.getState())).toBe(true);
+    expect(document.activeElement).toBe(keepFocus);
 
+    keepFocus.remove();
     act(() => {
       unmount();
     });

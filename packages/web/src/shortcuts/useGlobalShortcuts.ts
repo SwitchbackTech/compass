@@ -106,12 +106,12 @@ export function useNavigationShortcuts() {
     "Escape",
     () => {
       if (isOverlayEscapeArmed()) return;
+      (document.activeElement as HTMLElement | null)?.blur?.();
       settingsActions.closeCmdPalette();
     },
     {
       enabled: isCmdPaletteOpen,
       ignoreInputs: false,
-      blurOnTrigger: true,
       ignoreAppLock: true,
     },
   );
