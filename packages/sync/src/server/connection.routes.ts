@@ -420,11 +420,13 @@ export function registerConnectionRoutes(
             events: repos.events,
             resources: repos.syncResources,
             connections: repos.connections,
+            calendars: repos.calendars,
           },
           {
             tenantId: auth.tenantId,
             principalId: auth.principalId,
             calendarIds: query.calendarIds,
+            unbackedCalendarIds: query.unbackedCalendarIds,
             start,
             end,
             maxAgeMs: query.maxAgeMs,

@@ -5,7 +5,10 @@ import {
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { getWritableCalendars } from "@web/calendars/calendar.util";
+import {
+  getLocalCalendar,
+  getWritableCalendars,
+} from "@web/calendars/calendar.util";
 
 export const BOOKING_PLACEHOLDER_CALENDAR_ID =
   "000000000000000000000001" as CalendarId;
@@ -23,19 +26,27 @@ export function defaultBlockingCalendarIdsForDestination(
   destinationCalendarId: CalendarId,
   calendars: Calendar[],
 ): CalendarId[] {
+  const readable = getAvailabilityReadableCalendars(calendars);
   const destination = calendars.find(
     (calendar) => calendar.id === destinationCalendarId,
   );
-  if (!destination?.accountEmail) {
-    return [destinationCalendarId];
+  const accountEmail = destination?.accountEmail;
+  const ids: CalendarId[] =
+    accountEmail === undefined
+      ? [destinationCalendarId]
+      : readable
+          .filter(
+            (calendar) =>
+              calendar.accountEmail?.toLowerCase() ===
+              accountEmail.toLowerCase(),
+          )
+          .map((calendar) => calendar.id);
+  const blockingIds = ids.length > 0 ? ids : [destinationCalendarId];
+  const local = getLocalCalendar(readable);
+  if (local && !blockingIds.includes(local.id)) {
+    blockingIds.push(local.id);
   }
-  const accountEmail = destination.accountEmail.toLowerCase();
-  const onAccount = getAvailabilityReadableCalendars(calendars).filter(
-    (calendar) => calendar.accountEmail?.toLowerCase() === accountEmail,
-  );
-  return onAccount.length > 0
-    ? onAccount.map((calendar) => calendar.id)
-    : [destinationCalendarId];
+  return blockingIds;
 }
 
 export function isPlaceholderDestinationCalendar(

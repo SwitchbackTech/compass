@@ -15,6 +15,7 @@ import {
   mapPutInputToRecordFields,
 } from "@backend/booking/booking-page.mapper";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
+import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { resolveGoogleConnectionFromSync } from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -78,6 +79,10 @@ const assertCalendarsForEnable = async (
       .filter((calendar) => calendar.capabilities.canReadBusy)
       .map((calendar) => calendar.id as string),
   );
+  const localCalendar = await calendarService.getLocalCalendar(userId);
+  if (localCalendar) {
+    availabilityIds.add(localCalendar._id.toHexString());
+  }
   const invalidBlocking = input.blockingCalendarIds.find(
     (calendarId) => !availabilityIds.has(calendarId as string),
   );

@@ -229,6 +229,9 @@ describe("R-SEC-03 isolation matrix", () => {
         connections: unknown[];
         bookable: boolean;
       };
+      // A calendar id this principal does not own has no events resource here.
+      // Treat that as notImported and fail closed; do not return the owner's
+      // intervals under an empty Compass-unbacked result.
       expect(body.intervals).toEqual([]);
       expect(body.connections).toEqual([]);
       expect(body.bookable).toBe(false);

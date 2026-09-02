@@ -3,6 +3,9 @@ import { expect, type Page } from "@playwright/test";
 /** ObjectId-shaped id for stubbed Google calendar in host settings e2e. */
 export const BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
 
+/** ObjectId-shaped id for the stubbed Compass-local calendar. */
+export const COMPASS_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e0";
+
 export const HOST_ACCOUNT_EMAIL = "host@example.com";
 
 function jsonResponse(body: unknown, status = 200) {
@@ -33,6 +36,27 @@ const googleCalendar = {
   isVisible: true,
   isActive: true,
   accountEmail: HOST_ACCOUNT_EMAIL,
+};
+
+const compassCalendar = {
+  id: COMPASS_CALENDAR_ID,
+  name: "Compass",
+  description: "",
+  timeZone: "America/Chicago",
+  foregroundColor: "#000000",
+  backgroundColor: "#ffffff",
+  provider: "local",
+  access: "owner",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+  },
+  isPrimary: false,
+  isVisible: true,
+  isActive: true,
 };
 
 function monthKeyInZone(date: Date, timeZone: string): string {
@@ -514,7 +538,9 @@ export async function prepareSignedInBookingSettingsPage(
     const path = url.pathname;
 
     if (path.endsWith("/api/calendars")) {
-      return route.fulfill(jsonResponse({ calendars: [googleCalendar] }));
+      return route.fulfill(
+        jsonResponse({ calendars: [googleCalendar, compassCalendar] }),
+      );
     }
 
     if (path.endsWith("/api/event") && request.method() === "GET") {

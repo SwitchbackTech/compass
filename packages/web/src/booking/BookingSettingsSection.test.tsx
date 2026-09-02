@@ -827,6 +827,45 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
   });
 
+  it("checks the Compass calendar by default on an unconfigured page", async () => {
+    const compass = createMockCalendar({
+      name: "Compass",
+      provider: "local",
+    });
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: "000000000000000000000001",
+            blockingCalendarIds: ["000000000000000000000001"],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      writableCalendar,
+      compass,
+    ]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(
+      await screen.findByRole("checkbox", { name: "Compass" }),
+    ).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Work" })).toBeChecked();
+  });
+
   it("blocks enable without a destination calendar", async () => {
     const user = userEvent.setup({ delay: null });
 

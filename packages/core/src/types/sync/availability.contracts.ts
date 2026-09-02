@@ -28,6 +28,9 @@ export const BusyAvailabilityRequestSchema = z
     // The oldest a calendar's last successful sync may be and still count fresh.
     maxAgeMs: z.number().int().positive(),
     purpose: BusyQueryPurposeSchema,
+    // Compass-local calendar ids: cloud-only events at generation 0, no
+    // provider resource. Any other missing resource stays notImported.
+    unbackedCalendarIds: z.array(SyncEventCalendarIdSchema).max(100).optional(),
   })
   .refine((r) => Date.parse(r.end) > Date.parse(r.start), {
     message: "end must be after start",

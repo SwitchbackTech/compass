@@ -10,6 +10,7 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { computeBusyAvailability } from "@sync/domain/busy-query.service";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -24,6 +25,7 @@ describe("computeBusyAvailability", () => {
   let connections: ProviderConnectionRepository;
   let resources: SyncResourceRepository;
   let occurrences: EventOccurrenceRepository;
+  let calendars: ProviderCalendarRepository;
   let tenantId: TenantId;
   let principalId: PrincipalId;
   let accountSeq: number;
@@ -32,6 +34,7 @@ describe("computeBusyAvailability", () => {
     connections = new ProviderConnectionRepository(storage.db());
     resources = new SyncResourceRepository(storage.db());
     occurrences = new EventOccurrenceRepository(storage.db(), storage.client());
+    calendars = new ProviderCalendarRepository(storage.db());
     tenantId = objectId() as TenantId;
     principalId = objectId() as PrincipalId;
     accountSeq = 0;
@@ -119,13 +122,17 @@ describe("computeBusyAvailability", () => {
     return calendarId;
   };
 
-  const run = (calendarIds: SyncEventCalendarId[]) =>
+  const run = (
+    calendarIds: SyncEventCalendarId[],
+    unbackedCalendarIds?: SyncEventCalendarId[],
+  ) =>
     computeBusyAvailability(
-      { occurrences, resources, connections },
+      { occurrences, resources, connections, calendars },
       {
         tenantId,
         principalId,
         calendarIds,
+        unbackedCalendarIds,
         start: WINDOW_START,
         end: WINDOW_END,
         maxAgeMs: MAX_AGE_MS,
@@ -168,14 +175,83 @@ describe("computeBusyAvailability", () => {
       connectionId: conn,
       lastSuccessAt: fresh,
     });
-    const ghost = objectId() as SyncEventCalendarId; // no resource
+    const ghost = await calendars.upsertByProviderCalendar({
+      tenantId,
+      principalId,
+      connectionId: conn,
+      providerCalendarId: "ghost@google.com",
+      displayName: "Ghost",
+      color: null,
+      active: true,
+      primary: false,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
 
-    const result = await run([calA, ghost]);
+    const result = await run([calA, ghost._id as SyncEventCalendarId]);
 
     expect(result.complete).toBe(false);
     expect(result.bookable).toBe(false);
     expect(result.issues).toEqual([
-      { calendarId: ghost, reason: "notImported" },
+      { calendarId: ghost._id, reason: "notImported" },
+    ]);
+  });
+
+  it("includes Compass-local busy at generation 0 without a sync resource", async () => {
+    const localCalendarId = objectId() as SyncEventCalendarId;
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .insertOne({
+        _id: objectId(),
+        tenantId,
+        principalId,
+        eventId: objectId(),
+        occurrenceKey: `${localCalendarId}:local`,
+        calendarId: localCalendarId,
+        generation: 0,
+        startAt: new Date("2026-07-14T10:00:00.000Z"),
+        endAt: new Date("2026-07-14T10:30:00.000Z"),
+        busy: true,
+        cancelled: false,
+      });
+
+    const result = await run([localCalendarId], [localCalendarId]);
+
+    expect(result.complete).toBe(true);
+    expect(result.bookable).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.connections).toEqual([]);
+    expect(
+      result.intervals.map((i) => [i.start.toISOString(), i.end.toISOString()]),
+    ).toEqual([["2026-07-14T10:00:00.000Z", "2026-07-14T10:30:00.000Z"]]);
+  });
+
+  it("treats a Compass-local calendar with no occurrences as empty busy", async () => {
+    const localCalendarId = objectId() as SyncEventCalendarId;
+
+    const result = await run([localCalendarId], [localCalendarId]);
+
+    expect(result.complete).toBe(true);
+    expect(result.bookable).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.intervals).toEqual([]);
+  });
+
+  it("fails closed for a missing resource that is not allowlisted as unbacked", async () => {
+    const unknown = objectId() as SyncEventCalendarId;
+
+    const result = await run([unknown]);
+
+    expect(result.complete).toBe(false);
+    expect(result.bookable).toBe(false);
+    expect(result.issues).toEqual([
+      { calendarId: unknown, reason: "notImported" },
     ]);
   });
 
