@@ -5,13 +5,12 @@ import {
   RUN_TASKS,
   TIME_BONUS_PER_SECOND,
 } from "@web/components/ShortcutShowcase/game.tasks";
+import {
+  PRIMARY_BUTTON_CLASS,
+  SECONDARY_BUTTON_CLASS,
+} from "@web/components/ShortcutShowcase/showcase-buttons";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-
-const PRIMARY_BUTTON_CLASS =
-  "c-button c-button-primary inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs";
-const SECONDARY_BUTTON_CLASS =
-  "c-button c-button-secondary inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs";
 
 /**
  * The run's scoreboard. Every run finishes the queue now (the buzzer only

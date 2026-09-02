@@ -1,10 +1,5 @@
-import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
+import { type BookingOccupancyFacts } from "@core/booking/occupies-booking-slot";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
-
-export interface OccupancyFacts {
-  hostIsOrganizer: boolean;
-  hostResponseStatus: AttendeeResponseStatus | null;
-}
 
 /**
  * Facts only: whether this event's host identity matches the organizer or
@@ -14,7 +9,7 @@ export interface OccupancyFacts {
 export const occupancyFactsForEvent = (
   event: EventRecord | undefined,
   accountEmail: string | null,
-): OccupancyFacts => {
+): BookingOccupancyFacts => {
   if (!event) {
     return { hostIsOrganizer: true, hostResponseStatus: null };
   }

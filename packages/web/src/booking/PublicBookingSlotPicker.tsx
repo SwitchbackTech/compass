@@ -76,8 +76,8 @@ export function PublicBookingSlotPicker({
     [guestTimeZone, selectedDateKey, slots],
   );
 
-  const empty = !selectedDateKey || daySlots.length === 0;
   const firstSlotStart = daySlots[0]?.slotStart;
+  const empty = !firstSlotStart;
   const [focusedSlotStart, setFocusedSlotStart] = useState<string | null>(
     () => selectedSlotStart ?? firstSlotStart ?? null,
   );
@@ -135,7 +135,7 @@ export function PublicBookingSlotPicker({
       >
         Pick a time
       </h2>
-      {empty || !firstSlotStart ? (
+      {empty ? (
         <>
           <p className="mt-2 text-sm text-text-muted">
             {selectedDateKey

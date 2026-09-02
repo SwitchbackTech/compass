@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { OVERLAY_LETTER_SHORTCUT } from "@web/billing/overlay-letter-shortcut";
 import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { deferGoogleDelayedToastIfVisible } from "@web/common/utils/toast/google-delayed.toast";
@@ -15,6 +16,7 @@ import {
   POINTER_ACTIONS,
   pointerShortcutAttributes,
 } from "@web/shortcuts/keyboard-only/pointer-action";
+import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
@@ -22,12 +24,6 @@ const PANEL_CLASSNAME =
   "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
 const SECONDARY_BUTTON_CLASSNAME =
   "c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2";
-
-const OVERLAY_LETTER_SHORTCUT = {
-  ignoreAppLock: true,
-  ignoreInputs: false,
-  preventDefault: true,
-} as const;
 
 type BillingGateModalProps = {
   status: string;
@@ -84,7 +80,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
       };
 
   useAppShortcut(
-    "S",
+    START_TRIAL_SHORTCUT_KEY,
     () => {
       if (isRedirecting) return;
       void redirectTo("checkout");
@@ -134,7 +130,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
             onClick={() => void redirectTo("checkout")}
             onPointerEnter={focusOnPointerEnter}
             type="button"
-            {...pointerShortcutAttributes("S")}
+            {...pointerShortcutAttributes(START_TRIAL_SHORTCUT_KEY)}
             {...(isAwaitingCheckout
               ? { [POINTER_ACTION_ATTRIBUTE]: POINTER_ACTIONS.startTrial }
               : {})}
@@ -144,7 +140,9 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
               : isAwaitingCheckout
                 ? "Start trial"
                 : "Subscribe"}
-            <ShortcutHint className="ml-2">S</ShortcutHint>
+            <ShortcutHint className="ml-2">
+              {START_TRIAL_SHORTCUT_KEY}
+            </ShortcutHint>
           </button>
           <button
             ref={secondaryButtonRef}

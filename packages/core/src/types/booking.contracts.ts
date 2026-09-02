@@ -103,19 +103,21 @@ export type WeeklyAvailabilityInterval = z.infer<
   typeof WeeklyAvailabilityIntervalSchema
 >;
 
-const intervalsOverlap = (
-  a: WeeklyAvailabilityInterval,
-  b: WeeklyAvailabilityInterval,
+const localTimeRangesOverlap = (
+  a: { start: string; end: string },
+  b: { start: string; end: string },
 ): boolean => {
-  if (a.weekday !== b.weekday) {
-    return false;
-  }
   const aStart = localTimeToMinutes(a.start);
   const aEnd = localTimeToMinutes(a.end);
   const bStart = localTimeToMinutes(b.start);
   const bEnd = localTimeToMinutes(b.end);
   return aStart < bEnd && bStart < aEnd;
 };
+
+const intervalsOverlap = (
+  a: WeeklyAvailabilityInterval,
+  b: WeeklyAvailabilityInterval,
+): boolean => a.weekday === b.weekday && localTimeRangesOverlap(a, b);
 
 export const WeeklyAvailabilitySchema = z
   .array(WeeklyAvailabilityIntervalSchema)
@@ -180,17 +182,6 @@ export const DateHoursIntervalSchema = z
   );
 export type DateHoursInterval = z.infer<typeof DateHoursIntervalSchema>;
 
-const dateHoursOverlap = (
-  left: DateHoursInterval,
-  right: DateHoursInterval,
-): boolean => {
-  const leftStart = localTimeToMinutes(left.start);
-  const leftEnd = localTimeToMinutes(left.end);
-  const rightStart = localTimeToMinutes(right.start);
-  const rightEnd = localTimeToMinutes(right.end);
-  return leftStart < rightEnd && rightStart < leftEnd;
-};
-
 export const BookingBlockedDateOverrideSchema = z.strictObject({
   kind: z.literal("blocked"),
   date: BookingLocalDateSchema,
@@ -213,7 +204,7 @@ export const BookingHoursDateOverrideSchema = z
         if (!right) {
           continue;
         }
-        if (dateHoursOverlap(left, right)) {
+        if (localTimeRangesOverlap(left, right)) {
           ctx.addIssue({
             code: "custom",
             message: "Date override hours must not overlap",

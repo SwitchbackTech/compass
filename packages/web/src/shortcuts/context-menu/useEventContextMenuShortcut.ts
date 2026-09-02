@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
-import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
-import { isAppLocked } from "@web/shortcuts/app-lock";
+import { shouldStandDownBareLetterShortcut } from "@web/shortcuts/bare-letter-stand-down";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
-import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
-import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 export const EVENT_MENU_LETTER = "m";
 
@@ -23,9 +20,7 @@ export function useEventContextMenuShortcut() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (!isBareLetterKey(event, EVENT_MENU_LETTER)) return;
-      if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-      if (isEditSequenceArmed()) return;
-      if (isEventJumpActive()) return;
+      if (shouldStandDownBareLetterShortcut(event)) return;
 
       const active = document.activeElement;
       if (!(active instanceof HTMLElement)) return;

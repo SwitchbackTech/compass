@@ -1,13 +1,10 @@
 import { useEffect } from "react";
-import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
-import { isAppLocked } from "@web/shortcuts/app-lock";
+import { shouldStandDownBareLetterShortcut } from "@web/shortcuts/bare-letter-stand-down";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import {
   findNextNoticeTarget,
   getVisibleNotices,
 } from "@web/shortcuts/notice-focus/notice-focus";
-import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
-import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 export const FOCUS_NOTICE_LETTER = "f";
 
@@ -26,9 +23,7 @@ export function useFocusNoticeShortcut() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (!isBareLetterKey(event, FOCUS_NOTICE_LETTER)) return;
-      if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-      if (isEditSequenceArmed()) return;
-      if (isEventJumpActive()) return;
+      if (shouldStandDownBareLetterShortcut(event)) return;
 
       const target = findNextNoticeTarget(
         getVisibleNotices(),
