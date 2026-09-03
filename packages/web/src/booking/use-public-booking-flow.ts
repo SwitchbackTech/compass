@@ -24,6 +24,8 @@ import {
 } from "@web/booking/public-booking.query";
 import { type PublicBookingSearch } from "@web/booking/public-booking-search";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
@@ -198,6 +200,24 @@ export function usePublicBookingFlow() {
     pendingPickerFocusRef.current = true;
     setChangingTime(true);
   };
+
+  // Escape on Your details is the keyboard equivalent of Change time.
+  // OverlayPanel (timezone) holds the app lock, so ignoreAppLock stays false.
+  // Slot-list Escape is owned by PublicBookingSlotPicker, not this shortcut.
+  useAppShortcut(
+    "Escape",
+    (event) => {
+      if (isHigherEscapeOwner()) {
+        return;
+      }
+      if (!showDetailsStep) {
+        return;
+      }
+      event.preventDefault();
+      handleChangeTime();
+    },
+    { ignoreInputs: false },
+  );
 
   const handlePrefetchMonth = (nextMonthKey: string) => {
     if (!pageQuery.data) {

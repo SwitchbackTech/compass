@@ -78,4 +78,20 @@ describe("PublicBookingPicker", () => {
     await user.click(day);
     expect(day).toHaveFocus();
   });
+
+  it("returns focus to the selected day on Escape from a slot", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPicker();
+
+    const day = screen.getByRole("button", {
+      name: formatBookingMonthDayLabel(selectedDateKey, timeZone),
+    });
+    const firstSlotButton = screen.getByRole("button", {
+      name: formatBookingSlotTime(firstSlot, timeZone),
+    });
+
+    firstSlotButton.focus();
+    await user.keyboard("{Escape}");
+    expect(day).toHaveFocus();
+  });
 });

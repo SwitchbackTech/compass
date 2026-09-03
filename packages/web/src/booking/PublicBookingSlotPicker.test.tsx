@@ -137,4 +137,29 @@ describe("PublicBookingSlotPicker", () => {
     await user.keyboard("{End}");
     expect(last).toHaveFocus();
   });
+
+  it("calls onEscapeToSelectedDay from a focused slot", async () => {
+    const user = userEvent.setup({ delay: null });
+    const escaped: number[] = [];
+    render(
+      <PublicBookingSlotPicker
+        slots={slots}
+        selectedDateKey="2026-08-17"
+        guestTimeZone={timeZone}
+        selectedSlotStart={null}
+        onSelectSlot={() => {}}
+        onEscapeToSelectedDay={() => {
+          escaped.push(1);
+        }}
+      />,
+    );
+
+    screen
+      .getByRole("button", {
+        name: formatBookingSlotTime(dayA, timeZone),
+      })
+      .focus();
+    await user.keyboard("{Escape}");
+    expect(escaped).toHaveLength(1);
+  });
 });

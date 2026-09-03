@@ -1,5 +1,8 @@
 import { type Ref, useEffect, useRef, useState } from "react";
-import { PublicBookingMonthGrid } from "@web/booking/PublicBookingMonthGrid";
+import {
+  bookingDayButtonId,
+  PublicBookingMonthGrid,
+} from "@web/booking/PublicBookingMonthGrid";
 import { PublicBookingMonthGridSkeleton } from "@web/booking/PublicBookingMonthGridSkeleton";
 import { PublicBookingSlotPaneSkeleton } from "@web/booking/PublicBookingSlotPaneSkeleton";
 import { PublicBookingSlotPicker } from "@web/booking/PublicBookingSlotPicker";
@@ -173,6 +176,14 @@ export function PublicBookingPicker({
               selectedSlotStart={selectedSlotStart}
               headingRef={slotsHeadingRef}
               onSelectSlot={onSelectSlot}
+              onEscapeToSelectedDay={() => {
+                if (!selectedDateKey) {
+                  return;
+                }
+                document
+                  .getElementById(bookingDayButtonId(monthKey, selectedDateKey))
+                  ?.focus();
+              }}
               onJumpToNextAvailable={onJumpToNextAvailable}
             />
           )}

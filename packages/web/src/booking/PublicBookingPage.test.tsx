@@ -1,3 +1,4 @@
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import {
   createMemoryHistory,
   createRouter,
@@ -29,7 +30,12 @@ function renderBookingRoute(path: string) {
     defaultPendingMs: 0,
   });
   const { wrapper } = createStoreWrapper();
-  const result = render(<RouterProvider router={router} />, { wrapper });
+  const result = render(
+    <HotkeysProvider>
+      <RouterProvider router={router} />
+    </HotkeysProvider>,
+    { wrapper },
+  );
   return { ...result, router };
 }
 
@@ -1281,6 +1287,107 @@ describe("PublicBookingPage", () => {
     releaseNextMonthSlots();
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+  });
+
+  it("returns to the picker on Escape from Your details", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    renderBookingRoute("/book/tylerdane");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotButtonName(currentSlot.slotStart),
+      }),
+    );
+    await screen.findByRole("heading", { name: "Your details" });
+    await user.type(screen.getByLabelText("Name"), "Guest User");
+    await user.keyboard("{Escape}");
+
+    const pickerHeading = await screen.findByRole("heading", {
+      name: "Pick a time",
+    });
+    await waitFor(() => {
+      expect(pickerHeading).toHaveFocus();
+    });
+    expect(
+      screen.queryByRole("heading", { name: "Your details" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves focus from a slot to the selected day on Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    renderBookingRoute("/book/tylerdane");
+
+    await screen.findByRole("heading", { name: "Pick a time" });
+    const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
+    const day = await screen.findByRole("button", {
+      name: formatBookingMonthDayLabel(dateKey, guestTimeZone),
+    });
+    const slot = await screen.findByRole("button", {
+      name: slotButtonName(currentSlot.slotStart),
+    });
+    slot.focus();
+    await user.keyboard("{Escape}");
+    expect(day).toHaveFocus();
+    expect(
+      screen.getByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
+  });
+
+  it("closes the timezone panel on Escape without leaving Your details", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    renderBookingRoute("/book/tylerdane");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotButtonName(currentSlot.slotStart),
+      }),
+    );
+    await screen.findByRole("heading", { name: "Your details" });
+    await user.click(screen.getByRole("button", { name: /^Timezone:/ }));
+    expect(
+      await screen.findByRole("heading", { name: "Timezone" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "Timezone" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("heading", { name: "Your details" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Pick a time" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not navigate away when Escape is pressed on the month grid", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    const { router } = renderBookingRoute("/book/tylerdane");
+
+    await screen.findByRole("heading", { name: "Pick a time" });
+    const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
+    const day = await screen.findByRole("button", {
+      name: formatBookingMonthDayLabel(dateKey, guestTimeZone),
+    });
+    day.focus();
+    const href = router.state.location.href;
+    await user.keyboard("{Escape}");
+
+    expect(day).toHaveFocus();
+    expect(router.state.location.href).toBe(href);
+    expect(
+      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Pick a time" }),
     ).toBeInTheDocument();
   });
 });
