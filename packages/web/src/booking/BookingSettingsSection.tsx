@@ -641,7 +641,7 @@ export function BookingSettingsSection({
             disabled={saveMutation.isPending}
             onClick={handleSave}
             shortcut={["Mod", "Enter"]}
-            showShortcut={showShortcuts}
+            showShortcut
             variant="primary"
             {...settingsShortcutAttrs("save-booking")}
           >
