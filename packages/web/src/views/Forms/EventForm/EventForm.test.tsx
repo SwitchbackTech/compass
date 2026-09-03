@@ -313,6 +313,33 @@ describe("EventForm", () => {
     ).toBeInTheDocument();
   });
 
+  it("stacks the title input above its underline so the copy button does not squeeze the field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ title: "Standup" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const title = screen.getByPlaceholderText("Title");
+    const copyTitle = screen.getByRole("button", { name: "copy event title" });
+
+    // Focusable renders the input and a decorative underline as a fragment.
+    // They must share a wrapping box; if they land as flex siblings of the
+    // copy button, the 100%-wide underline collapses the input to a bar.
+    expect(title.parentElement).not.toBe(copyTitle.parentElement);
+    expect(title.parentElement?.contains(copyTitle)).toBe(false);
+    expect(copyTitle.parentElement?.contains(title)).toBe(true);
+    expect(title.nextElementSibling).not.toBe(copyTitle);
+    expect(title).toHaveValue("Standup");
+  });
+
   it("renders as a transparent sidebar column with the save footer after the fields", () => {
     renderWithStore(
       <EventForm
