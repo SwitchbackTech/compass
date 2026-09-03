@@ -61,6 +61,12 @@ import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
+// OverlayPanel is the scrollport and uses p-8. sticky bottom-0 pins to that
+// padding box, so -mb-8 + pb-8 extend the painted bar into the 32px strip
+// below it. Hint copy lives at the top of the section, not in this bar.
+const BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME =
+  "sticky bottom-0 z-10 -mb-8 border-border border-t bg-surface-panel pt-3 pb-8";
+
 // Named so the value the checkbox writes and the value its label promises can
 // only ever be the same number.
 const DEFAULT_BUFFER_MINUTES = 30;
@@ -364,6 +370,11 @@ export function BookingSettingsSection({
       disabled={isReadOnly || saveMutation.isPending}
       ref={sectionRef}
     >
+      <p className="flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
+        Press <kbd>e</kbd> then a letter to jump to a field.
+        <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
+      </p>
+
       {savedPage ? (
         <div {...bookingFieldAttrs("link")}>
           <BookingCopyLink bookingUrl={savedPage.bookingUrl} />
@@ -622,7 +633,7 @@ export function BookingSettingsSection({
         </BookingCheckboxRow>
       </fieldset>
 
-      <div className="sticky bottom-0 z-10 bg-surface-panel pt-3">
+      <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
         <OverlayPanelActions align="start">
           <OverlayPanelActionButton
             aria-busy={saveMutation.isPending || undefined}
@@ -637,10 +648,6 @@ export function BookingSettingsSection({
             {saveMutation.isPending ? "Saving…" : "Save booking settings"}
           </OverlayPanelActionButton>
         </OverlayPanelActions>
-        <p className="mt-2 flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
-          Press <kbd>e</kbd> then a letter to jump to a field.
-          <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
-        </p>
       </div>
 
       <EditSequenceMenu
