@@ -61,11 +61,11 @@ import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
-// OverlayPanel is the scrollport and uses p-8. sticky bottom-0 pins to that
-// padding box, so -mb-8 + pb-8 extend the painted bar into the 32px strip
-// below it. Hint copy lives at the top of the section, not in this bar.
+// OverlayPanel is the scrollport and uses p-8. sticky bottom-0 would pin to
+// that padding box and leave a 32px unpainted strip; -bottom-8 + pb-8 drop
+// the painted bar into the padding without shrinking the scroll range.
 const BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME =
-  "sticky bottom-0 z-10 -mb-8 border-border border-t bg-surface-panel pt-3 pb-8";
+  "sticky -bottom-8 z-10 border-border border-t bg-surface-panel pt-3 pb-8";
 
 // Named so the value the checkbox writes and the value its label promises can
 // only ever be the same number.
