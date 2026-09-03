@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type FC, useEffect, useState } from "react";
+import { type FC, useEffect, useRef, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
 import {
   billingQueryKeys,
+  startBillingStatusPoll,
   useBillingSubscriptionQuery,
+  useStripePublishableKey,
 } from "@web/billing/billing.query";
 import {
   formatBillingDate,
@@ -15,12 +17,19 @@ import {
 } from "@web/billing/billing-display";
 import { showBillingRequestError } from "@web/billing/billing-request-error";
 import { CancelSubscriptionDialog } from "@web/billing/CancelSubscriptionDialog";
+import { CardUpdatePanel } from "@web/billing/CardUpdatePanel";
+import {
+  cardUpdateActions,
+  selectCardUpdateOpen,
+  useCardUpdateStore,
+} from "@web/billing/card-update.store";
 import {
   getPlanBadge,
   PLAN_BADGE_TONE_CLASSNAME,
 } from "@web/billing/planBadge";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import {
+  BILLING_CARD_UPDATED_TOAST_ID,
   BILLING_PLAN_ENDS_TOAST_ID,
   BILLING_PLAN_RENEWS_TOAST_ID,
 } from "@web/common/constants/toast.constants";
@@ -54,6 +63,11 @@ export const PlanSection: FC<PlanSectionProps> = ({
   const page = useSettingsStore(selectSettingsPage);
   const queryClient = useQueryClient();
   const badge = getPlanBadge(access);
+  const publishableKey = useStripePublishableKey();
+  const isCardUpdateOpen = useCardUpdateStore(selectCardUpdateOpen);
+  const updateCardButtonRef = useRef<HTMLButtonElement>(null);
+  const stopCardPollRef = useRef<(() => void) | null>(null);
+  const wasCardUpdateOpen = useRef(false);
   const subscriptionQuery = useBillingSubscriptionQuery(
     page === "billing" && access.kind === "server",
   );
@@ -67,6 +81,20 @@ export const PlanSection: FC<PlanSectionProps> = ({
       "Couldn't load billing details.",
     );
   }, [subscriptionQuery.error, subscriptionQuery.isError]);
+
+  useEffect(() => {
+    if (wasCardUpdateOpen.current && !isCardUpdateOpen) {
+      updateCardButtonRef.current?.focus({ preventScroll: true });
+    }
+    wasCardUpdateOpen.current = isCardUpdateOpen;
+  }, [isCardUpdateOpen]);
+
+  useEffect(
+    () => () => {
+      stopCardPollRef.current?.();
+    },
+    [],
+  );
 
   if (!badge) return null;
 
@@ -136,6 +164,20 @@ export const PlanSection: FC<PlanSectionProps> = ({
     })();
   };
 
+  const handleCardUpdateComplete = () => {
+    cardUpdateActions.close();
+    track("billing_card_update_completed");
+    showStatusToast(BILLING_CARD_UPDATED_TOAST_ID, "Card updated");
+    stopCardPollRef.current?.();
+    stopCardPollRef.current = startBillingStatusPoll(
+      queryClient,
+      () => {
+        stopCardPollRef.current = null;
+      },
+      billingQueryKeys.subscription,
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -183,6 +225,32 @@ export const PlanSection: FC<PlanSectionProps> = ({
               ? formatCardOnFile(summary.paymentMethod)
               : "No card on file"}
           </p>
+
+          {isCardUpdateOpen ? (
+            publishableKey ? (
+              <CardUpdatePanel
+                publishableKey={publishableKey}
+                onCancel={cardUpdateActions.close}
+                onComplete={handleCardUpdateComplete}
+              />
+            ) : (
+              <p className="text-sm text-text-muted">Loading checkout...</p>
+            )
+          ) : (
+            <OverlayPanelActions align="start">
+              <OverlayPanelActionButton
+                ref={updateCardButtonRef}
+                disabled={isSubmitting}
+                onClick={cardUpdateActions.open}
+                shortcut="U"
+                showShortcut={showShortcuts}
+                variant="secondary"
+                {...settingsShortcutAttrs("update-card")}
+              >
+                Update card
+              </OverlayPanelActionButton>
+            </OverlayPanelActions>
+          )}
 
           {canManageCancellation ? (
             <OverlayPanelActions align="start">

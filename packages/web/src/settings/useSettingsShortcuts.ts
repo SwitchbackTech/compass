@@ -60,6 +60,7 @@ const shortcutIdForEvent = (
   if (page === "billing") {
     if (key === "c") return "cancel-subscription";
     if (key === "r") return "resume-subscription";
+    if (key === "u") return "update-card";
     return null;
   }
   if (page !== "accounts") return null;

@@ -1,5 +1,6 @@
 import { CreditCardIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { cardUpdateActions } from "@web/billing/card-update.store";
 import { getPlanBadge } from "@web/billing/planBadge";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
@@ -33,6 +34,16 @@ export const useShowBillingCmdItems = (): CommandItem[] => {
       badge: badge.label,
       onClick: () =>
         settingsActions.openSettings("billing", { fromPalette: true }),
+    },
+    {
+      id: "update-card",
+      label: "Update card",
+      icon: CreditCardIcon,
+      keywords: ["card", "payment", "billing", "update"],
+      onClick: () => {
+        cardUpdateActions.open();
+        settingsActions.openSettings("billing", { fromPalette: true });
+      },
     },
   ];
 };
