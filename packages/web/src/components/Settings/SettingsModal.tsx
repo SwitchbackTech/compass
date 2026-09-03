@@ -77,7 +77,8 @@ const navButtonClassName = (current: boolean) =>
  * The app's Settings menu (Mod+,): Accounts (timezone, calendars, Google
  * connections, export / delete / log out) and Billing (plan) as sibling
  * pages. ESC steps back a level - out of an open disconnect
- * confirmation first, then out of the modal - via `handleDismiss`, since
+ * confirmation first, then out of a dirty Booking form's discard
+ * prompt, then out of the modal - via `handleDismiss`, since
  * OverlayPanel already routes both ESC and a backdrop click through
  * `onDismiss`.
  */
@@ -87,6 +88,7 @@ export const SettingsModal: FC = () => {
   const initialFocusRef = useRef<HTMLButtonElement>(null);
   const reseatFocusOnAccountsRef = useRef(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const bookingDismissGuardRef = useRef<(() => boolean) | null>(null);
   const { skipFocusRestoreRef, handleDismiss: dismissToPalette } =
     usePaletteAwareOverlayDismiss(isOpen, settingsActions.closeSettings);
   useAppLockReason("settingsModal", isOpen);
@@ -149,6 +151,9 @@ export const SettingsModal: FC = () => {
       setConfirmingId(null);
       return;
     }
+    // Booking form is dirty: ask before dropping the modal. The e-leader
+    // capture-phase Escape never reaches here.
+    if (bookingDismissGuardRef.current?.()) return;
     dismissToPalette();
   };
 
@@ -244,7 +249,11 @@ export const SettingsModal: FC = () => {
             <PlanSection showShortcuts={areHintsVisible} />
           ) : page === "booking" && IS_BOOKING_ENABLED ? (
             <Suspense fallback={null}>
-              <BookingSettingsSection showShortcuts={areHintsVisible} />
+              <BookingSettingsSection
+                dismissGuardRef={bookingDismissGuardRef}
+                onDiscardUnsaved={dismissToPalette}
+                showShortcuts={areHintsVisible}
+              />
             </Suspense>
           ) : (
             <>
