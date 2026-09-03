@@ -37,4 +37,40 @@ export const BillingPortalResponseSchema = z.object({
 });
 export type BillingPortalResponse = z.infer<typeof BillingPortalResponseSchema>;
 
+export const BillingPriceSchema = z.object({
+  amount: z.number(),
+  currency: z.string(),
+  interval: z.enum(["day", "week", "month", "year"]),
+});
+
+export const BillingPaymentMethodSchema = z.object({
+  brand: z.string(),
+  last4: z.string(),
+  expMonth: z.number(),
+  expYear: z.number(),
+});
+
+export const BillingInvoiceSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  amountPaid: z.number(),
+  currency: z.string(),
+  status: z.string(),
+  hostedInvoiceUrl: z.string().nullable(),
+});
+
+/** Settings > Billing management payload. Dates are ISO strings. */
+export const BillingSubscriptionResponseSchema = z.object({
+  subscriptionStatus: BillingSubscriptionStatusSchema,
+  currentPeriodEnd: z.string().nullable(),
+  cancelAtPeriodEnd: z.boolean(),
+  trialEndsAt: z.string().nullable(),
+  price: BillingPriceSchema.nullable(),
+  paymentMethod: BillingPaymentMethodSchema.nullable(),
+  invoices: z.array(BillingInvoiceSchema),
+});
+export type BillingSubscriptionResponse = z.infer<
+  typeof BillingSubscriptionResponseSchema
+>;
+
 export type { BillingSubscriptionStatus };
