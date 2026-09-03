@@ -3,15 +3,9 @@ import {
   EmbeddedCheckoutProvider,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { type ComponentType, useMemo } from "react";
+import { useMemo } from "react";
 import { showBillingRequestError } from "@web/billing/billing-request-error";
-
-export type EmbeddedCheckoutProps = {
-  publishableKey: string;
-  fetchClientSecret: () => Promise<string>;
-  onComplete: () => void;
-  className?: string;
-};
+import { type EmbeddedCheckoutProps } from "./embedded-checkout.seam";
 
 const CHECKOUT_REQUEST_FALLBACK = "Couldn't start checkout. Please try again.";
 
@@ -24,6 +18,10 @@ export function getStripePromise(publishableKey: string) {
   const promise = loadStripe(publishableKey);
   stripePromises.set(publishableKey, promise);
   return promise;
+}
+
+export function resetStripePromiseForTests(): void {
+  stripePromises.clear();
 }
 
 export function fetchEmbeddedCheckoutClientSecret(
@@ -58,20 +56,4 @@ export function StripeEmbeddedCheckout({
   );
 }
 
-let embeddedCheckoutOverride: ComponentType<EmbeddedCheckoutProps> | null =
-  null;
-
-export function getEmbeddedCheckoutComponent(): ComponentType<EmbeddedCheckoutProps> {
-  return embeddedCheckoutOverride ?? StripeEmbeddedCheckout;
-}
-
-export function setEmbeddedCheckoutForTests(
-  component: ComponentType<EmbeddedCheckoutProps> | null,
-): void {
-  embeddedCheckoutOverride = component;
-}
-
-export function resetEmbeddedCheckoutForTests(): void {
-  embeddedCheckoutOverride = null;
-  stripePromises.clear();
-}
+export default StripeEmbeddedCheckout;

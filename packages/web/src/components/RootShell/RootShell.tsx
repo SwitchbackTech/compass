@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
-import { useCheckoutReturn } from "@web/billing/billing.query";
 import {
   selectBillingPreviewing,
   useBillingPreviewStore,
@@ -58,7 +57,6 @@ export function RootShell() {
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
   useSyncBillingWriteLock();
-  useCheckoutReturn();
   usePlanChangeToasts();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
@@ -74,21 +72,25 @@ export function RootShell() {
   // banner pitching a trial they can no longer take.
   const isPreviewable = readOnlyStatus === "awaiting_checkout";
   const showReadOnlyBanner = isPreviewable && isPreviewing;
-  // The gate must yield to the celebration. Between the Checkout return and
+  // The gate must yield to the celebration. Between Checkout completing and
   // the webhook landing, status can still read awaiting_checkout, and the gate
-  // is a full app-lock overlay -- it would take the screen at exactly the
+  // is a full app-lock overlay: it would take the screen at exactly the
   // moment the user has just paid.
   const gateStatus =
     showReadOnlyBanner || isCelebrating ? null : readOnlyStatus;
   const showCalendarOnboarding =
-    gateStatus === null && !deferCalendarOnboarding && !isMobile;
+    gateStatus === null &&
+    !isCelebrating &&
+    !deferCalendarOnboarding &&
+    !isMobile;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
-  // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
-  // (above Z_INDEX_MODAL), so leaving them mounted would let a gated user
-  // click straight through it and keep touring. They are suppressed rather
-  // than living in a second copy of this tree, which keeps Outlet's slot
-  // stable — swapping tree shapes remounts the whole calendar.
+  // The gate and the celebration own the screen: the onboarding cards sit at
+  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
+  // a gated or celebrating user click straight through and keep touring. They
+  // are suppressed rather than living in a second copy of this tree, which
+  // keeps Outlet's slot stable — swapping tree shapes remounts the whole
+  // calendar.
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}

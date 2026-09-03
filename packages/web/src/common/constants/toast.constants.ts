@@ -19,8 +19,6 @@ export const LOGGED_OUT_TOAST_ID: Id = "logged-out";
 export const EVENT_SAVE_UNAVAILABLE_TOAST_ID: Id = "event-save-unavailable";
 export const NOTIFICATIONS_STATUS_TOAST_ID: Id = "notifications-status";
 export const BILLING_SUBSCRIBED_TOAST_ID: Id = "billing-subscribed";
-export const BILLING_CHECKOUT_CANCELED_TOAST_ID: Id =
-  "billing-checkout-canceled";
 
 /**
  * Toast chrome follows `[data-theme]` instead of a JS hex snapshot, so body

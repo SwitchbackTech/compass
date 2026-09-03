@@ -56,7 +56,6 @@ const shortcutIdForEvent = (
     return hasBooking || page === "booking" ? "nav-booking" : null;
 
   const key = normalizedKeyboardKey(event);
-  if (page === "billing" && key === "m") return "manage-billing";
   if (page === "booking" && isModEnter(event)) return "save-booking";
   if (page !== "accounts") return null;
   if (key === "a") return "add-account";

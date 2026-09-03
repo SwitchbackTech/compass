@@ -13,6 +13,10 @@ import {
   initialBillingPreviewState,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
+import {
+  initialCheckoutPanelState,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
 import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-accounts.store";
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
@@ -109,6 +113,7 @@ const storeResets: StoreReset[] = [
   () => useEventJumpStore.setState(initialEventJumpState, true),
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),
   () => useBillingPreviewStore.setState(initialBillingPreviewState, true),
+  () => useCheckoutPanelStore.setState(initialCheckoutPanelState, true),
   resetShortcutHintProgressStoreForTests,
   resetShortcutTelemetryForTests,
 ];

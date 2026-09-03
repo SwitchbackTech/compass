@@ -1,8 +1,6 @@
 import {
   type BillingCheckoutResponse,
   BillingCheckoutResponseSchema,
-  type BillingPortalResponse,
-  BillingPortalResponseSchema,
   type BillingStatusResponse,
   BillingStatusResponseSchema,
 } from "@core/types/billing.types";
@@ -27,13 +25,6 @@ const BillingApi = {
     const response =
       await BaseApi.post<BillingStatusResponse>(`/billing/trial/end`);
     return BillingStatusResponseSchema.parse(response.data);
-  },
-
-  async createPortalSession(): Promise<BillingPortalResponse> {
-    const response = await BaseApi.post<BillingPortalResponse>(
-      `/billing/portal/session`,
-    );
-    return BillingPortalResponseSchema.parse(response.data);
   },
 };
 

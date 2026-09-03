@@ -12,18 +12,22 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import {
-  type EmbeddedCheckoutProps,
   fetchEmbeddedCheckoutClientSecret,
-  getEmbeddedCheckoutComponent,
   getStripePromise,
-  resetEmbeddedCheckoutForTests,
+  resetStripePromiseForTests,
   StripeEmbeddedCheckout,
-  setEmbeddedCheckoutForTests,
 } from "./embedded-checkout.port";
+import {
+  type EmbeddedCheckoutProps,
+  getEmbeddedCheckoutComponent,
+  resetEmbeddedCheckoutForTests,
+  setEmbeddedCheckoutForTests,
+} from "./embedded-checkout.seam";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
   resetEmbeddedCheckoutForTests();
+  resetStripePromiseForTests();
   resetToastPort();
 });
 
@@ -47,14 +51,15 @@ describe("getStripePromise", () => {
 });
 
 describe("embedded checkout test seam", () => {
-  it("returns a registered fake and restores the default when set to null", () => {
-    expect(getEmbeddedCheckoutComponent()).toBe(StripeEmbeddedCheckout);
+  it("returns a registered fake and restores the lazy default when set to null", () => {
+    const DefaultCheckout = getEmbeddedCheckoutComponent();
+    expect(DefaultCheckout).not.toBe(StripeEmbeddedCheckout);
 
     setEmbeddedCheckoutForTests(FakeCheckout);
     expect(getEmbeddedCheckoutComponent()).toBe(FakeCheckout);
 
     setEmbeddedCheckoutForTests(null);
-    expect(getEmbeddedCheckoutComponent()).toBe(StripeEmbeddedCheckout);
+    expect(getEmbeddedCheckoutComponent()).toBe(DefaultCheckout);
   });
 
   it("lets a fake complete checkout without loading Stripe.js", async () => {

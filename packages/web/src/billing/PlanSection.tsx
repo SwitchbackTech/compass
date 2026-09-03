@@ -5,14 +5,7 @@ import {
   PLAN_BADGE_TONE_CLASSNAME,
 } from "@web/billing/planBadge";
 import { useAppAccess } from "@web/billing/useAppAccess";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
-import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
-import { pointerPassAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
-
-const OUTLINE_BUTTON_CLASSNAME =
-  "c-focus-ring inline-flex shrink-0 items-center rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
 
 /**
  * The account view's answer to "what am I paying for?". Until this existed,
@@ -21,13 +14,10 @@ const OUTLINE_BUTTON_CLASSNAME =
  *
  * Renders nothing when there is no plan to report (self-hosted, enforcement
  * paused, anonymous), rather than inventing billing chrome for installs that
- * have no billing.
+ * have no billing. WP-06 rebuilds the management actions.
  */
-export const PlanSection: FC<{
-  showShortcuts?: boolean;
-}> = ({ showShortcuts = false }) => {
+export const PlanSection: FC = () => {
   const access = useAppAccess();
-  const { isRedirecting, redirectTo } = useBillingRedirect();
   const badge = getPlanBadge(access);
 
   if (!badge) return null;
@@ -57,18 +47,6 @@ export const PlanSection: FC<{
             </p>
           ) : null}
         </div>
-        <button
-          className={OUTLINE_BUTTON_CLASSNAME}
-          disabled={isRedirecting}
-          onClick={() => void redirectTo("portal", "settings_portal")}
-          onPointerEnter={focusOnPointerEnter}
-          type="button"
-          {...pointerPassAttributes}
-          {...settingsShortcutAttrs("manage-billing")}
-        >
-          {isRedirecting ? "Opening Stripe…" : "Manage billing"}
-          {showShortcuts ? <ShortcutKeys className="ml-2" keys="M" /> : null}
-        </button>
       </div>
     </div>
   );

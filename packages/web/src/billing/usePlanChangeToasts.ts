@@ -10,8 +10,8 @@ const isActiveAccess = (access: AppAccess): boolean =>
   access.kind === "server" && access.status === "active";
 
 /**
- * When a trial becomes a paid subscription (portal return, webhook, in-app
- * end-trial), say so. The toast id matches the in-app upgrade so rapid
+ * When a trial becomes a paid subscription (webhook or in-app end-trial),
+ * say so. The toast id matches the in-app upgrade so rapid
  * duplicate reports collapse to one chip.
  */
 export function usePlanChangeToasts() {

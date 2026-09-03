@@ -14,7 +14,7 @@ import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
 } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
-import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.port";
+import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import {
   registerToastPort,
   resetToastPort,

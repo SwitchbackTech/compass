@@ -12,19 +12,16 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+  initialSettingsState,
+  selectIsSettingsOpen,
+  selectSettingsPage,
+  useSettingsStore,
+} from "@web/settings/settings.store";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 // Register a toast port rather than spying the toast utils: spyOn patches the
 // shared module object, so calls here would leak into other suites' spies.
 let toastMocks: ReturnType<typeof createTestToastPort>["mocks"];
-const assign = spyOn(window.location, "assign").mockImplementation(() => {});
 
 function OpenButton() {
   const { openUpgradeConfirmation } = useUpgradeConfirmation();
@@ -66,7 +63,7 @@ beforeEach(() => {
 
 afterEach(() => {
   resetToastPort();
-  assign.mockClear();
+  useSettingsStore.setState(initialSettingsState, true);
 });
 
 describe("UpgradeConfirmationProvider", () => {
@@ -187,99 +184,40 @@ describe("UpgradeConfirmationProvider", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("sends Manage billing to the Stripe portal in a new tab", async () => {
-    const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
-      url: "https://billing.stripe.com/p/session_1",
-    });
-    const replace = mock(() => {});
-    const popup = { closed: false, location: { replace }, opener: {} };
-    const open = spyOn(window, "open").mockReturnValue(
-      popup as unknown as Window,
-    );
+  it("opens Settings on Billing from Manage billing", async () => {
+    const endTrial = spyOn(BillingApi, "endTrial");
     await openDialog();
 
     await userEvent.click(
       screen.getByRole("button", { name: "Manage billing" }),
     );
 
-    await waitFor(() => {
-      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
-      expect(replace).toHaveBeenCalledWith(
-        "https://billing.stripe.com/p/session_1",
-      );
-    });
-    expect(assign).not.toHaveBeenCalled();
-    portal.mockRestore();
-    open.mockRestore();
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(endTrial).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
+    ).not.toBeInTheDocument();
+    endTrial.mockRestore();
   });
 
-  it("opens the portal with M and does not end the trial", async () => {
+  it("opens Settings on Billing with M and does not end the trial", async () => {
     const endTrial = spyOn(BillingApi, "endTrial");
-    const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
-      url: "https://billing.stripe.com/p/session_1",
-    });
-    const replace = mock(() => {});
-    const popup = { closed: false, location: { replace }, opener: {} };
-    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
     await openDialog();
 
     await userEvent.keyboard("m");
 
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith(
-        "https://billing.stripe.com/p/session_1",
-      );
-    });
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
     expect(endTrial).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("button", {
-        name: (accessibleName) =>
-          accessibleName.includes("Manage billing") ||
-          accessibleName.includes("Opening Stripe"),
-      }),
-    ).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
-    expect(endTrial).not.toHaveBeenCalled();
-    portal.mockRestore();
+      screen.queryByRole("dialog", { name: "Start Premium now?" }),
+    ).not.toBeInTheDocument();
     endTrial.mockRestore();
-  });
-
-  it("stays in Compass if the portal tab is closed before the URL lands", async () => {
-    const popup = {
-      closed: false,
-      close: mock(),
-      location: { replace: mock() },
-      opener: {},
-    };
-    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
-    const portal = spyOn(BillingApi, "createPortalSession").mockImplementation(
-      async () => {
-        popup.closed = true;
-        return { url: "https://billing.stripe.com/p/session_1" };
-      },
-    );
-    await openDialog();
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Manage billing" }),
-    );
-
-    await waitFor(() => {
-      expect(portal).toHaveBeenCalled();
-    });
-    expect(assign).not.toHaveBeenCalled();
-    expect(popup.location.replace).not.toHaveBeenCalled();
-    portal.mockRestore();
   });
 
   it("activates Manage billing on hover then Enter instead of Start Premium", async () => {
     const endTrial = spyOn(BillingApi, "endTrial");
-    const portal = spyOn(BillingApi, "createPortalSession").mockResolvedValue({
-      url: "https://billing.stripe.com/p/session_1",
-    });
-    const replace = mock(() => {});
-    const popup = { closed: false, location: { replace }, opener: {} };
-    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
     await openDialog();
 
     const manage = screen.getByRole("button", { name: "Manage billing" });
@@ -287,13 +225,9 @@ describe("UpgradeConfirmationProvider", () => {
     expect(manage).toHaveFocus();
     await userEvent.keyboard("{Enter}");
 
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith(
-        "https://billing.stripe.com/p/session_1",
-      );
-    });
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
     expect(endTrial).not.toHaveBeenCalled();
-    portal.mockRestore();
     endTrial.mockRestore();
   });
 });

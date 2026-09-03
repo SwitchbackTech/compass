@@ -3,9 +3,7 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
   type BillingCheckoutResponse,
-  type BillingClientSecretResponse,
-  BillingClientSecretResponseSchema,
-  type BillingPortalResponse,
+  BillingCheckoutResponseSchema,
   type BillingStatusResponse,
   type BillingSubscriptionResponse,
   BillingSubscriptionResponseSchema,
@@ -75,30 +73,15 @@ class BillingController {
   };
 
   createPaymentMethodSession = async (
-    req: Request<never, BillingClientSecretResponse, never, never>,
-    res: Response<BillingClientSecretResponse | { error: string }>,
+    req: Request<never, BillingCheckoutResponse, never, never>,
+    res: Response<BillingCheckoutResponse | { error: string }>,
   ) => {
     try {
       const userId = zObjectId.parse(req.session?.getUserId());
       const result = await stripeService.createPaymentMethodSession(
         userId.toString(),
       );
-      res
-        .status(Status.OK)
-        .json(BillingClientSecretResponseSchema.parse(result));
-    } catch (e) {
-      sendBillingError(res, e);
-    }
-  };
-
-  createPortalSession = async (
-    req: Request<never, BillingPortalResponse, never, never>,
-    res: Response<BillingPortalResponse | { error: string }>,
-  ) => {
-    try {
-      const userId = zObjectId.parse(req.session?.getUserId());
-      const result = await stripeService.createPortalSession(userId.toString());
-      res.status(Status.OK).json(result);
+      res.status(Status.OK).json(BillingCheckoutResponseSchema.parse(result));
     } catch (e) {
       sendBillingError(res, e);
     }

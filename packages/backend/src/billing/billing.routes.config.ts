@@ -44,8 +44,8 @@ export function mountStripeWebhook(app: express.Application): void {
 
 /**
  * Billing routes: trial status, Stripe Checkout, ending a trial early,
- * Billing Portal, and in-app subscription management. The Stripe webhook
- * is mounted separately, ahead of body parsers; see `mountStripeWebhook`.
+ * and in-app subscription management. The Stripe webhook is mounted
+ * separately, ahead of body parsers; see `mountStripeWebhook`.
  */
 export class BillingRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -72,11 +72,6 @@ export class BillingRoutes extends CommonRoutesConfig {
       .route(`/api/billing/payment-method/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createPaymentMethodSession);
-
-    this.app
-      .route(`/api/billing/portal/session`)
-      .all(verifySession())
-      .post(sessionWriteLimiter, billingController.createPortalSession);
 
     this.app
       .route(`/api/billing/subscription`)

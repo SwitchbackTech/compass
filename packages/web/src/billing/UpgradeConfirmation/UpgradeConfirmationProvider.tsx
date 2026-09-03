@@ -9,13 +9,13 @@ import {
   useUpgradeConfirmationState,
 } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { UpgradeConfirmationDialog } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationDialog";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { BILLING_SUBSCRIBED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
   selectIsSettingsOpen,
+  settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
@@ -27,11 +27,11 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const isTrialing = useIsTrialing();
   const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
-  const { isRedirecting, redirectTo } = useBillingRedirect();
-  const busy = isSubmitting || isRedirecting;
+  const busy = isSubmitting;
   const handleManageBilling = () => {
     if (busy) return;
-    void redirectTo("portal", "upgrade_portal");
+    closeUpgradeConfirmation();
+    settingsActions.openSettings("billing");
   };
 
   // Bare "B" for billing. The feature owns its own trigger rather than
@@ -83,7 +83,6 @@ export function UpgradeConfirmationProvider({ children }: PropsWithChildren) {
       <UpgradeConfirmationDialog
         isOpen={isOpen}
         isSubmitting={busy}
-        isOpeningPortal={isRedirecting}
         onCancel={closeUpgradeConfirmation}
         onConfirm={handleConfirm}
         onManageBilling={handleManageBilling}
