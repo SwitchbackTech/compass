@@ -13,8 +13,10 @@ import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
+import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
 import { PublicBookingService } from "@backend/booking/services/public-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import userService from "@backend/user/services/user.service";
 import {
@@ -747,6 +749,36 @@ describe("PublicBookingService", () => {
       description: string;
     };
     expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
+  });
+
+  it("asks Sync to mint Meet on confirm and does not invent a conference URL", async () => {
+    const { slug } = await enableBookingPage();
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(true);
+    expect(request.input.content.conference).toBeNull();
   });
 
   it("patches guest name and notes and submits an event update", async () => {
