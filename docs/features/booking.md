@@ -407,3 +407,5 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 - [Attendees, Contacts, And RSVP](./attendees.md)
 - [Google Sync And SSE Flow](./google-sync-and-sse-flow.md)
 - [Billing And Trial](./billing.md)
+- Product audit prompt (next-milestone recommendations, not the booking loop):
+  [`.github/prompts/booking-product-audit.md`](../../.github/prompts/booking-product-audit.md)
