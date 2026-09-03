@@ -83,8 +83,8 @@ describe("promptShortcutUpgrade", () => {
       source: "keyboard",
     });
 
-    expect(useBillingPreviewStore.getState().isPreviewing).toBe(true);
     await waitFor(() => {
+      expect(useBillingPreviewStore.getState().isPreviewing).toBe(true);
       expect(mocks.toast).toHaveBeenCalledTimes(1);
     });
     setAppLockReason("billingGate", false);

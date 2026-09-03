@@ -1,5 +1,5 @@
 import { type HTMLAttributes, type ReactNode, useMemo } from "react";
-import { useShortcutWriteLocked } from "@web/billing/billing-write-lock";
+import { useShortcutWriteLocked } from "@web/billing/useBillingWriteLock";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import {
   selectIsEventFormOpen,

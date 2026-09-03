@@ -5,7 +5,7 @@ import {
   SSE_DEGRADED_STATUS,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
-import { useShortcutWriteLocked } from "@web/billing/billing-write-lock";
+import { useShortcutWriteLocked } from "@web/billing/useBillingWriteLock";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import {

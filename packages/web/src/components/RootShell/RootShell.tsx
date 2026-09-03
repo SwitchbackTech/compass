@@ -8,13 +8,13 @@ import {
   selectBillingPreviewing,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
-import { useSyncBillingWriteLock } from "@web/billing/billing-write-lock";
 import { CheckoutCelebrationModal } from "@web/billing/CheckoutCelebrationModal";
 import {
   selectIsCelebrating,
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import { useSyncBillingWriteLock } from "@web/billing/useBillingWriteLock";
 import { usePlanChangeToasts } from "@web/billing/usePlanChangeToasts";
 import { isMobileOS } from "@web/common/utils/device/device.util";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";

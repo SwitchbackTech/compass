@@ -1,7 +1,6 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
 import { track } from "@web/auth/posthog/track";
-import { billingPreviewActions } from "@web/billing/billing-preview.store";
 import {
   getBillingWriteLockStatus,
   isBillingWriteLocked,
@@ -56,7 +55,7 @@ export function promptShortcutUpgrade(
   if (!isBillingWriteLocked()) return;
 
   if (hasAppLockReason("billingGate")) {
-    billingPreviewActions.enter();
+    enterBillingLookAround();
   }
 
   const copy = promptCopy(input.featureArea);
@@ -83,9 +82,18 @@ export function promptShortcutUpgrade(
 
 /**
  * Lazy so this module can sit on the `useAppShortcut` hot path without a
- * boot-time cycle: ShortcutUpgradeToast → ToastActionButton →
- * useNoticeActionShortcut → useAppShortcut.
+ * boot-time cycle through toast CTAs (`ToastActionButton` →
+ * `useNoticeActionShortcut` → `useAppShortcut`) or Google availability
+ * (`billing-preview.store` → delayed/reconnect toasts → `AppConfigApi`).
  */
+function enterBillingLookAround(): void {
+  void import("@web/billing/billing-preview.store").then(
+    ({ billingPreviewActions }) => {
+      billingPreviewActions.enter();
+    },
+  );
+}
+
 function showUpgradeToast(title: string, ctaLabel: string): void {
   void import("@web/billing/ShortcutUpgradeToast").then(
     ({ ShortcutUpgradeToast }) => {

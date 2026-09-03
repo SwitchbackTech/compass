@@ -13,8 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
-import { useShortcutWriteLocked } from "@web/billing/billing-write-lock";
 import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
+import { useShortcutWriteLocked } from "@web/billing/useBillingWriteLock";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
