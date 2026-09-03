@@ -96,9 +96,6 @@ export function PublicBookingConfirmedPage() {
       if (isHigherEscapeOwner()) {
         return;
       }
-      if (!bookingSlug) {
-        return;
-      }
       event.preventDefault();
       requestPublicBookingPageHeadingFocus();
       void navigate({
