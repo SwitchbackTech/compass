@@ -4,6 +4,7 @@ import {
   useHotkey,
 } from "@tanstack/react-hotkeys";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import { recordShortcutUnavailableAttempt } from "@web/shortcuts/tips/shortcut-telemetry";
 import { type ShortcutHintId } from "@web/shortcuts/tips/shortcut-tips.data";
 
@@ -61,6 +62,7 @@ export function useAppShortcut(
       }
 
       handler(event);
+      pointerConfusionActions.recordKeyboardSuccess();
     },
     {
       enabled,

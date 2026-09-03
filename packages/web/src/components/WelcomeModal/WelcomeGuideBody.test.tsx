@@ -1,10 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  initialPointerBlockState,
-  pointerBlockActions,
-  usePointerBlockStore,
-} from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import { useFlashedWelcomeShortcut } from "./useFlashedWelcomeShortcut";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { afterEach, describe, expect, it, mock } from "bun:test";
@@ -34,7 +30,7 @@ const captureLinkClick = (name: string) => {
 
 describe("WelcomeGuideBody", () => {
   afterEach(() => {
-    usePointerBlockStore.setState(initialPointerBlockState, true);
+    pointerConfusionActions.resetForTests();
   });
 
   it("explains that numbered shortcuts open the FAQ", () => {
@@ -151,7 +147,7 @@ describe("WelcomeGuideBody", () => {
     expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.recordDeadClick({
         actionId: "unknown",
         shortcutKey: "1",
       });
@@ -160,7 +156,7 @@ describe("WelcomeGuideBody", () => {
     expect(hintWrap?.className).toMatch(/c-keycap-flash/);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({ actionId: "unknown" });
+      pointerConfusionActions.recordDeadClick({ actionId: "unknown" });
     });
 
     expect(hintWrap?.className).not.toMatch(/c-keycap-flash/);
@@ -170,7 +166,7 @@ describe("WelcomeGuideBody", () => {
     const first = renderWelcomeGuide();
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.recordDeadClick({
         actionId: "unknown",
         shortcutKey: "1",
       });

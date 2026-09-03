@@ -35,9 +35,3 @@ export const pointerBlockActions = {
       { type: "pulseBlockedClick" },
     ),
 };
-
-export const selectPointerBlockPulse = (state: PointerBlockState) =>
-  state.blockedClickPulse;
-
-export const selectLatestPointerAttempt = (state: PointerBlockState) =>
-  state.latestAttempt;

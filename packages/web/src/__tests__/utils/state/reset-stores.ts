@@ -56,6 +56,8 @@ import {
   initialPointerBlockState,
   usePointerBlockStore,
 } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
+import { resetPointerHintPersistenceForTests } from "@web/shortcuts/keyboard-only/pointer-hint.storage";
 import {
   initialPageJumpHintState,
   usePageJumpHintStore,
@@ -99,6 +101,10 @@ const storeResets: StoreReset[] = [
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
   () => useEditSequenceStore.setState(initialEditSequenceState, true),
+  () => {
+    resetPointerHintPersistenceForTests();
+    pointerConfusionActions.resetForTests();
+  },
   () => usePointerBlockStore.setState(initialPointerBlockState, true),
   () => useEventJumpStore.setState(initialEventJumpState, true),
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),

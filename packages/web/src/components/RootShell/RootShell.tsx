@@ -30,7 +30,7 @@ import {
 } from "@web/components/WelcomeModal/welcome.guide.store";
 import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
-import { usePointerSuppression } from "@web/shortcuts/keyboard-only/usePointerSuppression";
+import { usePointerConfusionTracker } from "@web/shortcuts/keyboard-only/usePointerConfusionTracker";
 import { useFocusNoticeShortcut } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
 import {
   useCalendarShellShortcuts,
@@ -60,7 +60,7 @@ export function RootShell() {
   usePlanChangeToasts();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
-  usePointerSuppression(!isLifeView);
+  usePointerConfusionTracker(!isLifeView);
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
 
