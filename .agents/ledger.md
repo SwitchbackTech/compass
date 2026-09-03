@@ -13,7 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3129 | high | Verifier | verifying | packages/web/src/booking/BookingSettingsSection.tsx | bun test:web BookingSettingsSection.test.tsx: 30 pass | 2026-09-03T20:00:00Z | 0 | none |
+| 3129 | high | Verifier | verifying | packages/web/src/booking/BookingSettingsSection.tsx | bun test:web 30 pass; host-settings e2e 5 pass; test:a11y 24 pass; bun run verify PASS | 2026-09-03T20:00:00Z | 0 | none |
 | simplify-recent-3098 | medium | Manager | verifying | .agents/handoffs/simplify-recent-3098.md | bun run verify PASS (core, web, backend, type-check, lint, knip); focused web 161 pass; review: no confirmed findings | 2026-09-03T06:00:00Z | 1 | none |
 | simplify-recent-3047 | medium | Manager | verifying | .agents/handoffs/simplify-recent-3047.md | focused web 79 pass; core/sync 49 pass; verify package checks pass; a11y retry pass; review: no confirmed findings | 2026-09-02T06:00:00Z | 1 | none |
 | 2980 | high | Manager | waiting | https://github.com/KeepSoftwareSimple/compass-calendar/pull/2980 | verify PASS (web, type-check, lint, knip, a11y, e2e); review: no confirmed findings | 2026-08-31T00:00:00Z | 1 | none |
