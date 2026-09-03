@@ -4,6 +4,7 @@ import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirm
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
+import { requestPublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -99,6 +100,7 @@ export function PublicBookingConfirmedPage() {
         return;
       }
       event.preventDefault();
+      requestPublicBookingPageHeadingFocus();
       void navigate({
         to: ROOT_ROUTES.BOOK,
         params: { username: bookingSlug },

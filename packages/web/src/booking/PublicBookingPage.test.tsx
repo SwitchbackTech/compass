@@ -19,9 +19,14 @@ import {
   formatBookingSlotTime,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
+import { releasePublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { routeTree } from "@web/routers/router.routes";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
+
+afterEach(() => {
+  releasePublicBookingPageHeadingFocus();
+});
 
 function renderBookingRoute(path: string) {
   const router = createRouter({
@@ -293,10 +298,8 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/book/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
-    ).toHaveFocus();
-    await screen.findByRole("heading", { name: "Pick a time" });
-    (document.activeElement as HTMLElement | null)?.blur();
+      await screen.findByRole("heading", { name: "Pick a time" }),
+    ).toBeInTheDocument();
     await user.tab();
     expect(
       screen.getByRole("link", { name: "Skip to open times" }),

@@ -128,6 +128,30 @@ test.describe("public booking page", () => {
     });
   });
 
+  test("returns to the host page on Escape from confirmation", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeFocused();
+
+    await page.keyboard.press("Escape");
+
+    await expect(page).toHaveURL(/\/book\/tylerdane(?:\?|$)/);
+    await expect(
+      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeFocused();
+  });
+
   test("overrides the guest timezone on the reservation", async ({ page }) => {
     const { slotStart } = buildBookableSlot();
     const captured = await preparePublicBookingPage(page);

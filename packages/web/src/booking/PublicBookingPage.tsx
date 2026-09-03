@@ -1,4 +1,5 @@
 import { useParams } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
 import { PublicBookingGuestForm } from "@web/booking/PublicBookingGuestForm";
@@ -12,7 +13,11 @@ import {
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import { formatDurationMinutes } from "@web/booking/public-booking.format";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
-import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
+import {
+  isPublicBookingPageHeadingFocusPending,
+  releasePublicBookingPageHeadingFocus,
+  useBookingHeadingFocus,
+} from "@web/booking/use-booking-heading-focus";
 import { usePublicBookingFlow } from "@web/booking/use-public-booking-flow";
 
 const STICKY_STEP_CLASS_NAME =
@@ -22,9 +27,21 @@ export function PublicBookingPage() {
   const { username } = useParams({ from: "/book/$username" });
   const flow = usePublicBookingFlow();
   const { pageQuery, slotsQuery } = flow;
+  const focusHostHeadingRef = useRef(isPublicBookingPageHeadingFocusPending());
+  const pageReady = pageQuery.isSuccess && Boolean(pageQuery.data?.enabled);
   const headingRef = useBookingHeadingFocus(
-    pageQuery.isSuccess && pageQuery.data?.enabled ? username : null,
+    focusHostHeadingRef.current && pageReady ? username : null,
   );
+
+  useEffect(() => {
+    if (!focusHostHeadingRef.current || pageQuery.isPending) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      releasePublicBookingPageHeadingFocus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [pageQuery.isPending]);
 
   useBookingDocumentTitle(
     pageQuery.data?.enabled
