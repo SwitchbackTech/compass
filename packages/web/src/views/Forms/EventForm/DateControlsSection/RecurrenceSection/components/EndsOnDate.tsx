@@ -33,6 +33,7 @@ export const EndsOnDate = ({
         <TooltipWrapper description="Select recurrence end date">
           <div id="portal">
             <DatePicker
+              animationOnToggle={false}
               calendarClassName="recurrenceUntilDatePicker"
               isOpen={open}
               minDate={miniDate.toDate()}

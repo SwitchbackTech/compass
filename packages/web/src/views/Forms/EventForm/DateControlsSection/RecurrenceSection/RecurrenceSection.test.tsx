@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Dispatch,
@@ -34,16 +34,37 @@ const baseDraft = () =>
     timeZone: "UTC",
   });
 
+const PAST_MIDNIGHT_SCHEDULE = EventScheduleSchema.parse({
+  kind: "timed",
+  start: "2026-08-03T23:00:00.000Z",
+  end: "2026-08-04T00:30:00.000Z",
+  timeZone: "UTC",
+});
+
 // A timed event that runs past local midnight: it starts on Aug 3 but its end
-// lands on Aug 4. The "Ends on" floor is anchored to the start date, so the
-// event's own date (Aug 3) stays selectable.
-const pastMidnightDraft = () =>
-  createGridEventDraft({
-    kind: "timed",
-    start: new Date("2026-08-03T23:00:00.000Z"),
-    end: new Date("2026-08-04T00:30:00.000Z"),
-    timeZone: "UTC",
+// lands on Aug 4. Recurrence is already on so the test can open Ends on
+// without a userEvent click (those stall under CI popper/tooltip overlap).
+const pastMidnightRecurringDraft = () => {
+  const source = createMockEvent({
+    schedule: PAST_MIDNIGHT_SCHEDULE,
+    recurrence: {
+      kind: "series",
+      rules: ["RRULE:FREQ=WEEKLY;BYDAY=MO"],
+    },
   });
+  const draft = editGridEventDraft(source);
+  if (!draft) throw new Error("expected edit draft");
+  return {
+    ...draft,
+    values: {
+      ...draft.values,
+      recurrence: {
+        kind: "series" as const,
+        rules: ["RRULE:FREQ=WEEKLY;BYDAY=MO"],
+      },
+    },
+  } as GridEventDraft;
+};
 
 const recurringDraft = () => {
   const source = createMockEvent({
@@ -160,28 +181,23 @@ describe("RecurrenceSection", () => {
   });
 
   // Regression: the "Ends on" floor used to be the event's *end*, so an event
-  // running past local midnight (end on the next calendar day) disabled its own
-  // start date - the date the user most naturally picks. react-datepicker
-  // compares day cells by calendar day, so the fix is to anchor the floor to
-  // the start date. See RecurrenceSectionView's recurrenceMinDate.
-  it("keeps the event's own date selectable when the event ends after midnight", async () => {
-    const user = userEvent.setup({ delay: null, skipHover: true });
-    renderRecurrenceSection({ initialDraft: pastMidnightDraft() });
+  // running past local midnight disabled its own start date. userEvent.click
+  // can stall for tens of seconds on CI when the tooltip/popper covers the
+  // control; fireEvent avoids that retry loop.
+  it("keeps the event's own date selectable when the event ends after midnight", () => {
+    renderRecurrenceSection({ initialDraft: pastMidnightRecurringDraft() });
+    act(() => {
+      fireEvent.click(screen.getByRole("textbox"));
+    });
 
-    // Enable recurrence to reveal the "Ends on" picker, then open it via its
-    // input and assert the event's own (start) date is offered, not blocked.
-    await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
-    await user.click(await screen.findByRole("textbox"));
-
-    // The picker usually opens on the event month (openToDate). If it still
-    // lands on today, walk toward August without userEvent pointer retries:
-    // a covered/disabled Previous control can hang click() until CI SIGTERM.
     const ownDateLabel = /Monday, August 3rd, 2026/;
     for (let i = 0; i < 12 && !screen.queryByLabelText(ownDateLabel); i += 1) {
-      fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+      act(() => {
+        fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+      });
     }
 
-    const ownDate = await screen.findByLabelText(ownDateLabel);
+    const ownDate = screen.getByLabelText(ownDateLabel);
     expect(ownDate.getAttribute("aria-label")).toMatch(/^Choose /);
     expect(ownDate).not.toHaveClass("react-datepicker__day--disabled");
     expect(ownDate.getAttribute("aria-disabled")).not.toBe("true");
@@ -189,32 +205,38 @@ describe("RecurrenceSection", () => {
 
   // Regression: EventFormShell stops mousedown bubbling, which used to leave
   // the Ends on calendar open after an outside click (focus left, popover stayed).
-  it("closes the Ends on picker on outside click when mousedown propagation is stopped", async () => {
-    const user = userEvent.setup();
+  it("closes the Ends on picker on outside click when mousedown propagation is stopped", () => {
     renderRecurrenceSection({
       initialDraft: recurringDraft(),
       withFormLikeStopPropagation: true,
     });
 
-    await user.click(await screen.findByRole("textbox"));
-    expect(
-      (await screen.findAllByLabelText(/Choose .*2026/i)).length,
-    ).toBeGreaterThan(0);
+    act(() => {
+      fireEvent.click(screen.getByRole("textbox"));
+    });
+    expect(screen.getAllByLabelText(/Choose .*2026/i).length).toBeGreaterThan(
+      0,
+    );
 
-    await user.click(screen.getByRole("button", { name: "Outside" }));
+    act(() => {
+      fireEvent.mouseDown(screen.getByRole("button", { name: "Outside" }));
+    });
 
     expect(screen.queryAllByLabelText(/Choose .*2026/i)).toHaveLength(0);
   });
 
   // Regression: opening via TooltipTrigger onClick re-opened the popover when a
   // day click bubbled from the local portal; open only via the input path.
-  it("closes the Ends on picker after selecting a day", async () => {
-    const user = userEvent.setup();
+  it("closes the Ends on picker after selecting a day", () => {
     renderRecurrenceSection({ initialDraft: recurringDraft() });
 
-    await user.click(await screen.findByRole("textbox"));
-    const [day] = await screen.findAllByLabelText(/^Choose /);
-    await user.click(day);
+    act(() => {
+      fireEvent.click(screen.getByRole("textbox"));
+    });
+    const [day] = screen.getAllByLabelText(/^Choose /);
+    act(() => {
+      fireEvent.click(day);
+    });
 
     expect(screen.queryAllByLabelText(/^Choose /)).toHaveLength(0);
   });
