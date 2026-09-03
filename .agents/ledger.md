@@ -13,7 +13,8 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3135 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3197 | bun run verify PASS (web shards 1617/1592, a11y 24, e2e 109); review: no confirmed findings after hours-draft fix | 2026-09-04T00:00:00Z | 0 | none |
+| 3133 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3199 | bun run verify PASS (web/type-check/lint/knip); test:a11y 24; product e2e 86 including confirmation Escape; review: no confirmed findings | 2026-09-04T00:00:00Z | 0 | none |
+| 3135 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3197 | bun run verify PASS (web shards 1617/1592, a11y 24, e2e 109); review: no confirmed findings after hours-draft fix | null | 0 | none |
 | 3162 | high | Founder | waiting | docs/features/billing.md | bun run verify PASS (type-check, lint, knip); founder staging QA waiting | 2026-09-10T00:00:00Z | 0 | human |
 | 3134 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3195 | bun run verify PASS (web 1613, a11y 24, e2e 109); review: no confirmed findings | null | 0 | none |
 | 3158 | high | Implementer | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3168 | bun test:web 1569 pass; type-check pass; lint exit 0; knip pass | 2026-09-04T00:00:00Z | 0 | none |
