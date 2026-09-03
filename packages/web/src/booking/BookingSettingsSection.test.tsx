@@ -13,7 +13,10 @@ import {
 } from "@web/__tests__/utils/factories/calendar.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
+import {
+  BOOKING_SETTINGS_HINT_PARTS,
+  BookingSettingsSection,
+} from "@web/booking/BookingSettingsSection";
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
@@ -34,6 +37,7 @@ import {
   isAppLocked,
   setAppLockReason,
 } from "@web/shortcuts/app-lock";
+import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
 import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -299,6 +303,38 @@ describe("BookingSettingsSection", () => {
       lastControl.compareDocumentPosition(save) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0);
+  });
+
+  it("exposes a complete screen-reader name for the keyboard hint, with aria-hidden chips", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const accessibleName = getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS);
+    const accessible = await screen.findByText(accessibleName);
+    expect(accessible).toHaveClass("sr-only");
+    expect(accessible.textContent).toBe(accessibleName);
+    expect(accessibleName).toMatch(/Cmd\+E|Ctrl\+E/);
+    expect(accessibleName).not.toMatch(/Press e then/);
+
+    const visualHint = accessible.nextElementSibling;
+    expect(visualHint).toHaveAttribute("aria-hidden");
+    expect(visualHint).toHaveTextContent("then a letter to jump to a field");
+    expect(visualHint).toHaveTextContent("saves");
   });
 
   it("saves again after the first save, sending only PUT input keys", async () => {

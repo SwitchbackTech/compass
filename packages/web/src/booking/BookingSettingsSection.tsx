@@ -56,6 +56,8 @@ import {
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
 import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
+import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
@@ -66,6 +68,14 @@ const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 // the painted bar into the padding without shrinking the scroll range.
 const BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME =
   "sticky -bottom-8 z-10 border-border border-t bg-surface-panel pt-3 pb-8";
+
+export const BOOKING_SETTINGS_HINT_PARTS: readonly ShortcutTipPart[] = [
+  "Press ",
+  { keys: ["Mod", "E"] },
+  " then a letter to jump to a field. ",
+  { keys: ["Mod", "Enter"] },
+  " saves.",
+];
 
 // Named so the value the checkbox writes and the value its label promises can
 // only ever be the same number.
@@ -370,9 +380,8 @@ export function BookingSettingsSection({
       disabled={isReadOnly || saveMutation.isPending}
       ref={sectionRef}
     >
-      <p className="flex flex-wrap items-center gap-x-1 text-text-muted text-xs">
-        Press <kbd>e</kbd> then a letter to jump to a field.
-        <ShortcutKeys keys={["Mod", "Enter"]} /> saves.
+      <p className="text-text-muted text-xs">
+        <ShortcutTipParts parts={BOOKING_SETTINGS_HINT_PARTS} />
       </p>
 
       {savedPage ? (
