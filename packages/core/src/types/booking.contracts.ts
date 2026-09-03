@@ -289,9 +289,24 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   hostDisplayName: z.string().trim().min(1).max(256),
   status: BookingReservationStatusSchema,
   bookingSlug: BookingSlugSchema,
+  guestName: z.string().trim().min(1).max(256),
+  notes: z.string().trim().max(4000).nullable(),
 });
 export type PublicGetBookingReservationResponse = z.infer<
   typeof PublicGetBookingReservationResponseSchema
+>;
+
+export const PatchBookingReservationInputSchema = z
+  .strictObject({
+    token: z.string().trim().min(1).max(256),
+    name: z.string().trim().min(1).max(256).optional(),
+    notes: z.string().trim().max(4000).optional(),
+  })
+  .refine((input) => input.name !== undefined || input.notes !== undefined, {
+    message: "Provide name or notes",
+  });
+export type PatchBookingReservationInput = z.infer<
+  typeof PatchBookingReservationInputSchema
 >;
 
 export const CancelBookingReservationInputSchema = z.strictObject({

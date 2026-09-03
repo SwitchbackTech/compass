@@ -9,6 +9,8 @@ import {
   CreateBookingReservationInputSchema,
   type CreateBookingReservationResponse,
   CreateBookingReservationResponseSchema,
+  type PatchBookingReservationInput,
+  PatchBookingReservationInputSchema,
   type PublicGetBookingPageResponse,
   PublicGetBookingPageResponseSchema,
   type PublicGetBookingReservationResponse,
@@ -77,6 +79,26 @@ const PublicBookingApi = {
     try {
       const response = await BaseApi.get<unknown>(
         `/booking/reservations/${encodeURIComponent(reservationId)}`,
+        { skipSessionRecovery: true },
+      );
+      return PublicGetBookingReservationResponseSchema.parse(response.data);
+    } catch (error) {
+      if (getErrorStatus(error) === 404) {
+        throw new PublicBookingNotFoundError();
+      }
+      throw error;
+    }
+  },
+
+  async patchReservation(
+    reservationId: string,
+    input: PatchBookingReservationInput,
+  ): Promise<PublicGetBookingReservationResponse> {
+    const parsed = PatchBookingReservationInputSchema.parse(input);
+    try {
+      const response = await BaseApi.patch<unknown>(
+        `/booking/reservations/${encodeURIComponent(reservationId)}`,
+        parsed,
         { skipSessionRecovery: true },
       );
       return PublicGetBookingReservationResponseSchema.parse(response.data);

@@ -13,6 +13,7 @@ import {
   CreateBookingReservationInputSchema,
   CreateBookingReservationResponseSchema,
   isGuestEmail,
+  PatchBookingReservationInputSchema,
   type PublicBookingPage,
   PublicBookingPageSchema,
   type PublicGetBookingReservationResponse,
@@ -33,6 +34,7 @@ import {
 } from "@backend/booking/booking-cancel-token";
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
+import { type BookingReservationRecord } from "@backend/booking/booking-reservation.record";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
@@ -95,6 +97,37 @@ const parseSlotsQuery = (rawQuery: unknown) => {
 
 const slotEndForStart = (slotStart: Date, durationMinutes: number): Date =>
   new Date(slotStart.getTime() + durationMinutes * 60_000);
+
+const bookingEventDescription = (
+  notes: string | null | undefined,
+  guestsCanInviteOthers: boolean,
+  cancelUrl: string,
+): string =>
+  [notes?.trim() || null, guestsCanInviteOthers ? null : `Cancel: ${cancelUrl}`]
+    .filter(Boolean)
+    .join("\n\n");
+
+const durationMinutesForReservation = (
+  reservation: BookingReservationRecord,
+  pageDurationMinutes: number,
+) => {
+  const fromSlot = Math.round(
+    (reservation.slotEnd.getTime() - reservation.slotStart.getTime()) / 60_000,
+  );
+  return BookingDurationMinutesSchema.safeParse(fromSlot).success
+    ? fromSlot
+    : pageDurationMinutes;
+};
+
+const nextGuestNotes = (
+  incoming: string | undefined,
+  current: string | null,
+): string | null => {
+  if (incoming === undefined) {
+    return current;
+  }
+  return incoming.length > 0 ? incoming : null;
+};
 
 /**
  * Every page-derived knob the slot engine reads, in one place.
@@ -276,12 +309,11 @@ export class PublicBookingService {
           // The cancel URL is a capability: anyone holding it can cancel. When
           // the guest may invite others, every invitee sees the description, so
           // keep the URL out of it — the guest gets it on the confirmation page.
-          description: [
-            input.notes?.trim(),
-            page.guestsCanInviteOthers ? null : `Cancel: ${cancelUrl}`,
-          ]
-            .filter(Boolean)
-            .join("\n\n"),
+          description: bookingEventDescription(
+            input.notes,
+            page.guestsCanInviteOthers,
+            cancelUrl,
+          ),
           start: input.slotStart,
           end: DateTimeSchema.parse(slotEnd.toISOString()),
           timeZone: page.timeZone,
@@ -371,14 +403,10 @@ export class PublicBookingService {
     }
 
     const hostDisplayName = await getHostDisplayName(page.userId);
-    const fromSlot = Math.round(
-      (reservation.slotEnd.getTime() - reservation.slotStart.getTime()) /
-        60_000,
+    const durationMinutes = durationMinutesForReservation(
+      reservation,
+      page.durationMinutes,
     );
-    const durationMinutes = BookingDurationMinutesSchema.safeParse(fromSlot)
-      .success
-      ? fromSlot
-      : page.durationMinutes;
     return PublicGetBookingReservationResponseSchema.parse({
       slotStart: reservation.slotStart.toISOString(),
       guestTimeZone: reservation.guestTimeZone,
@@ -386,7 +414,68 @@ export class PublicBookingService {
       hostDisplayName,
       status: reservation.status,
       bookingSlug: page.bookingSlug,
+      guestName: reservation.guestName,
+      notes: reservation.notes,
     });
+  }
+
+  async patchPublicReservation(reservationId: ObjectId, rawInput: unknown) {
+    const input = PatchBookingReservationInputSchema.parse(rawInput);
+    const reservation =
+      await bookingReservationRepository.findById(reservationId);
+    if (
+      !reservation ||
+      !verifyCancelToken(reservation.cancelTokenHash, input.token)
+    ) {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    if (reservation.status === "cancelled") {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    const page = await bookingPageRepository.findById(reservation.pageId);
+    if (!page?.bookingSlug) {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    const guestName = input.name ?? reservation.guestName;
+    const notes = nextGuestNotes(input.notes, reservation.notes);
+    const hostDisplayName = await getHostDisplayName(page.userId);
+    const cancelUrl = buildGuestActionUrl(
+      "cancel",
+      reservationId.toString(),
+      input.token,
+    );
+
+    if (reservation.calendarEventId) {
+      await this.calendarBooking.updateBookingEvent(page.userId.toString(), {
+        eventId: reservation.calendarEventId as EventId,
+        title: `${guestName} and ${hostDisplayName}`,
+        description: bookingEventDescription(
+          notes,
+          page.guestsCanInviteOthers,
+          cancelUrl,
+        ),
+        start: DateTimeSchema.parse(reservation.slotStart.toISOString()),
+        end: DateTimeSchema.parse(reservation.slotEnd.toISOString()),
+        timeZone: page.timeZone,
+        guest: {
+          email: reservation.guestEmail,
+          displayName: guestName,
+        },
+      });
+    }
+
+    const updated = await bookingReservationRepository.updateGuestDetails(
+      reservationId,
+      { guestName, notes },
+    );
+    if (!updated) {
+      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+    }
+
+    return this.getPublicReservation(reservationId);
   }
 
   async cancelReservation(

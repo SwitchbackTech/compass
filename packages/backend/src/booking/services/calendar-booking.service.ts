@@ -13,6 +13,7 @@ import {
   type CalendarBookingDeleteEventInput,
   type CalendarBookingGetAvailabilityInput,
   type CalendarBookingPort,
+  type CalendarBookingUpdateEventInput,
 } from "@backend/booking/services/calendar-booking.port";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -22,6 +23,7 @@ import {
 } from "@backend/common/services/sync-service/sync-proxy-error";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
+import { createHash } from "node:crypto";
 
 const mintEventId = (): EventId =>
   EventIdSchema.parse(new ObjectId().toHexString());
@@ -78,6 +80,56 @@ const toBookingCreateSubmitRequest = (
       recurrence: { kind: "single" },
     },
   });
+
+const toBookingUpdateSubmitRequest = (
+  input: CalendarBookingUpdateEventInput,
+) => {
+  const digest = createHash("sha256")
+    .update(
+      JSON.stringify({
+        title: input.title,
+        description: input.description,
+        displayName: input.guest.displayName,
+      }),
+    )
+    .digest("hex")
+    .slice(0, 40);
+  return CommandSubmitRequestSchema.parse({
+    idempotencyKey: IdempotencyKeySchema.parse(
+      `booking-update:${input.eventId}:${digest}`,
+    ),
+    eventId: input.eventId,
+    expectedVersion: null,
+    input: {
+      kind: "update",
+      invitation: "all",
+      attendeesEdit: "preserve",
+      content: {
+        title: input.title,
+        description: input.description,
+        location: null,
+        organizer: null,
+        attendees: [
+          {
+            email: input.guest.email,
+            displayName: input.guest.displayName,
+            responseStatus: "needsAction",
+          },
+        ],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: input.start,
+        end: input.end,
+        timeZone: input.timeZone,
+      },
+      recurrence: { kind: "single" },
+      scope: "all",
+      recurrenceId: null,
+    },
+  });
+};
 
 export class CalendarBookingService implements CalendarBookingPort {
   constructor(
@@ -138,6 +190,27 @@ export class CalendarBookingService implements CalendarBookingPort {
       throwSyncCommandSubmitFailure(result.error.kind);
     }
     return eventId;
+  }
+
+  async updateBookingEvent(
+    userId: string,
+    input: CalendarBookingUpdateEventInput,
+  ): Promise<void> {
+    const guestEmail = input.guest.email.trim();
+    if (!guestEmail) {
+      throw bookingError("INVALID_INPUT", "Guest email is required");
+    }
+
+    const result = await this.client.submitCommand(
+      toSyncPrincipal(userId),
+      toBookingUpdateSubmitRequest({
+        ...input,
+        guest: { ...input.guest, email: guestEmail },
+      }),
+    );
+    if (!result.ok) {
+      throwSyncCommandSubmitFailure(result.error.kind);
+    }
   }
 
   async deleteBookingEvent(

@@ -94,6 +94,27 @@ class BookingController {
     }
   };
 
+  patchPublicReservation = async (req: Request, res: Response) => {
+    try {
+      const parsedId = zObjectId.safeParse(req.params["id"]);
+      if (!parsedId.success) {
+        const { status, body } = toBookingErrorResponse(
+          bookingError("RESERVATION_NOT_FOUND", "Reservation not found"),
+        );
+        res.status(status).json(body);
+        return;
+      }
+      const response = await publicBookingService.patchPublicReservation(
+        parsedId.data,
+        req.body,
+      );
+      res.status(Status.OK).json(response);
+    } catch (error) {
+      const { status, body } = toBookingErrorResponse(error);
+      res.status(status).json(body);
+    }
+  };
+
   cancelReservation = async (req: Request, res: Response) => {
     try {
       const reservationId = zObjectId.parse(req.params["id"]);

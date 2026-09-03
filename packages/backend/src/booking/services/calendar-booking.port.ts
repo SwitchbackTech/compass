@@ -34,6 +34,16 @@ export interface CalendarBookingDeleteEventInput {
   eventId: EventId;
 }
 
+export interface CalendarBookingUpdateEventInput {
+  eventId: EventId;
+  title: string;
+  description: string;
+  start: DateTime;
+  end: DateTime;
+  timeZone: string;
+  guest: BookingEventGuest;
+}
+
 export interface CalendarBookingPort {
   getAvailability(
     userId: string,
@@ -44,6 +54,11 @@ export interface CalendarBookingPort {
     userId: string,
     input: CalendarBookingCreateEventInput,
   ): Promise<EventId>;
+
+  updateBookingEvent(
+    userId: string,
+    input: CalendarBookingUpdateEventInput,
+  ): Promise<void>;
 
   deleteBookingEvent(
     userId: string,

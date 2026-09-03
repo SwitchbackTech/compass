@@ -31,6 +31,8 @@ function reservationGetHandler(overrides: Record<string, unknown> = {}) {
           hostDisplayName: "Tyler Dane",
           status: "confirmed",
           bookingSlug: "tylerdane",
+          guestName: "Guest User",
+          notes: null,
           ...overrides,
         }),
       ),

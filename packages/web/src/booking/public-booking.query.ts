@@ -8,6 +8,7 @@ import { useEffect, useMemo } from "react";
 import {
   type BookingSlotsResponse,
   type CreateBookingReservationInput,
+  type PatchBookingReservationInput,
 } from "@core/types/booking.contracts";
 import {
   PublicBookingApi,
@@ -241,6 +242,23 @@ export function useCreatePublicBookingReservationMutation(slug: string) {
       void queryClient.invalidateQueries({
         queryKey: publicBookingQueryKeys.slotsAll(slug),
       });
+    },
+  });
+}
+
+export function usePatchPublicBookingReservationMutation(
+  reservationId: string,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PatchBookingReservationInput) =>
+      PublicBookingApi.patchReservation(reservationId, input),
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        publicBookingQueryKeys.reservation(reservationId),
+        data,
+      );
     },
   });
 }

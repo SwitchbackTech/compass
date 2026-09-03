@@ -19,6 +19,8 @@ describe("PublicBookingConfirmationView", () => {
         cancelUrl={cancelUrl}
         durationMinutes={30}
         hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
         slotStart={slotStart}
         timeZone={timeZone}
       />,
@@ -27,6 +29,9 @@ describe("PublicBookingConfirmationView", () => {
     expect(
       screen.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Name")).toBeInTheDocument();
+    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(screen.queryByText("Notes")).not.toBeInTheDocument();
     expect(screen.getByText("When")).toBeInTheDocument();
     expect(
       screen.getByText(formatBookingSlotLabel(slotStart, timeZone)),
@@ -48,6 +53,8 @@ describe("PublicBookingConfirmationView", () => {
       <PublicBookingConfirmationView
         durationMinutes={30}
         hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
         slotStart={slotStart}
         timeZone={timeZone}
       />,
@@ -82,6 +89,8 @@ describe("PublicBookingConfirmationView", () => {
         cancelUrl={cancelUrl}
         durationMinutes={30}
         hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
         slotStart={slotStart}
         timeZone={timeZone}
       />,
@@ -92,5 +101,44 @@ describe("PublicBookingConfirmationView", () => {
     expect(written).toEqual([cancelUrl]);
     expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Copied");
+  });
+
+  it("shows notes and Edit details when provided", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onEditDetails = mock(() => undefined);
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes="bring coffee"
+        onEditDetails={onEditDetails}
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(screen.getByText("Notes")).toBeInTheDocument();
+    expect(screen.getByText("bring coffee")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Edit details" }));
+    expect(onEditDetails).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides Edit details without an edit handler", () => {
+    render(
+      <PublicBookingConfirmationView
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Edit details" }),
+    ).not.toBeInTheDocument();
   });
 });

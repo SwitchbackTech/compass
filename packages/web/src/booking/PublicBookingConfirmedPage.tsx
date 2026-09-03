@@ -1,8 +1,14 @@
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
+import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
+import { PublicBookingEditDetailsForm } from "@web/booking/PublicBookingEditDetailsForm";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
-import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
+import {
+  usePatchPublicBookingReservationMutation,
+  usePublicBookingReservationQuery,
+} from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { requestPublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -73,6 +79,18 @@ function cancelUrlFromHistory(state: unknown): string | undefined {
   return undefined;
 }
 
+function tokenFromCancelUrl(cancelUrl: string): string {
+  try {
+    return (
+      new URL(cancelUrl, "https://compasscalendar.com").searchParams.get(
+        "token",
+      ) ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+
 export function PublicBookingConfirmedPage() {
   const { reservationId } = useParams({
     from: "/book/confirmed/$reservationId",
@@ -80,16 +98,23 @@ export function PublicBookingConfirmedPage() {
   const cancelUrl = useRouterState({
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),
   });
+  const token = cancelUrl ? tokenFromCancelUrl(cancelUrl) : "";
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
+  const patchReservation =
+    usePatchPublicBookingReservationMutation(reservationId);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   useBookingDocumentTitle("Booking confirmed");
   const navigate = useNavigate();
 
   const view = resolveConfirmedPageView(reservationQuery);
   const bookingSlug =
     view.kind === "confirmation" ? view.reservation.bookingSlug : "";
+  const canEdit = view.kind === "confirmation" && token.length > 0;
 
   // Escape returns to the host's public page. OverlayPanel peels first.
-  // Unknown and cancelled views have no slug path, so they stay put.
+  // An open edit form backs out one step. Unknown and cancelled views have
+  // no slug path, so they stay put.
   useAppShortcut(
     "Escape",
     (event) => {
@@ -97,6 +122,11 @@ export function PublicBookingConfirmedPage() {
         return;
       }
       event.preventDefault();
+      if (isEditing) {
+        setIsEditing(false);
+        setSaveError(null);
+        return;
+      }
       requestPublicBookingPageHeadingFocus();
       void navigate({
         to: ROOT_ROUTES.BOOK,
@@ -111,13 +141,57 @@ export function PublicBookingConfirmedPage() {
   }
 
   const { reservation } = view;
+
+  if (isEditing && canEdit) {
+    return (
+      <PublicBookingEditDetailsForm
+        guestName={reservation.guestName}
+        notes={reservation.notes ?? ""}
+        disabled={patchReservation.isPending}
+        error={saveError}
+        onCancel={() => {
+          setIsEditing(false);
+          setSaveError(null);
+        }}
+        onSubmit={(values) => {
+          setSaveError(null);
+          patchReservation.mutate(
+            { token, name: values.name, notes: values.notes },
+            {
+              onSuccess: () => {
+                setIsEditing(false);
+              },
+              onError: (error) => {
+                setSaveError(
+                  getErrorStatus(error) === 404
+                    ? "This booking could not be updated. Use the link in your invite."
+                    : "Could not save your details. Please try again.",
+                );
+              },
+            },
+          );
+        }}
+      />
+    );
+  }
+
   return (
     <PublicBookingConfirmationView
       hostDisplayName={reservation.hostDisplayName}
+      guestName={reservation.guestName}
+      notes={reservation.notes}
       durationMinutes={reservation.durationMinutes}
       slotStart={reservation.slotStart}
       timeZone={reservation.guestTimeZone}
       cancelUrl={cancelUrl}
+      onEditDetails={
+        canEdit
+          ? () => {
+              setSaveError(null);
+              setIsEditing(true);
+            }
+          : undefined
+      }
     />
   );
 }

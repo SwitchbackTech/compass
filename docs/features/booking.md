@@ -319,8 +319,12 @@ Unauthenticated:
   guestEmail, notes?, guestTimeZone}`. Re-checks busy, then creates.
 - `GET /api/booking/reservations/:id` — public confirmation payload
   (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
-  `status`, `bookingSlug`). `404` when missing. No guest email, notes, or
-  cancel token.
+  `status`, `bookingSlug`, `guestName`, `notes`). `404` when missing. No
+  guest email or cancel token.
+- `PATCH /api/booking/reservations/:id` — `{token, name?, notes?}`. Verify
+  token. Updates the reservation and rewrites the calendar event title and
+  description. Guest email is not accepted. `404` when missing, cancelled, or
+  the token is invalid.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
 - `GET /api/booking/reservations/:id/slots?token=&start=&end=&timeZone=`
   — bookable instants excluding this reservation from occupancy and
@@ -378,6 +382,9 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 
 ### Named warts
 
+- **Guest email is not editable after confirm.** The attendee identity and
+  Google invite are bound to the address collected at booking. Changing it
+  would send a new invitation, which v1.5 does not do.
 - **Slug is not editable in v1.** Allocation runs once on first enable; changing
   slugs needs a migration with redirects.
 - **Guest reschedule is v1.3, not v1.** In-place PATCH; same cancel token.

@@ -7,18 +7,24 @@ import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 interface PublicBookingConfirmationViewProps {
   hostDisplayName: string;
+  guestName: string;
+  notes: string | null;
   durationMinutes: number;
   slotStart: string;
   timeZone: string;
   cancelUrl?: string;
+  onEditDetails?: () => void;
 }
 
 export function PublicBookingConfirmationView({
   hostDisplayName,
+  guestName,
+  notes,
   durationMinutes,
   slotStart,
   timeZone,
   cancelUrl,
+  onEditDetails,
 }: PublicBookingConfirmationViewProps) {
   const headingRef = useBookingHeadingFocus(hostDisplayName);
 
@@ -49,13 +55,38 @@ export function PublicBookingConfirmationView({
           slotStart={slotStart}
           timeZone={timeZone}
         />
+        <dl className="rounded-md border border-border bg-surface-panel px-3 py-2 text-sm text-text">
+          <div>
+            <dt className="text-text-muted">Name</dt>
+            <dd>{guestName}</dd>
+          </div>
+          {notes ? (
+            <div className="mt-2">
+              <dt className="text-text-muted">Notes</dt>
+              <dd>{notes}</dd>
+            </div>
+          ) : null}
+        </dl>
         <p className="text-sm text-text">
           {`A Google Meet invite is on its way to your email.${
             cancelUrl ? "" : " To cancel, use the link in that invite."
           }`}
         </p>
-        {cancelUrl ? (
-          <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
+        {cancelUrl || onEditDetails ? (
+          <div className="flex flex-col items-start gap-3">
+            {onEditDetails ? (
+              <button
+                type="button"
+                onClick={onEditDetails}
+                className="c-button c-button-secondary"
+              >
+                Edit details
+              </button>
+            ) : null}
+            {cancelUrl ? (
+              <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
+            ) : null}
+          </div>
         ) : null}
       </section>
     </PublicBookingLayout>
