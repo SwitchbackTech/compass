@@ -24,6 +24,9 @@ class ConfigController {
           isConfigured: isStripeConfigured(CONFIG),
           enforcement: isBillingEnforced(CONFIG),
           trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
+          publishableKey: isStripeConfigured(CONFIG)
+            ? (CONFIG.STRIPE_PUBLISHABLE_KEY ?? null)
+            : null,
         },
       }),
     );

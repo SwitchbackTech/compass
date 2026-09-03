@@ -56,7 +56,7 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
-    // Hosted Stripe billing. All-three-or-none is enforced when this is
+    // Hosted Stripe billing. All-four-or-none is enforced when this is
     // mapped into backend CONFIG (see config.constants superRefine). Omit
     // the whole block for self-host — billing enforcement then stays off.
     stripe: z
@@ -64,6 +64,7 @@ const CompassConfigSchema = z
         secretKey: optionalString,
         webhookSecret: optionalString,
         priceId: optionalString,
+        publishableKey: optionalString,
       })
       .nullish(),
     // Operator pause switch for trial/billing gates, independent of whether

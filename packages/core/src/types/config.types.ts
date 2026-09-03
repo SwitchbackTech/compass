@@ -31,11 +31,15 @@ export const AppConfigSchema = z.object({
       isConfigured: z.boolean(),
       enforcement: z.boolean().default(false),
       trialLengthDays: z.number(),
+      // Public Stripe.js key. Default null so old /api/config payloads still
+      // parse until every backend is on the four-value stripe block.
+      publishableKey: z.string().nullable().default(null),
     })
     .default({
       isConfigured: false,
       enforcement: false,
       trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
+      publishableKey: null,
     }),
 });
 

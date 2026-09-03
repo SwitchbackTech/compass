@@ -58,29 +58,42 @@ describe("config.constants", () => {
     const env = parseConfigFromEnv(validEnv);
 
     expect(env.STRIPE_SECRET_KEY).toBeUndefined();
+    expect(env.STRIPE_PUBLISHABLE_KEY).toBeUndefined();
     expect(isStripeConfigured(env)).toBe(false);
   });
 
-  it("rejects a partial Stripe configuration", () => {
-    expect(() =>
-      parseConfigFromEnv({
-        ...validEnv,
-        STRIPE_SECRET_KEY: "rk_test_123",
-      }),
-    ).toThrow(
-      "Stripe configuration requires secretKey, webhookSecret, and priceId together",
-    );
+  const stripeFour = {
+    STRIPE_SECRET_KEY: "rk_test_123",
+    STRIPE_WEBHOOK_SECRET: "whsec_test",
+    STRIPE_PRICE_ID: "price_test",
+    STRIPE_PUBLISHABLE_KEY: "pk_test_123",
+  };
+
+  it("rejects any three of the four Stripe values", () => {
+    const missingOne: Array<keyof typeof stripeFour> = [
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "STRIPE_PRICE_ID",
+      "STRIPE_PUBLISHABLE_KEY",
+    ];
+
+    for (const omitted of missingOne) {
+      const partial: Partial<typeof stripeFour> = { ...stripeFour };
+      delete partial[omitted];
+      expect(() => parseConfigFromEnv({ ...validEnv, ...partial })).toThrow(
+        "Stripe configuration requires secretKey, webhookSecret, priceId, and publishableKey together",
+      );
+    }
   });
 
-  it("reports Stripe as configured only when all three values are present", () => {
+  it("reports Stripe as configured only when all four values are present", () => {
     const env = parseConfigFromEnv({
       ...validEnv,
-      STRIPE_SECRET_KEY: "rk_test_123",
-      STRIPE_WEBHOOK_SECRET: "whsec_test",
-      STRIPE_PRICE_ID: "price_test",
+      ...stripeFour,
     });
 
     expect(isStripeConfigured(env)).toBe(true);
+    expect(env.STRIPE_PUBLISHABLE_KEY).toBe("pk_test_123");
   });
 
   it("trims Stripe values from env and compass.yaml", () => {
@@ -89,9 +102,11 @@ describe("config.constants", () => {
       STRIPE_SECRET_KEY: " rk_test_123\n",
       STRIPE_WEBHOOK_SECRET: " whsec_test ",
       STRIPE_PRICE_ID: "price_test\n",
+      STRIPE_PUBLISHABLE_KEY: " pk_test_123\n",
     });
     expect(fromEnv.STRIPE_PRICE_ID).toBe("price_test");
     expect(fromEnv.STRIPE_SECRET_KEY).toBe("rk_test_123");
+    expect(fromEnv.STRIPE_PUBLISHABLE_KEY).toBe("pk_test_123");
 
     const fromFile = parseRawConfig({
       ...baseRawConfig,
@@ -99,10 +114,12 @@ describe("config.constants", () => {
         secretKey: " sk_test_abc ",
         webhookSecret: "whsec_file",
         priceId: " price_file\n",
+        publishableKey: " pk_file\n",
       },
     });
     expect(fromFile.STRIPE_PRICE_ID).toBe("price_file");
     expect(fromFile.STRIPE_SECRET_KEY).toBe("sk_test_abc");
+    expect(fromFile.STRIPE_PUBLISHABLE_KEY).toBe("pk_file");
   });
 
   it("rejects partially configured Google credentials", () => {

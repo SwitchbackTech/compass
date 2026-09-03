@@ -46,6 +46,7 @@ supertokens:
 #   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY
 #   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
 #   priceId: REPLACE_WITH_STRIPE_PRICE_ID
+#   publishableKey: REPLACE_WITH_STRIPE_PUBLISHABLE_KEY
 # Omit this block on self-host. Compass stays fully writable without Stripe.
 
 # Compass Sync service — self-host runs the same architecture as Compass

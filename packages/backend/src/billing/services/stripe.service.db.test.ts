@@ -23,6 +23,7 @@ const stripeConfigured = {
   STRIPE_SECRET_KEY: "rk_test_123",
   STRIPE_WEBHOOK_SECRET: "whsec_test",
   STRIPE_PRICE_ID: "price_test",
+  STRIPE_PUBLISHABLE_KEY: "pk_test_123",
   FRONTEND_URL: "http://localhost:9080",
 } as const;
 

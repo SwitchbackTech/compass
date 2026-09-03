@@ -45,7 +45,8 @@ supertokens:
 #   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY # sk_test_... is fine for staging
 #   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
 #   priceId: REPLACE_WITH_STRIPE_PRICE_ID
-# Omit the whole block for self-host. All three values are required together.
+#   publishableKey: REPLACE_WITH_STRIPE_PUBLISHABLE_KEY # pk_test_... is fine for staging
+# Omit the whole block for self-host. All four values are required together.
 
 # billing:
 #   enforcement: false # operator pause switch — keep the app free for everyone
