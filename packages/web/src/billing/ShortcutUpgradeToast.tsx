@@ -1,5 +1,7 @@
 import { type Id } from "react-toastify";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import { track } from "@web/auth/posthog/track";
+import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { checkoutPanelActions } from "@web/billing/checkout-panel.store";
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
@@ -13,19 +15,17 @@ export function ShortcutUpgradeToast({
   title: string;
   ctaLabel: string;
 }) {
-  const { isRedirecting, redirectTo } = useBillingRedirect();
-
   const handleUpgrade = () => {
-    void redirectTo("checkout", "shortcut_prompt");
+    track("billing_gate_cta_clicked", { cta: "shortcut_prompt" });
     getToast().dismiss(toastId);
+    billingPreviewActions.exit();
+    checkoutPanelActions.open();
   };
 
   return (
     <ToastNotice>
       <p className="text-sm text-text">{title}</p>
-      <ToastActionButton onClick={handleUpgrade}>
-        {isRedirecting ? "Opening Stripe…" : ctaLabel}
-      </ToastActionButton>
+      <ToastActionButton onClick={handleUpgrade}>{ctaLabel}</ToastActionButton>
     </ToastNotice>
   );
 }
