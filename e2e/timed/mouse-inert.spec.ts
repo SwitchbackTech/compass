@@ -7,8 +7,12 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test("event form copy buttons copy field text", async ({ page }) => {
+const getFormTitleInput = (page: import("@playwright/test").Page) =>
+  page.getByRole("form").getByRole("textbox", { name: "Title" });
+
+test("event form copy buttons copy field text", async ({ page, context }) => {
   await prepareCalendarPage(page);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   const title = createEventTitle("Copy Field Target");
   await openTimedEventFormWithKeyboard(page);
@@ -21,20 +25,20 @@ test("event form copy buttons copy field text", async ({ page }) => {
   await eventButton.focus();
   await page.keyboard.press("Enter");
 
-  await expect(page.getByLabel("Title")).toBeVisible();
+  await expect(getFormTitleInput(page)).toBeVisible();
 
   await page.getByRole("button", { name: "copy event title" }).click();
-  const clipboardTitle = await page.evaluate(() =>
-    navigator.clipboard.readText(),
-  );
-  expect(clipboardTitle).toBe(title);
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect
+    .poll(async () => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(title);
 });
 
 test("text can be selected in the event title field", async ({ page }) => {
   await prepareCalendarPage(page);
   await openTimedEventFormWithKeyboard(page);
 
-  const titleField = page.getByLabel("Title");
+  const titleField = getFormTitleInput(page);
   await titleField.fill("Selectable title");
   await titleField.selectText();
 
