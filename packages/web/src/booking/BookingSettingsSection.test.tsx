@@ -108,6 +108,18 @@ function BookingSettingsWithShortcuts({
   return <BookingSettingsSection showShortcuts={showShortcuts} />;
 }
 
+function findStickyAncestor(element: HTMLElement): HTMLElement | null {
+  let current: HTMLElement | null = element;
+  while (current) {
+    const className = current.getAttribute("class") ?? "";
+    if (className.split(/\s+/).includes("sticky")) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
+
 function dispatchModKey(target: HTMLElement, key: string) {
   const modifierKey = resolveModifier("Mod");
   const isControl = modifierKey === "Control";
@@ -201,9 +213,12 @@ describe("BookingSettingsSection", () => {
     const save = await screen.findByRole("button", {
       name: "Save booking settings",
     });
-    const stickyBar = save.parentElement?.parentElement;
-    expect(stickyBar?.className).toContain("sticky");
-    expect(stickyBar).toHaveTextContent("then a letter to jump to a field");
+    const stickyBar = findStickyAncestor(save);
+    expect(stickyBar).not.toBeNull();
+    expect(
+      screen.getByText(/then a letter to jump to a field/),
+    ).toBeInTheDocument();
+    expect(stickyBar).not.toHaveTextContent("then a letter to jump to a field");
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
@@ -220,6 +235,70 @@ describe("BookingSettingsSection", () => {
     const openLink = screen.getByRole("link", { name: "Open booking page" });
     expect(openLink).toHaveAttribute("href", bookingUrl);
     expect(openLink).toHaveAttribute("target", "_blank");
+  });
+
+  it("renders the keyboard hint above the public link, outside the sticky save bar", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: true,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "America/New_York",
+            weeklyAvailability: [],
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const hint = await screen.findByText(/then a letter to jump to a field/);
+    const publicLink = screen.getByLabelText("Public booking link");
+    const save = screen.getByRole("button", { name: /Save booking settings/ });
+    const lastControl = screen.getByRole("checkbox", {
+      name: "Guest can invite others",
+    });
+
+    expect(
+      hint.compareDocumentPosition(publicLink) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
+
+    const stickyBar = findStickyAncestor(save);
+    expect(stickyBar).not.toBeNull();
+    expect(stickyBar!.contains(save)).toBe(true);
+    expect(stickyBar!.contains(hint)).toBe(false);
+    expect(stickyBar!.contains(lastControl)).toBe(false);
+    expect(within(save).getByText("Enter")).toBeInTheDocument();
+    expect(
+      lastControl.compareDocumentPosition(save) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0);
   });
 
   it("saves again after the first save, sending only PUT input keys", async () => {

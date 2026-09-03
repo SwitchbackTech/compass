@@ -100,6 +100,45 @@ test("saves welcome text", async ({ page }) => {
   ).toHaveAttribute("href", bookingUrl);
 });
 
+test("keyboard hint sits above the public link and the last control stays above Save", async ({
+  page,
+}) => {
+  await prepareSignedInBookingSettingsPage(page, {
+    bookingUrl: "https://compasscalendar.com/book/hostuser",
+  });
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const hint = settingsDialog.getByText("then a letter to jump to a field");
+  const publicLink = settingsDialog.getByLabel("Public booking link");
+  const lastControl = settingsDialog.getByRole("checkbox", {
+    name: "Guest can invite others",
+  });
+  const save = settingsDialog.getByRole("button", {
+    name: "Save booking settings",
+  });
+
+  await expect(hint).toBeVisible();
+  const hintBox = await hint.boundingBox();
+  const linkBox = await publicLink.boundingBox();
+  expect(hintBox).not.toBeNull();
+  expect(linkBox).not.toBeNull();
+  expect(hintBox!.y + hintBox!.height).toBeLessThan(linkBox!.y);
+
+  await lastControl.scrollIntoViewIfNeeded();
+  await settingsDialog.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+
+  const lastBox = await lastControl.boundingBox();
+  const saveBarTop = await save.evaluate((el) => {
+    const bar = el.closest(".sticky");
+    return bar?.getBoundingClientRect().y ?? null;
+  });
+  expect(lastBox).not.toBeNull();
+  expect(saveBarTop).not.toBeNull();
+  expect(lastBox!.y + lastBox!.height).toBeLessThanOrEqual(saveBarTop!);
+});
+
 test("saves with Compass checked as a blocking calendar", async ({ page }) => {
   const captured = await prepareSignedInBookingSettingsPage(page);
 
