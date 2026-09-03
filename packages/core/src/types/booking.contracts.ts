@@ -198,6 +198,7 @@ export const PublicBookingPageSchema = z.strictObject({
   enabled: z.boolean(),
   maxHorizonDays: z.number().int().positive().max(60),
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
+  createsGoogleMeet: z.boolean().default(true),
 });
 export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 
@@ -211,6 +212,7 @@ export const toPublicBookingPage = (
     | "welcomeText"
   >,
   hostDisplayName: string,
+  createsGoogleMeet: boolean,
 ): PublicBookingPage =>
   PublicBookingPageSchema.parse({
     hostDisplayName,
@@ -219,6 +221,7 @@ export const toPublicBookingPage = (
     enabled: page.enabled,
     maxHorizonDays: page.maxHorizonDays,
     welcomeText: page.welcomeText ?? null,
+    createsGoogleMeet,
   });
 
 export const BookingReservationStatusSchema = z.enum([
@@ -291,6 +294,7 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   bookingSlug: BookingSlugSchema,
   guestName: z.string().trim().min(1).max(256),
   notes: z.string().trim().max(4000).nullable(),
+  createsGoogleMeet: z.boolean().default(true),
 });
 export type PublicGetBookingReservationResponse = z.infer<
   typeof PublicGetBookingReservationResponseSchema

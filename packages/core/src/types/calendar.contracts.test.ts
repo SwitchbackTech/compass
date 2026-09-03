@@ -44,6 +44,16 @@ describe("Calendar Contracts", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("accepts createsGoogleMeet and omits it when absent", () => {
+      expect(CalendarSchema.parse(validCalendar).createsGoogleMeet).toBe(
+        undefined,
+      );
+      expect(
+        CalendarSchema.parse({ ...validCalendar, createsGoogleMeet: false })
+          .createsGoogleMeet,
+      ).toBe(false);
+    });
   });
 
   describe("getCalendarCapabilities", () => {

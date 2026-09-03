@@ -113,6 +113,7 @@ describe("GoogleCalendarAdapter", () => {
           canReadBusy: true,
           canInviteAttendees: true,
         },
+        createsGoogleMeet: true,
       },
     ]);
   });
@@ -370,6 +371,65 @@ describe("GoogleCalendarAdapter", () => {
     expect(calendars).toHaveLength(1);
     expect(calendars[0].providerCalendarId).toBe("no-color");
     expect(calendars[0].color).toBeNull();
+  });
+
+  it("treats missing conference types as Meet-capable", async () => {
+    const api = new FakeCalendarListApi([
+      page({ items: [entry({ id: "primary" })], nextSyncToken: "s" }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const { calendars } = await adapter.discoverCalendars({
+      accessToken: "at",
+    });
+
+    expect(calendars[0].createsGoogleMeet).toBe(true);
+  });
+
+  it("maps hangoutsMeet as Meet-capable", async () => {
+    const api = new FakeCalendarListApi([
+      page({
+        items: [
+          entry({
+            id: "meet",
+            conferenceProperties: {
+              allowedConferenceSolutionTypes: ["hangoutsMeet"],
+            },
+          }),
+        ],
+        nextSyncToken: "s",
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const { calendars } = await adapter.discoverCalendars({
+      accessToken: "at",
+    });
+
+    expect(calendars[0].createsGoogleMeet).toBe(true);
+  });
+
+  it("maps a calendar without hangoutsMeet as not Meet-capable", async () => {
+    const api = new FakeCalendarListApi([
+      page({
+        items: [
+          entry({
+            id: "resource",
+            conferenceProperties: {
+              allowedConferenceSolutionTypes: ["eventHangout"],
+            },
+          }),
+        ],
+        nextSyncToken: "s",
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const { calendars } = await adapter.discoverCalendars({
+      accessToken: "at",
+    });
+
+    expect(calendars[0].createsGoogleMeet).toBe(false);
   });
 
   it("returns a null cursor when the provider sends no sync token", async () => {

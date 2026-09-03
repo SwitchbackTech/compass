@@ -54,4 +54,16 @@ describe("mapCalendarRecord", () => {
     expect(calendar).not.toHaveProperty("source");
     expect(calendar).not.toHaveProperty("etag");
   });
+
+  it("marks a local calendar as unable to mint Meet", () => {
+    const calendar = mapCalendarRecord(
+      buildRecord({ source: { provider: "local" } }),
+    );
+    expect(calendar.createsGoogleMeet).toBe(false);
+  });
+
+  it("marks a google-sourced calendar as Meet-capable by default", () => {
+    const calendar = mapCalendarRecord(buildRecord());
+    expect(calendar.createsGoogleMeet).toBe(true);
+  });
 });

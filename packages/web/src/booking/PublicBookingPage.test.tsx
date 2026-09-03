@@ -1423,7 +1423,9 @@ describe("PublicBookingConfirmedPage", () => {
     expect(screen.getByText("Duration")).toBeInTheDocument();
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(
-      screen.getByText(/A Google Meet invite is on its way to your email/),
+      screen.getByText(
+        "A Google Meet invite is on its way to your email. To cancel, use the link in that invite.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Guest User")).toBeInTheDocument();
     expect(
@@ -1431,6 +1433,25 @@ describe("PublicBookingConfirmedPage", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Edit details" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("promises a calendar invite when the reservation cannot mint Meet", async () => {
+    server.use(reservationGetHandler({ createsGoogleMeet: false }));
+    renderBookingRoute("/book/confirmed/000000000000000000000099");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "A calendar invite is on its way to your email. To cancel, use the link in that invite.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/A Google Meet invite is on its way to your email/),
     ).not.toBeInTheDocument();
   });
 

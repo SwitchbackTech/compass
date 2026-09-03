@@ -14,7 +14,7 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 export function createMockCalendar(
   overrides: Partial<Calendar> = {},
 ): Calendar {
-  return {
+  const calendar: Calendar = {
     id: CalendarIdSchema.parse(createObjectIdString()),
     name: "Work",
     description: "",
@@ -27,8 +27,16 @@ export function createMockCalendar(
     isPrimary: false,
     isVisible: true,
     isActive: true,
+    createsGoogleMeet: true,
     ...overrides,
   };
+  if (
+    calendar.provider === "local" &&
+    overrides.createsGoogleMeet === undefined
+  ) {
+    calendar.createsGoogleMeet = false;
+  }
+  return calendar;
 }
 
 /** A healthy connected-account summary; override state fields to break it. */

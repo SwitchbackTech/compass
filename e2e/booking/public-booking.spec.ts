@@ -110,7 +110,7 @@ test.describe("public booking page", () => {
     await expect(page.getByText("Duration")).toBeVisible();
     await expect(page.getByText("Timezone")).toBeVisible();
     await expect(
-      page.getByText(/A Google Meet invite is on its way to your email/),
+      page.getByText("A Google Meet invite is on its way to your email."),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "cancel this booking" }),

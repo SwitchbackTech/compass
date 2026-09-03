@@ -1022,6 +1022,7 @@ export function toProviderCalendar(
     primary: record.primary,
     accessRole: record.accessRole,
     capabilities: record.capabilities,
+    createsGoogleMeet: record.createsGoogleMeet,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });

@@ -315,6 +315,17 @@ describe("Sync connection contracts", () => {
       expect(ProviderCalendarSchema.safeParse(calendar).success).toBe(true);
     });
 
+    it("defaults createsGoogleMeet to true when omitted", () => {
+      const parsed = ProviderCalendarSchema.parse(validCalendar());
+      expect(parsed.createsGoogleMeet).toBe(true);
+      expect(
+        ProviderCalendarSchema.parse({
+          ...validCalendar(),
+          createsGoogleMeet: false,
+        }).createsGoogleMeet,
+      ).toBe(false);
+    });
+
     it("rejects product preference fields", () => {
       const calendar = { ...validCalendar(), visible: true };
       expect(ProviderCalendarSchema.safeParse(calendar).success).toBe(false);

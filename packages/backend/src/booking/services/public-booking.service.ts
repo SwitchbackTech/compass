@@ -38,8 +38,11 @@ import { type BookingReservationRecord } from "@backend/booking/booking-reservat
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
@@ -124,6 +127,7 @@ const toPublicReservation = (
   bookingSlug: string,
   hostDisplayName: string,
   pageDurationMinutes: number,
+  createsGoogleMeet: boolean,
 ): PublicGetBookingReservationResponse =>
   PublicGetBookingReservationResponseSchema.parse({
     slotStart: reservation.slotStart.toISOString(),
@@ -137,6 +141,7 @@ const toPublicReservation = (
     bookingSlug,
     guestName: reservation.guestName,
     notes: reservation.notes,
+    createsGoogleMeet,
   });
 
 const nextGuestNotes = (
@@ -147,6 +152,29 @@ const nextGuestNotes = (
     return current;
   }
   return incoming.length > 0 ? incoming : null;
+};
+
+const destinationCreatesGoogleMeet = async (
+  userId: ObjectId,
+  destinationCalendarId: string,
+): Promise<boolean> => {
+  const local = await calendarService.getLocalCalendar(userId);
+  if (local && local._id.toHexString() === destinationCalendarId) {
+    return false;
+  }
+
+  const client = getSyncServiceClient();
+  const result = await client.listCalendars(toSyncPrincipal(userId.toString()));
+  if (!result.ok) {
+    return true;
+  }
+  const destination = result.value.calendars.find(
+    (calendar) => (calendar.id as string) === destinationCalendarId,
+  );
+  if (!destination) {
+    return false;
+  }
+  return destination.createsGoogleMeet !== false;
 };
 
 /**
@@ -192,8 +220,12 @@ export class PublicBookingService {
   async getPublicPage(slug: string): Promise<PublicBookingPage> {
     const page = await resolveEnabledPage(slug);
     const hostDisplayName = await getHostDisplayName(page.userId);
+    const createsGoogleMeet = await destinationCreatesGoogleMeet(
+      page.userId,
+      page.destinationCalendarId,
+    );
     return PublicBookingPageSchema.parse(
-      toPublicBookingPage(page, hostDisplayName),
+      toPublicBookingPage(page, hostDisplayName, createsGoogleMeet),
     );
   }
 
@@ -423,11 +455,16 @@ export class PublicBookingService {
     }
 
     const hostDisplayName = await getHostDisplayName(page.userId);
+    const createsGoogleMeet = await destinationCreatesGoogleMeet(
+      page.userId,
+      page.destinationCalendarId,
+    );
     return toPublicReservation(
       reservation,
       page.bookingSlug,
       hostDisplayName,
       page.durationMinutes,
+      createsGoogleMeet,
     );
   }
 
@@ -487,11 +524,16 @@ export class PublicBookingService {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
 
+    const createsGoogleMeet = await destinationCreatesGoogleMeet(
+      page.userId,
+      page.destinationCalendarId,
+    );
     return toPublicReservation(
       updated,
       page.bookingSlug,
       hostDisplayName,
       page.durationMinutes,
+      createsGoogleMeet,
     );
   }
 

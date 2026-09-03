@@ -173,6 +173,7 @@ export const ProviderCalendarSchema = z.strictObject({
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,
   capabilities: SyncCalendarCapabilitiesSchema,
+  createsGoogleMeet: z.boolean().default(true),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema,
 });

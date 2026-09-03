@@ -37,6 +37,9 @@ export const ProviderCalendarRecordSchema = z.strictObject({
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,
   capabilities: SyncCalendarCapabilitiesSchema,
+  // Default true so documents discovered before this field existed still
+  // promise Meet, matching Google's omitted conferenceProperties.
+  createsGoogleMeet: z.boolean().default(true),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

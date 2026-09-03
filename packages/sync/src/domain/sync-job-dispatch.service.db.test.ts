@@ -79,6 +79,7 @@ const discovery = {
           canReadBusy: true,
           canInviteAttendees: true,
         },
+        createsGoogleMeet: true,
       },
     ],
     cursor: "cursor-1",
