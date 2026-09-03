@@ -1,8 +1,16 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import {
+  resetBillingWriteLockForTests,
+  setBillingWriteLock,
+} from "@web/billing/billing-write-lock";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   useAppShortcut,
   useAppShortcutUp,
+  WRITE_CREATE_SHORTCUT,
 } from "@web/shortcuts/useAppShortcut";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -25,11 +33,15 @@ function dispatchKeyEvent(
 
 describe("useAppShortcut", () => {
   const mockHandler = mock();
+  const { port, mocks } = createTestToastPort();
 
   beforeEach(() => {
     mockHandler.mockClear();
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
+    resetBillingWriteLockForTests();
+    mocks.toast.mockClear();
+    registerToastPort(port);
   });
 
   it("calls the handler for keydown hotkeys", async () => {
@@ -208,5 +220,53 @@ describe("useAppShortcut", () => {
     await waitFor(() => {
       expect(mockHandler).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("shows a contextual upgrade prompt instead of running a write shortcut", async () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    renderHook(() => useAppShortcut("C", mockHandler, WRITE_CREATE_SHORTCUT));
+
+    dispatchKeyEvent("c", "keydown");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+      expect(mocks.toast).toHaveBeenCalled();
+    });
+  });
+
+  it("replaces the billing gate when a locked write shortcut fires", async () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    setAppLockReason("billingGate", true);
+
+    renderHook(() =>
+      useAppShortcut("C", mockHandler, {
+        ...WRITE_CREATE_SHORTCUT,
+        telemetryHintId: "create-event",
+      }),
+    );
+
+    dispatchKeyEvent("c", "keydown");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+      expect(mocks.toast).toHaveBeenCalled();
+    });
+    setAppLockReason("billingGate", false);
+  });
+
+  it("does not prompt for a write shortcut locked by a non-billing overlay", async () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    setAppLockReason("settingsModal", true);
+
+    renderHook(() => useAppShortcut("C", mockHandler, WRITE_CREATE_SHORTCUT));
+
+    dispatchKeyEvent("c", "keydown");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+    expect(mocks.toast).not.toHaveBeenCalled();
+    setAppLockReason("settingsModal", false);
   });
 });

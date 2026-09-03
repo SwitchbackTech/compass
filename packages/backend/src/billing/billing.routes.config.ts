@@ -69,6 +69,11 @@ export class BillingRoutes extends CommonRoutesConfig {
       .post(sessionWriteLimiter, billingController.endTrial);
 
     this.app
+      .route(`/api/billing/payment-method/session`)
+      .all(verifySession())
+      .post(sessionWriteLimiter, billingController.createPaymentMethodSession);
+
+    this.app
       .route(`/api/billing/portal/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createPortalSession);

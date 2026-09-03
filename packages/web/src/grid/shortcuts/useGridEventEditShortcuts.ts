@@ -72,7 +72,10 @@ import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { swallowNextKeyup } from "@web/shortcuts/swallow-next-keyup";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import {
+  useAppShortcut,
+  WRITE_EDIT_SHORTCUT,
+} from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 
 // Fallback when the grid can't be measured, matching EventForm's all-day->timed toggle.
@@ -699,15 +702,19 @@ export function useGridEventEditShortcuts({
   };
 
   useAppShortcut("Delete", deleteFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     ignoreInputs: false,
   });
   useAppShortcut("Mod+D", duplicateFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     ignoreInputs: false,
   });
   useAppShortcut("Mod+C", copyFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     ignoreInputs: true,
   });
   useAppShortcut("Mod+V", pasteCopiedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     ignoreInputs: true,
   });
   useAppShortcut(
@@ -731,19 +738,24 @@ export function useGridEventEditShortcuts({
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(KEYMAP.moveEvent.hotkeys.up, moveFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     telemetryHintId: "nudge",
   });
   useAppShortcut(KEYMAP.moveEvent.hotkeys.down, moveFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     telemetryHintId: "nudge",
   });
   useAppShortcut(KEYMAP.moveEvent.hotkeys.left, moveFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     telemetryHintId: "nudge",
   });
   useAppShortcut(KEYMAP.moveEvent.hotkeys.right, moveFocusedCalendarEvent, {
+    ...WRITE_EDIT_SHORTCUT,
     telemetryHintId: "nudge",
   });
   useAppShortcut(KEYMAP.edgeFocus.hotkey, cycleEdgeFocus, {
     ...DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+    ...WRITE_EDIT_SHORTCUT,
     telemetryHintId: "edge-focus",
   });
   useAppShortcut("Shift+Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);

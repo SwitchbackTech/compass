@@ -13,6 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
+import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
+import { useShortcutWriteLocked } from "@web/billing/useBillingWriteLock";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
@@ -301,6 +303,19 @@ export const CommandPalette = ({
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   useAppLockReason("commandPalette", open);
+  const writeLocked = useShortcutWriteLocked();
+  const eventItems = writeLocked
+    ? eventCommandPaletteItems.map((item) => ({
+        ...item,
+        badge: "Pro",
+        onClick: () =>
+          promptShortcutUpgrade({
+            featureArea: "event_creation",
+            actionId: "calendar.create_timed_event",
+            source: "command_palette",
+          }),
+      }))
+    : eventCommandPaletteItems;
   const navigate = useNavigate();
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
@@ -333,7 +348,7 @@ export const CommandPalette = ({
       id: "general",
       heading: "Common Actions",
       items: [
-        ...eventCommandPaletteItems,
+        ...eventItems,
         ...demoEventsCmdItems,
         {
           id: "undo-last-change",

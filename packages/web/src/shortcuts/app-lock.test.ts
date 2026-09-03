@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import {
   clearAppLockReasons,
+  hasAppLockReason,
   setAppLockReason,
   useAppLockReason,
 } from "@web/shortcuts/app-lock";
@@ -43,5 +44,14 @@ describe("app-lock", () => {
 
     unmount();
     expect(document.body.dataset.appLocked).toBeUndefined();
+  });
+
+  it("reports whether a named reason is active", () => {
+    setAppLockReason("billingGate", true);
+    expect(hasAppLockReason("billingGate")).toBe(true);
+    expect(hasAppLockReason("settingsModal")).toBe(false);
+
+    setAppLockReason("billingGate", false);
+    expect(hasAppLockReason("billingGate")).toBe(false);
   });
 });

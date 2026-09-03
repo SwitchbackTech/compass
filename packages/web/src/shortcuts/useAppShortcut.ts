@@ -3,10 +3,26 @@ import {
   type RegisterableHotkey,
   useHotkey,
 } from "@tanstack/react-hotkeys";
-import { isAppLocked } from "@web/shortcuts/app-lock";
+import { isBillingWriteLocked } from "@web/billing/billing-write-lock";
+import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
+import { hasAppLockReason, isAppLocked } from "@web/shortcuts/app-lock";
 import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import { recordShortcutUnavailableAttempt } from "@web/shortcuts/tips/shortcut-telemetry";
-import { type ShortcutHintId } from "@web/shortcuts/tips/shortcut-tips.data";
+import {
+  getShortcutHint,
+  type ShortcutFeatureArea,
+  type ShortcutHintId,
+} from "@web/shortcuts/tips/shortcut-tips.data";
+
+export const WRITE_CREATE_SHORTCUT = {
+  requiresWrite: true,
+  upgradeFeatureArea: "event_creation",
+} as const;
+
+export const WRITE_EDIT_SHORTCUT = {
+  requiresWrite: true,
+  upgradeFeatureArea: "event_editing",
+} as const;
 
 export interface UseAppShortcutOptions {
   enabled?: boolean;
@@ -24,8 +40,27 @@ export interface UseAppShortcutOptions {
   /** Enables privacy-safe telemetry when this registered shortcut is blocked
    * by the app lock before its handler can run. */
   telemetryHintId?: ShortcutHintId;
+  /**
+   * When true, a billing-gated account gets a contextual upgrade prompt
+   * instead of the handler (and instead of slamming the full billing gate).
+   */
+  requiresWrite?: boolean;
+  /** Feature area for the upgrade prompt when `requiresWrite` is set. */
+  upgradeFeatureArea?: ShortcutFeatureArea;
   /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
   conflictBehavior?: ConflictBehavior;
+}
+
+function promptLockedWriteShortcut(
+  telemetryHintId: ShortcutHintId | undefined,
+  upgradeFeatureArea: ShortcutFeatureArea | undefined,
+): void {
+  const hint = telemetryHintId ? getShortcutHint(telemetryHintId) : null;
+  promptShortcutUpgrade({
+    featureArea: upgradeFeatureArea ?? hint?.featureArea ?? "event_editing",
+    actionId: hint?.actionId,
+    source: "keyboard",
+  });
 }
 
 export function useAppShortcut(
@@ -42,6 +77,8 @@ export function useAppShortcut(
     stopPropagation,
     ignoreAppLock = false,
     telemetryHintId,
+    requiresWrite = false,
+    upgradeFeatureArea,
     conflictBehavior = "allow",
   } = options;
 
@@ -54,6 +91,18 @@ export function useAppShortcut(
         if (telemetryHintId) {
           recordShortcutUnavailableAttempt(telemetryHintId, "app_locked");
         }
+        if (
+          requiresWrite &&
+          isBillingWriteLocked() &&
+          hasAppLockReason("billingGate")
+        ) {
+          promptLockedWriteShortcut(telemetryHintId, upgradeFeatureArea);
+        }
+        return;
+      }
+
+      if (requiresWrite && isBillingWriteLocked()) {
+        promptLockedWriteShortcut(telemetryHintId, upgradeFeatureArea);
         return;
       }
 

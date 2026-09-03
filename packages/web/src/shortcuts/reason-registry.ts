@@ -38,6 +38,7 @@ export function createReasonRegistry(onChange?: (anyActive: boolean) => void) {
       sync();
     },
     isAnyActive: () => reasons.size > 0,
+    has: (reason: string) => reasons.has(reason),
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => {

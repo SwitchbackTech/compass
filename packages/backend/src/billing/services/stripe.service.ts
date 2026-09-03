@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { Status } from "@core/errors/status.codes";
 import {
   type BillingCheckoutResponse,
+  type BillingClientSecretResponse,
   type BillingStatusResponse,
   type BillingSubscriptionResponse,
 } from "@core/types/billing.types";
@@ -356,6 +357,44 @@ class StripeService {
       .catch(wrapStripeFailure);
 
     return { url: session.url };
+  };
+
+  createPaymentMethodSession = async (
+    userId: string,
+  ): Promise<BillingClientSecretResponse> => {
+    if (!isStripeConfigured(CONFIG)) {
+      throw new Error("Stripe is not configured");
+    }
+
+    const _id = mongoService.objectId(userId);
+    const user = await mongoService.user.findOne({ _id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const customerId = user.billing?.stripeCustomerId;
+    if (!customerId) {
+      throw new BillingHttpError(Status.CONFLICT, "No billing account yet.");
+    }
+
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions
+      .create({
+        mode: "setup",
+        customer: customerId,
+        payment_method_types: ["card"],
+        ui_mode: "embedded",
+        redirect_on_completion: "never",
+        client_reference_id: userId,
+        setup_intent_data: { metadata: { compassUserId: userId } },
+      })
+      .catch(wrapStripeFailure);
+
+    if (!session.client_secret) {
+      throw new Error("Stripe Checkout did not return a client secret");
+    }
+
+    return { clientSecret: session.client_secret };
   };
 }
 
