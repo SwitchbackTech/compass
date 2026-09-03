@@ -1,21 +1,47 @@
+import { useParams } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
 import { PublicBookingGuestForm } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingPicker } from "@web/booking/PublicBookingPicker";
 import { PublicBookingSkipLink } from "@web/booking/PublicBookingSkipLink";
-import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import {
+  PUBLIC_BOOKING_HEADING_CLASS,
+  PublicBookingStatusMessage,
+} from "@web/booking/PublicBookingStatusMessage";
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import { formatDurationMinutes } from "@web/booking/public-booking.format";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
+import {
+  isPublicBookingPageHeadingFocusPending,
+  releasePublicBookingPageHeadingFocus,
+  useBookingHeadingFocus,
+} from "@web/booking/use-booking-heading-focus";
 import { usePublicBookingFlow } from "@web/booking/use-public-booking-flow";
 
 const STICKY_STEP_CLASS_NAME =
   "sticky bottom-0 z-10 -mx-4 border-border border-t bg-background px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:px-0 sm:py-0";
 
 export function PublicBookingPage() {
+  const { username } = useParams({ from: "/book/$username" });
   const flow = usePublicBookingFlow();
   const { pageQuery, slotsQuery } = flow;
+  const focusHostHeadingRef = useRef(isPublicBookingPageHeadingFocusPending());
+  const pageReady = pageQuery.isSuccess && Boolean(pageQuery.data?.enabled);
+  const headingRef = useBookingHeadingFocus(
+    focusHostHeadingRef.current && pageReady ? username : null,
+  );
+
+  useEffect(() => {
+    if (!focusHostHeadingRef.current || pageQuery.isPending) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      releasePublicBookingPageHeadingFocus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [pageQuery.isPending]);
 
   useBookingDocumentTitle(
     pageQuery.data?.enabled
@@ -77,7 +103,11 @@ export function PublicBookingPage() {
         }
       />
       <header className="flex flex-col gap-1">
-        <h1 className="font-semibold text-text text-xl">
+        <h1
+          className={PUBLIC_BOOKING_HEADING_CLASS}
+          ref={headingRef}
+          tabIndex={-1}
+        >
           Book with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">

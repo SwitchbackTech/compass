@@ -1,9 +1,13 @@
-import { useParams, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
+import { requestPublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 const BOOKING_LOADING = {
   title: "Loading booking",
@@ -78,8 +82,30 @@ export function PublicBookingConfirmedPage() {
   });
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
   useBookingDocumentTitle("Booking confirmed");
+  const navigate = useNavigate();
 
   const view = resolveConfirmedPageView(reservationQuery);
+  const bookingSlug =
+    view.kind === "confirmation" ? view.reservation.bookingSlug : "";
+
+  // Escape returns to the host's public page. OverlayPanel peels first.
+  // Unknown and cancelled views have no slug path, so they stay put.
+  useAppShortcut(
+    "Escape",
+    (event) => {
+      if (isHigherEscapeOwner()) {
+        return;
+      }
+      event.preventDefault();
+      requestPublicBookingPageHeadingFocus();
+      void navigate({
+        to: ROOT_ROUTES.BOOK,
+        params: { username: bookingSlug },
+      });
+    },
+    { enabled: bookingSlug.length > 0, ignoreInputs: false },
+  );
+
   if (view.kind === "status") {
     return <PublicBookingStatusMessage {...view} />;
   }

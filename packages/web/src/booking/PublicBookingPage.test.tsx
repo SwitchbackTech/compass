@@ -19,9 +19,14 @@ import {
   formatBookingSlotTime,
   shiftBookingMonthKey,
 } from "@web/booking/public-booking.format";
+import { releasePublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { routeTree } from "@web/routers/router.routes";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
+
+afterEach(() => {
+  releasePublicBookingPageHeadingFocus();
+});
 
 function renderBookingRoute(path: string) {
   const router = createRouter({
@@ -1421,6 +1426,72 @@ describe("PublicBookingConfirmedPage", () => {
     expect(
       screen.queryByRole("button", { name: "Copy cancel link" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("returns to the host booking page on Escape and focuses its heading", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(
+      pageHandler(),
+      slotsInWindow([currentSlot]),
+      reservationGetHandler(),
+    );
+    const { router } = renderBookingRoute(
+      "/book/confirmed/000000000000000000000099",
+    );
+
+    await screen.findByRole("heading", {
+      name: "You are booked with Tyler Dane",
+    });
+    await user.keyboard("{Escape}");
+
+    const heading = await screen.findByRole("heading", {
+      name: "Book with Tyler Dane",
+    });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+    expect(router.state.location.pathname).toBe("/book/tylerdane");
+  });
+
+  it("does not navigate on Escape when the confirmation has no slug", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(reservationGetHandler({ status: "cancelled" }));
+    const { router } = renderBookingRoute(
+      "/book/confirmed/000000000000000000000099",
+    );
+
+    const heading = await screen.findByRole("heading", {
+      name: "This booking was canceled",
+    });
+    await user.keyboard("{Escape}");
+
+    expect(heading).toHaveFocus();
+    expect(router.state.location.pathname).toBe(
+      "/book/confirmed/000000000000000000000099",
+    );
+  });
+
+  it("does not navigate on Escape when the reservation is unknown", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/000000000000000000000099`,
+        (_req, res, ctx) => res(ctx.status(Status.NOT_FOUND), ctx.json({})),
+      ),
+    );
+    const { router } = renderBookingRoute(
+      "/book/confirmed/000000000000000000000099",
+    );
+
+    const heading = await screen.findByRole("heading", {
+      name: "Booking not found",
+    });
+    await user.keyboard("{Escape}");
+
+    expect(heading).toHaveFocus();
+    expect(router.state.location.pathname).toBe(
+      "/book/confirmed/000000000000000000000099",
+    );
   });
 
   it("shows a calm state for a cancelled reservation", async () => {
