@@ -78,6 +78,34 @@ export const globalHandlers = [
       }),
     );
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/billing/subscription`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        subscriptionStatus: "active",
+        currentPeriodEnd: "2099-06-15T12:00:00.000Z",
+        cancelAtPeriodEnd: false,
+        trialEndsAt: null,
+        price: { amount: 1200, currency: "usd", interval: "month" },
+        paymentMethod: {
+          brand: "visa",
+          last4: "4242",
+          expMonth: 12,
+          expYear: 2099,
+        },
+        invoices: [
+          {
+            id: "in_test_1",
+            createdAt: "2099-05-15T12:00:00.000Z",
+            amountPaid: 1200,
+            currency: "usd",
+            status: "paid",
+            hostedInvoiceUrl: "https://invoice.stripe.com/test",
+          },
+        ],
+      }),
+    );
+  }),
   rest.get(`${ENV_WEB.API_BASEURL}/booking/page`, (_req, res, ctx) => {
     return res(
       ctx.status(Status.OK),

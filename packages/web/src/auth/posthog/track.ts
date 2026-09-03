@@ -31,6 +31,8 @@ export type ProductEvent =
   | "trial_celebration_shown"
   | "billing_gate_shown"
   | "billing_gate_cta_clicked"
+  | "billing_cancel_scheduled"
+  | "billing_resumed"
   | "shortcut_upgrade_prompted"
   | "notifications_enabled"
   | "notifications_disabled"

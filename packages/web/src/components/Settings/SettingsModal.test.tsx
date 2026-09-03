@@ -760,6 +760,30 @@ describe("SettingsModal", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders plan, card, and receipts when opening Billing", async () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page: "billing" });
+
+    expect(screen.getByText("Premium")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("$12.00 per month")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText("Visa ending in 4242, expires 12/99"),
+    ).toBeInTheDocument();
+    const receipt = screen.getByRole("link", { name: "Receipt" });
+    expect(receipt).toHaveAttribute("target", "_blank");
+    expect(receipt).toHaveAttribute("rel", "noreferrer");
+    expect(
+      screen.getByRole("button", { name: "Cancel subscription" }),
+    ).toBeInTheDocument();
+  });
+
   it("counts down the trial and points at the early-upgrade shortcut", () => {
     access = {
       kind: "server",
