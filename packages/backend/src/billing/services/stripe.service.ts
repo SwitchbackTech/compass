@@ -1,7 +1,9 @@
+import type Stripe from "stripe";
 import { Status } from "@core/errors/status.codes";
 import {
   type BillingCheckoutResponse,
   type BillingStatusResponse,
+  type BillingSubscriptionResponse,
 } from "@core/types/billing.types";
 import {
   BILLING_PLAN,
@@ -223,6 +225,110 @@ class StripeService {
     return billingService.getStatus(userId);
   };
 
+  getSubscriptionSummary = async (
+    userId: string,
+  ): Promise<BillingSubscriptionResponse> => {
+    const _id = mongoService.objectId(userId);
+    const user = await mongoService.user.findOne({ _id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const billing = user.billing;
+    const mongo = {
+      subscriptionStatus: billing?.subscriptionStatus ?? "none",
+      currentPeriodEnd: billing?.currentPeriodEnd?.toISOString() ?? null,
+      cancelAtPeriodEnd: billing?.cancelAtPeriodEnd === true,
+      trialEndsAt: billing?.trialEndsAt?.toISOString() ?? null,
+    };
+
+    const subscriptionId = billing?.stripeSubscriptionId;
+    if (!subscriptionId) {
+      return { ...mongo, price: null, paymentMethod: null, invoices: [] };
+    }
+
+    if (!isStripeConfigured(CONFIG)) {
+      throw new Error("Stripe is not configured");
+    }
+
+    const stripe = getStripeClient();
+    const subscription = await stripe.subscriptions
+      .retrieve(subscriptionId, { expand: ["default_payment_method"] })
+      .catch(wrapStripeFailure);
+
+    let paymentMethod = cardFromPaymentMethod(
+      subscription.default_payment_method,
+    );
+    const customerId =
+      customerIdOf(subscription.customer) ?? billing?.stripeCustomerId;
+    if (!paymentMethod && customerId) {
+      const customer = await stripe.customers
+        .retrieve(customerId, {
+          expand: ["invoice_settings.default_payment_method"],
+        })
+        .catch(wrapStripeFailure);
+      if (!("deleted" in customer && customer.deleted)) {
+        paymentMethod = cardFromPaymentMethod(
+          customer.invoice_settings.default_payment_method,
+        );
+      }
+    }
+
+    const invoices = customerId
+      ? (
+          await stripe.invoices
+            .list({ customer: customerId, limit: 12 })
+            .catch(wrapStripeFailure)
+        ).data.flatMap((invoice) => {
+          const mapped = mapInvoice(invoice);
+          return mapped ? [mapped] : [];
+        })
+      : [];
+
+    return {
+      ...mongo,
+      price: mapPrice(subscription),
+      paymentMethod,
+      invoices,
+    };
+  };
+
+  setCancelAtPeriodEnd = async (
+    userId: string,
+    cancel: boolean,
+  ): Promise<BillingStatusResponse> => {
+    if (!isStripeConfigured(CONFIG)) {
+      throw new Error("Stripe is not configured");
+    }
+
+    const _id = mongoService.objectId(userId);
+    const user = await mongoService.user.findOne({ _id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const status = user.billing?.subscriptionStatus;
+    const subscriptionId = user.billing?.stripeSubscriptionId;
+    const canUpdate =
+      Boolean(subscriptionId) &&
+      (status === "trialing" || status === "active" || status === "past_due");
+    if (!subscriptionId || !canUpdate) {
+      throw new BillingHttpError(
+        Status.CONFLICT,
+        "No active subscription to update.",
+      );
+    }
+
+    const stripe = getStripeClient();
+    const subscription = await stripe.subscriptions
+      .update(subscriptionId, { cancel_at_period_end: cancel })
+      .catch(wrapStripeFailure);
+
+    await applySubscription(userId, subscription, new Date());
+
+    return billingService.getStatus(userId);
+  };
+
   createPortalSession = async (
     userId: string,
   ): Promise<BillingCheckoutResponse> => {
@@ -267,5 +373,57 @@ function isMissingStripeCustomer(error: unknown): boolean {
       candidate.message.startsWith("No such customer"))
   );
 }
+
+const customerIdOf = (value: unknown): string | undefined => {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof (value as { id: unknown }).id === "string"
+  ) {
+    return (value as { id: string }).id;
+  }
+  return undefined;
+};
+
+const cardFromPaymentMethod = (
+  value: unknown,
+): BillingSubscriptionResponse["paymentMethod"] => {
+  if (typeof value !== "object" || value === null) return null;
+  const card = (value as Stripe.PaymentMethod).card;
+  if (!card?.brand || !card.last4) return null;
+  return {
+    brand: card.brand,
+    last4: card.last4,
+    expMonth: card.exp_month,
+    expYear: card.exp_year,
+  };
+};
+
+const mapPrice = (
+  subscription: Stripe.Subscription,
+): BillingSubscriptionResponse["price"] => {
+  const price = subscription.items.data[0]?.price;
+  if (!price || typeof price === "string") return null;
+  const amount = price.unit_amount;
+  const interval = price.recurring?.interval;
+  if (amount == null || !price.currency || !interval) return null;
+  return { amount, currency: price.currency, interval };
+};
+
+const mapInvoice = (
+  invoice: Stripe.Invoice,
+): BillingSubscriptionResponse["invoices"][number] | null => {
+  if (!invoice.id) return null; // basil types leave Invoice.id optional
+  return {
+    id: invoice.id,
+    createdAt: new Date(invoice.created * 1000).toISOString(),
+    amountPaid: invoice.amount_paid,
+    currency: invoice.currency,
+    status: invoice.status ?? "unknown",
+    hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
+  };
+};
 
 export default new StripeService();

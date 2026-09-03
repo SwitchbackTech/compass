@@ -5,6 +5,8 @@ import {
   type BillingCheckoutResponse,
   type BillingPortalResponse,
   type BillingStatusResponse,
+  type BillingSubscriptionResponse,
+  BillingSubscriptionResponseSchema,
 } from "@core/types/billing.types";
 import { zObjectId } from "@core/types/type.utils";
 import { BillingHttpError } from "@backend/billing/billing.errors";
@@ -78,6 +80,55 @@ class BillingController {
       const userId = zObjectId.parse(req.session?.getUserId());
       const result = await stripeService.createPortalSession(userId.toString());
       res.status(Status.OK).json(result);
+    } catch (e) {
+      sendBillingError(res, e);
+    }
+  };
+
+  getSubscription = async (
+    req: Request<never, BillingSubscriptionResponse, never, never>,
+    res: Response<BillingSubscriptionResponse | { error: string }>,
+  ) => {
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId());
+      const summary = await stripeService.getSubscriptionSummary(
+        userId.toString(),
+      );
+      res
+        .status(Status.OK)
+        .json(BillingSubscriptionResponseSchema.parse(summary));
+    } catch (e) {
+      sendBillingError(res, e);
+    }
+  };
+
+  cancelSubscription = async (
+    req: Request<never, BillingStatusResponse, never, never>,
+    res: Response<BillingStatusResponse | { error: string }>,
+  ) => {
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId());
+      const status = await stripeService.setCancelAtPeriodEnd(
+        userId.toString(),
+        true,
+      );
+      res.status(Status.OK).json(status);
+    } catch (e) {
+      sendBillingError(res, e);
+    }
+  };
+
+  resumeSubscription = async (
+    req: Request<never, BillingStatusResponse, never, never>,
+    res: Response<BillingStatusResponse | { error: string }>,
+  ) => {
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId());
+      const status = await stripeService.setCancelAtPeriodEnd(
+        userId.toString(),
+        false,
+      );
+      res.status(Status.OK).json(status);
     } catch (e) {
       sendBillingError(res, e);
     }
