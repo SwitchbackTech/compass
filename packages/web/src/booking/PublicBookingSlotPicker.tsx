@@ -19,6 +19,7 @@ interface PublicBookingSlotPickerProps {
   selectedSlotStart: string | null;
   headingRef?: Ref<HTMLHeadingElement>;
   onSelectSlot: (slotStart: string) => void;
+  onEscapeToSelectedDay?: () => void;
   onJumpToNextAvailable?: () => void;
 }
 
@@ -62,6 +63,7 @@ export function PublicBookingSlotPicker({
   selectedSlotStart,
   headingRef,
   onSelectSlot,
+  onEscapeToSelectedDay,
   onJumpToNextAvailable,
 }: PublicBookingSlotPickerProps) {
   const daySlots = useMemo(
@@ -112,6 +114,11 @@ export function PublicBookingSlotPicker({
     event: KeyboardEvent<HTMLButtonElement>,
     index: number,
   ) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onEscapeToSelectedDay?.();
+      return;
+    }
     const nextIndex = stepSlotIndex(index, daySlots.length, event.key);
     if (nextIndex === null) {
       return;
