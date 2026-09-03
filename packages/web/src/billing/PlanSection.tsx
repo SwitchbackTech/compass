@@ -148,7 +148,7 @@ export const PlanSection: FC<PlanSectionProps> = ({
               {badge.label}
             </span>
             {summary?.price ? (
-              <p className="mt-1 text-text text-sm">
+              <p className="mt-1 text-sm text-text">
                 {formatBillingMoney(
                   summary.price.amount,
                   summary.price.currency,

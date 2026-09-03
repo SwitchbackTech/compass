@@ -95,7 +95,7 @@ function PlanHarness() {
   return <PlanSection showShortcuts />;
 }
 
-const renderPlan = () => {
+const renderPlan = async () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -106,6 +106,9 @@ const renderPlan = () => {
       </HotkeysProvider>
     </QueryClientProvider>,
   );
+  await waitFor(() => {
+    expect(screen.queryByText("Loading your plan")).not.toBeInTheDocument();
+  });
   return { ...view, queryClient };
 };
 
@@ -140,7 +143,7 @@ describe("PlanSection", () => {
   });
 
   it("renders price, renewal, card, and receipts from the summary", async () => {
-    renderPlan();
+    await renderPlan();
 
     expect(screen.getByText("Premium")).toBeInTheDocument();
     await waitFor(() => {
@@ -169,7 +172,7 @@ describe("PlanSection", () => {
       cancelAtPeriodEnd: true,
     });
     const track = spyOn(Track, "track");
-    const { queryClient } = renderPlan();
+    const { queryClient } = await renderPlan();
     const invalidate = spyOn(
       queryClient,
       "invalidateQueries",
@@ -232,7 +235,7 @@ describe("PlanSection", () => {
     });
     const track = spyOn(Track, "track");
 
-    renderPlan();
+    await renderPlan();
 
     await waitFor(() => {
       expect(
@@ -261,7 +264,7 @@ describe("PlanSection", () => {
 
   it("keeps the badge and shows the fallback toast when the summary fails", async () => {
     getSubscription.mockRejectedValue(new Error("network"));
-    renderPlan();
+    await renderPlan();
 
     expect(screen.getByText("Premium")).toBeInTheDocument();
     await waitFor(() => {
@@ -275,7 +278,7 @@ describe("PlanSection", () => {
 
   it("says no card on file when Stripe has no payment method", async () => {
     getSubscription.mockResolvedValue(activeSummary({ paymentMethod: null }));
-    renderPlan();
+    await renderPlan();
 
     await waitFor(() => {
       expect(screen.getByText("No card on file")).toBeInTheDocument();
@@ -284,7 +287,7 @@ describe("PlanSection", () => {
 
   it("hides the receipts heading when the list is empty", async () => {
     getSubscription.mockResolvedValue(activeSummary({ invoices: [] }));
-    renderPlan();
+    await renderPlan();
 
     await waitFor(() => {
       expect(screen.getByText("$12.00 per month")).toBeInTheDocument();
@@ -307,7 +310,7 @@ describe("PlanSection", () => {
       }),
     );
     const user = userEvent.setup({ delay: null });
-    renderPlan();
+    await renderPlan();
 
     await waitFor(() => {
       expect(
