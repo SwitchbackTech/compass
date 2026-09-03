@@ -1,14 +1,29 @@
 import "@testing-library/jest-dom";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type BillingSubscriptionResponse } from "@core/types/billing.types";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { BillingApi } from "@web/api/billing.api";
 import * as Track from "@web/auth/posthog/track";
+import {
+  initialCardUpdateState,
+  useCardUpdateStore,
+} from "@web/billing/card-update.store";
+import {
+  type EmbeddedCheckoutProps,
+  setEmbeddedCheckoutForTests,
+} from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import {
+  BILLING_CARD_UPDATED_TOAST_ID,
   BILLING_PLAN_ENDS_TOAST_ID,
   BILLING_PLAN_RENEWS_TOAST_ID,
 } from "@web/common/constants/toast.constants";
@@ -99,6 +114,15 @@ const renderPlan = async () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  queryClient.setQueryData(billingQueryKeys.config, {
+    google: { isConfigured: false },
+    billing: {
+      isConfigured: true,
+      enforcement: true,
+      trialLengthDays: 7,
+      publishableKey: "pk_test_card",
+    },
+  });
   const view = render(
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>
@@ -137,9 +161,12 @@ describe("PlanSection", () => {
   });
 
   afterEach(() => {
+    cleanup();
     resetToastPort();
     getSubscription.mockRestore();
     useSettingsStore.setState(initialSettingsState, true);
+    useCardUpdateStore.setState(initialCardUpdateState, true);
+    setEmbeddedCheckoutForTests(null);
   });
 
   it("renders price, renewal, card, and receipts from the summary", async () => {
@@ -324,5 +351,68 @@ describe("PlanSection", () => {
     ).toHaveTextContent(
       `You keep access until the trial ends on ${PERIOD_END_LABEL}. You can resume any time before then.`,
     );
+  });
+
+  it("mounts the card form with U and unmounts it with Cancel", async () => {
+    function FakeCheckout() {
+      return <div>Fake card checkout</div>;
+    }
+    setEmbeddedCheckoutForTests(FakeCheckout);
+    const user = userEvent.setup({ delay: null });
+    await renderPlan();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Update card" }),
+      ).toBeInTheDocument();
+    });
+
+    await user.keyboard("u");
+    expect(screen.getByText("Fake card checkout")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Update card" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Fake card checkout")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Update card" })).toHaveFocus();
+  });
+
+  it("completes a card update, toasts, tracks, and polls the subscription", async () => {
+    function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
+      return (
+        <button type="button" onClick={onComplete}>
+          Complete card update
+        </button>
+      );
+    }
+    setEmbeddedCheckoutForTests(FakeCheckout);
+    const user = userEvent.setup({ delay: null });
+    const track = spyOn(Track, "track");
+    const { queryClient } = await renderPlan();
+    const invalidate = spyOn(queryClient, "invalidateQueries");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Update card" }),
+      ).toBeInTheDocument();
+    });
+    await user.keyboard("u");
+    await user.click(
+      screen.getByRole("button", { name: "Complete card update" }),
+    );
+
+    expect(track).toHaveBeenCalledWith("billing_card_update_completed");
+    expect(toastMocks.toast).toHaveBeenCalledWith(
+      "Card updated",
+      expect.objectContaining({ toastId: BILLING_CARD_UPDATED_TOAST_ID }),
+    );
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: billingQueryKeys.subscription,
+    });
+    expect(screen.getByRole("button", { name: "Update card" })).toHaveFocus();
+
+    track.mockRestore();
+    invalidate.mockRestore();
   });
 });

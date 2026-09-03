@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { BillingBanner } from "@web/billing/BillingBanner";
+import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
 import {
   billingPreviewActions,
@@ -10,9 +11,19 @@ import {
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
 import {
+  initialCardUpdateState,
+  useCardUpdateStore,
+} from "@web/billing/card-update.store";
+import {
   initialCheckoutPanelState,
   useCheckoutPanelStore,
 } from "@web/billing/checkout-panel.store";
+import {
+  initialSettingsState,
+  selectIsSettingsOpen,
+  selectSettingsPage,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import {
   POINTER_ACTION_ATTRIBUTE,
   POINTER_ACTIONS,
@@ -28,6 +39,8 @@ afterEach(() => {
   eventJumpActions.reset();
   useBillingPreviewStore.setState(initialBillingPreviewState, true);
   useCheckoutPanelStore.setState(initialCheckoutPanelState, true);
+  useCardUpdateStore.setState(initialCardUpdateState, true);
+  useSettingsStore.setState(initialSettingsState, true);
 });
 
 const renderBanner = (onCta = mock(), disabled = false) =>
@@ -113,5 +126,20 @@ describe("BillingBanner", () => {
 
     expect(useBillingPreviewStore.getState().isPreviewing).toBe(false);
     expect(useCheckoutPanelStore.getState().isOpen).toBe(true);
+  });
+
+  it("opens Settings on Billing with the card form already open", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(
+      <HotkeysProvider>
+        <BillingPastDueBanner />
+      </HotkeysProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Update card" }));
+
+    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(useCardUpdateStore.getState().isOpen).toBe(true);
   });
 });

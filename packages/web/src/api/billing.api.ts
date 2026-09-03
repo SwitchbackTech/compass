@@ -49,6 +49,13 @@ const BillingApi = {
     );
     return BillingStatusResponseSchema.parse(response.data);
   },
+
+  async createPaymentMethodSession(): Promise<BillingCheckoutResponse> {
+    const response = await BaseApi.post<BillingCheckoutResponse>(
+      `/billing/payment-method/session`,
+    );
+    return BillingCheckoutResponseSchema.parse(response.data);
+  },
 };
 
 export { BillingApi };

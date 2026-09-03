@@ -2,6 +2,10 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realUsesession from "@web/auth/compass/session/useSession";
+import {
+  initialCardUpdateState,
+  useCardUpdateStore,
+} from "@web/billing/card-update.store";
 import * as realUseappaccess from "@web/billing/useAppAccess";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import {
@@ -78,5 +82,26 @@ describe("useShowBillingCmdItems", () => {
     expect(selectOverlayOpenedFromPalette(useSettingsStore.getState())).toBe(
       true,
     );
+  });
+
+  it("opens Settings on Billing with the card form from Update card", () => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    useCardUpdateStore.setState(initialCardUpdateState, true);
+
+    const { result } = renderHook(() => useShowBillingCmdItems());
+    const updateCard = result.current.find((item) => item.id === "update-card");
+    expect(updateCard?.label).toBe("Update card");
+
+    act(() => {
+      updateCard?.onClick?.();
+    });
+
+    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
+    expect(useCardUpdateStore.getState().isOpen).toBe(true);
   });
 });

@@ -14,6 +14,10 @@ import {
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
 import {
+  initialCardUpdateState,
+  useCardUpdateStore,
+} from "@web/billing/card-update.store";
+import {
   initialCheckoutPanelState,
   useCheckoutPanelStore,
 } from "@web/billing/checkout-panel.store";
@@ -114,6 +118,7 @@ const storeResets: StoreReset[] = [
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),
   () => useBillingPreviewStore.setState(initialBillingPreviewState, true),
   () => useCheckoutPanelStore.setState(initialCheckoutPanelState, true),
+  () => useCardUpdateStore.setState(initialCardUpdateState, true),
   resetShortcutHintProgressStoreForTests,
   resetShortcutTelemetryForTests,
 ];
