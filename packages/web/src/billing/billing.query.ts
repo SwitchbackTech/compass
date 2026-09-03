@@ -54,6 +54,10 @@ export function useAppConfigQuery() {
   return useQuery(appConfigQueryOptions());
 }
 
+export function useStripePublishableKey(): string | null {
+  return useAppConfigQuery().data?.billing.publishableKey ?? null;
+}
+
 /**
  * The operator pause switch. False (paused) whenever config is pending or
  * errored, not just when the server says so, so a slow network never flashes

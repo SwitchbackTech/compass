@@ -3,15 +3,13 @@ import { type PropsWithChildren, useCallback, useState } from "react";
 import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
 import { billingQueryKeys } from "@web/billing/billing.query";
+import { showBillingRequestError } from "@web/billing/billing-request-error";
 import {
   UpgradeConfirmationContext,
   useUpgradeConfirmationState,
 } from "@web/billing/UpgradeConfirmation/hooks/useUpgradeConfirmation";
 import { UpgradeConfirmationDialog } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationDialog";
-import {
-  showBillingRequestError,
-  useBillingRedirect,
-} from "@web/billing/useBillingRedirect";
+import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { BILLING_SUBSCRIBED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
