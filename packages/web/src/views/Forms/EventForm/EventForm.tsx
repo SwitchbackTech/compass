@@ -895,28 +895,34 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             </div>
 
             <div className="flex items-start gap-1">
-              <Focusable
-                id={EVENT_FORM_TITLE_ID}
-                Component="input"
-                className={classNames(
-                  INPUT_RESET_CLASSNAME,
-                  // w-full: an input's intrinsic size-attribute width would
-                  // overflow the sidebar-width form and force horizontal scroll
-                  "min-w-0 flex-1 bg-transparent font-semibold text-xl",
-                )}
-                autoFocus
-                disabled={isReadOnly}
-                onChange={onChangeTitle}
-                onKeyDown={handleTitleKeyDown}
-                placeholder="Title"
-                aria-label="Title"
-                name="Event Title"
-                aria-invalid={titleError ? true : undefined}
-                aria-describedby={titleErrorDescribedBy}
-                underlineColor={eventColor}
-                value={displayTitle}
-                withUnderline
-              />
+              {/* Focusable with withUnderline is a fragment (input +
+                divider). Wrap it so those stack in a box; otherwise they
+                become flex siblings of the copy button and the 100%-wide
+                underline squeezes the input into a bar. */}
+              <div className="min-w-0 flex-1">
+                <Focusable
+                  id={EVENT_FORM_TITLE_ID}
+                  Component="input"
+                  className={classNames(
+                    INPUT_RESET_CLASSNAME,
+                    // w-full: an input's intrinsic size-attribute width would
+                    // overflow the sidebar-width form and force horizontal scroll
+                    "w-full bg-transparent font-semibold text-xl",
+                  )}
+                  autoFocus
+                  disabled={isReadOnly}
+                  onChange={onChangeTitle}
+                  onKeyDown={handleTitleKeyDown}
+                  placeholder="Title"
+                  aria-label="Title"
+                  name="Event Title"
+                  aria-invalid={titleError ? true : undefined}
+                  aria-describedby={titleErrorDescribedBy}
+                  underlineColor={eventColor}
+                  value={displayTitle}
+                  withUnderline
+                />
+              </div>
               <CopyButton label="copy event title" text={displayTitle} />
             </div>
 
