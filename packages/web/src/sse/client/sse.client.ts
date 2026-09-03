@@ -29,15 +29,49 @@ function getListeners(
 
 const reopenListeners = new Set<() => void>();
 
+// Native EventSource does not expose WebSocket-style close codes. Classify
+// from the signals the browser does give us so PostHog can split the
+// sse_connection_degraded series instead of a single unlabelled count.
+type SseDegradedErrorType = "network_error" | "timeout" | "server_closed";
+
 let es: EventSource | null = null;
 let forwardingHandler: ((e: MessageEvent) => void) | null = null;
 let openHandler: (() => void) | null = null;
 let errorHandler: (() => void) | null = null;
 let degradedTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectCount = 0;
+let episodeErrorCount = 0;
 let hasReportedDegraded = false;
+let connectionOpenedAtMs: number | null = null;
+let connectionDurationMs = 0;
+let userEventCount = 0;
+let lastErrorType: SseDegradedErrorType = "timeout";
 
 const DEGRADED_AFTER_MS = 15_000;
+
+function classifySseError(source: EventSource | null): SseDegradedErrorType {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "network_error";
+  }
+  if (source?.readyState === EventSource.CLOSED) {
+    return "server_closed";
+  }
+  return "timeout";
+}
+
+function currentPagePath(): string {
+  if (typeof window === "undefined") return "";
+  return window.location.pathname;
+}
+
+function resetConnectionDiagnostics() {
+  reconnectCount = 0;
+  episodeErrorCount = 0;
+  connectionOpenedAtMs = null;
+  connectionDurationMs = 0;
+  userEventCount = 0;
+  lastErrorType = "timeout";
+}
 
 // Whether the live stream has been down long enough that displayed data can
 // no longer be trusted as fresh. Previously this was analytics-only
@@ -65,9 +99,18 @@ function reportSseDegraded() {
   sseDegradedStore.set(true);
   if (hasReportedDegraded) return;
   hasReportedDegraded = true;
-  getPosthogClient()?.capture("sse_connection_degraded", {
-    reconnect_count: reconnectCount,
-  });
+  try {
+    getPosthogClient()?.capture("sse_connection_degraded", {
+      reconnect_count: reconnectCount,
+      error_type: lastErrorType,
+      connection_duration_ms: connectionDurationMs,
+      retry_attempt: Math.max(0, episodeErrorCount - 1),
+      user_event_count: userEventCount,
+      page_path: currentPagePath(),
+    });
+  } catch {
+    // Analytics must never interrupt the stream lifecycle it observes.
+  }
 }
 
 function armDegradedTimer() {
@@ -85,6 +128,7 @@ export const openStream = (): EventSource => {
     withCredentials: true,
   });
   forwardingHandler = (e: MessageEvent) => {
+    userEventCount += 1;
     let raw: unknown;
     try {
       raw = JSON.parse(e.data as string);
@@ -110,6 +154,10 @@ export const openStream = (): EventSource => {
   openHandler = () => {
     clearDegradedTimer();
     hasReportedDegraded = false;
+    episodeErrorCount = 0;
+    connectionOpenedAtMs = Date.now();
+    userEventCount = 0;
+    lastErrorType = "timeout";
     sseDegradedStore.set(false);
     for (const listener of reopenListeners) {
       listener();
@@ -117,6 +165,14 @@ export const openStream = (): EventSource => {
   };
   errorHandler = () => {
     reconnectCount += 1;
+    episodeErrorCount += 1;
+    lastErrorType = classifySseError(es);
+    if (episodeErrorCount === 1) {
+      connectionDurationMs =
+        connectionOpenedAtMs === null
+          ? 0
+          : Math.max(0, Date.now() - connectionOpenedAtMs);
+    }
     armDegradedTimer();
   };
   es.addEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
@@ -142,6 +198,7 @@ export const closeStream = (): void => {
   forwardingHandler = null;
   openHandler = null;
   errorHandler = null;
+  resetConnectionDiagnostics();
 };
 
 export const getStream = (): EventSource | null => es;
