@@ -3,12 +3,16 @@ import {
   queryOptions,
   useQuery,
 } from "@tanstack/react-query";
-import { type BillingStatusResponse } from "@core/types/billing.types";
+import {
+  type BillingStatusResponse,
+  type BillingSubscriptionResponse,
+} from "@core/types/billing.types";
 import { AppConfigApi } from "@web/api/app-config.api";
 import { BillingApi } from "@web/api/billing.api";
 
 export const billingQueryKeys = {
   status: ["billing", "status"] as const,
+  subscription: ["billing", "subscription"] as const,
   config: ["app-config"] as const,
 };
 
@@ -34,6 +38,23 @@ export function useBillingStatusQuery(enabled: boolean) {
     enabled,
     // Embedded Checkout completes in-page; still refetch on focus so a
     // webhook that lands while the tab is backgrounded shows up immediately.
+    refetchOnWindowFocus: "always",
+  });
+}
+
+export function billingSubscriptionQueryOptions() {
+  return queryOptions({
+    queryKey: billingQueryKeys.subscription,
+    queryFn: (): Promise<BillingSubscriptionResponse> =>
+      BillingApi.getSubscription(),
+    staleTime: 30_000,
+  });
+}
+
+export function useBillingSubscriptionQuery(enabled: boolean) {
+  return useQuery({
+    ...billingSubscriptionQueryOptions(),
+    enabled,
     refetchOnWindowFocus: "always",
   });
 }

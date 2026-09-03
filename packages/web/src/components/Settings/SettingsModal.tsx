@@ -241,7 +241,7 @@ export const SettingsModal: FC = () => {
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (
-            <PlanSection />
+            <PlanSection showShortcuts={areHintsVisible} />
           ) : page === "booking" && IS_BOOKING_ENABLED ? (
             <Suspense fallback={null}>
               <BookingSettingsSection showShortcuts={areHintsVisible} />
