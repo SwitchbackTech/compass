@@ -108,7 +108,9 @@ test("keyboard hint sits above the public link and the last control stays above 
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  const hint = settingsDialog.getByText("then a letter to jump to a field");
+  const hint = settingsDialog
+    .locator("p")
+    .filter({ hasText: "then a letter to jump to a field" });
   const publicLink = settingsDialog.getByLabel("Public booking link");
   const lastControl = settingsDialog.getByRole("checkbox", {
     name: "Guest can invite others",

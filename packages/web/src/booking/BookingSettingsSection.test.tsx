@@ -220,7 +220,7 @@ describe("BookingSettingsSection", () => {
     const stickyBar = findStickyAncestor(save);
     expect(stickyBar).not.toBeNull();
     expect(
-      screen.getByText(/then a letter to jump to a field/),
+      screen.getByText(getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS)),
     ).toBeInTheDocument();
     expect(stickyBar).not.toHaveTextContent("then a letter to jump to a field");
 
@@ -281,7 +281,9 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const hint = await screen.findByText(/then a letter to jump to a field/);
+    const hint = await screen.findByText(
+      getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS),
+    );
     const publicLink = screen.getByLabelText("Public booking link");
     const save = screen.getByRole("button", { name: /Save booking settings/ });
     const lastControl = screen.getByRole("checkbox", {
