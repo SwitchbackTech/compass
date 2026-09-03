@@ -25,6 +25,12 @@ expect.extend(jestDomMatchers);
 const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("../utils/state/reset-stores");
 const { BaseApi } = await import("@web/api/base/base.api");
+const { resetBillingWriteLockForTests } = await import(
+  "@web/billing/billing-write-lock"
+);
+const { resetShortcutUpgradePromptForTests } = await import(
+  "@web/billing/prompt-shortcut-upgrade"
+);
 const { clearAppLockReasons } = await import("@web/shortcuts/app-lock");
 const { clearFloatingLayerReasons } = await import(
   "@web/shortcuts/floating-layer"
@@ -39,6 +45,8 @@ function resetDocument() {
   document.body.removeAttribute("data-app-locked");
   clearAppLockReasons();
   clearFloatingLayerReasons();
+  resetBillingWriteLockForTests();
+  resetShortcutUpgradePromptForTests();
   document.documentElement.removeAttribute("style");
 }
 

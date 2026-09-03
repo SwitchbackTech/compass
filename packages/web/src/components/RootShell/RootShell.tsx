@@ -8,6 +8,7 @@ import {
   selectBillingPreviewing,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
+import { useSyncBillingWriteLock } from "@web/billing/billing-write-lock";
 import { CheckoutCelebrationModal } from "@web/billing/CheckoutCelebrationModal";
 import {
   selectIsCelebrating,
@@ -56,6 +57,7 @@ export function RootShell() {
   const access = useAppAccess();
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
+  useSyncBillingWriteLock();
   useCheckoutReturn();
   usePlanChangeToasts();
   useNavigationShortcuts();

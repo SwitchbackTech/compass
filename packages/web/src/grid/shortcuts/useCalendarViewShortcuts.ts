@@ -8,6 +8,7 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
 import {
   useAppShortcut,
   useAppShortcutUp,
+  WRITE_CREATE_SHORTCUT,
 } from "@web/shortcuts/useAppShortcut";
 import {
   setTimeTravelZone,
@@ -52,7 +53,9 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
     enabled: config.onShiftViewForward !== undefined,
   });
   useAppShortcutUp("T", () => config.onGoToToday?.());
-  useAppShortcutUp("Shift+C", () => config.onCreateAllDayEvent?.());
+  useAppShortcutUp("Shift+C", () => config.onCreateAllDayEvent?.(), {
+    ...WRITE_CREATE_SHORTCUT,
+  });
   useAppShortcutUp(
     KEYMAP.createEvent.hotkey,
     () => {
@@ -60,7 +63,7 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
       config.onCreateTimedEvent();
       shortcutHintProgressActions.demonstrate("create-event");
     },
-    { telemetryHintId: "create-event" },
+    { ...WRITE_CREATE_SHORTCUT, telemetryHintId: "create-event" },
   );
   useAppShortcutUp("U", () => config.onFocusCalendar?.());
   // Keydown so a macOS Cmd+Z keyup-replay (meta already released) cannot

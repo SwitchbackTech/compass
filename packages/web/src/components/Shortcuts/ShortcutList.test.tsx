@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ShortcutList } from "./ShortcutList";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -72,5 +73,30 @@ describe("ShortcutList", () => {
     expect(label).not.toHaveClass("truncate");
     expect(row).toHaveClass("justify-between");
     expect(row).not.toHaveClass("border");
+  });
+
+  it("shows a Pro badge and tooltip on a locked write shortcut", async () => {
+    const user = userEvent.setup();
+    render(
+      <ShortcutList
+        shortcuts={[
+          {
+            id: "create-timed",
+            keys: ["c"],
+            label: "Create timed event",
+            section: "create",
+            requiresWrite: true,
+            locked: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Pro")).toBeInTheDocument();
+    expect(screen.getByText("Premium shortcut.")).toBeInTheDocument();
+    await user.hover(screen.getByText("Create timed event"));
+    expect(
+      await screen.findByText("Included with Premium"),
+    ).toBeInTheDocument();
   });
 });
