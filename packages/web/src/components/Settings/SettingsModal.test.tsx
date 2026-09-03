@@ -922,6 +922,28 @@ describe("SettingsModal", () => {
     ).toBeInTheDocument();
   });
 
+  it("asks before discarding uncommitted weekly hours on Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.type(screen.getByLabelText("Monday"), "9");
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Monday")).toHaveValue("9");
+  });
+
   it("asks before discarding unsaved booking edits on Escape", async () => {
     const user = userEvent.setup({ delay: null });
     const calendar = createMockCalendar({ name: "Work" });

@@ -20,6 +20,8 @@ interface BookingWeeklyHoursEditorProps {
   disabled?: boolean;
   /** Raised when a row cannot be read, so the form can block saving. */
   onValidityChange?: (isValid: boolean) => void;
+  /** True while a row's typed text has not been committed into `value`. */
+  onDraftDirtyChange?: (isDirty: boolean) => void;
   /** Jump keys to reveal beside the legend while hold-Mod hints are up. */
   shortcutKeys?: readonly string[];
 }
@@ -47,6 +49,7 @@ export function BookingWeeklyHoursEditor({
   onChange,
   disabled = false,
   onValidityChange,
+  onDraftDirtyChange,
   shortcutKeys,
 }: BookingWeeklyHoursEditorProps) {
   // Raw text per row so a half-typed value is never yanked out from under the
@@ -60,6 +63,7 @@ export function BookingWeeklyHoursEditor({
   // outside - the server response seeding the form - so the rows resync,
   // without yanking a half-typed value out from under the user.
   const emittedRef = useRef<WeeklyAvailability>(value);
+  const draftDirtyRef = useRef(false);
 
   useEffect(() => {
     if (value === emittedRef.current) return;
@@ -71,6 +75,16 @@ export function BookingWeeklyHoursEditor({
   useEffect(() => {
     onValidityChange?.(Object.keys(errors).length === 0);
   }, [errors, onValidityChange]);
+
+  useEffect(() => {
+    if (!onDraftDirtyChange) return;
+    const dirty = ISO_WEEKDAYS.some(
+      (weekday) => (texts[weekday] ?? "") !== textForWeekday(value, weekday),
+    );
+    if (draftDirtyRef.current === dirty) return;
+    draftDirtyRef.current = dirty;
+    onDraftDirtyChange(dirty);
+  }, [onDraftDirtyChange, texts, value]);
 
   const commit = (nextTexts: Record<Weekday, string>) => {
     const nextErrors: Partial<Record<Weekday, string>> = {};

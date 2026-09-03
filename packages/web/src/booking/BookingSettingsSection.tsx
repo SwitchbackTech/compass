@@ -232,6 +232,7 @@ export function BookingSettingsSection({
     String(form.maxHorizonDays),
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
   const sectionRef = useRef<HTMLFieldSetElement>(null);
   const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
@@ -284,13 +285,14 @@ export function BookingSettingsSection({
   }, [availabilityCalendars, effectiveTimeZone, serverPage, writableCalendars]);
 
   const isDirty =
-    baselineFormRef.current !== null &&
-    isBookingSettingsFormDirty({
-      baseline: baselineFormRef.current,
-      form,
-      horizonText,
-      minNoticeText,
-    });
+    (baselineFormRef.current !== null &&
+      isBookingSettingsFormDirty({
+        baseline: baselineFormRef.current,
+        form,
+        horizonText,
+        minNoticeText,
+      })) ||
+    hoursDraftDirty;
 
   if (dismissGuardRef) {
     dismissGuardRef.current = () => {
@@ -575,6 +577,7 @@ export function BookingSettingsSection({
             onChange={(weeklyAvailability) =>
               updateForm({ weeklyAvailability })
             }
+            onDraftDirtyChange={setHoursDraftDirty}
             onValidityChange={setAreHoursValid}
             shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
             value={form.weeklyAvailability}
