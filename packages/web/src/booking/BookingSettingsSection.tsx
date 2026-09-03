@@ -17,6 +17,7 @@ import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
+import { BookingNumberField } from "@web/booking/BookingNumberField";
 import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
 import {
@@ -541,87 +542,41 @@ export function BookingSettingsSection({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <BookingFieldLabel
-            field="notice"
-            htmlFor="booking-min-notice"
-            showShortcuts={showShortcuts}
-          >
-            Minimum notice (hours)
-          </BookingFieldLabel>
-          <input
-            {...bookingFieldAttrs("notice")}
-            aria-describedby={
-              minNoticeInvalid ? "booking-min-notice-error" : undefined
+        <BookingNumberField
+          field="notice"
+          id="booking-min-notice"
+          invalid={minNoticeInvalid}
+          invalidMessage="Enter 0 or more hours."
+          label="Minimum notice (hours)"
+          min={0}
+          onChange={(raw) => {
+            setMinNoticeText(raw);
+            const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
+            if (parsed !== null) {
+              updateForm({ minNoticeHours: parsed });
             }
-            aria-invalid={minNoticeInvalid || undefined}
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
-            id="booking-min-notice"
-            min={0}
-            onChange={(event) => {
-              setMinNoticeText(event.target.value);
-              const parsed = parseBookingCount(
-                event.target.value,
-                MIN_NOTICE_BOUNDS,
-              );
-              if (parsed !== null) {
-                updateForm({ minNoticeHours: parsed });
-              }
-            }}
-            type="number"
-            value={minNoticeText}
-          />
-          {minNoticeInvalid ? (
-            <p
-              className="text-error text-xs"
-              id="booking-min-notice-error"
-              role="alert"
-            >
-              Enter 0 or more hours.
-            </p>
-          ) : null}
-        </div>
-        <div>
-          <BookingFieldLabel
-            field="horizon"
-            htmlFor="booking-max-horizon"
-            showShortcuts={showShortcuts}
-          >
-            Maximum horizon (days)
-          </BookingFieldLabel>
-          <input
-            {...bookingFieldAttrs("horizon")}
-            aria-describedby={
-              horizonInvalid ? "booking-max-horizon-error" : undefined
+          }}
+          showShortcuts={showShortcuts}
+          value={minNoticeText}
+        />
+        <BookingNumberField
+          field="horizon"
+          id="booking-max-horizon"
+          invalid={horizonInvalid}
+          invalidMessage="Enter 1 to 60 days."
+          label="Maximum horizon (days)"
+          max={60}
+          min={1}
+          onChange={(raw) => {
+            setHorizonText(raw);
+            const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
+            if (parsed !== null) {
+              updateForm({ maxHorizonDays: parsed });
             }
-            aria-invalid={horizonInvalid || undefined}
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
-            id="booking-max-horizon"
-            max={60}
-            min={1}
-            onChange={(event) => {
-              setHorizonText(event.target.value);
-              const parsed = parseBookingCount(
-                event.target.value,
-                HORIZON_BOUNDS,
-              );
-              if (parsed !== null) {
-                updateForm({ maxHorizonDays: parsed });
-              }
-            }}
-            type="number"
-            value={horizonText}
-          />
-          {horizonInvalid ? (
-            <p
-              className="text-error text-xs"
-              id="booking-max-horizon-error"
-              role="alert"
-            >
-              Enter 1 to 60 days.
-            </p>
-          ) : null}
-        </div>
+          }}
+          showShortcuts={showShortcuts}
+          value={horizonText}
+        />
       </div>
 
       <fieldset
