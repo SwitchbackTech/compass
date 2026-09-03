@@ -6,6 +6,7 @@ import {
 import { isBillingWriteLocked } from "@web/billing/billing-write-lock";
 import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
 import { hasAppLockReason, isAppLocked } from "@web/shortcuts/app-lock";
+import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import { recordShortcutUnavailableAttempt } from "@web/shortcuts/tips/shortcut-telemetry";
 import {
   getShortcutHint,
@@ -110,6 +111,7 @@ export function useAppShortcut(
       }
 
       handler(event);
+      pointerConfusionActions.recordKeyboardSuccess();
     },
     {
       enabled,

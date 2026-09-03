@@ -1,5 +1,7 @@
+import { X } from "@phosphor-icons/react";
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
+import IconButton from "@web/components/IconButton/IconButton";
 import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
@@ -12,12 +14,14 @@ import {
 import {
   type BlockedPointerAttempt,
   POINTER_ACTIONS,
+  pointerPassAttributes,
 } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
-  selectLatestPointerAttempt,
-  selectPointerBlockPulse,
-  usePointerBlockStore,
-} from "@web/shortcuts/keyboard-only/pointer-block.store";
+  pointerConfusionActions,
+  selectPointerConfusionAttempt,
+  selectPointerConfusionHintPulse,
+  usePointerConfusionStore,
+} from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   CONNECTION_BANNER_SHORTCUT_KEY,
@@ -29,50 +33,19 @@ import {
 } from "@web/shortcuts/shift-hint/event-jump.store";
 
 const HINT_VISIBLE_MS = 2500;
-const HINT_BRIEF_MS = 400;
-const HINT_FULL_LIMIT = 3;
-const HINT_COUNT_KEY = "compass.pointer-hint-count";
-
-const readHintCount = () => {
-  try {
-    return Number(sessionStorage.getItem(HINT_COUNT_KEY) ?? "0");
-  } catch {
-    return 0;
-  }
-};
-
-const writeHintCount = (count: number) => {
-  try {
-    sessionStorage.setItem(HINT_COUNT_KEY, String(count));
-  } catch {
-    // sessionStorage can throw in privacy modes; the hint still shows.
-  }
-};
 
 const Key = ({ children }: { children: string }) => (
   <kbd className="c-keycap">{children}</kbd>
 );
 
-/**
- * A named action (or a bound shortcut) earns the full display time; only the
- * anonymous "keyboard only" pulse shortens. Derived from the attempt rather
- * than enumerated, so a new pointer action does not have to be registered
- * here as well as in `pointerHintMessage`.
- */
-const isContextualAttempt = (attempt: BlockedPointerAttempt | null) =>
-  attempt != null &&
-  (attempt.actionId !== "unknown" || Boolean(attempt.shortcutKey));
-
 const pointerHintMessage = ({
   attempt,
   eventJumpKey,
-  isBrief,
   showcaseActive,
   welcomeOpen,
 }: {
   attempt: BlockedPointerAttempt | null;
   eventJumpKey: string | null;
-  isBrief: boolean;
   showcaseActive: boolean;
   welcomeOpen: boolean;
 }): ReactNode => {
@@ -174,8 +147,6 @@ const pointerHintMessage = ({
     );
   }
 
-  if (isBrief) return "Keyboard only.";
-
   if (welcomeOpen) return "Use the keys on this screen.";
 
   return (
@@ -186,35 +157,21 @@ const pointerHintMessage = ({
 };
 
 /**
- * Teaches instead of silently ignoring: when a mouse click is blocked, a
- * transient pill explains the exact keyboard path for recognized targets and
- * falls back to the legend while coverage is expanded. Mounted in RootShell
- * so it shows with the sidebar closed too.
- * Top-center to stay clear of the Up Next banner's bottom-center spot.
+ * Teaches the keyboard model when confusion heuristics fire, not on every
+ * blocked click. Mounted in RootShell so it shows with the sidebar closed too.
  */
 export const PointerHint: FC = () => {
-  const pulse = usePointerBlockStore(selectPointerBlockPulse);
-  const attempt = usePointerBlockStore(selectLatestPointerAttempt);
+  const pulse = usePointerConfusionStore(selectPointerConfusionHintPulse);
+  const attempt = usePointerConfusionStore(selectPointerConfusionAttempt);
   const eventJumpKey = useEventJumpStore(selectEventJumpPointerHintKey);
   const showcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   const welcomeOpen = useWelcomeGuideStore(selectWelcomeSurfaceOpen);
   const [isVisible, setIsVisible] = useState(false);
-  const [isBrief, setIsBrief] = useState(false);
 
   useEffect(() => {
     if (pulse === 0) return;
-    const next = readHintCount() + 1;
-    writeHintCount(next);
-    const brief = next > HINT_FULL_LIMIT;
-    setIsBrief(brief);
     setIsVisible(true);
-    const contextual = isContextualAttempt(
-      usePointerBlockStore.getState().latestAttempt,
-    );
-    const timer = window.setTimeout(
-      () => setIsVisible(false),
-      brief && !contextual ? HINT_BRIEF_MS : HINT_VISIBLE_MS,
-    );
+    const timer = window.setTimeout(() => setIsVisible(false), HINT_VISIBLE_MS);
     return () => window.clearTimeout(timer);
   }, [pulse]);
 
@@ -223,18 +180,32 @@ export const PointerHint: FC = () => {
   return (
     <div
       aria-live="polite"
-      className="fixed top-4 left-1/2 -translate-x-1/2 starting:translate-y-1 rounded-lg border border-border bg-surface-panel/90 px-3 py-1.5 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-200 ease-out motion-reduce:transition-none"
+      className="fixed top-4 left-1/2 flex max-w-[min(100vw-2rem,36rem)] -translate-x-1/2 items-start gap-2 starting:translate-y-1 rounded-lg border border-border bg-surface-panel/90 px-3 py-1.5 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-200 ease-out motion-reduce:transition-none"
       data-pointer-hint=""
       role="status"
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
-      {pointerHintMessage({
-        attempt,
-        eventJumpKey,
-        isBrief,
-        showcaseActive,
-        welcomeOpen,
-      })}
+      <span className="min-w-0 flex-1">
+        {pointerHintMessage({
+          attempt,
+          eventJumpKey,
+          showcaseActive,
+          welcomeOpen,
+        })}
+      </span>
+      <IconButton
+        {...pointerPassAttributes}
+        aria-label="Dismiss keyboard tips permanently"
+        className="shrink-0 opacity-70 hover:opacity-100"
+        onClick={() => {
+          pointerConfusionActions.dismissPermanently();
+          setIsVisible(false);
+        }}
+        size="small"
+        type="button"
+      >
+        <X size={16} />
+      </IconButton>
     </div>
   );
 };

@@ -49,7 +49,11 @@ type StorageKey =
   // Device-local opt-in for upcoming-event browser notifications. Only ever
   // written "true" right after the browser grants permission, so a stale flag
   // can never outlive a revoked grant (the permission is re-read on load).
-  | "compass.notifications.enabled";
+  | "compass.notifications.enabled"
+  // Keyboard-only hint guardrails (lifetime cap, permanent dismiss, spacing).
+  | "compass.pointer-hint.lifetime-count"
+  | "compass.pointer-hint.dismissed-permanently"
+  | "compass.pointer-hint.last-shown-at";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -75,7 +79,10 @@ export const STORAGE_KEYS: Record<
   | "DEFAULT_TIMEZONE"
   | "TIME_TRAVEL_TIMEZONE"
   | "TIMEZONE_MISMATCH_SNOOZED_BROWSER"
-  | "NOTIFICATIONS_ENABLED",
+  | "NOTIFICATIONS_ENABLED"
+  | "POINTER_HINT_LIFETIME_COUNT"
+  | "POINTER_HINT_DISMISSED_PERMANENTLY"
+  | "POINTER_HINT_LAST_SHOWN_AT",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -106,4 +113,8 @@ export const STORAGE_KEYS: Record<
   TIMEZONE_MISMATCH_SNOOZED_BROWSER:
     "compass.timezone.mismatch-snoozed-browser",
   NOTIFICATIONS_ENABLED: "compass.notifications.enabled",
+  POINTER_HINT_LIFETIME_COUNT: "compass.pointer-hint.lifetime-count",
+  POINTER_HINT_DISMISSED_PERMANENTLY:
+    "compass.pointer-hint.dismissed-permanently",
+  POINTER_HINT_LAST_SHOWN_AT: "compass.pointer-hint.last-shown-at",
 } as const;

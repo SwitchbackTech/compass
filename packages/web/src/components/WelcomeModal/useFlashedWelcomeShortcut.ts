@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  selectLatestPointerAttempt,
-  selectPointerBlockPulse,
-  usePointerBlockStore,
-} from "@web/shortcuts/keyboard-only/pointer-block.store";
+  selectPointerConfusionAttempt,
+  selectPointerConfusionDeadClickPulse,
+  usePointerConfusionStore,
+} from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 
 export const KEYCAP_FLASH_MS = 700;
 
-/** The shortcut key currently flashing after a blocked click, or null. */
+/** The shortcut key currently flashing after a dead click, or null. */
 export function useFlashedWelcomeShortcut(): string | null {
-  const pulse = usePointerBlockStore(selectPointerBlockPulse);
-  const attempt = usePointerBlockStore(selectLatestPointerAttempt);
+  const pulse = usePointerConfusionStore(selectPointerConfusionDeadClickPulse);
+  const attempt = usePointerConfusionStore(selectPointerConfusionAttempt);
   const [flashedKey, setFlashedKey] = useState<string | null>(null);
-  // Ignore the pulse already in the store on mount so a remount does not
-  // replay a flash from an earlier blocked click.
   const lastPulseRef = useRef(pulse);
 
   useEffect(() => {

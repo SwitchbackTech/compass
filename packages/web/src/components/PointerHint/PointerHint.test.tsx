@@ -1,4 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PointerHint } from "@web/components/PointerHint/PointerHint";
 import {
   initialShortcutShowcaseState,
@@ -8,10 +9,10 @@ import {
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import {
-  initialPointerBlockState,
-  pointerBlockActions,
-  usePointerBlockStore,
-} from "@web/shortcuts/keyboard-only/pointer-block.store";
+  pointerConfusionActions,
+  usePointerConfusionStore,
+} from "@web/shortcuts/keyboard-only/pointer-confusion.store";
+import { resetPointerHintPersistenceForTests } from "@web/shortcuts/keyboard-only/pointer-hint.storage";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   eventJumpActions,
@@ -20,33 +21,31 @@ import {
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-const HINT_COUNT_KEY = "compass.pointer-hint-count";
-
 describe("PointerHint", () => {
   beforeEach(() => {
-    usePointerBlockStore.setState(initialPointerBlockState, true);
+    resetPointerHintPersistenceForTests();
+    pointerConfusionActions.resetForTests();
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
     welcomeGuideActions.setFirstVisitOpen(false);
     welcomeGuideActions.close();
-    sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
   afterEach(() => {
-    usePointerBlockStore.setState(initialPointerBlockState, true);
+    resetPointerHintPersistenceForTests();
+    pointerConfusionActions.resetForTests();
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true);
     useEventJumpStore.setState(initialEventJumpState, true);
     welcomeGuideActions.setFirstVisitOpen(false);
     welcomeGuideActions.close();
-    sessionStorage.removeItem(HINT_COUNT_KEY);
   });
 
-  it("stays hidden until a click is blocked, then teaches", () => {
+  it("stays hidden until the confusion heuristic fires", () => {
     render(<PointerHint />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick();
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -59,7 +58,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick();
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -73,7 +72,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick();
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -86,7 +85,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.startTrial,
         shortcutKey: "S",
       });
@@ -101,7 +100,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.reconnectGoogle,
         shortcutKey: "G",
       });
@@ -112,11 +111,11 @@ describe("PointerHint", () => {
     );
   });
 
-  it("teaches Escape for the up-next banner dismiss control", () => {
+  it("teaches Esc for the up-next dismiss target", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.upNextDismiss,
         shortcutKey: "Esc",
       });
@@ -127,81 +126,11 @@ describe("PointerHint", () => {
     );
   });
 
-  it("teaches a bound shortcut key outside the welcome modal", () => {
+  it("teaches the sidebar close shortcut", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: "unknown",
-        shortcutKey: "S",
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent("Press S");
-  });
-
-  it("teaches a chord shortcut as separate keycaps", () => {
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: "unknown",
-        shortcutKey: ["Mod", "K"],
-      });
-    });
-
-    const hint = screen.getByRole("status");
-    expect(hint).toHaveTextContent("Press");
-    expect(hint).toHaveTextContent("K");
-  });
-
-  it("teaches the matching welcome shortcut for the attempted control", () => {
-    welcomeGuideActions.setFirstVisitOpen(true);
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: "unknown",
-        shortcutKey: "1",
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent("Press 1");
-  });
-
-  it("keeps the welcome shortcut sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    welcomeGuideActions.setFirstVisitOpen(true);
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: "unknown",
-        shortcutKey: "U",
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent("Press U");
-  });
-
-  it("points at the on-screen keys while the showcase is active", () => {
-    shortcutShowcaseActions.replay();
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick();
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Keyboard only. Follow the keys on screen.",
-    );
-  });
-
-  it("teaches the sidebar shortcut for the attempted action", () => {
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.sidebarClose,
       });
     });
@@ -211,11 +140,25 @@ describe("PointerHint", () => {
     );
   });
 
-  it("teaches the today shortcut for the month picker today control", () => {
+  it("teaches the sidebar open shortcut", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
+        actionId: POINTER_ACTIONS.sidebarOpen,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press ] to open the sidebar.",
+    );
+  });
+
+  it("teaches the today shortcut", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.goToToday,
       });
     });
@@ -225,11 +168,11 @@ describe("PointerHint", () => {
     );
   });
 
-  it("teaches view shortcuts for the date heading", () => {
+  it("teaches view switching", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.switchView,
       });
     });
@@ -239,12 +182,40 @@ describe("PointerHint", () => {
     );
   });
 
-  it("teaches the assigned sequence for the attempted event", () => {
+  it("teaches a bound shortcut when present", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerConfusionActions.triggerHintForTests({
+        actionId: "unknown",
+        shortcutKey: "Mod+K",
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Press");
+  });
+
+  it("uses showcase copy while practice mode is active", () => {
+    act(() => {
+      shortcutShowcaseActions.startFromWelcome();
+    });
+    render(<PointerHint />);
+
+    act(() => {
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Keyboard only. Follow the keys on screen.",
+    );
+  });
+
+  it("teaches the assigned event-jump key when present", () => {
     render(<PointerHint />);
 
     act(() => {
       eventJumpActions.setPointerHint({ eventId: "event-1", key: "W2" });
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.eventOpen,
         eventId: "event-1",
       });
@@ -259,7 +230,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: POINTER_ACTIONS.eventOpen,
         eventId: "event-1",
       });
@@ -270,84 +241,11 @@ describe("PointerHint", () => {
     );
   });
 
-  it("shortens to a brief pulse after a few reminders in the session", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick();
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent("Keyboard only.");
-    expect(screen.getByRole("status")).not.toHaveTextContent("Press");
-  });
-
-  it("keeps the contextual sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: POINTER_ACTIONS.sidebarClose,
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Press ] to close the sidebar.",
-    );
-  });
-
-  it("keeps the today shortcut sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: POINTER_ACTIONS.goToToday,
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Press T to go to today.",
-    );
-  });
-
-  it("keeps the view-switch sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: POINTER_ACTIONS.switchView,
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Press W, D, or L to switch views.",
-    );
-  });
-
-  it("keeps the up-next dismiss sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: POINTER_ACTIONS.upNextDismiss,
-        shortcutKey: "Esc",
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Press Esc to dismiss.",
-    );
-  });
-
   it("names the quarter-hour an empty timed-grid click aimed at", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: "grid.timed",
         gridDate: "2026-08-29",
         gridTimeKey: "1130",
@@ -364,7 +262,7 @@ describe("PointerHint", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: "grid.timed",
         gridDate: "2026-08-29",
         gridTimeKey: "1830",
@@ -377,29 +275,11 @@ describe("PointerHint", () => {
     );
   });
 
-  it("keeps the timed-grid shortcut sentence after the session reminder threshold", () => {
-    sessionStorage.setItem(HINT_COUNT_KEY, "3");
-    render(<PointerHint />);
-
-    act(() => {
-      pointerBlockActions.pulseBlockedClick({
-        actionId: "grid.timed",
-        gridDate: "2026-08-29",
-        gridTimeKey: "1200",
-        gridTimeLabel: "12:00 PM",
-      });
-    });
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Type 1200 to create an event at 12:00 PM.",
-    );
-  });
-
   it("teaches Shift+C for a click on the all-day row", () => {
     render(<PointerHint />);
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick({
+      pointerConfusionActions.triggerHintForTests({
         actionId: "grid.all-day",
         gridDate: "2026-08-29",
       });
@@ -408,5 +288,23 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Press Shift+C to create an all-day event here.",
     );
+  });
+
+  it("dismisses permanently from the hint control", async () => {
+    const user = userEvent.setup();
+    render(<PointerHint />);
+
+    act(() => {
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Dismiss keyboard tips permanently",
+      }),
+    );
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(usePointerConfusionStore.getState().score).toBe(0);
   });
 });

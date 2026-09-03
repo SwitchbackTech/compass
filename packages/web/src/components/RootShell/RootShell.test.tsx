@@ -29,7 +29,7 @@ import {
   selectSettingsPage,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { pointerBlockActions } from "@web/shortcuts/keyboard-only/pointer-block.store";
+import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import {
   afterAll,
   afterEach,
@@ -323,7 +323,7 @@ describe("RootShell calendar onboarding on /life", () => {
     await renderShell("/life", { anonymous: true });
 
     act(() => {
-      pointerBlockActions.pulseBlockedClick();
+      pointerConfusionActions.triggerHintForTests({ actionId: "unknown" });
     });
 
     expect(

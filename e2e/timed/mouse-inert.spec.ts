@@ -3,34 +3,59 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
-  getMainGridPoint,
   openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-// Compass is the keyboard calendar: the mouse is permanently inert. These
-// tests are the behavioral contract for the always-on pointer suppression.
+const getFormTitleInput = (page: import("@playwright/test").Page) =>
+  page.getByRole("form").getByRole("textbox", { name: "Title" });
 
-test("empty timed-grid clicks teach the matching HHMM shortcut", async ({
-  page,
-}) => {
+test("event form copy buttons copy field text", async ({ page, context }) => {
   await prepareCalendarPage(page);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  const { x, y } = await getMainGridPoint(page, { xRatio: 0.6, yRatio: 0.6 });
-  await page.mouse.click(x, y);
+  const title = createEventTitle("Copy Field Target");
+  await openTimedEventFormWithKeyboard(page);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
 
-  await expect(page.getByLabel("Title")).toHaveCount(0);
-  await expect(page.locator("[data-pointer-hint]")).toContainText(
-    /Type \d{4} to create an event at/,
-  );
+  const eventButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: title });
+  await eventButton.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(getFormTitleInput(page)).toBeVisible();
+
+  await page.getByRole("button", { name: "copy event title" }).click();
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+  await expect
+    .poll(async () => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(title);
 });
 
-test("mouse clicks are inert and show the keyboard-only hint", async ({
+test("text can be selected in the event title field", async ({ page }) => {
+  await prepareCalendarPage(page);
+  await openTimedEventFormWithKeyboard(page);
+
+  const titleField = getFormTitleInput(page);
+  await titleField.fill("Selectable title");
+  await titleField.selectText();
+
+  const selected = await titleField.evaluate(
+    (el) =>
+      (el as HTMLInputElement).selectionStart !==
+      (el as HTMLInputElement).selectionEnd,
+  );
+  expect(selected).toBe(true);
+});
+
+test("keyboard-only hint is not shown on the first mouse click", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
 
-  const title = createEventTitle("Mouse Inert Target");
+  const title = createEventTitle("No Immediate Hint");
   await openTimedEventFormWithKeyboard(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
@@ -40,28 +65,12 @@ test("mouse clicks are inert and show the keyboard-only hint", async ({
     .getByRole("button", { name: title });
 
   await eventButton.click({ force: true });
-  await expect(page.getByLabel("Title")).toHaveCount(0);
-  await expect(eventButton).toBeFocused();
-  await expect(page.locator("[data-pointer-hint]")).toBeVisible();
-
-  // Clicking empty grid does not open a draft either.
-  const { x, y } = await getMainGridPoint(page, { xRatio: 0.6, yRatio: 0.6 });
-  await page.mouse.click(x, y);
-  await expect(page.getByLabel("Title")).toHaveCount(0);
-
-  // A blocked click still selects the event so Enter opens it without
-  // an extra keyboard focus step.
-  await eventButton.click({ force: true });
-  await expect(page.getByLabel("Title")).toHaveCount(0);
-  await page.keyboard.press("Enter");
-  await expect(page.getByLabel("Title")).toBeVisible();
+  await expect(page.locator("[data-pointer-hint]")).toHaveCount(0);
 });
 
 test("keyboard activation of native buttons still works", async ({ page }) => {
   await prepareCalendarPage(page);
 
-  // Enter on a focused native button fires a trusted click with detail 0;
-  // the blocker must pass it or every button in the app dies.
   const timezoneButton = page.getByRole("button", {
     name: /Calendar timezone/,
   });
@@ -71,25 +80,4 @@ test("keyboard activation of native buttons still works", async ({ page }) => {
 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("combobox")).toHaveCount(0);
-});
-
-test("right-click is blocked; m opens the menu instead", async ({ page }) => {
-  await prepareCalendarPage(page);
-  const title = createEventTitle("No Right Click");
-  await openTimedEventFormWithKeyboard(page);
-  await fillTitleAndSaveEventForm(page, title);
-  await expectTimedEventVisible(page, title);
-
-  const eventButton = page
-    .locator("#mainGrid")
-    .getByRole("button", { name: title });
-
-  await eventButton.click({ button: "right", force: true });
-  await expect(page.getByRole("menuitem")).toHaveCount(0);
-
-  await eventButton.focus();
-  await page.keyboard.press("m");
-  await expect(page.getByRole("menuitem").first()).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menuitem")).toHaveCount(0);
 });
