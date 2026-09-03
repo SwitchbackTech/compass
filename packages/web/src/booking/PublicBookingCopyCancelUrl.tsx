@@ -22,7 +22,7 @@ export function PublicBookingCopyCancelUrl({
         href={cancelUrl}
         className="c-focus-ring text-accent text-sm underline"
       >
-        cancel this booking
+        Cancel this booking
       </a>
       <p role="status" className="sr-only">
         {copied ? "Copied" : ""}

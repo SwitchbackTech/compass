@@ -1,4 +1,6 @@
 import {
+  publicCancelUrlForReservation,
+  tokenFromGuestActionUrl,
   validateBookingCancelSearch,
   validatePublicBookingSearch,
 } from "@web/booking/public-booking-search";
@@ -62,5 +64,40 @@ describe("validateBookingCancelSearch", () => {
       token: undefined,
     });
     expect(validateBookingCancelSearch({})).toEqual({ token: undefined });
+  });
+});
+
+describe("tokenFromGuestActionUrl", () => {
+  it("reads token from an absolute cancel URL", () => {
+    expect(
+      tokenFromGuestActionUrl(
+        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      ),
+    ).toBe("abc");
+  });
+
+  it("reads token from a relative URL", () => {
+    expect(tokenFromGuestActionUrl("/book/cancel/99?token=secret")).toBe(
+      "secret",
+    );
+  });
+
+  it("returns empty when token is missing or the URL is unusable", () => {
+    expect(tokenFromGuestActionUrl("/book/cancel/99")).toBe("");
+    expect(tokenFromGuestActionUrl("://bad")).toBe("");
+  });
+});
+
+describe("publicCancelUrlForReservation", () => {
+  it("builds an origin-absolute cancel URL", () => {
+    expect(
+      publicCancelUrlForReservation(
+        "000000000000000000000099",
+        "abc",
+        "https://staging.compasscalendar.com",
+      ),
+    ).toBe(
+      "https://staging.compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+    );
   });
 });

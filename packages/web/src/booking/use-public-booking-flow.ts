@@ -22,7 +22,10 @@ import {
   usePublicBookingPageQuery,
   usePublicBookingSlotsQuery,
 } from "@web/booking/public-booking.query";
-import { type PublicBookingSearch } from "@web/booking/public-booking-search";
+import {
+  type PublicBookingSearch,
+  tokenFromGuestActionUrl,
+} from "@web/booking/public-booking-search";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -277,10 +280,14 @@ export function usePublicBookingFlow() {
           guestTimeZone: values.guestTimeZone,
         }),
       );
+      const token = tokenFromGuestActionUrl(result.cancelUrl);
       await navigate({
         to: ROOT_ROUTES.BOOK_CONFIRMED,
         params: { reservationId: result.reservationId },
-        // Post-submit only: the public GET cannot reconstruct the cancel token.
+        search: token ? { token } : undefined,
+        // History state still carries the absolute cancel URL from confirm.
+        // The permalink also writes `?token=` so a reload or bookmark keeps
+        // cancel and edit without publishing the token on the public GET.
         state: { cancelUrl: result.cancelUrl } as never,
       });
     } catch (error) {

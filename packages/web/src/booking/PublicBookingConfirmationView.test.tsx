@@ -41,7 +41,7 @@ describe("PublicBookingConfirmationView", () => {
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(screen.queryByText(cancelUrl)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute("href", cancelUrl);
     expect(
       screen.getByRole("button", { name: "Copy cancel link" }),
@@ -92,10 +92,14 @@ describe("PublicBookingConfirmationView", () => {
       screen.queryByRole("link", { name: "cancel this booking" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        "A Google Meet invite is on its way to your email. To cancel, use the link in that invite.",
-      ),
+      screen.queryByRole("link", { name: "Cancel this booking" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("A Google Meet invite is on its way to your email."),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/To cancel, use the link in that invite/),
+    ).not.toBeInTheDocument();
   });
 
   it("copies the cancel URL from the secondary button", async () => {

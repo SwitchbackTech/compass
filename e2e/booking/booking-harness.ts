@@ -364,7 +364,10 @@ export async function preparePublicBookingPage(
 
 export async function preparePublicBookingConfirmedPage(
   page: Page,
-  options: PublicBookingStubOptions & { reservationId?: string } = {},
+  options: PublicBookingStubOptions & {
+    reservationId?: string;
+    token?: string;
+  } = {},
 ): Promise<void> {
   const reservationId = options.reservationId ?? "000000000000000000000099";
   const slot =
@@ -402,7 +405,10 @@ export async function preparePublicBookingConfirmedPage(
     return route.fulfill(jsonResponse({}));
   });
 
-  await page.goto(`/book/confirmed/${reservationId}`, {
+  const tokenQuery = options.token
+    ? `?token=${encodeURIComponent(options.token)}`
+    : "";
+  await page.goto(`/book/confirmed/${reservationId}${tokenQuery}`, {
     waitUntil: "domcontentloaded",
   });
 }

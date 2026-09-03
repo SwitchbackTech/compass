@@ -70,11 +70,9 @@ export function PublicBookingConfirmationView({
           ) : null}
         </dl>
         <p className="text-sm text-text">
-          {`${
-            createsGoogleMeet
-              ? "A Google Meet invite is on its way to your email."
-              : "A calendar invite is on its way to your email."
-          }${cancelUrl ? "" : " To cancel, use the link in that invite."}`}
+          {createsGoogleMeet
+            ? "A Google Meet invite is on its way to your email."
+            : "A calendar invite is on its way to your email."}
         </p>
         {onEditDetails ? (
           <button
