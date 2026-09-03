@@ -73,6 +73,16 @@ a draft on a focused column.
 
 Do not run both maps at once. Do not invent a second hold key.
 
+Settings is an OverlayPanel with its own letter map while it holds app-lock
+(`packages/web/src/settings/useSettingsShortcuts.ts`). Those letters are not
+page-jump digits; they activate controls already on the Settings overlay.
+Billing: `U` Update card,
+`C` Cancel subscription, `R` Resume subscription. Accounts: `A` Add account,
+`E` Export, `D` Delete account, `O` Log out. `B` (trial badge / Start
+Premium) is registered by `UpgradeConfirmationProvider` and keeps working
+while Settings is open. The `?` overlay remains the catalog; hold-Mod still
+reveals the chips.
+
 ## 7. Leaders wait, then teach
 
 `e` then a letter within ~600ms is silent muscle memory. Hold the leader
