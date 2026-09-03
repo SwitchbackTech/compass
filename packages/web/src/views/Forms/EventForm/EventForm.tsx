@@ -37,7 +37,9 @@ import {
   isDeleteTextEditingTarget,
   shouldDeferEnterToTarget,
 } from "@web/common/utils/form/form.util";
+import { htmlToPlainText } from "@web/common/utils/html/html-to-plain-text.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { CopyButton } from "@web/components/CopyButton/CopyButton";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
 import {
   Focusable,
@@ -73,6 +75,10 @@ import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardU
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
 import { FormActionsRow } from "@web/views/Forms/EventForm/FormActionsRow";
+import {
+  formatAttendeeListPlainText,
+  formatEventPlainText,
+} from "@web/views/Forms/EventForm/format-event-plain-text";
 import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -365,6 +371,40 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               statusForEmail(attendeeRsvpByEmail, chip.email),
             ),
           );
+    const descriptionPlainText = useMemo(
+      () => htmlToPlainText(description),
+      [description],
+    );
+    const attendeeListPlainText = useMemo(
+      () => formatAttendeeListPlainText(attendeeChips),
+      [attendeeChips],
+    );
+    const eventPlainText = useMemo(() => {
+      const calendarName =
+        draft.kind === "edit"
+          ? originalCalendarName
+          : draft.values.calendarId
+            ? (calendarLookup.get(draft.values.calendarId)?.name ?? null)
+            : (defaultTargetCalendar?.name ?? null);
+
+      return formatEventPlainText({
+        title: displayTitle,
+        schedule: draft.values.schedule,
+        location,
+        description,
+        attendees: attendeeChips.length > 0 ? attendeeChips : undefined,
+        calendarName,
+      });
+    }, [
+      attendeeChips,
+      calendarLookup,
+      defaultTargetCalendar,
+      description,
+      displayTitle,
+      draft,
+      location,
+      originalCalendarName,
+    ]);
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDateStrings(draft);
@@ -843,36 +883,42 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         >
           {/* Scrollable body; the save footer below stays pinned. */}
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-1 pb-4 [scrollbar-gutter:stable]">
-            <FormActionsRow
-              isExistingEvent={isExistingEvent}
-              isReadOnly={isReadOnly}
-              onClose={requestClose}
-              onDelete={onDeleteEvent}
-              onDuplicate={onDuplicateEvent}
-            />
+            <div className="flex items-start justify-between gap-2">
+              <FormActionsRow
+                isExistingEvent={isExistingEvent}
+                isReadOnly={isReadOnly}
+                onClose={requestClose}
+                onDelete={onDeleteEvent}
+                onDuplicate={onDuplicateEvent}
+              />
+              <CopyButton label="copy event" text={eventPlainText} />
+            </div>
 
-            <Focusable
-              id={EVENT_FORM_TITLE_ID}
-              Component="input"
-              className={classNames(
-                INPUT_RESET_CLASSNAME,
-                // w-full: an input's intrinsic size-attribute width would
-                // overflow the sidebar-width form and force horizontal scroll
-                "w-full bg-transparent font-semibold text-xl",
-              )}
-              autoFocus
-              disabled={isReadOnly}
-              onChange={onChangeTitle}
-              onKeyDown={handleTitleKeyDown}
-              placeholder="Title"
-              aria-label="Title"
-              name="Event Title"
-              aria-invalid={titleError ? true : undefined}
-              aria-describedby={titleErrorDescribedBy}
-              underlineColor={eventColor}
-              value={displayTitle}
-              withUnderline
-            />
+            <div className="flex items-start gap-1">
+              <Focusable
+                id={EVENT_FORM_TITLE_ID}
+                Component="input"
+                className={classNames(
+                  INPUT_RESET_CLASSNAME,
+                  // w-full: an input's intrinsic size-attribute width would
+                  // overflow the sidebar-width form and force horizontal scroll
+                  "min-w-0 flex-1 bg-transparent font-semibold text-xl",
+                )}
+                autoFocus
+                disabled={isReadOnly}
+                onChange={onChangeTitle}
+                onKeyDown={handleTitleKeyDown}
+                placeholder="Title"
+                aria-label="Title"
+                name="Event Title"
+                aria-invalid={titleError ? true : undefined}
+                aria-describedby={titleErrorDescribedBy}
+                underlineColor={eventColor}
+                value={displayTitle}
+                withUnderline
+              />
+              <CopyButton label="copy event title" text={displayTitle} />
+            </div>
 
             {/* Same fieldset mechanism as the title above, covering
               date/recurrence/calendar/description in one wrapper. Its
@@ -957,7 +1003,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     Component="input"
                     className={classNames(
                       INPUT_RESET_CLASSNAME,
-                      "w-full bg-transparent text-sm",
+                      "min-w-0 flex-1 bg-transparent text-sm",
                     )}
                     disabled={isReadOnly}
                     onChange={onChangeLocation}
@@ -967,6 +1013,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     name="Event Location"
                     value={location}
                   />
+                  <CopyButton label="copy event location" text={location} />
                 </div>
               </FormCard>
 
@@ -1003,20 +1050,36 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                         }
                       />
                     </div>
+                    <CopyButton
+                      label="copy attendee list"
+                      text={attendeeListPlainText}
+                    />
                   </div>
                 </FormCard>
               )}
 
               <FormCard>
-                <DescriptionEditor
-                  id={EVENT_FORM_DESCRIPTION_ID}
-                  resetKey={draft.kind === "edit" ? draft.source.id : "create"}
-                  value={description}
-                  onChange={(html) => patchDraftFields({ description: html })}
-                  editable={!isReadOnly}
-                  underlineColor={eventColor}
-                  onKeyDown={handleIgnoredKeys}
-                />
+                <div className="flex items-start gap-1">
+                  <div className="min-w-0 flex-1">
+                    <DescriptionEditor
+                      id={EVENT_FORM_DESCRIPTION_ID}
+                      resetKey={
+                        draft.kind === "edit" ? draft.source.id : "create"
+                      }
+                      value={description}
+                      onChange={(html) =>
+                        patchDraftFields({ description: html })
+                      }
+                      editable={!isReadOnly}
+                      underlineColor={eventColor}
+                      onKeyDown={handleIgnoredKeys}
+                    />
+                  </div>
+                  <CopyButton
+                    label="copy event description"
+                    text={descriptionPlainText}
+                  />
+                </div>
               </FormCard>
             </fieldset>
 
