@@ -1,9 +1,13 @@
 # Billing And Trial
 
-Hosted Compass uses Stripe Checkout (subscription mode, 7-day trial)
-and the Stripe Billing Portal. The subscription amount lives on the Stripe
-Price behind `stripe.priceId`, so operators can change it in Stripe without
-a web deploy. There is no Stripe.js and no publishable key in the web bundle.
+Hosted Compass uses Stripe **embedded** Checkout (subscription mode, 7-day
+trial) rendered inside the app, and a Compass-built Settings > Billing view
+for the card on file, cancel or resume, and receipts. The subscription
+amount lives on the Stripe Price behind `stripe.priceId`, so operators can
+change it in Stripe without a web deploy. Stripe.js loads lazily from
+`js.stripe.com` on the first checkout surface (the gate or Update card);
+the publishable key is served by `/api/config` as `billing.publishableKey`
+and is never baked into the web bundle.
 
 Self-host installs omit the `stripe:` config block. `/api/config` then reports
 `billing.isConfigured: false`, the web never shows a paid gate, and event
@@ -82,11 +86,14 @@ production.
   browser-local trial: a trial is only ever asked for at the moment of
   commitment (sign up, sign in, connect an account).
 - **Signed up, no card yet:** `awaiting_checkout`, read-only,
-  `BillingGateModal` with Start trial (Stripe Checkout). The gate also offers
-  "Look around first", which unmounts it and drops the user onto the real
-  calendar behind `BillingReadOnlyBanner`. That preview lives in
-  `billing-preview.store.ts` and is deliberately in-memory, so a reload puts
-  the trial ask back. Writes still fail server-side, and the
+  `BillingGateModal` with Start trial. Checkout happens inside the gate:
+  Start trial (`S`) mounts Stripe embedded Checkout in the same overlay.
+  Completion raises the celebration through `onComplete`; the webhook remains
+  the source of truth and a short poll of `GET /api/billing/status` waits for
+  it. The gate also offers "Look around first" (`L`), which unmounts it and
+  drops the user onto the real calendar behind `BillingReadOnlyBanner`. That
+  preview lives in `billing-preview.store.ts` and is deliberately in-memory, so
+  a reload puts the trial ask back. Writes still fail server-side, and the
   `BILLING_REQUIRED` branch in `useEventMutations` exits the preview, so the
   first refused save brings the gate straight back. That refusal does not
   show the catch-all "something went wrong" toast — the gate is the feedback.
@@ -99,27 +106,48 @@ production.
   that jump. Press `B` (keycap-styled in the badge tooltip and on Settings →
   Billing) to subscribe early. That shortcut is registered by
   `UpgradeConfirmationProvider` and keeps working while Settings is open.
-- **Active / past_due:** writable. `past_due` also shows a banner. Settings
-  splits Accounts and Billing; Billing is hidden on installs with no plan.
-- **Active / past_due:** writable. `past_due` also shows a banner.
+- **Active / past_due:** writable. `past_due` also shows a banner whose CTA
+  opens Settings on Billing with Update card already mounted.
 - **Expired / canceled:** read-only until they subscribe again. A later
   Checkout does not grant another trial.
 
 There is no `POST /api/billing/trial/start`. A trial only begins through
-Stripe Checkout (`trial_period_days` on the first subscription).
+Stripe Checkout (`trial_period_days` on the first subscription). Sessions
+use `ui_mode: "embedded"` and `redirect_on_completion: "never"`, so
+Checkout stays inside Compass. Redirect-based payment methods are therefore
+unavailable by design.
 
 A trial can be *ended* early through `POST /api/billing/trial/end`, which calls
 `subscriptions.update(trial_end: "now")` and writes the returned Subscription
 through the webhook's own `applySubscription`, so status is fresh in the same
-response and the Stripe field mapping stays in one place. The Billing Portal
-cannot shorten a trial, which is why this endpoint exists. Three ways in, all
+response and the Stripe field mapping stays in one place. Three ways in, all
 gated on a running trial: the badge, a "Subscribe now" palette command, and
-bare `B`. "Manage billing" is a different action: it opens the Stripe Customer
-Portal in a new tab (popup-blocked fallback: same-tab, returning to
-`?settings=billing`). Portal return reopens Settings on Billing and refetches
-status on window focus so a trial that became Premium is visible immediately.
-A declined card lands on `past_due` (still writable), so the confirm dialog
-reports the resulting status instead of a blanket success.
+bare `B`. "Manage billing" on that confirm dialog opens Settings on Billing;
+it does not charge today and does not end the trial. A declined card lands
+on `past_due` (still writable), so the confirm dialog reports the resulting
+status instead of a blanket success.
+
+**Settings > Billing** (`PlanSection.tsx`) is the management view. It shows
+the plan badge, price from the Stripe Price (minor units formatted in the
+browser), renews or ends date, and the card on file (`{Brand} ending in
+{last4}, expires MM/YY`, or "No card on file"). From there:
+
+- **Update card** (`U`) mounts a setup-mode embedded Checkout session
+  (`POST /api/billing/payment-method/session`). The webhook
+  `checkout.session.completed` for `mode: "setup"` sets the default payment
+  method on the Customer and Subscription. After `onComplete`, Compass toasts
+  "Card updated" and polls until Settings shows the new last4.
+- **Cancel subscription** (`C`) schedules cancel at period end. Trialing
+  copy: access continues until the trial ends. Toast: "Your plan ends on
+  {date}". **Resume subscription** (`R`) appears while `cancelAtPeriodEnd`
+  is set.
+- **Receipts:** up to 12 invoices, linking to Stripe-hosted PDFs
+  (`target="_blank"`). The heading is hidden when the list is empty. A $0.00
+  trial invoice still appears.
+
+Deliberate exclusions: no address or tax ID editing in Compass, and no
+redirect-based payment methods (`redirect_on_completion: "never"`). Sales
+tax is still collected at Checkout (see Staging).
 
 ## Account deletion
 
@@ -159,16 +187,24 @@ Stripe Checkout.
 
 ## Staging
 
-Set `STRIPE_SECRET_KEY` (`sk_test_...` is fine), `STRIPE_WEBHOOK_SECRET`,
-and `STRIPE_PRICE_ID` on the `staging-cloud` GitHub Environment, then
+Set all four Stripe GitHub Environment variables on `staging-cloud`, then
 **re-run Deploy staging** so `~/compass/compass.yaml` is rewritten. A restart
 on old yaml will not pick up new secrets. Confirm `/api/config` shows
-`billing.isConfigured: true`.
+`billing.isConfigured: true` and a non-null `billing.publishableKey`.
+
+- `STRIPE_SECRET_KEY` (`sk_test_...` is fine)
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `STRIPE_PUBLISHABLE_KEY` (`pk_test_...` is fine)
+
+All four are required together. If any is missing, the deploy omits the
+`stripe:` block and hosted billing stays off.
 
 The webhook endpoint (`https://staging.compasscalendar.com/api/billing/webhook/stripe`)
 must subscribe to Checkout and Subscriptions snapshot events, not Accounts v2:
 
-- `checkout.session.completed`
+- `checkout.session.completed` (subscription Checkout and setup-mode card
+  updates both arrive on this event; setup-mode has `mode: "setup"`)
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
@@ -184,12 +220,57 @@ register each jurisdiction under Tax > Registrations and set a product tax
 code, in test and live mode separately. Without a registration Stripe
 calculates zero tax rather than erroring, so a missing one is silent.
 
+### Manual QA checklist (founder, on staging-cloud)
+
+Do this after every prior embedded-billing package is deployed. Use a real
+signed-in hosted account that is not on the bypass list.
+
+1. **Happy path:** Start trial with `4242 4242 4242 4242` (any future expiry,
+   any CVC). Checkout stays inside the gate. Celebration appears. Status
+   becomes `trialing`.
+2. **3DS:** Start trial with `4000 0025 0000 3155`. Complete 3DS inside the
+   Stripe iframe (do not leave Compass). Celebration still fires through
+   `onComplete`.
+3. **Decline:** `4000 0000 0000 9995` is rejected inside the iframe. The gate
+   stays up; no celebration; status stays `awaiting_checkout`.
+4. **Update card:** Settings > Billing, Update card (`U`). Complete a
+   setup-mode session. Toast "Card updated". The card row shows the new last4.
+5. **Cancel then Resume:** Cancel (`C`) schedules end at period end. Resume
+   (`R`) restores renewal. Toasts match the dates shown on the plan row.
+6. **Receipt:** open a Receipt link. It loads a Stripe-hosted PDF in a new tab.
+7. **Setup-mode webhook:** Stripe Dashboard (or Compass `app:billing.webhook`
+   logs) shows a successful `checkout.session.completed` delivery for the
+   setup-mode session (`mode: "setup"`), HTTP 200, and no
+   `No Compass user for setup checkout session` / `No Stripe customer for
+   setup checkout session` warning.
+
+## Content Security Policy
+
+The repo ships no CSP. The hosted Caddyfile lives on the host, not in this
+tree. Operators who front the web with a Content-Security-Policy header need
+these Stripe origins so embedded Checkout and Update card can load:
+
+| Directive | Origins |
+| --- | --- |
+| `script-src` | `https://js.stripe.com` `https://*.js.stripe.com` |
+| `frame-src` | `https://js.stripe.com` `https://*.js.stripe.com` `https://hooks.stripe.com` `https://checkout.stripe.com` |
+| `connect-src` | `https://api.stripe.com` `https://checkout.stripe.com` |
+| `img-src` | `https://*.stripe.com` |
+
+If Link is enabled, also add `https://link.com` and `https://*.link.com` to
+`frame-src` and `connect-src`.
+
 ## Key files
 
 - Trial length: `packages/core/src/constants/billing.constants.ts`
 - Status derivation: `packages/backend/src/billing/services/billing.service.ts`
-- Checkout / portal: `packages/backend/src/billing/services/stripe.service.ts`
+- Checkout and payment-method sessions: `packages/backend/src/billing/services/stripe.service.ts`
 - Webhook: `packages/backend/src/billing/services/billing.webhook.service.ts`
 - Write guard: `packages/backend/src/billing/billing.guard.ts`
 - Web access: `packages/web/src/billing/useAppAccess.ts`
 - Read-only look-around: `packages/web/src/billing/billing-preview.store.ts`
+- Embedded Checkout port (the only `loadStripe` call): `packages/web/src/billing/embedded-checkout/embedded-checkout.port.tsx`
+- Lazy seam: `packages/web/src/billing/embedded-checkout/embedded-checkout.seam.ts`
+- Gate checkout store: `packages/web/src/billing/checkout-panel.store.ts`
+- Update-card store: `packages/web/src/billing/card-update.store.ts`
+- Settings > Billing management: `packages/web/src/billing/PlanSection.tsx`

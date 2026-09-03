@@ -33,6 +33,7 @@ export type ProductEvent =
   | "billing_gate_cta_clicked"
   | "billing_cancel_scheduled"
   | "billing_resumed"
+  | "billing_card_update_completed"
   | "shortcut_upgrade_prompted"
   | "notifications_enabled"
   | "notifications_disabled"
