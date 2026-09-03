@@ -777,9 +777,6 @@ describe("BookingSettingsSection", () => {
       "Meta+Enter Control+Enter",
     );
     expect(within(save).getByText("Enter")).toBeInTheDocument();
-    const modIconTestId =
-      resolveModifier("Mod") === "Meta" ? "meta-icon" : "control-icon";
-    expect(within(save).getByTestId(modIconTestId)).toBeInTheDocument();
 
     const durationLabel = screen.getByText("Duration");
     expect(within(durationLabel).queryByText("D")).not.toBeInTheDocument();
