@@ -29,6 +29,7 @@ function reservationGetHandler(overrides: Record<string, unknown> = {}) {
           durationMinutes: 30,
           hostDisplayName: "Tyler Dane",
           status: "confirmed",
+          bookingSlug: "tylerdane",
           ...overrides,
         }),
       ),

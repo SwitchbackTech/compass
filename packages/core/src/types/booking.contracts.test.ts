@@ -4,13 +4,18 @@ import {
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
   BookingPageSchema,
+  BookingReservationSlotsQuerySchema,
   BookingSlugSchema,
+  CancelBookingReservationInputSchema,
   CreateBookingReservationInputSchema,
+  CreateBookingReservationResponseSchema,
   isGuestEmail,
   PublicBookingPageSchema,
   PublicGetBookingPageResponseSchema,
   PublicGetBookingReservationResponseSchema,
   pickAdminPutBookingPageInput,
+  RescheduleBookingReservationInputSchema,
+  RescheduleBookingReservationResponseSchema,
   toPublicBookingPage,
   WeeklyAvailabilityIntervalSchema,
 } from "@core/types/booking.contracts";
@@ -320,14 +325,16 @@ describe("HTTP booking contracts", () => {
   });
 
   it("parses a public reservation GET without guest contact fields", () => {
+    const publicGet = {
+      slotStart: "2026-09-01T15:00:00.000Z",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+      hostDisplayName: "Tyler Dane",
+      status: "confirmed",
+      bookingSlug: "tylerdane",
+    };
     expect(
-      PublicGetBookingReservationResponseSchema.safeParse({
-        slotStart: "2026-09-01T15:00:00.000Z",
-        guestTimeZone: "Europe/London",
-        durationMinutes: 30,
-        hostDisplayName: "Tyler Dane",
-        status: "confirmed",
-      }).success,
+      PublicGetBookingReservationResponseSchema.safeParse(publicGet).success,
     ).toBe(true);
     expect(
       PublicGetBookingReservationResponseSchema.safeParse({
@@ -336,7 +343,102 @@ describe("HTTP booking contracts", () => {
         durationMinutes: 30,
         hostDisplayName: "Tyler Dane",
         status: "confirmed",
+      }).success,
+    ).toBe(false);
+    expect(
+      PublicGetBookingReservationResponseSchema.safeParse({
+        ...publicGet,
         guestEmail: "ada@example.com",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires rescheduleUrl on create reservation responses", () => {
+    const created = {
+      reservationId: objectId(),
+      slotStart: "2026-09-01T15:00:00.000Z",
+      slotEnd: "2026-09-01T15:30:00.000Z",
+      guestTimeZone: "Europe/London",
+      cancelUrl:
+        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      rescheduleUrl:
+        "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+    };
+    expect(
+      CreateBookingReservationResponseSchema.safeParse(created).success,
+    ).toBe(true);
+    expect(
+      CreateBookingReservationResponseSchema.safeParse({
+        reservationId: created.reservationId,
+        slotStart: created.slotStart,
+        slotEnd: created.slotEnd,
+        guestTimeZone: created.guestTimeZone,
+        cancelUrl: created.cancelUrl,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("parses reschedule input and rejects extra keys", () => {
+    expect(
+      RescheduleBookingReservationInputSchema.safeParse({
+        token: "abc",
+        slotStart: "2026-09-01T15:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }).success,
+    ).toBe(true);
+    expect(
+      RescheduleBookingReservationInputSchema.safeParse({
+        token: "abc",
+        slotStart: "2026-09-01T15:00:00.000Z",
+        guestTimeZone: "Europe/London",
+        notes: "extra",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("parses a reschedule response with the updated slot", () => {
+    expect(
+      RescheduleBookingReservationResponseSchema.safeParse({
+        reservationId: objectId(),
+        slotStart: "2026-09-02T15:00:00.000Z",
+        slotEnd: "2026-09-02T15:30:00.000Z",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+        hostDisplayName: "Tyler Dane",
+        status: "confirmed",
+        bookingSlug: "tylerdane",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("parses tokenized reservation slots query and rejects extra keys", () => {
+    expect(
+      BookingReservationSlotsQuerySchema.safeParse({
+        token: "abc",
+        start: "2026-09-01T00:00:00.000Z",
+        end: "2026-09-30T00:00:00.000Z",
+        timeZone: "Europe/London",
+      }).success,
+    ).toBe(true);
+    expect(
+      BookingReservationSlotsQuerySchema.safeParse({
+        token: "abc",
+        start: "2026-09-01T00:00:00.000Z",
+        end: "2026-09-30T00:00:00.000Z",
+        timeZone: "Europe/London",
+        slug: "tylerdane",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("keeps cancel input as token only", () => {
+    expect(
+      CancelBookingReservationInputSchema.safeParse({ token: "abc" }).success,
+    ).toBe(true);
+    expect(
+      CancelBookingReservationInputSchema.safeParse({
+        token: "abc",
+        slotStart: "2026-09-01T15:00:00.000Z",
       }).success,
     ).toBe(false);
   });
@@ -344,5 +446,9 @@ describe("HTTP booking contracts", () => {
   it("rejects reserved slug confirmed", () => {
     expect(BookingSlugSchema.safeParse("confirmed").success).toBe(false);
     expect(BookingSlugSchema.safeParse("cancel").success).toBe(false);
+  });
+
+  it("rejects reserved slug reschedule", () => {
+    expect(BookingSlugSchema.safeParse("reschedule").success).toBe(false);
   });
 });

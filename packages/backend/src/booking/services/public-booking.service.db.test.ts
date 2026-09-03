@@ -239,6 +239,8 @@ describe("PublicBookingService", () => {
     });
     expect(response.reservationId).toBeTruthy();
     expect(response.cancelUrl).toContain("token=");
+    expect(response.rescheduleUrl).toContain("token=");
+    expect(response.rescheduleUrl).toContain("/book/reschedule/");
   });
 
   it("rejects confirm when bookable is false without creating an event", async () => {
@@ -545,9 +547,11 @@ describe("PublicBookingService", () => {
       durationMinutes: 30,
       hostDisplayName: "Host User",
       status: "confirmed",
+      bookingSlug: slug,
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
+    expect(publicReservation).not.toHaveProperty("rescheduleUrl");
     expect(publicReservation).not.toHaveProperty("notes");
   });
 
@@ -864,7 +868,7 @@ describe("Public booking routes", () => {
         blockingCalendarIds: [calendar.id],
       }),
     );
-    if (!("id" in page)) {
+    if (!("id" in page) || !("slug" in page)) {
       throw new Error("expected a saved booking page");
     }
     const reservationId = new ObjectId();
@@ -893,9 +897,11 @@ describe("Public booking routes", () => {
       durationMinutes: 30,
       hostDisplayName: "Permalink Host",
       status: "confirmed",
+      bookingSlug: page.slug,
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");
+    expect(response.body).not.toHaveProperty("rescheduleUrl");
     expect(response.body).not.toHaveProperty("notes");
   });
 

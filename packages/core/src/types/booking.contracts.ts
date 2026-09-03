@@ -15,6 +15,7 @@ export const BOOKING_RESERVED_SLUGS = [
   "cleanup",
   "book",
   "cancel",
+  "reschedule",
   "confirmed",
   "p",
   "settings",
@@ -275,6 +276,7 @@ export const CreateBookingReservationResponseSchema = z.strictObject({
   slotEnd: DateTimeSchema,
   guestTimeZone: TimeZoneSchema,
   cancelUrl: z.url(),
+  rescheduleUrl: z.url(),
 });
 export type CreateBookingReservationResponse = z.infer<
   typeof CreateBookingReservationResponseSchema
@@ -286,6 +288,7 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   durationMinutes: BookingDurationMinutesSchema,
   hostDisplayName: z.string().trim().min(1).max(256),
   status: BookingReservationStatusSchema,
+  bookingSlug: BookingSlugSchema,
 });
 export type PublicGetBookingReservationResponse = z.infer<
   typeof PublicGetBookingReservationResponseSchema
@@ -296,6 +299,39 @@ export const CancelBookingReservationInputSchema = z.strictObject({
 });
 export type CancelBookingReservationInput = z.infer<
   typeof CancelBookingReservationInputSchema
+>;
+
+export const BookingReservationSlotsQuerySchema = z.strictObject({
+  token: z.string().trim().min(1).max(256),
+  start: DateTimeSchema,
+  end: DateTimeSchema,
+  timeZone: TimeZoneSchema,
+});
+export type BookingReservationSlotsQuery = z.infer<
+  typeof BookingReservationSlotsQuerySchema
+>;
+
+export const RescheduleBookingReservationInputSchema = z.strictObject({
+  token: z.string().trim().min(1).max(256),
+  slotStart: DateTimeSchema,
+  guestTimeZone: TimeZoneSchema,
+});
+export type RescheduleBookingReservationInput = z.infer<
+  typeof RescheduleBookingReservationInputSchema
+>;
+
+export const RescheduleBookingReservationResponseSchema = z.strictObject({
+  reservationId: BookingReservationIdSchema,
+  slotStart: DateTimeSchema,
+  slotEnd: DateTimeSchema,
+  guestTimeZone: TimeZoneSchema,
+  durationMinutes: BookingDurationMinutesSchema,
+  hostDisplayName: z.string().trim().min(1).max(256),
+  status: BookingReservationStatusSchema,
+  bookingSlug: BookingSlugSchema,
+});
+export type RescheduleBookingReservationResponse = z.infer<
+  typeof RescheduleBookingReservationResponseSchema
 >;
 
 export const AdminGetBookingPageResponseSchema = BookingPageSchema.extend({

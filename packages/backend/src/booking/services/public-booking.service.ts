@@ -42,9 +42,13 @@ import mongoService from "@backend/common/services/mongo.service";
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
 
-const buildCancelUrl = (reservationId: string, token: string): string =>
+const buildGuestActionUrl = (
+  action: "cancel" | "reschedule",
+  reservationId: string,
+  token: string,
+): string =>
   new URL(
-    `/book/cancel/${reservationId}?token=${encodeURIComponent(token)}`,
+    `/book/${action}/${reservationId}?token=${encodeURIComponent(token)}`,
     CONFIG.FRONTEND_URL,
   ).href;
 
@@ -251,7 +255,16 @@ export class PublicBookingService {
     const hostDisplayName = await getHostDisplayName(page.userId);
     const cancelToken = generateCancelToken();
     const reservationId = mongoService.objectId();
-    const cancelUrl = buildCancelUrl(reservationId.toString(), cancelToken);
+    const cancelUrl = buildGuestActionUrl(
+      "cancel",
+      reservationId.toString(),
+      cancelToken,
+    );
+    const rescheduleUrl = buildGuestActionUrl(
+      "reschedule",
+      reservationId.toString(),
+      cancelToken,
+    );
 
     let calendarEventId: EventId | null = null;
     try {
@@ -323,6 +336,7 @@ export class PublicBookingService {
         slotEnd: reservation.slotEnd.toISOString(),
         guestTimeZone: reservation.guestTimeZone,
         cancelUrl,
+        rescheduleUrl,
       });
     } catch (error) {
       if (calendarEventId) {
@@ -352,7 +366,7 @@ export class PublicBookingService {
     }
 
     const page = await bookingPageRepository.findById(reservation.pageId);
-    if (!page) {
+    if (!page?.bookingSlug) {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
 
@@ -371,6 +385,7 @@ export class PublicBookingService {
       durationMinutes,
       hostDisplayName,
       status: reservation.status,
+      bookingSlug: page.bookingSlug,
     });
   }
 
