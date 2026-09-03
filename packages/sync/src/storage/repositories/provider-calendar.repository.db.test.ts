@@ -107,6 +107,17 @@ describe("ProviderCalendarRepository", () => {
     expect(updated.capabilities.canWriteEvents).toBe(false);
   });
 
+  it("updates createsGoogleMeet on re-discovery", async () => {
+    const connectionId = objectId();
+    await repo.upsertByProviderCalendar(
+      baseUpsert({ connectionId, createsGoogleMeet: true }),
+    );
+    const updated = await repo.upsertByProviderCalendar(
+      baseUpsert({ connectionId, createsGoogleMeet: false }),
+    );
+    expect(updated.createsGoogleMeet).toBe(false);
+  });
+
   it("does not leak calendars across principals", async () => {
     const tenantId = objectId();
     const connectionId = objectId();

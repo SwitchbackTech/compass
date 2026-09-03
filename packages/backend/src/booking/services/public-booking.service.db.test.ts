@@ -50,6 +50,7 @@ const writableCalendar = (id = calendarId()) => ({
     canReadBusy: true,
     canInviteAttendees: true,
   },
+  createsGoogleMeet: true,
   createdAt: "2026-07-01T00:00:00.000Z",
   updatedAt: "2026-07-20T12:00:00.000Z",
 });
@@ -448,6 +449,43 @@ describe("PublicBookingService", () => {
     expect(page).not.toHaveProperty("dateOverrides");
   });
 
+  it("carries createsGoogleMeet true when the destination can mint Meet", async () => {
+    const { slug } = await enableBookingPage();
+    const page = await service.getPublicPage(slug);
+    expect(page.createsGoogleMeet).toBe(true);
+  });
+
+  it("carries createsGoogleMeet false when the destination cannot mint Meet", async () => {
+    const userId = await createNamedUser("No Meet Host");
+    const calendar = { ...writableCalendar(), createsGoogleMeet: false };
+    mockHealthySync([calendar]);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.createsGoogleMeet).toBe(false);
+
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const publicReservation = await service.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.createsGoogleMeet).toBe(false);
+  });
+
   it("clamps a requested window that extends past the host horizon", async () => {
     const userId = await createNamedUser("Short Horizon Host");
     const calendar = writableCalendar();
@@ -555,6 +593,7 @@ describe("PublicBookingService", () => {
       bookingSlug: slug,
       guestName: "Ada Lovelace",
       notes: "secret notes",
+      createsGoogleMeet: true,
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
@@ -954,6 +993,7 @@ describe("Public booking routes", () => {
         durationMinutes: 30,
         enabled: true,
         maxHorizonDays: 60,
+        createsGoogleMeet: true,
       }),
     );
   });
@@ -1018,6 +1058,7 @@ describe("Public booking routes", () => {
       bookingSlug: page.slug,
       guestName: "Ada Lovelace",
       notes: "secret notes",
+      createsGoogleMeet: true,
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");

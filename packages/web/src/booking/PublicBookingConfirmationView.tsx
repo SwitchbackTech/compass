@@ -12,6 +12,7 @@ interface PublicBookingConfirmationViewProps {
   durationMinutes: number;
   slotStart: string;
   timeZone: string;
+  createsGoogleMeet?: boolean;
   cancelUrl?: string;
   onEditDetails?: () => void;
 }
@@ -23,6 +24,7 @@ export function PublicBookingConfirmationView({
   durationMinutes,
   slotStart,
   timeZone,
+  createsGoogleMeet = true,
   cancelUrl,
   onEditDetails,
 }: PublicBookingConfirmationViewProps) {
@@ -68,9 +70,11 @@ export function PublicBookingConfirmationView({
           ) : null}
         </dl>
         <p className="text-sm text-text">
-          {`A Google Meet invite is on its way to your email.${
-            cancelUrl ? "" : " To cancel, use the link in that invite."
-          }`}
+          {`${
+            createsGoogleMeet
+              ? "A Google Meet invite is on its way to your email."
+              : "A calendar invite is on its way to your email."
+          }${cancelUrl ? "" : " To cancel, use the link in that invite."}`}
         </p>
         {onEditDetails ? (
           <button

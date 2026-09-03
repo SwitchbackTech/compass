@@ -948,6 +948,77 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
   });
 
+  it("warns next to Destination calendar when it cannot mint Meet", async () => {
+    const noMeet = createMockCalendar({
+      name: "Resource room",
+      accountEmail: "host@example.com",
+      createsGoogleMeet: false,
+    });
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: noMeet.id,
+            blockingCalendarIds: [noMeet.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [noMeet]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const warning =
+      "This calendar cannot create a Google Meet link. Guests will get a calendar invite without a Meet URL.";
+    await screen.findByRole("combobox", { name: "Destination calendar" });
+    expect(screen.getByText(warning)).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Destination calendar" }),
+    ).toHaveAccessibleDescription(warning);
+  });
+
+  it("does not warn when the destination can mint Meet", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("combobox", { name: "Destination calendar" });
+    expect(
+      screen.queryByText(/cannot create a Google Meet link/),
+    ).not.toBeInTheDocument();
+  });
+
   it("checks the Compass calendar by default on an unconfigured page", async () => {
     const compass = createMockCalendar({
       name: "Compass",

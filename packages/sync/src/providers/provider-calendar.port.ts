@@ -27,6 +27,10 @@ export interface DiscoveredCalendar {
   readonly active: boolean;
   readonly accessRole: CalendarAccessRole;
   readonly capabilities: SyncCalendarCapabilities;
+  // Whether this calendar can mint a Google Meet URL. Missing conference
+  // types from Google keep the current Meet promise (true). An advertised
+  // list that omits hangoutsMeet is false.
+  readonly createsGoogleMeet: boolean;
 }
 
 // The result of one discovery pass: the full set of calendars the provider

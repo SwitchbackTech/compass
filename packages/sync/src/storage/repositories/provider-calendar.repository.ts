@@ -48,6 +48,7 @@ export class ProviderCalendarRepository {
           primary: fields.primary,
           accessRole: fields.accessRole,
           capabilities: fields.capabilities,
+          createsGoogleMeet: fields.createsGoogleMeet,
           updatedAt: now,
         },
         $setOnInsert: {

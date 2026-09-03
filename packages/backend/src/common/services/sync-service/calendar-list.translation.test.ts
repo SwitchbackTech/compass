@@ -130,4 +130,14 @@ describe("syncCalendarToBrowser", () => {
     // Capabilities are derived from the access role, matching the legacy mapper.
     expect(result.capabilities).toEqual(getCalendarCapabilities(browserAccess));
   });
+
+  it("maps createsGoogleMeet through", () => {
+    expect(
+      syncCalendarToBrowser(providerCalendar({ createsGoogleMeet: false }))
+        .createsGoogleMeet,
+    ).toBe(false);
+    expect(syncCalendarToBrowser(providerCalendar()).createsGoogleMeet).toBe(
+      true,
+    );
+  });
 });

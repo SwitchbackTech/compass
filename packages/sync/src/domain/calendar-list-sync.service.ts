@@ -154,6 +154,7 @@ export async function syncCalendarList(
       primary: calendar.primary,
       accessRole: calendar.accessRole,
       capabilities: calendar.capabilities,
+      createsGoogleMeet: calendar.createsGoogleMeet,
     });
     upserted.push(record);
   }

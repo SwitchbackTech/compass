@@ -32,6 +32,7 @@ const discovered = (
     canReadBusy: true,
     canInviteAttendees: true,
   },
+  createsGoogleMeet: true,
 });
 
 // Replays scripted discovery passes and records the cursor each call received.
@@ -179,6 +180,23 @@ describe("syncCalendarList", () => {
     // The discovery cursor is stored on the calendarList resource for next pass.
     expect((await calendarListResource(conn))?.syncCursor).toBe("cur-1");
     expect(discovery.cursors).toEqual([undefined]); // first pass is a full list
+  });
+
+  it("persists createsGoogleMeet from discovery", async () => {
+    const conn = connection();
+    const noMeet = { ...discovered("resource"), createsGoogleMeet: false };
+    const discovery = new FakeDiscovery([
+      { calendars: [discovered("primary"), noMeet], cursor: "c" },
+    ]);
+
+    await syncCalendarList(deps(discovery), conn, now);
+
+    const docs = await calendarDocs(conn);
+    const byId = Object.fromEntries(
+      docs.map((doc) => [doc.providerCalendarId, doc.createsGoogleMeet]),
+    );
+    expect(byId["primary"]).toBe(true);
+    expect(byId["resource"]).toBe(false);
   });
 
   it("ensures an events resource for each active calendar so its import can run", async () => {

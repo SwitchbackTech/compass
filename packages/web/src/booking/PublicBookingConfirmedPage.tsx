@@ -183,6 +183,7 @@ export function PublicBookingConfirmedPage() {
       durationMinutes={reservation.durationMinutes}
       slotStart={reservation.slotStart}
       timeZone={reservation.guestTimeZone}
+      createsGoogleMeet={reservation.createsGoogleMeet}
       cancelUrl={cancelUrl}
       onEditDetails={
         canEdit

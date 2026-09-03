@@ -74,6 +74,7 @@ const syncCalendarToBrowser = (
     isPrimary: calendar.primary,
     isVisible: true,
     isActive: calendar.active,
+    createsGoogleMeet: calendar.createsGoogleMeet !== false,
     ...(accountEmail ? { accountEmail } : {}),
   });
 };

@@ -230,7 +230,19 @@ async function mapCalendar(
     active: item.deleted !== true && item.hidden !== true,
     accessRole,
     capabilities: CAPABILITIES_BY_ROLE[accessRole],
+    createsGoogleMeet: calendarCreatesGoogleMeet(
+      item.conferenceProperties?.allowedConferenceSolutionTypes,
+    ),
   };
+}
+
+// Missing types keep the current Meet promise. An advertised list that does
+// not include hangoutsMeet cannot mint a Meet URL.
+function calendarCreatesGoogleMeet(
+  allowedTypes: readonly string[] | null | undefined,
+): boolean {
+  if (allowedTypes == null) return true;
+  return allowedTypes.includes("hangoutsMeet");
 }
 
 function mapAccessRole(

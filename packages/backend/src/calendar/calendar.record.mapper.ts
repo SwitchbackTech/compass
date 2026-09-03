@@ -18,4 +18,5 @@ export const mapCalendarRecord = (record: CalendarRecord): Calendar => ({
   isPrimary: record.isPrimary,
   isVisible: record.isVisible,
   isActive: record.isActive,
+  createsGoogleMeet: record.source.provider === "google",
 });

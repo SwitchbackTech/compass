@@ -325,6 +325,12 @@ export function BookingSettingsSection({
   );
   const { groups: writableGroups, ungrouped: writableUngrouped } =
     groupCalendarsByAccount(writableCalendars, connections);
+  const destinationCalendar = writableCalendars.find(
+    (calendar) => calendar.id === form.destinationCalendarId,
+  );
+  const destinationCannotMintMeet =
+    destinationCalendar?.createsGoogleMeet === false;
+  const destinationMeetWarningId = "booking-destination-meet-warning";
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
     setEnableError(null);
@@ -496,6 +502,9 @@ export function BookingSettingsSection({
           </BookingFieldLabel>
           <select
             {...bookingFieldAttrs("destination")}
+            aria-describedby={
+              destinationCannotMintMeet ? destinationMeetWarningId : undefined
+            }
             className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
             id="booking-destination-calendar"
             onChange={(event) =>
@@ -531,6 +540,16 @@ export function BookingSettingsSection({
               </>
             )}
           </select>
+          {destinationCannotMintMeet ? (
+            <p
+              className="mt-1 text-sm text-warning"
+              id={destinationMeetWarningId}
+              role="status"
+            >
+              This calendar cannot create a Google Meet link. Guests will get a
+              calendar invite without a Meet URL.
+            </p>
+          ) : null}
         </div>
 
         <fieldset

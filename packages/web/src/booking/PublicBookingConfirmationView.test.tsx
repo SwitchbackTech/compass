@@ -46,6 +46,31 @@ describe("PublicBookingConfirmationView", () => {
     expect(
       screen.getByRole("button", { name: "Copy cancel link" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("A Google Meet invite is on its way to your email."),
+    ).toBeInTheDocument();
+  });
+
+  it("promises a calendar invite when the destination cannot mint Meet", () => {
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        createsGoogleMeet={false}
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.getByText("A calendar invite is on its way to your email."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("A Google Meet invite is on its way to your email."),
+    ).not.toBeInTheDocument();
   });
 
   it("hides copy and cancel controls without a cancel URL", () => {
@@ -67,7 +92,9 @@ describe("PublicBookingConfirmationView", () => {
       screen.queryByRole("link", { name: "cancel this booking" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(/To cancel, use the link in that invite/),
+      screen.getByText(
+        "A Google Meet invite is on its way to your email. To cancel, use the link in that invite.",
+      ),
     ).toBeInTheDocument();
   });
 
