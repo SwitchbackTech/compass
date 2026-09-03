@@ -119,6 +119,26 @@ const durationMinutesForReservation = (
     : pageDurationMinutes;
 };
 
+const toPublicReservation = (
+  reservation: BookingReservationRecord,
+  bookingSlug: string,
+  hostDisplayName: string,
+  pageDurationMinutes: number,
+): PublicGetBookingReservationResponse =>
+  PublicGetBookingReservationResponseSchema.parse({
+    slotStart: reservation.slotStart.toISOString(),
+    guestTimeZone: reservation.guestTimeZone,
+    durationMinutes: durationMinutesForReservation(
+      reservation,
+      pageDurationMinutes,
+    ),
+    hostDisplayName,
+    status: reservation.status,
+    bookingSlug,
+    guestName: reservation.guestName,
+    notes: reservation.notes,
+  });
+
 const nextGuestNotes = (
   incoming: string | undefined,
   current: string | null,
@@ -403,20 +423,12 @@ export class PublicBookingService {
     }
 
     const hostDisplayName = await getHostDisplayName(page.userId);
-    const durationMinutes = durationMinutesForReservation(
+    return toPublicReservation(
       reservation,
+      page.bookingSlug,
+      hostDisplayName,
       page.durationMinutes,
     );
-    return PublicGetBookingReservationResponseSchema.parse({
-      slotStart: reservation.slotStart.toISOString(),
-      guestTimeZone: reservation.guestTimeZone,
-      durationMinutes,
-      hostDisplayName,
-      status: reservation.status,
-      bookingSlug: page.bookingSlug,
-      guestName: reservation.guestName,
-      notes: reservation.notes,
-    });
   }
 
   async patchPublicReservation(reservationId: ObjectId, rawInput: unknown) {
@@ -475,7 +487,12 @@ export class PublicBookingService {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
 
-    return this.getPublicReservation(reservationId);
+    return toPublicReservation(
+      updated,
+      page.bookingSlug,
+      hostDisplayName,
+      page.durationMinutes,
+    );
   }
 
   async cancelReservation(

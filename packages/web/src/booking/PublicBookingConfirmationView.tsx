@@ -72,21 +72,17 @@ export function PublicBookingConfirmationView({
             cancelUrl ? "" : " To cancel, use the link in that invite."
           }`}
         </p>
-        {cancelUrl || onEditDetails ? (
-          <div className="flex flex-col items-start gap-3">
-            {onEditDetails ? (
-              <button
-                type="button"
-                onClick={onEditDetails}
-                className="c-button c-button-secondary"
-              >
-                Edit details
-              </button>
-            ) : null}
-            {cancelUrl ? (
-              <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
-            ) : null}
-          </div>
+        {onEditDetails ? (
+          <button
+            type="button"
+            onClick={onEditDetails}
+            className="c-button c-button-secondary"
+          >
+            Edit details
+          </button>
+        ) : null}
+        {cancelUrl ? (
+          <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
         ) : null}
       </section>
     </PublicBookingLayout>
