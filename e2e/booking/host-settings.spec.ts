@@ -108,7 +108,9 @@ test("keyboard hint sits above the public link and the last control stays above 
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  const hint = settingsDialog.getByText("then a letter to jump to a field");
+  const hint = settingsDialog
+    .locator("p")
+    .filter({ hasText: "then a letter to jump to a field" });
   const publicLink = settingsDialog.getByLabel("Public booking link");
   const lastControl = settingsDialog.getByRole("checkbox", {
     name: "Guest can invite others",
@@ -145,6 +147,11 @@ test("saves with Compass checked as a blocking calendar", async ({ page }) => {
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   const compass = settingsDialog.getByRole("checkbox", { name: "Compass" });
   await expect(compass).toBeVisible();
+  // Calendars query replaces the synthetic local Compass id. Wait for Work
+  // (the stubbed Google calendar) so Compass is the fixture, not a placeholder.
+  await expect(
+    settingsDialog.getByRole("checkbox", { name: "Work" }),
+  ).toBeVisible();
   // Placeholder defaults check Compass first; the saved-page seed then
   // unchecks it. Wait for that before checking it for the PUT.
   await expect.poll(async () => compass.isChecked()).toBe(false);
