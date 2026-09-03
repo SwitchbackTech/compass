@@ -921,4 +921,134 @@ describe("SettingsModal", () => {
       await screen.findByText("Loading booking settings\u2026"),
     ).toBeInTheDocument();
   });
+
+  it("asks before discarding uncommitted weekly hours on Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.type(screen.getByLabelText("Monday"), "9");
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Monday")).toHaveValue("9");
+  });
+
+  it("asks before discarding unsaved booking edits on Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Duration")).toHaveValue("45");
+  });
+
+  it("closes Settings after confirming discard of booking edits", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "Settings" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps booking edits when the discard confirmation is dismissed", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Duration")).toHaveValue("45");
+  });
+
+  it("closes Settings on Escape when booking settings are unchanged", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Settings" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("disarms the e leader on Escape without closing Booking Settings", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("button", { name: "Save booking settings" });
+    await user.keyboard("e");
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("h");
+    expect(document.activeElement).not.toBe(screen.getByLabelText("Monday"));
+  });
 });

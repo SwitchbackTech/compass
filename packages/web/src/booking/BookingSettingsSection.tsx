@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type MutableRefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type AdminGetBookingPageResponse,
   type AdminGetBookingPageResult,
@@ -29,6 +35,7 @@ import {
   canEnableBookingPage,
   defaultBlockingCalendarIdsForDestination,
   getAvailabilityReadableCalendars,
+  isBookingSettingsFormDirty,
   isPlaceholderDestinationCalendar,
   isUnconfiguredBookingPage,
   resolveWritableCalendars,
@@ -60,6 +67,7 @@ import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
@@ -167,10 +175,19 @@ const buildInitialForm = (
 
 interface BookingSettingsSectionProps {
   showShortcuts: boolean;
+  /**
+   * Settings OverlayPanel owns Escape. When this returns true, Settings must
+   * not dismiss: the booking form is dirty and the discard dialog is open.
+   */
+  dismissGuardRef?: MutableRefObject<(() => boolean) | null>;
+  /** Close Settings after the host confirms discarding unsaved booking edits. */
+  onDiscardUnsaved?: () => void;
 }
 
 export function BookingSettingsSection({
   showShortcuts,
+  dismissGuardRef,
+  onDiscardUnsaved,
 }: BookingSettingsSectionProps) {
   const googleConnectionState = useUserMetadataStore(
     selectGoogleConnectionState,
@@ -214,7 +231,10 @@ export function BookingSettingsSection({
   const [horizonText, setHorizonText] = useState(() =>
     String(form.maxHorizonDays),
   );
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
   const sectionRef = useRef<HTMLFieldSetElement>(null);
+  const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
   const minNoticeInvalid =
     parseBookingCount(minNoticeText, MIN_NOTICE_BOUNDS) === null;
@@ -261,7 +281,32 @@ export function BookingSettingsSection({
     setForm(seeded);
     setMinNoticeText(String(seeded.minNoticeHours));
     setHorizonText(String(seeded.maxHorizonDays));
+    baselineFormRef.current = seeded;
   }, [availabilityCalendars, effectiveTimeZone, serverPage, writableCalendars]);
+
+  const isDirty =
+    (baselineFormRef.current !== null &&
+      isBookingSettingsFormDirty({
+        baseline: baselineFormRef.current,
+        form,
+        horizonText,
+        minNoticeText,
+      })) ||
+    hoursDraftDirty;
+
+  if (dismissGuardRef) {
+    dismissGuardRef.current = () => {
+      if (!isDirty) return false;
+      setIsConfirmOpen(true);
+      return true;
+    };
+  }
+
+  useEffect(() => {
+    return () => {
+      if (dismissGuardRef) dismissGuardRef.current = null;
+    };
+  }, [dismissGuardRef]);
 
   if (!isGoogleHealthy) {
     return <BookingConnectGooglePrompt />;
@@ -375,298 +420,318 @@ export function BookingSettingsSection({
   };
 
   return (
-    <fieldset
-      className="flex flex-col gap-4"
-      disabled={isReadOnly || saveMutation.isPending}
-      ref={sectionRef}
-    >
-      <p className="text-text-muted text-xs">
-        <ShortcutTipParts parts={BOOKING_SETTINGS_HINT_PARTS} />
-      </p>
-
-      {savedPage ? (
-        <div {...bookingFieldAttrs("link")}>
-          <BookingCopyLink bookingUrl={savedPage.bookingUrl} />
-        </div>
-      ) : null}
-
-      <label
-        className="flex items-center gap-2 text-sm text-text"
-        {...bookingFieldAttrs("enabled")}
-      >
-        <input
-          checked={form.enabled}
-          className="c-all-day-checkbox"
-          onChange={(event) => handleEnableChange(event.target.checked)}
-          type="checkbox"
-        />
-        Enable booking page
-        {showShortcuts ? (
-          <ShortcutKeys keys={bookingJumpKeys("enabled")} />
-        ) : null}
-      </label>
-      {enableError ? (
-        <p className="text-error text-sm" role="alert">
-          {enableError}
-        </p>
-      ) : null}
-
-      <div>
-        <BookingFieldLabel
-          field="duration"
-          htmlFor="booking-duration"
-          showShortcuts={showShortcuts}
-        >
-          Duration
-        </BookingFieldLabel>
-        <select
-          {...bookingFieldAttrs("duration")}
-          className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
-          id="booking-duration"
-          onChange={(event) =>
-            updateForm({
-              durationMinutes: Number(
-                event.target.value,
-              ) as BookingDurationMinutes,
-            })
-          }
-          value={form.durationMinutes}
-        >
-          {DURATION_OPTIONS.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {minutes} minutes
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <BookingFieldLabel
-          field="destination"
-          htmlFor="booking-destination-calendar"
-          showShortcuts={showShortcuts}
-        >
-          Destination calendar
-        </BookingFieldLabel>
-        <select
-          {...bookingFieldAttrs("destination")}
-          className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
-          id="booking-destination-calendar"
-          onChange={(event) =>
-            handleDestinationChange(event.target.value as CalendarId)
-          }
-          value={form.destinationCalendarId}
-        >
-          {writableCalendars.length === 0 ? (
-            <option value={BOOKING_PLACEHOLDER_CALENDAR_ID}>
-              No writable calendars
-            </option>
-          ) : (
-            <>
-              {writableGroups
-                .filter((group) => group.calendars.length > 0)
-                .map((group) => (
-                  <optgroup key={group.accountEmail} label={group.accountEmail}>
-                    {group.calendars.map((calendar) => (
-                      <option key={calendar.id} value={calendar.id}>
-                        {calendar.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              {writableUngrouped.map((calendar) => (
-                <option key={calendar.id} value={calendar.id}>
-                  {calendar.name}
-                </option>
-              ))}
-            </>
-          )}
-        </select>
-      </div>
-
+    <>
       <fieldset
-        className="flex flex-col gap-2"
-        {...bookingFieldAttrs("blocking")}
+        className="flex flex-col gap-4"
+        disabled={isReadOnly || saveMutation.isPending}
+        ref={sectionRef}
       >
-        <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-          Blocking calendars
-          {showShortcuts ? (
-            <ShortcutKeys keys={bookingJumpKeys("blocking")} />
-          ) : null}
-        </legend>
-        {availabilityCalendars.length === 0 ? (
-          <p className="text-sm text-text-muted">No calendars available.</p>
-        ) : (
-          <>
-            {groups
-              .filter((group) => group.calendars.length > 0)
-              .map((group) => (
-                <div className="flex flex-col gap-1" key={group.accountEmail}>
-                  <p className="text-text-muted text-xs">
-                    {group.accountEmail}
-                  </p>
-                  {group.calendars.map(renderBlockingCalendar)}
-                </div>
-              ))}
-            {ungrouped.map(renderBlockingCalendar)}
-          </>
-        )}
-      </fieldset>
+        <p className="text-text-muted text-xs">
+          <ShortcutTipParts parts={BOOKING_SETTINGS_HINT_PARTS} />
+        </p>
 
-      <div {...bookingFieldAttrs("timezone")}>
-        <BookingTimezoneField
-          onChange={(timeZone) => updateForm({ timeZone })}
-          shortcutKeys={showShortcuts ? bookingJumpKeys("timezone") : undefined}
-          timeZone={form.timeZone}
-        />
-      </div>
+        {savedPage ? (
+          <div {...bookingFieldAttrs("link")}>
+            <BookingCopyLink bookingUrl={savedPage.bookingUrl} />
+          </div>
+        ) : null}
 
-      <div className="flex flex-col gap-4" {...bookingFieldAttrs("hours")}>
-        <BookingWeeklyHoursEditor
-          onChange={(weeklyAvailability) => updateForm({ weeklyAvailability })}
-          onValidityChange={setAreHoursValid}
-          shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
-          value={form.weeklyAvailability}
-        />
-      </div>
-
-      <div>
-        <BookingFieldLabel
-          field="welcome"
-          htmlFor="booking-welcome"
-          showShortcuts={showShortcuts}
+        <label
+          className="flex items-center gap-2 text-sm text-text"
+          {...bookingFieldAttrs("enabled")}
         >
-          Welcome text
-        </BookingFieldLabel>
-        <textarea
-          {...bookingFieldAttrs("welcome")}
-          aria-invalid={
-            (form.welcomeText?.length ?? 0) > 500 ? true : undefined
-          }
-          className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
-          id="booking-welcome"
-          maxLength={500}
-          onChange={(event) =>
-            updateForm({
-              welcomeText:
-                event.target.value.trim() === "" ? null : event.target.value,
-            })
-          }
-          value={form.welcomeText ?? ""}
-        />
-        {(form.welcomeText?.length ?? 0) > 500 ? (
-          <p className="text-error text-xs" role="alert">
-            Welcome text must be 500 characters or fewer.
+          <input
+            checked={form.enabled}
+            className="c-all-day-checkbox"
+            onChange={(event) => handleEnableChange(event.target.checked)}
+            type="checkbox"
+          />
+          Enable booking page
+          {showShortcuts ? (
+            <ShortcutKeys keys={bookingJumpKeys("enabled")} />
+          ) : null}
+        </label>
+        {enableError ? (
+          <p className="text-error text-sm" role="alert">
+            {enableError}
           </p>
         ) : null}
-      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <BookingNumberField
-          field="notice"
-          id="booking-min-notice"
-          invalid={minNoticeInvalid}
-          invalidMessage="Enter 0 or more hours."
-          label="Minimum notice (hours)"
-          min={0}
-          onChange={(raw) => {
-            setMinNoticeText(raw);
-            const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
-            if (parsed !== null) {
-              updateForm({ minNoticeHours: parsed });
-            }
-          }}
-          showShortcuts={showShortcuts}
-          value={minNoticeText}
-        />
-        <BookingNumberField
-          field="horizon"
-          id="booking-max-horizon"
-          invalid={horizonInvalid}
-          invalidMessage="Enter 1 to 60 days."
-          label="Maximum horizon (days)"
-          max={60}
-          min={1}
-          onChange={(raw) => {
-            setHorizonText(raw);
-            const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
-            if (parsed !== null) {
-              updateForm({ maxHorizonDays: parsed });
-            }
-          }}
-          showShortcuts={showShortcuts}
-          value={horizonText}
-        />
-      </div>
-
-      <fieldset
-        className="flex flex-col gap-2"
-        {...bookingFieldAttrs("options")}
-      >
-        <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-          Buffer and limits
-          {showShortcuts ? (
-            <ShortcutKeys keys={bookingJumpKeys("options")} />
-          ) : null}
-        </legend>
-
-        <BookingCheckboxRow
-          checked={form.bufferMinutes !== null}
-          onChange={(checked) =>
-            updateForm({
-              bufferMinutes: checked ? DEFAULT_BUFFER_MINUTES : null,
-            })
-          }
-        >
-          Buffer between appointments ({DEFAULT_BUFFER_MINUTES} minutes)
-        </BookingCheckboxRow>
-
-        <BookingCheckboxRow
-          checked={form.maxBookingsPerDay !== null}
-          onChange={(checked) =>
-            updateForm({
-              maxBookingsPerDay: checked ? DEFAULT_MAX_BOOKINGS_PER_DAY : null,
-            })
-          }
-        >
-          Max bookings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
-        </BookingCheckboxRow>
-
-        <BookingCheckboxRow
-          checked={form.guestsCanInviteOthers}
-          onChange={(guestsCanInviteOthers) =>
-            updateForm({ guestsCanInviteOthers })
-          }
-        >
-          Guest can invite others
-        </BookingCheckboxRow>
-      </fieldset>
-
-      <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
-        {/* Default align=end keeps the always-on chip Save off the hours column. */}
-        <OverlayPanelActions>
-          <OverlayPanelActionButton
-            aria-busy={saveMutation.isPending || undefined}
-            aria-keyshortcuts="Meta+Enter Control+Enter"
-            className="whitespace-nowrap"
-            disabled={saveMutation.isPending}
-            onClick={handleSave}
-            shortcut={["Mod", "Enter"]}
-            showShortcut
-            variant="primary"
-            {...settingsShortcutAttrs("save-booking")}
+        <div>
+          <BookingFieldLabel
+            field="duration"
+            htmlFor="booking-duration"
+            showShortcuts={showShortcuts}
           >
-            {saveMutation.isPending ? "Saving…" : "Save booking settings"}
-          </OverlayPanelActionButton>
-        </OverlayPanelActions>
-      </div>
+            Duration
+          </BookingFieldLabel>
+          <select
+            {...bookingFieldAttrs("duration")}
+            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+            id="booking-duration"
+            onChange={(event) =>
+              updateForm({
+                durationMinutes: Number(
+                  event.target.value,
+                ) as BookingDurationMinutes,
+              })
+            }
+            value={form.durationMinutes}
+          >
+            {DURATION_OPTIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes} minutes
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <EditSequenceMenu
-        getAnchor={() => sectionRef.current}
-        options={BOOKING_SEQUENCE_FIELDS}
-        prompt="Jump to which field?"
-        scope="booking"
+        <div>
+          <BookingFieldLabel
+            field="destination"
+            htmlFor="booking-destination-calendar"
+            showShortcuts={showShortcuts}
+          >
+            Destination calendar
+          </BookingFieldLabel>
+          <select
+            {...bookingFieldAttrs("destination")}
+            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+            id="booking-destination-calendar"
+            onChange={(event) =>
+              handleDestinationChange(event.target.value as CalendarId)
+            }
+            value={form.destinationCalendarId}
+          >
+            {writableCalendars.length === 0 ? (
+              <option value={BOOKING_PLACEHOLDER_CALENDAR_ID}>
+                No writable calendars
+              </option>
+            ) : (
+              <>
+                {writableGroups
+                  .filter((group) => group.calendars.length > 0)
+                  .map((group) => (
+                    <optgroup
+                      key={group.accountEmail}
+                      label={group.accountEmail}
+                    >
+                      {group.calendars.map((calendar) => (
+                        <option key={calendar.id} value={calendar.id}>
+                          {calendar.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                {writableUngrouped.map((calendar) => (
+                  <option key={calendar.id} value={calendar.id}>
+                    {calendar.name}
+                  </option>
+                ))}
+              </>
+            )}
+          </select>
+        </div>
+
+        <fieldset
+          className="flex flex-col gap-2"
+          {...bookingFieldAttrs("blocking")}
+        >
+          <legend className="mb-1 flex items-center gap-1 text-sm text-text">
+            Blocking calendars
+            {showShortcuts ? (
+              <ShortcutKeys keys={bookingJumpKeys("blocking")} />
+            ) : null}
+          </legend>
+          {availabilityCalendars.length === 0 ? (
+            <p className="text-sm text-text-muted">No calendars available.</p>
+          ) : (
+            <>
+              {groups
+                .filter((group) => group.calendars.length > 0)
+                .map((group) => (
+                  <div className="flex flex-col gap-1" key={group.accountEmail}>
+                    <p className="text-text-muted text-xs">
+                      {group.accountEmail}
+                    </p>
+                    {group.calendars.map(renderBlockingCalendar)}
+                  </div>
+                ))}
+              {ungrouped.map(renderBlockingCalendar)}
+            </>
+          )}
+        </fieldset>
+
+        <div {...bookingFieldAttrs("timezone")}>
+          <BookingTimezoneField
+            onChange={(timeZone) => updateForm({ timeZone })}
+            shortcutKeys={
+              showShortcuts ? bookingJumpKeys("timezone") : undefined
+            }
+            timeZone={form.timeZone}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4" {...bookingFieldAttrs("hours")}>
+          <BookingWeeklyHoursEditor
+            onChange={(weeklyAvailability) =>
+              updateForm({ weeklyAvailability })
+            }
+            onDraftDirtyChange={setHoursDraftDirty}
+            onValidityChange={setAreHoursValid}
+            shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
+            value={form.weeklyAvailability}
+          />
+        </div>
+
+        <div>
+          <BookingFieldLabel
+            field="welcome"
+            htmlFor="booking-welcome"
+            showShortcuts={showShortcuts}
+          >
+            Welcome text
+          </BookingFieldLabel>
+          <textarea
+            {...bookingFieldAttrs("welcome")}
+            aria-invalid={
+              (form.welcomeText?.length ?? 0) > 500 ? true : undefined
+            }
+            className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
+            id="booking-welcome"
+            maxLength={500}
+            onChange={(event) =>
+              updateForm({
+                welcomeText:
+                  event.target.value.trim() === "" ? null : event.target.value,
+              })
+            }
+            value={form.welcomeText ?? ""}
+          />
+          {(form.welcomeText?.length ?? 0) > 500 ? (
+            <p className="text-error text-xs" role="alert">
+              Welcome text must be 500 characters or fewer.
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <BookingNumberField
+            field="notice"
+            id="booking-min-notice"
+            invalid={minNoticeInvalid}
+            invalidMessage="Enter 0 or more hours."
+            label="Minimum notice (hours)"
+            min={0}
+            onChange={(raw) => {
+              setMinNoticeText(raw);
+              const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
+              if (parsed !== null) {
+                updateForm({ minNoticeHours: parsed });
+              }
+            }}
+            showShortcuts={showShortcuts}
+            value={minNoticeText}
+          />
+          <BookingNumberField
+            field="horizon"
+            id="booking-max-horizon"
+            invalid={horizonInvalid}
+            invalidMessage="Enter 1 to 60 days."
+            label="Maximum horizon (days)"
+            max={60}
+            min={1}
+            onChange={(raw) => {
+              setHorizonText(raw);
+              const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
+              if (parsed !== null) {
+                updateForm({ maxHorizonDays: parsed });
+              }
+            }}
+            showShortcuts={showShortcuts}
+            value={horizonText}
+          />
+        </div>
+
+        <fieldset
+          className="flex flex-col gap-2"
+          {...bookingFieldAttrs("options")}
+        >
+          <legend className="mb-1 flex items-center gap-1 text-sm text-text">
+            Buffer and limits
+            {showShortcuts ? (
+              <ShortcutKeys keys={bookingJumpKeys("options")} />
+            ) : null}
+          </legend>
+
+          <BookingCheckboxRow
+            checked={form.bufferMinutes !== null}
+            onChange={(checked) =>
+              updateForm({
+                bufferMinutes: checked ? DEFAULT_BUFFER_MINUTES : null,
+              })
+            }
+          >
+            Buffer between appointments ({DEFAULT_BUFFER_MINUTES} minutes)
+          </BookingCheckboxRow>
+
+          <BookingCheckboxRow
+            checked={form.maxBookingsPerDay !== null}
+            onChange={(checked) =>
+              updateForm({
+                maxBookingsPerDay: checked
+                  ? DEFAULT_MAX_BOOKINGS_PER_DAY
+                  : null,
+              })
+            }
+          >
+            Max bookings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
+          </BookingCheckboxRow>
+
+          <BookingCheckboxRow
+            checked={form.guestsCanInviteOthers}
+            onChange={(guestsCanInviteOthers) =>
+              updateForm({ guestsCanInviteOthers })
+            }
+          >
+            Guest can invite others
+          </BookingCheckboxRow>
+        </fieldset>
+
+        <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
+          {/* Default align=end keeps the always-on chip Save off the hours column. */}
+          <OverlayPanelActions>
+            <OverlayPanelActionButton
+              aria-busy={saveMutation.isPending || undefined}
+              aria-keyshortcuts="Meta+Enter Control+Enter"
+              className="whitespace-nowrap"
+              disabled={saveMutation.isPending}
+              onClick={handleSave}
+              shortcut={["Mod", "Enter"]}
+              showShortcut
+              variant="primary"
+              {...settingsShortcutAttrs("save-booking")}
+            >
+              {saveMutation.isPending ? "Saving…" : "Save booking settings"}
+            </OverlayPanelActionButton>
+          </OverlayPanelActions>
+        </div>
+
+        <EditSequenceMenu
+          getAnchor={() => sectionRef.current}
+          options={BOOKING_SEQUENCE_FIELDS}
+          prompt="Jump to which field?"
+          scope="booking"
+        />
+      </fieldset>
+      <DiscardUnsavedChangesDialog
+        isOpen={isConfirmOpen}
+        onCancel={() => setIsConfirmOpen(false)}
+        onDiscard={() => {
+          setIsConfirmOpen(false);
+          onDiscardUnsaved?.();
+        }}
       />
-    </fieldset>
+    </>
   );
 }

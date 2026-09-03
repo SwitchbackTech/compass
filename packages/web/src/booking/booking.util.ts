@@ -110,6 +110,35 @@ export function toBookingPageInput(
 }
 
 /**
+ * Compare the live Settings form against the last seeded page. Number fields
+ * keep raw text until parse succeeds, so an in-progress (or cleared) value
+ * counts as dirty even when `form.minNoticeHours` / `form.maxHorizonDays`
+ * still hold the previous integer.
+ */
+export function isBookingSettingsFormDirty({
+  form,
+  baseline,
+  minNoticeText,
+  horizonText,
+}: {
+  form: AdminPutBookingPageInput;
+  baseline: AdminPutBookingPageInput;
+  minNoticeText: string;
+  horizonText: string;
+}): boolean {
+  if (
+    JSON.stringify(toBookingPageInput(form)) !==
+    JSON.stringify(toBookingPageInput(baseline))
+  ) {
+    return true;
+  }
+  return (
+    minNoticeText !== String(baseline.minNoticeHours) ||
+    horizonText !== String(baseline.maxHorizonDays)
+  );
+}
+
+/**
  * A page the host has never saved. `GET /booking/page` answers with the same
  * bare input shape whether the host never saved or saved without ever
  * enabling, so the explicit flag is the only way to tell them apart - and the
