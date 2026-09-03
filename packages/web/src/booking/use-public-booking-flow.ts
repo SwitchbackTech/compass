@@ -210,13 +210,10 @@ export function usePublicBookingFlow() {
       if (isHigherEscapeOwner()) {
         return;
       }
-      if (!showDetailsStep) {
-        return;
-      }
       event.preventDefault();
       handleChangeTime();
     },
-    { ignoreInputs: false },
+    { enabled: showDetailsStep, ignoreInputs: false },
   );
 
   const handlePrefetchMonth = (nextMonthKey: string) => {
