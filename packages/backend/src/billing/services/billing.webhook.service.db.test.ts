@@ -532,4 +532,245 @@ describe("Stripe webhook", () => {
       }),
     ).toBe(1);
   });
+
+  describe("setup-mode checkout.session.completed", () => {
+    const seedCustomer = async (billing: Record<string, unknown> = {}) => {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "setup@example.com",
+        name: "Setup User",
+        firstName: "Setup",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "active",
+          stripeCustomerId: "cus_setup",
+          ...billing,
+        },
+      });
+      return userId;
+    };
+
+    const setupEvent = (userId: string, eventId = "evt_setup_1") =>
+      ({
+        id: eventId,
+        type: "checkout.session.completed",
+        created: 1_775_000_100,
+        data: {
+          object: {
+            id: "cs_setup_1",
+            mode: "setup",
+            client_reference_id: userId,
+            customer: "cus_setup",
+          },
+        },
+      }) as unknown as Stripe.Event;
+
+    const retrievedSetupSession = (userId: string) => ({
+      id: "cs_setup_1",
+      mode: "setup",
+      client_reference_id: userId,
+      customer: "cus_setup",
+      setup_intent: {
+        id: "seti_1",
+        payment_method: "pm_new",
+      },
+    });
+
+    it("sets the customer and subscription default payment method", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedCustomer({
+        stripeSubscriptionId: "sub_setup",
+      });
+      const customersUpdate = mock(() => Promise.resolve({ id: "cus_setup" }));
+      const subscriptionsUpdate = mock(() =>
+        Promise.resolve(
+          subscription({
+            id: "sub_setup",
+            status: "active",
+            customer: "cus_setup",
+            default_payment_method: "pm_new",
+          }),
+        ),
+      );
+      const sessionsRetrieve = mock(() =>
+        Promise.resolve(retrievedSetupSession(userId.toString())),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { retrieve: sessionsRetrieve } },
+        customers: { update: customersUpdate },
+        subscriptions: { update: subscriptionsUpdate },
+      } as unknown as Stripe);
+
+      await processStripeEvent(setupEvent(userId.toString()));
+
+      expect(sessionsRetrieve.mock.calls[0]?.[0]).toBe("cs_setup_1");
+      expect(sessionsRetrieve.mock.calls[0]?.[1]).toEqual({
+        expand: ["setup_intent"],
+      });
+      expect(customersUpdate.mock.calls[0]).toEqual([
+        "cus_setup",
+        { invoice_settings: { default_payment_method: "pm_new" } },
+      ]);
+      expect(subscriptionsUpdate.mock.calls[0]).toEqual([
+        "sub_setup",
+        { default_payment_method: "pm_new" },
+      ]);
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.subscriptionStatus).toBe("active");
+      expect(stored?.billing?.stripeSubscriptionId).toBe("sub_setup");
+    });
+
+    it("updates only the customer when there is no subscription id", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedCustomer();
+      const customersUpdate = mock(() => Promise.resolve({ id: "cus_setup" }));
+      const subscriptionsUpdate = mock();
+      setStripeClientForTests({
+        checkout: {
+          sessions: {
+            retrieve: mock(() =>
+              Promise.resolve(retrievedSetupSession(userId.toString())),
+            ),
+          },
+        },
+        customers: { update: customersUpdate },
+        subscriptions: { update: subscriptionsUpdate },
+      } as unknown as Stripe);
+
+      await processStripeEvent(setupEvent(userId.toString(), "evt_setup_2"));
+
+      expect(customersUpdate).toHaveBeenCalled();
+      expect(subscriptionsUpdate).not.toHaveBeenCalled();
+    });
+
+    it("still applies a subscription-mode checkout along the existing path", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "submode@example.com",
+        name: "Sub",
+        firstName: "Sub",
+        lastName: "User",
+        locale: "en",
+        billing: { subscriptionStatus: "awaiting_checkout" },
+      });
+      const sessionsRetrieve = mock();
+      const retrieve = mock(() =>
+        Promise.resolve(
+          subscription({ metadata: { compassUserId: userId.toString() } }),
+        ),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { retrieve: sessionsRetrieve } },
+        subscriptions: { retrieve },
+      } as unknown as Stripe);
+
+      await processStripeEvent({
+        id: "evt_sub_mode_1",
+        type: "checkout.session.completed",
+        created: 1_775_000_100,
+        data: {
+          object: {
+            id: "cs_sub_1",
+            mode: "subscription",
+            client_reference_id: userId.toString(),
+            customer: "cus_1",
+            subscription: "sub_1",
+          },
+        },
+      } as unknown as Stripe.Event);
+
+      expect(sessionsRetrieve).not.toHaveBeenCalled();
+      expect(retrieve).toHaveBeenCalled();
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.subscriptionStatus).toBe("trialing");
+    });
+
+    it("leaves no billingEvent row when Stripe fails, so the retry reprocesses", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedCustomer({ stripeSubscriptionId: "sub_setup" });
+      setStripeClientForTests({
+        checkout: {
+          sessions: {
+            retrieve: mock(() =>
+              Promise.reject(new Error("stripe unavailable")),
+            ),
+          },
+        },
+      } as unknown as Stripe);
+
+      const event = setupEvent(userId.toString(), "evt_setup_fail");
+      await expect(processStripeEvent(event)).rejects.toThrow(
+        "stripe unavailable",
+      );
+      expect(
+        await mongoService.billingEvent.countDocuments({ _id: event.id }),
+      ).toBe(0);
+    });
+
+    it("accepts a signed setup-mode event", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedCustomer({ stripeSubscriptionId: "sub_setup" });
+      const stripe = realStripe();
+      const customersUpdate = mock(() => Promise.resolve({ id: "cus_setup" }));
+      const subscriptionsUpdate = mock(() =>
+        Promise.resolve(
+          subscription({
+            id: "sub_setup",
+            status: "active",
+            customer: "cus_setup",
+          }),
+        ),
+      );
+      setStripeClientForTests({
+        webhooks: stripe.webhooks,
+        checkout: {
+          sessions: {
+            retrieve: mock(() =>
+              Promise.resolve(retrievedSetupSession(userId.toString())),
+            ),
+          },
+        },
+        customers: { update: customersUpdate },
+        subscriptions: { update: subscriptionsUpdate },
+      } as unknown as Stripe);
+
+      const payload = JSON.stringify({
+        id: "evt_setup_signed",
+        type: "checkout.session.completed",
+        created: 1_775_000_100,
+        data: {
+          object: {
+            id: "cs_setup_1",
+            mode: "setup",
+            client_reference_id: userId.toString(),
+            customer: "cus_setup",
+          },
+        },
+      });
+      const signature = await stripe.webhooks.generateTestHeaderStringAsync({
+        payload,
+        secret: stripeConfigured.STRIPE_WEBHOOK_SECRET,
+      });
+
+      const { res, json } = jsonRes();
+      await billingWebhookController.handleStripe(
+        {
+          body: Buffer.from(payload),
+          headers: { "stripe-signature": signature },
+        } as unknown as Request,
+        res,
+      );
+
+      expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+        Status.OK,
+      );
+      expect(json).toHaveBeenCalledWith({ received: true });
+      expect(customersUpdate).toHaveBeenCalled();
+      expect(subscriptionsUpdate).toHaveBeenCalled();
+    });
+  });
 });

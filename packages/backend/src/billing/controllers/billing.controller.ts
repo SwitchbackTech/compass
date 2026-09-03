@@ -3,6 +3,8 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
   type BillingCheckoutResponse,
+  type BillingClientSecretResponse,
+  BillingClientSecretResponseSchema,
   type BillingPortalResponse,
   type BillingStatusResponse,
   type BillingSubscriptionResponse,
@@ -67,6 +69,23 @@ class BillingController {
       const userId = zObjectId.parse(req.session?.getUserId());
       const status = await stripeService.endTrialNow(userId.toString());
       res.status(Status.OK).json(status);
+    } catch (e) {
+      sendBillingError(res, e);
+    }
+  };
+
+  createPaymentMethodSession = async (
+    req: Request<never, BillingClientSecretResponse, never, never>,
+    res: Response<BillingClientSecretResponse | { error: string }>,
+  ) => {
+    try {
+      const userId = zObjectId.parse(req.session?.getUserId());
+      const result = await stripeService.createPaymentMethodSession(
+        userId.toString(),
+      );
+      res
+        .status(Status.OK)
+        .json(BillingClientSecretResponseSchema.parse(result));
     } catch (e) {
       sendBillingError(res, e);
     }

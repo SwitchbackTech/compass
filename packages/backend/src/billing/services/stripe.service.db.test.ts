@@ -831,4 +831,77 @@ describe("StripeService", () => {
       });
     });
   });
+
+  describe("createPaymentMethodSession", () => {
+    it("creates a setup-mode embedded Checkout session", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "card@example.com",
+        name: "Card User",
+        firstName: "Card",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "active",
+          stripeCustomerId: "cus_card",
+          stripeSubscriptionId: "sub_card",
+        },
+      });
+
+      const sessionsCreate = mock(() =>
+        Promise.resolve({ client_secret: "seti_secret_1" }),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { create: sessionsCreate } },
+      } as unknown as Stripe);
+
+      const result = await stripeService.createPaymentMethodSession(
+        userId.toString(),
+      );
+
+      expect(result).toEqual({ clientSecret: "seti_secret_1" });
+      expect(sessionsCreate.mock.calls[0]?.[0]).toEqual({
+        mode: "setup",
+        customer: "cus_card",
+        payment_method_types: ["card"],
+        ui_mode: "embedded",
+        redirect_on_completion: "never",
+        client_reference_id: userId.toString(),
+        setup_intent_data: { metadata: { compassUserId: userId.toString() } },
+      });
+      expect(sessionsCreate.mock.calls[0]?.[1]).toBeUndefined();
+    });
+
+    it("rejects with 409 and skips Stripe when the user has no customer id", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "none@example.com",
+        name: "None User",
+        firstName: "None",
+        lastName: "User",
+        locale: "en",
+        billing: { subscriptionStatus: "awaiting_checkout" },
+      });
+
+      const sessionsCreate = mock(() =>
+        Promise.resolve({ client_secret: "seti_secret_1" }),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { create: sessionsCreate } },
+      } as unknown as Stripe);
+
+      await expect(
+        stripeService.createPaymentMethodSession(userId.toString()),
+      ).rejects.toMatchObject({
+        name: "BillingHttpError",
+        status: 409,
+        clientMessage: "No billing account yet.",
+      });
+      expect(sessionsCreate).not.toHaveBeenCalled();
+    });
+  });
 });
