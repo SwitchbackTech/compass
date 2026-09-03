@@ -173,6 +173,20 @@ describe("CommandPalette", () => {
     expect(screen.queryByText("Booking settings")).toBeNull();
   });
 
+  it("badges create actions as Pro when billing is read-only", () => {
+    authenticated = true;
+    access = {
+      kind: "server",
+      status: "awaiting_checkout",
+      isReadOnly: true,
+      trialEndsAt: null,
+    };
+    renderPalette();
+
+    const row = rowLabel("Create event").closest("button") as HTMLElement;
+    expect(within(row).getByText("Pro")).toBeInTheDocument();
+  });
+
   it("renders all sections with items and focuses the input on mount", () => {
     const { container } = renderPalette();
 

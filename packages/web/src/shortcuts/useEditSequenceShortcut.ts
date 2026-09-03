@@ -1,5 +1,7 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { useEffect, useRef } from "react";
+import { isBillingWriteLocked } from "@web/billing/billing-write-lock";
+import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
 import {
   type EventFormFocusField,
   isEditableKeyboardTarget,
@@ -145,6 +147,15 @@ export function useEditSequenceShortcut<
           disarm();
           return;
         }
+        if (!ignoreAppLock && isBillingWriteLocked()) {
+          disarm();
+          promptShortcutUpgrade({
+            featureArea: "event_editing",
+            actionId: "event.edit_title",
+            source: "keyboard",
+          });
+          return;
+        }
 
         if (event.key === "Escape") {
           disarm();
@@ -178,6 +189,23 @@ export function useEditSequenceShortcut<
       }
 
       if (!ignoreAppLock && isAppLocked()) {
+        return;
+      }
+
+      if (!ignoreAppLock && isBillingWriteLocked()) {
+        const isMod = isModLeader(event);
+        const isLeader =
+          isMod ||
+          (isBareLetterKey(event, LEADER_KEY) &&
+            !isEditableKeyboardTarget(event));
+        const canArm = !canArmRef.current || canArmRef.current();
+        if (isLeader && canArm) {
+          promptShortcutUpgrade({
+            featureArea: "event_editing",
+            actionId: "event.edit_title",
+            source: "keyboard",
+          });
+        }
         return;
       }
 

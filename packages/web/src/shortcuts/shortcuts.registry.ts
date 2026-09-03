@@ -153,24 +153,28 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: [KEYMAP.createEvent.hotkey.toLowerCase()],
     label: "Create timed event",
     section: "create",
+    requiresWrite: true,
   },
   {
     id: "create-allday",
     keys: ["Shift", "C"],
     label: "Create all-day event",
     section: "create",
+    requiresWrite: true,
   },
   {
     id: "create-place-timed",
     keys: ["Shift", "Arrow keys"],
     label: "Place timed draft on grid",
     section: "create",
+    requiresWrite: true,
   },
   {
     id: "create-typed-time",
     keys: ["1130"],
     label: "Create draft at a typed time (press H to see open slots)",
     section: "create",
+    requiresWrite: true,
   },
   {
     id: "create-place-discard",
@@ -237,30 +241,35 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: ["e", key],
     label: `Edit ${label.toLowerCase()}`,
     section: "edit",
+    requiresWrite: true,
   })),
   {
     id: "edit-delete",
     keys: ["Delete"],
     label: "Delete focused event",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-duplicate",
     keys: ["Mod", "D"],
     label: "Duplicate focused event",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-copy",
     keys: ["Mod", "C"],
     label: "Copy focused event",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-paste",
     keys: ["Mod", "V"],
     label: "Paste copied event",
     section: "edit",
+    requiresWrite: true,
   },
   {
     // Shift+F10 also opens this menu on platforms that have a context-menu key
@@ -271,6 +280,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: ["m"],
     label: "Open event menu",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-save",
@@ -278,6 +288,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Save event form",
     section: "edit",
     when: { isFormOpen: true },
+    requiresWrite: true,
   },
   // One row instead of seven duplicates of the rows above: `Mod+E` is the same
   // leader, for when the caret is already in a field and a bare `e` would type.
@@ -287,6 +298,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Same field jumps while typing",
     section: "edit",
     when: { isFormOpen: true },
+    requiresWrite: true,
   },
   // One row instead of eight duplicates: the digit assignment is the same
   // table as edit-focus-* above (just numbered instead of lettered), and
@@ -297,6 +309,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Jump to form field or actions (hold Mod for hints)",
     section: "edit",
     when: { isFormOpen: true },
+    requiresWrite: true,
   },
   // Called out separately from the digit row above: the actions toolbar is
   // the one jump target that isn't a field, and it's the only place Duplicate
@@ -307,6 +320,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Jump to event actions",
     section: "edit",
     when: { isFormOpen: true },
+    requiresWrite: true,
   },
   // Not form-gated: the same digit pick also runs in the event context
   // menu's color swatch strip, independent of whether the form is open.
@@ -315,6 +329,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: ["1-9", "0", "-", "="],
     label: "Pick focused color or calendar",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-focus-prev",
@@ -345,42 +360,49 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: ["Arrow keys"],
     label: "Move draft event",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-move-prev-day",
     keys: caps(KEYMAP.moveEvent.hotkeys.left),
     label: "Move event to previous day",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-move-next-day",
     keys: caps(KEYMAP.moveEvent.hotkeys.right),
     label: "Move event to next day",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-move-earlier",
     keys: caps(KEYMAP.moveEvent.hotkeys.up),
     label: "Move event 15 min earlier",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-move-later",
     keys: caps(KEYMAP.moveEvent.hotkeys.down),
     label: "Move event 15 min later",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-cycle-edge",
     keys: [KEYMAP.edgeFocus.hotkey],
     label: "Cycle start/end edge focus",
     section: "edit",
+    requiresWrite: true,
   },
   {
     id: "edit-move-edge",
     keys: ["Shift", "Arrow keys"],
     label: "Move only the focused edge",
     section: "edit",
+    requiresWrite: true,
   },
 
   // Other
@@ -431,12 +453,14 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     keys: caps(KEYMAP.undo.hotkey),
     label: "Undo last change",
     section: "other",
+    requiresWrite: true,
   },
   {
     id: "other-redo",
     keys: caps(KEYMAP.redo.hotkey),
     label: "Redo last change",
     section: "other",
+    requiresWrite: true,
   },
   {
     id: "other-time-travel",

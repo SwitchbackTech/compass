@@ -4,6 +4,7 @@ import {
   dispatchMissingKey,
   pressKey,
 } from "@web/__tests__/utils/keyboard.test.util";
+import { setBillingWriteLock } from "@web/billing/billing-write-lock";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   selectEditSequenceMenuVisible,
@@ -308,6 +309,18 @@ describe("useEditSequenceShortcut", () => {
       pressKey("t");
 
       expect(onSequence).toHaveBeenCalledWith("title");
+    });
+
+    it("does not arm while billing is write-locked", () => {
+      const onSequence = mock(() => {});
+      setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+      renderHook(() => useEditSequenceShortcut({ onSequence }));
+      pressKey("e");
+      pressKey("t");
+
+      expect(isEditSequenceArmed()).toBe(false);
+      expect(onSequence).not.toHaveBeenCalled();
     });
 
     it("dispatches from a custom field table", () => {

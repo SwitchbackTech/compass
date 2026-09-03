@@ -1,3 +1,4 @@
+import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { server } from "../__mocks__/server/mock.server";
 import {
   installDefaultWebTestSeams,
@@ -12,6 +13,7 @@ import {
   beforeEach,
   expect,
   mock,
+  setSystemTime,
 } from "bun:test";
 import { createRequire } from "node:module";
 
@@ -25,6 +27,15 @@ expect.extend(jestDomMatchers);
 const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("../utils/state/reset-stores");
 const { BaseApi } = await import("@web/api/base/base.api");
+const { billingPreviewActions } = await import(
+  "@web/billing/billing-preview.store"
+);
+const { resetBillingWriteLockForTests } = await import(
+  "@web/billing/billing-write-lock"
+);
+const { resetShortcutUpgradePromptForTests } = await import(
+  "@web/billing/prompt-shortcut-upgrade"
+);
 const { clearAppLockReasons } = await import("@web/shortcuts/app-lock");
 const { clearFloatingLayerReasons } = await import(
   "@web/shortcuts/floating-layer"
@@ -39,6 +50,8 @@ function resetDocument() {
   document.body.removeAttribute("data-app-locked");
   clearAppLockReasons();
   clearFloatingLayerReasons();
+  resetBillingWriteLockForTests();
+  resetShortcutUpgradePromptForTests();
   document.documentElement.removeAttribute("style");
 }
 
@@ -63,6 +76,12 @@ afterEach(async () => {
   resetBrowserState();
   resetAllStores();
   resetWebTestSeams();
+  billingPreviewActions.exit();
+  HotkeyManager.resetInstance();
+  // bun's fake clock is process-global across files in a shard. A leaked
+  // pin makes later findBy/waitFor hang forever because Date.now never
+  // advances past their timeout.
+  setSystemTime();
   BaseApi.defaults.adapter = undefined;
   server.resetHandlers();
 });

@@ -14,6 +14,7 @@ import {
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import { useSyncBillingWriteLock } from "@web/billing/useBillingWriteLock";
 import { usePlanChangeToasts } from "@web/billing/usePlanChangeToasts";
 import { isMobileOS } from "@web/common/utils/device/device.util";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
@@ -56,6 +57,7 @@ export function RootShell() {
   const access = useAppAccess();
   const isPreviewing = useBillingPreviewStore(selectBillingPreviewing);
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);
+  useSyncBillingWriteLock();
   useCheckoutReturn();
   usePlanChangeToasts();
   useNavigationShortcuts();
