@@ -51,6 +51,9 @@ const customerIdOf = (value: unknown): string | undefined => {
   return undefined;
 };
 
+const paymentMethodIdOf = (value: unknown): string | undefined =>
+  customerIdOf(value);
+
 /**
  * The single place Stripe subscription fields are mapped onto `billing.*`.
  * Exported because ending a trial early applies the Subscription that
@@ -132,6 +135,63 @@ async function findUserIdForSubscription(
   return null;
 }
 
+async function handleSetupCheckoutSession(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+  eventCreatedAt: Date,
+): Promise<void> {
+  const retrieved = await stripe.checkout.sessions.retrieve(session.id, {
+    expand: ["setup_intent"],
+  });
+  const setupIntent = retrieved.setup_intent;
+  const paymentMethodId = paymentMethodIdOf(
+    typeof setupIntent === "object" && setupIntent !== null
+      ? setupIntent.payment_method
+      : undefined,
+  );
+  if (!paymentMethodId) {
+    throw new Error(
+      `setup checkout ${session.id} had no SetupIntent payment method`,
+    );
+  }
+
+  const customerId =
+    customerIdOf(retrieved.customer) ?? customerIdOf(session.customer);
+  let userId: string | null =
+    retrieved.client_reference_id ?? session.client_reference_id ?? null;
+  if (!userId && customerId) {
+    const byCustomer = await mongoService.user.findOne({
+      "billing.stripeCustomerId": customerId,
+    });
+    userId = byCustomer?._id.toString() ?? null;
+  }
+  if (!userId) {
+    logger.warn(`No Compass user for setup checkout session ${session.id}`);
+    return;
+  }
+
+  const user = await mongoService.user.findOne({
+    _id: mongoService.objectId(userId),
+  });
+  const resolvedCustomerId = customerId ?? user?.billing?.stripeCustomerId;
+  if (!resolvedCustomerId) {
+    logger.warn(`No Stripe customer for setup checkout session ${session.id}`);
+    return;
+  }
+
+  await stripe.customers.update(resolvedCustomerId, {
+    invoice_settings: { default_payment_method: paymentMethodId },
+  });
+
+  const subscriptionId = user?.billing?.stripeSubscriptionId;
+  if (!subscriptionId) return;
+
+  const subscription = await stripe.subscriptions.update(subscriptionId, {
+    default_payment_method: paymentMethodId,
+  });
+  await applySubscription(userId, subscription, eventCreatedAt);
+}
+
 async function handleEvent(event: Stripe.Event): Promise<void> {
   if (!HANDLED_TYPES.has(event.type)) return;
 
@@ -140,6 +200,10 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode === "setup") {
+      await handleSetupCheckoutSession(stripe, session, eventCreatedAt);
+      return;
+    }
     const subscriptionId = subscriptionIdOf(session.subscription);
     if (!subscriptionId) {
       logger.warn("checkout.session.completed had no subscription id");

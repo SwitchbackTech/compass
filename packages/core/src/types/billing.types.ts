@@ -32,6 +32,14 @@ export type BillingCheckoutResponse = z.infer<
   typeof BillingCheckoutResponseSchema
 >;
 
+/** Setup-mode embedded Checkout. WP-05 collapses this into checkout. */
+export const BillingClientSecretResponseSchema = z.object({
+  clientSecret: z.string(),
+});
+export type BillingClientSecretResponse = z.infer<
+  typeof BillingClientSecretResponseSchema
+>;
+
 export const BillingPortalResponseSchema = z.object({
   url: z.string().url(),
 });
