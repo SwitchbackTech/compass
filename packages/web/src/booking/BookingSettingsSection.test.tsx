@@ -750,7 +750,7 @@ describe("BookingSettingsSection", () => {
     expect(putCount).toBe(1);
   });
 
-  it("advertises Mod+Enter on the save button when shortcut chips are shown", async () => {
+  it("always shows Mod+Enter keycaps on Save when hold-Mod hints are off", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
 
     server.use(
@@ -764,19 +764,23 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts />
+        <BookingSettingsSection showShortcuts={false} />
       </HotkeysProvider>,
       { wrapper },
     );
 
     const save = await screen.findByRole("button", {
-      name: /Save booking settings/,
+      name: "Save booking settings",
     });
     expect(save).toHaveAttribute(
       "aria-keyshortcuts",
       "Meta+Enter Control+Enter",
     );
     expect(within(save).getByText("Enter")).toBeInTheDocument();
+
+    const durationLabel = screen.getByText("Duration");
+    expect(within(durationLabel).queryByText("D")).not.toBeInTheDocument();
+    expect(within(durationLabel).queryByText("E")).not.toBeInTheDocument();
   });
 
   it("copies the booking link after a save that returns one", async () => {
