@@ -5,6 +5,7 @@ import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { MobileGameBoard } from "@web/components/MobileGate/MobileGameBoard";
+import { MOBILE_PRIMARY_BUTTON_CLASS } from "@web/components/MobileGate/mobile-buttons";
 import {
   type MobileSlot,
   slotFromPointer,
@@ -142,7 +143,7 @@ export const MobileGame: React.FC<{
           <button
             type="button"
             onClick={onAdvanceLevel}
-            className="min-h-11 w-full cursor-pointer rounded border-none bg-accent px-8 py-2 font-medium font-sans text-base text-on-accent transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+            className={MOBILE_PRIMARY_BUTTON_CLASS}
           >
             Next level
           </button>

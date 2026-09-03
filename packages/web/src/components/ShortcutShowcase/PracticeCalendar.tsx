@@ -1,12 +1,14 @@
 import { type FC } from "react";
-import {
-  HOURS_AM_FORMAT,
-  HOURS_AM_SHORT_FORMAT,
-} from "@core/constants/date.constants";
+import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GameSlot } from "@web/components/ShortcutShowcase/game.tasks";
+import {
+  formatGridHour,
+  gridOffsetPercent,
+  percentBlockStyle,
+} from "@web/components/ShortcutShowcase/game-grid.util";
 import {
   type PracticeEventBlock,
   type PracticeState,
@@ -22,18 +24,11 @@ const TOTAL_MIN = (SHOWCASE_GRID_END_HOUR - SHOWCASE_GRID_START_HOUR) * 60;
 /** The lock flash retriggers by remounting the block with a new seq. */
 export type PracticeFlash = { eventId: string; seq: number };
 
-// Same format constants the real grid uses, so the first calendar a new
-// user sees reads exactly like the one they graduate into.
-const formatHour = (hour: number) =>
-  dayjs().startOf("day").add(hour, "hour").format(HOURS_AM_SHORT_FORMAT);
-
 const formatTime = (minutes: number) =>
   dayjs().startOf("day").add(minutes, "minute").format(HOURS_AM_FORMAT);
 
-const slotGeometry = (startMin: number, endMin: number) => ({
-  top: `${((startMin - GRID_START_MIN) / TOTAL_MIN) * 100}%`,
-  height: `${((endMin - startMin) / TOTAL_MIN) * 100}%`,
-});
+const slotGeometry = (startMin: number, endMin: number) =>
+  percentBlockStyle(startMin, endMin - startMin, GRID_START_MIN, TOTAL_MIN);
 
 const PracticeBlock: FC<{
   block: PracticeEventBlock;
@@ -178,10 +173,10 @@ export const PracticeCalendar: FC<{
               key={hour}
               className="absolute right-2 -translate-y-1/2 text-[10px] text-text-muted"
               style={{
-                top: `${(((hour - SHOWCASE_GRID_START_HOUR) * 60) / TOTAL_MIN) * 100}%`,
+                top: gridOffsetPercent(hour * 60, GRID_START_MIN, TOTAL_MIN),
               }}
             >
-              {formatHour(hour)}
+              {formatGridHour(hour)}
             </span>
           ))}
         </div>
@@ -202,7 +197,7 @@ export const PracticeCalendar: FC<{
                 key={hour}
                 className="absolute inset-x-0 border-border/60 border-t"
                 style={{
-                  top: `${(((hour - SHOWCASE_GRID_START_HOUR) * 60) / TOTAL_MIN) * 100}%`,
+                  top: gridOffsetPercent(hour * 60, GRID_START_MIN, TOTAL_MIN),
                 }}
               />
             ))}

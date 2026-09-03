@@ -1,6 +1,9 @@
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
+export const PUBLIC_BOOKING_HEADING_CLASS =
+  "font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent";
+
 interface PublicBookingStatusMessageProps {
   title: string;
   description: string;
@@ -19,7 +22,7 @@ export function PublicBookingStatusMessage({
           ref={headingRef}
           id="booking-status-heading"
           tabIndex={-1}
-          className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
+          className={PUBLIC_BOOKING_HEADING_CLASS}
         >
           {title}
         </h1>

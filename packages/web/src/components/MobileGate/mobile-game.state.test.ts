@@ -15,7 +15,7 @@ import {
 } from "@web/components/MobileGate/mobile-game.state";
 import {
   SPEED_BONUS_MS,
-  SPEED_BONUS_POINTS,
+  scorePlacement,
   TASK_BASE_POINTS,
 } from "@web/components/ShortcutShowcase/game.tasks";
 import { describe, expect, it } from "bun:test";
@@ -38,8 +38,7 @@ describe("mobile game reducer", () => {
     // Every drop lands 2s after the previous one: all speedy, so the streak
     // climbs 1,2,3,... and the multiplier steps x2 at 3 and x3 at 6.
     const expectedPoints = (streak: number) =>
-      (TASK_BASE_POINTS + SPEED_BONUS_POINTS) *
-      (streak >= 6 ? 3 : streak >= 3 ? 2 : 1);
+      scorePlacement(streak - 1, 0).points;
 
     let placements = 0;
     for (let level = 0; level < MOBILE_LEVELS.length; level += 1) {

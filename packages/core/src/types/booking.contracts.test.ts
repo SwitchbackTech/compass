@@ -10,6 +10,7 @@ import {
   PublicBookingPageSchema,
   PublicGetBookingPageResponseSchema,
   PublicGetBookingReservationResponseSchema,
+  pickAdminPutBookingPageInput,
   toPublicBookingPage,
   WeeklyAvailabilityIntervalSchema,
 } from "@core/types/booking.contracts";
@@ -138,6 +139,26 @@ describe("PublicBookingPageSchema", () => {
     expect(Object.keys(pub)).not.toContain("destinationCalendarId");
     expect(Object.keys(pub)).not.toContain("blockingCalendarIds");
     expect(Object.keys(pub)).not.toContain("dateOverrides");
+  });
+
+  it("picks only the admin PUT fields from a full page", () => {
+    const page = BookingPageSchema.parse(fullAdminPage());
+    expect(pickAdminPutBookingPageInput(page)).toEqual({
+      enabled: page.enabled,
+      durationMinutes: page.durationMinutes,
+      destinationCalendarId: page.destinationCalendarId,
+      blockingCalendarIds: page.blockingCalendarIds,
+      timeZone: page.timeZone,
+      weeklyAvailability: page.weeklyAvailability,
+      welcomeText: page.welcomeText ?? null,
+      minNoticeHours: page.minNoticeHours,
+      maxHorizonDays: page.maxHorizonDays,
+      bufferMinutes: page.bufferMinutes,
+      maxBookingsPerDay: page.maxBookingsPerDay,
+      guestsCanInviteOthers: page.guestsCanInviteOthers,
+    });
+    expect(pickAdminPutBookingPageInput(page)).not.toHaveProperty("id");
+    expect(pickAdminPutBookingPageInput(page)).not.toHaveProperty("slug");
   });
 });
 

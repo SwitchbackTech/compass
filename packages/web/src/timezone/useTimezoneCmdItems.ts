@@ -28,7 +28,7 @@ export function useTimezoneCmdItems(): CommandItem[] {
       keywords: ["timezone", "time zone", "tz", "secondary"],
       onClick: () => {
         settingsActions.markOverlayOpenedFromPalette();
-        timezoneDialogActions.open(undefined, "time-travel");
+        timezoneDialogActions.open("time-travel");
       },
     },
   ];

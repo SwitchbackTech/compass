@@ -22,6 +22,16 @@ const STREAK_X3_AT = 6;
 export const streakMultiplier = (streak: number): 1 | 2 | 3 =>
   streak >= STREAK_X3_AT ? 3 : streak >= STREAK_X2_AT ? 2 : 1;
 
+/** Shared by Block Party and Time Block Party so the two games stay in sync. */
+export const scorePlacement = (priorStreak: number, elapsedMs: number) => {
+  const speedy = elapsedMs <= SPEED_BONUS_MS;
+  const streak = speedy ? priorStreak + 1 : 0;
+  const points =
+    (TASK_BASE_POINTS + (speedy ? SPEED_BONUS_POINTS : 0)) *
+    streakMultiplier(streak);
+  return { speedy, streak, points };
+};
+
 /** Clearing the whole queue converts remaining seconds into points. */
 export const TIME_BONUS_PER_SECOND = 10;
 

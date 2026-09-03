@@ -51,12 +51,12 @@ import {
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
-  reopenCommandPaletteIfNeeded,
   selectIsSettingsOpen,
   selectSettingsPage,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { usePaletteAwareOverlayDismiss } from "@web/settings/usePaletteAwareOverlayDismiss";
 import {
   settingsShortcutAttrs,
   useSettingsShortcuts,
@@ -86,8 +86,9 @@ export const SettingsModal: FC = () => {
   const page = useSettingsStore(selectSettingsPage);
   const initialFocusRef = useRef<HTMLButtonElement>(null);
   const reseatFocusOnAccountsRef = useRef(false);
-  const skipFocusRestoreRef = useRef(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const { skipFocusRestoreRef, handleDismiss: dismissToPalette } =
+    usePaletteAwareOverlayDismiss(isOpen, settingsActions.closeSettings);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
   const { authenticated } = useSession();
@@ -107,7 +108,6 @@ export const SettingsModal: FC = () => {
   // disconnect confirmation pre-armed on next open.
   useEffect(() => {
     if (!isOpen) setConfirmingId(null);
-    else skipFocusRestoreRef.current = false;
   }, [isOpen]);
 
   // Fail-open and in-flight status both look like `kind: "open"` (no badge).
@@ -149,9 +149,7 @@ export const SettingsModal: FC = () => {
       setConfirmingId(null);
       return;
     }
-    skipFocusRestoreRef.current =
-      useSettingsStore.getState().overlayOpenedFromPalette;
-    reopenCommandPaletteIfNeeded(settingsActions.closeSettings);
+    dismissToPalette();
   };
 
   const handleExport = () => {

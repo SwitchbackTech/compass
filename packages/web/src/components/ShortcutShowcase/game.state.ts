@@ -4,10 +4,7 @@ import {
   type GameTask,
   RUN_DURATION_MS,
   RUN_TASKS,
-  SPEED_BONUS_MS,
-  SPEED_BONUS_POINTS,
-  streakMultiplier,
-  TASK_BASE_POINTS,
+  scorePlacement,
   TIME_BONUS_PER_SECOND,
 } from "@web/components/ShortcutShowcase/game.tasks";
 import {
@@ -480,11 +477,7 @@ const completeIfDone = (state: GameState, nowMs: number): GameState => {
   if (!task || !isTaskComplete(task, state)) return state;
 
   const elapsed = nowMs - state.taskStartedAtMs;
-  const speedy = elapsed <= SPEED_BONUS_MS;
-  const streak = speedy ? state.streak + 1 : 0;
-  const multiplier = streakMultiplier(streak);
-  const points =
-    (TASK_BASE_POINTS + (speedy ? SPEED_BONUS_POINTS : 0)) * multiplier;
+  const { streak, points } = scorePlacement(state.streak, elapsed);
 
   const advanced: GameState = {
     ...state,

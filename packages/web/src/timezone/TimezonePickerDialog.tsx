@@ -23,14 +23,12 @@ const STOP_ID = "stop-time-travel";
 interface TimezonePickerDialogProps {
   onDismiss: () => void;
   purpose?: TimezoneDialogPurpose;
-  restoreFocus?: () => void;
   skipFocusRestoreRef?: RefObject<boolean>;
 }
 
 export function TimezonePickerDialog({
   onDismiss,
   purpose = "pin",
-  restoreFocus,
   skipFocusRestoreRef,
 }: TimezonePickerDialogProps) {
   const isTimeTravel = purpose === "time-travel";
@@ -95,7 +93,6 @@ export function TimezonePickerDialog({
           : undefined
       }
       onDismiss={onDismiss}
-      restoreFocus={restoreFocus}
       skipFocusRestoreRef={skipFocusRestoreRef}
       initialFocusRef={searchRef}
       align="start"
