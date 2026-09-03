@@ -6,9 +6,16 @@ import billingController from "@backend/billing/controllers/billing.controller";
 import billingWebhookController from "@backend/billing/controllers/billing.webhook.controller";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 
-const sessionWriteLimiter = rateLimit({
+export const sessionWriteLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const billingReadLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -37,8 +44,8 @@ export function mountStripeWebhook(app: express.Application): void {
 
 /**
  * Billing routes: trial status, Stripe Checkout, ending a trial early,
- * and Billing Portal. The Stripe webhook is mounted separately, ahead of
- * body parsers; see `mountStripeWebhook`.
+ * Billing Portal, and in-app subscription management. The Stripe webhook
+ * is mounted separately, ahead of body parsers; see `mountStripeWebhook`.
  */
 export class BillingRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -62,9 +69,29 @@ export class BillingRoutes extends CommonRoutesConfig {
       .post(sessionWriteLimiter, billingController.endTrial);
 
     this.app
+      .route(`/api/billing/payment-method/session`)
+      .all(verifySession())
+      .post(sessionWriteLimiter, billingController.createPaymentMethodSession);
+
+    this.app
       .route(`/api/billing/portal/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createPortalSession);
+
+    this.app
+      .route(`/api/billing/subscription`)
+      .all(verifySession())
+      .get(billingReadLimiter, billingController.getSubscription);
+
+    this.app
+      .route(`/api/billing/subscription/cancel`)
+      .all(verifySession())
+      .post(sessionWriteLimiter, billingController.cancelSubscription);
+
+    this.app
+      .route(`/api/billing/subscription/resume`)
+      .all(verifySession())
+      .post(sessionWriteLimiter, billingController.resumeSubscription);
 
     return this.app;
   }

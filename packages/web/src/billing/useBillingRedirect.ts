@@ -1,23 +1,7 @@
 import { useState } from "react";
 import { BillingApi } from "@web/api/billing.api";
-import {
-  getApiErrorMessage,
-  isSessionLevelError,
-} from "@web/api/util/api.util";
 import { track } from "@web/auth/posthog/track";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-
-/** Stripe 500s are not useful to the user; keep the surface-specific fallback. */
-export const showBillingRequestError = (
-  error: unknown,
-  fallback: string,
-): void => {
-  if (isSessionLevelError(error)) return;
-  const fromApi = getApiErrorMessage(error);
-  showErrorToast(
-    fromApi && fromApi !== "Internal server error" ? fromApi : fallback,
-  );
-};
+import { showBillingRequestError } from "@web/billing/billing-request-error";
 
 type BillingRedirectKind = "checkout" | "portal";
 

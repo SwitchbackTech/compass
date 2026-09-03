@@ -106,6 +106,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
+          STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to ${{ inputs.environment }}"
           # Only "production" ever runs the production runtime.nodeEnv; every
@@ -197,15 +198,16 @@ jobs:
             # if a repo-level STRIPE_* secret exists. Log to stderr — this
             # group is piped into compass.yaml.
             if { [ "${{ inputs.environment }}" = "production" ] || [ "${{ inputs.environment }}" = "staging-cloud" ]; } &&
-              [ -n "$STRIPE_SECRET_KEY" ] && [ -n "$STRIPE_WEBHOOK_SECRET" ] && [ -n "$STRIPE_PRICE_ID" ]; then
-              echo "Stripe config: writing stripe block (all three secrets present)" >&2
+              [ -n "$STRIPE_SECRET_KEY" ] && [ -n "$STRIPE_WEBHOOK_SECRET" ] && [ -n "$STRIPE_PRICE_ID" ] && [ -n "$STRIPE_PUBLISHABLE_KEY" ]; then
+              echo "Stripe config: writing stripe block (all four values present)" >&2
               printf '%s\n' \
                 'stripe:' \
                 "  secretKey: \"${STRIPE_SECRET_KEY}\"" \
                 "  webhookSecret: \"${STRIPE_WEBHOOK_SECRET}\"" \
-                "  priceId: \"${STRIPE_PRICE_ID}\""
+                "  priceId: \"${STRIPE_PRICE_ID}\"" \
+                "  publishableKey: \"${STRIPE_PUBLISHABLE_KEY}\""
             else
-              echo "Stripe config: omitting stripe block (environment=${{ inputs.environment }}; secretKey=$([ -n "$STRIPE_SECRET_KEY" ] && echo present || echo empty); webhookSecret=$([ -n "$STRIPE_WEBHOOK_SECRET" ] && echo present || echo empty); priceId=$([ -n "$STRIPE_PRICE_ID" ] && echo present || echo empty))" >&2
+              echo "Stripe config: omitting stripe block (environment=${{ inputs.environment }}; secretKey=$([ -n "$STRIPE_SECRET_KEY" ] && echo present || echo empty); webhookSecret=$([ -n "$STRIPE_WEBHOOK_SECRET" ] && echo present || echo empty); priceId=$([ -n "$STRIPE_PRICE_ID" ] && echo present || echo empty); publishableKey=$([ -n "$STRIPE_PUBLISHABLE_KEY" ] && echo present || echo empty))" >&2
             fi
             # Billing operator knobs (both optional; omit → schema defaults of
             # enforcement false + empty bypass list). The block header is

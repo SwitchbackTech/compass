@@ -14,6 +14,7 @@ import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
 } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.port";
 import {
   registerToastPort,
   resetToastPort,
@@ -184,4 +185,5 @@ export function resetWebTestSeams(): void {
   // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
   resetUseCompleteAuthenticationForTests();
   resetGoogleAvailabilityForTests();
+  resetEmbeddedCheckoutForTests();
 }

@@ -46,6 +46,7 @@ describe("ConfigController.get sync cutover posture", () => {
       isConfigured: false,
       enforcement: false,
       trialLengthDays: 7,
+      publishableKey: null,
     });
   });
 });
@@ -65,5 +66,41 @@ describe("ConfigController.get billing enforcement", () => {
   it("reports true once the operator enables it", () => {
     CONFIG.BILLING_ENFORCEMENT = true;
     expect(invokeGet().billing.enforcement).toBe(true);
+  });
+});
+
+describe("ConfigController.get billing publishableKey", () => {
+  const originals = {
+    secretKey: CONFIG.STRIPE_SECRET_KEY,
+    webhookSecret: CONFIG.STRIPE_WEBHOOK_SECRET,
+    priceId: CONFIG.STRIPE_PRICE_ID,
+    publishableKey: CONFIG.STRIPE_PUBLISHABLE_KEY,
+  };
+
+  afterEach(() => {
+    CONFIG.STRIPE_SECRET_KEY = originals.secretKey;
+    CONFIG.STRIPE_WEBHOOK_SECRET = originals.webhookSecret;
+    CONFIG.STRIPE_PRICE_ID = originals.priceId;
+    CONFIG.STRIPE_PUBLISHABLE_KEY = originals.publishableKey;
+  });
+
+  it("returns null when Stripe is not configured", () => {
+    CONFIG.STRIPE_SECRET_KEY = undefined;
+    CONFIG.STRIPE_WEBHOOK_SECRET = undefined;
+    CONFIG.STRIPE_PRICE_ID = undefined;
+    CONFIG.STRIPE_PUBLISHABLE_KEY = undefined;
+
+    expect(invokeGet().billing.publishableKey).toBeNull();
+    expect(invokeGet().billing.isConfigured).toBe(false);
+  });
+
+  it("returns the configured key when Stripe is fully configured", () => {
+    CONFIG.STRIPE_SECRET_KEY = "rk_test_123";
+    CONFIG.STRIPE_WEBHOOK_SECRET = "whsec_test";
+    CONFIG.STRIPE_PRICE_ID = "price_test";
+    CONFIG.STRIPE_PUBLISHABLE_KEY = "pk_test_123";
+
+    expect(invokeGet().billing.publishableKey).toBe("pk_test_123");
+    expect(invokeGet().billing.isConfigured).toBe(true);
   });
 });

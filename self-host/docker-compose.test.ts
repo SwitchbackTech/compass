@@ -521,8 +521,12 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain(
       "STRIPE_PRICE_ID: $".concat("{{ secrets.STRIPE_PRICE_ID }}"),
     );
+    expect(workflow).toContain(
+      "STRIPE_PUBLISHABLE_KEY: $".concat("{{ vars.STRIPE_PUBLISHABLE_KEY }}"),
+    );
     expect(workflow).not.toContain("&& secrets.STRIPE_SECRET_KEY ||");
     expect(workflow).toContain("'stripe:'");
+    expect(workflow).toContain("publishableKey:");
     expect(workflow).toContain("staging-selfhosted must omit this block");
   });
 

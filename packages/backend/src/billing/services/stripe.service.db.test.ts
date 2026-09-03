@@ -23,6 +23,7 @@ const stripeConfigured = {
   STRIPE_SECRET_KEY: "rk_test_123",
   STRIPE_WEBHOOK_SECRET: "whsec_test",
   STRIPE_PRICE_ID: "price_test",
+  STRIPE_PUBLISHABLE_KEY: "pk_test_123",
   FRONTEND_URL: "http://localhost:9080",
 } as const;
 
@@ -518,6 +519,389 @@ describe("StripeService", () => {
       await expect(
         stripeService.endTrialNow(userId.toString()),
       ).rejects.toMatchObject({ name: "BillingHttpError", status: 400 });
+    });
+  });
+
+  describe("getSubscriptionSummary", () => {
+    const periodEnd = new Date("2026-10-01T00:00:00.000Z");
+    const trialEnd = new Date("2026-09-10T00:00:00.000Z");
+
+    const seedUser = async (billing: Record<string, unknown>) => {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "sub@example.com",
+        name: "Sub User",
+        firstName: "Sub",
+        lastName: "User",
+        locale: "en",
+        billing,
+      });
+      return userId;
+    };
+
+    const cardPaymentMethod = {
+      id: "pm_card",
+      card: {
+        brand: "visa",
+        last4: "4242",
+        exp_month: 12,
+        exp_year: 2030,
+      },
+    };
+
+    const liveSubscription = (
+      paymentMethod: unknown,
+      overrides: Record<string, unknown> = {},
+    ) => ({
+      id: "sub_live",
+      status: "active",
+      customer: "cus_live",
+      cancel_at_period_end: false,
+      default_payment_method: paymentMethod,
+      items: {
+        data: [
+          {
+            price: {
+              id: "price_test",
+              unit_amount: 1200,
+              currency: "usd",
+              recurring: { interval: "month" },
+            },
+            current_period_end: 1_758_800_000,
+          },
+        ],
+      },
+      ...overrides,
+    });
+
+    it("maps price, card, and invoices from Stripe", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedUser({
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_live",
+        stripeSubscriptionId: "sub_live",
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+        trialEndsAt: trialEnd,
+      });
+
+      const retrieve = mock(() =>
+        Promise.resolve(liveSubscription(cardPaymentMethod)),
+      );
+      const customersRetrieve = mock();
+      const invoicesList = mock(() =>
+        Promise.resolve({
+          data: [
+            {
+              id: "in_1",
+              created: 1_756_000_000,
+              amount_paid: 1200,
+              currency: "usd",
+              status: "paid",
+              hosted_invoice_url: "https://invoice.stripe.com/i/1",
+            },
+          ],
+        }),
+      );
+      setStripeClientForTests({
+        subscriptions: { retrieve },
+        customers: { retrieve: customersRetrieve },
+        invoices: { list: invoicesList },
+      } as unknown as Stripe);
+
+      const result = await stripeService.getSubscriptionSummary(
+        userId.toString(),
+      );
+
+      expect(retrieve.mock.calls[0]?.[0]).toBe("sub_live");
+      expect(retrieve.mock.calls[0]?.[1]).toEqual({
+        expand: ["default_payment_method"],
+      });
+      expect(customersRetrieve).not.toHaveBeenCalled();
+      expect(invoicesList.mock.calls[0]?.[0]).toEqual({
+        customer: "cus_live",
+        limit: 12,
+      });
+      expect(result).toEqual({
+        subscriptionStatus: "active",
+        currentPeriodEnd: periodEnd.toISOString(),
+        cancelAtPeriodEnd: false,
+        trialEndsAt: trialEnd.toISOString(),
+        price: { amount: 1200, currency: "usd", interval: "month" },
+        paymentMethod: {
+          brand: "visa",
+          last4: "4242",
+          expMonth: 12,
+          expYear: 2030,
+        },
+        invoices: [
+          {
+            id: "in_1",
+            createdAt: new Date(1_756_000_000 * 1000).toISOString(),
+            amountPaid: 1200,
+            currency: "usd",
+            status: "paid",
+            hostedInvoiceUrl: "https://invoice.stripe.com/i/1",
+          },
+        ],
+      });
+    });
+
+    it("falls back to the customer default payment method", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedUser({
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_live",
+        stripeSubscriptionId: "sub_live",
+      });
+
+      const retrieve = mock(() => Promise.resolve(liveSubscription(null)));
+      const customersRetrieve = mock(() =>
+        Promise.resolve({
+          id: "cus_live",
+          invoice_settings: { default_payment_method: cardPaymentMethod },
+        }),
+      );
+      setStripeClientForTests({
+        subscriptions: { retrieve },
+        customers: { retrieve: customersRetrieve },
+        invoices: { list: mock(() => Promise.resolve({ data: [] })) },
+      } as unknown as Stripe);
+
+      const result = await stripeService.getSubscriptionSummary(
+        userId.toString(),
+      );
+
+      expect(customersRetrieve.mock.calls[0]?.[0]).toBe("cus_live");
+      expect(customersRetrieve.mock.calls[0]?.[1]).toEqual({
+        expand: ["invoice_settings.default_payment_method"],
+      });
+      expect(result.paymentMethod).toEqual({
+        brand: "visa",
+        last4: "4242",
+        expMonth: 12,
+        expYear: 2030,
+      });
+    });
+
+    it("returns nulls and skips Stripe when there is no subscription id", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedUser({
+        subscriptionStatus: "awaiting_checkout",
+        stripeCustomerId: "cus_pending",
+      });
+
+      const retrieve = mock(() => Promise.reject(new Error("no stripe")));
+      const invoicesList = mock(() => Promise.reject(new Error("no stripe")));
+      setStripeClientForTests({
+        subscriptions: { retrieve },
+        invoices: { list: invoicesList },
+      } as unknown as Stripe);
+
+      const result = await stripeService.getSubscriptionSummary(
+        userId.toString(),
+      );
+
+      expect(retrieve).not.toHaveBeenCalled();
+      expect(invoicesList).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        subscriptionStatus: "awaiting_checkout",
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+        trialEndsAt: null,
+        price: null,
+        paymentMethod: null,
+        invoices: [],
+      });
+    });
+  });
+
+  describe("setCancelAtPeriodEnd", () => {
+    const seedSubscriber = async (billing: Record<string, unknown> = {}) => {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "cancel@example.com",
+        name: "Cancel User",
+        firstName: "Cancel",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "active",
+          stripeCustomerId: "cus_live",
+          stripeSubscriptionId: "sub_live",
+          ...billing,
+        },
+      });
+      return userId;
+    };
+
+    const updatedSubscription = (cancelAtPeriodEnd: boolean) =>
+      ({
+        id: "sub_live",
+        status: "active",
+        customer: "cus_live",
+        cancel_at_period_end: cancelAtPeriodEnd,
+        items: {
+          data: [
+            {
+              price: { id: "price_test" },
+              current_period_end: 1_758_800_000,
+            },
+          ],
+        },
+      }) as unknown as Stripe.Subscription;
+
+    it("cancels at period end and returns the fresh status", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedSubscriber();
+      const update = mock(() => Promise.resolve(updatedSubscription(true)));
+      setStripeClientForTests({
+        subscriptions: { update },
+      } as unknown as Stripe);
+
+      const result = await stripeService.setCancelAtPeriodEnd(
+        userId.toString(),
+        true,
+      );
+
+      expect(update.mock.calls[0]?.[0]).toBe("sub_live");
+      expect(update.mock.calls[0]?.[1]).toEqual({ cancel_at_period_end: true });
+      expect(result.cancelAtPeriodEnd).toBe(true);
+      expect(result.subscriptionStatus).toBe("active");
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.cancelAtPeriodEnd).toBe(true);
+    });
+
+    it("resumes a subscription scheduled to cancel", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedSubscriber({ cancelAtPeriodEnd: true });
+      const update = mock(() => Promise.resolve(updatedSubscription(false)));
+      setStripeClientForTests({
+        subscriptions: { update },
+      } as unknown as Stripe);
+
+      const result = await stripeService.setCancelAtPeriodEnd(
+        userId.toString(),
+        false,
+      );
+
+      expect(update.mock.calls[0]?.[1]).toEqual({
+        cancel_at_period_end: false,
+      });
+      expect(result.cancelAtPeriodEnd).toBe(false);
+      const stored = await mongoService.user.findOne({ _id: userId });
+      expect(stored?.billing?.cancelAtPeriodEnd).toBe(false);
+    });
+
+    it.each([
+      "awaiting_checkout",
+      "expired",
+      "canceled",
+    ] as const)("rejects with 409 when status is %s", async (status) => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedSubscriber({ subscriptionStatus: status });
+      const update = mock(() => Promise.resolve(updatedSubscription(true)));
+      setStripeClientForTests({
+        subscriptions: { update },
+      } as unknown as Stripe);
+
+      await expect(
+        stripeService.setCancelAtPeriodEnd(userId.toString(), true),
+      ).rejects.toMatchObject({
+        name: "BillingHttpError",
+        status: 409,
+        clientMessage: "No active subscription to update.",
+      });
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it("rejects with 409 when there is no subscription id", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = await seedSubscriber({
+        stripeSubscriptionId: undefined,
+      });
+
+      await expect(
+        stripeService.setCancelAtPeriodEnd(userId.toString(), true),
+      ).rejects.toMatchObject({
+        status: 409,
+        clientMessage: "No active subscription to update.",
+      });
+    });
+  });
+
+  describe("createPaymentMethodSession", () => {
+    it("creates a setup-mode embedded Checkout session", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "card@example.com",
+        name: "Card User",
+        firstName: "Card",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "active",
+          stripeCustomerId: "cus_card",
+          stripeSubscriptionId: "sub_card",
+        },
+      });
+
+      const sessionsCreate = mock(() =>
+        Promise.resolve({ client_secret: "seti_secret_1" }),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { create: sessionsCreate } },
+      } as unknown as Stripe);
+
+      const result = await stripeService.createPaymentMethodSession(
+        userId.toString(),
+      );
+
+      expect(result).toEqual({ clientSecret: "seti_secret_1" });
+      expect(sessionsCreate.mock.calls[0]?.[0]).toEqual({
+        mode: "setup",
+        customer: "cus_card",
+        payment_method_types: ["card"],
+        ui_mode: "embedded",
+        redirect_on_completion: "never",
+        client_reference_id: userId.toString(),
+        setup_intent_data: { metadata: { compassUserId: userId.toString() } },
+      });
+      expect(sessionsCreate.mock.calls[0]?.[1]).toBeUndefined();
+    });
+
+    it("rejects with 409 and skips Stripe when the user has no customer id", async () => {
+      using _env = mockEnv(stripeConfigured);
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "none@example.com",
+        name: "None User",
+        firstName: "None",
+        lastName: "User",
+        locale: "en",
+        billing: { subscriptionStatus: "awaiting_checkout" },
+      });
+
+      const sessionsCreate = mock(() =>
+        Promise.resolve({ client_secret: "seti_secret_1" }),
+      );
+      setStripeClientForTests({
+        checkout: { sessions: { create: sessionsCreate } },
+      } as unknown as Stripe);
+
+      await expect(
+        stripeService.createPaymentMethodSession(userId.toString()),
+      ).rejects.toMatchObject({
+        name: "BillingHttpError",
+        status: 409,
+        clientMessage: "No billing account yet.",
+      });
+      expect(sessionsCreate).not.toHaveBeenCalled();
     });
   });
 });
