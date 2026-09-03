@@ -79,5 +79,6 @@ staging has the release, exercise
 If implementation discovers a missing slice that is still in v1
 scope, open a new GitHub issue with the agent-task template, label
 `agent-ready`, milestone **Compass Booking v1**. Do not silently
-expand v1 (multiple event types, reschedule, standalone product).
-Those stay out of scope.
+expand v1 (multiple event types, standalone product). Guest
+reschedule lives on milestone **Booking v1.3**, not Compass Booking
+v1. Do not file reschedule WPs on the v1 milestone.

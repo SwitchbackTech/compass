@@ -24,12 +24,11 @@ Cool things you can do with in Compass
 - Do everything from the cmd palette
 - Google Calendar sync
 - Add/remove event attendees and RSVP to invites, with optional Google-contact suggestions
-- Public booking pages at `/book/:username` (month grid plus day times, one duration per host, guest timezone override, confirmation permalink, guest cancel link)
+- Public booking pages at `/book/:username` (month grid plus day times, one duration per host, guest timezone override, confirmation permalink, guest cancel and reschedule links)
 
 Things you can't do in Compass (yet):
 
 - Add meeting links (except Google Meet on confirmed booking events)
-- Guest reschedule a booking (cancel and rebook instead)
 - Multiple booking event types or a standalone booking product
 - See your Outlook events
 

@@ -1,9 +1,10 @@
-# Compass Calendar Booking (v1 / v1.1)
+# Compass Calendar Booking (v1 / v1.1 / v1.3)
 
 Locked product spec for public scheduling on Compass Cloud
-(`https://compasscalendar.com`). Approved 2026-08-30. v1.1 (availability
-exceptions, RSVP-strict occupancy, and public page identity) is the
-current staging milestone.
+(`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
+RSVP-strict occupancy and public page identity (date-specific
+availability exceptions were removed in v1.2). v1.3 adds guest
+reschedule. v1.3 is the current staging milestone.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
@@ -11,12 +12,13 @@ creates the calendar event with `invitation: "all"`.
 ## Status
 
 v1 and v1.1 are implemented in the Compass monorepo (public
-`/book/:username`, host Settings, backend APIs). Booking is enabled in
-development and staging (`runtime.nodeEnv` other than `production`) and
-disabled in production. Do not flip `isBookingEnabled`. A standalone
-Compass Booking product (separate brand, domain, or deployable) is
-**explicitly deferred**. The seams below are the extraction path; they
-are not a second service in v1.
+`/book/:username`, host Settings, backend APIs). v1.3 (guest reschedule)
+is specified here and implemented on the Booking v1.3 milestone. Booking
+is enabled in development and staging (`runtime.nodeEnv` other than
+`production`) and disabled in production. Do not flip `isBookingEnabled`.
+A standalone Compass Booking product (separate brand, domain, or
+deployable) is **explicitly deferred**. The seams below are the
+extraction path; they are not a second service in v1.
 
 ## Public URL
 
@@ -34,13 +36,16 @@ picker, refresh keeps the selection, and the link is shareable. Invalid
 params drop to defaults; they never error.
 
 Confirmation permalink: `/book/confirmed/:reservationId` (survives
-refresh; cancel copy is only present when the guest just confirmed).
+refresh; cancel and reschedule copy is only present when the guest just
+confirmed or just rescheduled, via history state).
 
 Cancel: `/book/cancel/:reservationId?token=…`.
 
+Reschedule: `/book/reschedule/:reservationId?token=…`.
+
 Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
-`cleanup`, `book`, `cancel`, `confirmed`, `p`, `settings`, `admin`,
-`login`, `logout`, `signup`, `invite`, `calendar`.
+`cleanup`, `book`, `cancel`, `confirmed`, `reschedule`, `p`, `settings`,
+`admin`, `login`, `logout`, `signup`, `invite`, `calendar`.
 
 ### Slug allocation
 
@@ -73,8 +78,8 @@ user. Anonymous IndexedDB users do not get a booking link.
 Password-only users see a connect-Google prompt in Settings, not a
 broken public page.
 
-Host administration lives in Settings as a new page (today
-`SettingsPage` is `"accounts" | "billing"` in
+Host administration lives in Settings as a Booking page
+(`SettingsPage` includes `"booking"` in
 `packages/web/src/settings/settings.store.ts`). There is no dedicated
 `/booking` host app in v1.
 
@@ -92,11 +97,15 @@ flowchart TD
   details["Your details"]
   permalink["/book/confirmed/:id"]
   cancel["/book/cancel/:id"]
+  reschedule["/book/reschedule/:id"]
   load --> picker
   picker -->|select a time| details
   details -->|Change time| picker
   details -->|Confirm booking| permalink
   permalink -->|tokenized cancel URL| cancel
+  permalink -->|tokenized reschedule URL| reschedule
+  reschedule -->|reuse picker| picker
+  reschedule -->|POST new slot| permalink
 ```
 
 Public booking uses `light-beach` when `compass.theme` is unset. A
@@ -125,6 +134,11 @@ focus uses the accent ring. Intended Tab order on the picker:
    time**. Jump to next available day does the same.
 7. Cancel (`/book/cancel/:id`) focuses its heading on load and after
    each state change. Tab then reaches **Cancel this booking**.
+8. Reschedule (`/book/reschedule/:id`) focuses **Reschedule your booking
+   with {host}** on load and after each state change. Tab then reaches
+   the picker (same month grid and slot list as the public page), then
+   **Confirm**. A 409 conflict focuses the alert. Missing or invalid
+   token focuses the not-found heading.
 
 The month grid stays in the DOM ahead of the slot list. The skip link
 exists so keyboard users are not forced through every day cell before
@@ -135,17 +149,16 @@ times (and, on details, before the form).
 On confirm, Compass creates a timed Google Calendar event on the
 host's destination calendar, invites the guest, auto-adds a Google
 Meet link, and Google emails the invite. Compass shows a confirmation
-screen with the booked time (guest timezone) and a cancel link.
+screen with the booked time (guest timezone) and cancel plus
+reschedule links (history state only).
 
 **Event title:** `{Guest name} and {Host name}`.
 
-**Event description:** guest notes (if any). The cancel URL is included
-only when "Guest can invite others" is off: the URL is a cancel
-capability, and invitees see the description, so with invites open the
-guest keeps it from the confirmation page instead.
-
-**No reschedule in v1.** The guest cancels and rebooks. The host can
-delete the calendar event as usual.
+**Event description:** guest notes (if any). The cancel URL and
+reschedule URL are included only when "Guest can invite others" is
+off: those URLs are capabilities, and invitees see the description, so
+with invites open the guest keeps them from the confirmation page
+instead.
 
 ## Host inputs
 
@@ -216,11 +229,35 @@ decides whether a busy interval occupies a slot
 
 - Confirmation page includes a tokenized cancel URL; the event description
   carries it too only when guests cannot invite others (see above).
-- Token is unguessable and stored hashed on the reservation.
+- Token is unguessable and stored hashed on the reservation as
+  `cancelTokenHash`.
 - Cancel deletes the calendar event (host as organizer) and marks the
   reservation cancelled. Idempotent: a second cancel is a no-op success.
 - Expired / unknown tokens return a generic not-found page, not a
   leak of whether the booking existed.
+
+## Guest reschedule (v1.3)
+
+Guest-only. Hosts keep editing or deleting the calendar event in Compass.
+There is no host reservation inbox.
+
+- Reuses `cancelTokenHash` / `?token=`. No second secret.
+- Confirmation shows **Reschedule** (link + **Copy reschedule link**) next
+  to cancel when history state has `rescheduleUrl`. Cold permalink has
+  neither secret.
+- `/book/reschedule/:id?token=` reuses the public month/slot picker. Do
+  not re-collect name, email, or notes. Duration comes from current page
+  settings (same in-flight duration wart as confirm).
+- In-place Google PATCH of the existing event: same `calendarEventId`,
+  same Meet URL, same attendees. `invitation: "all"`,
+  `attendeesEdit: "preserve"`. Compass still sends no email.
+- While choosing a new time, this reservation must not occupy slots or
+  count toward max-per-day. Other overlapping host events still occupy.
+  Tokenized slots: `GET /api/booking/reservations/:id/slots`.
+- Status stays `confirmed`; mutate `slotStart` / `slotEnd`. Same slot is
+  an idempotent success (no second Google write). Cancelled or bad token
+  → same generic not-found as cancel. New slot re-check uses
+  `purpose: "booking_confirmation"`; race → `409`.
 
 ## Architecture
 
@@ -239,7 +276,7 @@ flowchart LR
   guest -->|"public /book/:slug"| api
   host -->|authenticated admin| api
   api --> booking
-  booking -->|"getAvailability / createEvent / deleteEvent"| calendar
+  booking -->|"getAvailability / createEvent / updateEvent / deleteEvent"| calendar
   calendar --> sync
 ```
 
@@ -259,6 +296,9 @@ flowchart LR
   `Calendar.createEvent` with the guest as attendee, `invitation: "all"`,
   Meet create-request, and `guestsCanInviteOthers` from the page setting.
   A race on the same slot: the second confirm fails; no double event.
+  Reschedule re-queries the same way, PATCHes the existing event
+  (`invitation: "all"`, `attendeesEdit: "preserve"`), and keeps
+  `calendarEventId`.
 
 Public API must be rate-limited (IP + slug), never leak event titles or
 attendees (busy intervals only), and must not require a SuperTokens
@@ -279,8 +319,16 @@ Unauthenticated:
   guestEmail, notes?, guestTimeZone}`. Re-checks busy, then creates.
 - `GET /api/booking/reservations/:id` — public confirmation payload
   (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
-  `status`). `404` when missing. No guest email, notes, or cancel token.
+  `status`, `bookingSlug`). `404` when missing. No guest email, notes, or
+  cancel token.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
+- `GET /api/booking/reservations/:id/slots?token=&start=&end=&timeZone=`
+  — bookable instants excluding this reservation from occupancy and
+  max-per-day. Verify token. `404` when missing or invalid.
+- `POST /api/booking/reservations/:id/reschedule` — `{token, slotStart,
+  guestTimeZone}`. Re-checks busy excluding self, PATCHes the event,
+  updates reservation times. Create response also includes
+  `rescheduleUrl`.
 
 Authenticated (host session + writable billing, same as event writes):
 
@@ -291,11 +339,12 @@ Authenticated (host session + writable billing, same as event writes):
 
 ## Out of v1 / v1.1
 
+Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
+
 - Multiple event types / appointment types
 - Custom intake questions
 - Paid booking
 - Team pages and round-robin
-- Guest reschedule
 - Compass-sent email or SMS
 - `guestsCanModify`
 - Editable slug
@@ -331,7 +380,9 @@ Authenticated (host session + writable billing, same as event writes):
 
 - **Slug is not editable in v1.** Allocation runs once on first enable; changing
   slugs needs a migration with redirects.
-- **No guest reschedule.** Cancel and rebook, or the host deletes the event.
+- **Guest reschedule is v1.3, not v1.** In-place PATCH; same cancel token.
+  Host-edited events still use `expectedVersion: null` on the booking
+  update path.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
 - **Google-only destination** calendars; password-only hosts see a connect-Google
