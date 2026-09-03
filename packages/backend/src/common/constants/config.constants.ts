@@ -56,6 +56,7 @@ const ConfigSchema = z
     STRIPE_SECRET_KEY: z.string().nonempty().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
     STRIPE_PRICE_ID: z.string().nonempty().optional(),
+    STRIPE_PUBLISHABLE_KEY: z.string().nonempty().optional(),
     // Operator pause switch: when false, trial/billing gates stay off for
     // everyone regardless of Stripe configuration.
     BILLING_ENFORCEMENT: BooleanFromInput.default(false),
@@ -85,14 +86,15 @@ const ConfigSchema = z
       env.STRIPE_SECRET_KEY,
       env.STRIPE_WEBHOOK_SECRET,
       env.STRIPE_PRICE_ID,
+      env.STRIPE_PUBLISHABLE_KEY,
     ];
     const present = stripeKeys.filter(Boolean).length;
-    if (present > 0 && present < 3) {
+    if (present > 0 && present < 4) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         fatal: true,
         message:
-          "Stripe configuration requires secretKey, webhookSecret, and priceId together",
+          "Stripe configuration requires secretKey, webhookSecret, priceId, and publishableKey together",
         path: ["STRIPE_SECRET_KEY"],
       });
     }
@@ -143,6 +145,7 @@ export function parseRawConfig(config: CompassConfig): Config {
     STRIPE_SECRET_KEY: nonEmpty(config.stripe?.secretKey),
     STRIPE_WEBHOOK_SECRET: nonEmpty(config.stripe?.webhookSecret),
     STRIPE_PRICE_ID: nonEmpty(config.stripe?.priceId),
+    STRIPE_PUBLISHABLE_KEY: nonEmpty(config.stripe?.publishableKey),
     BILLING_ENFORCEMENT: config.billing?.enforcement,
     BILLING_BYPASS_EMAILS: toEmailList(config.billing?.bypassEmails),
   });
@@ -180,6 +183,7 @@ export function parseConfigFromEnv(
     STRIPE_SECRET_KEY: nonEmpty(rawEnv["STRIPE_SECRET_KEY"]),
     STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
     STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
+    STRIPE_PUBLISHABLE_KEY: nonEmpty(rawEnv["STRIPE_PUBLISHABLE_KEY"]),
     BILLING_ENFORCEMENT: nonEmpty(rawEnv["BILLING_ENFORCEMENT"]),
     BILLING_BYPASS_EMAILS: toEmailList(
       rawEnv["BILLING_BYPASS_EMAILS"]?.split(","),

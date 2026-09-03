@@ -18,12 +18,16 @@ const isStripeValueValid = (value?: string): boolean =>
 export const isStripeConfigured = (
   env: Pick<
     Config,
-    "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "STRIPE_PRICE_ID"
+    | "STRIPE_SECRET_KEY"
+    | "STRIPE_WEBHOOK_SECRET"
+    | "STRIPE_PRICE_ID"
+    | "STRIPE_PUBLISHABLE_KEY"
   >,
 ): boolean =>
   isStripeValueValid(env.STRIPE_SECRET_KEY) &&
   isStripeValueValid(env.STRIPE_WEBHOOK_SECRET) &&
-  isStripeValueValid(env.STRIPE_PRICE_ID);
+  isStripeValueValid(env.STRIPE_PRICE_ID) &&
+  isStripeValueValid(env.STRIPE_PUBLISHABLE_KEY);
 
 export const isBillingEnforced = (
   env: Pick<Config, "BILLING_ENFORCEMENT">,

@@ -30,6 +30,7 @@ describe("GET /api/config", () => {
           isConfigured: false,
           enforcement: false,
           trialLengthDays: 7,
+          publishableKey: null,
         },
       });
     } finally {
@@ -62,6 +63,7 @@ describe("GET /api/config", () => {
           isConfigured: false,
           enforcement: false,
           trialLengthDays: 7,
+          publishableKey: null,
         },
       });
     } finally {
