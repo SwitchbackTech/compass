@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import {
   billingPreviewActions,
@@ -48,7 +49,7 @@ describe("promptShortcutUpgrade", () => {
     expect(track).not.toHaveBeenCalled();
   });
 
-  it("shows a contextual prompt and tracks both funnel events", () => {
+  it("shows a contextual prompt and tracks both funnel events", async () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade({
@@ -57,7 +58,9 @@ describe("promptShortcutUpgrade", () => {
       source: "keyboard",
     });
 
-    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledTimes(1);
+    });
     expect(track).toHaveBeenCalledWith("shortcut_upgrade_prompted", {
       feature_area: "event_editing",
       action_id: "event.move",
@@ -70,7 +73,7 @@ describe("promptShortcutUpgrade", () => {
     expect(useBillingPreviewStore.getState().isPreviewing).toBe(false);
   });
 
-  it("replaces the billing gate with look-around when that lock owns the screen", () => {
+  it("replaces the billing gate with look-around when that lock owns the screen", async () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
     setAppLockReason("billingGate", true);
 
@@ -81,11 +84,13 @@ describe("promptShortcutUpgrade", () => {
     });
 
     expect(useBillingPreviewStore.getState().isPreviewing).toBe(true);
-    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledTimes(1);
+    });
     setAppLockReason("billingGate", false);
   });
 
-  it("deduplicates tracking for a rapid repeat of the same shortcut", () => {
+  it("deduplicates tracking for a rapid repeat of the same shortcut", async () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade(
@@ -108,6 +113,8 @@ describe("promptShortcutUpgrade", () => {
     expect(
       track.mock.calls.filter(([name]) => name === "shortcut_upgrade_prompted"),
     ).toHaveLength(1);
-    expect(mocks.toast).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledTimes(2);
+    });
   });
 });

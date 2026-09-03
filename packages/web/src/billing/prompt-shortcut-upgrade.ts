@@ -6,7 +6,6 @@ import {
   getBillingWriteLockStatus,
   isBillingWriteLocked,
 } from "@web/billing/billing-write-lock";
-import { ShortcutUpgradeToast } from "@web/billing/ShortcutUpgradeToast";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { hasAppLockReason } from "@web/shortcuts/app-lock";
 import { type ShortcutFeatureArea } from "@web/shortcuts/tips/shortcut-tips.data";
@@ -79,13 +78,26 @@ export function promptShortcutUpgrade(
     });
   }
 
-  showStatusToast(
-    SHORTCUT_UPGRADE_TOAST_ID,
-    createElement(ShortcutUpgradeToast, {
-      toastId: SHORTCUT_UPGRADE_TOAST_ID,
-      title: copy.title,
-      ctaLabel: copy.cta,
-    }),
+  showUpgradeToast(copy.title, copy.cta);
+}
+
+/**
+ * Lazy so this module can sit on the `useAppShortcut` hot path without a
+ * boot-time cycle: ShortcutUpgradeToast → ToastActionButton →
+ * useNoticeActionShortcut → useAppShortcut.
+ */
+function showUpgradeToast(title: string, ctaLabel: string): void {
+  void import("@web/billing/ShortcutUpgradeToast").then(
+    ({ ShortcutUpgradeToast }) => {
+      showStatusToast(
+        SHORTCUT_UPGRADE_TOAST_ID,
+        createElement(ShortcutUpgradeToast, {
+          toastId: SHORTCUT_UPGRADE_TOAST_ID,
+          title,
+          ctaLabel,
+        }),
+      );
+    },
   );
 }
 
