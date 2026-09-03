@@ -634,10 +634,11 @@ export function BookingSettingsSection({
       </fieldset>
 
       <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
-        <OverlayPanelActions align="start">
+        <OverlayPanelActions align="end">
           <OverlayPanelActionButton
             aria-busy={saveMutation.isPending || undefined}
             aria-keyshortcuts="Meta+Enter Control+Enter"
+            className="whitespace-nowrap"
             disabled={saveMutation.isPending}
             onClick={handleSave}
             shortcut={["Mod", "Enter"]}
