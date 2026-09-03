@@ -245,6 +245,7 @@ function reservationGetHandler(
           durationMinutes: 30,
           hostDisplayName: "Tyler Dane",
           status: "confirmed",
+          bookingSlug: "tylerdane",
           ...overrides,
         }),
       ),
@@ -367,6 +368,8 @@ describe("PublicBookingPage", () => {
               guestTimeZone: "UTC",
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
@@ -487,6 +490,8 @@ describe("PublicBookingPage", () => {
               guestTimeZone: overrideZone,
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
@@ -1095,6 +1100,8 @@ describe("PublicBookingPage", () => {
               guestTimeZone: "UTC",
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
@@ -1484,6 +1491,8 @@ describe("PublicBookingConfirmedPage", () => {
               guestTimeZone: "UTC",
               cancelUrl:
                 "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
             }),
           ),
       ),

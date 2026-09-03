@@ -312,6 +312,8 @@ export async function preparePublicBookingPage(
           guestTimeZone: body.guestTimeZone,
           cancelUrl:
             "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+          rescheduleUrl:
+            "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
         }),
       );
     }
@@ -339,6 +341,7 @@ export async function preparePublicBookingPage(
           durationMinutes: options.durationMinutes ?? 30,
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
+          bookingSlug: slug,
         }),
       );
     }
@@ -384,6 +387,7 @@ export async function preparePublicBookingConfirmedPage(
           durationMinutes: options.durationMinutes ?? 30,
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
+          bookingSlug: options.slug ?? "tylerdane",
         }),
       );
     }
@@ -450,6 +454,7 @@ export async function preparePublicBookingCancelPage(
           durationMinutes: options.durationMinutes ?? 30,
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
+          bookingSlug: "tylerdane",
         }),
       );
     }
