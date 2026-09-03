@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Dispatch,
@@ -165,7 +165,7 @@ describe("RecurrenceSection", () => {
   // compares day cells by calendar day, so the fix is to anchor the floor to
   // the start date. See RecurrenceSectionView's recurrenceMinDate.
   it("keeps the event's own date selectable when the event ends after midnight", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null, skipHover: true });
     renderRecurrenceSection({ initialDraft: pastMidnightDraft() });
 
     // Enable recurrence to reveal the "Ends on" picker, then open it via its
@@ -173,11 +173,12 @@ describe("RecurrenceSection", () => {
     await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
     await user.click(await screen.findByRole("textbox"));
 
-    // The picker opens on today. Walk back to the event's month so the
-    // assertion does not depend on this test running in August.
+    // The picker usually opens on the event month (openToDate). If it still
+    // lands on today, walk toward August without userEvent pointer retries:
+    // a covered/disabled Previous control can hang click() until CI SIGTERM.
     const ownDateLabel = /Monday, August 3rd, 2026/;
     for (let i = 0; i < 12 && !screen.queryByLabelText(ownDateLabel); i += 1) {
-      await user.click(screen.getByRole("button", { name: "Previous month" }));
+      fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
     }
 
     const ownDate = await screen.findByLabelText(ownDateLabel);
