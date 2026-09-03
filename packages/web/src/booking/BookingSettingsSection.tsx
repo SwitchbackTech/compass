@@ -634,7 +634,8 @@ export function BookingSettingsSection({
       </fieldset>
 
       <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
-        <OverlayPanelActions align="end">
+        {/* Default align=end keeps the always-on chip Save off the hours column. */}
+        <OverlayPanelActions>
           <OverlayPanelActionButton
             aria-busy={saveMutation.isPending || undefined}
             aria-keyshortcuts="Meta+Enter Control+Enter"
