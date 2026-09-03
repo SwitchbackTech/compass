@@ -10,7 +10,6 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 interface UpgradeConfirmationDialogProps {
   isOpen: boolean;
   isSubmitting: boolean;
-  isOpeningPortal: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onManageBilling: () => void;
@@ -20,13 +19,12 @@ interface UpgradeConfirmationDialogProps {
  * Confirms starting a Stripe subscription before the trial runs out. No amount
  * is shown here on purpose: the price lives on the Stripe Price, not in this
  * codebase, so operators can change it without a web deploy. "Manage billing"
- * opens the Stripe portal (card, invoices, cancel) and does not charge today;
- * Start Premium is the only way to end the trial early.
+ * opens Settings on Billing and does not charge today; Start Premium is the
+ * only way to end the trial early.
  */
 export function UpgradeConfirmationDialog({
   isOpen,
   isSubmitting,
-  isOpeningPortal,
   onCancel,
   onConfirm,
   onManageBilling,
@@ -74,9 +72,7 @@ export function UpgradeConfirmationDialog({
             disabled={isSubmitting}
             onClick={onConfirm}
           >
-            {isSubmitting && !isOpeningPortal
-              ? "Starting Premium…"
-              : "Start Premium"}
+            {isSubmitting ? "Starting Premium…" : "Start Premium"}
           </OverlayPanelActionButton>
           <OverlayPanelActionButton
             shortcut="Esc"
@@ -93,7 +89,7 @@ export function UpgradeConfirmationDialog({
           disabled={isSubmitting}
           onClick={onManageBilling}
         >
-          {isOpeningPortal ? "Opening Stripe…" : "Manage billing"}
+          Manage billing
         </OverlayPanelActionButton>
       </div>
     </OverlayPanel>

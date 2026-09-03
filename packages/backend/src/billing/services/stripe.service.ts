@@ -2,7 +2,6 @@ import type Stripe from "stripe";
 import { Status } from "@core/errors/status.codes";
 import {
   type BillingCheckoutResponse,
-  type BillingClientSecretResponse,
   type BillingStatusResponse,
   type BillingSubscriptionResponse,
 } from "@core/types/billing.types";
@@ -22,19 +21,7 @@ import { isStripeConfigured } from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 /** Bump when Checkout Session create params change so Stripe does not replay a failed create. */
-const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v2-";
-
-const checkoutReturnUrl = (outcome: "success" | "cancel"): string => {
-  const url = new URL(CONFIG.FRONTEND_URL);
-  url.searchParams.set("checkout", outcome);
-  return url.toString();
-};
-
-const portalReturnUrl = (): string => {
-  const url = new URL(CONFIG.FRONTEND_URL);
-  url.searchParams.set("settings", "billing");
-  return url.toString();
-};
+const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v3-";
 
 class StripeService {
   /**
@@ -88,15 +75,16 @@ class StripeService {
     }
 
     const liveStatus = user.billing?.subscriptionStatus;
-    const hasOpenStripeSubscription =
+    const hasLiveSubscription =
       Boolean(user.billing?.stripeSubscriptionId) &&
-      Boolean(user.billing?.stripeCustomerId) &&
       (liveStatus === "trialing" ||
         liveStatus === "active" ||
-        liveStatus === "past_due" ||
-        liveStatus === "awaiting_checkout");
-    if (hasOpenStripeSubscription) {
-      return this.createPortalSession(userId);
+        liveStatus === "past_due");
+    if (hasLiveSubscription) {
+      throw new BillingHttpError(
+        Status.CONFLICT,
+        "You already have a subscription. Manage it under Settings > Billing.",
+      );
     }
 
     const stripe = getStripeClient();
@@ -145,6 +133,8 @@ class StripeService {
           automatic_tax: { enabled: true },
           customer_update: { address: "auto" },
           billing_address_collection: "required",
+          ui_mode: "embedded",
+          redirect_on_completion: "never",
           subscription_data: {
             ...(grantTrial
               ? {
@@ -156,8 +146,6 @@ class StripeService {
               : {}),
             metadata: { compassUserId: userId },
           },
-          success_url: checkoutReturnUrl("success"),
-          cancel_url: checkoutReturnUrl("cancel"),
         },
         grantTrial
           ? { idempotencyKey: `${CHECKOUT_IDEMPOTENCY_PREFIX}${userId}` }
@@ -165,16 +153,16 @@ class StripeService {
       )
       .catch(wrapStripeFailure);
 
-    if (!session.url) {
-      throw new Error("Stripe Checkout did not return a URL");
+    if (!session.client_secret) {
+      throw new Error("Stripe Checkout did not return a client secret");
     }
 
-    return { url: session.url };
+    return { clientSecret: session.client_secret };
   };
 
   /**
    * Ends a Stripe trial immediately, billing the card on file today. This is
-   * the only way to convert early: the Billing Portal cannot shorten a trial.
+   * the only way to convert early.
    *
    * The updated Subscription is written back through the webhook's
    * `applySubscription`, so the caller's next status read is already correct
@@ -186,9 +174,9 @@ class StripeService {
    * stays writable and raises the dunning banner. The caller is told the
    * resulting status rather than a blanket success.
    *
-   * A cancel scheduled from the Billing Portal is cleared here: subscribing
-   * now and cancelling at period end are contradictory instructions, and the
-   * one the user just gave wins.
+   * A cancel scheduled at period end is cleared here: subscribing now and
+   * cancelling at period end are contradictory instructions, and the one the
+   * user just gave wins.
    */
   endTrialNow = async (userId: string): Promise<BillingStatusResponse> => {
     if (!isStripeConfigured(CONFIG)) {
@@ -330,38 +318,9 @@ class StripeService {
     return billingService.getStatus(userId);
   };
 
-  createPortalSession = async (
-    userId: string,
-  ): Promise<BillingCheckoutResponse> => {
-    if (!isStripeConfigured(CONFIG)) {
-      throw new Error("Stripe is not configured");
-    }
-
-    const _id = mongoService.objectId(userId);
-    const user = await mongoService.user.findOne({ _id });
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const customerId = user.billing?.stripeCustomerId;
-    if (!customerId) {
-      throw new Error("User not found");
-    }
-
-    const stripe = getStripeClient();
-    const session = await stripe.billingPortal.sessions
-      .create({
-        customer: customerId,
-        return_url: portalReturnUrl(),
-      })
-      .catch(wrapStripeFailure);
-
-    return { url: session.url };
-  };
-
   createPaymentMethodSession = async (
     userId: string,
-  ): Promise<BillingClientSecretResponse> => {
+  ): Promise<BillingCheckoutResponse> => {
     if (!isStripeConfigured(CONFIG)) {
       throw new Error("Stripe is not configured");
     }

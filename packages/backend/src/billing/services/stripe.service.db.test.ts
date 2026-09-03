@@ -51,7 +51,7 @@ describe("StripeService", () => {
 
     const customersCreate = mock(() => Promise.resolve({ id: "cus_1" }));
     const sessionsCreate = mock(() =>
-      Promise.resolve({ url: "https://checkout.stripe.com/c/session_1" }),
+      Promise.resolve({ client_secret: "cs_test_1" }),
     );
 
     setStripeClientForTests({
@@ -61,13 +61,17 @@ describe("StripeService", () => {
 
     const result = await stripeService.createCheckoutSession(userId.toString());
 
-    expect(result.url).toBe("https://checkout.stripe.com/c/session_1");
+    expect(result.clientSecret).toBe("cs_test_1");
     expect(customersCreate).toHaveBeenCalled();
     const sessionArgs = sessionsCreate.mock.calls[0]?.[0] as {
       mode: string;
       client_reference_id: string;
       subscription_data: { trial_period_days: number };
       line_items: Array<{ price: string; quantity: number }>;
+      ui_mode?: string;
+      redirect_on_completion?: string;
+      success_url?: string;
+      cancel_url?: string;
     };
     expect(sessionArgs.mode).toBe("subscription");
     expect(sessionArgs.client_reference_id).toBe(userId.toString());
@@ -93,8 +97,12 @@ describe("StripeService", () => {
       customer_update: { address: "auto" },
       billing_address_collection: "required",
     });
+    expect(sessionArgs.ui_mode).toBe("embedded");
+    expect(sessionArgs.redirect_on_completion).toBe("never");
+    expect(sessionArgs.success_url).toBeUndefined();
+    expect(sessionArgs.cancel_url).toBeUndefined();
     expect(sessionsCreate.mock.calls[0]?.[1]).toEqual({
-      idempotencyKey: `compass-checkout-v2-${userId.toString()}`,
+      idempotencyKey: `compass-checkout-v3-${userId.toString()}`,
     });
 
     const stored = await mongoService.user.findOne({ _id: userId });
@@ -120,7 +128,7 @@ describe("StripeService", () => {
 
     const customersCreate = mock(() => Promise.resolve({ id: "cus_new" }));
     const sessionsCreate = mock(() =>
-      Promise.resolve({ url: "https://checkout.stripe.com/c/session_2" }),
+      Promise.resolve({ client_secret: "cs_test_2" }),
     );
     setStripeClientForTests({
       customers: { create: customersCreate },
@@ -192,7 +200,7 @@ describe("StripeService", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("sends an incomplete Checkout (awaiting_checkout with a subscription id) to the portal", async () => {
+  it("creates a Checkout session without a trial when awaiting_checkout still has a stale subscription id", async () => {
     using _env = mockEnv(stripeConfigured);
     const userId = mongoService.objectId();
     await mongoService.user.insertOne({
@@ -210,22 +218,19 @@ describe("StripeService", () => {
     });
 
     const sessionsCreate = mock(() =>
-      Promise.resolve({ url: "https://checkout.stripe.com/c/session_5" }),
-    );
-    const portalCreate = mock(() =>
-      Promise.resolve({
-        url: "https://billing.stripe.com/p/session_incomplete",
-      }),
+      Promise.resolve({ client_secret: "cs_test_stale" }),
     );
     setStripeClientForTests({
       checkout: { sessions: { create: sessionsCreate } },
-      billingPortal: { sessions: { create: portalCreate } },
     } as unknown as Stripe);
 
     const result = await stripeService.createCheckoutSession(userId.toString());
 
-    expect(result.url).toBe("https://billing.stripe.com/p/session_incomplete");
-    expect(sessionsCreate).not.toHaveBeenCalled();
+    expect(result.clientSecret).toBe("cs_test_stale");
+    const sessionArgs = sessionsCreate.mock.calls[0]?.[0] as {
+      subscription_data: { trial_period_days?: number };
+    };
+    expect(sessionArgs.subscription_data.trial_period_days).toBeUndefined();
   });
 
   it("omits trial_period_days when the user already had a Stripe subscription", async () => {
@@ -246,7 +251,7 @@ describe("StripeService", () => {
     });
 
     const sessionsCreate = mock(() =>
-      Promise.resolve({ url: "https://checkout.stripe.com/c/session_3" }),
+      Promise.resolve({ client_secret: "cs_test_3" }),
     );
     setStripeClientForTests({
       customers: { create: mock() },
@@ -261,70 +266,42 @@ describe("StripeService", () => {
     expect(sessionArgs.subscription_data.trial_period_days).toBeUndefined();
   });
 
-  it("sends a live subscriber to the Billing Portal instead of a second Checkout", async () => {
+  it("rejects a live subscriber with 409 instead of a second Checkout", async () => {
     using _env = mockEnv(stripeConfigured);
-    const userId = mongoService.objectId();
-    await mongoService.user.insertOne({
-      _id: userId,
-      email: "live@example.com",
-      name: "Live User",
-      firstName: "Live",
-      lastName: "User",
-      locale: "en",
-      billing: {
-        subscriptionStatus: "active",
-        stripeCustomerId: "cus_live",
-        stripeSubscriptionId: "sub_live",
-      },
-    });
-
     const sessionsCreate = mock(() =>
-      Promise.resolve({ url: "https://checkout.stripe.com/c/session_4" }),
-    );
-    const portalCreate = mock(() =>
-      Promise.resolve({ url: "https://billing.stripe.com/p/session_live" }),
+      Promise.resolve({ client_secret: "cs_should_not_create" }),
     );
     setStripeClientForTests({
       checkout: { sessions: { create: sessionsCreate } },
-      billingPortal: { sessions: { create: portalCreate } },
     } as unknown as Stripe);
 
-    const result = await stripeService.createCheckoutSession(userId.toString());
+    for (const status of ["trialing", "active", "past_due"] as const) {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: `${status}@example.com`,
+        name: "Live User",
+        firstName: "Live",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: status,
+          stripeCustomerId: `cus_${status}`,
+          stripeSubscriptionId: `sub_${status}`,
+        },
+      });
 
-    expect(result.url).toBe("https://billing.stripe.com/p/session_live");
+      await expect(
+        stripeService.createCheckoutSession(userId.toString()),
+      ).rejects.toMatchObject({
+        name: "BillingHttpError",
+        status: 409,
+        clientMessage:
+          "You already have a subscription. Manage it under Settings > Billing.",
+      });
+    }
+
     expect(sessionsCreate).not.toHaveBeenCalled();
-    expect(portalCreate).toHaveBeenCalled();
-  });
-
-  it("creates a billing portal session for an existing customer", async () => {
-    using _env = mockEnv(stripeConfigured);
-    const userId = mongoService.objectId();
-    await mongoService.user.insertOne({
-      _id: userId,
-      email: "pay@example.com",
-      name: "Pay User",
-      firstName: "Pay",
-      lastName: "User",
-      locale: "en",
-      billing: {
-        subscriptionStatus: "trialing",
-        stripeCustomerId: "cus_portal",
-      },
-    });
-
-    const portalCreate = mock(() =>
-      Promise.resolve({ url: "https://billing.stripe.com/p/session_1" }),
-    );
-    setStripeClientForTests({
-      billingPortal: { sessions: { create: portalCreate } },
-    } as unknown as Stripe);
-
-    const result = await stripeService.createPortalSession(userId.toString());
-    expect(result.url).toBe("https://billing.stripe.com/p/session_1");
-    expect(portalCreate.mock.calls[0]?.[0]).toEqual({
-      customer: "cus_portal",
-      return_url: "http://localhost:9080/?settings=billing",
-    });
   });
 
   it("maps a Stripe invalid-request error to BillingHttpError", async () => {

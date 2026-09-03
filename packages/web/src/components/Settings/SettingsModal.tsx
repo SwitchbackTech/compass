@@ -75,8 +75,8 @@ const navButtonClassName = (current: boolean) =>
 
 /**
  * The app's Settings menu (Mod+,): Accounts (timezone, calendars, Google
- * connections, export / delete / log out) and Billing (plan + portal) as
- * sibling pages. ESC steps back a level - out of an open disconnect
+ * connections, export / delete / log out) and Billing (plan) as sibling
+ * pages. ESC steps back a level - out of an open disconnect
  * confirmation first, then out of the modal - via `handleDismiss`, since
  * OverlayPanel already routes both ESC and a backdrop click through
  * `onDismiss`.
@@ -111,8 +111,8 @@ export const SettingsModal: FC = () => {
   }, [isOpen]);
 
   // Fail-open and in-flight status both look like `kind: "open"` (no badge).
-  // Bounce only once the server says there is no plan; otherwise a portal
-  // return (`?settings=billing`) would snap to Accounts before status lands.
+  // Bounce only once the server says there is no plan; otherwise a slow
+  // status load would snap to Accounts before Billing is ready.
   // The Billing nav unmounts on that bounce, so reseat focus on Accounts or
   // it falls to document.body and Escape no longer dismisses the dialog.
   useEffect(() => {
@@ -241,7 +241,7 @@ export const SettingsModal: FC = () => {
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (
-            <PlanSection showShortcuts={areHintsVisible} />
+            <PlanSection />
           ) : page === "booking" && IS_BOOKING_ENABLED ? (
             <Suspense fallback={null}>
               <BookingSettingsSection showShortcuts={areHintsVisible} />

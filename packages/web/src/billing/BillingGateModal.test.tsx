@@ -1,113 +1,93 @@
 import "@testing-library/jest-dom";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Status } from "@core/errors/status.codes";
-import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { type ApiError } from "@web/api/api.types";
-import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import * as Track from "@web/auth/posthog/track";
+import { billingQueryKeys } from "@web/billing/billing.query";
 import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
 import {
   initialBillingPreviewState,
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
-import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { BillingGateModal } from "./BillingGateModal";
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+  initialCheckoutCelebrationState,
+  useCheckoutCelebrationStore,
+} from "@web/billing/checkout-celebration.store";
+import {
+  initialCheckoutPanelState,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
+import {
+  type EmbeddedCheckoutProps,
+  setEmbeddedCheckoutForTests,
+} from "@web/billing/embedded-checkout/embedded-checkout.port";
+import { BillingGateModal } from "./BillingGateModal";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
-const assign = spyOn(window.location, "assign").mockImplementation(() => {});
+function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
+  return (
+    <button type="button" onClick={onComplete}>
+      Complete checkout
+    </button>
+  );
+}
 
-const checkoutFailed = (): ApiError => {
-  const error = new Error(
-    "Request failed for POST /billing/checkout/session with status 500",
-  ) as ApiError;
-  error.name = "ApiError";
-  error.response = {
-    config: {},
-    data: { error: "Internal server error" },
-    headers: new Headers(),
-    status: Status.INTERNAL_SERVER,
-    statusText: "Internal Server Error",
-  };
-  return error;
+const GATE_CONFIG = {
+  google: { isConfigured: false },
+  billing: {
+    isConfigured: true,
+    enforcement: true,
+    trialLengthDays: 7,
+    publishableKey: "pk_test_gate",
+  },
 };
 
-const renderGate = (status = "awaiting_checkout") =>
-  render(
-    <HotkeysProvider>
-      <SessionContext.Provider
-        value={{ authenticated: true, setAuthenticated: () => {} }}
-      >
-        <BillingGateModal status={status} />
-      </SessionContext.Provider>
-    </HotkeysProvider>,
+const renderGate = (status = "awaiting_checkout") => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  queryClient.setQueryData(billingQueryKeys.config, GATE_CONFIG);
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <HotkeysProvider>
+        <SessionContext.Provider
+          value={{ authenticated: true, setAuthenticated: () => {} }}
+        >
+          <BillingGateModal status={status} />
+        </SessionContext.Provider>
+      </HotkeysProvider>
+    </QueryClientProvider>,
   );
+  return { ...view, queryClient };
+};
 
 describe("BillingGateModal", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
+    setEmbeddedCheckoutForTests(FakeCheckout);
   });
 
   afterEach(() => {
-    assign.mockClear();
     useBillingPreviewStore.setState(initialBillingPreviewState);
+    useCheckoutPanelStore.setState(initialCheckoutPanelState, true);
+    useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState, true);
     resetBillingGateAttentionForTests();
   });
 
-  it("redirects to Stripe Checkout from Start trial", async () => {
-    const createCheckoutSession = spyOn(
-      BillingApi,
-      "createCheckoutSession",
-    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
-    const { port, mocks } = createTestToastPort();
-    registerToastPort(port);
+  it("opens embedded Checkout inside the gate from Start trial", async () => {
     const user = userEvent.setup();
     renderGate();
 
     await user.click(screen.getByRole("button", { name: "Start trial" }));
 
-    expect(createCheckoutSession).toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
-    expect(mocks.error).not.toHaveBeenCalled();
-    createCheckoutSession.mockRestore();
-  });
-
-  it("shows a toast when checkout fails instead of failing silently", async () => {
-    const createCheckoutSession = spyOn(
-      BillingApi,
-      "createCheckoutSession",
-    ).mockImplementation(() => Promise.reject(checkoutFailed()));
-    const { port, mocks } = createTestToastPort();
-    registerToastPort(port);
-    const user = userEvent.setup();
-    renderGate();
-
-    await user.click(screen.getByRole("button", { name: "Start trial" }));
-
-    await waitFor(() => {
-      expect(mocks.error).toHaveBeenCalledWith(
-        "Couldn't start checkout. Please try again.",
-        expect.any(Object),
-      );
-    });
-    expect(assign).not.toHaveBeenCalled();
-    createCheckoutSession.mockRestore();
+    expect(
+      within(
+        screen.getByRole("dialog", { name: "Start your 7-day trial" }),
+      ).getByRole("button", { name: "Complete checkout" }),
+    ).toBeInTheDocument();
   });
 
   it("shows shortcut keycaps and focuses Start trial", () => {
@@ -148,13 +128,7 @@ describe("BillingGateModal", () => {
     expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
   });
 
-  it("starts checkout with S and does not dismiss on Escape", async () => {
-    const createCheckoutSession = spyOn(
-      BillingApi,
-      "createCheckoutSession",
-    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
-    const { port } = createTestToastPort();
-    registerToastPort(port);
+  it("opens Checkout with S, returns to the buttons with Back, and does not dismiss on Escape", async () => {
     const user = userEvent.setup();
     renderGate();
 
@@ -162,13 +136,44 @@ describe("BillingGateModal", () => {
     expect(
       screen.getByRole("dialog", { name: "Start your 7-day trial" }),
     ).toBeInTheDocument();
-    expect(createCheckoutSession).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Complete checkout" }),
+    ).not.toBeInTheDocument();
 
     await user.keyboard("s");
 
-    expect(createCheckoutSession).toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
-    createCheckoutSession.mockRestore();
+    expect(
+      screen.getByRole("button", { name: "Complete checkout" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Back" }));
+
+    expect(
+      screen.getByRole("button", { name: "Start trial" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Complete checkout" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("completes Checkout without leaving the gate", async () => {
+    const track = spyOn(Track, "track");
+    const user = userEvent.setup();
+    const { queryClient } = renderGate();
+    const invalidate = spyOn(queryClient, "invalidateQueries");
+
+    await user.keyboard("s");
+    await user.click(screen.getByRole("button", { name: "Complete checkout" }));
+
+    expect(useCheckoutCelebrationStore.getState().isCelebrating).toBe(true);
+    expect(track).toHaveBeenCalledWith("trial_converted");
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({
+        queryKey: ["billing", "status"],
+      });
+    });
+    track.mockRestore();
+    invalidate.mockRestore();
   });
 
   it("enters the read-only look-around with L", async () => {
@@ -185,6 +190,12 @@ describe("BillingGateModal", () => {
     expect(
       screen.queryByRole("button", { name: /Look around first/ }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Manage billing" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Subscribe" }),
+    ).toBeInTheDocument();
   });
 
   it("traps Tab within the dialog", async () => {
@@ -202,75 +213,5 @@ describe("BillingGateModal", () => {
 
     await user.tab();
     expect(start).toHaveFocus();
-  });
-
-  it("opens the billing portal with M when subscribe is required", async () => {
-    const createPortalSession = spyOn(
-      BillingApi,
-      "createPortalSession",
-    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
-    const { port } = createTestToastPort();
-    registerToastPort(port);
-    const replace = mock(() => {});
-    const popup = { closed: false, location: { replace }, opener: {} };
-    const open = spyOn(window, "open").mockReturnValue(
-      popup as unknown as Window,
-    );
-    const user = userEvent.setup();
-    renderGate("canceled");
-
-    expect(
-      within(screen.getByRole("button", { name: "Manage billing" })).getByText(
-        "M",
-      ),
-    ).toBeTruthy();
-
-    await user.keyboard("m");
-
-    expect(createPortalSession).toHaveBeenCalled();
-    await waitFor(() => {
-      expect(open).toHaveBeenCalledWith("about:blank", "_blank");
-      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
-    });
-    expect(assign).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("button", {
-        name: (accessibleName) =>
-          accessibleName.includes("Manage billing") ||
-          accessibleName.includes("Opening Stripe"),
-      }),
-    ).toHaveFocus();
-    createPortalSession.mockRestore();
-    open.mockRestore();
-  });
-
-  it("activates Manage billing on hover then Enter instead of Subscribe", async () => {
-    const createPortalSession = spyOn(
-      BillingApi,
-      "createPortalSession",
-    ).mockResolvedValue({ url: "https://billing.stripe.com/p/ok" });
-    const createCheckoutSession = spyOn(
-      BillingApi,
-      "createCheckoutSession",
-    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
-    const { port } = createTestToastPort();
-    registerToastPort(port);
-    const replace = mock(() => {});
-    const popup = { closed: false, location: { replace }, opener: {} };
-    spyOn(window, "open").mockReturnValue(popup as unknown as Window);
-    const user = userEvent.setup({ delay: null });
-    renderGate("canceled");
-
-    const manage = screen.getByRole("button", { name: "Manage billing" });
-    fireEvent.pointerEnter(manage, { pointerType: "mouse" });
-    expect(manage).toHaveFocus();
-    await user.keyboard("{Enter}");
-
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith("https://billing.stripe.com/p/ok");
-    });
-    expect(createCheckoutSession).not.toHaveBeenCalled();
-    createPortalSession.mockRestore();
-    createCheckoutSession.mockRestore();
   });
 });

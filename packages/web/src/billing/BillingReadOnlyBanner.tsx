@@ -1,6 +1,8 @@
 import { type FC } from "react";
+import { track } from "@web/auth/posthog/track";
 import { BillingBanner } from "@web/billing/BillingBanner";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
+import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { checkoutPanelActions } from "@web/billing/checkout-panel.store";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
@@ -11,14 +13,15 @@ import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeA
  * same key after the overlay unmounts.
  */
 export const BillingReadOnlyBanner: FC = () => {
-  const { isRedirecting, redirectTo } = useBillingRedirect();
-
   return (
     <BillingBanner
       ctaLabel="Start your free 7-day trial to save changes"
-      disabled={isRedirecting}
       message="You're looking around in read-only mode."
-      onCta={() => void redirectTo("checkout", "banner_checkout")}
+      onCta={() => {
+        track("billing_gate_cta_clicked", { cta: "banner_checkout" });
+        billingPreviewActions.exit();
+        checkoutPanelActions.open();
+      }}
       pointerAction={POINTER_ACTIONS.startTrial}
       shortcutKey={START_TRIAL_SHORTCUT_KEY}
     />

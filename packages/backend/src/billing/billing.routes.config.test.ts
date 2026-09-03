@@ -27,6 +27,16 @@ const routeHandles = (path: string, method: string): unknown[] => {
 };
 
 describe("BillingRoutes limiters", () => {
+  it("puts POST /api/billing/checkout/session behind sessionWriteLimiter", () => {
+    const handles = routeHandles("/api/billing/checkout/session", "post");
+    expect(handles).toContain(sessionWriteLimiter);
+    expect(handles).toContain(billingController.createCheckoutSession);
+  });
+
+  it("does not mount a Customer Portal session route", () => {
+    expect(routeHandles("/api/billing/portal/session", "post")).toEqual([]);
+  });
+
   it("puts GET /api/billing/subscription behind billingReadLimiter", () => {
     const handles = routeHandles("/api/billing/subscription", "get");
     expect(handles).toContain(billingReadLimiter);

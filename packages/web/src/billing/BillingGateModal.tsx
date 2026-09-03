@@ -1,9 +1,21 @@
-import { type FC, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { type FC, useCallback, useEffect, useRef } from "react";
+import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
+import {
+  startBillingStatusPoll,
+  useStripePublishableKey,
+} from "@web/billing/billing.query";
 import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { checkoutCelebrationActions } from "@web/billing/checkout-celebration.store";
+import {
+  checkoutPanelActions,
+  selectCheckoutPanelOpen,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
+import { getEmbeddedCheckoutComponent } from "@web/billing/embedded-checkout/embedded-checkout.port";
 import { OVERLAY_LETTER_SHORTCUT } from "@web/billing/overlay-letter-shortcut";
-import { useBillingRedirect } from "@web/billing/useBillingRedirect";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { deferGoogleDelayedToastIfVisible } from "@web/common/utils/toast/google-delayed.toast";
 import { deferGoogleReconnectToastIfVisible } from "@web/common/utils/toast/google-reconnect.toast";
@@ -31,16 +43,19 @@ type BillingGateModalProps = {
 
 /**
  * App-lock overlay for signed-in users who cannot write (awaiting checkout,
- * expired, canceled). Escape and the backdrop do nothing, but a user who has
- * not started a trial yet can step past it into a read-only look around the
- * real calendar; the first refused write brings it straight back.
+ * expired, canceled). Escape and the backdrop do nothing while the ask is
+ * showing; once Checkout is open, Back (and Escape) return to the buttons.
+ * A user who has not started a trial yet can step past it into a read-only
+ * look around the real calendar; the first refused write brings it back.
  */
 export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppLockReason("billingGate", true);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
-  const secondaryButtonRef = useRef<HTMLButtonElement>(null);
-  const { isRedirecting, redirectTo } = useBillingRedirect();
   const shownRef = useRef(false);
+  const queryClient = useQueryClient();
+  const isCheckoutOpen = useCheckoutPanelStore(selectCheckoutPanelOpen);
+  const publishableKey = useStripePublishableKey();
+  const EmbeddedCheckout = getEmbeddedCheckoutComponent();
 
   const isAwaitingCheckout = status === "awaiting_checkout";
   const title = isAwaitingCheckout
@@ -49,6 +64,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   const body = isAwaitingCheckout
     ? "Try Compass for free for 7 days"
     : "Your trial has ended.";
+  const primaryLabel = isAwaitingCheckout ? "Start trial" : "Subscribe";
 
   useEffect(() => {
     if (!shownRef.current) {
@@ -69,21 +85,28 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     billingPreviewActions.enter();
   };
 
-  // Only a trial still on offer earns the look-around; once it is spent the
-  // way forward is the billing portal.
-  const secondary = isAwaitingCheckout
-    ? { key: "L", label: "Look around first", onClick: lookAround }
-    : {
-        key: "M",
-        label: "Manage billing",
-        onClick: () => void redirectTo("portal"),
-      };
+  const openCheckout = () => {
+    track("billing_gate_cta_clicked", { cta: "checkout" });
+    checkoutPanelActions.open();
+  };
+
+  const fetchClientSecret = useCallback(
+    () => BillingApi.createCheckoutSession().then((r) => r.clientSecret),
+    [],
+  );
+
+  const onCheckoutComplete = useCallback(() => {
+    track("trial_converted");
+    checkoutCelebrationActions.celebrate();
+    checkoutPanelActions.close();
+    startBillingStatusPoll(queryClient, () => {});
+  }, [queryClient]);
 
   useAppShortcut(
     START_TRIAL_SHORTCUT_KEY,
     () => {
-      if (isRedirecting) return;
-      void redirectTo("checkout");
+      if (isCheckoutOpen) return;
+      openCheckout();
     },
     OVERLAY_LETTER_SHORTCUT,
   );
@@ -91,75 +114,80 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   useAppShortcut(
     "L",
     () => {
-      if (isRedirecting) return;
-      // Look-around unmounts this overlay and drops app-lock before keyup.
-      // Life view is bound on that keyup — swallow it so L only means preview.
+      if (isCheckoutOpen) return;
       swallowNextKeyup("l");
       lookAround();
     },
     { ...OVERLAY_LETTER_SHORTCUT, enabled: isAwaitingCheckout },
   );
 
-  useAppShortcut(
-    "M",
-    () => {
-      if (isRedirecting) return;
-      secondaryButtonRef.current?.focus({ preventScroll: true });
-      void redirectTo("portal");
-    },
-    { ...OVERLAY_LETTER_SHORTCUT, enabled: !isAwaitingCheckout },
-  );
-
   return (
     <OverlayPanel
       align="center"
       ariaLabel={title}
+      backdropClassName={isCheckoutOpen ? "overflow-y-auto" : undefined}
       initialFocusRef={primaryButtonRef}
+      onDismiss={isCheckoutOpen ? checkoutPanelActions.close : undefined}
       panelClassName={PANEL_CLASSNAME}
-      widthClassName="w-120"
+      restoreFocus={() => {
+        primaryButtonRef.current?.focus({ preventScroll: true });
+      }}
+      widthClassName={isCheckoutOpen ? "w-[560px]" : "w-120"}
     >
-      <div className="flex w-full flex-col items-center gap-4">
-        <PixelPirateScouting className="h-14 w-14" />
-        <h1 className="font-medium text-xl">{title}</h1>
-        <p className="text-sm text-text-muted">{body}</p>
-        <div className="mt-2 flex w-full flex-col gap-2">
+      {isCheckoutOpen && publishableKey ? (
+        <div className="flex w-full flex-col items-center gap-4">
+          <EmbeddedCheckout
+            className="w-full"
+            fetchClientSecret={fetchClientSecret}
+            onComplete={onCheckoutComplete}
+            publishableKey={publishableKey}
+          />
           <button
-            ref={primaryButtonRef}
-            className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-6 py-2"
-            disabled={isRedirecting}
-            onClick={() => void redirectTo("checkout")}
-            onPointerEnter={focusOnPointerEnter}
-            type="button"
-            {...pointerShortcutAttributes(START_TRIAL_SHORTCUT_KEY)}
-            {...(isAwaitingCheckout
-              ? { [POINTER_ACTION_ATTRIBUTE]: POINTER_ACTIONS.startTrial }
-              : {})}
-          >
-            {isRedirecting
-              ? "Opening Stripe…"
-              : isAwaitingCheckout
-                ? "Start trial"
-                : "Subscribe"}
-            <ShortcutHint className="ml-2">
-              {START_TRIAL_SHORTCUT_KEY}
-            </ShortcutHint>
-          </button>
-          <button
-            ref={secondaryButtonRef}
             className={SECONDARY_BUTTON_CLASSNAME}
-            disabled={isRedirecting}
-            onClick={secondary.onClick}
+            onClick={checkoutPanelActions.close}
             onPointerEnter={focusOnPointerEnter}
             type="button"
-            {...pointerShortcutAttributes(secondary.key)}
           >
-            {isRedirecting && secondary.key === "M"
-              ? "Opening Stripe…"
-              : secondary.label}
-            <ShortcutHint className="ml-2">{secondary.key}</ShortcutHint>
+            Back
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="flex w-full flex-col items-center gap-4">
+          <PixelPirateScouting className="h-14 w-14" />
+          <h1 className="font-medium text-xl">{title}</h1>
+          <p className="text-sm text-text-muted">{body}</p>
+          <div className="mt-2 flex w-full flex-col gap-2">
+            <button
+              ref={primaryButtonRef}
+              className="c-button c-button-primary c-button-elevated inline-flex items-center justify-center rounded-full px-6 py-2"
+              onClick={openCheckout}
+              onPointerEnter={focusOnPointerEnter}
+              type="button"
+              {...pointerShortcutAttributes(START_TRIAL_SHORTCUT_KEY)}
+              {...(isAwaitingCheckout
+                ? { [POINTER_ACTION_ATTRIBUTE]: POINTER_ACTIONS.startTrial }
+                : {})}
+            >
+              {primaryLabel}
+              <ShortcutHint className="ml-2">
+                {START_TRIAL_SHORTCUT_KEY}
+              </ShortcutHint>
+            </button>
+            {isAwaitingCheckout ? (
+              <button
+                className={SECONDARY_BUTTON_CLASSNAME}
+                onClick={lookAround}
+                onPointerEnter={focusOnPointerEnter}
+                type="button"
+                {...pointerShortcutAttributes("L")}
+              >
+                Look around first
+                <ShortcutHint className="ml-2">L</ShortcutHint>
+              </button>
+            ) : null}
+          </div>
+        </div>
+      )}
     </OverlayPanel>
   );
 };

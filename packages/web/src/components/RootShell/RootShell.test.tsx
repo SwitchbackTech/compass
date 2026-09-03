@@ -1,11 +1,12 @@
 import "@testing-library/jest-dom";
+import { type QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { act, type ReactElement } from "react";
 import { render, screen, waitFor } from "@web/__tests__/__mocks__/mock.render";
-import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
-import { BillingApi } from "@web/api/billing.api";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { billingQueryKeys } from "@web/billing/billing.query";
 import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
 import {
   billingPreviewActions,
@@ -13,22 +14,23 @@ import {
   useBillingPreviewStore,
 } from "@web/billing/billing-preview.store";
 import {
+  checkoutCelebrationActions,
   initialCheckoutCelebrationState,
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
+import {
+  initialCheckoutPanelState,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
+import {
+  type EmbeddedCheckoutProps,
+  setEmbeddedCheckoutForTests,
+} from "@web/billing/embedded-checkout/embedded-checkout.port";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import {
-  registerToastPort,
-  resetToastPort,
-} from "@web/common/utils/toast/toast.port";
 import { RootShell } from "@web/components/RootShell/RootShell";
-import {
-  selectIsSettingsOpen,
-  selectSettingsPage,
-  useSettingsStore,
-} from "@web/settings/settings.store";
+import { useSettingsStore } from "@web/settings/settings.store";
 import { pointerConfusionActions } from "@web/shortcuts/keyboard-only/pointer-confusion.store";
 import {
   afterAll,
@@ -38,7 +40,6 @@ import {
   expect,
   it,
   mock,
-  spyOn,
 } from "bun:test";
 
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
@@ -56,9 +57,20 @@ const anonymousSession = {
   setAuthenticated: () => {},
 };
 
+function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
+  return (
+    <button type="button" onClick={onComplete}>
+      Complete checkout
+    </button>
+  );
+}
+
 const renderShell = async (
   initialPath = "/",
-  { anonymous = false }: { anonymous?: boolean } = {},
+  {
+    anonymous = false,
+    queryClient,
+  }: { anonymous?: boolean; queryClient?: QueryClient } = {},
 ) => {
   const ui: ReactElement = anonymous ? (
     <SessionContext.Provider value={anonymousSession}>
@@ -70,7 +82,7 @@ const renderShell = async (
   const router = createTestRouter(ui, {
     initialEntries: [initialPath],
   });
-  render(<div />, { router });
+  render(<div />, { router, queryClient });
   await router.load();
   return router;
 };
@@ -91,12 +103,12 @@ describe("RootShell billing gates", () => {
     access = { kind: "open" };
     useBillingPreviewStore.setState(initialBillingPreviewState);
     useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState);
+    useCheckoutPanelStore.setState(initialCheckoutPanelState, true);
     useSettingsStore.setState({
       isSettingsOpen: false,
       settingsPage: "accounts",
     });
     resetBillingGateAttentionForTests();
-    resetToastPort();
   });
 
   it("never gates an anonymous visitor", async () => {
@@ -185,66 +197,29 @@ describe("RootShell billing gates", () => {
   });
 
   it("starts checkout with S from the billing gate", async () => {
-    const createCheckoutSession = spyOn(
-      BillingApi,
-      "createCheckoutSession",
-    ).mockResolvedValue({ url: "https://checkout.stripe.com/c/ok" });
-    const assign = spyOn(window.location, "assign").mockImplementation(
-      () => {},
-    );
-    const { port } = createTestToastPort();
-    registerToastPort(port);
+    setEmbeddedCheckoutForTests(FakeCheckout);
+    const queryClient = createCompassQueryClient();
+    queryClient.setQueryData(billingQueryKeys.config, {
+      google: { isConfigured: false },
+      billing: {
+        isConfigured: true,
+        enforcement: true,
+        trialLengthDays: 7,
+        publishableKey: "pk_test_root",
+      },
+    });
     access = awaitingCheckout;
-    await renderShell("/week");
+    await renderShell("/week", { queryClient });
     const user = userEvent.setup();
 
     await user.keyboard("s");
 
-    expect(createCheckoutSession).toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/c/ok");
-    createCheckoutSession.mockRestore();
-    assign.mockRestore();
-  });
-
-  it("reopens Settings on Billing after returning from the portal", async () => {
-    access = {
-      kind: "server",
-      status: "active",
-      isReadOnly: false,
-      trialEndsAt: null,
-    };
-    spyOn(BillingApi, "getStatus").mockResolvedValue({
-      subscriptionStatus: "active",
-      trialEndsAt: null,
-      isReadOnly: false,
-      cancelAtPeriodEnd: false,
-    });
-    await renderShell("/week?settings=billing");
-
-    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
-    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
-  });
-
-  it("keeps Billing open when portal return lands before plan data", async () => {
-    access = { kind: "open" };
-    await renderShell("/week?settings=billing");
-
-    expect(selectIsSettingsOpen(useSettingsStore.getState())).toBe(true);
-    expect(selectSettingsPage(useSettingsStore.getState())).toBe("billing");
-  });
-
-  it("toasts and strips a canceled checkout", async () => {
-    const { port, mocks } = createTestToastPort();
-    registerToastPort(port);
-    const router = await renderShell("/week?checkout=cancel");
-
-    expect(mocks.toast).toHaveBeenCalledWith(
-      "Checkout canceled",
-      expect.objectContaining({ toastId: "billing-checkout-canceled" }),
-    );
     expect(
-      (router.state.location.search as { checkout?: string }).checkout,
-    ).toBeUndefined();
+      screen.getByRole("button", { name: "Complete checkout" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Start your 7-day trial" }),
+    ).toBeInTheDocument();
   });
 
   it("dismisses the checkout celebration with Start planning", async () => {
@@ -254,7 +229,8 @@ describe("RootShell billing gates", () => {
       isReadOnly: false,
       trialEndsAt: "2026-09-08T00:00:00.000Z",
     };
-    await renderShell("/week?checkout=success");
+    checkoutCelebrationActions.celebrate();
+    await renderShell("/week");
 
     const startPlanning = screen.getByRole("button", {
       name: "Start planning",
@@ -276,7 +252,8 @@ describe("RootShell billing gates", () => {
       isReadOnly: false,
       trialEndsAt: "2026-09-08T00:00:00.000Z",
     };
-    await renderShell("/week?checkout=success");
+    checkoutCelebrationActions.celebrate();
+    await renderShell("/week");
     const user = userEvent.setup();
 
     expect(

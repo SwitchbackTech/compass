@@ -3,6 +3,16 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { BillingBanner } from "@web/billing/BillingBanner";
+import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
+import {
+  billingPreviewActions,
+  initialBillingPreviewState,
+  useBillingPreviewStore,
+} from "@web/billing/billing-preview.store";
+import {
+  initialCheckoutPanelState,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
 import {
   POINTER_ACTION_ATTRIBUTE,
   POINTER_ACTIONS,
@@ -16,6 +26,8 @@ import "@testing-library/jest-dom";
 afterEach(() => {
   cleanup();
   eventJumpActions.reset();
+  useBillingPreviewStore.setState(initialBillingPreviewState, true);
+  useCheckoutPanelStore.setState(initialCheckoutPanelState, true);
 });
 
 const renderBanner = (onCta = mock(), disabled = false) =>
@@ -87,5 +99,19 @@ describe("BillingBanner", () => {
       }),
     );
     expect(onCta).toHaveBeenCalledTimes(1);
+  });
+
+  it("exits the preview and opens checkout from Start trial", () => {
+    billingPreviewActions.enter();
+    render(
+      <HotkeysProvider>
+        <BillingReadOnlyBanner />
+      </HotkeysProvider>,
+    );
+
+    pressKey("S");
+
+    expect(useBillingPreviewStore.getState().isPreviewing).toBe(false);
+    expect(useCheckoutPanelStore.getState().isOpen).toBe(true);
   });
 });

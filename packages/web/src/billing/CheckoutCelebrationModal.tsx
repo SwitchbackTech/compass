@@ -17,10 +17,10 @@ const PANEL_CLASSNAME =
 const TITLE = "You're aboard!";
 
 /**
- * The status is read live rather than captured on mount: `useCheckoutReturn`
- * polls billing status for 15s after the return, so a user who lands before
- * the Stripe webhook does sees "Setting up" sharpen into the real plan
- * without the modal remounting.
+ * The status is read live rather than captured on mount: completing Checkout
+ * starts a 15s status poll, so a user who finishes before the Stripe webhook
+ * lands sees "Setting up" sharpen into the real plan without the modal
+ * remounting.
  */
 const getBody = (access: AppAccess): string => {
   if (access.kind !== "server") return "Setting up your subscription...";
@@ -33,9 +33,9 @@ const getBody = (access: AppAccess): string => {
 
 /**
  * The moment the anonymous -> trial transition is finally acknowledged.
- * Raised by `useCheckoutReturn` on `?checkout=success`; `RootShell` suppresses
- * the billing gate while it is up, so the two never fight for the screen
- * during the webhook gap.
+ * Raised by Checkout `onComplete`; `RootShell` suppresses the billing gate
+ * while it is up, so the two never fight for the screen during the webhook
+ * gap.
  */
 export const CheckoutCelebrationModal: FC = () => {
   const isCelebrating = useCheckoutCelebrationStore(selectIsCelebrating);

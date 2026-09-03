@@ -37,8 +37,6 @@ const PARAM_TO_VIEW = Object.fromEntries(
 export interface AuthSearch {
   auth?: string;
   token?: string;
-  checkout?: string;
-  settings?: string;
   /** ?play=1 launches the Block Party practice game directly (any value). */
   play?: string | number | boolean;
 }
@@ -49,8 +47,6 @@ export function validateAuthSearch(
   return {
     auth: typeof search.auth === "string" ? search.auth : undefined,
     token: typeof search.token === "string" ? search.token : undefined,
-    checkout: typeof search.checkout === "string" ? search.checkout : undefined,
-    settings: search.settings === "billing" ? "billing" : undefined,
     // The router JSON-parses search values, so ?play=1 arrives as a number
     // and ?play as a boolean. Any present value counts.
     play:
