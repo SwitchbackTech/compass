@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type FC, useCallback, useEffect, useRef } from "react";
+import { type FC, Suspense, useCallback, useEffect, useRef } from "react";
 import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
 import {
@@ -14,7 +14,7 @@ import {
   selectCheckoutPanelOpen,
   useCheckoutPanelStore,
 } from "@web/billing/checkout-panel.store";
-import { getEmbeddedCheckoutComponent } from "@web/billing/embedded-checkout/embedded-checkout.port";
+import { getEmbeddedCheckoutComponent } from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { OVERLAY_LETTER_SHORTCUT } from "@web/billing/overlay-letter-shortcut";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { deferGoogleDelayedToastIfVisible } from "@web/common/utils/toast/google-delayed.toast";
@@ -136,12 +136,18 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     >
       {isCheckoutOpen && publishableKey ? (
         <div className="flex w-full flex-col items-center gap-4">
-          <EmbeddedCheckout
-            className="w-full"
-            fetchClientSecret={fetchClientSecret}
-            onComplete={onCheckoutComplete}
-            publishableKey={publishableKey}
-          />
+          <Suspense
+            fallback={
+              <p className="text-sm text-text-muted">Loading checkout...</p>
+            }
+          >
+            <EmbeddedCheckout
+              className="w-full"
+              fetchClientSecret={fetchClientSecret}
+              onComplete={onCheckoutComplete}
+              publishableKey={publishableKey}
+            />
+          </Suspense>
           <button
             className={SECONDARY_BUTTON_CLASSNAME}
             onClick={checkoutPanelActions.close}

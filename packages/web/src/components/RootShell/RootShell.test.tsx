@@ -25,7 +25,7 @@ import {
 import {
   type EmbeddedCheckoutProps,
   setEmbeddedCheckoutForTests,
-} from "@web/billing/embedded-checkout/embedded-checkout.port";
+} from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";

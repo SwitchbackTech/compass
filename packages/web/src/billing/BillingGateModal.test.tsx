@@ -22,7 +22,7 @@ import {
 import {
   type EmbeddedCheckoutProps,
   setEmbeddedCheckoutForTests,
-} from "@web/billing/embedded-checkout/embedded-checkout.port";
+} from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { BillingGateModal } from "./BillingGateModal";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
