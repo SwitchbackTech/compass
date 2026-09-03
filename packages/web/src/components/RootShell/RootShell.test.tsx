@@ -257,6 +257,9 @@ describe("RootShell billing gates", () => {
     const user = userEvent.setup();
 
     expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Start planning" }),
     ).toHaveFocus();
     await user.keyboard("{Enter}");

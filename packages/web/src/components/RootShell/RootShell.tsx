@@ -79,14 +79,18 @@ export function RootShell() {
   const gateStatus =
     showReadOnlyBanner || isCelebrating ? null : readOnlyStatus;
   const showCalendarOnboarding =
-    gateStatus === null && !deferCalendarOnboarding && !isMobile;
+    gateStatus === null &&
+    !isCelebrating &&
+    !deferCalendarOnboarding &&
+    !isMobile;
   const showPastDue = access.kind === "server" && access.status === "past_due";
 
-  // The gate owns the screen: the onboarding cards sit at Z_INDEX_TOOLTIP
-  // (above Z_INDEX_MODAL), so leaving them mounted would let a gated user
-  // click straight through it and keep touring. They are suppressed rather
-  // than living in a second copy of this tree, which keeps Outlet's slot
-  // stable — swapping tree shapes remounts the whole calendar.
+  // The gate and the celebration own the screen: the onboarding cards sit at
+  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
+  // a gated or celebrating user click straight through and keep touring. They
+  // are suppressed rather than living in a second copy of this tree, which
+  // keeps Outlet's slot stable — swapping tree shapes remounts the whole
+  // calendar.
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}
