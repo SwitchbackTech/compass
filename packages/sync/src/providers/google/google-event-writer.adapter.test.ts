@@ -400,7 +400,60 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.insert[0].requestBody.guestsCanInviteOthers).toBe(true);
   });
 
-  it("conditions a patch on the expected version via If-Match", async () => {
+  it("returns the Meet URL Google mints on create", async () => {
+    const hangoutApi = new FakeEventsApi({
+      insert: {
+        ...scriptedEvent("abc12deadbeef00000000000"),
+        hangoutLink: "https://meet.google.com/abc-defg-hij",
+      },
+    });
+    const hangout = await writerWith(hangoutApi).writer.createEvent({
+      ...baseCreate,
+      createConference: true,
+    });
+    expect(hangout.conference).toEqual({
+      url: "https://meet.google.com/abc-defg-hij",
+      label: null,
+    });
+
+    const entryPointApi = new FakeEventsApi({
+      insert: {
+        ...scriptedEvent("abc12deadbeef00000000000"),
+        conferenceData: {
+          conferenceSolution: { name: "Google Meet" },
+          entryPoints: [
+            { entryPointType: "phone", uri: "tel:+1-555" },
+            { entryPointType: "video", uri: "https://meet.google.com/xyz" },
+          ],
+        },
+      },
+    });
+    const fromEntryPoints = await writerWith(entryPointApi).writer.createEvent({
+      ...baseCreate,
+      createConference: true,
+    });
+    expect(fromEntryPoints.conference).toEqual({
+      url: "https://meet.google.com/xyz",
+      label: "Google Meet",
+    });
+  });
+
+  it("drops a malformed Meet URL on create instead of throwing", async () => {
+    const api = new FakeEventsApi({
+      insert: {
+        ...scriptedEvent("abc12deadbeef00000000000"),
+        hangoutLink: "not-a-url",
+      },
+    });
+    const result = await writerWith(api).writer.createEvent({
+      ...baseCreate,
+      createConference: true,
+    });
+    expect(result.conference).toBeUndefined();
+    expect(result.providerEventId).toBe("abc12deadbeef00000000000");
+  });
+
+  it("does not write conferenceData on patch", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
 
@@ -411,6 +464,8 @@ describe("GoogleEventWriter", () => {
 
     expect(api.calls.patch[0].ifMatch).toBe('"v1"');
     expect(result.providerVersion).toBe('"v2"');
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("conferenceData");
+    expect(api.calls.patch[0]).not.toHaveProperty("conferenceDataVersion");
   });
 
   it("patches unconditionally when no version is known", async () => {

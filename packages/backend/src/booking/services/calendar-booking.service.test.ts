@@ -146,6 +146,7 @@ describe("CalendarBookingService", () => {
         responseStatus: "needsAction",
       },
     ]);
+    expect(request.input.content.conference).toBeNull();
   });
 
   it("rejects empty guest email before submit", async () => {

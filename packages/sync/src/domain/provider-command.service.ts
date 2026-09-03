@@ -315,9 +315,12 @@ function buildLinkedEventRecord(
     throw new Error("buildLinkedEventRecord requires a create command");
   }
   const { input } = command;
-  const content = intendedAttendees
+  const withAttendees = intendedAttendees
     ? { ...input.content, attendees: intendedAttendees }
     : input.content;
+  const content = result.conference
+    ? { ...withAttendees, conference: result.conference }
+    : withAttendees;
   return {
     _id: command.eventId,
     tenantId: command.tenantId,

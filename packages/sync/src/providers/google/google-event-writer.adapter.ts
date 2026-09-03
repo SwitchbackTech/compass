@@ -10,7 +10,10 @@ import {
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
-import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
+import {
+  mapConference,
+  normalizeGoogleEvent,
+} from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import { googleInstanceEventId } from "@sync/providers/google/google-instance-id";
 import {
@@ -308,10 +311,12 @@ function toResult(event: gSchema$Event): ProviderWriteResult {
       "Google returned an event without an id or etag",
     );
   }
+  const conference = mapConference(event);
   return {
     providerEventId: event.id,
     providerVersion: event.etag,
     ...(event.iCalUID ? { icalUid: event.iCalUID } : {}),
+    ...(conference ? { conference } : {}),
   };
 }
 

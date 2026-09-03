@@ -174,7 +174,8 @@ function mapAttendees(
     }));
 }
 
-function mapConference(item: gSchema$Event): Conference | null {
+/** Read-reflected Meet URL. Writers reuse this on create responses. */
+export function mapConference(item: gSchema$Event): Conference | null {
   const url =
     item.hangoutLink ??
     item.conferenceData?.entryPoints?.find(

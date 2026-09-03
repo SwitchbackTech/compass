@@ -1,5 +1,8 @@
 import { type EventSchedule } from "@core/types/event.contracts";
-import { type Attendee } from "@core/types/event-attendance.contracts";
+import {
+  type Attendee,
+  type Conference,
+} from "@core/types/event-attendance.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
@@ -101,6 +104,10 @@ export interface ProviderWriteResult {
   // Google's cross-copy correlation key when the write response includes it.
   // Optional so non-Google writers and older fixtures stay valid.
   readonly icalUid?: string;
+  // Meet URL Google minted on create (or echoed on a later write). Omitted
+  // when the response has none. Create records overlay this onto command
+  // content, which sends `conference: null`.
+  readonly conference?: Conference;
 }
 
 // A provider-neutral event mutation port. Neutral inputs in, provider identity

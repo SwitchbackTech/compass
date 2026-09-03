@@ -302,6 +302,46 @@ describe("executeProviderCreate", () => {
     expect(stored?.providerMetadata).toEqual({ iCalUID: "g-evt-1@google.com" });
   });
 
+  it("stores the Meet URL Google minted on create, not the command's null", async () => {
+    const { tenantId, principalId, calendar, command } = await seed();
+    const writer = new FakeWriter();
+    writer.result = {
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-1",
+      conference: {
+        url: "https://meet.google.com/abc-defg-hij",
+        label: "Google Meet",
+      },
+    };
+
+    await executeProviderCreate(
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
+      command,
+      calendar,
+      now,
+    );
+
+    const stored = await events.findById(
+      tenantId,
+      principalId,
+      command.eventId,
+    );
+    expect(
+      command.input.kind === "create" && command.input.content.conference,
+    ).toBe(null);
+    expect(stored?.content.conference).toEqual({
+      url: "https://meet.google.com/abc-defg-hij",
+      label: "Google Meet",
+    });
+  });
+
   it("passes the caller's invitation intent through to the writer", async () => {
     const { calendar, command } = await seed("all");
     const writer = new FakeWriter();
