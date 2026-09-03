@@ -1,4 +1,4 @@
-import { useParams, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import {
   PublicBookingApi,
@@ -14,6 +14,9 @@ import {
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 type CancelActionState =
   | "idle"
@@ -81,6 +84,7 @@ const resolveCancelPageView = (
 export function PublicBookingCancelPage() {
   const { reservationId } = useParams({ from: "/book/cancel/$reservationId" });
   const search = useSearch({ from: "/book/cancel/$reservationId" });
+  const navigate = useNavigate();
   const token = search.token ?? "";
   const canLoad = Boolean(reservationId && token);
   const reservationQuery = usePublicBookingReservationQuery(
@@ -114,12 +118,34 @@ export function PublicBookingCancelPage() {
   };
 
   const view = resolveCancelPageView(canLoad, action, reservationQuery);
+  const busy = action === "cancelling";
+  const isConfirmView = view.kind === "confirm";
+
+  // Escape on the confirm view returns to the confirmation page. OverlayPanel
+  // (if any) peels first. In-flight cancel must not navigate or abort.
+  useAppShortcut(
+    "Escape",
+    (event) => {
+      if (isHigherEscapeOwner()) {
+        return;
+      }
+      if (!isConfirmView || inFlightRef.current || !reservationId) {
+        return;
+      }
+      event.preventDefault();
+      void navigate({
+        to: ROOT_ROUTES.BOOK_CONFIRMED,
+        params: { reservationId },
+      });
+    },
+    { enabled: isConfirmView && !busy, ignoreInputs: false },
+  );
+
   if (view.kind === "status") {
     return <PublicBookingStatusMessage {...view} />;
   }
 
   const { reservation } = view;
-  const busy = action === "cancelling";
   return (
     <PublicBookingLayout>
       <section aria-busy={busy} aria-labelledby="booking-cancel-heading">

@@ -1,3 +1,4 @@
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import {
   createMemoryHistory,
   createRouter,
@@ -42,7 +43,13 @@ function renderCancelRoute(path: string) {
     defaultPendingMs: 0,
   });
   const { wrapper } = createStoreWrapper();
-  return render(<RouterProvider router={router} />, { wrapper });
+  const result = render(
+    <HotkeysProvider>
+      <RouterProvider router={router} />
+    </HotkeysProvider>,
+    { wrapper },
+  );
+  return { ...result, router };
 }
 
 describe("PublicBookingCancelPage", () => {
@@ -218,5 +225,102 @@ describe("PublicBookingCancelPage", () => {
       screen.queryByRole("button", { name: "Cancel this booking" }),
     ).not.toBeInTheDocument();
     expect(cancelPosts).toBe(0);
+  });
+
+  it("returns to the confirmation page on Escape without posting", async () => {
+    const user = userEvent.setup({ delay: null });
+    let cancelPosts = 0;
+    server.use(
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        (_req, res, ctx) => {
+          cancelPosts += 1;
+          return res(ctx.status(Status.OK), ctx.json({ ok: true }));
+        },
+      ),
+    );
+
+    const { router } = renderCancelRoute(cancelPath);
+
+    expect(
+      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      `/book/confirmed/${reservationId}`,
+    );
+    expect(cancelPosts).toBe(0);
+  });
+
+  it("does not navigate or abort when Escape is pressed during cancel POST", async () => {
+    const user = userEvent.setup({ delay: null });
+    let cancelPosts = 0;
+    let release!: () => void;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    server.use(
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        async (_req, res, ctx) => {
+          cancelPosts += 1;
+          await hold;
+          return res(ctx.status(Status.OK), ctx.json({ ok: true }));
+        },
+      ),
+    );
+
+    const { router } = renderCancelRoute(cancelPath);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Cancel this booking" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Canceling..." }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("heading", { name: "Cancel this booking?" }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      `/book/cancel/${reservationId}`,
+    );
+    expect(cancelPosts).toBe(1);
+
+    release();
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+    expect(cancelPosts).toBe(1);
+  });
+
+  it("does not navigate on Escape from the not-found heading", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { router } = renderCancelRoute(`/book/cancel/${reservationId}`);
+
+    const heading = await screen.findByRole("heading", {
+      name: "Booking not found",
+    });
+    await waitFor(() => {
+      expect(heading).toHaveFocus();
+    });
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.getByRole("heading", { name: "Booking not found" }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      `/book/cancel/${reservationId}`,
+    );
   });
 });
