@@ -1,24 +1,29 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 import { EventColorPicker } from "./EventColorPicker";
 
 describe("EventColorPicker", () => {
-  it("selects a color slot and can clear back to calendar default", async () => {
-    const user = userEvent.setup();
+  // fireEvent, not userEvent: userEvent.click stalls some CI runners when
+  // always-visible tooltip nodes overlap the swatches (same class of hang as
+  // RecurrenceSection's Ends on datepicker).
+  it("selects a color slot and can clear back to calendar default", () => {
     const onChange = mock();
 
     const { rerender } = render(
       <EventColorPicker value={null} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("radio", { name: "Blue" }));
+    act(() => {
+      fireEvent.click(screen.getByRole("radio", { name: "Blue" }));
+    });
     expect(onChange).toHaveBeenCalledWith("blue");
 
     rerender(<EventColorPicker value="blue" onChange={onChange} />);
-    await user.click(screen.getByRole("radio", { name: "Calendar default" }));
+    act(() => {
+      fireEvent.click(screen.getByRole("radio", { name: "Calendar default" }));
+    });
     expect(onChange).toHaveBeenCalledWith(null);
   });
 
