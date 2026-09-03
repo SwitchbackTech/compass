@@ -241,6 +241,6 @@ function weekRowKey(
   return `${monthKey}-empty`;
 }
 
-function bookingDayButtonId(monthKey: string, dateKey: string): string {
+export function bookingDayButtonId(monthKey: string, dateKey: string): string {
   return `booking-day-${monthKey}-${dateKey}`;
 }
