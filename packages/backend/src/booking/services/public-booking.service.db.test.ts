@@ -109,6 +109,7 @@ describe("PublicBookingService", () => {
   let syncSpies: Array<{ mockRestore: () => void }> = [];
   let createBookingEvent: ReturnType<typeof mock>;
   let deleteBookingEvent: ReturnType<typeof mock>;
+  let updateBookingEvent: ReturnType<typeof mock>;
   let getAvailability: ReturnType<typeof mock>;
   let service: PublicBookingService;
 
@@ -124,11 +125,13 @@ describe("PublicBookingService", () => {
 
     createBookingEvent = mock(async () => new ObjectId().toString());
     deleteBookingEvent = mock(async () => undefined);
+    updateBookingEvent = mock(async () => undefined);
     getAvailability = mock(async () => busyResponse(true));
 
     const port: CalendarBookingPort = {
       getAvailability,
       createBookingEvent,
+      updateBookingEvent,
       deleteBookingEvent,
     };
     service = new PublicBookingService(port);
@@ -548,11 +551,12 @@ describe("PublicBookingService", () => {
       hostDisplayName: "Host User",
       status: "confirmed",
       bookingSlug: slug,
+      guestName: "Ada Lovelace",
+      notes: "secret notes",
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
     expect(publicReservation).not.toHaveProperty("rescheduleUrl");
-    expect(publicReservation).not.toHaveProperty("notes");
   });
 
   it("returns the booked slot duration after the host changes page duration", async () => {
@@ -745,6 +749,88 @@ describe("PublicBookingService", () => {
     expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
   });
 
+  it("patches guest name and notes and submits an event update", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+
+    const patched = await service.patchPublicReservation(reservationId, {
+      token,
+      name: "Grace Hopper",
+      notes: "bring tea",
+    });
+
+    expect(patched.guestName).toBe("Grace Hopper");
+    expect(patched.notes).toBe("bring tea");
+    expect(updateBookingEvent).toHaveBeenCalledTimes(1);
+    expect(updateBookingEvent.mock.calls[0]?.[1]).toMatchObject({
+      title: "Grace Hopper and Host User",
+      description: "bring tea",
+    });
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Grace Hopper");
+    expect(stored?.notes).toBe("bring tea");
+    expect(stored?.guestEmail).toBe("ada@example.com");
+  });
+
+  it("rejects a wrong patch token without changing the row", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "Europe/London",
+    });
+    const reservationId = new ObjectId(created.reservationId);
+
+    await expect(
+      service.patchPublicReservation(reservationId, {
+        token: "not-the-token",
+        name: "Grace Hopper",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Ada Lovelace");
+    expect(stored?.notes).toBe("bring coffee");
+  });
+
+  it("rejects patching a cancelled reservation without a command", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    await service.cancelReservation(reservationId, { token });
+    updateBookingEvent.mockClear();
+
+    await expect(
+      service.patchPublicReservation(reservationId, {
+        token,
+        name: "Grace Hopper",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Ada Lovelace");
+    expect(stored?.status).toBe("cancelled");
+  });
+
   it("rejects invalid guest email", async () => {
     const { slug } = await enableBookingPage();
     await expect(
@@ -898,11 +984,12 @@ describe("Public booking routes", () => {
       hostDisplayName: "Permalink Host",
       status: "confirmed",
       bookingSlug: page.slug,
+      guestName: "Ada Lovelace",
+      notes: "secret notes",
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");
     expect(response.body).not.toHaveProperty("rescheduleUrl");
-    expect(response.body).not.toHaveProperty("notes");
   });
 
   it("POST reservation returns 409 when bookable is false", async () => {

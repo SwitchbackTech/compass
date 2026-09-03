@@ -342,6 +342,11 @@ export async function preparePublicBookingPage(
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
           bookingSlug: slug,
+          guestName:
+            typeof lastPost?.guestName === "string"
+              ? lastPost.guestName
+              : "Guest User",
+          notes: typeof lastPost?.notes === "string" ? lastPost.notes : null,
         }),
       );
     }
@@ -388,6 +393,8 @@ export async function preparePublicBookingConfirmedPage(
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
           bookingSlug: options.slug ?? "tylerdane",
+          guestName: "Guest User",
+          notes: null,
         }),
       );
     }
@@ -455,6 +462,8 @@ export async function preparePublicBookingCancelPage(
           hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
           status: options.reservationStatus ?? "confirmed",
           bookingSlug: "tylerdane",
+          guestName: "Guest User",
+          notes: null,
         }),
       );
     }

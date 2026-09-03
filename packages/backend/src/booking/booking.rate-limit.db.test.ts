@@ -58,6 +58,36 @@ describe("Public booking rate limits", () => {
     expect(throttled.status).toBe(429);
   });
 
+  it("throttles PATCH reservation after 10 requests in a minute", async () => {
+    const server = baseDriver.getServer();
+    const id = "0000000000000000000000bb";
+    for (let i = 0; i < 10; i += 1) {
+      await server
+        .patch(`/api/booking/reservations/${id}`)
+        .send({ token: "a".repeat(64), name: "Ada" })
+        .expect(Status.NOT_FOUND);
+    }
+    const throttled = await server
+      .patch(`/api/booking/reservations/${id}`)
+      .send({ token: "a".repeat(64), name: "Ada" });
+    expect(throttled.status).toBe(429);
+  });
+
+  it("does not throttle a different reservation id PATCH bucket", async () => {
+    const server = baseDriver.getServer();
+    const busyId = "0000000000000000000000cc";
+    const quietId = "0000000000000000000000dd";
+    for (let i = 0; i < 11; i += 1) {
+      await server
+        .patch(`/api/booking/reservations/${busyId}`)
+        .send({ token: "a".repeat(64), name: "Ada" });
+    }
+    await server
+      .patch(`/api/booking/reservations/${quietId}`)
+      .send({ token: "a".repeat(64), name: "Ada" })
+      .expect(Status.NOT_FOUND);
+  });
+
   it("does not throttle a different slug's bucket", async () => {
     const server = baseDriver.getServer();
     for (let i = 0; i < 61; i += 1) {

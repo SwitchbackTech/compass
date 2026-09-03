@@ -79,6 +79,26 @@ class BookingReservationRepository {
     if (!result) return null;
     return BookingReservationRecordSchema.parse(result);
   }
+
+  async updateGuestDetails(
+    id: ObjectId,
+    details: { guestName: string; notes: string | null },
+  ): Promise<BookingReservationRecord | null> {
+    const now = new Date();
+    const result = await mongoService.bookingReservation.findOneAndUpdate(
+      { _id: id, status: "confirmed" },
+      {
+        $set: {
+          guestName: details.guestName,
+          notes: details.notes,
+          updatedAt: now,
+        },
+      },
+      { returnDocument: "after" },
+    );
+    if (!result) return null;
+    return BookingReservationRecordSchema.parse(result);
+  }
 }
 
 export const bookingReservationRepository = new BookingReservationRepository();

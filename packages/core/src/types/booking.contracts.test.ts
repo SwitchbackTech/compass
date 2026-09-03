@@ -10,6 +10,7 @@ import {
   CreateBookingReservationInputSchema,
   CreateBookingReservationResponseSchema,
   isGuestEmail,
+  PatchBookingReservationInputSchema,
   PublicBookingPageSchema,
   PublicGetBookingPageResponseSchema,
   PublicGetBookingReservationResponseSchema,
@@ -324,7 +325,7 @@ describe("HTTP booking contracts", () => {
     ).toBe(true);
   });
 
-  it("parses a public reservation GET without guest contact fields", () => {
+  it("parses a public reservation GET with name and notes, not email", () => {
     const publicGet = {
       slotStart: "2026-09-01T15:00:00.000Z",
       guestTimeZone: "Europe/London",
@@ -332,6 +333,8 @@ describe("HTTP booking contracts", () => {
       hostDisplayName: "Tyler Dane",
       status: "confirmed",
       bookingSlug: "tylerdane",
+      guestName: "Ada Lovelace",
+      notes: "bring coffee",
     };
     expect(
       PublicGetBookingReservationResponseSchema.safeParse(publicGet).success,
@@ -343,11 +346,40 @@ describe("HTTP booking contracts", () => {
         durationMinutes: 30,
         hostDisplayName: "Tyler Dane",
         status: "confirmed",
+        bookingSlug: "tylerdane",
       }).success,
     ).toBe(false);
     expect(
       PublicGetBookingReservationResponseSchema.safeParse({
         ...publicGet,
+        guestEmail: "ada@example.com",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("parses a guest details PATCH and rejects email or empty edits", () => {
+    expect(
+      PatchBookingReservationInputSchema.safeParse({
+        token: "abc",
+        name: "Grace Hopper",
+        notes: "bring tea",
+      }).success,
+    ).toBe(true);
+    expect(
+      PatchBookingReservationInputSchema.safeParse({
+        token: "abc",
+        notes: "",
+      }).success,
+    ).toBe(true);
+    expect(
+      PatchBookingReservationInputSchema.safeParse({
+        token: "abc",
+      }).success,
+    ).toBe(false);
+    expect(
+      PatchBookingReservationInputSchema.safeParse({
+        token: "abc",
+        name: "Ada Lovelace",
         guestEmail: "ada@example.com",
       }).success,
     ).toBe(false);

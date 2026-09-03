@@ -95,4 +95,7 @@ export const BaseApi = {
   put<T>(url: string, body?: unknown, config?: ApiMethodConfig) {
     return request<T>("PUT", url, body, config);
   },
+  patch<T>(url: string, body?: unknown, config?: ApiMethodConfig) {
+    return request<T>("PATCH", url, body, config);
+  },
 };

@@ -52,6 +52,14 @@ const publicCancelLimiter = rateLimit({
   keyGenerator: bookingReservationKey,
 });
 
+const publicReservationPatchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingReservationKey,
+});
+
 /**
  * Host admin routes require a session. Public guest routes are unauthenticated.
  */
@@ -85,7 +93,11 @@ export class BookingRoutes extends CommonRoutesConfig {
 
     this.app
       .route(`/api/booking/reservations/:id`)
-      .get(publicReservationGetLimiter, bookingController.getPublicReservation);
+      .get(publicReservationGetLimiter, bookingController.getPublicReservation)
+      .patch(
+        publicReservationPatchLimiter,
+        bookingController.patchPublicReservation,
+      );
 
     this.app
       .route(`/api/booking/reservations/:id/cancel`)

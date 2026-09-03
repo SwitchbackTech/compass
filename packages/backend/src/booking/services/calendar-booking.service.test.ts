@@ -176,6 +176,46 @@ describe("CalendarBookingService", () => {
     expect(submitCommand).not.toHaveBeenCalled();
   });
 
+  it("submits a booking update with the new title", async () => {
+    const eventId = faker.database.mongodbObjectId();
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: faker.database.mongodbObjectId() },
+    }));
+    const service = new CalendarBookingService({
+      queryBusyAvailability: mock(async () => ({
+        ok: true as const,
+        value: busyResponse,
+      })),
+      submitCommand,
+    } as unknown as SyncServiceClient);
+
+    await service.updateBookingEvent(userId(), {
+      eventId,
+      title: "Grace and Tyler",
+      description: "bring tea",
+      start: "2026-09-01T15:00:00.000Z",
+      end: "2026-09-01T15:30:00.000Z",
+      timeZone: "America/Denver",
+      guest: { email: "ada@example.com", displayName: "Grace Hopper" },
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    expect(submitCommand.mock.calls[0]?.[1]).toMatchObject({
+      eventId,
+      expectedVersion: null,
+      input: {
+        kind: "update",
+        invitation: "all",
+        attendeesEdit: "preserve",
+        content: {
+          title: "Grace and Tyler",
+          description: "bring tea",
+        },
+      },
+    });
+  });
+
   it("submits delete with invitation all", async () => {
     const eventId = faker.database.mongodbObjectId();
     const submitCommand = mock(async () => ({

@@ -251,6 +251,8 @@ function reservationGetHandler(
           hostDisplayName: "Tyler Dane",
           status: "confirmed",
           bookingSlug: "tylerdane",
+          guestName: "Guest User",
+          notes: null,
           ...overrides,
         }),
       ),
@@ -1423,8 +1425,12 @@ describe("PublicBookingConfirmedPage", () => {
     expect(
       screen.getByText(/A Google Meet invite is on its way to your email/),
     ).toBeInTheDocument();
+    expect(screen.getByText("Guest User")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Copy cancel link" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit details" }),
     ).not.toBeInTheDocument();
   });
 
@@ -1598,5 +1604,156 @@ describe("PublicBookingConfirmedPage", () => {
     ]);
     expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Copied");
+  });
+
+  it("opens Edit details from confirmation, prefills, and shows saved values", async () => {
+    const user = userEvent.setup({ delay: null });
+    const patches: Array<Record<string, unknown>> = [];
+
+    server.use(
+      pageHandler(),
+      slotsInWindow([currentSlot]),
+      reservationGetHandler({
+        guestName: "Ada Lovelace",
+        notes: "bring coffee",
+      }),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
+        async (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json({
+              reservationId: "000000000000000000000099",
+              slotStart: currentSlot.slotStart,
+              slotEnd: currentSlot.slotEnd,
+              guestTimeZone: "UTC",
+              cancelUrl:
+                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+            }),
+          ),
+      ),
+      rest.patch(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/000000000000000000000099`,
+        async (req, res, ctx) => {
+          const body = (await req.json()) as Record<string, unknown>;
+          patches.push(body);
+          return res(
+            ctx.status(Status.OK),
+            ctx.json({
+              slotStart: currentSlot.slotStart,
+              guestTimeZone: "UTC",
+              durationMinutes: 30,
+              hostDisplayName: "Tyler Dane",
+              status: "confirmed",
+              bookingSlug: "tylerdane",
+              guestName: body.name,
+              notes: body.notes,
+            }),
+          );
+        },
+      ),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotButtonName(currentSlot.slotStart),
+      }),
+    );
+    await user.type(screen.getByLabelText("Name"), "Ada Lovelace");
+    await user.type(screen.getByLabelText("Email"), "ada@example.com");
+    await user.type(screen.getByLabelText("Notes (optional)"), "bring coffee");
+    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Edit details" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
+    expect(screen.getByText("bring coffee")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit details" }));
+
+    const editHeading = await screen.findByRole("heading", {
+      name: "Edit details",
+    });
+    expect(editHeading).toHaveFocus();
+    expect(screen.getByLabelText("Name")).toHaveValue("Ada Lovelace");
+    expect(screen.getByLabelText("Notes (optional)")).toHaveValue(
+      "bring coffee",
+    );
+    expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Grace Hopper");
+    await user.clear(screen.getByLabelText("Notes (optional)"));
+    await user.type(screen.getByLabelText("Notes (optional)"), "bring tea");
+    await user.click(screen.getByRole("button", { name: "Save details" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Grace Hopper")).toBeInTheDocument();
+    expect(screen.getByText("bring tea")).toBeInTheDocument();
+    expect(screen.queryByText("Ada Lovelace")).not.toBeInTheDocument();
+    expect(patches).toEqual([
+      { token: "abc", name: "Grace Hopper", notes: "bring tea" },
+    ]);
+  });
+
+  it("returns from Edit details to confirmation on Escape", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(
+      pageHandler(),
+      slotsInWindow([currentSlot]),
+      reservationGetHandler({
+        guestName: "Ada Lovelace",
+        notes: "bring coffee",
+      }),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane/reservations`,
+        async (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json({
+              reservationId: "000000000000000000000099",
+              slotStart: currentSlot.slotStart,
+              slotEnd: currentSlot.slotEnd,
+              guestTimeZone: "UTC",
+              cancelUrl:
+                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+              rescheduleUrl:
+                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+            }),
+          ),
+      ),
+    );
+
+    const { router } = renderBookingRoute("/book/tylerdane");
+    await user.click(
+      await screen.findByRole("button", {
+        name: slotButtonName(currentSlot.slotStart),
+      }),
+    );
+    await user.type(screen.getByLabelText("Name"), "Ada Lovelace");
+    await user.type(screen.getByLabelText("Email"), "ada@example.com");
+    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Edit details" }),
+    );
+    await screen.findByRole("heading", { name: "Edit details" });
+    await user.keyboard("{Escape}");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(
+      "/book/confirmed/000000000000000000000099",
+    );
   });
 });
