@@ -324,6 +324,42 @@ export type AdminPutBookingPageInput = z.infer<
 >;
 
 /**
+ * The PUT body, and only the PUT body. GET responses carry extra keys
+ * (`id`, `slug`, `bookingUrl`, …) that `AdminPutBookingPageInputSchema`
+ * rejects as a `strictObject`. One picker keeps web form state and the
+ * backend record mapper on the same field list.
+ */
+export function pickAdminPutBookingPageInput(source: {
+  enabled: AdminPutBookingPageInput["enabled"];
+  durationMinutes: AdminPutBookingPageInput["durationMinutes"];
+  destinationCalendarId: AdminPutBookingPageInput["destinationCalendarId"];
+  blockingCalendarIds: AdminPutBookingPageInput["blockingCalendarIds"];
+  timeZone: AdminPutBookingPageInput["timeZone"];
+  weeklyAvailability: AdminPutBookingPageInput["weeklyAvailability"];
+  welcomeText?: AdminPutBookingPageInput["welcomeText"] | null;
+  minNoticeHours: AdminPutBookingPageInput["minNoticeHours"];
+  maxHorizonDays: AdminPutBookingPageInput["maxHorizonDays"];
+  bufferMinutes: AdminPutBookingPageInput["bufferMinutes"];
+  maxBookingsPerDay: AdminPutBookingPageInput["maxBookingsPerDay"];
+  guestsCanInviteOthers: AdminPutBookingPageInput["guestsCanInviteOthers"];
+}): AdminPutBookingPageInput {
+  return {
+    enabled: source.enabled,
+    durationMinutes: source.durationMinutes,
+    destinationCalendarId: source.destinationCalendarId,
+    blockingCalendarIds: source.blockingCalendarIds,
+    timeZone: source.timeZone,
+    weeklyAvailability: source.weeklyAvailability,
+    welcomeText: source.welcomeText ?? null,
+    minNoticeHours: source.minNoticeHours,
+    maxHorizonDays: source.maxHorizonDays,
+    bufferMinutes: source.bufferMinutes,
+    maxBookingsPerDay: source.maxBookingsPerDay,
+    guestsCanInviteOthers: source.guestsCanInviteOthers,
+  };
+}
+
+/**
  * GET response for a page with no public link yet: either never saved, or
  * saved but never enabled (so no slug was allocated). `isConfigured` tells
  * those two apart, which the wire otherwise could not - both came back as a

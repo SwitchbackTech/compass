@@ -2,6 +2,7 @@ import { CheckCircleIcon } from "@phosphor-icons/react";
 import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingSlotSummary } from "@web/booking/PublicBookingSlotSummary";
+import { PUBLIC_BOOKING_HEADING_CLASS } from "@web/booking/PublicBookingStatusMessage";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
 interface PublicBookingConfirmationViewProps {
@@ -38,7 +39,7 @@ export function PublicBookingConfirmationView({
             ref={headingRef}
             id="booking-confirmation-heading"
             tabIndex={-1}
-            className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
+            className={PUBLIC_BOOKING_HEADING_CLASS}
           >
             You are booked with {hostDisplayName}
           </h1>
@@ -49,9 +50,9 @@ export function PublicBookingConfirmationView({
           timeZone={timeZone}
         />
         <p className="text-sm text-text">
-          {cancelUrl
-            ? "A Google Meet invite is on its way to your email."
-            : "A Google Meet invite is on its way to your email. To cancel, use the link in that invite."}
+          {`A Google Meet invite is on its way to your email.${
+            cancelUrl ? "" : " To cancel, use the link in that invite."
+          }`}
         </p>
         {cancelUrl ? (
           <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />

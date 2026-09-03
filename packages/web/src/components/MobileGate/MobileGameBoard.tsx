@@ -1,6 +1,4 @@
 import { type FC, type MutableRefObject } from "react";
-import { HOURS_AM_SHORT_FORMAT } from "@core/constants/date.constants";
-import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import {
@@ -9,9 +7,11 @@ import {
   type MobilePiece,
   type MobileSlot,
 } from "@web/components/MobileGate/mobile-game.levels";
-
-const formatHour = (hour: number) =>
-  dayjs().startOf("day").add(hour, "hour").format(HOURS_AM_SHORT_FORMAT);
+import {
+  formatGridHour,
+  gridOffsetPercent,
+  percentBlockStyle,
+} from "@web/components/ShortcutShowcase/game-grid.util";
 
 const BlockView: FC<{
   block: MobileBlock;
@@ -27,8 +27,12 @@ const BlockView: FC<{
       } ${flashing ? "c-game-lock-flash" : ""}`}
       data-game-block={block.id}
       style={{
-        top: `${((block.startMin - gridStartMin) / totalMin) * 100}%`,
-        height: `${((block.endMin - block.startMin) / totalMin) * 100}%`,
+        ...percentBlockStyle(
+          block.startMin,
+          block.endMin - block.startMin,
+          gridStartMin,
+          totalMin,
+        ),
         backgroundColor: base,
         color: theme.getContrastText(base),
       }}
@@ -59,10 +63,8 @@ export const MobileGameBoard: FC<{
   const hours: number[] = [];
   for (let h = level.startHour; h < level.endHour; h += 1) hours.push(h);
 
-  const slotStyle = (slot: MobileSlot, durationMin: number) => ({
-    top: `${((slot.startMin - gridStartMin) / totalMin) * 100}%`,
-    height: `${(durationMin / totalMin) * 100}%`,
-  });
+  const slotStyle = (slot: MobileSlot, durationMin: number) =>
+    percentBlockStyle(slot.startMin, durationMin, gridStartMin, totalMin);
 
   return (
     <div className="flex h-full min-h-0 w-full touch-none select-none">
@@ -75,10 +77,10 @@ export const MobileGameBoard: FC<{
               key={hour}
               className="absolute right-1 -translate-y-1/2 text-[10px] text-text-muted"
               style={{
-                top: `${(((hour - level.startHour) * 60) / totalMin) * 100}%`,
+                top: gridOffsetPercent(hour * 60, gridStartMin, totalMin),
               }}
             >
-              {formatHour(hour)}
+              {formatGridHour(hour)}
             </span>
           ))}
         </div>
@@ -113,7 +115,7 @@ export const MobileGameBoard: FC<{
                   key={hour}
                   className="absolute inset-x-0 border-border/60 border-t"
                   style={{
-                    top: `${(((hour - level.startHour) * 60) / totalMin) * 100}%`,
+                    top: gridOffsetPercent(hour * 60, gridStartMin, totalMin),
                   }}
                 />
               ))}
@@ -123,7 +125,11 @@ export const MobileGameBoard: FC<{
                     key={`half-${hour}`}
                     className="absolute inset-x-0 border-border/30 border-t border-dashed"
                     style={{
-                      top: `${(((hour - level.startHour) * 60 + 30) / totalMin) * 100}%`,
+                      top: gridOffsetPercent(
+                        hour * 60 + 30,
+                        gridStartMin,
+                        totalMin,
+                      ),
                     }}
                   />
                 ))}

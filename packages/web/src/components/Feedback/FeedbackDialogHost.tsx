@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { usePostHog } from "@web/auth/posthog/posthog-react";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
@@ -9,11 +9,8 @@ import {
   selectFeedbackRequest,
   useFeedbackStore,
 } from "@web/components/Feedback/feedback.store";
-import {
-  reopenCommandPaletteIfNeeded,
-  settingsActions,
-  useSettingsStore,
-} from "@web/settings/settings.store";
+import { settingsActions } from "@web/settings/settings.store";
+import { usePaletteAwareOverlayDismiss } from "@web/settings/usePaletteAwareOverlayDismiss";
 
 export const restoreCommandPaletteFocus = () => {
   document
@@ -27,19 +24,12 @@ export function FeedbackDialogHost() {
   const request = useFeedbackStore(selectFeedbackRequest);
   const posthog = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const skipFocusRestoreRef = useRef(false);
-
-  useEffect(() => {
-    if (request) skipFocusRestoreRef.current = false;
-  }, [request]);
+  const { skipFocusRestoreRef, handleDismiss } = usePaletteAwareOverlayDismiss(
+    Boolean(request),
+    feedbackActions.close,
+  );
 
   if (!request || !posthog) return null;
-
-  const handleDismiss = () => {
-    skipFocusRestoreRef.current =
-      useSettingsStore.getState().overlayOpenedFromPalette;
-    reopenCommandPaletteIfNeeded(feedbackActions.close);
-  };
 
   const handleSubmit = async (details: string) => {
     if (isSubmitting) return;

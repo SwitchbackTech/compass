@@ -4,6 +4,11 @@ import { track } from "@web/auth/posthog/track";
 import { DesktopHandoff } from "@web/components/MobileGate/DesktopHandoff";
 import { MobileGame } from "@web/components/MobileGate/MobileGame";
 import {
+  MOBILE_PRIMARY_BUTTON_CLASS,
+  MOBILE_TEXT_BUTTON_CLASS,
+  MOBILE_TEXT_BUTTON_COMPACT_CLASS,
+} from "@web/components/MobileGate/mobile-buttons";
+import {
   advanceLevel,
   createInitialMobileGameState,
   dropPiece,
@@ -78,14 +83,14 @@ export const MobileGate: React.FC<{
             <button
               type="button"
               onClick={() => setGame((state) => startGame(state, Date.now()))}
-              className="mb-3 min-h-11 w-full cursor-pointer rounded border-none bg-accent px-8 py-2 font-medium font-sans text-base text-on-accent transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+              className={`mb-3 ${MOBILE_PRIMARY_BUTTON_CLASS}`}
             >
               Play
             </button>
             <button
               type="button"
               onClick={() => setGame(skipToEnd)}
-              className="min-h-11 cursor-pointer rounded border-none bg-transparent px-8 py-2 font-medium font-sans text-base text-text-muted underline-offset-2 transition-opacity duration-300 hover:underline hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+              className={MOBILE_TEXT_BUTTON_CLASS}
             >
               Skip to desktop link
             </button>
@@ -126,7 +131,7 @@ export const MobileGate: React.FC<{
           <button
             type="button"
             onClick={handleReplay}
-            className="min-h-11 cursor-pointer rounded border-none bg-transparent px-8 py-2 font-medium font-sans text-sm text-text-muted underline-offset-2 transition-opacity duration-300 hover:underline hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+            className={MOBILE_TEXT_BUTTON_COMPACT_CLASS}
           >
             {game.skipped ? "Play Time Block Party" : "Play again"}
           </button>

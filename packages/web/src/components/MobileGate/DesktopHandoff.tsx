@@ -2,6 +2,10 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@web/auth/posthog/track";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
+import {
+  MOBILE_PRIMARY_BUTTON_CLASS,
+  MOBILE_TEXT_BUTTON_CLASS,
+} from "@web/components/MobileGate/mobile-buttons";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 
@@ -60,14 +64,14 @@ export const DesktopHandoff: React.FC<{ header?: React.ReactNode }> = ({
       <button
         type="button"
         onClick={() => void handleCopyLink()}
-        className="mb-3 min-h-11 w-full cursor-pointer rounded border-none bg-accent px-8 py-2 font-medium font-sans text-base text-on-accent transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+        className={`mb-3 ${MOBILE_PRIMARY_BUTTON_CLASS}`}
       >
         {copied ? "Link copied" : "Copy link for desktop"}
       </button>
       <button
         type="button"
         onClick={handleJoinWaitlist}
-        className="min-h-11 cursor-pointer rounded border-none bg-transparent px-8 py-2 font-medium font-sans text-base text-text-muted underline-offset-2 transition-opacity duration-300 hover:underline hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+        className={MOBILE_TEXT_BUTTON_CLASS}
       >
         Join mobile waitlist
       </button>

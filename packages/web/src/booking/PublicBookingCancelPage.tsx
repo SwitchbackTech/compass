@@ -7,7 +7,10 @@ import {
 import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingSlotSummary } from "@web/booking/PublicBookingSlotSummary";
-import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMessage";
+import {
+  PUBLIC_BOOKING_HEADING_CLASS,
+  PublicBookingStatusMessage,
+} from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
@@ -18,6 +21,62 @@ type CancelActionState =
   | "cancelled"
   | "not-found"
   | "error";
+
+const BOOKING_NOT_FOUND = {
+  title: "Booking not found",
+  description: "This cancel link may be invalid or already used.",
+} as const;
+
+const BOOKING_CANCELED = {
+  title: "Booking canceled",
+  description: "Your appointment has been canceled. You can close this page.",
+} as const;
+
+const BOOKING_CANCEL_FAILED = {
+  title: "Could not cancel booking",
+  description: "Please try again or use the link from your calendar invite.",
+} as const;
+
+const BOOKING_LOADING = {
+  title: "Loading booking",
+  description: "One moment while we load this booking.",
+} as const;
+
+type CancelPageView =
+  | { kind: "status"; title: string; description: string }
+  | {
+      kind: "confirm";
+      reservation: NonNullable<
+        ReturnType<typeof usePublicBookingReservationQuery>["data"]
+      >;
+    };
+
+const resolveCancelPageView = (
+  canLoad: boolean,
+  action: CancelActionState,
+  reservationQuery: ReturnType<typeof usePublicBookingReservationQuery>,
+): CancelPageView => {
+  if (!canLoad || action === "not-found") {
+    return { kind: "status", ...BOOKING_NOT_FOUND };
+  }
+  if (action === "cancelled") return { kind: "status", ...BOOKING_CANCELED };
+  if (action === "error") return { kind: "status", ...BOOKING_CANCEL_FAILED };
+  if (reservationQuery.isLoading) return { kind: "status", ...BOOKING_LOADING };
+  if (reservationQuery.isError) {
+    return {
+      kind: "status",
+      ...(reservationQuery.error instanceof PublicBookingNotFoundError
+        ? BOOKING_NOT_FOUND
+        : BOOKING_CANCEL_FAILED),
+    };
+  }
+  const reservation = reservationQuery.data;
+  if (!reservation) return { kind: "status", ...BOOKING_NOT_FOUND };
+  if (reservation.status === "cancelled") {
+    return { kind: "status", ...BOOKING_CANCELED };
+  }
+  return { kind: "confirm", reservation };
+};
 
 export function PublicBookingCancelPage() {
   const { reservationId } = useParams({ from: "/book/cancel/$reservationId" });
@@ -54,78 +113,12 @@ export function PublicBookingCancelPage() {
     }
   };
 
-  if (!canLoad || action === "not-found") {
-    return (
-      <PublicBookingStatusMessage
-        title="Booking not found"
-        description="This cancel link may be invalid or already used."
-      />
-    );
+  const view = resolveCancelPageView(canLoad, action, reservationQuery);
+  if (view.kind === "status") {
+    return <PublicBookingStatusMessage {...view} />;
   }
 
-  if (action === "cancelled") {
-    return (
-      <PublicBookingStatusMessage
-        title="Booking canceled"
-        description="Your appointment has been canceled. You can close this page."
-      />
-    );
-  }
-
-  if (action === "error") {
-    return (
-      <PublicBookingStatusMessage
-        title="Could not cancel booking"
-        description="Please try again or use the link from your calendar invite."
-      />
-    );
-  }
-
-  if (reservationQuery.isLoading) {
-    return (
-      <PublicBookingStatusMessage
-        title="Loading booking"
-        description="One moment while we load this booking."
-      />
-    );
-  }
-
-  if (reservationQuery.isError) {
-    if (reservationQuery.error instanceof PublicBookingNotFoundError) {
-      return (
-        <PublicBookingStatusMessage
-          title="Booking not found"
-          description="This cancel link may be invalid or already used."
-        />
-      );
-    }
-    return (
-      <PublicBookingStatusMessage
-        title="Could not cancel booking"
-        description="Please try again or use the link from your calendar invite."
-      />
-    );
-  }
-
-  const reservation = reservationQuery.data;
-  if (!reservation) {
-    return (
-      <PublicBookingStatusMessage
-        title="Booking not found"
-        description="This cancel link may be invalid or already used."
-      />
-    );
-  }
-
-  if (reservation.status === "cancelled") {
-    return (
-      <PublicBookingStatusMessage
-        title="Booking canceled"
-        description="Your appointment has been canceled. You can close this page."
-      />
-    );
-  }
-
+  const { reservation } = view;
   const busy = action === "cancelling";
   return (
     <PublicBookingLayout>
@@ -134,7 +127,7 @@ export function PublicBookingCancelPage() {
           ref={headingRef}
           id="booking-cancel-heading"
           tabIndex={-1}
-          className="font-semibold text-text text-xl focus:outline-none focus:ring-2 focus:ring-accent"
+          className={PUBLIC_BOOKING_HEADING_CLASS}
         >
           Cancel this booking?
         </h1>

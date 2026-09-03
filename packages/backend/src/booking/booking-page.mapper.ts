@@ -2,9 +2,9 @@ import {
   type AdminGetBookingPageResponse,
   type AdminGetBookingPageSetupResponse,
   type AdminPutBookingPageInput,
-  AdminPutBookingPageInputSchema,
   type BookingPage,
   BookingPageSchema,
+  pickAdminPutBookingPageInput,
 } from "@core/types/booking.contracts";
 import {
   CalendarIdSchema,
@@ -68,20 +68,7 @@ export const mapBookingPageRecordToSetupResponse = (
     | "guestsCanInviteOthers"
   >,
 ): AdminGetBookingPageSetupResponse => ({
-  ...AdminPutBookingPageInputSchema.parse({
-    enabled: record.enabled,
-    durationMinutes: record.durationMinutes,
-    destinationCalendarId: record.destinationCalendarId,
-    blockingCalendarIds: record.blockingCalendarIds,
-    timeZone: record.timeZone,
-    weeklyAvailability: record.weeklyAvailability,
-    welcomeText: record.welcomeText ?? null,
-    minNoticeHours: record.minNoticeHours,
-    maxHorizonDays: record.maxHorizonDays,
-    bufferMinutes: record.bufferMinutes,
-    maxBookingsPerDay: record.maxBookingsPerDay,
-    guestsCanInviteOthers: record.guestsCanInviteOthers,
-  }),
+  ...pickAdminPutBookingPageInput(record),
   isConfigured: true,
 });
 
@@ -90,20 +77,7 @@ export const mapPutInputToRecordFields = (
 ): Omit<
   BookingPageRecord,
   "_id" | "userId" | "bookingSlug" | "createdAt" | "updatedAt"
-> => ({
-  enabled: input.enabled,
-  durationMinutes: input.durationMinutes,
-  destinationCalendarId: input.destinationCalendarId,
-  blockingCalendarIds: input.blockingCalendarIds,
-  timeZone: input.timeZone,
-  weeklyAvailability: input.weeklyAvailability,
-  welcomeText: input.welcomeText ?? null,
-  minNoticeHours: input.minNoticeHours,
-  maxHorizonDays: input.maxHorizonDays,
-  bufferMinutes: input.bufferMinutes,
-  maxBookingsPerDay: input.maxBookingsPerDay,
-  guestsCanInviteOthers: input.guestsCanInviteOthers,
-});
+> => pickAdminPutBookingPageInput(input);
 
 const PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
   "000000000000000000000001",

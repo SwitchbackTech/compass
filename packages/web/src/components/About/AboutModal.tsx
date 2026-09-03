@@ -3,17 +3,17 @@ import {
   LinkedinLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
-import { type FC, useEffect, useRef, useState } from "react";
+import { type FC, useState } from "react";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import {
-  reopenCommandPaletteIfNeeded,
   selectIsAboutOpen,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { usePaletteAwareOverlayDismiss } from "@web/settings/usePaletteAwareOverlayDismiss";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 const SOCIAL_ICONS = {
@@ -31,12 +31,11 @@ const COPIED_LABEL_DURATION_MS = 2000;
 export const AboutModal: FC = () => {
   const isOpen = useSettingsStore(selectIsAboutOpen);
   const [copied, setCopied] = useState(false);
-  const skipFocusRestoreRef = useRef(false);
+  const { skipFocusRestoreRef, handleDismiss } = usePaletteAwareOverlayDismiss(
+    isOpen,
+    settingsActions.closeAbout,
+  );
   useAppLockReason("aboutModal", isOpen);
-
-  useEffect(() => {
-    if (isOpen) skipFocusRestoreRef.current = false;
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -46,12 +45,6 @@ export const AboutModal: FC = () => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), COPIED_LABEL_DURATION_MS);
     });
-  };
-
-  const handleDismiss = () => {
-    skipFocusRestoreRef.current =
-      useSettingsStore.getState().overlayOpenedFromPalette;
-    reopenCommandPaletteIfNeeded(settingsActions.closeAbout);
   };
 
   return (

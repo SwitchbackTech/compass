@@ -65,9 +65,7 @@ export function useCalendarViewShortcuts(config: CalendarViewShortcutsConfig) {
   useAppShortcutUp("U", () => config.onFocusCalendar?.());
   // Keydown so a macOS Cmd+Z keyup-replay (meta already released) cannot
   // match this binding the way Mod+D vs D does on keyup.
-  useAppShortcut("Z", () =>
-    timezoneDialogActions.open(undefined, "time-travel"),
-  );
+  useAppShortcut("Z", () => timezoneDialogActions.open("time-travel"));
   useAppShortcut(
     "Escape",
     () => {

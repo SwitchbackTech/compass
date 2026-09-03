@@ -37,8 +37,7 @@ export const GridTimezoneLabel = () => {
   }, []);
 
   const abbreviation = formatTimeZoneAbbreviation(timeZone, now.toDate());
-  const openTimeTravel = () =>
-    timezoneDialogActions.open(undefined, "time-travel");
+  const openTimeTravel = () => timezoneDialogActions.open("time-travel");
   const isTraveling = timeTravelZone !== null;
   const travelAbbreviation = isTraveling
     ? formatTimeZoneAbbreviation(timeTravelZone, now.toDate())

@@ -1,6 +1,7 @@
 import {
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
+  pickAdminPutBookingPageInput,
   type WeeklyAvailabilityInterval,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
@@ -105,20 +106,7 @@ export function toBookingPageInput(
     welcomeText?: AdminPutBookingPageInput["welcomeText"];
   },
 ): AdminPutBookingPageInput {
-  return {
-    enabled: page.enabled,
-    durationMinutes: page.durationMinutes,
-    destinationCalendarId: page.destinationCalendarId,
-    blockingCalendarIds: page.blockingCalendarIds,
-    timeZone: page.timeZone,
-    weeklyAvailability: page.weeklyAvailability,
-    welcomeText: page.welcomeText ?? null,
-    minNoticeHours: page.minNoticeHours,
-    maxHorizonDays: page.maxHorizonDays,
-    bufferMinutes: page.bufferMinutes,
-    maxBookingsPerDay: page.maxBookingsPerDay,
-    guestsCanInviteOthers: page.guestsCanInviteOthers,
-  };
+  return pickAdminPutBookingPageInput(page);
 }
 
 /**

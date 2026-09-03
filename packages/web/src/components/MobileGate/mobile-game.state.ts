@@ -5,12 +5,7 @@ import {
   type MobilePiece,
   type MobileSlot,
 } from "@web/components/MobileGate/mobile-game.levels";
-import {
-  SPEED_BONUS_MS,
-  SPEED_BONUS_POINTS,
-  streakMultiplier,
-  TASK_BASE_POINTS,
-} from "@web/components/ShortcutShowcase/game.tasks";
+import { scorePlacement } from "@web/components/ShortcutShowcase/game.tasks";
 
 /**
  * The Time Block Party reducer. Every function is pure and every timestamp
@@ -133,11 +128,10 @@ export const dropPiece = (
     };
   }
 
-  const speedy = nowMs - state.pieceStartedAtMs <= SPEED_BONUS_MS;
-  const streak = speedy ? state.streak + 1 : 0;
-  const points =
-    (TASK_BASE_POINTS + (speedy ? SPEED_BONUS_POINTS : 0)) *
-    streakMultiplier(streak);
+  const { streak, points } = scorePlacement(
+    state.streak,
+    nowMs - state.pieceStartedAtMs,
+  );
 
   const level = currentLevel(state);
   const placed: MobileGameState = {
