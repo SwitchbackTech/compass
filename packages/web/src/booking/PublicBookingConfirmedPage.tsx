@@ -5,6 +5,57 @@ import { PublicBookingStatusMessage } from "@web/booking/PublicBookingStatusMess
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 
+const BOOKING_LOADING = {
+  title: "Loading booking",
+  description: "One moment while we load this confirmation.",
+} as const;
+
+const BOOKING_NOT_FOUND = {
+  title: "Booking not found",
+  description:
+    "This confirmation link may be incorrect or no longer available.",
+} as const;
+
+const BOOKING_LOAD_FAILED = {
+  title: "Could not load booking",
+  description: "Please refresh and try again.",
+} as const;
+
+const BOOKING_CANCELED = {
+  title: "This booking was canceled",
+  description:
+    "The appointment is no longer on the host calendar. You can close this page.",
+} as const;
+
+type ConfirmedPageView =
+  | { kind: "status"; title: string; description: string }
+  | {
+      kind: "confirmation";
+      reservation: NonNullable<
+        ReturnType<typeof usePublicBookingReservationQuery>["data"]
+      >;
+    };
+
+const resolveConfirmedPageView = (
+  reservationQuery: ReturnType<typeof usePublicBookingReservationQuery>,
+): ConfirmedPageView => {
+  if (reservationQuery.isLoading) return { kind: "status", ...BOOKING_LOADING };
+  if (reservationQuery.isError) {
+    return {
+      kind: "status",
+      ...(reservationQuery.error instanceof PublicBookingNotFoundError
+        ? BOOKING_NOT_FOUND
+        : BOOKING_LOAD_FAILED),
+    };
+  }
+  const reservation = reservationQuery.data;
+  if (!reservation) return { kind: "status", ...BOOKING_NOT_FOUND };
+  if (reservation.status === "cancelled") {
+    return { kind: "status", ...BOOKING_CANCELED };
+  }
+  return { kind: "confirmation", reservation };
+};
+
 function cancelUrlFromHistory(state: unknown): string | undefined {
   if (
     state &&
@@ -28,51 +79,12 @@ export function PublicBookingConfirmedPage() {
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
   useBookingDocumentTitle("Booking confirmed");
 
-  if (reservationQuery.isLoading) {
-    return (
-      <PublicBookingStatusMessage
-        title="Loading booking"
-        description="One moment while we load this confirmation."
-      />
-    );
+  const view = resolveConfirmedPageView(reservationQuery);
+  if (view.kind === "status") {
+    return <PublicBookingStatusMessage {...view} />;
   }
 
-  if (reservationQuery.isError) {
-    if (reservationQuery.error instanceof PublicBookingNotFoundError) {
-      return (
-        <PublicBookingStatusMessage
-          title="Booking not found"
-          description="This confirmation link may be incorrect or no longer available."
-        />
-      );
-    }
-    return (
-      <PublicBookingStatusMessage
-        title="Could not load booking"
-        description="Please refresh and try again."
-      />
-    );
-  }
-
-  if (!reservationQuery.data) {
-    return (
-      <PublicBookingStatusMessage
-        title="Booking not found"
-        description="This confirmation link may be incorrect or no longer available."
-      />
-    );
-  }
-
-  const reservation = reservationQuery.data;
-  if (reservation.status === "cancelled") {
-    return (
-      <PublicBookingStatusMessage
-        title="This booking was canceled"
-        description="The appointment is no longer on the host calendar. You can close this page."
-      />
-    );
-  }
-
+  const { reservation } = view;
   return (
     <PublicBookingConfirmationView
       hostDisplayName={reservation.hostDisplayName}
