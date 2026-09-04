@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { DateTimeSchema } from "@core/types/domain-primitives";
+import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { AttendeeResponseStatusSchema } from "@core/types/event-attendance.contracts";
 import { ConnectionStateSchema } from "@core/types/sync/connection.contracts";
 import { SyncEventCalendarIdSchema } from "@core/types/sync/event.contracts";
@@ -31,6 +31,10 @@ export const BusyAvailabilityRequestSchema = z
     // Compass-local calendar ids: cloud-only events at generation 0, no
     // provider resource. Any other missing resource stays notImported.
     unbackedCalendarIds: z.array(SyncEventCalendarIdSchema).max(100).optional(),
+    // Drop these Compass event ids before merge. Unknown ids are ignored.
+    // Omit or pass [] for today's merge behavior. Event ids never appear on
+    // the busy response wire.
+    excludeEventIds: z.array(EventIdSchema).max(100).optional(),
   })
   .refine((r) => Date.parse(r.end) > Date.parse(r.start), {
     message: "end must be after start",

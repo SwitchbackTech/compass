@@ -80,6 +80,8 @@ export interface BusyQueryInput {
   // Half-open query window [start, end).
   start: Date;
   end: Date;
+  // Drop these events before merge. Unknown ids are ignored.
+  excludeEventIds?: readonly EventId[];
 }
 
 // The merged busy intervals within [start, end) for the given calendars. Each
@@ -107,6 +109,7 @@ export async function queryBusyOccurrences(
 
   const windowStart = input.start.getTime();
   const windowEnd = input.end.getTime();
+  const excluded = new Set(input.excludeEventIds ?? []);
   return occurrences
     .map((occurrence) => ({
       start:
@@ -117,7 +120,11 @@ export async function queryBusyOccurrences(
         occurrence.endAt.getTime() < windowEnd ? occurrence.endAt : input.end,
       eventId: occurrence.eventId,
     }))
-    .filter((interval) => interval.end.getTime() > interval.start.getTime());
+    .filter(
+      (interval) =>
+        interval.end.getTime() > interval.start.getTime() &&
+        !excluded.has(interval.eventId),
+    );
 }
 
 export async function queryBusyIntervals(
@@ -191,6 +198,8 @@ export interface BusyAvailabilityInput {
   // The oldest a calendar's last successful sync may be and still count as fresh.
   maxAgeMs: number;
   now: Date;
+  // Drop these events before merge. Unknown ids are ignored.
+  excludeEventIds?: readonly EventId[];
 }
 
 // The busy intervals for a set of calendars plus the freshness/completeness
@@ -270,6 +279,7 @@ export async function computeBusyAvailability(
           calendars: present,
           start: input.start,
           end: input.end,
+          excludeEventIds: input.excludeEventIds,
         },
       )
     : [];

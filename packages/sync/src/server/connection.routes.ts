@@ -427,6 +427,7 @@ export function registerConnectionRoutes(
             principalId: auth.principalId,
             calendarIds: query.calendarIds,
             unbackedCalendarIds: query.unbackedCalendarIds,
+            excludeEventIds: query.excludeEventIds,
             start,
             end,
             maxAgeMs: query.maxAgeMs,

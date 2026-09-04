@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type EventId } from "@core/types/domain-primitives";
 import { type ConnectionState } from "@core/types/sync/connection.contracts";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
@@ -125,6 +126,7 @@ describe("computeBusyAvailability", () => {
   const run = (
     calendarIds: SyncEventCalendarId[],
     unbackedCalendarIds?: SyncEventCalendarId[],
+    excludeEventIds?: EventId[],
   ) =>
     computeBusyAvailability(
       { occurrences, resources, connections, calendars },
@@ -133,6 +135,7 @@ describe("computeBusyAvailability", () => {
         principalId,
         calendarIds,
         unbackedCalendarIds,
+        excludeEventIds,
         start: WINDOW_START,
         end: WINDOW_END,
         maxAgeMs: MAX_AGE_MS,
@@ -317,5 +320,23 @@ describe("computeBusyAvailability", () => {
     expect(result.complete).toBe(true); // the data itself is fresh
     expect(result.bookable).toBe(false); // but the connection cannot be verified
     expect(result.connections).toEqual([]); // no record to report freshness for
+  });
+
+  it("still fail-closes on incomplete freshness when excludeEventIds is set", async () => {
+    const conn = await seedConnection("healthy", old);
+    const cal = await seedCalendar({
+      connectionId: conn,
+      lastSuccessAt: old,
+      intervals: [["2026-07-14T13:00Z", "2026-07-14T14:00Z"]],
+    });
+
+    const result = await run([cal], undefined, [objectId() as EventId]);
+
+    expect(result.issues).toEqual([{ calendarId: cal, reason: "stale" }]);
+    expect(result.complete).toBe(false);
+    expect(result.bookable).toBe(false);
+    expect(
+      result.intervals.map((i) => [i.start.toISOString(), i.end.toISOString()]),
+    ).toEqual([["2026-07-14T13:00:00.000Z", "2026-07-14T14:00:00.000Z"]]);
   });
 });
