@@ -129,6 +129,9 @@ export interface ConnectionApiDeps {
   now?: () => number;
   // Shared secret that encrypts credentials on the Compass API → Sync hop.
   credentialEncryptionSecret: string;
+  // AES-256-GCM key for password credentials at rest. Absent when yaml omits
+  // it (Google-only deployments); storePassword then refuses.
+  credentialAtRestKey?: string;
 }
 
 // Internal, authenticated connection endpoints. The tenant/principal comes from
@@ -849,6 +852,9 @@ export function registerConnectionRoutes(
         const custody = new CredentialCustody(
           new CredentialRepository(deps.mongo.db),
           resolveAuthFrom(deps.registry),
+          undefined,
+          undefined,
+          deps.credentialAtRestKey,
         );
         await custody.disconnect(id.data);
         await connections.markDisconnected(
@@ -947,6 +953,9 @@ async function linkConnection(
     const custody = new CredentialCustody(
       repos.credentials,
       resolveAuthForConnectionApi(deps),
+      undefined,
+      undefined,
+      deps.credentialAtRestKey,
     );
     await custody.store({
       connectionId: connection._id,

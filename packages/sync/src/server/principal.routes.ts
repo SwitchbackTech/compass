@@ -30,6 +30,7 @@ export interface PrincipalApiDeps {
   // it (passive / unconfigured deployments) so Sync-held tokens are never
   // stranded.
   registry: ProviderRegistry;
+  credentialAtRestKey?: string;
 }
 
 // Hard-delete every Sync-held row for the signed principal. Served in passive
@@ -58,6 +59,9 @@ export function registerPrincipalRoutes(
                 ? new CredentialCustody(
                     repos.credentials,
                     resolveAuthFrom(deps.registry),
+                    undefined,
+                    undefined,
+                    deps.credentialAtRestKey,
                   )
                 : undefined,
           },

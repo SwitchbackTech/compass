@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { encryptCredentialAtRest } from "@core/security/credential-at-rest";
 import {
   type ProviderCalendarId,
   type ProviderCalendarSourceId,
@@ -13,6 +14,7 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { beforeEach, describe, expect, it } from "bun:test";
+import { randomBytes } from "node:crypto";
 
 const objectId = () => faker.database.mongodbObjectId();
 
@@ -753,6 +755,27 @@ describe("refreshConnectionState", () => {
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("actionRequired");
     expect(after.stateReason).toBe("authorizationRevoked");
+  });
+
+  it("does not treat a password credential as revoked", async () => {
+    const connection = await seedImportingConnection();
+    await credentials.deleteByConnection(connection._id);
+    const sealed = encryptCredentialAtRest(
+      randomBytes(32).toString("base64"),
+      "apple-app-password-fixture",
+    );
+    await credentials.storePassword({
+      connectionId: connection._id,
+      provider: "apple",
+      username: "user@icloud.com",
+      secretCiphertext: sealed.ciphertext,
+      secretIv: sealed.iv,
+      secretTag: sealed.tag,
+      keyVersion: sealed.keyVersion,
+    });
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.stateReason).not.toBe("authorizationRevoked");
   });
 
   it("derives actionRequired/authorizationExpired after consecutive refresh failures", async () => {

@@ -41,7 +41,10 @@ describe("CredentialRepository", () => {
     expect(stored.createdAt).toBeInstanceOf(Date);
 
     const read = await repo.findByConnection(input.connectionId);
-    expect(read?.refreshToken).toBe("refresh-token-secret");
+    expect(read).toMatchObject({
+      credentialKind: "oauthRefresh",
+      refreshToken: "refresh-token-secret",
+    });
   });
 
   it("returns null when no credential exists for the connection", async () => {
@@ -128,5 +131,52 @@ describe("CredentialRepository", () => {
     const serialized = JSON.stringify(redacted);
     expect(serialized).not.toContain("refresh-token-secret");
     expect(serialized).not.toContain("access-token-value");
+  });
+
+  it("parses a document stored without credentialKind as oauthRefresh", async () => {
+    const connectionId = objectId() as ConnectionId;
+    await db.collection(SYNC_COLLECTIONS.credentials).insertOne({
+      _id: connectionId,
+      provider: "google",
+      refreshToken: "legacy-refresh",
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshFailureCount: 0,
+      scopes: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const read = await repo.findByConnection(connectionId);
+    expect(read).toMatchObject({
+      credentialKind: "oauthRefresh",
+      refreshToken: "legacy-refresh",
+    });
+  });
+
+  it("stores a password credential without mixing oauth fields", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const stored = await repo.storePassword({
+      connectionId,
+      provider: "apple",
+      username: "user@icloud.com",
+      secretCiphertext: "cipher",
+      secretIv: "iv",
+      secretTag: "tag",
+      keyVersion: 1,
+    });
+    expect(stored.credentialKind).toBe("password");
+    expect(stored.username).toBe("user@icloud.com");
+
+    expect(
+      await repo.cacheAccessToken(connectionId, "should-not-write", new Date()),
+    ).toBeNull();
+    expect(await repo.incrementRefreshFailure(connectionId)).toBe(0);
+
+    const raw = await db
+      .collection(SYNC_COLLECTIONS.credentials)
+      .findOne({ _id: connectionId });
+    expect(raw).not.toHaveProperty("refreshToken");
+    expect(raw).not.toHaveProperty("accessToken");
   });
 });

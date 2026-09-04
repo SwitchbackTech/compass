@@ -160,6 +160,7 @@ export function createSyncService(
         // resolves against the public base URL.
         stateSecret: deriveOAuthStateSecret(config.INTERNAL_AUTH_TOKEN),
         credentialEncryptionSecret: config.INTERNAL_AUTH_TOKEN,
+        credentialAtRestKey: config.CREDENTIAL_ENCRYPTION_KEY,
         callbackBaseUrl: config.CALLBACK_BASE_URL,
         // Fall back to the callback base when no explicit redirect is set.
         postConnectRedirectUrl:
@@ -489,7 +490,13 @@ function buildSchedulers(
         resolveAdapters,
         commands: repos.commands,
         jobs,
-        custody: new CredentialCustody(repos.credentials, resolveAuth),
+        custody: new CredentialCustody(
+          repos.credentials,
+          resolveAuth,
+          undefined,
+          undefined,
+          config.CREDENTIAL_ENCRYPTION_KEY,
+        ),
         // Where the provider posts change notifications back; the callback route
         // verifies them against the stored subscription.
         callbackUrlFor: (kind) =>
@@ -734,7 +741,13 @@ function buildSchedulers(
             execution: config.EXECUTION,
             provider: {
               resolveAdapters,
-              custody: new CredentialCustody(repos.credentials, resolveAuth),
+              custody: new CredentialCustody(
+                repos.credentials,
+                resolveAuth,
+                undefined,
+                undefined,
+                config.CREDENTIAL_ENCRYPTION_KEY,
+              ),
             },
             onRetryError: (error, commandId) =>
               logger.error(

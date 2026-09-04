@@ -16,6 +16,14 @@ const PROVIDER_MARKER_SAMPLES: Record<
   apple: ["BEGIN:VEVENT\nUID:1\nEND:VEVENT"],
 };
 
+describe("SECRET_PATTERNS", () => {
+  it("trips the canary for the Apple app-password fixture", () => {
+    expect(findSafetyCanaryHit("apple-app-password-fixture")).toMatch(
+      /^secret:/,
+    );
+  });
+});
+
 describe("PROVIDER_LEAK_MARKERS", () => {
   it("trips the canary for a marker from every registered provider", () => {
     for (const [provider, patterns] of Object.entries(PROVIDER_LEAK_MARKERS)) {

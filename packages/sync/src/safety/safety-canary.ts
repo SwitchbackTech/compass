@@ -11,6 +11,7 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /refresh_token\s*=\s*\S+/i,
   /"access_token"\s*:\s*"[^"]+"/i,
   /"refresh_token"\s*:\s*"[^"]+"/i,
+  /apple-app-password-fixture/,
 ];
 
 /** Provider-native payload shapes that must not leak into logs or SSE. */

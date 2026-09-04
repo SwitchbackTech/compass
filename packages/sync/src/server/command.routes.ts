@@ -42,6 +42,9 @@ export interface CommandApiDeps {
   // Provider registry, present only when at least one provider is configured.
   // A provider-targeted create executes through the connection's kind.
   registry: ProviderRegistry;
+  // AES-256-GCM key for password credentials at rest. Optional so Google-only
+  // tests keep constructing custody without a key.
+  credentialAtRestKey?: string;
   // Injectable clock so local confirmation timestamps are deterministic in
   // tests.
   now?: () => number;
@@ -85,6 +88,9 @@ export function registerCommandRoutes(
                 custody: new CredentialCustody(
                   repos.credentials,
                   resolveAuthFrom(deps.registry),
+                  undefined,
+                  undefined,
+                  deps.credentialAtRestKey,
                 ),
               }
             : undefined;

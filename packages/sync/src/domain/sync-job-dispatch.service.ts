@@ -166,7 +166,10 @@ export async function dispatchSyncJob(
       const credential = await deps.credentials.findByConnection(
         job.connectionId,
       );
-      const refreshFailures = credential?.refreshFailureCount ?? 0;
+      const refreshFailures =
+        credential?.credentialKind === "oauthRefresh"
+          ? credential.refreshFailureCount
+          : 0;
       if (refreshFailures >= MAX_REFRESH_FAILED_ATTEMPTS) {
         await refreshConnectionStateAfterJob(deps, job, now);
         return {
