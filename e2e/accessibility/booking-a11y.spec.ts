@@ -102,6 +102,39 @@ test.describe("public booking confirmation page", () => {
     });
   });
 
+  test("tokenized permalink confirmation has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, { token: "abc" });
+    await expect(
+      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Edit details" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking confirmation permalink with token",
+    });
+  });
+
+  test("edit-details form has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingConfirmedPage(page, {
+      token: "abc",
+      guestName: "Ada Lovelace",
+      notes: "bring coffee",
+    });
+    await page.getByRole("button", { name: "Edit details" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Edit details" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Email")).toHaveCount(0);
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking edit details",
+    });
+  });
+
   test("cancelled state has no automatically detectable accessibility violations", async ({
     page,
   }) => {
@@ -234,6 +267,22 @@ test.describe("settings booking section", () => {
     await expect(settingsDialog.getByText("Enter 1 to 60 days.")).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking error",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("discard confirmation has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByLabel("Duration").selectOption("30");
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking discard confirmation",
       include: "[role='dialog']",
     });
   });

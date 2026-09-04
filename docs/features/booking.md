@@ -1,21 +1,24 @@
-# Compass Calendar Booking (v1 / v1.1 / v1.3)
+# Compass Calendar Booking (v1 / v1.1 / v1.5)
 
 Locked product spec for public scheduling on Compass Cloud
 (`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
 RSVP-strict occupancy and public page identity (date-specific
-availability exceptions were removed in v1.2). v1.3 adds guest
-reschedule. v1.3 is the current staging milestone.
+availability exceptions were removed in v1.2). v1.5 shipped keyboard
+Escape paths, guest edit-details after confirm, confirmation permalink
+tokens, and the audit fixes on milestone Booking v1.5. v1.3 (guest
+reschedule) remains specified here and is not shipped.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1 and v1.1 are implemented in the Compass monorepo (public
-`/book/:username`, host Settings, backend APIs). v1.3 (guest reschedule)
-is specified here and implemented on the Booking v1.3 milestone. Booking
-is enabled in development and staging (`runtime.nodeEnv` other than
-`production`) and disabled in production. Do not flip `isBookingEnabled`.
+v1, v1.1, and v1.5 are implemented in the Compass monorepo (public
+`/book/:username`, host Settings, backend APIs, guest cancel and
+edit-details). v1.3 (guest reschedule) is specified here and is not
+implemented. Booking is enabled in development and staging
+(`runtime.nodeEnv` other than `production`) and disabled in production.
+Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
 deployable) is **explicitly deferred**. The seams below are the
 extraction path; they are not a second service in v1.
@@ -145,11 +148,32 @@ focus uses the accent ring. Intended Tab order on the picker:
    with {host}** on load and after each state change. Tab then reaches
    the picker (same month grid and slot list as the public page), then
    **Confirm**. A 409 conflict focuses the alert. Missing or invalid
-   token focuses the not-found heading.
+   token focuses the not-found heading. This path is v1.3 and is not
+   shipped.
 
 The month grid stays in the DOM ahead of the slot list. The skip link
 exists so keyboard users are not forced through every day cell before
 times (and, on details, before the form).
+
+### Escape
+
+Escape peels one layer. OverlayPanel (timezone picker, discard confirm)
+holds the app lock first.
+
+- **Your details:** Escape is **Change time**. Focus returns to **Pick a
+  time**.
+- **Timezone overlay:** Escape closes the overlay and leaves the current
+  step (picker or details) in place.
+- **Slot list:** Escape moves focus to the selected day. It does not
+  change the URL.
+- **Month grid:** Escape is a no-op. It does not leave `/book/:slug`.
+- **Confirmation** (`/book/confirmed/:id`): Escape returns to
+  `/book/:bookingSlug` and focuses **Book with {host}**. Unknown,
+  cancelled, and load-error states have no slug path and stay put.
+- **Edit details:** Escape returns to confirmation without PATCHing.
+- **Cancel confirm** (`/book/cancel/:id`): Escape returns to
+  `/book/confirmed/:id` with the same `?token=` and does not POST.
+  In-flight cancel does not navigate or abort.
 
 ### Outcome
 
@@ -212,6 +236,10 @@ timezone `<select>` plus a checkbox and two time inputs per weekday.
   stays.
 - **Open booking page** sits next to Copy and opens the public URL in a
   new tab. There is no authenticated preview iframe.
+- **Discard:** Escape on a dirty Booking form opens **Discard unsaved
+  changes?** instead of closing Settings. Cancel (Escape) keeps the
+  edits. **Discard** (Shift+Escape or Mod+Enter) closes Settings without
+  saving.
 
 ## Busy occupancy
 
@@ -233,12 +261,16 @@ decides whether a busy interval occupies a slot
 - The public busy wire never includes titles, attendees, or emails.
   Optional facts are `hostIsOrganizer` and `hostResponseStatus` only.
 
-## Guest cancel
+## Guest cancel and edit details
 
 - Confirmation page includes a tokenized cancel URL when `?token=` is on
   the permalink (just-confirmed navigation writes it there). The event
   description carries it too only when guests cannot invite others (see
   above). A permalink without the token does not invent a cancel path.
+- **Edit details** uses the same token. Name and notes only; email is not
+  on the form and is not accepted on PATCH. **Save details** PATCHes
+  `{token, name?, notes?}` and rewrites the Google event title and
+  description. **Back** or Escape returns to confirmation without saving.
 - Token is unguessable and stored hashed on the reservation as
   `cancelTokenHash`. It stays valid until `slotEnd` and then returns
   the same generic not-found as an unknown token.
@@ -258,7 +290,7 @@ There is no host reservation inbox.
 - Confirmation shows **Reschedule** (link + **Copy reschedule link**) next
   to cancel when history state has `rescheduleUrl`. Cold permalink has
   neither reschedule secret. Cancel and edit use `?token=` on the
-  confirmation URL (see Guest cancel).
+  confirmation URL (see Guest cancel and edit details).
 - `/book/reschedule/:id?token=` reuses the public month/slot picker. Do
   not re-collect name, email, or notes. Duration comes from current page
   settings (same in-flight duration wart as confirm).
@@ -347,12 +379,11 @@ Unauthenticated:
   the token is invalid.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
 - `GET /api/booking/reservations/:id/slots?token=&start=&end=&timeZone=`
-  — bookable instants excluding this reservation from occupancy and
-  max-per-day. Verify token. `404` when missing or invalid.
-- `POST /api/booking/reservations/:id/reschedule` — `{token, slotStart,
-  guestTimeZone}`. Re-checks busy excluding self, PATCHes the event,
-  updates reservation times. Create response also includes
-  `rescheduleUrl`.
+  — v1.3, not shipped. Would return bookable instants excluding this
+  reservation from occupancy and max-per-day.
+- `POST /api/booking/reservations/:id/reschedule` — v1.3, not shipped.
+  `{token, slotStart, guestTimeZone}`. Create response still includes
+  `rescheduleUrl` for that specified flow.
 
 Authenticated (host session + writable billing, same as event writes):
 
@@ -396,7 +427,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts`, `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
 | Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
-| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx` |
+| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts` |
 
@@ -416,6 +447,11 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 - **Guest email is not editable after confirm.** The attendee identity and
   Google invite are bound to the address collected at booking. Changing it
   would send a new invitation, which v1.5 does not do.
+- **Keyboard-targeted event is not in the event-jump store.** f4 targeting
+  lives as a local ref plus DOM focus in the hint hook
+  (`packages/web/src/shortcuts/shift-hint/event-jump.store.ts`). Enter has
+  nothing in that store to check. Recorded in WP-12; do not fold targeting
+  into the store in a drive-by.
 - **Slug is not editable in v1.** Allocation runs once on first enable; changing
   slugs needs a migration with redirects.
 - **Guest reschedule is v1.3, not v1.** In-place PATCH; same cancel token.
