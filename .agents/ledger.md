@@ -13,7 +13,8 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3145 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3289 | bun run verify PASS (backend, type-check, lint, knip); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3146 | high | Manager | verifying | packages/backend/src/booking/services/public-booking.service.ts | bun run verify PASS (backend, type-check, lint, knip); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3145 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3289 | squash-merged 41cb48cb6; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3144 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3288 | squash-merged 40e5a02f0; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3143 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3287 | squash-merged 58a4e58b9; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3142 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3286 | squash-merged 105ea7910; bun run verify PASS; review: no confirmed findings | null | 0 | none |
