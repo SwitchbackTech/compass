@@ -87,6 +87,15 @@ describe("detect-code-changes", () => {
     expect(unit).toContain(
       "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
     );
+    expect(unit).toContain("static:");
+    expect(unit).toContain("name: unit (${{ matrix.name }})");
+    expect(unit).toContain("WEB_TEST_SHARD_INDEX");
+    expect(unit).toContain("name: web, 1");
+    expect(unit).toContain("name: web, 2");
+    expect(unit).not.toContain("uses: actions/setup-node");
+    expect(unit).not.toMatch(/^ {2}lint:/m);
+    expect(unit).not.toMatch(/^ {2}knip:/m);
+    expect(unit).not.toMatch(/^ {2}type-check:/m);
   });
 
   it("runs checks for non-pull-request events without calling GitHub", () => {

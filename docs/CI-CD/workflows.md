@@ -4,7 +4,7 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Unit (`test-unit.yml`) | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
+| Unit (`test-unit.yml`) | Push / PR to `main` | Runs `static` (lint, knip, type-check) and unit tests |
 | PR body | Pull request | Fails empty template sections (including docs-only PRs) |
 | E2E (`test-e2e.yml`) | Push / PR to `main` | Playwright e2e in four shards behind one required `e2e` gate (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
@@ -34,14 +34,19 @@ repo variable (default off). Ordered queue: `AGENT_LOOP_MILESTONES`.
 
 Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.yml)
 
-`lint`, `knip`, and `type-check` each carry a 5-minute job timeout; `unit`
-carries 10 minutes (its own test-run steps are separately capped at 5
-minutes each, leaving headroom for checkout/setup/cache/install). These
-bound a hung job to a fixed, small window instead of GitHub's 360-minute
-default — GitHub Actions has no native way to give several built-in action
-steps (`checkout`, `setup-node`, `setup-bun`, `cache`) one shared budget
-without reimplementing them by hand, so the job-level timeout is the
-practical equivalent.
+`static` (lint, knip, and type-check as separate steps) and `unit` each
+carry a 10-minute job timeout. Unit test-run steps are separately capped
+at 5 minutes each, leaving headroom for checkout, setup-bun, cache, and
+install. These bound a hung job to a fixed, small window instead of
+GitHub's 360-minute default. GitHub Actions has no native way to give
+several built-in action steps (`checkout`, `setup-bun`, `cache`) one
+shared budget without reimplementing them by hand, so the job-level
+timeout is the practical equivalent.
+
+Jobs that only run Bun do not install Node. `unit (web, 1)` and
+`unit (web, 2)` each run one half of the web suite via
+`WEB_TEST_SHARDS=2` and `WEB_TEST_SHARD_INDEX`. Local `bun test:web`
+still runs every shard sequentially.
 
 **Known flakiness**: a job can occasionally hang for several minutes on
 runner/network flakiness unrelated to the diff, while the identical job on

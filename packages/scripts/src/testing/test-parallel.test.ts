@@ -1,8 +1,10 @@
 import {
   parallelArgsFor,
+  selectWebShards,
   shardTargets,
   testArgvFor,
   webSuiteShardCount,
+  webSuiteShardIndex,
 } from "./test-parallel";
 import { describe, expect, it } from "bun:test";
 
@@ -69,5 +71,45 @@ describe("webSuiteShardCount", () => {
     expect(webSuiteShardCount({ explicitPathCount: 0, envShards: "3" })).toBe(
       3,
     );
+  });
+});
+
+describe("webSuiteShardIndex", () => {
+  it("runs every shard when the index env is unset", () => {
+    expect(webSuiteShardIndex({ shardCount: 2 })).toBe("all");
+    expect(webSuiteShardIndex({ shardCount: 2, envIndex: "" })).toBe("all");
+  });
+
+  it("picks a 1-based shard for CI legs", () => {
+    expect(webSuiteShardIndex({ shardCount: 2, envIndex: "2" })).toBe(2);
+  });
+
+  it("rejects an index outside the shard count", () => {
+    expect(() => webSuiteShardIndex({ shardCount: 2, envIndex: "3" })).toThrow(
+      /1 to 2/,
+    );
+    expect(() => webSuiteShardIndex({ shardCount: 2, envIndex: "0" })).toThrow(
+      /1 to 2/,
+    );
+  });
+});
+
+describe("selectWebShards", () => {
+  const shards = [
+    ["a", "b"],
+    ["c", "d"],
+  ];
+
+  it("keeps every shard for local bun test:web", () => {
+    expect(selectWebShards(shards, "all")).toEqual([
+      { index: 0, shard: ["a", "b"] },
+      { index: 1, shard: ["c", "d"] },
+    ]);
+  });
+
+  it("runs only the second half when WEB_TEST_SHARD_INDEX=2", () => {
+    expect(selectWebShards(shards, 2)).toEqual([
+      { index: 1, shard: ["c", "d"] },
+    ]);
   });
 });
