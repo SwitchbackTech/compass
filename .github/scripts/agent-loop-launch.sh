@@ -8,6 +8,7 @@ set -euo pipefail
 
 ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number>}
 
+# shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 if [ -z "$REPO" ]; then
@@ -97,8 +98,14 @@ BODY
 )"
     gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
       --add-label "$QUOTA_WAITING_LABEL" --remove-label "$RUNNING_LABEL" \
-      --remove-label "$LEGACY_RUNNING_LABEL" \
-      --remove-label "$NEEDS_HUMAN_LABEL" --remove-label "$LEGACY_NEEDS_HUMAN_LABEL"
+      2>/dev/null || \
+      gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$QUOTA_WAITING_LABEL"
+    gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+      --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
+    gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+      --remove-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || true
+    gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+      --remove-label "$LEGACY_NEEDS_HUMAN_LABEL" 2>/dev/null || true
     notify "${COMMENT_PREFIX} Cursor quota exhausted for #${ISSUE_NUMBER}; retrying after ${next_retry_at}"
     echo "Cursor quota exhausted for #${ISSUE_NUMBER}; retry after ${next_retry_at}."
     set_output launch_mode quota-wait

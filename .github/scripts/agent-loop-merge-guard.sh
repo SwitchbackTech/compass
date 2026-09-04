@@ -12,6 +12,7 @@
 # (GITHUB_TOKEN merges do not).
 set -uo pipefail
 
+# shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 PR_NUMBER=${1:-}
@@ -74,9 +75,9 @@ downgrade() {
     return 0
   fi
   notify "Agent-loop PR #${pr_number} ${reason}; leaving for human review: https://github.com/${REPO}/pull/${pr_number}"
-  gh pr edit "$pr_number" --repo "$REPO" \
-    --remove-label "$AUTOMERGE_LABEL" --remove-label "$LEGACY_AUTOMERGE_LABEL" \
-    --add-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || true
+  gh pr edit "$pr_number" --repo "$REPO" --remove-label "$AUTOMERGE_LABEL" 2>/dev/null || true
+  gh pr edit "$pr_number" --repo "$REPO" --remove-label "$LEGACY_AUTOMERGE_LABEL" 2>/dev/null || true
+  gh pr edit "$pr_number" --repo "$REPO" --add-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || true
   local issue_number
   issue_number=$(gh pr view "$pr_number" --repo "$REPO" --json body --jq '.body' 2>/dev/null |
     grep -oE '[Ff]ixes #[0-9]+' | grep -oE '[0-9]+' | head -n1)

@@ -3,6 +3,7 @@
 # came from an agent-automerge PR, then print smoke_ok for GHA.
 set -euo pipefail
 
+# shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 HEAD_SHA=${HEAD_SHA:-${GITHUB_SHA:-}}

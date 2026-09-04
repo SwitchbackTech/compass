@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Shared helpers for the agent-loop scripts. Source, don't execute:
 #   source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh
+# shellcheck disable=SC2034 # sourced constants consumed by sibling scripts
 REPO=${GH_REPO:-${GITHUB_REPOSITORY:-}}
 AGENT_LOOP_SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 STAGING_URL="${AGENT_LOOP_STAGING_URL:-${BOOKING_LOOP_STAGING_URL:-https://staging.compasscalendar.com}}"
