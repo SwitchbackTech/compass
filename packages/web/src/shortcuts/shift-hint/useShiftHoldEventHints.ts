@@ -764,6 +764,7 @@ export function useShiftHoldEventHints({
     .map((event) => event._id ?? "")
     .join(",");
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: eventIdsKey re-runs this when the event set changes; the contents come from refs
   useEffect(() => {
     if (!isActive) {
       // External resets clear the store without going through deactivate();
@@ -809,6 +810,7 @@ export function useShiftHoldEventHints({
   // event props rather than the DOM registry so it is current before any
   // keypress. Events without a start date would otherwise advertise the
   // FALLBACK_SCHEDULE's phantom Sunday.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: eventIdsKey re-runs this when the event set changes; the contents come from refs
   useEffect(() => {
     const weekdays = [...allDayEventsRef.current, ...timedEventsRef.current]
       .filter((event) => Boolean(event.startDate))

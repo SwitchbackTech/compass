@@ -42,7 +42,7 @@ export const GameHud: FC<{
               overtime
                 ? "text-error"
                 : warning
-                  ? "motion-reduce:animate-none animate-pulse text-error"
+                  ? "animate-pulse text-error motion-reduce:animate-none"
                   : "text-text"
             }`}
             role="timer"
@@ -74,7 +74,7 @@ export const GameHud: FC<{
           <span
             key={award.seq}
             aria-hidden
-            className="c-game-score-pop -top-4 absolute right-0 font-semibold text-accent text-sm"
+            className="c-game-score-pop absolute -top-4 right-0 font-semibold text-accent text-sm"
           >
             +{award.points}
           </span>
@@ -138,6 +138,7 @@ export const GameTaskQueue: FC<{
         <div className="flex items-center gap-1 pt-3">
           {keycaps.map((key, index) => (
             <ShortcutHint
+              // biome-ignore lint/suspicious/noArrayIndexKey: keycap sequences repeat keys; position is the identity
               key={`${key}-${index}`}
               variant="keycap"
               className={

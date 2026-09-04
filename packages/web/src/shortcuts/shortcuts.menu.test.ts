@@ -1,7 +1,8 @@
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 
-const stripMetadata = (shortcuts: any[]) =>
-  shortcuts.map(({ keys, label }) => ({ keys, label }));
+const stripMetadata = (
+  shortcuts: ReadonlyArray<{ keys: unknown; label: unknown }>,
+) => shortcuts.map(({ keys, label }) => ({ keys, label }));
 
 describe("shortcut menu sections", () => {
   describe("getShortcutMenuSections", () => {
