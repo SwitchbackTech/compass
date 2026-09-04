@@ -679,6 +679,103 @@ describe("PublicBookingService", () => {
     expect(response.slots.map((slot) => slot.slotStart)).not.toContain(booked);
   });
 
+  it("does not fetch a confirmed reservation far outside the requested window", async () => {
+    const { slug, pageId } = await enableBookingPage();
+    await seedConfirmedReservation(
+      pageId,
+      "2025-09-08T10:00:00.000Z",
+      "2025-09-08T10:30:00.000Z",
+    );
+    const listSpy = spyOn(
+      bookingReservationRepository,
+      "listConfirmedStartsByPageId",
+    );
+
+    try {
+      const response = await service.getSlots(slug, {
+        start: "2026-09-07T00:00:00.000Z",
+        end: "2026-09-08T00:00:00.000Z",
+        timeZone: "UTC",
+      });
+
+      const fetched = (await listSpy.mock.results[0]?.value) as Date[];
+      expect(fetched.map((start) => start.toISOString())).not.toContain(
+        "2025-09-08T10:00:00.000Z",
+      );
+      expect(response.bookable).toBe(true);
+      expect(response.slots.map((slot) => slot.slotStart)).toContain(
+        "2026-09-07T10:00:00Z",
+      );
+    } finally {
+      listSpy.mockRestore();
+    }
+  });
+
+  it("still blocks the adjacent slot when a reservation sits just outside the window inside the buffer", async () => {
+    const { slug, pageId } = await enableBookingPage("Buffer Host", {
+      bufferMinutes: 15,
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-07T09:00:00.000Z",
+      "2026-09-07T09:30:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T09:30:00.000Z",
+      end: "2026-09-07T11:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.slots.map((slot) => slot.slotStart)).not.toContain(
+      "2026-09-07T09:30:00Z",
+    );
+    expect(response.slots.map((slot) => slot.slotStart)).toContain(
+      "2026-09-07T09:45:00Z",
+    );
+  });
+
+  it("still blocks the last slot when a buffered reservation starts after local midnight", async () => {
+    const { slug, pageId } = await enableBookingPage("Late Buffer Host", {
+      bufferMinutes: 30,
+      weeklyAvailability: [{ weekday: 1, start: "21:00", end: "23:59" }],
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-08T00:10:00.000Z",
+      "2026-09-08T00:40:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T21:00:00.000Z",
+      end: "2026-09-07T23:30:00.000Z",
+      timeZone: "UTC",
+    });
+
+    const starts = response.slots.map((slot) => slot.slotStart);
+    expect(starts).toContain("2026-09-07T21:00:00Z");
+    expect(starts).not.toContain("2026-09-07T23:15:00Z");
+  });
+
+  it("still applies max bookings per day when the only reservation is earlier the same local day", async () => {
+    const { slug, pageId } = await enableBookingPage("Cap Host", {
+      maxBookingsPerDay: 1,
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-07T10:00:00.000Z",
+      "2026-09-07T10:30:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T14:00:00.000Z",
+      end: "2026-09-07T17:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.slots).toEqual([]);
+  });
+
   it("accepts a second non-overlapping booking on the same page", async () => {
     const { slug } = await enableBookingPage();
     await service.createReservation(slug, {

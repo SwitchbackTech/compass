@@ -37,7 +37,10 @@ import {
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
 import { type BookingReservationRecord } from "@backend/booking/booking-reservation.record";
-import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
+import {
+  bookingReservationRepository,
+  confirmedReservationScanRange,
+} from "@backend/booking/booking-reservation.repository";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -294,7 +297,10 @@ export class PublicBookingService {
     }
 
     const confirmedStarts =
-      await bookingReservationRepository.listConfirmedStartsByPageId(page._id);
+      await bookingReservationRepository.listConfirmedStartsByPageId(
+        page._id,
+        confirmedReservationScanRange(page, windowStart, windowEnd),
+      );
     const slotStarts = computeBookingSlots(
       slotEngineInputForPage(page, availability, confirmedStarts, {
         now,
@@ -347,7 +353,10 @@ export class PublicBookingService {
     }
 
     const confirmedStarts =
-      await bookingReservationRepository.listConfirmedStartsByPageId(page._id);
+      await bookingReservationRepository.listConfirmedStartsByPageId(
+        page._id,
+        confirmedReservationScanRange(page, slotStart, slotEnd),
+      );
     const allowedStarts = new Set(
       computeBookingSlots(
         slotEngineInputForPage(page, availability, confirmedStarts, {
