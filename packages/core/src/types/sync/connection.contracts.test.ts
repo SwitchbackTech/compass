@@ -93,6 +93,15 @@ describe("Sync connection contracts", () => {
       expect(ProviderConnectionSchema.safeParse(connection).success).toBe(true);
     });
 
+    it("accepts actionRequired with consentRequired", () => {
+      const connection = {
+        ...validConnection(),
+        state: "actionRequired",
+        stateReason: "consentRequired",
+      };
+      expect(ProviderConnectionSchema.safeParse(connection).success).toBe(true);
+    });
+
     it("rejects actionRequired without a reason", () => {
       const connection = { ...validConnection(), state: "actionRequired" };
       expect(ProviderConnectionSchema.safeParse(connection).success).toBe(

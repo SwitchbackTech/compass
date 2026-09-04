@@ -1,0 +1,6 @@
+{
+  "access_token": "fresh-access-token",
+  "scope": "Calendars.ReadWrite User.Read",
+  "expires_in": 3600,
+  "token_type": "Bearer"
+}

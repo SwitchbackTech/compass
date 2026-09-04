@@ -1,0 +1,4 @@
+{
+  "error": "invalid_grant",
+  "error_description": "AADSTS70000: The refresh token has expired."
+}

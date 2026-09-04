@@ -1,6 +1,6 @@
 {
   "name": "@compass/sync",
-  "description": "Compass Sync service — provider state, sync work, and connection health",
+  "description": "Compass Sync service \u2014 provider state, sync work, and connection health",
   "license": "MIT",
   "version": "1.0.0",
   "main": "build/src/app.js",
@@ -13,6 +13,7 @@
     "fast-xml-parser": "^5.11.1",
     "google-auth-library": "^10.6.2",
     "ical.js": "^2.2.1",
+    "jose": "^5.9.6",
     "mongodb": "^7.2.0",
     "rrule": "^2.7.2",
     "tslib": "^2.4.0",
