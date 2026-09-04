@@ -22,6 +22,7 @@ const ownerCapabilities = {
   canWrite: true,
   canManage: true,
   canWatchEvents: true,
+  canInviteAttendees: true,
 };
 
 const connection = (id: string, accountEmail: string) => ({
