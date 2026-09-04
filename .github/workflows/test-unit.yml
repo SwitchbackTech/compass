@@ -102,18 +102,17 @@ jobs:
         run: |
           bun run type-check
 
-  # A skipped MATRIX job collapses to one check run named `unit`, so the
-  # required `unit (core)` ... `unit (web, 2)` contexts would never report and
-  # a docs-only PR would still be BLOCKED. Let the legs start and skip every
-  # step instead: each reports its own name, in a few seconds, for free.
-  # Job display names are the required-check contexts: `unit (web, 1)` and
-  # `unit (web, 2)` each cover half the suite as two sequential shards
-  # (`WEB_TEST_SHARDS=4` with index `1,2` / `3,4`) so RSS stays under 7 GB.
-  unit:
+  # A skipped MATRIX job collapses to one check run, so the `unit` rollup
+  # below would see `skipped` for a docs-only PR only if every leg started.
+  # Let the legs start and skip every step instead: each reports in a few
+  # seconds, for free. `unit-leg (web, 1)` and `unit-leg (web, 2)` each cover
+  # half the suite as two sequential shards (`WEB_TEST_SHARDS=4` with index
+  # `1,2` / `3,4`) so RSS stays under 7 GB.
+  unit-leg:
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    name: unit (${{ matrix.name }})
+    name: unit-leg (${{ matrix.name }})
     strategy:
       fail-fast: false
       matrix:
@@ -195,3 +194,23 @@ jobs:
           TZ: Etc/UTC
         run: |
           bun run test:${{ matrix.project }}
+
+  # One required context for every leg, like `e2e` over `e2e-shard`. Legs can
+  # be added, split, or renamed without touching the ruleset: on 2026-09-04
+  # the ruleset was updated to new leg names before the workflow that
+  # produced them merged, and every PR sat BLOCKED with no bypass actor.
+  unit:
+    needs: [changes, unit-leg]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every unit leg to pass
+        env:
+          RESULT: ${{ needs.unit-leg.result }}
+        run: |
+          echo "unit legs: ${RESULT}"
+          case "$RESULT" in
+            success|skipped) exit 0 ;;
+            *) exit 1 ;;
+          esac
