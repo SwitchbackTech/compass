@@ -61,14 +61,8 @@ const publicReservationPatchLimiter = rateLimit({
   keyGenerator: bookingReservationKey,
 });
 
-const bookingAdminKey = (req: express.Request): string => {
-  const session = (req as SessionRequest).session;
-  const userId =
-    session && typeof session.getUserId === "function"
-      ? session.getUserId()
-      : "unknown";
-  return `booking-admin:${userId}`;
-};
+const bookingAdminKey = (req: express.Request): string =>
+  `booking-admin:${(req as SessionRequest).session?.getUserId?.() ?? "unknown"}`;
 
 // GET is Settings load/poll; 60/min matches the public page read budget.
 const adminPageGetLimiter = rateLimit({
