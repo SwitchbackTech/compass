@@ -42,14 +42,14 @@ test.describe("public booking reschedule", () => {
 
     await page.getByRole("link", { name: "Reschedule this booking" }).click();
 
+    await expect(page).toHaveURL(
+      /\/book\/reschedule\/000000000000000000000099\?token=abc/,
+    );
     await expect(
       page.getByRole("heading", {
         name: "Reschedule your booking with Tyler Dane",
       }),
     ).toBeFocused();
-    await expect(page).toHaveURL(
-      /\/book\/reschedule\/000000000000000000000099\?token=abc/,
-    );
 
     await page
       .getByRole("button", { name: formatSlotButtonLabel(second.slotStart) })

@@ -367,7 +367,7 @@ export async function preparePublicBookingPage(
       if (typeof body.guestTimeZone === "string") {
         postedTimeZone = body.guestTimeZone;
       }
-      const origin = new URL(request.url()).origin;
+      const origin = new URL(page.url()).origin;
       return route.fulfill(
         jsonResponse({
           reservationId,
