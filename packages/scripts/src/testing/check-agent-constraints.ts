@@ -9,9 +9,6 @@ const SOURCE_EXT = /\.(ts|tsx)$/;
 
 export type ConstraintAllow = { glob: string; reason: string };
 
-/** Empty: remaining barrels were deleted; imports target the concrete files. */
-export const BARREL_ALLOWLIST: ConstraintAllow[] = [];
-
 /**
  * Structural locator exceptions. New tests outside these globs are still
  * flagged, including `packages/web/src/auth/providers/**`.
@@ -141,12 +138,6 @@ export function scanConstraints(root = repoRoot): ConstraintHit[] {
   for (const file of walk(join(root, "packages"))) {
     const rel = posixRel(root, file);
     const source = readFileSync(file, "utf8");
-
-    if (isIndexModule(rel) && rel !== APP_ENTRY && isBarrelSource(source)) {
-      if (!matchesConstraintAllow(rel, BARREL_ALLOWLIST)) {
-        hits.push({ path: rel, rule: "barrel", line: 1 });
-      }
-    }
 
     if (isWebTest(rel) && !matchesConstraintAllow(rel, WEB_LOCATOR_ALLOWLIST)) {
       for (const line of locatorHits(source)) {

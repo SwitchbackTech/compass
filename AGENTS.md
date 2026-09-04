@@ -107,9 +107,6 @@ Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`
   instead. Prose in `docs/` and code comments are unaffected. Fix any
   pre-existing ones you touch in passing.
 - Keep React components in their own files.
-- Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from
-  the concrete source file instead, and remove nearby barrel files when it is
-  safe to do so.
 
 ## Git
 
@@ -150,7 +147,7 @@ everything runs through Bun, so that mismatch is not a blocker.
   placeholders. The validator (`packages/core/src/config/compass.config.ts`)
   rejects any string containing `REPLACE_WITH_` (comments are ignored). This
   file is gitignored and holds secrets — never commit it.
-- Web: `bun run dev:web` serves http://localhost:9080 and works fully in the
+- Web: `bun run dev:web` serves <http://localhost:9080> and works fully in the
   anonymous / IndexedDB mode with no backend (create/edit events, shortcuts,
   etc.), which is the quickest way to exercise core functionality. For
   frontend-only work, `cp compass.example.yaml compass.yaml` and replace the
@@ -166,7 +163,7 @@ everything runs through Bun, so that mismatch is not a blocker.
   `docs/development/testing-playbook.md`).
 - Backend: run `bash .cursor/bootstrap-backend.sh` once to write a working
   `compass.yaml` and install/start a single-node MongoDB replica set, then
-  `bun run dev:backend` (serves http://localhost:3000/api). The script is
+  `bun run dev:backend` (serves <http://localhost:3000/api>). The script is
   idempotent and reads `SUPERTOKENS_URI`, `SUPERTOKENS_KEY`, `GOOGLE_CLIENT_ID`,
   `GOOGLE_CLIENT_SECRET`, `SYNC_MONGO_URI`, and `SYNC_INTERNAL_AUTH_TOKEN` from
   the environment when set (otherwise dummy local values, Google disabled). The

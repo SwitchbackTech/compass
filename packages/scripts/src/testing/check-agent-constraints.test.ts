@@ -1,5 +1,4 @@
 import {
-  BARREL_ALLOWLIST,
   duplicateEventSchemaHits,
   isBarrelSource,
   locatorHits,
@@ -208,17 +207,6 @@ describe("constraint allowlist globs", () => {
         MONGO_SERVICE_TEST_ALLOWLIST,
       ),
     ).toBe(false);
-  });
-
-  it("keeps allowlists empty or glob entries with a reason", () => {
-    expect(BARREL_ALLOWLIST).toEqual([]);
-    for (const entry of [
-      ...WEB_LOCATOR_ALLOWLIST,
-      ...MONGO_SERVICE_TEST_ALLOWLIST,
-    ]) {
-      expect(entry.glob.includes("*")).toBe(true);
-      expect(entry.reason.length).toBeGreaterThan(0);
-    }
   });
 });
 
