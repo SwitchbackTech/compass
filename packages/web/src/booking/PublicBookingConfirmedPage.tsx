@@ -5,7 +5,6 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingConfirmationView } from "@web/booking/PublicBookingConfirmationView";
 import { PublicBookingEditDetailsForm } from "@web/booking/PublicBookingEditDetailsForm";
@@ -14,6 +13,10 @@ import {
   usePatchPublicBookingReservationMutation,
   usePublicBookingReservationQuery,
 } from "@web/booking/public-booking.query";
+import {
+  type PublicBookingReservationView,
+  resolvePublicBookingReservationView,
+} from "@web/booking/public-booking.view";
 import {
   publicCancelUrlForReservation,
   tokenFromGuestActionUrl,
@@ -46,34 +49,15 @@ const BOOKING_CANCELED = {
     "The appointment is no longer on the host calendar. You can close this page.",
 } as const;
 
-type ConfirmedPageView =
-  | { kind: "status"; title: string; description: string }
-  | {
-      kind: "confirmation";
-      reservation: NonNullable<
-        ReturnType<typeof usePublicBookingReservationQuery>["data"]
-      >;
-    };
-
 const resolveConfirmedPageView = (
   reservationQuery: ReturnType<typeof usePublicBookingReservationQuery>,
-): ConfirmedPageView => {
-  if (reservationQuery.isLoading) return { kind: "status", ...BOOKING_LOADING };
-  if (reservationQuery.isError) {
-    return {
-      kind: "status",
-      ...(reservationQuery.error instanceof PublicBookingNotFoundError
-        ? BOOKING_NOT_FOUND
-        : BOOKING_LOAD_FAILED),
-    };
-  }
-  const reservation = reservationQuery.data;
-  if (!reservation) return { kind: "status", ...BOOKING_NOT_FOUND };
-  if (reservation.status === "cancelled") {
-    return { kind: "status", ...BOOKING_CANCELED };
-  }
-  return { kind: "confirmation", reservation };
-};
+): PublicBookingReservationView =>
+  resolvePublicBookingReservationView(reservationQuery, {
+    loading: BOOKING_LOADING,
+    notFound: BOOKING_NOT_FOUND,
+    loadFailed: BOOKING_LOAD_FAILED,
+    cancelled: BOOKING_CANCELED,
+  });
 
 function cancelUrlFromHistory(state: unknown): string | undefined {
   if (
@@ -120,8 +104,8 @@ export function PublicBookingConfirmedPage() {
 
   const view = resolveConfirmedPageView(reservationQuery);
   const bookingSlug =
-    view.kind === "confirmation" ? view.reservation.bookingSlug : "";
-  const canEdit = view.kind === "confirmation" && token.length > 0;
+    view.kind === "reservation" ? view.reservation.bookingSlug : "";
+  const canEdit = view.kind === "reservation" && token.length > 0;
 
   // Escape returns to the host's public page. OverlayPanel peels first.
   // An open edit form backs out one step. Unknown and cancelled views have
