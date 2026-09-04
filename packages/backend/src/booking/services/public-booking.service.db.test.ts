@@ -648,6 +648,53 @@ describe("PublicBookingService", () => {
     expect(stored?.status).toBe("cancelled");
   });
 
+  it("marks cancelled before delete so a failed provider delete does not keep the slot", async () => {
+    const { slug } = await enableBookingPage();
+    const slotStart = "2026-09-07T10:00:00.000Z";
+    const created = await service.createReservation(slug, {
+      slotStart,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    expect(token).toBeTruthy();
+    const reservationId = new ObjectId(created.reservationId);
+
+    deleteBookingEvent.mockImplementation(async () => {
+      throw new BaseError(
+        "SYNC_UNAVAILABLE",
+        "could not delete the booking event",
+        Status.SERVICE_UNAVAILABLE,
+        true,
+      );
+    });
+
+    await expect(
+      service.cancelReservation(reservationId, { token }),
+    ).rejects.toMatchObject({ result: "SYNC_UNAVAILABLE" });
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.status).toBe("cancelled");
+    expect(stored?.calendarEventId).toBeTruthy();
+
+    const retry = await service.createReservation(slug, {
+      slotStart,
+      guestName: "Grace Hopper",
+      guestEmail: "grace@example.com",
+      guestTimeZone: "America/New_York",
+    });
+    expect(retry.reservationId).toBeTruthy();
+
+    deleteBookingEvent.mockImplementation(async () => undefined);
+    await service.cancelReservation(reservationId, { token });
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(2);
+    const afterRetry =
+      await bookingReservationRepository.findById(reservationId);
+    expect(afterRetry?.status).toBe("cancelled");
+    expect(afterRetry?.calendarEventId).toBeNull();
+  });
+
   it("rejects an expired cancel token at slotEnd with RESERVATION_NOT_FOUND", async () => {
     const { pageId } = await enableBookingPage();
     const token = generateCancelToken();

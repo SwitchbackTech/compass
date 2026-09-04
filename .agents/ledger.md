@@ -13,8 +13,8 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3217 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3285 | bun run verify PASS (test:scripts:fast, type-check, lint, knip); review: no confirmed findings; web+backend concurrent 200ms vs serial 520ms | 2026-09-04T06:00:00Z | 0 | none |
-| 3146 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3290 | bun run verify PASS (backend, type-check, lint, knip); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3147 | high | Manager | verifying | packages/backend/src/booking/services/public-booking.service.ts | bun run verify PASS (backend, type-check, lint, knip); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3146 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3290 | squash-merged 936e90b26; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3145 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3289 | squash-merged 41cb48cb6; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3144 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3288 | squash-merged 40e5a02f0; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3143 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3287 | squash-merged 58a4e58b9; bun run verify PASS; review: no confirmed findings | null | 0 | none |
@@ -42,3 +42,4 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2918 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2918 | bun run verify PASS; review finding fixed in 3fa6e4a8c | 2026-08-27T20:30:00Z | 0 | none |
 | 2922 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun run verify PASS; simplify c4cbe8696; review: no confirmed findings | 2026-08-27T21:00:00Z | 0 | none |
 | simplify-recent-2965 | medium | Manager | verifying | packages/web/src/shortcuts/quick-time/quick-time.util.ts | bun run verify PASS: web, type-check, lint, knip; review: no confirmed findings | 2026-08-31T06:00:00Z | 0 | none |
+| 3217 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3285 | bun run verify PASS (test:scripts:fast, type-check, lint, knip); review: no confirmed findings; web+backend concurrent 200ms vs serial 520ms | 2026-09-04T06:00:00Z | 0 | none |
