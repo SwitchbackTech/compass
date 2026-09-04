@@ -68,7 +68,7 @@ jobs:
           bun-version: 1.3.14
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -90,7 +90,7 @@ jobs:
           bun run knip
 
       - name: Cache TypeScript incremental build info
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             **/*.tsbuildinfo
@@ -163,7 +163,7 @@ jobs:
 
       - name: Cache Bun dependencies
         if: needs.changes.outputs.code == 'true'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -179,7 +179,7 @@ jobs:
       # mongod binary so each run doesn't re-fetch it.
       - name: Cache MongoDB binaries
         if: needs.changes.outputs.code == 'true' && (matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync')
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/mongodb-binaries
           key: ${{ runner.os }}-mongodb-memory-server

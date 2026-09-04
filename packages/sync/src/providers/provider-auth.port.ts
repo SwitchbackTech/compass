@@ -78,6 +78,7 @@ export type ProviderAuthErrorReason =
   | "invalidIdToken" // the id token was absent or failed verification
   | "consentRequired" // the tenant requires admin consent before the app can connect
   | "authorizationRevoked" // the refresh token is no longer valid (revoked/expired)
-  | "refreshFailed"; // the token refresh failed for a transient/unknown reason
+  | "refreshFailed" // the token refresh failed for a transient/unknown reason
+  | "unsupported"; // the operation does not apply to this provider's auth model
 
 export class ProviderAuthError extends ProviderError<ProviderAuthErrorReason> {}

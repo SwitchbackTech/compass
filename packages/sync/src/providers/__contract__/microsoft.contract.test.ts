@@ -97,6 +97,7 @@ function describeAuthCases(
 describeAuthCases("microsoft", () => buildAdapter(), [
   {
     name: "exchange yields oid-keyed identity, a refresh token, and granted scopes",
+    requires: "oauthRedirect",
     async run(auth) {
       const result = await auth.exchangeAuthorizationCode({
         code: "auth-code",
@@ -123,6 +124,7 @@ describeAuthCases(
   [
     {
       name: "refresh mints a fresh access token and expiry",
+      requires: "oauthRedirect",
       async run(auth) {
         const fixture = exchangeFixture as ExchangeSuccessFixture;
         await auth.exchangeAuthorizationCode({
@@ -150,6 +152,7 @@ describeAuthCases(
   [
     {
       name: "maps invalid_grant to authorizationRevoked",
+      requires: "oauthRedirect",
       async run(auth) {
         const fixture = exchangeFixture as ExchangeSuccessFixture;
         await auth.exchangeAuthorizationCode({
