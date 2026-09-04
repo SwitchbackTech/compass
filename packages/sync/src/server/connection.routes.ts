@@ -56,7 +56,11 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
-import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
+import {
+  type ProviderAuthAdapter,
+  ProviderAuthError,
+} from "@sync/providers/provider-auth.port";
 import {
   GOOGLE_CALLBACK_PATH,
   OAUTH_CALLBACK_PARAM_PATH,
@@ -732,8 +736,20 @@ export function registerConnectionRoutes(
         return redirect("error");
       }
       if (!deps.mongo.isConnected) return redirect("error");
-      // The user declined consent, or the provider returned an error.
-      if (typeof req.query["error"] === "string") return redirect("declined");
+      const oauthError = req.query["error"];
+      const oauthDescription = req.query["error_description"];
+      if (typeof oauthError === "string") {
+        if (
+          routeProvider === "microsoft" &&
+          isMicrosoftConsentRequired(
+            oauthError,
+            typeof oauthDescription === "string" ? oauthDescription : undefined,
+          )
+        ) {
+          return redirect("consentRequired");
+        }
+        return redirect("declined");
+      }
 
       const code = req.query["code"];
       const state = req.query["state"];
@@ -765,6 +781,12 @@ export function registerConnectionRoutes(
             redirectUri: `${deps.callbackBaseUrl}${registration.callbackPath}`,
           });
       } catch (error) {
+        if (
+          error instanceof ProviderAuthError &&
+          error.reason === "consentRequired"
+        ) {
+          return redirect("consentRequired");
+        }
         // Bad code, no refresh token, unverifiable identity — nothing to link.
         logger.error("OAuth code exchange failed", redactedCause(error));
         return redirect("error");

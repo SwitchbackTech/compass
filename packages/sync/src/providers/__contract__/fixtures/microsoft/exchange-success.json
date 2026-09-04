@@ -1,0 +1,14 @@
+{
+  "tokenResponse": {
+    "refresh_token": "microsoft-refresh-token",
+    "access_token": "microsoft-access-token",
+    "scope": "openid profile email offline_access User.Read Calendars.ReadWrite",
+    "expires_in": 3600,
+    "token_type": "Bearer"
+  },
+  "idTokenClaims": {
+    "oid": "microsoft-oid-123",
+    "preferred_username": "user@contoso.com",
+    "name": "Contoso User"
+  }
+}

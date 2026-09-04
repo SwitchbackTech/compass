@@ -76,6 +76,7 @@ export type ProviderAuthErrorReason =
   | "missingRefreshToken" // no refresh token returned (e.g. prior consent)
   | "missingIdentity" // the account could not be identified from the grant
   | "invalidIdToken" // the id token was absent or failed verification
+  | "consentRequired" // the tenant requires admin consent before the app can connect
   | "authorizationRevoked" // the refresh token is no longer valid (revoked/expired)
   | "refreshFailed"; // the token refresh failed for a transient/unknown reason
 
