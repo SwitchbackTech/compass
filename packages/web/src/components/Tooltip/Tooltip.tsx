@@ -32,35 +32,37 @@ type TooltipTriggerProps = HTMLProps<HTMLElement> & {
   "data-state"?: "open" | "closed";
 };
 
-export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
-  const context = useTooltipContext();
+export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(
+  function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
+    const context = useTooltipContext();
 
-  const childrenRef = isValidElement(children)
-    ? (children as { ref?: Ref<HTMLElement> }).ref
-    : undefined;
-  const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
+    const childrenRef = isValidElement(children)
+      ? (children as { ref?: Ref<HTMLElement> }).ref
+      : undefined;
+    const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
-  // `asChild` allows the user to pass any element as the anchor
-  if (asChild && isValidElement<TooltipTriggerProps>(children)) {
-    const childProps: TooltipTriggerProps = {
-      ref,
-      ...props,
-      ...children.props,
-      "data-state": context.open ? "open" : "closed",
-    };
-    return cloneElement(children, context.getReferenceProps(childProps));
-  }
+    // `asChild` allows the user to pass any element as the anchor
+    if (asChild && isValidElement<TooltipTriggerProps>(children)) {
+      const childProps: TooltipTriggerProps = {
+        ref,
+        ...props,
+        ...children.props,
+        "data-state": context.open ? "open" : "closed",
+      };
+      return cloneElement(children, context.getReferenceProps(childProps));
+    }
 
-  return (
-    <div
-      ref={ref}
-      data-state={context.open ? "open" : "closed"}
-      {...context.getReferenceProps(props)}
-    >
-      {children}
-    </div>
-  );
-});
+    return (
+      <div
+        ref={ref}
+        data-state={context.open ? "open" : "closed"}
+        {...context.getReferenceProps(props)}
+      >
+        {children}
+      </div>
+    );
+  },
+);
 
 export const TooltipContent = forwardRef<
   HTMLDivElement,
