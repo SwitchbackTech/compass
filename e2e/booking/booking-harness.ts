@@ -225,7 +225,9 @@ export interface PublicBookingStubOptions {
 export interface CapturedBookingRequests {
   reservationPosts: Array<Record<string, unknown>>;
   reservationPatches: Array<Record<string, unknown>>;
+  reschedulePosts: Array<Record<string, unknown>>;
   slotGets: number;
+  reservationSlotGets: number;
   slotQueries: Array<{ start: string | null; end: string | null }>;
 }
 
@@ -277,9 +279,12 @@ export async function preparePublicBookingPage(
   const captured: CapturedBookingRequests = {
     reservationPosts: [],
     reservationPatches: [],
+    reschedulePosts: [],
     slotGets: 0,
+    reservationSlotGets: 0,
     slotQueries: [],
   };
+  const reservationId = "000000000000000000000099";
   const slot =
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
   const slots = options.slots ?? [slot];
@@ -288,6 +293,7 @@ export async function preparePublicBookingPage(
   let guestName = options.guestName ?? "Guest User";
   let notes = options.notes ?? null;
   let postedSlotStart = slot.slotStart;
+  let postedSlotEnd = slot.slotEnd;
   let postedTimeZone = "UTC";
 
   await page.route("**/api/**", async (route) => {
@@ -361,16 +367,74 @@ export async function preparePublicBookingPage(
       if (typeof body.guestTimeZone === "string") {
         postedTimeZone = body.guestTimeZone;
       }
+      const origin = new URL(request.url()).origin;
       return route.fulfill(
         jsonResponse({
-          reservationId: "000000000000000000000099",
+          reservationId,
           slotStart: body.slotStart,
-          slotEnd: slot.slotEnd,
+          slotEnd: postedSlotEnd,
           guestTimeZone: body.guestTimeZone,
-          cancelUrl:
-            "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
-          rescheduleUrl:
-            "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+          cancelUrl: `${origin}/book/cancel/${reservationId}?token=abc`,
+          rescheduleUrl: `${origin}/book/reschedule/${reservationId}?token=abc`,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/reservations/${reservationId}/slots` &&
+      request.method() === "GET"
+    ) {
+      captured.reservationSlotGets += 1;
+      const windowStart = url.searchParams.get("start");
+      const windowEnd = url.searchParams.get("end");
+      captured.slotQueries.push({
+        start: windowStart,
+        end: windowEnd,
+      });
+      const startMs = windowStart ? Date.parse(windowStart) : Number.NaN;
+      const endMs = windowEnd ? Date.parse(windowEnd) : Number.NaN;
+      const slotsInWindow = slots.filter((entry) => {
+        const slotMs = Date.parse(entry.slotStart);
+        return slotMs >= startMs && slotMs < endMs;
+      });
+      return route.fulfill(
+        jsonResponse({
+          bookable: options.bookable ?? true,
+          slots: slotsInWindow,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/reservations/${reservationId}/reschedule` &&
+      request.method() === "POST"
+    ) {
+      const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      captured.reschedulePosts.push(body);
+      if (typeof body.slotStart === "string") {
+        postedSlotStart = body.slotStart;
+        const matched = slots.find(
+          (entry) => entry.slotStart === body.slotStart,
+        );
+        postedSlotEnd =
+          matched?.slotEnd ??
+          new Date(
+            Date.parse(postedSlotStart) + durationMinutes * 60 * 1000,
+          ).toISOString();
+      }
+      if (typeof body.guestTimeZone === "string") {
+        postedTimeZone = body.guestTimeZone;
+      }
+      return route.fulfill(
+        jsonResponse({
+          reservationId,
+          slotStart: postedSlotStart,
+          slotEnd: postedSlotEnd,
+          guestTimeZone: postedTimeZone,
+          durationMinutes,
+          hostDisplayName,
+          status: "confirmed",
+          bookingSlug: slug,
         }),
       );
     }
@@ -449,7 +513,9 @@ export async function preparePublicBookingConfirmedPage(
   const captured: CapturedBookingRequests = {
     reservationPosts: [],
     reservationPatches: [],
+    reschedulePosts: [],
     slotGets: 0,
+    reservationSlotGets: 0,
     slotQueries: [],
   };
 
@@ -603,6 +669,166 @@ export async function preparePublicBookingCancelPage(
 
   const search = token ? `?token=${encodeURIComponent(token)}` : "";
   await page.goto(`/book/cancel/${reservationId}${search}`, {
+    waitUntil: "domcontentloaded",
+  });
+
+  return captured;
+}
+
+export interface PublicBookingRescheduleStubOptions {
+  reservationId?: string;
+  token?: string;
+  durationMinutes?: number;
+  slots?: Array<{ slotStart: string; slotEnd: string }>;
+  bookable?: boolean;
+  /** HTTP status for POST /reservations/:id/reschedule. Default 200. */
+  rescheduleStatus?: number;
+  /** When set, the reschedule POST waits until this resolves (for in-flight UI). */
+  holdReschedule?: Promise<void>;
+  guestTimeZone?: string;
+  hostDisplayName?: string;
+  slug?: string;
+  /** Public GET reservation status. Defaults to confirmed. */
+  reservationStatus?: "confirmed" | "cancelled";
+  /** When true, GET /reservations/:id returns 404. */
+  reservationNotFound?: boolean;
+  /** When set, GET /reservations/:id returns this status instead of 200. */
+  reservationGetStatus?: number;
+}
+
+export interface CapturedRescheduleRequests {
+  reschedulePosts: Array<Record<string, unknown>>;
+  reservationSlotGets: number;
+}
+
+export async function preparePublicBookingReschedulePage(
+  page: Page,
+  options: PublicBookingRescheduleStubOptions = {},
+): Promise<CapturedRescheduleRequests> {
+  const reservationId = options.reservationId ?? "000000000000000000000099";
+  const token = options.token ?? "abc";
+  const slug = options.slug ?? "tylerdane";
+  const durationMinutes = options.durationMinutes ?? 30;
+  const hostDisplayName = options.hostDisplayName ?? "Tyler Dane";
+  const first = options.slots?.[0] ?? buildBookableSlot(durationMinutes);
+  const slots = options.slots ?? [first];
+  let currentSlotStart = first.slotStart;
+  let currentSlotEnd = first.slotEnd;
+  let guestTimeZone = options.guestTimeZone ?? "UTC";
+  const captured: CapturedRescheduleRequests = {
+    reschedulePosts: [],
+    reservationSlotGets: 0,
+  };
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path === `/api/booking/pages/${slug}` && request.method() === "GET") {
+      return route.fulfill(
+        jsonResponse({
+          hostDisplayName,
+          durationMinutes,
+          timeZone: "America/Chicago",
+          enabled: true,
+          maxHorizonDays: 60,
+          welcomeText: null,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/reservations/${reservationId}` &&
+      request.method() === "GET"
+    ) {
+      if (options.reservationNotFound) {
+        return route.fulfill(jsonResponse({}, 404));
+      }
+      if (options.reservationGetStatus) {
+        return route.fulfill(jsonResponse({}, options.reservationGetStatus));
+      }
+      return route.fulfill(
+        jsonResponse({
+          slotStart: currentSlotStart,
+          guestTimeZone,
+          durationMinutes,
+          hostDisplayName,
+          status: options.reservationStatus ?? "confirmed",
+          bookingSlug: slug,
+          guestName: "Guest User",
+          notes: null,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/reservations/${reservationId}/slots` &&
+      request.method() === "GET"
+    ) {
+      captured.reservationSlotGets += 1;
+      const windowStart = url.searchParams.get("start");
+      const windowEnd = url.searchParams.get("end");
+      const startMs = windowStart ? Date.parse(windowStart) : Number.NaN;
+      const endMs = windowEnd ? Date.parse(windowEnd) : Number.NaN;
+      const slotsInWindow = slots.filter((entry) => {
+        const slotMs = Date.parse(entry.slotStart);
+        return slotMs >= startMs && slotMs < endMs;
+      });
+      return route.fulfill(
+        jsonResponse({
+          bookable: options.bookable ?? true,
+          slots: slotsInWindow,
+        }),
+      );
+    }
+
+    if (
+      path === `/api/booking/reservations/${reservationId}/reschedule` &&
+      request.method() === "POST"
+    ) {
+      const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      captured.reschedulePosts.push(body);
+      if (options.holdReschedule) {
+        await options.holdReschedule;
+      }
+      const status = options.rescheduleStatus ?? 200;
+      if (status !== 200) {
+        return route.fulfill(jsonResponse({}, status));
+      }
+      if (typeof body.slotStart === "string") {
+        currentSlotStart = body.slotStart;
+        const matched = slots.find(
+          (entry) => entry.slotStart === body.slotStart,
+        );
+        currentSlotEnd =
+          matched?.slotEnd ??
+          new Date(
+            Date.parse(currentSlotStart) + durationMinutes * 60 * 1000,
+          ).toISOString();
+      }
+      if (typeof body.guestTimeZone === "string") {
+        guestTimeZone = body.guestTimeZone;
+      }
+      return route.fulfill(
+        jsonResponse({
+          reservationId,
+          slotStart: currentSlotStart,
+          slotEnd: currentSlotEnd,
+          guestTimeZone,
+          durationMinutes,
+          hostDisplayName,
+          status: "confirmed",
+          bookingSlug: slug,
+        }),
+      );
+    }
+
+    return route.fulfill(jsonResponse({}));
+  });
+
+  const search = token ? `?token=${encodeURIComponent(token)}` : "";
+  await page.goto(`/book/reschedule/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -845,6 +1071,20 @@ export function formatSlotButtonLabel(
   }).format(new Date(slotStart));
   const escaped = time.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(escaped, "i");
+}
+
+export function formatSlotWhenLabel(
+  slotStart: string,
+  timeZone = "UTC",
+): string {
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(slotStart));
 }
 
 export function formatMonthDayButtonLabel(
