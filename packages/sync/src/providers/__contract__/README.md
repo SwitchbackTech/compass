@@ -6,7 +6,9 @@ Add a provider by listing `DiscoveryContractCase` entries in
 adapter's injectable narrow API (for Apple, the CalDAV client's `fetch`).
 
 The full suite (auth, reader, writer, notifications, normalizer) lands in P0
-WP-11 (#3236). This directory currently carries discovery cases only.
+WP-11 (#3236). This directory currently carries discovery, normalizer, and
+OAuth auth contract scaffolding. Password-only providers mark OAuth auth cases
+not-applicable via `AuthContractCapabilities.oauthRedirect`.
 
 ## Add Apple-style discovery coverage
 
