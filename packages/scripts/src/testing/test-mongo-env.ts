@@ -85,50 +85,88 @@ const testTargets = [
 console.log(`Running ${label} (${pkg})...`);
 
 /**
- * How long to wait for `bun test` to exit before declaring it wedged.
+ * A worker that ends still holding an open handle (a Mongo connection is the
+ * usual culprit: cleanupTestDb deliberately never disconnects, and the
+ * shared-mongod path makes stopMemoryMongo a no-op) never exits, so `bun test`
+ * never exits either. Bun has already printed its summary by then, so the
+ * summary is the result: once "Ran N tests across M files" appears, give the
+ * process a moment to exit on its own, then kill it and exit with the pass or
+ * fail Bun reported. Twice on 2026-09-03 this leak turned a fully green
+ * scripts suite into a four-minute wait and a red main.
  *
- * A worker that ends still holding an open handle never exits, and
- * `await proc.exited` then blocks forever - the run dies on the CI step's own
- * `timeout-minutes` with no output after the last passing test, which reads as
- * a mystery rather than a diagnosis. The slowest of these suites (sync) runs in
- * about 105s on ubuntu-latest, so four minutes is well clear of a legitimately
- * slow run while still landing inside the step timeout, where this can say what
- * actually happened and name the processes still alive.
+ * If no summary ever appears, the run is genuinely wedged; four minutes is
+ * well clear of the slowest suite (sync, ~105s on ubuntu-latest) and inside
+ * the CI step timeout, so the failure is named here instead of silently.
  */
 const EXIT_TIMEOUT_MS = 4 * 60 * 1000;
+const EXIT_GRACE_MS = 3_000;
+
+/** Bun writes its summary to stderr; reports fail + error counts once it lands. */
+function watchForSummary(
+  stream: ReadableStream<Uint8Array>,
+  onSummary: (failed: number) => void,
+): void {
+  const decoder = new TextDecoder();
+  let tail = "";
+  let failed = 0;
+  const reader = stream.getReader();
+  const pump = (): Promise<void> =>
+    reader.read().then(({ done, value }) => {
+      if (done) return;
+      const text = decoder.decode(value, { stream: true });
+      process.stderr.write(text);
+      tail = (tail + text).slice(-4096);
+      for (const line of tail.matchAll(/^\s*(\d+) (fail|error)s?$/gm)) {
+        failed += Number(line[1]);
+      }
+      if (/^Ran \d+ tests? across \d+ files?\./m.test(tail)) {
+        onSummary(failed);
+        failed = 0;
+        tail = "";
+      }
+      return pump();
+    });
+  void pump();
+}
 
 try {
   const proc = Bun.spawn(testTargets, {
     env,
     stdout: "inherit",
-    stderr: "inherit",
+    stderr: "pipe",
   });
 
   let wedged: ReturnType<typeof setTimeout> | undefined;
-  const code = await Promise.race([
-    proc.exited,
-    new Promise<number>((resolve) => {
-      wedged = setTimeout(() => {
+  let grace: ReturnType<typeof setTimeout> | undefined;
+  const code = await new Promise<number>((resolve) => {
+    proc.exited.then((exit) => resolve(exit ?? 1));
+    watchForSummary(proc.stderr, (failed) => {
+      grace = setTimeout(() => {
         console.error(
-          `\n${pkg}: tests stopped reporting but 'bun test' has not exited after ` +
-            `${formatDuration(started)}s. This is an open-handle leak in a test ` +
-            `worker, not a slow suite - a worker has finished its tests but is ` +
-            `still holding something open (a Mongo connection is the usual ` +
-            `culprit: cleanupTestDb deliberately never disconnects, and the ` +
-            `shared-mongod path makes stopMemoryMongo a no-op). Killing it so ` +
-            `the failure is visible rather than a silent step timeout.`,
+          `\n${pkg}: 'bun test' printed its summary but did not exit; a worker ` +
+            `is holding an open handle. Using the summary as the result.`,
         );
         proc.kill();
-        resolve(1);
-      }, EXIT_TIMEOUT_MS);
-    }),
-  ]);
+        resolve(failed > 0 ? 1 : 0);
+      }, EXIT_GRACE_MS);
+    });
+    wedged = setTimeout(() => {
+      console.error(
+        `\n${pkg}: tests stopped reporting and 'bun test' has not exited after ` +
+          `${formatDuration(started)}s with no summary. Killing it so the ` +
+          `failure is visible rather than a silent step timeout.`,
+      );
+      proc.kill();
+      resolve(1);
+    }, EXIT_TIMEOUT_MS);
+  });
   clearTimeout(wedged);
+  clearTimeout(grace);
 
   console.log(`\n${pkg}: finished in ${formatDuration(started)}s`);
 
   if (code !== 0) {
-    process.exit(code ?? 1);
+    process.exit(code);
   }
 } finally {
   await server.stop();

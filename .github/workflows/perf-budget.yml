@@ -75,9 +75,12 @@ jobs:
       - name: Serve build with compression
         # `serve` gzips responses the way production Caddy does in front of
         # serve-web.ts; measuring uncompressed delivery would inflate LCP by
-        # ~2s and flag the file server instead of the app.
+        # ~2s and flag the file server instead of the app. It is a
+        # devDependency so it comes from the bun install above: the npx
+        # download of it missed the 30 s startup window in 29 of 96 runs on
+        # 2026-09-03.
         run: |
-          npx --yes serve@14 -s build/web -l 9161 --no-clipboard &
+          bunx serve -s build/web -l 9161 --no-clipboard &
           for i in $(seq 1 30); do
             if curl -sf -o /dev/null http://localhost:9161/; then exit 0; fi
             sleep 1
