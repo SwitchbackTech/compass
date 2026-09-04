@@ -1,5 +1,6 @@
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -96,5 +97,77 @@ describe("Public booking rate limits", () => {
     await server
       .get("/api/booking/pages/quiet-neighbor-slug")
       .expect(Status.NOT_FOUND);
+  });
+});
+
+describe("Host admin booking rate limits", () => {
+  const baseDriver = new BaseDriver();
+
+  beforeAll(async () => {
+    await setupTestDb(import.meta.url);
+    await baseDriver.listen();
+  });
+
+  beforeEach(cleanupCollections);
+
+  afterAll(async () => {
+    await baseDriver.teardown();
+    await cleanupTestDb();
+  });
+
+  const sessionCookie = (userId: string) =>
+    `session=${JSON.stringify({ userId })}`;
+
+  const getAdminPage = (userId: string) =>
+    baseDriver
+      .getServer()
+      .get("/api/booking/page")
+      .set("Cookie", sessionCookie(userId));
+
+  const putAdminPage = (userId: string) =>
+    baseDriver
+      .getServer()
+      .put("/api/booking/page")
+      .set("Cookie", sessionCookie(userId))
+      .send({});
+
+  it("throttles GET /api/booking/page after 60 requests in a minute", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const userId = user._id.toString();
+    for (let i = 0; i < 60; i += 1) {
+      await getAdminPage(userId);
+    }
+    const throttled = await getAdminPage(userId);
+    expect(throttled.status).toBe(429);
+  });
+
+  it("throttles PUT /api/booking/page after 20 requests in a minute", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const userId = user._id.toString();
+    for (let i = 0; i < 20; i += 1) {
+      await putAdminPage(userId);
+    }
+    const throttled = await putAdminPage(userId);
+    expect(throttled.status).toBe(429);
+  });
+
+  it("does not throttle a different host's GET bucket", async () => {
+    const { user: busy } = await UtilDriver.setupTestUser();
+    const { user: quiet } = await UtilDriver.setupTestUser();
+    for (let i = 0; i < 61; i += 1) {
+      await getAdminPage(busy._id.toString());
+    }
+    const response = await getAdminPage(quiet._id.toString());
+    expect(response.status).not.toBe(429);
+  });
+
+  it("does not throttle a different host's PUT bucket", async () => {
+    const { user: busy } = await UtilDriver.setupTestUser();
+    const { user: quiet } = await UtilDriver.setupTestUser();
+    for (let i = 0; i < 21; i += 1) {
+      await putAdminPage(busy._id.toString());
+    }
+    const response = await putAdminPage(quiet._id.toString());
+    expect(response.status).not.toBe(429);
   });
 });
