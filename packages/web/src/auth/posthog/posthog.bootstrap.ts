@@ -26,6 +26,12 @@ export function initPosthog(): PostHog | undefined {
     api_host: ENV_WEB.POSTHOG_HOST!,
     // Assumes the US cloud; self-hosters on another instance would differ.
     ui_host: "https://us.posthog.com",
+    // Captured errors land on the event as `$exception_list[]` (type, value,
+    // stacktrace.frames) plus the flattened `$exception_types` /
+    // `$exception_values` arrays. The legacy `$exception_type` /
+    // `$exception_message` scalars are never sent by this SDK line, so a
+    // query on them reads null for every event and looks like a broken
+    // integration when nothing is wrong.
     capture_exceptions: {
       capture_unhandled_errors: true,
       capture_unhandled_rejections: true,
