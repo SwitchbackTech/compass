@@ -18,7 +18,7 @@
     "supertokens-node": "^23.0.1",
     "stripe": "^18.5.0",
     "tslib": "^2.4.0",
-    "zod": "^3.25.76"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",

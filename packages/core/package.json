@@ -21,7 +21,7 @@
     "winston": "^3.8.1",
     "winston-transport": "^4.7.0",
     "yaml": "^2.9.0",
-    "zod": "^3.25.76"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",

@@ -35,7 +35,7 @@
     "supertokens-web-js": "^0.16.0",
     "supertokens-website": "^20.1.5",
     "tinycolor2": "^1.6.0",
-    "zod": "^3.25.76",
+    "zod": "^4.5.4",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
