@@ -96,7 +96,7 @@ const toBookingUpdateSubmitRequest = (
     .slice(0, 40);
   return CommandSubmitRequestSchema.parse({
     idempotencyKey: IdempotencyKeySchema.parse(
-      `booking-update:${input.eventId}:${digest}`,
+      `update:${input.eventId}:${input.start}:${digest}`,
     ),
     eventId: input.eventId,
     expectedVersion: null,
@@ -109,13 +109,7 @@ const toBookingUpdateSubmitRequest = (
         description: input.description,
         location: null,
         organizer: null,
-        attendees: [
-          {
-            email: input.guest.email,
-            displayName: input.guest.displayName,
-            responseStatus: "needsAction",
-          },
-        ],
+        attendees: [],
         conference: null,
       },
       schedule: {
@@ -156,6 +150,9 @@ export class CalendarBookingService implements CalendarBookingPort {
         maxAgeMs: input.maxAgeMs ?? BOOKING_CONFIRMATION_MAX_AGE_MS,
         purpose: "booking_confirmation",
         ...(unbackedCalendarIds ? { unbackedCalendarIds } : {}),
+        ...(input.excludeEventIds
+          ? { excludeEventIds: [...input.excludeEventIds] }
+          : {}),
       },
     );
     if (!result.ok) {

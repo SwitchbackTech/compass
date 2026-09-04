@@ -17,6 +17,7 @@ export interface CalendarBookingGetAvailabilityInput {
   start: DateTime;
   end: DateTime;
   maxAgeMs?: number;
+  excludeEventIds?: readonly EventId[];
 }
 
 export interface CalendarBookingCreateEventInput {

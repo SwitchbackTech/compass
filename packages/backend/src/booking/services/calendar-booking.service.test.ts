@@ -86,6 +86,36 @@ describe("CalendarBookingService", () => {
         unbackedCalendarIds: [localId],
       }),
     );
+    expect(queryBusyAvailability.mock.calls[0]?.[1]).not.toHaveProperty(
+      "excludeEventIds",
+    );
+  });
+
+  it("forwards excludeEventIds on the busy query when provided", async () => {
+    const queryBusyAvailability = mock(async () => ({
+      ok: true as const,
+      value: busyResponse,
+    }));
+    const service = new CalendarBookingService({
+      queryBusyAvailability,
+      submitCommand: mock(async () => ({ ok: true as const, value: {} })),
+    } as unknown as SyncServiceClient);
+    const excluded = [faker.database.mongodbObjectId()];
+
+    await service.getAvailability(userId(), {
+      calendarIds: [calendarId()],
+      start: "2026-09-01T12:00:00.000Z",
+      end: "2026-09-02T12:00:00.000Z",
+      excludeEventIds: excluded,
+    });
+
+    expect(queryBusyAvailability).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        excludeEventIds: excluded,
+        purpose: "booking_confirmation",
+      }),
+    );
   });
 
   it("returns bookable false without throwing", async () => {
@@ -202,19 +232,34 @@ describe("CalendarBookingService", () => {
     });
 
     expect(submitCommand).toHaveBeenCalledTimes(1);
-    expect(submitCommand.mock.calls[0]?.[1]).toMatchObject({
+    const request = submitCommand.mock.calls[0]?.[1];
+    expect(request).toMatchObject({
       eventId,
       expectedVersion: null,
       input: {
         kind: "update",
         invitation: "all",
         attendeesEdit: "preserve",
+        scope: "all",
+        recurrenceId: null,
         content: {
           title: "Grace and Tyler",
           description: "bring tea",
+          location: null,
+        },
+        schedule: {
+          kind: "timed",
+          start: "2026-09-01T15:00:00.000Z",
+          end: "2026-09-01T15:30:00.000Z",
+          timeZone: "America/Denver",
         },
       },
     });
+    expect(request.idempotencyKey.startsWith(`update:${eventId}:`)).toBe(true);
+    expect(request.idempotencyKey).toContain("2026-09-01T15:00:00.000Z");
+    expect(request.input).not.toHaveProperty("createConference");
+    expect(request.input.content.attendees).toEqual([]);
+    expect(request.input.content.conference).toBeNull();
   });
 
   it("submits delete with invitation all", async () => {
