@@ -41,6 +41,11 @@ describe("agent-loop Routine contract", () => {
     expect(prompt).toContain("on the PR branch");
     expect(prompt).toContain("agent-automerge");
     expect(prompt).toContain("Never enter credentials");
+    expect(prompt).toContain("Open a **draft** PR");
+    expect(prompt).toContain("review_draft_pull_requests: false");
+    const ship = readFileSync(".agents/skills/ship/SKILL.md", "utf8");
+    expect(ship).toContain("Mark it ready only after");
+    expect(ship).toContain("`bun run verify` passes");
   });
 
   it("keeps merge-guard as the Verifier with booking-sized rails", () => {

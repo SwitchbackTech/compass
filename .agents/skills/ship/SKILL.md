@@ -131,10 +131,11 @@ the dependency and the next check time in the handoff record.
    `AGENTS.md`, and the complete diff **without** the implementer’s
    conclusions. Confirmed findings go back to Implementer as isolated fix
    commits, then re-verify and re-review only if the diff changed.
-5. **PR** — open or update a **ready** (not draft) pull request using
+5. **PR** — open or update a **draft** pull request using
    `.github/PULL_REQUEST_TEMPLATE.md` filled from executed evidence
    (verifier verdict, simplify result, review pointer). Do not add
-   unchecked manual-testing tasks. Do not leave it draft for a human look.
+   unchecked manual-testing tasks. Mark it ready only after
+   `bun run verify` passes. Do not leave it draft waiting for a human look.
 6. **Merge** — watch required checks. Once `/verify-change` is PASS, `/review`
    has no unresolved findings, and required GitHub checks are green,
    squash-merge immediately (`gh pr merge --squash --delete-branch`). Do not
