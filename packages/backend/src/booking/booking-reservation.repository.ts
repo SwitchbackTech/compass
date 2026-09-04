@@ -1,6 +1,7 @@
 import { type ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import { zObjectId } from "@core/types/type.utils";
+import dayjs from "@core/util/date/dayjs";
 import {
   type BookingReservationRecord,
   BookingReservationRecordSchema,
@@ -14,6 +15,43 @@ const ConfirmedSlotRowSchema = z.object({
   slotStart: z.date(),
 });
 
+/**
+ * Half-open [from, to) of `slotStart` values the slot engine can still see.
+ *
+ * Buffer collision uses the reservation interval expanded by `bufferMinutes`
+ * on each side, so a start `duration+buffer` before the window (or after it)
+ * can still block a candidate. `maxBookingsPerDay` counts every confirmed
+ * start on each local day that has a candidate, so the range also covers
+ * those local days in full.
+ */
+export const confirmedReservationScanRange = (
+  page: {
+    bufferMinutes: number | null;
+    durationMinutes: number;
+    timeZone: string;
+  },
+  windowStart: Date,
+  windowEnd: Date,
+): { from: Date; to: Date } => {
+  const bufferMs = (page.bufferMinutes ?? 0) * 60_000;
+  const durationMs = page.durationMinutes * 60_000;
+  const fromByBuffer = new Date(windowStart.getTime() - durationMs - bufferMs);
+  const toByBuffer = new Date(windowEnd.getTime() + durationMs + bufferMs);
+  const fromByDay = dayjs(windowStart)
+    .tz(page.timeZone)
+    .startOf("day")
+    .toDate();
+  const toByDay = dayjs(windowEnd)
+    .tz(page.timeZone)
+    .add(1, "day")
+    .startOf("day")
+    .toDate();
+  return {
+    from: new Date(Math.min(fromByBuffer.getTime(), fromByDay.getTime())),
+    to: new Date(Math.max(toByBuffer.getTime(), toByDay.getTime())),
+  };
+};
+
 export type InsertBookingReservationInput = Omit<
   BookingReservationRecord,
   "createdAt" | "updatedAt"
@@ -26,9 +64,16 @@ class BookingReservationRepository {
     return BookingReservationRecordSchema.parse(record);
   }
 
-  async listConfirmedStartsByPageId(pageId: ObjectId): Promise<Date[]> {
+  async listConfirmedStartsByPageId(
+    pageId: ObjectId,
+    range: { from: Date; to: Date },
+  ): Promise<Date[]> {
     const rows = await mongoService.bookingReservation
-      .find({ pageId, status: "confirmed" })
+      .find({
+        pageId,
+        status: "confirmed",
+        slotStart: { $gte: range.from, $lt: range.to },
+      })
       .project({ slotStart: 1 })
       .toArray();
     return rows.map((row) => ConfirmedSlotRowSchema.parse(row).slotStart);
