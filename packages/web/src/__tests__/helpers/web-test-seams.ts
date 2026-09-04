@@ -1,4 +1,3 @@
-import * as actualReactToastify from "react-toastify";
 import { resetUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
 import {
   registerSessionApiPort,

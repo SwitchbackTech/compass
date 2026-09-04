@@ -11,7 +11,6 @@ describe("getToastDefaultOptions", () => {
         color: "var(--text)",
       }),
     );
-
   });
 
   it("keeps the same chrome tokens in light theme", () => {
