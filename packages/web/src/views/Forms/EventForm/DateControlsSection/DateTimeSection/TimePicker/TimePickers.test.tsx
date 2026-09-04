@@ -88,7 +88,7 @@ describe("TimePickers", () => {
   // "h:mm A" and paired with the unchanged date, producing end-before-start and
   // an unhandled ZodError out of mapToBackend.
   it("moves the start to the previous day when correcting it backwards past midnight", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T00:30:00.000Z")}
@@ -104,7 +104,7 @@ describe("TimePickers", () => {
   });
 
   it("moves the end to the next day when correcting it forwards past midnight", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T22:00:00.000Z")}
@@ -121,7 +121,7 @@ describe("TimePickers", () => {
   // it to the compliment's date instead counts an already-overnight draft's
   // span twice, silently stretching this event to 47 hours.
   it("does not add a second day when correcting a draft that already crosses midnight", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T23:30:00.000Z")}
@@ -135,7 +135,7 @@ describe("TimePickers", () => {
   });
 
   it("shifts the end later to keep the duration when start moves past it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T06:00:00.000Z")}
@@ -150,7 +150,7 @@ describe("TimePickers", () => {
   });
 
   it("shifts the start earlier to keep the duration when end moves before it", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T06:00:00.000Z")}
@@ -165,7 +165,7 @@ describe("TimePickers", () => {
   });
 
   it("shifts the start from a keyboard commit that would invert the times", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T06:00:00.000Z")}
@@ -182,7 +182,7 @@ describe("TimePickers", () => {
   });
 
   it("does not change the draft when Tabbing through the time pickers", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T13:00:00.000Z")}
@@ -203,7 +203,7 @@ describe("TimePickers", () => {
   });
 
   it("does not reject a later overnight end just because the clock is before start", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         start={new Date("2026-04-24T22:00:00.000Z")}
