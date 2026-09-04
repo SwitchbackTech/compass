@@ -5,6 +5,7 @@ import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import {
   buildProviderRegistry,
   GOOGLE_CALLBACK_PATH,
+  GOOGLE_NOTIFICATIONS_PATH,
 } from "@sync/providers/provider-registry";
 import { describe, expect, it } from "bun:test";
 
@@ -75,6 +76,10 @@ describe("ProviderRegistry", () => {
     );
     const google = registry.get("google");
     expect(google.callbackPath).toBe(GOOGLE_CALLBACK_PATH);
+    expect(google.notificationsCallbackPath).toBe(GOOGLE_NOTIFICATIONS_PATH);
+    expect(registry.callbackUrlFor("https://example.test", "google")).toBe(
+      "https://example.test/sync/notifications/google",
+    );
     expect(google.capabilities).toEqual(
       expect.arrayContaining([
         "readEvents",

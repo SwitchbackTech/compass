@@ -196,7 +196,7 @@ describe("dispatchSyncJob", () => {
     jobs,
     commands,
     custody,
-    callbackUrl: "https://sync.example/sync/notifications/google",
+    callbackUrlFor: () => "https://sync.example/sync/notifications/google",
     invalidations,
   });
 

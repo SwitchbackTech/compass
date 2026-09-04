@@ -1,10 +1,19 @@
-import { type Express } from "express";
+import { type Express, type Request, type Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import { ProviderKindSchema } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { verifyNotification } from "@sync/notifications/notification-verification";
-import { parseGoogleNotification } from "@sync/providers/google/google-notifications.adapter";
+import {
+  type NotificationParseResult,
+  type ProviderNotification,
+} from "@sync/providers/provider-notifications.port";
+import {
+  GOOGLE_NOTIFICATIONS_PATH,
+  NOTIFICATIONS_PARAM_PATH,
+  type ProviderRegistry,
+} from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   calendarListSyncJob,
@@ -14,9 +23,9 @@ import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
-// Public reverse-proxy path under the same `/sync/*` prefix as the OAuth
-// callback (no Google Console registration required for webhooks).
-export const NOTIFICATIONS_PATH = "/sync/notifications/google";
+// Legacy alias: Google push ingress (also registered under
+// NOTIFICATIONS_PARAM_PATH with provider=google).
+export const NOTIFICATIONS_PATH = GOOGLE_NOTIFICATIONS_PATH;
 
 // Public callbacks arrive fast and in bursts (Google fans out per change); this
 // backstop bounds a flood or a spoof storm without shaping normal delivery.
@@ -32,6 +41,7 @@ const logger = Logger("sync:notification.routes");
 export interface NotificationApiDeps {
   mongo: SyncMongoService;
   execution: SyncExecutionMode;
+  registry: ProviderRegistry;
   now?: () => number;
 }
 
@@ -45,93 +55,110 @@ export function registerNotificationRoutes(
   app: Express,
   deps: NotificationApiDeps,
 ): void {
-  app.post(NOTIFICATIONS_PATH, notificationRateLimit, async (req, res) => {
-    const notification = parseGoogleNotification(
-      req.headers as Record<string, string | undefined>,
-    );
-    if (!notification) {
-      res.status(Status.BAD_REQUEST).end();
-      return;
-    }
+  const handleNotification =
+    (routeProvider: ReturnType<typeof ProviderKindSchema.parse>) =>
+    async (req: Request, res: Response) => {
+      const parsed = deps.registry
+        .get(routeProvider)
+        .adapters.notifications.parseNotification({
+          headers: req.headers as Record<string, string | undefined>,
+          body: req.body,
+          query: req.query as Record<string, unknown>,
+        });
 
-    // A passive service has no subscriptions to match; accept and drop.
-    if (deps.execution === "passive" || !deps.mongo.isConnected) {
-      res.status(Status.OK).end();
-      return;
-    }
-
-    try {
-      const resources = new SyncResourceRepository(deps.mongo.db);
-      const resource = await resources.findBySubscriptionId(
-        notification.channelId,
-      );
-      const now = new Date((deps.now ?? Date.now)());
-      const verdict = verifyNotification(notification, resource, now);
-
-      // Never reveal the verdict to the caller (response stays 200 either
-      // way), but a rejection is still worth a quiet log line - a fleet-wide
-      // channel/resource desync (e.g. every callback suddenly unknownChannel)
-      // would otherwise be invisible until reconcile's 15-min fallback masks
-      // the symptom.
-      if (verdict.status === "rejected") {
-        logger.warn(
-          `Rejected notification for channel ${notification.channelId}: ${verdict.reason}`,
-        );
+      if (parsed === null) {
+        res.status(Status.BAD_REQUEST).end();
+        return;
+      }
+      if (isValidationHandshake(parsed)) {
+        res.status(Status.OK).type("text/plain").send(parsed.body);
+        return;
+      }
+      if (!("channelId" in parsed)) {
+        res.status(Status.BAD_REQUEST).end();
+        return;
       }
 
-      // Only an authentic change schedules work. Coalescing on the resource
-      // collapses duplicate deliveries of the same change into one job.
-      if (verdict.status === "process" && resource) {
-        // A calendarList notification means the LIST itself changed, so make the
-        // resulting pass re-enumerate instead of listing incrementally from the
-        // stored cursor. Clearing the cursor is the one existing mechanism for
-        // that (syncCalendarList reads it fresh at execution time), so this works
-        // whether the pass comes from the enqueue below or from a job that
-        // already coalesced on this connection's key.
-        //
-        // Scoped to calendarList: clearing an events cursor would force a full
-        // re-import. Done first because its failure mode is the harmless one — a
-        // cleared cursor with no job just means the next pass runs full, whereas
-        // a stamped marker with no clear would strand the change on the sweep.
-        if (resource.resourceKind === "calendarList") {
-          await resources.clearSyncCursor(
-            resource.tenantId,
-            resource.principalId,
-            resource._id,
-          );
-        }
-        // Stamp BEFORE enqueuing. The enqueue below no-ops whenever a job
-        // already holds this coalescing key — including the CLAIMED row of a
-        // job already in flight, which may have read the provider before this
-        // change existed. The marker is what survives that: the running job's
-        // compare-and-clear (events pull and calendar-list sync alike) fails
-        // against it and the job goes round again. Stamping first also keeps
-        // the ordering safe if the enqueue throws — a marker with no job is
-        // recovered by the sweeps, whereas a job with no marker could clear a
-        // change it never read.
-        await resources.markChangeNotified(
+      await processNotification(deps, parsed, res);
+    };
+
+  app.post(
+    NOTIFICATIONS_PATH,
+    notificationRateLimit,
+    handleNotification("google"),
+  );
+  app.post(NOTIFICATIONS_PARAM_PATH, notificationRateLimit, (req, res) => {
+    const parsed = ProviderKindSchema.safeParse(req.params["provider"]);
+    if (!parsed.success || !deps.registry.has(parsed.data)) {
+      res.status(Status.NOT_FOUND).end();
+      return;
+    }
+    return handleNotification(parsed.data)(req, res);
+  });
+}
+
+function isValidationHandshake(
+  parsed: NotificationParseResult,
+): parsed is { kind: "validation"; body: string } {
+  return (
+    typeof parsed === "object" &&
+    parsed !== null &&
+    "kind" in parsed &&
+    parsed.kind === "validation"
+  );
+}
+
+async function processNotification(
+  deps: NotificationApiDeps,
+  notification: ProviderNotification,
+  res: Response,
+): Promise<void> {
+  // A passive service has no subscriptions to match; accept and drop.
+  if (deps.execution === "passive" || !deps.mongo.isConnected) {
+    res.status(Status.OK).end();
+    return;
+  }
+
+  try {
+    const resources = new SyncResourceRepository(deps.mongo.db);
+    const resource = await resources.findBySubscriptionId(
+      notification.channelId,
+    );
+    const now = new Date((deps.now ?? Date.now)());
+    const verdict = verifyNotification(notification, resource, now);
+
+    if (verdict.status === "rejected") {
+      logger.warn(
+        `Rejected notification for channel ${notification.channelId}: ${verdict.reason}`,
+      );
+    }
+
+    if (verdict.status === "process" && resource) {
+      if (resource.resourceKind === "calendarList") {
+        await resources.clearSyncCursor(
           resource.tenantId,
           resource.principalId,
           resource._id,
-          now,
         );
-        // Background priority on purpose: webhooks are provider-paced.
-        // Promoting them to user priority would make the entire steady state
-        // urgent and defeat the tier that protects Refresh / post-OAuth work.
-        const job =
-          resource.resourceKind === "calendarList"
-            ? calendarListSyncJob(resource, now)
-            : resourceJob(resource, "incrementalPull", now);
-        await new JobRepository(deps.mongo.db).enqueue(job);
       }
-      res.status(Status.OK).end();
-    } catch (error) {
-      // A storage failure is the one case worth a retry, so signal it.
-      logger.error(
-        `Failed to process notification for channel ${notification.channelId}`,
-        redactedCause(error),
+      await resources.markChangeNotified(
+        resource.tenantId,
+        resource.principalId,
+        resource._id,
+        now,
       );
-      res.status(Status.INTERNAL_SERVER).end();
+      const job =
+        resource.resourceKind === "calendarList"
+          ? calendarListSyncJob(resource, now)
+          : resourceJob(resource, "incrementalPull", now);
+      await new JobRepository(deps.mongo.db).enqueue(job);
     }
-  });
+    res.status(Status.OK).end();
+  } catch (error) {
+    logger.error(
+      `Failed to process notification for channel ${notification.channelId}`,
+      redactedCause(error),
+    );
+    res.status(Status.INTERNAL_SERVER).end();
+  }
 }

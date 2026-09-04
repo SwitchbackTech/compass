@@ -29,6 +29,7 @@ export interface ProviderRegistration {
   scopes: ProviderScopes;
   capabilities: readonly ProviderCapability[];
   callbackPath: string;
+  notificationsCallbackPath: string;
   capabilitiesFromScopes(granted: readonly string[]): ProviderCapability[];
 }
 
@@ -55,9 +56,16 @@ export class ProviderRegistry {
   kinds(): ProviderKind[] {
     return [...this.registrations.keys()];
   }
+
+  callbackUrlFor(baseUrl: string, kind: ProviderKind): string {
+    return `${baseUrl}${this.get(kind).notificationsCallbackPath}`;
+  }
 }
 
 export const GOOGLE_CALLBACK_PATH = "/sync/google";
+export const GOOGLE_NOTIFICATIONS_PATH = "/sync/notifications/google";
+export const OAUTH_CALLBACK_PARAM_PATH = "/sync/:provider";
+export const NOTIFICATIONS_PARAM_PATH = "/sync/notifications/:provider";
 
 export function buildProviderRegistry(
   config: SyncConfig,
@@ -73,6 +81,7 @@ export function buildProviderRegistry(
       scopes: { forFeatures: googleScopesForFeatures },
       capabilities: GOOGLE_PROVIDER_CAPABILITIES,
       callbackPath: GOOGLE_CALLBACK_PATH,
+      notificationsCallbackPath: GOOGLE_NOTIFICATIONS_PATH,
       capabilitiesFromScopes: googleCapabilitiesFromScopes,
     });
   }

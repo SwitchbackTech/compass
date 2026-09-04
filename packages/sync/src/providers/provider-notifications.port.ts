@@ -25,6 +25,17 @@ export interface ProviderNotification {
   readonly state: NotificationState;
 }
 
+export type NotificationParseResult =
+  | ProviderNotification
+  | { readonly kind: "validation"; readonly body: string }
+  | null;
+
+export interface NotificationRequest {
+  readonly headers: Record<string, string | undefined>;
+  readonly body: unknown;
+  readonly query: Record<string, unknown>;
+}
+
 // A provider-neutral notification port. Channel lifecycle (watch/stop) and the
 // provider-specific callback header shapes stay inside the adapter; the domain
 // works with the normalized ProviderNotification and the verification verdict.
@@ -50,6 +61,11 @@ export interface ProviderNotificationAdapter {
     readonly channelId: string;
     readonly resourceId: string;
   }): Promise<void>;
+
+  // Normalize an inbound callback into a ProviderNotification, a provider
+  // validation handshake (Microsoft's subscription echo), or null when the
+  // request is not recognizable.
+  parseNotification(request: NotificationRequest): NotificationParseResult;
 }
 
 // Why a mutation of a channel could not complete.

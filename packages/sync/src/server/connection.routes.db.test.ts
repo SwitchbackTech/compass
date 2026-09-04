@@ -28,6 +28,10 @@ import {
   type ProviderAuthorization,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
+import {
+  buildProviderRegistry,
+  ProviderRegistry,
+} from "@sync/providers/provider-registry";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   ADOPT_GOOGLE_AUTHORIZATION_PATH,
@@ -689,8 +693,9 @@ describe("GET /sync/google", () => {
   const startService = async (
     config: SyncConfig,
     authAdapter?: ProviderAuthAdapter,
+    registry?: ProviderRegistry,
   ) => {
-    service = createSyncService(config, { mongo, authAdapter });
+    service = createSyncService(config, { mongo, authAdapter, registry });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -701,6 +706,7 @@ describe("GET /sync/google", () => {
       tenantId: tenantId as TenantId,
       principalId: principalId as PrincipalId,
       connectionId: null,
+      provider: "google",
       issuedAt: Date.now(),
     });
 
@@ -888,6 +894,7 @@ describe("GET /sync/google", () => {
       tenantId: tenantId as TenantId,
       principalId: principalId as PrincipalId,
       connectionId: connectionId as ConnectionId,
+      provider: "google",
       issuedAt: Date.now(),
     });
 
@@ -986,6 +993,47 @@ describe("GET /sync/google", () => {
     );
 
     expect(statusOf(res)).toBe("error");
+    expect(
+      await connections.listByPrincipal(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+      ),
+    ).toHaveLength(0);
+  });
+
+  const registryWithMicrosoft = (authAdapter: ProviderAuthAdapter) => {
+    const config = activeConfig();
+    const google = buildProviderRegistry(config, {
+      google: { auth: authAdapter },
+    }).get("google");
+    return new ProviderRegistry(
+      new Map([
+        ["google", google],
+        [
+          "microsoft",
+          {
+            ...google,
+            callbackPath: "/sync/microsoft",
+            notificationsCallbackPath: "/sync/notifications/microsoft",
+          },
+        ],
+      ]),
+    );
+  };
+
+  it("rejects a google state presented on another provider callback with stateMismatch", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter, registryWithMicrosoft(adapter));
+
+    const res = await fetch(
+      `${base}/sync/microsoft?code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+      { redirect: "manual" },
+    );
+
+    expect(res.status).toBe(302);
+    expect(statusOf(res)).toBe("stateMismatch");
+    expect(adapter.exchanges).toHaveLength(0);
     expect(
       await connections.listByPrincipal(
         tenantId as TenantId,

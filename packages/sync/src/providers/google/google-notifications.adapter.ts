@@ -185,6 +185,14 @@ export class GoogleNotificationAdapter implements ProviderNotificationAdapter {
       throw classifyWatchError(error);
     }
   }
+
+  parseNotification(request: {
+    headers: Record<string, string | undefined>;
+    body: unknown;
+    query: Record<string, unknown>;
+  }): ProviderNotification | null {
+    return parseGoogleNotification(request.headers);
+  }
 }
 
 // Normalize Google callback headers into a ProviderNotification, or null if
