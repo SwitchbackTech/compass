@@ -202,6 +202,7 @@ export const useWeekShortcutOwner = ({
   // targets the post-shift card rather than a node the shift is about to
   // replace.
   const pendingCarryFocusIdRef = useRef<string | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: weekDays landing is the trigger; the id comes from a ref
   useEffect(() => {
     const eventId = pendingCarryFocusIdRef.current;
     if (!eventId) return;

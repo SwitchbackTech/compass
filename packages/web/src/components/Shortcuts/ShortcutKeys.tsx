@@ -55,6 +55,7 @@ export function ShortcutKeys({ keys, title, className }: Props) {
       className={classNames("inline-flex items-center gap-1", className)}
     >
       {cleaned.map((key, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: keycap sequences repeat keys; position is the identity
         <ShortcutHint key={`${key}-${index}`} variant="keycap">
           <ShortCutLabel k={normalizeKeyToken(key)} />
         </ShortcutHint>

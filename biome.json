@@ -127,7 +127,8 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noConsole": "off"
+            "noConsole": "off",
+            "noTemplateCurlyInString": "off"
           }
         }
       }

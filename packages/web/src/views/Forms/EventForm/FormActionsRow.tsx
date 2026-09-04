@@ -62,6 +62,7 @@ export const FormActionsRow: React.FC<Props> = ({
   });
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: fieldset's min-inline-size breaks the flex row; role="group" is the accessible equivalent
     <div
       aria-label="Event actions"
       className="flex items-center justify-end gap-1"

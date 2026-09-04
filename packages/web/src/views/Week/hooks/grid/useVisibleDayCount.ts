@@ -52,6 +52,7 @@ export const useVisibleDayCount = () => {
     [measureNode],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: marginLeft changes the measurable width without firing a resize
   useEffect(() => {
     if (nodeRef.current) {
       measureNode(nodeRef.current);

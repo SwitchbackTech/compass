@@ -110,7 +110,7 @@ describe("recurrenceScopeOpportunityActions", () => {
 
   it("records a decline when a newer ask supersedes a live edit ask", () => {
     recurrenceScopeOpportunityActions.reset();
-    const id1 = recurrenceScopeOpportunityActions.begin({
+    recurrenceScopeOpportunityActions.begin({
       kind: "replace",
       original,
       input: {
@@ -169,7 +169,7 @@ describe("recurrenceScopeOpportunityActions", () => {
 
   it("clear() leaves the ask undeclined", () => {
     recurrenceScopeOpportunityActions.reset();
-    const id = recurrenceScopeOpportunityActions.begin({
+    recurrenceScopeOpportunityActions.begin({
       kind: "replace",
       original,
       input: {

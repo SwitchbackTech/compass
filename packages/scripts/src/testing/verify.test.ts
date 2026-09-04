@@ -294,6 +294,7 @@ describe("runVerify", () => {
     expect(logs.lines.join("\n")).toContain("Tier test:scripts:fast:");
     expect(logs.lines.join("\n")).toContain("── test:scripts:fast ──");
     expect(logs.lines.join("\n")).toContain("All checks passed");
+    expect(logs.lines.at(-1)).toBe("VERDICT: PASS");
   });
 
   it("prints no packages detected and still runs type-check, lint, and knip", async () => {
@@ -340,6 +341,7 @@ describe("runVerify", () => {
 
     expect(exitCode).toBe(1);
     expect(logs.errors.join("\n")).toContain("Failed: type-check");
+    expect(logs.lines.at(-1)).toBe("VERDICT: FAIL");
   });
 
   it("selects e2e for an e2e/-only diff and reports incomplete parity when Chromium is missing", async () => {
@@ -365,6 +367,24 @@ describe("runVerify", () => {
     expect(logs.lines.join("\n")).toContain(PLAYWRIGHT_INSTALL_COMMAND);
     expect(logs.lines.join("\n")).toContain("CI parity incomplete");
     expect(logs.lines.join("\n")).not.toContain("All checks passed");
+    expect(logs.lines.at(-1)).toBe("VERDICT: INCOMPLETE");
+  });
+
+  it("exits 1 on an incomplete run under --strict", async () => {
+    const { spawn } = recordingSpawn();
+    const logs = captureLogs();
+    const exitCode = await runVerify(["--strict"], {
+      git: gitStub({
+        diffs: { "abc123...HEAD": ["e2e/calendar.spec.ts"] },
+      }),
+      spawn,
+      log: logs.log,
+      chromiumAvailable: () => false,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(logs.lines.at(-1)).toBe("VERDICT: INCOMPLETE");
+    expect(logs.errors.join("\n")).toContain("--strict");
   });
 
   it("starts Playwright only after independent checks finish", async () => {
