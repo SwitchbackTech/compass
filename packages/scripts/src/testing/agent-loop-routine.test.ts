@@ -33,6 +33,9 @@ describe("agent-loop Routine contract", () => {
       "utf8",
     );
     for (const pattern of [
+      "'^\\.github/workflows/(deploy-|_deploy-environment|publish-docker-images|release-on-main|sync-docs|agent-loop|agent-review|error-autofix)'",
+      "'^\\.github/scripts/(agent-loop|autofix|deploy-|discord-)'",
+      "'^\\.github/(agent-loop|prompts|docker)/'",
       "'^self-host/'",
       "'^packages/backend/src/auth/'",
       "'^packages/web/src/auth/'",
@@ -43,6 +46,19 @@ describe("agent-loop Routine contract", () => {
     ]) {
       expect(guard).toContain(pattern);
     }
+  });
+
+  it("lets CI-speed workflow files auto-merge but never the agent or deploy ones", () => {
+    const guard = readFileSync(
+      ".github/scripts/agent-loop-merge-guard.sh",
+      "utf8",
+    );
+    // A blanket '^\.github/' made every CI change a human merge; the three
+    // slowest merges of 2026-09-04 were CI-speed PRs waiting 10+ hours.
+    expect(guard).not.toContain("'^\\.github/'");
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    expect(unit).toContain("rhysd/actionlint");
+    expect(unit).toContain("agent-loop-merge-guard.test.sh");
   });
 
   it("launches the next WP on merge with per-job concurrency", () => {

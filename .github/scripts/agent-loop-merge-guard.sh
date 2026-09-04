@@ -23,8 +23,16 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 PR_NUMBER=${1:-}
 
+# .github/ is refused only where a change could reach secrets, deploys, or
+# the agents themselves: deploy and release workflows, the loop and autofix
+# workflows, their scripts and prompts, allowlists, and Docker build context.
+# Test, e2e, and perf workflows, detect-code-changes.sh, templates,
+# dependabot, and stale config may auto-merge; actionlint and the loop
+# script tests gate them in the `static` job.
 NO_AUTOMERGE_PATH_PATTERNS=(
-  '^\.github/'
+  '^\.github/workflows/(deploy-|_deploy-environment|publish-docker-images|release-on-main|sync-docs|agent-loop|agent-review|error-autofix)'
+  '^\.github/scripts/(agent-loop|autofix|deploy-|discord-)'
+  '^\.github/(agent-loop|prompts|docker)/'
   '^self-host/'
   '^packages/backend/src/auth/'
   '^packages/web/src/auth/'
