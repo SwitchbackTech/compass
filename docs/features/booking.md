@@ -240,9 +240,12 @@ decides whether a busy interval occupies a slot
   description carries it too only when guests cannot invite others (see
   above). A permalink without the token does not invent a cancel path.
 - Token is unguessable and stored hashed on the reservation as
-  `cancelTokenHash`.
-- Cancel deletes the calendar event (host as organizer) and marks the
-  reservation cancelled. Idempotent: a second cancel is a no-op success.
+  `cancelTokenHash`. It stays valid until `slotEnd` and then returns
+  the same generic not-found as an unknown token.
+- Cancel marks the reservation cancelled, then deletes the calendar
+  event (host as organizer, `invitation: "all"`). A failed delete
+  still frees the slot; retry deletes while `calendarEventId` remains.
+  Idempotent: a second cancel after a successful delete is a no-op.
 - Expired / unknown tokens return a generic not-found page, not a
   leak of whether the booking existed.
 
@@ -321,13 +324,18 @@ Unauthenticated:
 
 - `GET /api/booking/pages/:slug` — public page (host display name,
   duration, timezone, enabled, optional welcome text). `404` when
-  missing or disabled.
+  missing or disabled. A host who cannot write is `409` with
+  `This page is not accepting bookings.` (no billing, plan, or payment
+  wording).
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
   instants in the guest timezone for that window. The guest UI requests
   **one month at a time** (plus prefetch of adjacent months). Window
-  must be within the 60-day horizon.
+  must be within the 60-day horizon. A host who cannot write is
+  `{ slots: [], bookable: false }`.
 - `POST /api/booking/pages/:slug/reservations` — `{slotStart, guestName,
-  guestEmail, notes?, guestTimeZone}`. Re-checks busy, then creates.
+  guestEmail, notes?, guestTimeZone}`. Re-checks billing and busy, then
+  creates. A host who cannot write is the same `409` as GET page and
+  submits no create command.
 - `GET /api/booking/reservations/:id` — public confirmation payload
   (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
   `status`, `bookingSlug`, `guestName`, `notes`). `404` when missing. No
@@ -393,6 +401,17 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 
 ### Named warts
 
+- **Public booking rate limits are per process.** `express-rate-limit`
+  buckets live in memory on each app replica. The numbers in
+  `booking.routes.config.ts` (for example 10 confirms per minute) are
+  per instance: N replicas yield about N times that, and a client that
+  reconnects to a different replica resets its bucket. Accepted for v1
+  while `isBookingEnabled` stays false in production.
+- **Cancel and edit tokens travel in the query string.** The bearer
+  lives in `?token=` on `/book/confirmed/:id` and `/book/cancel/:id`,
+  so it can appear in browser history, Referer headers, and access
+  logs. Accepted for v1: a fragment or POST landing page would break
+  the confirmation permalink. Tokens stop working at `slotEnd`.
 - **Guest email is not editable after confirm.** The attendee identity and
   Google invite are bound to the address collected at booking. Changing it
   would send a new invitation, which v1.5 does not do.

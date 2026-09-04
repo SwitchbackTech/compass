@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { AdminPutBookingPageInputSchema } from "@core/types/booking.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -9,15 +10,23 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import * as billingGuard from "@backend/billing/billing.guard";
+import {
+  generateCancelToken,
+  hashCancelToken,
+} from "@backend/booking/booking-cancel-token";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
-import { PublicBookingService } from "@backend/booking/services/public-booking.service";
+import {
+  PublicBookingService,
+  publicBookingCompensationLog,
+} from "@backend/booking/services/public-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
+import { eventMutationError } from "@backend/event/event.error";
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,
@@ -263,6 +272,75 @@ describe("PublicBookingService", () => {
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
     expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects confirm when the host cannot write and submits no create command", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns unbookable slots when the host cannot write", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response).toEqual({ slots: [], bookable: false });
+    expect(getAvailability).not.toHaveBeenCalled();
+  });
+
+  it("rejects public page GET when the host cannot write without billing wording", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .getPublicPage(slug)
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
   });
 
   it("rejects slot not in engine output", async () => {
@@ -570,6 +648,79 @@ describe("PublicBookingService", () => {
     expect(stored?.status).toBe("cancelled");
   });
 
+  it("marks cancelled before delete so a failed provider delete does not keep the slot", async () => {
+    const { slug } = await enableBookingPage();
+    const slotStart = "2026-09-07T10:00:00.000Z";
+    const created = await service.createReservation(slug, {
+      slotStart,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    expect(token).toBeTruthy();
+    const reservationId = new ObjectId(created.reservationId);
+
+    deleteBookingEvent.mockImplementation(async () => {
+      throw new BaseError(
+        "SYNC_UNAVAILABLE",
+        "could not delete the booking event",
+        Status.SERVICE_UNAVAILABLE,
+        true,
+      );
+    });
+
+    await expect(
+      service.cancelReservation(reservationId, { token }),
+    ).rejects.toMatchObject({ result: "SYNC_UNAVAILABLE" });
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.status).toBe("cancelled");
+    expect(stored?.calendarEventId).toBeTruthy();
+
+    const retry = await service.createReservation(slug, {
+      slotStart,
+      guestName: "Grace Hopper",
+      guestEmail: "grace@example.com",
+      guestTimeZone: "America/New_York",
+    });
+    expect(retry.reservationId).toBeTruthy();
+
+    deleteBookingEvent.mockImplementation(async () => undefined);
+    await service.cancelReservation(reservationId, { token });
+    expect(deleteBookingEvent).toHaveBeenCalledTimes(2);
+    const afterRetry =
+      await bookingReservationRepository.findById(reservationId);
+    expect(afterRetry?.status).toBe("cancelled");
+    expect(afterRetry?.calendarEventId).toBeNull();
+  });
+
+  it("rejects an expired cancel token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: null,
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.cancelReservation(reservationId, { token }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(deleteBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.status).toBe("confirmed");
+  });
+
   it("returns minimal public reservation details", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
@@ -675,6 +826,103 @@ describe("PublicBookingService", () => {
     expect(response.slots.map((slot) => slot.slotStart)).not.toContain(booked);
   });
 
+  it("does not fetch a confirmed reservation far outside the requested window", async () => {
+    const { slug, pageId } = await enableBookingPage();
+    await seedConfirmedReservation(
+      pageId,
+      "2025-09-08T10:00:00.000Z",
+      "2025-09-08T10:30:00.000Z",
+    );
+    const listSpy = spyOn(
+      bookingReservationRepository,
+      "listConfirmedStartsByPageId",
+    );
+
+    try {
+      const response = await service.getSlots(slug, {
+        start: "2026-09-07T00:00:00.000Z",
+        end: "2026-09-08T00:00:00.000Z",
+        timeZone: "UTC",
+      });
+
+      const fetched = (await listSpy.mock.results[0]?.value) as Date[];
+      expect(fetched.map((start) => start.toISOString())).not.toContain(
+        "2025-09-08T10:00:00.000Z",
+      );
+      expect(response.bookable).toBe(true);
+      expect(response.slots.map((slot) => slot.slotStart)).toContain(
+        "2026-09-07T10:00:00Z",
+      );
+    } finally {
+      listSpy.mockRestore();
+    }
+  });
+
+  it("still blocks the adjacent slot when a reservation sits just outside the window inside the buffer", async () => {
+    const { slug, pageId } = await enableBookingPage("Buffer Host", {
+      bufferMinutes: 15,
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-07T09:00:00.000Z",
+      "2026-09-07T09:30:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T09:30:00.000Z",
+      end: "2026-09-07T11:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.slots.map((slot) => slot.slotStart)).not.toContain(
+      "2026-09-07T09:30:00Z",
+    );
+    expect(response.slots.map((slot) => slot.slotStart)).toContain(
+      "2026-09-07T09:45:00Z",
+    );
+  });
+
+  it("still blocks the last slot when a buffered reservation starts after local midnight", async () => {
+    const { slug, pageId } = await enableBookingPage("Late Buffer Host", {
+      bufferMinutes: 30,
+      weeklyAvailability: [{ weekday: 1, start: "21:00", end: "23:59" }],
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-08T00:10:00.000Z",
+      "2026-09-08T00:40:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T21:00:00.000Z",
+      end: "2026-09-07T23:30:00.000Z",
+      timeZone: "UTC",
+    });
+
+    const starts = response.slots.map((slot) => slot.slotStart);
+    expect(starts).toContain("2026-09-07T21:00:00Z");
+    expect(starts).not.toContain("2026-09-07T23:15:00Z");
+  });
+
+  it("still applies max bookings per day when the only reservation is earlier the same local day", async () => {
+    const { slug, pageId } = await enableBookingPage("Cap Host", {
+      maxBookingsPerDay: 1,
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-07T10:00:00.000Z",
+      "2026-09-07T10:30:00.000Z",
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T14:00:00.000Z",
+      end: "2026-09-07T17:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response.slots).toEqual([]);
+  });
+
   it("accepts a second non-overlapping booking on the same page", async () => {
     const { slug } = await enableBookingPage();
     await service.createReservation(slug, {
@@ -729,6 +977,59 @@ describe("PublicBookingService", () => {
         new Date("2026-09-07T12:00:00.000Z"),
       );
     expect(survivors).toHaveLength(1);
+  });
+
+  it("logs a failed race compensation without changing SLOT_UNAVAILABLE", async () => {
+    const { slug, pageId, userId, calendarId } = await enableBookingPage();
+    createBookingEvent.mockImplementation(async () => {
+      await seedConfirmedReservation(
+        pageId,
+        "2026-09-07T10:15:00.000Z",
+        "2026-09-07T10:45:00.000Z",
+      );
+      return "our-evt";
+    });
+    deleteBookingEvent.mockImplementation(async () => {
+      throw new BaseError(
+        "SYNC_UNAVAILABLE",
+        "could not delete the orphaned event",
+        Status.SERVICE_UNAVAILABLE,
+        true,
+      );
+    });
+    const logSpy = spyOn(publicBookingCompensationLog, "failed");
+
+    try {
+      await expect(
+        service.createReservation(slug, {
+          slotStart: "2026-09-07T10:00:00.000Z",
+          guestName: "Ada Lovelace",
+          guestEmail: "ada@example.com",
+          guestTimeZone: "Europe/London",
+        }),
+      ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+
+      expect(logSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy.mock.calls[0]?.[0]).toMatchObject({
+        result: "SYNC_UNAVAILABLE",
+      });
+      expect(logSpy.mock.calls[0]?.[1]).toMatchObject({
+        tenantId: userId.toString(),
+        principalId: userId.toString(),
+        calendarId,
+        eventId: "our-evt",
+        slotStart: "2026-09-07T10:00:00.000Z",
+      });
+      const survivors =
+        await bookingReservationRepository.listConfirmedOverlapping(
+          pageId,
+          new Date("2026-09-07T09:00:00.000Z"),
+          new Date("2026-09-07T12:00:00.000Z"),
+        );
+      expect(survivors).toHaveLength(1);
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 
   it("translates a same-start duplicate insert into SLOT_UNAVAILABLE", async () => {
@@ -900,6 +1201,35 @@ describe("PublicBookingService", () => {
     const stored = await bookingReservationRepository.findById(reservationId);
     expect(stored?.guestName).toBe("Ada Lovelace");
     expect(stored?.status).toBe("cancelled");
+  });
+
+  it("rejects an expired patch token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.patchPublicReservation(reservationId, {
+        token,
+        name: "Grace Hopper",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Ada Lovelace");
   });
 
   it("rejects invalid guest email", async () => {

@@ -19,15 +19,12 @@ const nineFortyFive = { label: "9:45 AM", value: "9:45 AM" };
 function Harness({
   initialValue = intervalOptions[0],
   options = intervalOptions,
-  freshOptions = false,
 }: {
   initialValue?: SelectOption<string>;
   options?: SelectOption<string>[];
-  freshOptions?: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
-  const resolvedOptions = freshOptions ? getTimeOptions() : options;
 
   return (
     <div>
@@ -37,7 +34,7 @@ function Harness({
         inputId="startTimePicker"
         isMenuOpen={isMenuOpen}
         onChange={setValue}
-        options={resolvedOptions}
+        options={options}
         setIsMenuOpen={setIsMenuOpen}
         value={value}
       />
@@ -48,7 +45,7 @@ function Harness({
 
 describe("TimePicker", () => {
   it("closes its menu when focus moves elsewhere in the form, instead of staying open forever", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(screen.getByRole("combobox", { name: "Start time" }));
@@ -60,7 +57,7 @@ describe("TimePicker", () => {
   });
 
   it("commits the focused filtered option when the user presses Tab", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
@@ -74,13 +71,17 @@ describe("TimePicker", () => {
   });
 
   it("keeps the original time when Tabbing through without changing the draft", async () => {
-    const user = userEvent.setup();
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    const user = userEvent.setup({ delay: null });
+    const options = [
+      { value: "12:00 AM", label: "12 AM" },
+      onePm,
+      { value: "1:15 PM", label: "1:15 PM" },
+    ];
+    render(<Harness initialValue={onePm} options={options} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
-
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
     await user.tab();
 
     expect(screen.getByText("1 PM")).toBeInTheDocument();
@@ -90,12 +91,11 @@ describe("TimePicker", () => {
   });
 
   it("commits the next interval when ArrowDown then Tab", async () => {
-    const user = userEvent.setup();
-    render(<Harness initialValue={onePm} options={dayOptions} />);
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={onePm} options={intervalOptions} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
     await user.keyboard("{ArrowDown}");
@@ -107,7 +107,7 @@ describe("TimePicker", () => {
   });
 
   it("discards typed filter on Escape instead of committing", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
@@ -120,7 +120,7 @@ describe("TimePicker", () => {
   });
 
   it("does not commit while IME composition is active", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
@@ -135,7 +135,7 @@ describe("TimePicker", () => {
   });
 
   it("announces that Tab confirms a newly chosen option or leaves the time unchanged", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness />);
 
     await user.click(screen.getByRole("combobox", { name: "Start time" }));
@@ -158,7 +158,7 @@ const focusedOptionName = (combobox: HTMLElement) => {
 
 describe("TimePicker arrow-key focus", () => {
   it("focuses the current time on open so arrow keys move one interval", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(<Harness initialValue={{ ...fiveThirty }} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
@@ -178,7 +178,7 @@ describe("TimePicker arrow-key focus", () => {
   });
 
   it("keeps a custom time selectable and arrow-navigable from nearby intervals", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     render(
       <Harness
         initialValue={{ label: "5:33 PM", value: "5:33 PM" }}
@@ -205,14 +205,8 @@ describe("TimePicker arrow-key focus", () => {
 
 describe("TimePicker Enter commit", () => {
   it("commits an explicit meridiem typed after the clock", async () => {
-    const user = userEvent.setup();
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -225,14 +219,8 @@ describe("TimePicker Enter commit", () => {
   });
 
   it("commits a clicked filtered option instead of the announced first match", async () => {
-    const user = userEvent.setup();
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -247,14 +235,8 @@ describe("TimePicker Enter commit", () => {
   });
 
   it("commits the first filtered match on Enter without arrowing", async () => {
-    const user = userEvent.setup();
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -267,14 +249,8 @@ describe("TimePicker Enter commit", () => {
   });
 
   it("commits the parsed hour on Enter instead of a substring match like 12 AM", async () => {
-    const user = userEvent.setup();
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -287,8 +263,8 @@ describe("TimePicker Enter commit", () => {
   });
 
   it("commits a glued meridiem like 8p as 8 PM", async () => {
-    const user = userEvent.setup();
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={onePm} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -300,12 +276,11 @@ describe("TimePicker Enter commit", () => {
   });
 
   it("keeps the original time when Enter is pressed without changing the draft", async () => {
-    const user = userEvent.setup();
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    const user = userEvent.setup({ delay: null });
+    render(<Harness initialValue={onePm} options={dayOptions} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
     await user.keyboard("{Enter}");

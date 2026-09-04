@@ -18,3 +18,20 @@ export const verifyCancelToken = (
   }
   return timingSafeEqual(stored, candidate);
 };
+
+/** Valid while `now` is strictly before `slotEnd` (half-open, like the slot). */
+export const guestActionTokenIsLive = (
+  slotEnd: Date,
+  now: Date = new Date(),
+): boolean => now.getTime() < slotEnd.getTime();
+
+export const guestActionTokenAuthorizes = (
+  storedHash: string,
+  rawToken: string,
+  slotEnd: Date,
+  now: Date = new Date(),
+): boolean => {
+  const hashOk = verifyCancelToken(storedHash, rawToken);
+  const live = guestActionTokenIsLive(slotEnd, now);
+  return hashOk && live;
+};

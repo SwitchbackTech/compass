@@ -120,6 +120,36 @@ describe("self-host docker compose", () => {
     expect(dockerfile).not.toContain("--environment");
   });
 
+  it("installs bun deps before copying the full source tree", () => {
+    for (const file of [
+      "self-host/Dockerfile.backend",
+      "self-host/Dockerfile.sync",
+      "self-host/Dockerfile.web",
+      ".github/docker/Dockerfile.web",
+    ]) {
+      const dockerfile = readRepoFile(file);
+      const installAt = dockerfile.search(
+        /^RUN bun install --frozen-lockfile$/m,
+      );
+      const copySourceAt = dockerfile.search(/^COPY \. \.$/m);
+      expect(installAt).toBeGreaterThan(-1);
+      expect(copySourceAt).toBeGreaterThan(installAt);
+    }
+  });
+
+  it("caches each publish-docker-images build with a per-image GHA scope", () => {
+    const workflow = readRepoFile(
+      ".github/workflows/publish-docker-images.yml",
+    );
+
+    for (const image of ["backend", "sync", "mongo", "web"]) {
+      expect(workflow).toContain(`cache-from: type=gha,scope=compass-${image}`);
+      expect(workflow).toContain(
+        `cache-to: type=gha,mode=max,scope=compass-${image}`,
+      );
+    }
+  });
+
   it("gates the passive sync service behind its own profile", () => {
     const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
       encoding: "utf8",

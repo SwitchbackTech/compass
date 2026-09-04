@@ -15,6 +15,14 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 3214 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3284 | bun run verify PASS (scripts, type-check, lint, knip); review: no confirmed findings | 2026-09-04T14:00:00Z | 0 | human |
 | 3140 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3281 | bun run verify PASS (web, type-check, lint, knip, a11y, e2e 110); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3147 | high | Manager | verifying | packages/backend/src/booking/services/public-booking.service.ts | bun run verify PASS (backend, type-check, lint, knip); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
+| 3146 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3290 | squash-merged 936e90b26; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3145 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3289 | squash-merged 41cb48cb6; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3144 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3288 | squash-merged 40e5a02f0; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3143 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3287 | squash-merged 58a4e58b9; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3142 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3286 | squash-merged 105ea7910; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3141 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3282 | squash-merged b69a4ed2b; bun run verify PASS; review: no confirmed findings | null | 0 | none |
+| 3140 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3281 | squash-merged f9cf87e8d; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3139 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3204 | squash-merged 964fd28ab; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3138 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3202 | squash-merged 144c0690f; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3137 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3201 | squash-merged 2ac4e9a5c; bun run verify PASS; review: no confirmed findings | null | 0 | none |
@@ -36,3 +44,5 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 | 2918 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2918 | bun run verify PASS; review finding fixed in 3fa6e4a8c | 2026-08-27T20:30:00Z | 0 | none |
 | 2922 | medium | Manager | verifying | https://github.com/keepsoftwaresimple/compass-calendar/pull/2922 | bun run verify PASS; simplify c4cbe8696; review: no confirmed findings | 2026-08-27T21:00:00Z | 0 | none |
 | simplify-recent-2965 | medium | Manager | verifying | packages/web/src/shortcuts/quick-time/quick-time.util.ts | bun run verify PASS: web, type-check, lint, knip; review: no confirmed findings | 2026-08-31T06:00:00Z | 0 | none |
+| 3217 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3285 | bun run verify PASS (test:scripts:fast, type-check, lint, knip); review: no confirmed findings; web+backend concurrent 200ms vs serial 520ms | 2026-09-04T06:00:00Z | 0 | none |
+| 3219 | high | Founder | waiting | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3293 | bun run verify PASS (test:scripts:fast, type-check, lint, knip); bun-pin test fails 1.2.18 vs 1.3.14; human: .github/ and self-host/ | 2026-09-05T12:00:00Z | 0 | human |

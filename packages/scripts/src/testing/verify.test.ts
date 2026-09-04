@@ -9,6 +9,7 @@ import {
   runVerify,
   type SpawnFn,
   type SpawnResult,
+  selectPackageTestCheck,
 } from "@scripts/testing/verify";
 import { describe, expect, it } from "bun:test";
 
@@ -37,21 +38,36 @@ function gitStub(options: {
   };
 }
 
-function recordingSpawn(options?: { results?: Record<string, SpawnResult> }): {
+function recordingSpawn(options?: {
+  results?: Record<string, SpawnResult>;
+  delays?: Record<string, number>;
+  onStart?: (cmd: string[]) => void;
+  onEnd?: (cmd: string[]) => void;
+}): {
   spawn: SpawnFn;
   commands: string[][];
 } {
   const commands: string[][] = [];
   const spawn: SpawnFn = (cmd) => {
     commands.push(cmd);
+    options?.onStart?.(cmd);
     const key = cmd.join(" ");
-    return (
-      options?.results?.[key] ?? {
-        exitCode: 0,
-        stdout: "",
-        stderr: "",
-      }
-    );
+    const result = options?.results?.[key] ?? {
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+    };
+    const delay = options?.delays?.[key] ?? 0;
+    if (delay <= 0) {
+      options?.onEnd?.(cmd);
+      return result;
+    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        options?.onEnd?.(cmd);
+        resolve(result);
+      }, delay);
+    });
   };
   return { spawn, commands };
 }
@@ -150,6 +166,54 @@ describe("planVerify", () => {
     expect(plan.skips[0]?.reason).toContain(PLAYWRIGHT_INSTALL_COMMAND);
     expect(plan.playwrightSelected).toBe(true);
   });
+
+  it("picks test:sync:fast for a provider-only sync diff", () => {
+    const files = ["packages/sync/src/providers/foo.ts"];
+    const plan = planVerify({
+      packages: mapFilesToPackages(files),
+      files,
+      playwrightChromiumAvailable: false,
+    });
+    expect(plan.checks.map((check) => check.id)).toEqual([
+      "test:sync:fast",
+      "type-check",
+      "lint",
+      "knip",
+    ]);
+    expect(plan.checks[0]?.reason).toContain("no *.db.test.ts");
+  });
+
+  it("picks test:sync for a storage/repositories sync diff", () => {
+    const files = ["packages/sync/src/storage/repositories/x.ts"];
+    const plan = planVerify({
+      packages: mapFilesToPackages(files),
+      files,
+      playwrightChromiumAvailable: false,
+    });
+    expect(plan.checks.map((check) => check.id)).toEqual([
+      "test:sync",
+      "type-check",
+      "lint",
+      "knip",
+    ]);
+    expect(plan.checks[0]?.reason).toContain("/storage/");
+  });
+});
+
+describe("selectPackageTestCheck", () => {
+  it("keeps the full suite for web because there is no fast script", () => {
+    expect(selectPackageTestCheck("web", ["packages/web/src/App.tsx"]).id).toBe(
+      "test:web",
+    );
+  });
+
+  it("keeps the full suite when a db test is in the package diff", () => {
+    expect(
+      selectPackageTestCheck("backend", [
+        "packages/backend/src/routes/events.db.test.ts",
+      ]).id,
+    ).toBe("test:backend");
+  });
 });
 
 describe("resolveMergeBase and collectChangedFiles", () => {
@@ -202,10 +266,10 @@ describe("chromiumInstallLocationFromDryRun", () => {
 });
 
 describe("runVerify", () => {
-  it("runs scripts tests plus type-check, lint, and knip for a scripts-only tree", () => {
+  it("runs scripts fast tests plus type-check, lint, and knip for a scripts-only tree", async () => {
     const { spawn, commands } = recordingSpawn();
     const logs = captureLogs();
-    const exitCode = runVerify([], {
+    const exitCode = await runVerify([], {
       git: gitStub({
         diffs: {
           "abc123...HEAD": ["packages/scripts/src/testing/verify.ts"],
@@ -218,7 +282,7 @@ describe("runVerify", () => {
 
     expect(exitCode).toBe(0);
     expect(commands).toEqual([
-      ["bun", "run", "test:scripts"],
+      ["bun", "run", "test:scripts:fast"],
       ["bun", "run", "type-check"],
       ["bun", "run", "lint"],
       ["bun", "run", "knip"],
@@ -227,13 +291,15 @@ describe("runVerify", () => {
       logs.lines.some((line) => line.includes("no packages detected")),
     ).toBe(false);
     expect(logs.lines.join("\n")).toContain("Detected changes in: scripts");
+    expect(logs.lines.join("\n")).toContain("Tier test:scripts:fast:");
+    expect(logs.lines.join("\n")).toContain("── test:scripts:fast ──");
     expect(logs.lines.join("\n")).toContain("All checks passed");
   });
 
-  it("prints no packages detected and still runs type-check, lint, and knip", () => {
+  it("prints no packages detected and still runs type-check, lint, and knip", async () => {
     const { spawn, commands } = recordingSpawn();
     const logs = captureLogs();
-    const exitCode = runVerify([], {
+    const exitCode = await runVerify([], {
       git: gitStub({
         diffs: { "abc123...HEAD": ["README.md"] },
       }),
@@ -252,7 +318,7 @@ describe("runVerify", () => {
     expect(logs.lines.join("\n")).not.toContain("falling back to: core");
   });
 
-  it("exits 1 and lists type-check when that spawn fails", () => {
+  it("exits 1 and lists type-check when that spawn fails", async () => {
     const { spawn } = recordingSpawn({
       results: {
         "bun run type-check": {
@@ -263,7 +329,7 @@ describe("runVerify", () => {
       },
     });
     const logs = captureLogs();
-    const exitCode = runVerify([], {
+    const exitCode = await runVerify([], {
       git: gitStub({
         diffs: { "abc123...HEAD": ["packages/scripts/src/testing/verify.ts"] },
       }),
@@ -276,10 +342,10 @@ describe("runVerify", () => {
     expect(logs.errors.join("\n")).toContain("Failed: type-check");
   });
 
-  it("selects e2e for an e2e/-only diff and reports incomplete parity when Chromium is missing", () => {
+  it("selects e2e for an e2e/-only diff and reports incomplete parity when Chromium is missing", async () => {
     const { spawn, commands } = recordingSpawn();
     const logs = captureLogs();
-    const exitCode = runVerify([], {
+    const exitCode = await runVerify([], {
       git: gitStub({
         diffs: { "abc123...HEAD": ["e2e/calendar.spec.ts"] },
       }),
@@ -299,5 +365,99 @@ describe("runVerify", () => {
     expect(logs.lines.join("\n")).toContain(PLAYWRIGHT_INSTALL_COMMAND);
     expect(logs.lines.join("\n")).toContain("CI parity incomplete");
     expect(logs.lines.join("\n")).not.toContain("All checks passed");
+  });
+
+  it("starts Playwright only after independent checks finish", async () => {
+    const events: string[] = [];
+    const { spawn } = recordingSpawn({
+      delays: {
+        "bun run test:web": 40,
+        "bun run type-check": 20,
+        "bun run lint": 10,
+        "bun run knip": 10,
+        "bun run test:a11y": 10,
+        "bun run test:e2e": 10,
+      },
+      onStart: (cmd) => events.push(`start ${cmd[2]}`),
+      onEnd: (cmd) => events.push(`end ${cmd[2]}`),
+    });
+    const logs = captureLogs();
+    const exitCode = await runVerify([], {
+      git: gitStub({
+        diffs: { "abc123...HEAD": ["e2e/calendar.spec.ts"] },
+      }),
+      spawn,
+      log: logs.log,
+      chromiumAvailable: () => true,
+    });
+
+    expect(exitCode).toBe(0);
+    const lastIndependentEnd = Math.max(
+      events.indexOf("end test:web"),
+      events.indexOf("end type-check"),
+      events.indexOf("end lint"),
+      events.indexOf("end knip"),
+    );
+    expect(events.indexOf("start test:a11y")).toBeGreaterThan(
+      lastIndependentEnd,
+    );
+    expect(events.indexOf("start test:e2e")).toBeGreaterThan(
+      events.indexOf("end test:a11y"),
+    );
+  });
+
+  it("runs a web plus backend diff at least 40 percent faster concurrently than --serial", async () => {
+    const delays = {
+      "bun run test:web": 200,
+      "bun run test:backend:fast": 80,
+      "bun run type-check": 120,
+      "bun run lint": 60,
+      "bun run knip": 60,
+    };
+    const git = gitStub({
+      diffs: {
+        "abc123...HEAD": [
+          "packages/web/src/App.tsx",
+          "packages/backend/src/routes/events.ts",
+        ],
+      },
+    });
+
+    const serial = recordingSpawn({ delays });
+    const serialLogs = captureLogs();
+    const serialStarted = performance.now();
+    const serialCode = await runVerify(["--serial"], {
+      git,
+      spawn: serial.spawn,
+      log: serialLogs.log,
+      chromiumAvailable: () => false,
+    });
+    const serialMs = performance.now() - serialStarted;
+
+    const concurrent = recordingSpawn({ delays });
+    const concurrentLogs = captureLogs();
+    const concurrentStarted = performance.now();
+    const concurrentCode = await runVerify([], {
+      git,
+      spawn: concurrent.spawn,
+      log: concurrentLogs.log,
+      chromiumAvailable: () => false,
+    });
+    const concurrentMs = performance.now() - concurrentStarted;
+
+    expect(serialCode).toBe(0);
+    expect(concurrentCode).toBe(0);
+    expect(serial.commands).toEqual([
+      ["bun", "run", "test:web"],
+      ["bun", "run", "test:backend:fast"],
+      ["bun", "run", "type-check"],
+      ["bun", "run", "lint"],
+      ["bun", "run", "knip"],
+    ]);
+    expect(concurrent.commands).toEqual(serial.commands);
+    expect(serialLogs.lines.join("\n")).toContain("Running serial:");
+    expect(concurrentLogs.lines.join("\n")).toContain("Running concurrent:");
+    expect(concurrentMs).toBeLessThan(serialMs * 0.6);
+    expect(serialMs).toBeGreaterThan(concurrentMs);
   });
 });
