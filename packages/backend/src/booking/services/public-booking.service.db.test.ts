@@ -10,6 +10,10 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import * as billingGuard from "@backend/billing/billing.guard";
+import {
+  generateCancelToken,
+  hashCancelToken,
+} from "@backend/booking/booking-cancel-token";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
@@ -574,6 +578,32 @@ describe("PublicBookingService", () => {
     expect(stored?.status).toBe("cancelled");
   });
 
+  it("rejects an expired cancel token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: null,
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.cancelReservation(reservationId, { token }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(deleteBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.status).toBe("confirmed");
+  });
+
   it("returns minimal public reservation details", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
@@ -1054,6 +1084,35 @@ describe("PublicBookingService", () => {
     const stored = await bookingReservationRepository.findById(reservationId);
     expect(stored?.guestName).toBe("Ada Lovelace");
     expect(stored?.status).toBe("cancelled");
+  });
+
+  it("rejects an expired patch token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.patchPublicReservation(reservationId, {
+        token,
+        name: "Grace Hopper",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Ada Lovelace");
   });
 
   it("rejects invalid guest email", async () => {

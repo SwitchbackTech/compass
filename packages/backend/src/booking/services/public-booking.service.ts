@@ -31,8 +31,8 @@ import dayjs from "@core/util/date/dayjs";
 import { bookingError } from "@backend/booking/booking.error";
 import {
   generateCancelToken,
+  guestActionTokenAuthorizes,
   hashCancelToken,
-  verifyCancelToken,
 } from "@backend/booking/booking-cancel-token";
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
@@ -523,7 +523,11 @@ export class PublicBookingService {
       await bookingReservationRepository.findById(reservationId);
     if (
       !reservation ||
-      !verifyCancelToken(reservation.cancelTokenHash, input.token)
+      !guestActionTokenAuthorizes(
+        reservation.cancelTokenHash,
+        input.token,
+        reservation.slotEnd,
+      )
     ) {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
@@ -595,7 +599,11 @@ export class PublicBookingService {
       await bookingReservationRepository.findById(reservationId);
     if (
       !reservation ||
-      !verifyCancelToken(reservation.cancelTokenHash, token)
+      !guestActionTokenAuthorizes(
+        reservation.cancelTokenHash,
+        token,
+        reservation.slotEnd,
+      )
     ) {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
