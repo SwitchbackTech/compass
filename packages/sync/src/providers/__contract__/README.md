@@ -26,4 +26,5 @@ Record live request/response pairs with `recordingApi(realApi, corpusDir, caseNa
 - `Bearer …` values
 
 Apple discovery-only cases stay in `apple.contract.test.ts` until the rest of
-the Apple adapter set lands (A-11).
+the Apple adapter set lands (A-11). Nightly live runs are documented in
+[`docs/CI-CD/live-provider-smoke.md`](../../../../docs/CI-CD/live-provider-smoke.md).

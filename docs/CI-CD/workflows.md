@@ -18,6 +18,7 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Deploy production | Manual dispatch | Deploys a release tag to production, then runs cloud deploy health checks |
 | Deploy health check | Reusable workflow | Validates the deployed staging stack and alerts Discord on failure |
 | Sync docs to compass-docs | Push to `main` touching `docs/**` | Mirrors this `docs/` directory to docs.compasscalendar.com |
+| Live provider smoke (`live-provider-smoke.yml`) | Nightly schedule / `workflow_dispatch` only (never on PRs) | Live adapter contract against `compass-smoke` test calendars; see [live-provider-smoke.md](./live-provider-smoke.md) |
 
 Error autofix is a governed Routine. Contract, drills, and recovery packet:
 [error-autofix-routine.md](./error-autofix-routine.md). Kill switch
