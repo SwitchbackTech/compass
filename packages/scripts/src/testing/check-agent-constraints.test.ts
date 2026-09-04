@@ -3,6 +3,8 @@ import {
   isBarrelSource,
   locatorHits,
   mongoServiceImportHits,
+  ovenBunVersion,
+  scanBunDockerfilePins,
   scanConstraints,
 } from "./check-agent-constraints";
 import { describe, expect, it } from "bun:test";
@@ -118,6 +120,32 @@ describe("scanConstraints", () => {
     expect(
       hits.some((hit) => hit.includes("packages/web/src/Widget.tsx")),
     ).toBe(false);
+  });
+});
+
+describe("scanBunDockerfilePins", () => {
+  it("strips the slim suffix when comparing oven/bun tags", () => {
+    expect(ovenBunVersion("1.3.14")).toBe("1.3.14");
+    expect(ovenBunVersion("1.3.14-slim")).toBe("1.3.14");
+  });
+
+  it("accepts the repo Dockerfiles against test-unit.yml", () => {
+    expect(scanBunDockerfilePins()).toEqual([]);
+  });
+
+  it("fails when one Dockerfile oven/bun tag differs from CI", () => {
+    const root = mkdtempSync(join(tmpdir(), "bun-pin-"));
+    writeTree(root, {
+      ".github/workflows/test-unit.yml": "bun-version: 1.3.14\n",
+      "self-host/Dockerfile.backend": "FROM oven/bun:1.2.18 AS build\n",
+      ".github/docker/Dockerfile.web":
+        "FROM oven/bun:1.3.14 AS build\nFROM oven/bun:1.3.14-slim AS runtime\n",
+    });
+
+    const hits = scanBunDockerfilePins(root);
+    expect(hits.map((hit) => `${hit.rule}:${hit.path}`)).toEqual([
+      "bun-pin:self-host/Dockerfile.backend",
+    ]);
   });
 });
 

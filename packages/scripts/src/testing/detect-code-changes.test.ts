@@ -74,6 +74,21 @@ describe("detect-code-changes", () => {
     }
   });
 
+  it("runs Unit once per PR push and names Unit vs E2E", () => {
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
+
+    expect(unit).toMatch(/^name: Unit$/m);
+    expect(e2e).toMatch(/^name: E2E$/m);
+    expect(unit).toContain("branches:");
+    expect(unit).toContain(
+      "group: unit-${{ github.event.pull_request.number || github.ref }}",
+    );
+    expect(unit).toContain(
+      "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+    );
+  });
+
   it("runs checks for non-pull-request events without calling GitHub", () => {
     const result = runDetector("push");
 
