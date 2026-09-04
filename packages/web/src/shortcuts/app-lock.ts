@@ -18,6 +18,9 @@ export const setAppLockReason = registry.set;
 
 export const hasAppLockReason = registry.has;
 
+/** Sorted names of every reason currently holding the lock. */
+export const getAppLockReasons = registry.active;
+
 export const subscribeAppLock = registry.subscribe;
 
 /** Clears every reason — used by tests between cases. */

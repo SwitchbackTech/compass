@@ -29,6 +29,9 @@ const {
   recordShortcutUnavailableAttempt,
   resetShortcutTelemetryForTests,
 } = await import("@web/shortcuts/tips/shortcut-telemetry");
+const { clearAppLockReasons, setAppLockReason } = await import(
+  "@web/shortcuts/app-lock"
+);
 const { getShortcutHint } = await import(
   "@web/shortcuts/tips/shortcut-tips.data"
 );
@@ -123,15 +126,63 @@ describe("shortcut telemetry", () => {
     ).toMatchObject({ invocations: 1, lastInvokedAt: 200_000 });
   });
 
-  it("captures a detectable unavailable attempt without key or content data", () => {
-    recordShortcutUnavailableAttempt("create-event", "app_locked");
+  it("captures which registered shortcut was blocked, by which lock, where", () => {
+    window.history.pushState({}, "", "/week/2026-09-06");
+    setAppLockReason("settingsModal", true);
+    setAppLockReason("billingGate", true);
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    recordShortcutUnavailableAttempt("edge-focus", "app_locked", {
+      hotkey: "Tab",
+      event: {
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        repeat: true,
+      },
+    });
 
     expect(capture).toHaveBeenCalledWith("shortcut_unavailable_attempt", {
-      action_id: "calendar.create_timed_event",
-      feature_area: "event_creation",
+      action_id: "event.edge_focus",
+      active_element: "input",
+      context: "billingGate+settingsModal",
+      feature_area: "event_editing",
+      is_repeat: true,
       outcome: "unavailable",
       reason_code: "app_locked",
+      shortcut_key: "Tab",
       source: "keyboard",
+      view: "week_view",
+      was_modifier_held: false,
     });
+    input.remove();
+    clearAppLockReasons();
+  });
+
+  it("names the lock context unknown when no reason is registered", () => {
+    window.history.pushState({}, "", "/day");
+    recordShortcutUnavailableAttempt("nudge", "app_locked", {
+      hotkey: { key: "ArrowLeft", shift: true },
+      event: {
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: true,
+        repeat: false,
+      },
+    });
+
+    expect(capture).toHaveBeenCalledWith(
+      "shortcut_unavailable_attempt",
+      expect.objectContaining({
+        context: "unknown",
+        shortcut_key: "Shift+ArrowLeft",
+        view: "day_view",
+        was_modifier_held: true,
+      }),
+    );
   });
 });

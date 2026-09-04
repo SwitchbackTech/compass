@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import {
   clearAppLockReasons,
+  getAppLockReasons,
   hasAppLockReason,
   setAppLockReason,
   useAppLockReason,
@@ -53,5 +54,14 @@ describe("app-lock", () => {
 
     setAppLockReason("billingGate", false);
     expect(hasAppLockReason("billingGate")).toBe(false);
+  });
+
+  it("lists active reasons sorted for stable telemetry keys", () => {
+    setAppLockReason("settingsModal", true);
+    setAppLockReason("billingGate", true);
+    expect(getAppLockReasons()).toEqual(["billingGate", "settingsModal"]);
+
+    clearAppLockReasons();
+    expect(getAppLockReasons()).toEqual([]);
   });
 });

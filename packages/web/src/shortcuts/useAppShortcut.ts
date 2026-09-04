@@ -89,7 +89,10 @@ export function useAppShortcut(
     (event) => {
       if (!ignoreAppLock && isAppLocked()) {
         if (telemetryHintId) {
-          recordShortcutUnavailableAttempt(telemetryHintId, "app_locked");
+          recordShortcutUnavailableAttempt(telemetryHintId, "app_locked", {
+            hotkey,
+            event,
+          });
         }
         if (
           requiresWrite &&
