@@ -141,11 +141,14 @@ function viewFromPathname(pathname: string): string {
 }
 
 /** Lock owners as a stable, low-cardinality key. OverlayPanel registers
- * `overlayPanel:<useId>` per instance so nested panels unlock independently;
- * the instance suffix is dropped here so PostHog can group on the name. */
+ * `overlayPanel:<title slug>:<useId>` per instance so nested panels unlock
+ * independently; the instance suffix is dropped here so PostHog can group on
+ * `overlayPanel:<title slug>`. */
 function lockContext(): string {
   const names = new Set(
-    getAppLockReasons().map((reason) => reason.split(":")[0]),
+    getAppLockReasons().map((reason) =>
+      reason.split(":").slice(0, 2).join(":"),
+    ),
   );
   return [...names].sort().join("+") || "unknown";
 }

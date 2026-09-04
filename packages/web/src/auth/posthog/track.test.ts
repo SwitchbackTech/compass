@@ -130,8 +130,8 @@ describe("shortcut telemetry", () => {
     window.history.pushState({}, "", "/week/2026-09-06");
     setAppLockReason("settingsModal", true);
     setAppLockReason("billingGate", true);
-    setAppLockReason("overlayPanel::r3:", true);
-    setAppLockReason("overlayPanel::r79:", true);
+    setAppLockReason("overlayPanel:settings::r3:", true);
+    setAppLockReason("overlayPanel:settings::r79:", true);
     const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();
@@ -150,7 +150,7 @@ describe("shortcut telemetry", () => {
     expect(capture).toHaveBeenCalledWith("shortcut_unavailable_attempt", {
       action_id: "event.edge_focus",
       active_element: "input",
-      context: "billingGate+overlayPanel+settingsModal",
+      context: "billingGate+overlayPanel:settings+settingsModal",
       feature_area: "event_editing",
       is_repeat: true,
       outcome: "unavailable",
