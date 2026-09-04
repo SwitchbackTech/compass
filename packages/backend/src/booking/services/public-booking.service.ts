@@ -28,6 +28,7 @@ import {
   type BusyAvailabilityResponse,
 } from "@core/types/sync/availability.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { assertBillingAllowsWrites } from "@backend/billing/billing.guard";
 import { bookingError } from "@backend/booking/booking.error";
 import {
   generateCancelToken,
@@ -50,6 +51,30 @@ import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-prin
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 
 const logger = Logger("app:booking.public");
+
+const GUEST_PAGE_NOT_ACCEPTING_BOOKINGS =
+  "This page is not accepting bookings.";
+
+const isBillingRequiredError = (error: unknown): boolean =>
+  error instanceof BaseError && error.code === "BILLING_REQUIRED";
+
+const hostAllowsGuestWrites = async (userId: ObjectId): Promise<boolean> => {
+  try {
+    await assertBillingAllowsWrites(userId.toString());
+    return true;
+  } catch (error) {
+    if (isBillingRequiredError(error)) {
+      return false;
+    }
+    throw error;
+  }
+};
+
+const assertHostAllowsGuestWrites = async (userId: ObjectId): Promise<void> => {
+  if (!(await hostAllowsGuestWrites(userId))) {
+    throw bookingError("SLOT_UNAVAILABLE", GUEST_PAGE_NOT_ACCEPTING_BOOKINGS);
+  }
+};
 
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
@@ -250,6 +275,7 @@ export class PublicBookingService {
 
   async getPublicPage(slug: string): Promise<PublicBookingPage> {
     const page = await resolveEnabledPage(slug);
+    await assertHostAllowsGuestWrites(page.userId);
     const hostDisplayName = await getHostDisplayName(page.userId);
     const createsGoogleMeet = await destinationCreatesGoogleMeet(
       page.userId,
@@ -265,6 +291,12 @@ export class PublicBookingService {
     rawQuery: unknown,
   ): Promise<BookingSlotsResponse> {
     const page = await resolveEnabledPage(slug);
+    if (!(await hostAllowsGuestWrites(page.userId))) {
+      return BookingSlotsResponseSchema.parse({
+        slots: [],
+        bookable: false,
+      });
+    }
     const query = parseSlotsQuery(rawQuery);
     const now = new Date();
     const windowStart = new Date(query.start);
@@ -323,6 +355,7 @@ export class PublicBookingService {
 
   async createReservation(slug: string, rawInput: unknown) {
     const page = await resolveEnabledPage(slug);
+    await assertHostAllowsGuestWrites(page.userId);
     const input = CreateBookingReservationInputSchema.parse(rawInput);
     assertGuestEmail(input.guestEmail);
 

@@ -26,6 +26,7 @@ import {
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
+import { eventMutationError } from "@backend/event/event.error";
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,
@@ -271,6 +272,75 @@ describe("PublicBookingService", () => {
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
     expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects confirm when the host cannot write and submits no create command", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns unbookable slots when the host cannot write", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response).toEqual({ slots: [], bookable: false });
+    expect(getAvailability).not.toHaveBeenCalled();
+  });
+
+  it("rejects public page GET when the host cannot write without billing wording", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .getPublicPage(slug)
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
   });
 
   it("rejects slot not in engine output", async () => {
