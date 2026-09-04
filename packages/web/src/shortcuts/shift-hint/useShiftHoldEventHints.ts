@@ -206,6 +206,8 @@ export function useShiftHoldEventHints({
     null,
   );
   const columnTimeBurstRef = useRef<{ digit: string; at: number }[]>([]);
+  /** Event last focused by jump. Not in the store (see event-jump.store wart). */
+  const focusedJumpEventIdRef = useRef<string | null>(null);
   const createAtTimeRef = useRef(createAtTime);
   const focusRef = useRef(focus);
   const getQuickTimeDayRef = useRef(getQuickTimeDay);
@@ -259,6 +261,7 @@ export function useShiftHoldEventHints({
       const digits = useEventJumpStore.getState().quickTimeDigits;
       resetQuickTime();
       resetColumnTimeBurst();
+      focusedJumpEventIdRef.current = null;
       clearAmbiguousCommitTimer();
       if (!digits) return;
 
@@ -379,6 +382,7 @@ export function useShiftHoldEventHints({
       isActiveRef.current = true;
       bufferRef.current = "";
       resetColumnTimeBurst();
+      focusedJumpEventIdRef.current = null;
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([]);
       setHints(toActiveHints(assignments, visibleByIdRef.current));
@@ -388,12 +392,14 @@ export function useShiftHoldEventHints({
       isActiveRef.current = false;
       bufferRef.current = "";
       resetColumnTimeBurst();
+      focusedJumpEventIdRef.current = null;
       clearHints();
       eventJumpActions.setPointerDraftIntent(null);
       eventJumpActions.setActive(false);
     };
 
     const focusEvent = (eventId: string) => {
+      focusedJumpEventIdRef.current = eventId;
       const target = visibleByIdRef.current.get(eventId);
       if (!target) return;
       target.element.scrollIntoView({ block: "nearest" });
@@ -402,6 +408,12 @@ export function useShiftHoldEventHints({
 
     const commitFocus = (eventId: string, dayKey: string, buffer: string) => {
       clearAmbiguousCommitTimer();
+      // Do not resetColumnTimeBurst here. Unique ordinals (w1, f4) are also
+      // valid HHMM prefixes. W then 1230 on a column with one event
+      // unique-matches on the leading 1; clearing the burst would drop that
+      // digit and 230 would not auto-commit as 12:30 (#3078). Enter is gated
+      // on focusedJumpEventIdRef instead, so f4 then Enter opens the event
+      // rather than committing leftover "4" as 4am.
       eventJumpActions.setActiveDayKeys([dayKey]);
       focusEvent(eventId);
       // Keep the day prefix so the next digit indexes within the same day.
@@ -567,7 +579,8 @@ export function useShiftHoldEventHints({
       // Empty buffer: digits are times. Once a day letter is typed ("w"),
       // 1-2 digits still index that day's events. A four-digit HHMM still
       // creates on the selected column so focusing Tuesday then 1230 lands
-      // there instead of today.
+      // there instead of today. Enter after an ordinal focus opens that
+      // event; it does not commit the leftover hour digit as a draft.
       if (bufferRef.current === "" && tryQuickTimeKey(event)) {
         event.preventDefault();
         event.stopPropagation();
@@ -579,11 +592,15 @@ export function useShiftHoldEventHints({
         recentColumnTimeDigits() &&
         bufferRef.current !== ""
       ) {
-        eventJumpActions.setQuickTimeDigits(recentColumnTimeDigits());
-        commitQuickTime();
-        event.preventDefault();
-        event.stopPropagation();
-        return;
+        if (focusedJumpEventIdRef.current) {
+          resetColumnTimeBurst();
+        } else {
+          eventJumpActions.setQuickTimeDigits(recentColumnTimeDigits());
+          commitQuickTime();
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
       }
 
       if (event.key === "Escape") {
@@ -752,6 +769,7 @@ export function useShiftHoldEventHints({
       // External resets clear the store without going through deactivate();
       // drop local chips/buffer to match.
       bufferRef.current = "";
+      focusedJumpEventIdRef.current = null;
       assignmentsRef.current = [];
       visibleByIdRef.current = new Map();
       setHints([]);

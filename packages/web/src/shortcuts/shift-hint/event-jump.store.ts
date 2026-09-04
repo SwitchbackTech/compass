@@ -15,6 +15,10 @@ export type EventJumpState = {
   pointerHintKey: string | null;
   /** Event that owns `pointerHintKey`, so rebuilds can refresh the token. */
   pointerHintEventId: string | null;
+  // Keyboard-targeted event is not stored here. It lives in the hint hook as
+  // a local ref plus DOM focus, which is why Enter has nothing in this store
+  // to check. Recorded as a wart (WP-12); do not fold targeting into this
+  // store in a drive-by.
   /** Date selected by the latest blocked empty-grid click. */
   pointerDraftDateKey: string | null;
   pointerDraftStart: string | null;
