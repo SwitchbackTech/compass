@@ -1092,6 +1092,7 @@ describe("PublicBookingService", () => {
     };
     expect(eventInput.description).toContain("bring coffee");
     expect(eventInput.description).not.toContain("Cancel:");
+    expect(eventInput.description).not.toContain("Reschedule:");
   });
 
   it("includes the cancel URL in the event description when invitees are off", async () => {
@@ -1110,6 +1111,9 @@ describe("PublicBookingService", () => {
       description: string;
     };
     expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
+    expect(eventInput.description).toContain(
+      `Reschedule: ${created.rescheduleUrl}`,
+    );
   });
 
   it("asks Sync to mint Meet on confirm and does not invent a conference URL", async () => {
@@ -1263,6 +1267,226 @@ describe("PublicBookingService", () => {
         guestTimeZone: "Europe/London",
       }),
     ).rejects.toMatchObject({ bookingCode: "INVALID_INPUT" });
+  });
+
+  it("reschedules a confirmed reservation to a new slot", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    createBookingEvent.mockClear();
+    updateBookingEvent.mockClear();
+
+    const response = await service.rescheduleReservation(reservationId, {
+      token,
+      slotStart: "2026-09-07T11:00:00.000Z",
+      guestTimeZone: "America/Denver",
+    });
+
+    expect(updateBookingEvent).toHaveBeenCalledTimes(1);
+    expect(updateBookingEvent.mock.calls[0]?.[1]).toMatchObject({
+      start: "2026-09-07T11:00:00.000Z",
+      end: "2026-09-07T11:30:00.000Z",
+    });
+    expect(createBookingEvent).not.toHaveBeenCalled();
+    expect(response.slotStart).toBe("2026-09-07T11:00:00.000Z");
+    expect(response.slotEnd).toBe("2026-09-07T11:30:00.000Z");
+    expect(response.guestTimeZone).toBe("America/Denver");
+    expect(response.status).toBe("confirmed");
+    expect(response).not.toHaveProperty("guestEmail");
+    expect(response).not.toHaveProperty("cancelUrl");
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.slotStart.toISOString()).toBe("2026-09-07T11:00:00.000Z");
+    expect(stored?.calendarEventId).toBeTruthy();
+  });
+
+  it("treats a second reschedule to the same slot as idempotent", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    await service.rescheduleReservation(reservationId, {
+      token,
+      slotStart: "2026-09-07T11:00:00.000Z",
+      guestTimeZone: "America/Denver",
+    });
+    updateBookingEvent.mockClear();
+
+    const again = await service.rescheduleReservation(reservationId, {
+      token,
+      slotStart: "2026-09-07T11:00:00.000Z",
+      guestTimeZone: "UTC",
+    });
+
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    expect(again.slotStart).toBe("2026-09-07T11:00:00.000Z");
+    expect(again.guestTimeZone).toBe("America/Denver");
+  });
+
+  it("rejects reschedule onto another confirmed reservation", async () => {
+    const { slug, pageId } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    await seedConfirmedReservation(
+      pageId,
+      "2026-09-07T11:00:00.000Z",
+      "2026-09-07T11:30:00.000Z",
+    );
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    updateBookingEvent.mockClear();
+
+    await expect(
+      service.rescheduleReservation(reservationId, {
+        token,
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects reschedule of a cancelled reservation", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    await service.cancelReservation(reservationId, { token });
+    updateBookingEvent.mockClear();
+
+    await expect(
+      service.rescheduleReservation(reservationId, {
+        token,
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects a bad or missing reschedule token as not-found", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const reservationId = new ObjectId(created.reservationId);
+    updateBookingEvent.mockClear();
+
+    await expect(
+      service.rescheduleReservation(reservationId, {
+        token: "not-the-token",
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    await expect(
+      service.rescheduleReservation(reservationId, {
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    await expect(
+      service.rescheduleReservation(new ObjectId(), {
+        token: "a".repeat(32),
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("includes the current start on tokenized slots and hides it on public slots", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    const window = {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    };
+
+    const publicSlots = await service.getSlots(slug, window);
+    const tokenized = await service.getReservationSlots(reservationId, {
+      ...window,
+      token,
+    });
+
+    const booked = Date.parse("2026-09-07T10:00:00.000Z");
+    expect(
+      publicSlots.slots.map((slot) => Date.parse(slot.slotStart)),
+    ).not.toContain(booked);
+    expect(tokenized.slots.map((slot) => Date.parse(slot.slotStart))).toContain(
+      booked,
+    );
+    const createdEventId = await createBookingEvent.mock.results[0]?.value;
+    expect(getAvailability.mock.calls.at(-1)?.[1]).toMatchObject({
+      excludeEventIds: [createdEventId],
+    });
+  });
+
+  it("keeps overlapping host busy after self-exclusion", async () => {
+    const { slug } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    getAvailability.mockImplementation(async () => ({
+      ...busyResponse(true),
+      intervals: [
+        {
+          start: "2026-09-07T10:00:00.000Z",
+          end: "2026-09-07T11:00:00.000Z",
+          hostIsOrganizer: true,
+        },
+      ],
+    }));
+
+    const tokenized = await service.getReservationSlots(
+      new ObjectId(created.reservationId),
+      {
+        token,
+        start: "2026-09-07T00:00:00.000Z",
+        end: "2026-09-08T00:00:00.000Z",
+        timeZone: "UTC",
+      },
+    );
+
+    const occupied = Date.parse("2026-09-07T10:00:00.000Z");
+    const halfHour = Date.parse("2026-09-07T10:30:00.000Z");
+    const starts = tokenized.slots.map((slot) => Date.parse(slot.slotStart));
+    expect(starts).not.toContain(occupied);
+    expect(starts).not.toContain(halfHour);
   });
 });
 
