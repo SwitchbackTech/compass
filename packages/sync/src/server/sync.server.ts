@@ -43,9 +43,7 @@ export function buildSyncApp(deps: {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
       execution: deps.connectionApi.execution,
-      resolveAdapters: deps.connectionApi.resolveAdapters,
-      writer: deps.connectionApi.writer,
-      authAdapter: deps.connectionApi.authAdapter,
+      registry: deps.connectionApi.registry,
       now: deps.connectionApi.now,
     });
     // Attendee contact suggestions from the provider's People surfaces, gated
@@ -54,8 +52,7 @@ export function buildSyncApp(deps: {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
       execution: deps.connectionApi.execution,
-      authAdapter: deps.connectionApi.authAdapter,
-      contacts: deps.connectionApi.contacts,
+      registry: deps.connectionApi.registry,
     });
     // Resumable invalidation outbox for Compass API → browser SSE (S40).
     registerChangeFeedRoutes(app, {
@@ -68,7 +65,7 @@ export function buildSyncApp(deps: {
     registerPrincipalRoutes(app, {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
-      authAdapter: deps.connectionApi.authAdapter,
+      registry: deps.connectionApi.registry,
     });
     // Private support diagnostic lookup by non-user-facing connection key (S45).
     registerDiagnosticRoutes(app, {

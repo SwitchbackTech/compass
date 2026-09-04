@@ -185,7 +185,10 @@ describe("GET /internal/connections", () => {
     config: SyncConfig = testConfig(),
     authAdapter?: ProviderAuthAdapter,
   ) => {
-    service = createSyncService(config, { mongo, authAdapter });
+    service = createSyncService(config, {
+      mongo,
+      adapterOverrides: { google: { auth: authAdapter } },
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -341,7 +344,10 @@ describe("DELETE /internal/connections/:id", () => {
     config: SyncConfig,
     authAdapter?: ProviderAuthAdapter,
   ) => {
-    service = createSyncService(config, { mongo, authAdapter });
+    service = createSyncService(config, {
+      mongo,
+      adapterOverrides: { google: { auth: authAdapter } },
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -467,7 +473,10 @@ describe("POST /internal/connections/begin", () => {
     config: SyncConfig,
     authAdapter?: ProviderAuthAdapter,
   ) => {
-    service = createSyncService(config, { mongo, authAdapter });
+    service = createSyncService(config, {
+      mongo,
+      adapterOverrides: { google: { auth: authAdapter } },
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -690,7 +699,10 @@ describe("GET /sync/google", () => {
     config: SyncConfig,
     authAdapter?: ProviderAuthAdapter,
   ) => {
-    service = createSyncService(config, { mongo, authAdapter });
+    service = createSyncService(config, {
+      mongo,
+      adapterOverrides: { google: { auth: authAdapter } },
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -1018,7 +1030,7 @@ describe("POST /internal/connections/adopt-google-authorization", () => {
   const startService = async () => {
     service = createSyncService(testConfig({ EXECUTION: "active" }), {
       mongo,
-      authAdapter: new FakeAuthAdapter(),
+      adapterOverrides: { google: { auth: new FakeAuthAdapter() } },
     });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;

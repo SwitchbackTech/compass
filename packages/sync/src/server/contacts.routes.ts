@@ -10,19 +10,16 @@ import {
 } from "@core/types/contact.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { authResolverForAdapter } from "@sync/providers/google/build-provider-resolvers";
 import {
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY,
 } from "@sync/providers/google/google.scopes";
-import {
-  type ProviderAuthAdapter,
-  ProviderAuthError,
-} from "@sync/providers/provider-auth.port";
+import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ContactsPort,
   ContactsSearchError,
 } from "@sync/providers/provider-contacts.port";
+import { type ProviderRegistry } from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
@@ -44,10 +41,7 @@ export interface ContactsApiDeps {
   mongo: SyncMongoService;
   // Suggestions call the provider, so a passive deployment refuses.
   execution: SyncExecutionMode;
-  // Backs per-request credential custody; absent means no provider work.
-  authAdapter?: ProviderAuthAdapter;
-  // The provider contacts port, present only when the provider is configured.
-  contacts?: ContactsPort;
+  registry?: ProviderRegistry;
 }
 
 // Internal, authenticated attendee-suggestion lookup. Principal-scoped: the
@@ -69,7 +63,7 @@ export function registerContactsRoutes(
       if (!ensureConnected(deps.mongo, res)) return;
       // Suggestions always touch the provider (contacts are never cached), so
       // a passive or unconfigured service refuses like begin does.
-      if (deps.execution === "passive" || !deps.authAdapter || !deps.contacts) {
+      if (deps.execution === "passive" || !deps.registry?.isConfigured()) {
         res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
         return;
       }
@@ -112,12 +106,15 @@ export function registerContactsRoutes(
 
         const custody = new CredentialCustody(
           repos.credentials,
-          authResolverForAdapter(deps.authAdapter),
+          deps.registry.resolveAuth(),
         );
         const collected: ContactSuggestion[] = [];
         for (const connection of capable) {
+          const registration = deps.registry.get(connection.provider);
+          const contacts = registration.adapters.contacts;
+          if (!contacts) continue;
           const suggestions = await searchConnection(
-            deps.contacts,
+            contacts,
             custody,
             repos.credentials,
             connection,

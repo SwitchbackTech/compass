@@ -34,19 +34,11 @@ import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
+import { type ProviderAdapterOverrides } from "@sync/providers/google/build-provider-resolvers";
 import {
-  buildResolveAdapters,
-  buildResolveAuth,
-  googleProviderConfigured,
-  type ProviderAdapterOverrides,
-} from "@sync/providers/google/build-provider-resolvers";
-import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
-import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
-import { GooglePeopleAdapter } from "@sync/providers/google/google-people.adapter";
-import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
-import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
-import { type ContactsPort } from "@sync/providers/provider-contacts.port";
-import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+  buildProviderRegistry,
+  type ProviderRegistry,
+} from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
@@ -99,16 +91,9 @@ export function createSyncService(
   config: SyncConfig,
   deps: {
     mongo?: SyncMongoService;
-    // Override the provider adapter (tests inject a fake to avoid the network);
-    // production builds it from config.
-    authAdapter?: ProviderAuthAdapter;
-    // Override the provider event writer (tests inject a fake); production
-    // builds it from config.
-    writer?: ProviderEventWriter;
-    // Override the provider contacts port (tests inject a fake); production
-    // builds it from config.
-    contacts?: ContactsPort;
-    resolveAdapters?: ResolveProviderAdapters;
+    registry?: ProviderRegistry;
+    // Per-kind adapter overrides for tests (merged into buildProviderRegistry).
+    adapterOverrides?: ProviderAdapterOverrides;
   } = {},
 ): SyncService {
   const identity = buildServiceIdentity({
@@ -129,18 +114,8 @@ export function createSyncService(
     );
   }
 
-  const adapterOverrides: ProviderAdapterOverrides =
-    deps.authAdapter || deps.writer || deps.contacts
-      ? {
-          google: {
-            auth: deps.authAdapter,
-            writer: deps.writer,
-            contacts: deps.contacts,
-          },
-        }
-      : {};
-  const resolveAdapters =
-    deps.resolveAdapters ?? buildResolveAdapters(config, adapterOverrides);
+  const registry =
+    deps.registry ?? buildProviderRegistry(config, deps.adapterOverrides ?? {});
 
   // The internal connection API mounts only when storage is provided. Its
   // routes read the connected db per request, so the app is still built before
@@ -155,16 +130,7 @@ export function createSyncService(
         }),
         mongo: deps.mongo,
         execution: config.EXECUTION,
-        resolveAdapters,
-        // The provider adapter is db-free, so it is built once here (gated on
-        // provider config); the per-request custody/repos build from the db.
-        authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
-        // The event writer is likewise db-free and gated on provider config;
-        // the command routes use it for provider-targeted creates.
-        writer: deps.writer ?? buildEventWriter(config),
-        // The contacts port is likewise db-free and gated on provider config;
-        // the contacts routes use it for attendee suggestions.
-        contacts: deps.contacts ?? buildContactsPort(config),
+        registry,
         // The OAuth CSRF state is signed with a key derived from the service
         // secret (domain-separated from internal-auth signing); the callback
         // resolves against the public base URL.
@@ -194,39 +160,6 @@ export function createSyncService(
   };
 
   return { identity, readiness, shutdown, httpServer, stop };
-}
-
-// Build the provider authorization adapter when the provider is configured.
-// A passive deployment without provider credentials returns undefined, and the
-// connection API refuses provider-touching operations rather than failing.
-function buildAuthAdapter(config: SyncConfig): ProviderAuthAdapter | undefined {
-  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
-    return undefined;
-  }
-  return new GoogleAuthAdapter(
-    config.GOOGLE_CLIENT_ID,
-    config.GOOGLE_CLIENT_SECRET,
-  );
-}
-
-// Build the provider event writer when the provider is configured. Gated on the
-// same credentials as the auth adapter: a passive/unconfigured deployment
-// returns undefined, and provider-targeted commands stay pending.
-function buildEventWriter(config: SyncConfig): ProviderEventWriter | undefined {
-  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
-    return undefined;
-  }
-  return new GoogleEventWriter();
-}
-
-// Build the provider contacts port when the provider is configured. Gated on
-// the same credentials as the auth adapter: a passive/unconfigured deployment
-// returns undefined and the suggestions route refuses.
-function buildContactsPort(config: SyncConfig): ContactsPort | undefined {
-  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
-    return undefined;
-  }
-  return new GooglePeopleAdapter();
 }
 
 function closeHttpServer(httpServer: Server): Promise<void> {
@@ -501,10 +434,11 @@ function buildSchedulers(
   sweeps: ReadonlyArray<readonly [name: string, sweep: SweepScheduler]>;
 } | null {
   if (config.EXECUTION !== "active") return null;
-  if (!googleProviderConfigured(config)) return null;
+  const registry = buildProviderRegistry(config);
+  if (!registry.isConfigured()) return null;
 
-  const resolveAdapters = buildResolveAdapters(config);
-  const resolveAuth = buildResolveAuth(resolveAdapters);
+  const resolveAdapters = registry.resolveAdapters();
+  const resolveAuth = registry.resolveAuth();
 
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;

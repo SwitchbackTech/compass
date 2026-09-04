@@ -705,8 +705,7 @@ describe("POST /internal/commands", () => {
     };
     service = createSyncService(testConfig({ EXECUTION: "active" }), {
       mongo,
-      writer,
-      authAdapter,
+      adapterOverrides: { google: { auth: authAdapter, writer } },
     });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;

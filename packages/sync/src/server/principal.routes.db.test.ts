@@ -111,7 +111,9 @@ describe("DELETE /internal/principal", () => {
       options && "authAdapter" in options ? options.authAdapter : adapter;
     service = createSyncService(options?.config ?? testConfig(), {
       mongo,
-      authAdapter: authAdapter ?? undefined,
+      adapterOverrides: authAdapter
+        ? { google: { auth: authAdapter } }
+        : undefined,
     });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;

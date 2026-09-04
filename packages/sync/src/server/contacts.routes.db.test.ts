@@ -109,7 +109,10 @@ describe("GET /internal/contacts/suggestions", () => {
   let contacts: FakeContactsPort;
 
   const startService = async (config: SyncConfig = testConfig()) => {
-    service = createSyncService(config, { mongo, authAdapter, contacts });
+    service = createSyncService(config, {
+      mongo,
+      adapterOverrides: { google: { auth: authAdapter, contacts } },
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;

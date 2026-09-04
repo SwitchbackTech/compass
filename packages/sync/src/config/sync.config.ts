@@ -66,6 +66,12 @@ export const SyncConfigSchema = z
     // the Google adapter refuses to construct when either is absent.
     GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
+    // Microsoft OAuth client (read only until M-09 registers the provider).
+    MICROSOFT_CLIENT_ID: z.string().trim().min(1).optional(),
+    MICROSOFT_CLIENT_SECRET: z.string().trim().min(1).optional(),
+    // 32-byte base64 key for password credentials at rest (Apple). Read only
+    // until A-08 registers the provider.
+    CREDENTIAL_ENCRYPTION_KEY: z.string().trim().min(1).optional(),
     // Optional PostHog credentials for sanitized sync_health_snapshot events.
     // When absent, the health emitter no-ops (local/dev without analytics).
     POSTHOG_KEY: z.string().trim().min(1).optional(),
@@ -102,6 +108,10 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     // Empty-string (unfilled deploy placeholder) or null coerces to absent.
     GOOGLE_CLIENT_ID: config.google?.clientId || undefined,
     GOOGLE_CLIENT_SECRET: config.google?.clientSecret || undefined,
+    MICROSOFT_CLIENT_ID: config.microsoft?.clientId || undefined,
+    MICROSOFT_CLIENT_SECRET: config.microsoft?.clientSecret || undefined,
+    CREDENTIAL_ENCRYPTION_KEY:
+      config.sync?.credentialEncryptionKey || undefined,
     POSTHOG_KEY: config.posthog?.key || undefined,
     POSTHOG_HOST: config.posthog?.host || undefined,
   });

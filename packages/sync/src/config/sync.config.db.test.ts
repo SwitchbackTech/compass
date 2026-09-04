@@ -102,6 +102,48 @@ describe("Sync service configuration", () => {
     });
   });
 
+  describe("Microsoft credentials (read only)", () => {
+    const withMicrosoft = (microsoft: Record<string, unknown> | undefined) =>
+      ({
+        runtime: { nodeEnv: "staging", timezone: "Etc/UTC" },
+        sync: baseSyncSection(),
+        microsoft,
+      }) as unknown as CompassConfig;
+
+    it("leaves Microsoft client unset when the section is absent", () => {
+      const config = parseSyncConfig(withMicrosoft(undefined));
+      expect(config.MICROSOFT_CLIENT_ID).toBeUndefined();
+      expect(config.MICROSOFT_CLIENT_SECRET).toBeUndefined();
+    });
+
+    it("reads Microsoft client id and secret when both are set", () => {
+      const config = parseSyncConfig(
+        withMicrosoft({
+          clientId: "ms-id",
+          clientSecret: "ms-secret",
+        }),
+      );
+      expect(config.MICROSOFT_CLIENT_ID).toBe("ms-id");
+      expect(config.MICROSOFT_CLIENT_SECRET).toBe("ms-secret");
+    });
+  });
+
+  describe("credential encryption key (read only)", () => {
+    it("reads sync.credentialEncryptionKey when set", () => {
+      const key =
+        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCD";
+      const config = parseSyncConfig(
+        compassConfigWithSync({ credentialEncryptionKey: key }),
+      );
+      expect(config.CREDENTIAL_ENCRYPTION_KEY).toBe(key);
+    });
+
+    it("leaves credentialEncryptionKey unset when omitted", () => {
+      const config = parseSyncConfig(compassConfigWithSync());
+      expect(config.CREDENTIAL_ENCRYPTION_KEY).toBeUndefined();
+    });
+  });
+
   describe("required fields", () => {
     it("throws a clear error when the sync section is absent", () => {
       const config = { runtime: { nodeEnv: "staging", timezone: "Etc/UTC" } };

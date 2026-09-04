@@ -13,10 +13,7 @@ import {
   ProviderWriteUnavailableError,
   submitCloudCommand,
 } from "@sync/domain/cloud-command.service";
-import { buildResolveAuth } from "@sync/providers/google/build-provider-resolvers";
-import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
-import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
-import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { type ProviderRegistry } from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
@@ -38,24 +35,13 @@ export interface CommandApiDeps {
   // Whether provider work is enabled. A provider-targeted create executes only
   // when active; otherwise it is recorded pending.
   execution: SyncExecutionMode;
-  // Provider write + auth adapters, present only when a provider is configured.
-  // Both are needed to execute a provider create (the writer performs it, the
-  // auth adapter backs the per-request credential custody). Absent leaves
+  // Provider registry for per-connection adapter resolution. Absent leaves
   // provider-targeted commands pending.
-  writer?: ProviderEventWriter;
-  authAdapter?: ProviderAuthAdapter;
-  resolveAdapters?: ResolveProviderAdapters;
+  registry?: ProviderRegistry;
   // Injectable clock so local confirmation timestamps are deterministic in
   // tests.
   now?: () => number;
 }
-
-// Internal, authenticated command ingress. Durably records acknowledged user
-// intent for one event mutation. A cloud-only create is applied to the
-// canonical store and confirmed locally in the same request — no provider call
-// — so this is served in passive mode too. The tenant/principal come from the
-// signed auth context, never the body, so a caller only ever writes to its own
-// principal.
 export function registerCommandRoutes(
   app: Express,
   deps: CommandApiDeps,
@@ -81,16 +67,15 @@ export function registerCommandRoutes(
         // Build the provider write capability only when both adapters exist;
         // custody is per-request (it holds the request's db-backed credential
         // repo), the writer is shared.
-        const provider =
-          deps.resolveAdapters && deps.authAdapter
-            ? {
-                resolveAdapters: deps.resolveAdapters,
-                custody: new CredentialCustody(
-                  repos.credentials,
-                  buildResolveAuth(deps.resolveAdapters),
-                ),
-              }
-            : undefined;
+        const provider = deps.registry?.isConfigured()
+          ? {
+              resolveAdapters: deps.registry.resolveAdapters(),
+              custody: new CredentialCustody(
+                repos.credentials,
+                deps.registry.resolveAuth(),
+              ),
+            }
+          : undefined;
 
         const events = repos.events;
         // Snapshot calendarId before apply: a confirmed delete removes the
