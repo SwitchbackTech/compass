@@ -227,7 +227,7 @@ async function applyDeletions(
 ): Promise<number> {
   let deleted = 0;
   for (const cancellation of cancellations) {
-    const event = await deps.events.findByProviderIdentity(
+    let event = await deps.events.findByProviderIdentity(
       calendar.tenantId,
       calendar.principalId,
       {
@@ -238,6 +238,17 @@ async function applyDeletions(
         >,
       },
     );
+    if (!event) {
+      event = await deps.events.findByProviderResourceHref(
+        calendar.tenantId,
+        calendar.principalId,
+        {
+          connectionId: calendar.connectionId,
+          calendarId: calendar._id,
+          href: cancellation.providerEventId,
+        },
+      );
+    }
     // Already gone (a prior pull removed it) or never stored — nothing to do.
     if (!event) continue;
     // A local edit/create is still in flight for this event; keep it so the

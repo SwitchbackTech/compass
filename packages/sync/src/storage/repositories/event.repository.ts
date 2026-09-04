@@ -328,6 +328,28 @@ export class EventRepository {
     return record ? EventRecordSchema.parse(record) : null;
   }
 
+  // Resolve a CalDAV resource href to a stored provider event. Incremental
+  // sync-collection deletions report only the href; import stores it in
+  // providerMetadata.href so pulls can map back to providerEventId.
+  async findByProviderResourceHref(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    identity: {
+      connectionId: NonNullable<EventRecord["connectionId"]>;
+      calendarId: EventRecord["calendarId"];
+      href: string;
+    },
+  ): Promise<EventRecord | null> {
+    const record = await this.collection.findOne({
+      tenantId,
+      principalId,
+      connectionId: identity.connectionId,
+      calendarId: identity.calendarId,
+      "providerMetadata.href": identity.href,
+    });
+    return record ? EventRecordSchema.parse(record) : null;
+  }
+
   // Remove one event by id, scoped to its owner so a caller can only delete its
   // own event. Idempotent: deleting an already-absent event is a no-op, so a
   // retried delete converges. Returns whether a document was removed.
