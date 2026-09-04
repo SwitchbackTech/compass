@@ -7,6 +7,27 @@ in-backend sync engine they measured (see [Google Sync And SSE Flow](../features
 for the current architecture) — Sync (`packages/sync`) owns import
 performance now, with its own test suite.
 
+Web paint and script-transfer numbers come from GitHub Actions
+[`.github/workflows/perf-budget.yml`](../../.github/workflows/perf-budget.yml)
+(`lighthouse` job), not from this table. That workflow builds `packages/web`,
+serves the gzipped bundle the way production Caddy does, and asserts medians
+from two Lighthouse profiles (desktop is the blocking gate; mobile is
+warn-only). Budgets and the calibration rule live in
+[`.github/perf/assert-budget.ts`](../../.github/perf/assert-budget.ts):
+read actuals off a green `main` run, never a laptop.
+
+The job is **not** a required merge check. It runs on:
+
+- `push` to `main` when `packages/web/**`, `packages/core/**`, `bun.lock`,
+  `.github/perf/**`, or the workflow file change
+- a nightly `schedule` (`15 5 * * *` UTC)
+- `workflow_dispatch`
+- pull requests that touch `.github/perf/**` or
+  `.github/workflows/perf-budget.yml`
+
+A PR that only changes `packages/web/src/**` does not start a `lighthouse`
+check. List recent runs with `gh run list --workflow=perf-budget.yml`.
+
 ## Native parallel test suite timings (Bun 1.3.14)
 
 Recorded on 2026-08-12 on the cloud agent VM after launch-hardening work
