@@ -140,6 +140,16 @@ function viewFromPathname(pathname: string): string {
   return match?.[1] ?? "other";
 }
 
+/** Lock owners as a stable, low-cardinality key. OverlayPanel registers
+ * `overlayPanel:<useId>` per instance so nested panels unlock independently;
+ * the instance suffix is dropped here so PostHog can group on the name. */
+function lockContext(): string {
+  const names = new Set(
+    getAppLockReasons().map((reason) => reason.split(":")[0]),
+  );
+  return [...names].sort().join("+") || "unknown";
+}
+
 /** Static registration string for a hotkey (e.g. "Shift+ArrowLeft"). */
 function registeredHotkeyLabel(hotkey: RegisterableHotkey): string {
   if (typeof hotkey === "string") return hotkey;
@@ -173,7 +183,7 @@ export function recordShortcutUnavailableAttempt(
   track("shortcut_unavailable_attempt", {
     action_id: hint.actionId,
     active_element: document.activeElement?.tagName.toLowerCase() ?? "none",
-    context: getAppLockReasons().join("+") || "unknown",
+    context: lockContext(),
     feature_area: hint.featureArea,
     is_repeat: event.repeat,
     outcome: "unavailable",
