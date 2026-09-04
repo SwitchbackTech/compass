@@ -147,9 +147,11 @@ Concurrency is per job. `merge-guard` runs in `agent-merge-<pr>` with
 `cancel-in-progress: false`, so a second launch **waits** for the first.
 Do not put those jobs back under one workflow-level group. The picker
 fills up to `AGENT_LOOP_CONCURRENCY` (default 3) issues whose partition
-labels do not overlap. Merge combinations are re-tested by a merge queue
-on the Copilot PR Review ruleset (or `strict_required_status_checks_policy`
-if the queue cannot be enabled).
+labels do not overlap. Untested combinations cannot land: the Copilot PR
+Review ruleset (8388539) requires a merge queue (`grouping_strategy:
+ALLGREEN`, squash). Unit and E2E workflows listen for `merge_group` so
+the queue can emit the required checks. If the queue rule cannot be
+written, the equivalent is `strict_required_status_checks_policy: true`.
 
 ## Sensitive-path merge gate
 

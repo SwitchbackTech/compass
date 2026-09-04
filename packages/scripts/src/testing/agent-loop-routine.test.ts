@@ -141,6 +141,14 @@ describe("agent-loop Routine contract", () => {
     expect(workflow).toContain("agent-loop-launch.sh");
     expect(workflow).toContain("AGENT_LOOP_CONCURRENCY");
     expect(workflow).toContain("steps.next.outputs.issue_numbers");
+
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
+    const routine = readFileSync("docs/CI-CD/agent-loop-routine.md", "utf8");
+    expect(unit).toMatch(/^ {2}merge_group:$/m);
+    expect(e2e).toMatch(/^ {2}merge_group:$/m);
+    expect(routine).toContain("grouping_strategy:");
+    expect(routine).toContain("ALLGREEN");
   });
 
   it("smokes staging without logging in", () => {

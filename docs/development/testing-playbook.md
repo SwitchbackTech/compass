@@ -39,7 +39,7 @@ Source of truth:
 
 Unit workflow (`test-unit.yml`):
 
-- triggers on `pull_request` to `main` and `push` to `main`
+- triggers on `pull_request` to `main`, `merge_group`, and `push` to `main`
 - uses `concurrency` so a new PR push cancels the previous PR run
 - runs one `static` job (lint, knip, type-check as separate steps)
 - runs a matrix across `core`, `sync`, `web, 1`, `web, 2`, `backend`, and `scripts`
@@ -64,7 +64,7 @@ bun run test:backend
 bun run test:scripts
 ```
 
-E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` via `bun run test:e2e`.
+E2E workflow (`test-e2e.yml`) is separate and runs on pull requests, merge-queue `merge_group` events, and pushes to `main` via `bun run test:e2e`.
 
 ## Current Test Strategy
 
