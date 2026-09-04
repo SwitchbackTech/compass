@@ -4,6 +4,7 @@ import {
   publicRescheduleUrlForReservation,
   tokenFromGuestActionUrl,
   validateBookingCancelSearch,
+  validateBookingRescheduleSearch,
   validatePublicBookingSearch,
 } from "@web/booking/public-booking-search";
 import { describe, expect, it } from "bun:test";
@@ -66,6 +67,26 @@ describe("validateBookingCancelSearch", () => {
       token: undefined,
     });
     expect(validateBookingCancelSearch({})).toEqual({ token: undefined });
+  });
+});
+
+describe("validateBookingRescheduleSearch", () => {
+  it("keeps token and picker selection together", () => {
+    expect(
+      validateBookingRescheduleSearch({
+        token: "abc",
+        month: "2026-09",
+        date: "2026-09-07",
+        slot: "2026-09-07T10:00:00.000Z",
+        tz: "UTC",
+      }),
+    ).toEqual({
+      token: "abc",
+      month: "2026-09",
+      date: "2026-09-07",
+      slot: "2026-09-07T10:00:00.000Z",
+      tz: "UTC",
+    });
   });
 });
 

@@ -6,6 +6,7 @@ import {
   preparePublicBookingCancelPage,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
+  preparePublicBookingReschedulePage,
   prepareSignedInBookingSettingsPage,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
@@ -238,6 +239,66 @@ test.describe("public booking cancel page", () => {
       page.getByRole("heading", { name: "Could not cancel booking" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel error" });
+  });
+});
+
+test.describe("public booking reschedule page", () => {
+  test("picker has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingReschedulePage(page);
+    await expect(
+      page.getByRole("heading", {
+        name: "Reschedule your booking with Tyler Dane",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking reschedule picker",
+    });
+  });
+
+  test("not-found state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingReschedulePage(page, { token: "" });
+    await expect(
+      page.getByRole("heading", { name: "Booking not found" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking reschedule not found",
+    });
+  });
+
+  test("canceled state has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await preparePublicBookingReschedulePage(page, {
+      reservationStatus: "cancelled",
+    });
+    await expect(
+      page.getByRole("heading", { name: "This booking was canceled" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking reschedule canceled",
+    });
+  });
+
+  test("conflict alert has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingReschedulePage(page, { rescheduleStatus: 409 });
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByRole("button", { name: "Confirm" }).click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "booking reschedule conflict",
+    });
   });
 });
 

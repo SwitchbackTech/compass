@@ -2,6 +2,7 @@ export const ROOT_ROUTES = {
   API: "/api",
   BOOK: "/book/$username",
   BOOK_CANCEL: "/book/cancel/$reservationId",
+  BOOK_RESCHEDULE: "/book/reschedule/$reservationId",
   BOOK_CONFIRMED: "/book/confirmed/$reservationId",
   CLEANUP: "/cleanup",
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
