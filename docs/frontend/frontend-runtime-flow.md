@@ -72,13 +72,25 @@ site; the calendar views stay keyboard-only.
 Welcome → signup → first-event contract:
 
 - unauthenticated users who have not seen welcome get `WelcomeModal`
-- the welcome CTA order is **Continue with Google** (`G`, when Google is
+- welcome is three screens in one dialog, each with one focused primary
+  button so Enter (or a click) is always the obvious next thing: **Get
+  started for free** (headline, tagline, one-sentence pitch) → **Next** over
+  the five FAQ rows (digits `1`–`5` toggle them, only on this screen) →
+  the auth choices. `Log in` (`i`) and a three-dot step indicator sit on
+  every screen. Escape, the backdrop and **Back** step back one screen and
+  are a no-op on the first, so a stray Escape never drops a first-timer into
+  the practice game
+- the welcome overlay is the one calendar surface where the mouse works
+  (`data-pointer-pass`): a landing page should behave like a normal site, and
+  keyboard-only starts once the visitor enters the calendar
+- the last screen's CTA order is **Continue with Google** (`G`, when Google is
   available), **Sign up with email** (`U`), then **Explore without an account**
-  (`S`). Google leads because the scopes Compass requests include the calendar,
-  so that one round trip signs the user up *and* connects it — the moment the
-  product starts being worth keeping
-- **Explore without an account**, the backdrop, and Escape start the Shortcut
-  Showcase (`entry: "welcome"`) after the welcome dialog unmounts
+  (`S`), with the social and legal links (`6`–`0`) below. Google leads
+  because the scopes Compass requests include the calendar, so that one round
+  trip signs the user up *and* connects it, the moment the product starts
+  being worth keeping
+- **Explore without an account** starts the Shortcut Showcase
+  (`entry: "welcome"`) after the welcome dialog unmounts
 - **Log in** opens the auth modal and leaves the showcase flags alone, so a
   returning user is not handed the practice or the first-event prompt
 - signing up (either route) defers a showcase offer via `showcase.storage.ts`;

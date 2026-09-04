@@ -1,13 +1,10 @@
-import classNames from "classnames";
-import { type ReactNode, useCallback, useId, useState } from "react";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
-import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
-import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
-import { FAQ_ITEMS } from "./faq";
-import { flashedShortcutClass } from "./useFlashedWelcomeShortcut";
+import { type ReactNode, useId } from "react";
+import { useFaqDisclosure } from "./useFaqDisclosure";
 import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
+import { WelcomeFaqList } from "./WelcomeFaqList";
 import { WelcomeLinks } from "./WelcomeLinks";
 
+/** The signed-in welcome guide: headline, FAQ, and footer links on one screen. */
 export function WelcomeGuideBody({
   children,
   flashedKey,
@@ -15,35 +12,9 @@ export function WelcomeGuideBody({
   children?: ReactNode;
   flashedKey: string | null;
 }) {
-  const disclosureIdPrefix = useId();
-  const faqHintId = `${disclosureIdPrefix}-faq-hint`;
-  const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
-    () => new Set(),
-  );
-
-  const toggleFaq = useCallback((question: string) => {
-    setExpandedFaqs((currentFaqs) => {
-      const nextFaqs = new Set(currentFaqs);
-
-      if (nextFaqs.has(question)) {
-        nextFaqs.delete(question);
-      } else {
-        nextFaqs.add(question);
-      }
-
-      return nextFaqs;
-    });
-  }, []);
-
-  const toggleFaqAt = useCallback(
-    (index: number) => {
-      const item = FAQ_ITEMS[index];
-      if (item) toggleFaq(item.question);
-    },
-    [toggleFaq],
-  );
-
-  useWelcomeJumpShortcuts(toggleFaqAt);
+  const faqHintId = `${useId()}-faq-hint`;
+  const faq = useFaqDisclosure();
+  useWelcomeJumpShortcuts(faq.toggleAt);
 
   return (
     <>
@@ -57,60 +28,12 @@ export function WelcomeGuideBody({
         </p>
       </div>
 
-      <div
-        aria-describedby={faqHintId}
-        className="flex w-full flex-col divide-y divide-border"
-      >
-        {FAQ_ITEMS.map((item, index) => {
-          const isExpanded = expandedFaqs.has(item.question);
-          const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
-          const state = isExpanded ? "open" : "closed";
-          const digit = String(index + 1);
-
-          return (
-            <div key={item.question} className="py-3">
-              <div
-                className="flex items-center justify-between gap-3"
-                {...pointerShortcutAttributes(digit)}
-              >
-                <button
-                  type="button"
-                  aria-controls={answerId}
-                  aria-expanded={isExpanded}
-                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
-                  onClick={() => toggleFaq(item.question)}
-                >
-                  {item.question}
-                </button>
-                <span
-                  className={classNames(
-                    "shrink-0",
-                    flashedShortcutClass(flashedKey, digit),
-                  )}
-                >
-                  <ShortcutHint>{digit}</ShortcutHint>
-                </span>
-              </div>
-              <div
-                id={answerId}
-                aria-hidden={!isExpanded}
-                className="c-disclosure-content"
-                data-state={state}
-              >
-                <div>
-                  <div className="mt-2 text-sm text-text-muted leading-relaxed">
-                    {typeof item.answer === "string" ? (
-                      item.answer
-                    ) : (
-                      <ShortcutTipParts parts={item.answer} />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <WelcomeFaqList
+        describedById={faqHintId}
+        expanded={faq.expanded}
+        flashedKey={flashedKey}
+        onToggle={faq.toggle}
+      />
 
       <p id={faqHintId} className="text-text-muted text-xs leading-relaxed">
         Tip: Press a number to open a question or a link.

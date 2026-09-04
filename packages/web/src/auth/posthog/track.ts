@@ -3,6 +3,7 @@ import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 export type ProductEvent =
   | "welcome_modal_shown"
   | "welcome_modal_dismissed"
+  | "welcome_step_viewed"
   | "signup_started"
   | "signup_completed"
   | "google_oauth_redirect_started"
