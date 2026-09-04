@@ -1,11 +1,11 @@
 import { ObjectId } from "mongodb";
+import { explainWindowedConfirmedReservationScan } from "@backend/__tests__/helpers/booking-reservation.explain";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
-import mongoService from "@backend/common/services/mongo.service";
 import {
   afterAll,
   beforeAll,
@@ -40,18 +40,10 @@ describe("booking indexes", () => {
 
   it("uses a page+slotStart index for a windowed confirmed scan, not a collection scan", async () => {
     const pageId = new ObjectId();
-    const query = {
-      pageId,
-      status: "confirmed" as const,
-      slotStart: {
-        $gte: new Date("2026-09-07T00:00:00.000Z"),
-        $lt: new Date("2026-09-08T00:00:00.000Z"),
-      },
-    };
-
-    const explained = await mongoService.bookingReservation
-      .find(query)
-      .explain("queryPlanner");
+    const explained = await explainWindowedConfirmedReservationScan(pageId, {
+      from: new Date("2026-09-07T00:00:00.000Z"),
+      to: new Date("2026-09-08T00:00:00.000Z"),
+    });
     const plan = (explained as { queryPlanner?: { winningPlan?: unknown } })
       .queryPlanner?.winningPlan;
     const used = indexNamesFromPlan(plan);
