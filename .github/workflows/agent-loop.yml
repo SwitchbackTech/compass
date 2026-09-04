@@ -103,6 +103,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+          AGENT_LOOP_CONCURRENCY: ${{ vars.AGENT_LOOP_CONCURRENCY }}
         run: .github/scripts/agent-loop-next.sh
 
       - name: Launch next agent
@@ -111,7 +112,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
-        run: .github/scripts/agent-loop-launch.sh "${{ steps.next.outputs.issue_number }}"
+        run: .github/scripts/agent-loop-launch.sh ${{ steps.next.outputs.issue_numbers }}
 
   post-deploy:
     name: Smoke staging after release
@@ -137,6 +138,22 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: .github/scripts/agent-loop-postdeploy.sh
+
+      - name: Pick WPs to top the fleet up to N
+        id: next
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+          AGENT_LOOP_CONCURRENCY: ${{ vars.AGENT_LOOP_CONCURRENCY }}
+        run: .github/scripts/agent-loop-next.sh
+
+      - name: Launch agents
+        if: steps.next.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-launch.sh ${{ steps.next.outputs.issue_numbers }}
 
   kick:
     name: Pick and launch a WP
@@ -174,17 +191,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+          AGENT_LOOP_CONCURRENCY: ${{ vars.AGENT_LOOP_CONCURRENCY }}
         run: .github/scripts/agent-loop-next.sh
 
-      - name: Launch agent
-        if: steps.given.outputs.found == 'true' || steps.next.outputs.found == 'true'
+      - name: Launch dispatched issue
+        if: steps.given.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
-        run: |
-          n="${{ steps.given.outputs.issue_number }}"
-          if [ -z "$n" ]; then
-            n="${{ steps.next.outputs.issue_number }}"
-          fi
-          .github/scripts/agent-loop-launch.sh "$n"
+        run: .github/scripts/agent-loop-launch.sh "${{ steps.given.outputs.issue_number }}"
+
+      - name: Launch selected issues
+        if: steps.next.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-launch.sh ${{ steps.next.outputs.issue_numbers }}

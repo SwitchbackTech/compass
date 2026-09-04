@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# Launch one agent-loop agent for a GitHub issue.
+# Launch one or more agent-loop agents for GitHub issues.
 # If CURSOR_API_KEY is set, POST https://api.cursor.com/v0/agents only.
 # Otherwise comment the exact pickup phrase for a Cursor Automation:
 #   agent-loop: pickup
 # Never both (that would start two agents).
 set -euo pipefail
 
-ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number>}
+ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number> [issue-number...]}
+
+if [ "$#" -gt 1 ]; then
+  for n in "$@"; do
+    "$0" "$n"
+  done
+  exit 0
+fi
 
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"

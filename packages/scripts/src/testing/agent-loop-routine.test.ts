@@ -125,6 +125,9 @@ describe("agent-loop Routine contract", () => {
     expect(next).toContain("READY_LABEL");
     expect(next).toContain("is_human_approval");
     expect(next).toContain("has_open_dependency");
+    expect(next).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(next).toContain("PARTITION_LABELS");
+    expect(next).toContain("issue_numbers");
 
     const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
     expect(workflow).toContain("vars.BOOKING_LOOP_ENABLED == 'true'");
@@ -136,6 +139,8 @@ describe("agent-loop Routine contract", () => {
     expect(workflow).toContain("agent-loop-postdeploy.sh");
     expect(workflow).toContain("agent-loop-next.sh");
     expect(workflow).toContain("agent-loop-launch.sh");
+    expect(workflow).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(workflow).toContain("steps.next.outputs.issue_numbers");
   });
 
   it("smokes staging without logging in", () => {

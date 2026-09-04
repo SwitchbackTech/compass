@@ -12,6 +12,12 @@ if [ -z "$REPO" ]; then
   exit 1
 fi
 
+CONCURRENCY=${AGENT_LOOP_CONCURRENCY:-3}
+if ! [[ "$CONCURRENCY" =~ ^[1-9][0-9]*$ ]]; then
+  echo "AGENT_LOOP_CONCURRENCY must be a positive integer, got ${CONCURRENCY}" >&2
+  exit 1
+fi
+
 mapfile -t MILESTONES < <(parse_milestones)
 if [ "${#MILESTONES[@]}" -eq 0 ]; then
   echo "AGENT_LOOP_MILESTONES is empty" >&2
@@ -100,17 +106,19 @@ print(json.dumps(issues[0]))
   echo "Retrying issue: #${number} ${title}"
   set_output found true
   set_output issue_number "$number"
+  set_output issue_numbers "$number"
   set_output issue_title "$title"
   set_output issue_url "$url"
   if [ -z "${GITHUB_OUTPUT:-}" ]; then
     echo "ISSUE_NUMBER=${number}"
+    echo "ISSUE_NUMBERS=${number}"
     echo "ISSUE_TITLE=${title}"
     echo "ISSUE_URL=${url}"
   fi
   exit 0
 fi
 
-running_json=$(collect_labeled "number,updatedAt" "$RUNNING_LABEL" "$LEGACY_RUNNING_LABEL")
+running_json=$(collect_labeled "number,updatedAt,labels" "$RUNNING_LABEL" "$LEGACY_RUNNING_LABEL")
 
 stale=$(
   python3 -c '
@@ -157,8 +165,8 @@ if [ -n "$stale_list" ]; then
   done
 fi
 
-if [ "${fresh_count:-0}" -gt 0 ]; then
-  echo "An issue already has ${RUNNING_LABEL}; idle (concurrency 1)."
+if [ "${fresh_count:-0}" -ge "$CONCURRENCY" ]; then
+  echo "Fleet is full (${fresh_count} in-flight, concurrency ${CONCURRENCY}); idle."
   set_output found false
   if [ -z "${GITHUB_OUTPUT:-}" ]; then
     echo "found=false"
@@ -174,9 +182,10 @@ prs_json=$(
 picker_tmp=$(mktemp -d)
 trap 'rm -rf "$picker_tmp"' EXIT
 printf '%s' "$prs_json" >"${picker_tmp}/prs.json"
+printf '%s' "$running_json" >"${picker_tmp}/running.json"
 
 open_numbers=()
-declare -A MILESTONE_ISSUES=()
+all_issues='[]'
 for milestone in "${MILESTONES[@]}"; do
   issues_json=$(
     gh issue list --repo "$REPO" --milestone "$milestone" --state open \
@@ -185,30 +194,46 @@ for milestone in "${MILESTONES[@]}"; do
   if [ -z "$issues_json" ]; then
     issues_json='[]'
   fi
-  MILESTONE_ISSUES["$milestone"]=$issues_json
+  issues_json=$(
+    printf '%s' "$issues_json" | python3 -c \
+      'import json,sys; issues=json.load(sys.stdin); issues.sort(key=lambda i: i["number"]); print(json.dumps(issues))'
+  )
+  all_issues=$(json_concat "$all_issues" "$issues_json")
   while IFS= read -r n; do
     [ -n "$n" ] && open_numbers+=("$n")
   done < <(printf '%s' "$issues_json" | issue_numbers_from_json)
 done
 
-selected=""
-for milestone in "${MILESTONES[@]}"; do
-  issues_json=${MILESTONE_ISSUES["$milestone"]}
-  if [ -z "$issues_json" ] || [ "$issues_json" = "[]" ]; then
-    continue
-  fi
-  printf '%s' "$issues_json" >"${picker_tmp}/issues.json"
-  selected=$(
-    OPEN_NUMBERS="${open_numbers[*]}" \
-    SKIP_LABEL="$NEEDS_HUMAN_LABEL" LEGACY_SKIP_LABEL="$LEGACY_NEEDS_HUMAN_LABEL" \
-    RUNNING_LABEL="$RUNNING_LABEL" LEGACY_RUNNING_LABEL="$LEGACY_RUNNING_LABEL" \
-    QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" LEGACY_QUOTA_WAITING_LABEL="$LEGACY_QUOTA_WAITING_LABEL" \
-    READY_LABEL="$READY_LABEL" \
-    python3 - "${picker_tmp}/issues.json" "${picker_tmp}/prs.json" <<'PY'
+printf '%s' "$all_issues" >"${picker_tmp}/issues.json"
+
+selected=$(
+  OPEN_NUMBERS="${open_numbers[*]}" \
+  SKIP_LABEL="$NEEDS_HUMAN_LABEL" LEGACY_SKIP_LABEL="$LEGACY_NEEDS_HUMAN_LABEL" \
+  RUNNING_LABEL="$RUNNING_LABEL" LEGACY_RUNNING_LABEL="$LEGACY_RUNNING_LABEL" \
+  QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" LEGACY_QUOTA_WAITING_LABEL="$LEGACY_QUOTA_WAITING_LABEL" \
+  READY_LABEL="$READY_LABEL" \
+  CONCURRENCY="$CONCURRENCY" \
+  FRESH_COUNT="${fresh_count:-0}" \
+  python3 - "${picker_tmp}/issues.json" "${picker_tmp}/prs.json" \
+    "${picker_tmp}/running.json" <<'PY'
 import json, os, re, sys
+from datetime import datetime, timezone, timedelta
+
+PARTITION_LABELS = {
+    "sync-core",
+    "sync-microsoft",
+    "sync-apple",
+    "web",
+    "backend",
+    "core",
+    "scripts",
+    "e2e",
+    "docs",
+}
 
 issues = json.load(open(sys.argv[1], encoding="utf-8"))
 prs = json.load(open(sys.argv[2], encoding="utf-8"))
+running = json.load(open(sys.argv[3], encoding="utf-8"))
 open_numbers = {int(n) for n in os.environ.get("OPEN_NUMBERS", "").split() if n}
 ready_label = os.environ["READY_LABEL"]
 skip_labels = {
@@ -219,8 +244,41 @@ skip_labels = {
     os.environ["QUOTA_WAITING_LABEL"],
     os.environ["LEGACY_QUOTA_WAITING_LABEL"],
 }
+concurrency = int(os.environ["CONCURRENCY"])
+fresh_count = int(os.environ["FRESH_COUNT"])
+slots = max(concurrency - fresh_count, 0)
+cutoff = datetime.now(timezone.utc) - timedelta(hours=3)
 
-issues.sort(key=lambda i: i["number"])
+def label_names(issue):
+    return {lab["name"] for lab in issue.get("labels") or []}
+
+def partitions(labels):
+    return {name for name in labels if name in PARTITION_LABELS}
+
+def is_fresh_running(issue):
+    labels = label_names(issue)
+    if not (
+        os.environ["RUNNING_LABEL"] in labels
+        or os.environ["LEGACY_RUNNING_LABEL"] in labels
+    ):
+        return False
+    raw = issue.get("updatedAt") or ""
+    try:
+        ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    return ts >= cutoff
+
+used = set()
+seen_running = set()
+for issue in running:
+    number = issue.get("number")
+    if number in seen_running:
+        continue
+    seen_running.add(number)
+    if not is_fresh_running(issue):
+        continue
+    used |= partitions(label_names(issue))
 
 def has_open_pr(number: int) -> bool:
     pattern = re.compile(
@@ -248,8 +306,14 @@ def has_open_dependency(body: str) -> bool:
     deps = [int(num) for num in re.findall(r"#(\d+)", line)]
     return any(dep in open_numbers for dep in deps)
 
+selected = []
+seen = set()
 for issue in issues:
-    labels = {lab["name"] for lab in issue.get("labels") or []}
+    number = issue["number"]
+    if number in seen:
+        continue
+    seen.add(number)
+    labels = label_names(issue)
     if ready_label not in labels:
         continue
     if labels & skip_labels:
@@ -259,23 +323,26 @@ for issue in issues:
         continue
     if has_open_dependency(body):
         continue
-    if has_open_pr(issue["number"]):
+    if has_open_pr(number):
         continue
-    print(json.dumps({
-        "number": issue["number"],
+    parts = partitions(labels)
+    if parts & used:
+        continue
+    selected.append({
+        "number": number,
         "title": issue["title"],
         "url": issue["url"],
-    }))
-    break
-PY
-  )
-  if [ -n "$selected" ]; then
-    break
-  fi
-done
+    })
+    used |= parts
+    if len(selected) >= slots:
+        break
 
-if [ -z "$selected" ]; then
-  echo "No eligible issue (all skipped, running, human, blocked, or already have a PR)."
+print(json.dumps(selected))
+PY
+)
+
+if [ -z "$selected" ] || [ "$selected" = "[]" ]; then
+  echo "No eligible issue (all skipped, running, human, blocked, overlapping, or already have a PR)."
   set_output found false
   if [ -z "${GITHUB_OUTPUT:-}" ]; then
     echo "found=false"
@@ -283,18 +350,22 @@ if [ -z "$selected" ]; then
   exit 0
 fi
 
-number=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["number"])' <<<"$selected")
-title=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["title"])' <<<"$selected")
-url=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["url"])' <<<"$selected")
+numbers=$(python3 -c 'import json,sys; print(" ".join(str(i["number"]) for i in json.loads(sys.stdin.read())))' <<<"$selected")
+number=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())[0]["number"])' <<<"$selected")
+title=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())[0]["title"])' <<<"$selected")
+url=$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())[0]["url"])' <<<"$selected")
+summaries=$(python3 -c 'import json,sys; print("; ".join("#%s %s" % (i["number"], i["title"]) for i in json.loads(sys.stdin.read())))' <<<"$selected")
 
-echo "Next issue: #${number} ${title}"
+echo "Next issues: ${summaries}"
 set_output found true
 set_output issue_number "$number"
+set_output issue_numbers "$numbers"
 set_output issue_title "$title"
 set_output issue_url "$url"
 
 if [ -z "${GITHUB_OUTPUT:-}" ]; then
   echo "ISSUE_NUMBER=${number}"
+  echo "ISSUE_NUMBERS=${numbers}"
   echo "ISSUE_TITLE=${title}"
   echo "ISSUE_URL=${url}"
 fi

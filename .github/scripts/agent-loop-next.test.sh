@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Local assertions for agent-loop-next.sh milestone ordering.
+# Local assertions for agent-loop-next.sh milestone ordering and concurrency.
 # Run: bash .github/scripts/agent-loop-next.test.sh
-# Until WP-05, this is not in the static CI job.
+# Also invoked from packages/scripts/src/testing/agent-loop-next.test.ts.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -104,10 +104,15 @@ STUB
 
 run_next() {
   write_stub
+  local -a extra=()
+  if [ -n "${AGENT_LOOP_CONCURRENCY:-}" ]; then
+    extra+=(AGENT_LOOP_CONCURRENCY="$AGENT_LOOP_CONCURRENCY")
+  fi
   env -u GITHUB_OUTPUT \
     GH_STUB="${STUB_DIR}/gh" \
     GH_REPO="example/compass" \
     AGENT_LOOP_MILESTONES="Providers L: loop + CI acceleration,Providers P0: foundation,Booking v1.5" \
+    "${extra[@]}" \
     STUB_L_OPEN="${STUB_L_OPEN:-[]}" \
     STUB_P0_OPEN="${STUB_P0_OPEN:-[]}" \
     STUB_B_OPEN="${STUB_B_OPEN:-[]}" \
@@ -139,12 +144,13 @@ P0_DEP='[{"number":3236,"title":"P0 WP-11 corpus","url":"https://example.test/is
 out=$(STUB_L_OPEN="$L_ISSUE" STUB_B_OPEN="$B_ISSUE" run_next)
 assert_contains "$out" "ISSUE_NUMBER=3217" "higher-priority milestone drains first"
 assert_contains "$out" "ISSUE_TITLE=providers L WP" "prints title for Providers L issue"
+assert_contains "$out" "ISSUE_NUMBERS=3217 3100" "fills remaining slots from later milestones"
 
 out=$(STUB_L_OPEN='[]' STUB_B_OPEN="$B_ISSUE" run_next)
 assert_contains "$out" "ISSUE_NUMBER=3100" "falls through to later milestone when first is empty"
 
-out=$(STUB_L_OPEN="$L_ISSUE" STUB_B_OPEN="$B_ISSUE" STUB_L_RUNNING="$L_RUNNING_FRESH" run_next)
-assert_contains "$out" "found=false" "fresh running label idles the whole loop"
+out=$(AGENT_LOOP_CONCURRENCY=1 STUB_L_OPEN="$L_ISSUE" STUB_B_OPEN="$B_ISSUE" STUB_L_RUNNING="$L_RUNNING_FRESH" run_next)
+assert_contains "$out" "found=false" "fresh running label idles when fleet is at N"
 if printf '%s' "$out" | grep -q 'ISSUE_NUMBER='; then
   echo "FAIL idle run must not print ISSUE_NUMBER" >&2
   FAIL=$((FAIL + 1))
@@ -174,9 +180,79 @@ assert_contains "$out" "ISSUE_NUMBER=3222" "skips Approval boundary human"
 
 out=$(STUB_L_OPEN="$(json_cat "$L_DEP" "$L_ALLOW")" STUB_P0_OPEN="$P0_DEP" run_next)
 assert_contains "$out" "ISSUE_NUMBER=3222" "skips WP whose Depends on issue is still open"
+if printf '%s' "$out" | grep -Eq 'ISSUE_NUMBERS=.*3272'; then
+  echo "FAIL blocked WP-10 must not appear in ISSUE_NUMBERS: ${out}" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok blocked WP-10 omitted from ISSUE_NUMBERS"
+  PASS=$((PASS + 1))
+fi
 
 out=$(STUB_L_OPEN="$L_HUMAN" STUB_P0_OPEN="$P0_DEP" run_next)
 assert_contains "$out" "ISSUE_NUMBER=3236" "human leftovers on L do not block P0"
+
+L_DEP_CHAIN=$(python3 - <<'PY'
+import json
+allow = "### Approval boundary\n\nallow\n\nDepends on: none"
+issues = [
+  {"number": 1, "title": "one", "url": "https://example.test/issues/1",
+   "labels": [{"name": "agent-ready"}], "body": allow},
+  {"number": 2, "title": "two", "url": "https://example.test/issues/2",
+   "labels": [{"name": "agent-ready"}],
+   "body": "### Approval boundary\n\nallow\n\nDepends on: #1"},
+  {"number": 3, "title": "three", "url": "https://example.test/issues/3",
+   "labels": [{"name": "agent-ready"}], "body": allow},
+]
+print(json.dumps(issues))
+PY
+)
+out=$(STUB_L_OPEN="$L_DEP_CHAIN" run_next)
+assert_contains "$out" "ISSUE_NUMBERS=1 3" "Depends on open issue skips 2 and still selects 1 and 3"
+
+L_SYNC_CORE_PAIR=$(python3 - <<'PY'
+import json
+allow = "### Approval boundary\n\nallow\n\nDepends on: none"
+issues = [
+  {"number": 10, "title": "core-a", "url": "https://example.test/issues/10",
+   "labels": [{"name": "agent-ready"}, {"name": "sync-core"}], "body": allow},
+  {"number": 11, "title": "core-b", "url": "https://example.test/issues/11",
+   "labels": [{"name": "agent-ready"}, {"name": "sync-core"}], "body": allow},
+]
+print(json.dumps(issues))
+PY
+)
+out=$(AGENT_LOOP_CONCURRENCY=2 STUB_L_OPEN="$L_SYNC_CORE_PAIR" run_next)
+assert_contains "$out" "ISSUE_NUMBERS=10" "overlapping sync-core labels pick only the lower number"
+if printf '%s' "$out" | grep -Eq 'ISSUE_NUMBERS=.*11'; then
+  echo "FAIL overlapping sync-core issue 11 must not be selected: ${out}" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok overlapping sync-core issue 11 omitted"
+  PASS=$((PASS + 1))
+fi
+
+L_RUNNING_CORE='[{"number":10,"updatedAt":"2099-01-01T00:00:00Z","labels":[{"name":"agent-loop-running"},{"name":"sync-core"}]}]'
+L_WEB_AND_CORE=$(python3 - <<'PY'
+import json
+allow = "### Approval boundary\n\nallow\n\nDepends on: none"
+issues = [
+  {"number": 11, "title": "core-b", "url": "https://example.test/issues/11",
+   "labels": [{"name": "agent-ready"}, {"name": "sync-core"}], "body": allow},
+  {"number": 12, "title": "web-a", "url": "https://example.test/issues/12",
+   "labels": [{"name": "agent-ready"}, {"name": "web"}], "body": allow},
+]
+print(json.dumps(issues))
+PY
+)
+out=$(AGENT_LOOP_CONCURRENCY=2 STUB_L_OPEN="$L_WEB_AND_CORE" STUB_L_RUNNING="$L_RUNNING_CORE" run_next)
+assert_contains "$out" "ISSUE_NUMBERS=12" "running sync-core occupies that partition so only web is launched"
+if printf '%s' "$out" | grep -Eq 'ISSUE_NUMBERS=.*11'; then
+  echo "FAIL running partition must block the other sync-core WP: ${out}" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok running sync-core blocks the overlapping candidate"
+  PASS=$((PASS + 1))
+fi
 
 if grep -q 'os.environ\["A"\]' "${ROOT}/.github/scripts/agent-loop-lib.sh"; then
   echo "FAIL json_concat still passes JSON through the environment" >&2
