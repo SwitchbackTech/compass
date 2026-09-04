@@ -242,8 +242,10 @@ decides whether a busy interval occupies a slot
 - Token is unguessable and stored hashed on the reservation as
   `cancelTokenHash`. It stays valid until `slotEnd` and then returns
   the same generic not-found as an unknown token.
-- Cancel deletes the calendar event (host as organizer) and marks the
-  reservation cancelled. Idempotent: a second cancel is a no-op success.
+- Cancel marks the reservation cancelled, then deletes the calendar
+  event (host as organizer, `invitation: "all"`). A failed delete
+  still frees the slot; retry deletes while `calendarEventId` remains.
+  Idempotent: a second cancel after a successful delete is a no-op.
 - Expired / unknown tokens return a generic not-found page, not a
   leak of whether the booking existed.
 

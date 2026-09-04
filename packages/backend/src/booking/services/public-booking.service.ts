@@ -641,10 +641,6 @@ export class PublicBookingService {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
 
-    if (reservation.status === "cancelled") {
-      return;
-    }
-
     const pageRecord = await mongoService.bookingPage.findOne({
       _id: reservation.pageId,
     });
@@ -652,14 +648,22 @@ export class PublicBookingService {
       throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
     }
 
-    if (reservation.calendarEventId) {
-      await this.calendarBooking.deleteBookingEvent(
-        pageRecord.userId.toString(),
-        { eventId: reservation.calendarEventId as EventId },
-      );
+    // Cancel local state first so a crash after the provider delete cannot
+    // leave a confirmed row occupying the slot. Retry still deletes while
+    // `calendarEventId` remains.
+    if (reservation.status === "confirmed") {
+      await bookingReservationRepository.markCancelled(reservationId);
     }
 
-    await bookingReservationRepository.markCancelled(reservationId);
+    if (!reservation.calendarEventId) {
+      return;
+    }
+
+    await this.calendarBooking.deleteBookingEvent(
+      pageRecord.userId.toString(),
+      { eventId: reservation.calendarEventId as EventId },
+    );
+    await bookingReservationRepository.clearCalendarEventId(reservationId);
   }
 }
 
