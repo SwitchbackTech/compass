@@ -11,6 +11,12 @@
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { backendTestSpawnEnv } from "./backend-test-env";
 import {
+  bunTestRunExitCode,
+  bunTestRunLooksFinished,
+  createBunTestRunProgress,
+  ingestBunTestOutput,
+} from "./bun-test-run-progress";
+import {
   formatDuration,
   resolveTestTargets,
   warnIfBunVersionMismatch,
@@ -88,42 +94,30 @@ console.log(`Running ${label} (${pkg})...`);
  * A worker that ends still holding an open handle (a Mongo connection is the
  * usual culprit: cleanupTestDb deliberately never disconnects, and the
  * shared-mongod path makes stopMemoryMongo a no-op) never exits, so `bun test`
- * never exits either. Bun has already printed its summary by then, so the
- * summary is the result: once "Ran N tests across M files" appears, give the
- * process a moment to exit on its own, then kill it and exit with the pass or
- * fail Bun reported. Twice on 2026-09-03 this leak turned a fully green
- * scripts suite into a four-minute wait and a red main.
- *
- * If no summary ever appears, the run is genuinely wedged; four minutes is
- * well clear of the slowest suite (sync, ~105s on ubuntu-latest) and inside
- * the CI step timeout, so the failure is named here instead of silently.
+ * never exits either. Bun prints "Ran N tests across M files" only after every
+ * worker exits, so a leak also swallows the summary. Watch both streams, and
+ * if output goes quiet after passing tests, kill the worker and use that
+ * progress as the result. The four-minute wedge is the last resort for a
+ * suite that never started; a green leak must not fail CI.
  */
 const EXIT_TIMEOUT_MS = 4 * 60 * 1000;
 const EXIT_GRACE_MS = 3_000;
+/** Just over `--timeout 60000` so a slow last test can still print. */
+const QUIET_AFTER_OUTPUT_MS = 65_000;
 
-/** Bun writes its summary to stderr; reports fail + error counts once it lands. */
-function watchForSummary(
+function watchStream(
   stream: ReadableStream<Uint8Array>,
-  onSummary: (failed: number) => void,
+  dest: { write(text: string): unknown },
+  onText: (text: string) => void,
 ): void {
   const decoder = new TextDecoder();
-  let tail = "";
-  let failed = 0;
   const reader = stream.getReader();
   const pump = (): Promise<void> =>
     reader.read().then(({ done, value }) => {
       if (done) return;
       const text = decoder.decode(value, { stream: true });
-      process.stderr.write(text);
-      tail = (tail + text).slice(-4096);
-      for (const line of tail.matchAll(/^\s*(\d+) (fail|error)s?$/gm)) {
-        failed += Number(line[1]);
-      }
-      if (/^Ran \d+ tests? across \d+ files?\./m.test(tail)) {
-        onSummary(failed);
-        failed = 0;
-        tail = "";
-      }
+      dest.write(text);
+      onText(text);
       return pump();
     });
   void pump();
@@ -132,36 +126,71 @@ function watchForSummary(
 try {
   const proc = Bun.spawn(testTargets, {
     env,
-    stdout: "inherit",
+    stdout: "pipe",
     stderr: "pipe",
   });
 
+  const progress = createBunTestRunProgress();
   let wedged: ReturnType<typeof setTimeout> | undefined;
-  let grace: ReturnType<typeof setTimeout> | undefined;
+  let quiet: ReturnType<typeof setTimeout> | undefined;
+  let settled = false;
+
   const code = await new Promise<number>((resolve) => {
-    proc.exited.then((exit) => resolve(exit ?? 1));
-    watchForSummary(proc.stderr, (failed) => {
-      grace = setTimeout(() => {
-        console.error(
-          `\n${pkg}: 'bun test' printed its summary but did not exit; a worker ` +
-            `is holding an open handle. Using the summary as the result.`,
-        );
-        proc.kill();
-        resolve(failed > 0 ? 1 : 0);
-      }, EXIT_GRACE_MS);
-    });
+    const settle = (exitCode: number, kill: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(wedged);
+      clearTimeout(quiet);
+      if (kill) proc.kill();
+      resolve(exitCode);
+    };
+
+    const armQuiet = () => {
+      clearTimeout(quiet);
+      quiet = setTimeout(
+        () => {
+          if (!bunTestRunLooksFinished(progress)) return;
+          const exitCode = bunTestRunExitCode(progress);
+          console.error(
+            progress.sawSummary
+              ? `\n${pkg}: 'bun test' printed its summary but did not exit; a worker ` +
+                  `is holding an open handle. Using the summary as the result.`
+              : `\n${pkg}: tests stopped reporting after ${formatDuration(started)}s ` +
+                  `with no summary; a worker is holding an open handle. Using the ` +
+                  `pass/fail output as the result.`,
+          );
+          settle(exitCode, true);
+        },
+        progress.sawSummary ? EXIT_GRACE_MS : QUIET_AFTER_OUTPUT_MS,
+      );
+    };
+
+    proc.exited.then((exit) => settle(exit ?? 1, false));
+    const onText = (text: string) => {
+      ingestBunTestOutput(text, progress);
+      armQuiet();
+    };
+    watchStream(proc.stdout, process.stdout, onText);
+    watchStream(proc.stderr, process.stderr, onText);
+
     wedged = setTimeout(() => {
+      if (bunTestRunLooksFinished(progress)) {
+        const exitCode = bunTestRunExitCode(progress);
+        console.error(
+          `\n${pkg}: tests stopped reporting after ${formatDuration(started)}s ` +
+            `with no process exit. Using the pass/fail output as the result.`,
+        );
+        settle(exitCode, true);
+        return;
+      }
       console.error(
         `\n${pkg}: tests stopped reporting and 'bun test' has not exited after ` +
           `${formatDuration(started)}s with no summary. Killing it so the ` +
           `failure is visible rather than a silent step timeout.`,
       );
-      proc.kill();
-      resolve(1);
+      settle(1, true);
     }, EXIT_TIMEOUT_MS);
   });
-  clearTimeout(wedged);
-  clearTimeout(grace);
 
   console.log(`\n${pkg}: finished in ${formatDuration(started)}s`);
 
