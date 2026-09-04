@@ -182,6 +182,18 @@ const parseSlotsQuery = (rawQuery: unknown) => {
 const slotEndForStart = (slotStart: Date, durationMinutes: number): Date =>
   new Date(slotStart.getTime() + durationMinutes * 60_000);
 
+const assertPinnedDuration = (
+  requestedMinutes: number,
+  pageDurationMinutes: number,
+): void => {
+  if (requestedMinutes !== pageDurationMinutes) {
+    throw bookingError(
+      "SLOT_UNAVAILABLE",
+      "Selected slot is no longer available",
+    );
+  }
+};
+
 const bookingEventDescription = (
   notes: string | null | undefined,
   guestsCanInviteOthers: boolean,
@@ -546,9 +558,10 @@ export class PublicBookingService {
     await assertHostAllowsGuestWrites(page.userId);
     const input = CreateBookingReservationInputSchema.parse(rawInput);
     assertGuestEmail(input.guestEmail);
+    assertPinnedDuration(input.durationMinutes, page.durationMinutes);
 
     const slotStart = new Date(input.slotStart);
-    const slotEnd = slotEndForStart(slotStart, page.durationMinutes);
+    const slotEnd = slotEndForStart(slotStart, input.durationMinutes);
     await this.assertSlotAvailable(page, slotStart, slotEnd);
 
     const hostDisplayName = await getHostDisplayName(page.userId);
@@ -754,9 +767,10 @@ export class PublicBookingService {
     }
     const page = await resolveReservationPublicPage(reservation);
     await assertHostAllowsGuestWrites(page.userId);
+    assertPinnedDuration(input.durationMinutes, page.durationMinutes);
 
     const slotStart = new Date(input.slotStart);
-    const slotEnd = slotEndForStart(slotStart, page.durationMinutes);
+    const slotEnd = slotEndForStart(slotStart, input.durationMinutes);
     const hostDisplayName = await getHostDisplayName(page.userId);
     const cancelUrl = buildGuestActionUrl(
       "cancel",

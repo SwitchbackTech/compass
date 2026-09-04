@@ -7,7 +7,7 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import * as realUseversioncheck from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { viewActions } from "@web/events/stores/view.store";
-import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, describe, expect, it } from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so the real hook
 // is captured up front and a flag (flipped off in afterAll) decides which

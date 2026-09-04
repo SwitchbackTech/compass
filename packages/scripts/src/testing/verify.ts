@@ -11,11 +11,18 @@ import { existsSync } from "node:fs";
  * e2e after that wave, unless Chromium is missing — in that case the helper
  * skips those checks and reports incomplete CI parity instead of a silent pass.
  *
+ * The last line is always machine-readable: `VERDICT: PASS`, `VERDICT:
+ * INCOMPLETE` (every selected check passed but a Playwright check was
+ * skipped, so CI parity is not proven), or `VERDICT: FAIL`. INCOMPLETE exits
+ * 0 by default so a Chromium-less machine can still iterate; `--strict`
+ * makes it exit 1, which is what a PR gate should use.
+ *
  * Usage:
  *   bun run verify              — auto-detect from git
  *   bun run verify web          — run web suite + required static checks
  *   bun run verify core web     — run specific suites + required static checks
  *   bun run verify --serial     — run checks one after another (debugging)
+ *   bun run verify --strict     — exit 1 on VERDICT: INCOMPLETE
  */
 
 const VALID_PACKAGES = ["core", "sync", "web", "backend", "scripts"] as const;
@@ -31,6 +38,8 @@ const CHROMIUM_MISSING_REASON = `Playwright Chromium missing; install with: ${PL
 const PLAYWRIGHT_CHECKS = ["test:a11y", "test:e2e"] as const;
 const FAST_TEST_PACKAGES = new Set<Package>(["backend", "sync", "scripts"]);
 export const SERIAL_FLAG = "--serial";
+export const STRICT_FLAG = "--strict";
+export type Verdict = "PASS" | "INCOMPLETE" | "FAIL";
 const FAST_TIER_REASON =
   "no *.db.test.ts and no /storage/ or /repositories/ paths";
 
@@ -332,10 +341,11 @@ function defaultSpawn(): SpawnFn {
 function parseVerifyArgs(
   args: string[],
 ):
-  | { ok: true; serial: boolean; packages: Package[] | null }
+  | { ok: true; serial: boolean; strict: boolean; packages: Package[] | null }
   | { ok: false; error: string } {
   const serial = args.includes(SERIAL_FLAG);
-  const rest = args.filter((arg) => arg !== SERIAL_FLAG);
+  const strict = args.includes(STRICT_FLAG);
+  const rest = args.filter((arg) => arg !== SERIAL_FLAG && arg !== STRICT_FLAG);
   const invalid = rest.filter((arg) => !isPackage(arg));
   if (invalid.length > 0) {
     return {
@@ -346,6 +356,7 @@ function parseVerifyArgs(
   return {
     ok: true,
     serial,
+    strict,
     packages: rest.length > 0 ? rest.filter(isPackage) : null,
   };
 }
@@ -537,6 +548,7 @@ export async function runVerify(
 
   if (failed.length > 0) {
     log.error(`\nFailed: ${failed.join(", ")}`);
+    log.log(verdictLine("FAIL"));
     return 1;
   }
 
@@ -546,11 +558,23 @@ export async function runVerify(
         skips.map((skip) => skip.reason),
       ).join("; ")}`,
     );
+    log.log(verdictLine("INCOMPLETE"));
+    if (parsed.strict) {
+      log.error(
+        `${STRICT_FLAG}: INCOMPLETE is not PASS; run the skipped checks`,
+      );
+      return 1;
+    }
     return 0;
   }
 
   log.log("\n✓ All checks passed");
+  log.log(verdictLine("PASS"));
   return 0;
+}
+
+export function verdictLine(verdict: Verdict): string {
+  return `VERDICT: ${verdict}`;
 }
 
 function splitLines(output: string): string[] {

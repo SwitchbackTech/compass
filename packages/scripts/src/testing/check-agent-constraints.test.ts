@@ -1,16 +1,24 @@
 import {
   BARREL_ALLOWLIST,
   duplicateEventSchemaHits,
+  EM_DASH_ALLOWLIST,
+  emDashHits,
+  formatHit,
   isBarrelSource,
+  KEYDOWN_LISTENER_ALLOWLIST,
+  keydownListenerHits,
   locatorHits,
   MONGO_SERVICE_TEST_ALLOWLIST,
   matchesConstraintAllow,
   matchGlob,
   mongoServiceImportHits,
   ovenBunVersion,
+  RULE_HELP,
   scanBunDockerfilePins,
   scanConstraints,
   WEB_LOCATOR_ALLOWLIST,
+  ZOD_V3_ALLOWLIST,
+  zodV3ImportHits,
 } from "./check-agent-constraints";
 import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -97,7 +105,98 @@ describe("duplicateEventSchemaHits", () => {
   });
 });
 
+describe("emDashHits", () => {
+  it("flags em-dashes in strings and JSX text but not comments", () => {
+    const source = [
+      "// a comment \u2014 with a dash",
+      "/* block \u2014 comment */ const ok = 1;",
+      'const label = "Save \u2014 later";',
+      "  {/* jsx \u2014 comment */}",
+      "<p>Ready \u2014 go</p>",
+      'const url = "https://x.test/a\u2014b";',
+    ].join("\n");
+    expect(emDashHits(source)).toEqual([3, 5, 6]);
+  });
+});
+
+describe("zodV3ImportHits", () => {
+  it("flags the bare zod path and zod/v3, not zod/v4 or zod/v4-mini", () => {
+    expect(zodV3ImportHits('import { z } from "zod";\n')).toEqual([1]);
+    expect(zodV3ImportHits('import { z } from "zod/v3";\n')).toEqual([1]);
+    expect(zodV3ImportHits('import { z } from "zod/v4";\n')).toEqual([]);
+    expect(zodV3ImportHits('import { z } from "zod/v4-mini";\n')).toEqual([]);
+  });
+});
+
+describe("keydownListenerHits", () => {
+  it("flags raw keydown listeners", () => {
+    expect(
+      keydownListenerHits('document.addEventListener("keydown", onKey);\n'),
+    ).toEqual([1]);
+    expect(
+      keydownListenerHits('window.addEventListener("resize", onResize);\n'),
+    ).toEqual([]);
+  });
+});
+
+describe("formatHit", () => {
+  it("prints the path, rule, detail, and how to fix it", () => {
+    const text = formatHit({
+      path: "self-host/Dockerfile.backend",
+      rule: "bun-pin",
+      line: 1,
+      detail: "oven/bun:1.2.18 but CI pins 1.3.14",
+    });
+    expect(text).toContain("self-host/Dockerfile.backend:1 bun-pin");
+    expect(text).toContain("oven/bun:1.2.18 but CI pins 1.3.14");
+    expect(text).toContain(RULE_HELP["bun-pin"]);
+  });
+
+  it("documents every rule the scanner can emit", () => {
+    for (const rule of [
+      "barrel",
+      "web-locator",
+      "mongoService-import",
+      "duplicate-event-schema",
+      "bun-pin",
+      "zod-import",
+      "em-dash",
+      "keydown-listener",
+    ]) {
+      expect(RULE_HELP[rule]?.length ?? 0).toBeGreaterThan(20);
+    }
+  });
+});
+
 describe("scanConstraints", () => {
+  it("fails a v3 zod import, an em-dash string, and a raw keydown listener", () => {
+    const root = mkdtempSync(join(tmpdir(), "agent-constraints-new-"));
+    writeTree(root, {
+      "packages/web/src/index.tsx":
+        'import { init } from "@web/auth/posthog/posthog.bootstrap";\nvoid import("./app.bootstrap");\n',
+      "packages/core/src/types/new.contracts.ts": 'import { z } from "zod";\n',
+      "packages/web/src/toast.ts":
+        '// fine \u2014 in a comment\nexport const msg = "Saved \u2014 finally";\n',
+      "packages/web/src/toast.test.ts":
+        'expect("a \u2014 b").toBe("a \u2014 b");\n',
+      "packages/web/src/Widget.tsx":
+        'document.addEventListener("keydown", () => {});\n',
+      "packages/web/src/shortcuts/engine.ts":
+        'document.addEventListener("keydown", () => {});\n',
+    });
+
+    const hits = scanConstraints(root).map(
+      (hit) => `${hit.rule}:${hit.path}:${hit.line}`,
+    );
+    expect(hits).toContain(
+      "zod-import:packages/core/src/types/new.contracts.ts:1",
+    );
+    expect(hits).toContain("em-dash:packages/web/src/toast.ts:2");
+    expect(hits).toContain("keydown-listener:packages/web/src/Widget.tsx:1");
+    expect(hits.some((hit) => hit.includes("toast.test.ts"))).toBe(false);
+    expect(hits.some((hit) => hit.includes("shortcuts/engine.ts"))).toBe(false);
+  });
+
   it("fails a new barrel, locator, mongoService import, and duplicate schema", () => {
     const root = mkdtempSync(join(tmpdir(), "agent-constraints-"));
     writeTree(root, {
@@ -217,8 +316,11 @@ describe("constraint allowlist globs", () => {
     for (const entry of [
       ...WEB_LOCATOR_ALLOWLIST,
       ...MONGO_SERVICE_TEST_ALLOWLIST,
+      ...ZOD_V3_ALLOWLIST,
+      ...EM_DASH_ALLOWLIST,
+      ...KEYDOWN_LISTENER_ALLOWLIST,
     ]) {
-      expect(entry.glob.includes("*")).toBe(true);
+      expect(entry.glob.length).toBeGreaterThan(0);
       expect(entry.reason.length).toBeGreaterThan(0);
     }
   });

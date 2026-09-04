@@ -184,7 +184,7 @@ export function BookingWeeklyHoursEditor({
             ) : null}
           </div>
           {errors[weekday] ? (
-            <p className="text-error pl-30 text-xs" role="alert">
+            <p className="pl-30 text-error text-xs" role="alert">
               {errors[weekday]}
             </p>
           ) : null}

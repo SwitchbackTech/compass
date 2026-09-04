@@ -360,14 +360,36 @@ describe("HTTP booking contracts", () => {
   });
 
   it("parses create reservation input", () => {
+    const valid = {
+      slotStart: "2026-09-01T15:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30 as const,
+    };
+    expect(CreateBookingReservationInputSchema.safeParse(valid).success).toBe(
+      true,
+    );
     expect(
       CreateBookingReservationInputSchema.safeParse({
-        slotStart: "2026-09-01T15:00:00.000Z",
-        guestName: "Ada Lovelace",
-        guestEmail: "ada@example.com",
-        guestTimeZone: "Europe/London",
+        slotStart: valid.slotStart,
+        guestName: valid.guestName,
+        guestEmail: valid.guestEmail,
+        guestTimeZone: valid.guestTimeZone,
       }).success,
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      CreateBookingReservationInputSchema.safeParse({
+        ...valid,
+        extra: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      CreateBookingReservationInputSchema.safeParse({
+        ...valid,
+        durationMinutes: 20,
+      }).success,
+    ).toBe(false);
   });
 
   it("parses a public reservation GET with name and notes, not email", () => {
@@ -404,6 +426,17 @@ describe("HTTP booking contracts", () => {
         guestEmail: "ada@example.com",
       }).success,
     ).toBe(false);
+    expect(
+      PublicGetBookingReservationResponseSchema.safeParse({
+        slotStart: publicGet.slotStart,
+        guestTimeZone: publicGet.guestTimeZone,
+        durationMinutes: publicGet.durationMinutes,
+        hostDisplayName: publicGet.hostDisplayName,
+        status: publicGet.status,
+        guestName: publicGet.guestName,
+        notes: publicGet.notes,
+      }).success,
+    ).toBe(true);
   });
 
   it("parses a guest details PATCH and rejects email or empty edits", () => {
@@ -465,6 +498,7 @@ describe("HTTP booking contracts", () => {
         token: "abc",
         slotStart: "2026-09-01T15:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }).success,
     ).toBe(true);
     expect(
@@ -472,6 +506,14 @@ describe("HTTP booking contracts", () => {
         token: "abc",
         slotStart: "2026-09-01T15:00:00.000Z",
         guestTimeZone: "Europe/London",
+      }).success,
+    ).toBe(false);
+    expect(
+      RescheduleBookingReservationInputSchema.safeParse({
+        token: "abc",
+        slotStart: "2026-09-01T15:00:00.000Z",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
         notes: "extra",
       }).success,
     ).toBe(false);

@@ -69,6 +69,7 @@ describe("Public booking rate limits", () => {
           token: "a".repeat(64),
           slotStart: "2026-09-07T11:00:00.000Z",
           guestTimeZone: "UTC",
+          durationMinutes: 30,
         })
         .expect(Status.NOT_FOUND);
     }
@@ -78,6 +79,7 @@ describe("Public booking rate limits", () => {
         token: "a".repeat(64),
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "UTC",
+        durationMinutes: 30,
       });
     expect(throttled.status).toBe(429);
   });

@@ -286,6 +286,7 @@ export const CreateBookingReservationInputSchema = z.strictObject({
   guestEmail: z.string().trim().min(1).max(320),
   notes: z.string().trim().max(4000).optional(),
   guestTimeZone: TimeZoneSchema,
+  durationMinutes: BookingDurationMinutesSchema,
 });
 export type CreateBookingReservationInput = z.infer<
   typeof CreateBookingReservationInputSchema
@@ -309,7 +310,7 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   durationMinutes: BookingDurationMinutesSchema,
   hostDisplayName: z.string().trim().min(1).max(256),
   status: BookingReservationStatusSchema,
-  bookingSlug: BookingSlugSchema,
+  bookingSlug: BookingSlugSchema.optional(),
   guestName: z.string().trim().min(1).max(256),
   notes: z.string().trim().max(4000).nullable(),
   createsGoogleMeet: z.boolean().default(true),
@@ -352,6 +353,7 @@ export const RescheduleBookingReservationInputSchema = z.strictObject({
   token: z.string().trim().min(1).max(256),
   slotStart: DateTimeSchema,
   guestTimeZone: TimeZoneSchema,
+  durationMinutes: BookingDurationMinutesSchema,
 });
 export type RescheduleBookingReservationInput = z.infer<
   typeof RescheduleBookingReservationInputSchema

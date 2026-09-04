@@ -141,7 +141,7 @@ describe("PublicBookingReschedulePage", () => {
 
     await waitFor(() => {
       expect(posts).toEqual([
-        { token: "abc", slotStart, guestTimeZone: "UTC" },
+        { token: "abc", slotStart, guestTimeZone: "UTC", durationMinutes: 30 },
       ]);
     });
     await waitFor(() => {

@@ -40,8 +40,10 @@ export const DayCalendarColumnHeaders = ({
             const isFocused = focusedColumnKey === calendar.id;
 
             return (
+              // biome-ignore lint/a11y/useSemanticElements: fieldset's min-inline-size breaks the flex header; role="group" is the accessible equivalent
               <div
                 aria-label={calendar.name}
+                role="group"
                 className="flex w-full min-w-0 items-center justify-center gap-2 border-border border-l px-3 text-text last:border-r has-[:focus-visible]:bg-accent/15"
                 data-focused-column={isFocused ? "true" : undefined}
                 key={calendar.id}

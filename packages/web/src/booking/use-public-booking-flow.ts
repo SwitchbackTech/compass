@@ -263,7 +263,7 @@ export function usePublicBookingFlow() {
   };
 
   const handleSubmit = async (values: PublicBookingGuestFormValues) => {
-    if (!selectedSlotStart || submitInFlightRef.current) {
+    if (!selectedSlotStart || !pageQuery.data || submitInFlightRef.current) {
       return;
     }
 
@@ -278,6 +278,7 @@ export function usePublicBookingFlow() {
           guestEmail: values.guestEmail,
           notes: values.notes || undefined,
           guestTimeZone: values.guestTimeZone,
+          durationMinutes: pageQuery.data.durationMinutes,
         }),
       );
       const token = tokenFromGuestActionUrl(result.cancelUrl);

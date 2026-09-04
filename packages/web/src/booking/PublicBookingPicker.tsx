@@ -107,6 +107,7 @@ export function PublicBookingPicker({
       ?.focus();
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusFirstSlot only reads refs; the selected date changing is the trigger
   useEffect(() => {
     const pendingDate = pendingSlotFocusDateRef.current;
     if (pendingDate === null || pendingDate !== selectedDateKey) {

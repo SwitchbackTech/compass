@@ -333,4 +333,140 @@ describe("PublicBookingCancelPage", () => {
       `/book/cancel/${reservationId}`,
     );
   });
+
+  it("offers Retry after a failed cancel and sends a second POST", async () => {
+    const user = userEvent.setup({ delay: null });
+    const tokens: string[] = [];
+    let failNext = true;
+
+    server.use(
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        async (req, res, ctx) => {
+          const body = (await req.json()) as { token?: string };
+          tokens.push(body.token ?? "");
+          if (failNext) {
+            failNext = false;
+            return res(ctx.status(Status.INTERNAL_SERVER), ctx.json({}));
+          }
+          return res(ctx.status(Status.OK), ctx.json({ ok: true }));
+        },
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+    await user.click(
+      await screen.findByRole("button", { name: "Cancel this booking" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Could not cancel booking" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(
+      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("When")).toBeInTheDocument();
+    expect(screen.getByText("Duration")).toBeInTheDocument();
+    expect(screen.getByText("Timezone")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Cancel this booking" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+    expect(tokens).toEqual(["abc", "abc"]);
+  });
+
+  it("does not offer Retry after a 404 cancel", async () => {
+    const user = userEvent.setup({ delay: null });
+    let cancelPosts = 0;
+    server.use(
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        (_req, res, ctx) => {
+          cancelPosts += 1;
+          return res(ctx.status(Status.NOT_FOUND), ctx.json({}));
+        },
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+    await user.click(
+      await screen.findByRole("button", { name: "Cancel this booking" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Booking not found" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Retry" }),
+    ).not.toBeInTheDocument();
+    expect(cancelPosts).toBe(1);
+  });
+
+  it("links Book another time after cancel when bookingSlug is present", async () => {
+    const user = userEvent.setup({ delay: null });
+    server.use(
+      reservationGetHandler(),
+      rest.post(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}/cancel`,
+        (_req, res, ctx) => res(ctx.status(Status.OK), ctx.json({ ok: true })),
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+    await user.click(
+      await screen.findByRole("button", { name: "Cancel this booking" }),
+    );
+    const rebook = await screen.findByRole("link", {
+      name: "Book another time",
+    });
+    expect(rebook).toHaveAttribute("href", "/book/tylerdane");
+    expect(rebook.getAttribute("href")).not.toContain("token");
+  });
+
+  it("shows Book another time on an already-cancelled reservation", async () => {
+    server.use(reservationGetHandler({ status: "cancelled" }));
+
+    renderCancelRoute(cancelPath);
+
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+    const rebook = screen.getByRole("link", { name: "Book another time" });
+    expect(rebook).toHaveAttribute("href", "/book/tylerdane");
+    expect(rebook.getAttribute("href")).not.toContain("token");
+    expect(rebook.getAttribute("href")).not.toContain(reservationId);
+  });
+
+  it("hides Book another time when bookingSlug is missing", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json({
+              slotStart,
+              guestTimeZone: "UTC",
+              durationMinutes: 30,
+              hostDisplayName: "Tyler Dane",
+              status: "cancelled",
+              guestName: "Guest User",
+              notes: null,
+            }),
+          ),
+      ),
+    );
+
+    renderCancelRoute(cancelPath);
+
+    expect(
+      await screen.findByRole("heading", { name: "Booking canceled" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Book another time" }),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -251,7 +251,12 @@ export function usePublicBookingRescheduleFlow() {
   };
 
   const handleConfirm = async () => {
-    if (!selectedSlotStart || !token || submitInFlightRef.current) {
+    if (
+      !selectedSlotStart ||
+      !token ||
+      !pageQuery.data ||
+      submitInFlightRef.current
+    ) {
       return;
     }
 
@@ -264,6 +269,7 @@ export function usePublicBookingRescheduleFlow() {
           token,
           slotStart: selectedSlotStart,
           guestTimeZone,
+          durationMinutes: pageQuery.data.durationMinutes,
         }),
       );
       await navigate({
