@@ -53,7 +53,7 @@ jobs:
       proceed: ${{ steps.preflight.outputs.proceed }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Uses a PAT, not GITHUB_TOKEN: the merge push must fire
       # release-on-main.yml (see comment above), which GITHUB_TOKEN-authored

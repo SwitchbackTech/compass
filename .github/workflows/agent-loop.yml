@@ -62,7 +62,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Deterministic merge guard, then enable auto-merge
         env:
@@ -89,7 +89,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: main
 
@@ -127,7 +127,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: main
 
@@ -167,7 +167,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Re-run merge guard on labeled PRs
         if: github.event_name == 'schedule'

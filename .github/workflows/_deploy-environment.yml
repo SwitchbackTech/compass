@@ -34,7 +34,7 @@ jobs:
           echo "image_version=${IMAGE_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Check out release tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag }}
 
