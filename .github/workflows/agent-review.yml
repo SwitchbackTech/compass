@@ -1,0 +1,46 @@
+name: Agent review
+
+# Independent, read-only review of a ready PR by a separate agent session.
+# Findings land as one PR comment; this is not a required check. It replaces
+# the in-session "Reviewer" role, which had the implementer's own context.
+#
+# Kill switch: repo variable AGENT_REVIEW_ENABLED (string "true"; default off).
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: agent-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: >-
+      vars.AGENT_REVIEW_ENABLED == 'true' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Review the diff
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Read .github/prompts/review.md and follow it exactly.
+            Pull request: #${{ github.event.pull_request.number }}
+            Base: ${{ github.event.pull_request.base.sha }}
+            Head: ${{ github.event.pull_request.head.sha }}
+          claude_args: |
+            --max-turns 30
+            --allowedTools "Read,Glob,Grep,Bash(git diff:*),Bash(git log:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"

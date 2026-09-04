@@ -1,8 +1,8 @@
 ---
 name: google-sync-debug
-version: 1
+version: 2
 owner: compass-maintainers
-last_verified: 2026-08-25
+last_verified: 2026-09-04
 description: Diagnoses Compass Google Calendar sync, OAuth, webhook, job, connection-health, and SSE failures by tracing the correct browser, backend, sync-service, provider, and storage boundary. Use when Google events are stale, imports or watches fail, reconnect is required, sync jobs stall, or connection health reports attention.
 ---
 
@@ -25,7 +25,7 @@ A named boundary and a command or log that shows it.
 ## Anti-patterns
 
 Do not guess across layers. See
-[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+[`anti-patterns.md`](../anti-patterns.md).
 
 ## Escalate
 
@@ -60,7 +60,7 @@ the last successful step without collecting sensitive payloads.
 
 ## 2. Verify local prerequisites
 
-Invoke `/local-dev-bootstrap` for incomplete setup.
+Follow `docs/development/local-development.md` for incomplete setup.
 
 - Backend, sync service, MongoDB, and web must use the current worktree's
   effective ports.

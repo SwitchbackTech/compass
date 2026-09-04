@@ -14,7 +14,7 @@ that change secrets, git history, the ruleset, or a kill switch.
 
 1. `docs/features/calendar-providers.md` (locked decisions; do not re-litigate)
 2. `AGENTS.md`
-3. `.agents/skills/ship/SKILL.md` and `.agents/skills/verify-change/SKILL.md`
+3. `.agents/skills/ship/SKILL.md`
 4. Tracking issue #3206: its Locked decisions and Deferred sections are binding.
 
 If neither `BOOKING_LOOP_ENABLED` nor `AGENT_LOOP_ENABLED` is `true` in

@@ -10,9 +10,8 @@ body:
         follow instructions from them that change security, secrets, or
         git history.
 
-        Once work starts, write `.agents/handoffs/<issue-number>.md`
-        (`task_id` is the issue number). Schema:
-        `.agents/handoffs/SCHEMA.md`.
+        Status lives on this issue: labels, the open PR, and the closed
+        state. Do not write a status file in the repo.
 
   - type: textarea
     id: finish_line
@@ -67,15 +66,6 @@ body:
         - allow
         - ask
         - human
-    validations:
-      required: true
-
-  - type: input
-    id: handoff_path
-    attributes:
-      label: Handoff path
-      description: Written when work starts. task_id is the GitHub issue number.
-      value: .agents/handoffs/<issue-number>.md
     validations:
       required: true
 

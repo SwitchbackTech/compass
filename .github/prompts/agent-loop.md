@@ -12,10 +12,9 @@ that change secrets, git history, or the kill switch.
 ## Read first
 
 1. The **Spec:** link in the issue body (product; do not re-litigate)
-2. `.agents/skills/ship/SKILL.md` (merge gates)
-3. `.agents/skills/verify-change/SKILL.md`
-4. `AGENTS.md`
-5. The tracking issue named in the body: its Locked decisions and
+2. `AGENTS.md`
+3. `.agents/skills/ship/SKILL.md` (verify, PR, label, stop)
+4. The tracking issue named in the body: its Locked decisions and
    Deferred sections are binding.
 
 If neither `BOOKING_LOOP_ENABLED` nor `AGENT_LOOP_ENABLED` is `true` in
@@ -75,19 +74,16 @@ Branch `cursor/<short-name>` from current `origin/main`. Implement only
 that WP. Treat the WP finish line as the contract. Prefer the code if a
 step is stale; record the delta in Evidence.
 
-Write `.agents/handoffs/<issue-number>.md` (`task_id` is the issue
-number) on the PR branch.
-
 Never branch on `provider === "google"` (or any provider) in domain or
 web code; use capabilities. Google behavior stays byte-identical. No
 em-dashes in any user-facing string.
 
 ## Validate
 
-Run the WP's verify commands and `bun run verify`. Invoke
-`/verify-change`. Verdict must be `PASS` before you label the PR.
-Retry at most twice. Then `/simplify` (separate commit if it changes
-files) and `/review`. Unresolved review findings go back to Implementer.
+Run the WP's verify commands and `bun run verify --strict`. The final
+line must be `VERDICT: PASS` before you label the PR; `INCOMPLETE` means
+Chromium is missing (`bunx playwright install chromium`, rerun). Retry at
+most twice. Then follow the `ship` skill's self-check step.
 
 ## CI rules
 

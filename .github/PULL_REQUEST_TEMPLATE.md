@@ -1,19 +1,9 @@
-## Summary
+Fixes #
 
-<!-- What changed and why. -->
+## What and why
 
-## Simplicity
+<!-- One paragraph. Link the spec or issue for product context. -->
 
-<!-- What was simplified, or why the implementation is already minimal. -->
+## Verify
 
-## Automated validation
-
-<!-- Completed browser, CLI, or API scenarios and their observed results. -->
-
-## Independent review
-
-<!-- `/review` verdict pointer: path to `.agents/handoffs/<task_id>.md` or quoted FINDINGS. “Looks good” is not a pointer. -->
-
-## Test plan
-
-<!-- Commands actually run. Do not add manual tasks or unchecked boxes. -->
+<!-- Paste the final `VERDICT:` line from `bun run verify --strict` and the checks it ran. Do not add manual tasks or unchecked boxes. -->
