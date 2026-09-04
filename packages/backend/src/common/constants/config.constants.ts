@@ -26,6 +26,13 @@ const ConfigSchema = z
     BASEURL: z.string().nonempty(),
     GOOGLE_CLIENT_ID: z.string().nonempty().optional(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty().optional(),
+    MICROSOFT_CLIENT_ID: z.string().nonempty().optional(),
+    MICROSOFT_CLIENT_SECRET: z.string().nonempty().optional(),
+    APPLE_SIGNIN_SERVICES_ID: z.string().nonempty().optional(),
+    APPLE_SIGNIN_TEAM_ID: z.string().nonempty().optional(),
+    APPLE_SIGNIN_KEY_ID: z.string().nonempty().optional(),
+    APPLE_SIGNIN_PRIVATE_KEY: z.string().nonempty().optional(),
+    SYNC_CREDENTIAL_ENCRYPTION_KEY: z.string().nonempty().optional(),
     DB: z.string().nonempty(),
     FRONTEND_URL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
@@ -82,6 +89,36 @@ const ConfigSchema = z
       });
     }
 
+    const hasMicrosoftClientId = Boolean(env.MICROSOFT_CLIENT_ID);
+    const hasMicrosoftClientSecret = Boolean(env.MICROSOFT_CLIENT_SECRET);
+    if (hasMicrosoftClientId !== hasMicrosoftClientSecret) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message: "Microsoft configuration requires both client ID and secret",
+        path: hasMicrosoftClientId
+          ? ["MICROSOFT_CLIENT_SECRET"]
+          : ["MICROSOFT_CLIENT_ID"],
+      });
+    }
+
+    const appleSignInKeys = [
+      env.APPLE_SIGNIN_SERVICES_ID,
+      env.APPLE_SIGNIN_TEAM_ID,
+      env.APPLE_SIGNIN_KEY_ID,
+      env.APPLE_SIGNIN_PRIVATE_KEY,
+    ];
+    const applePresent = appleSignInKeys.filter(Boolean).length;
+    if (applePresent > 0 && applePresent < 4) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "Apple sign-in configuration requires servicesId, teamId, keyId, and privateKey together",
+        path: ["APPLE_SIGNIN_SERVICES_ID"],
+      });
+    }
+
     const stripeKeys = [
       env.STRIPE_SECRET_KEY,
       env.STRIPE_WEBHOOK_SECRET,
@@ -125,6 +162,15 @@ export function parseRawConfig(config: CompassConfig): Config {
     BASEURL: config.backend.apiUrl,
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
+    MICROSOFT_CLIENT_ID: nonEmpty(config.microsoft?.clientId),
+    MICROSOFT_CLIENT_SECRET: nonEmpty(config.microsoft?.clientSecret),
+    APPLE_SIGNIN_SERVICES_ID: nonEmpty(config.apple?.signIn?.servicesId),
+    APPLE_SIGNIN_TEAM_ID: nonEmpty(config.apple?.signIn?.teamId),
+    APPLE_SIGNIN_KEY_ID: nonEmpty(config.apple?.signIn?.keyId),
+    APPLE_SIGNIN_PRIVATE_KEY: nonEmpty(config.apple?.signIn?.privateKey),
+    SYNC_CREDENTIAL_ENCRYPTION_KEY: nonEmpty(
+      config.sync?.credentialEncryptionKey,
+    ),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     FRONTEND_URL: config.web.url,
     MONGO_URI: config.mongo.uri,
@@ -160,6 +206,13 @@ export function parseConfigFromEnv(
     BASEURL: rawEnv["BASEURL"],
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
     GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"],
+    MICROSOFT_CLIENT_ID: rawEnv["MICROSOFT_CLIENT_ID"],
+    MICROSOFT_CLIENT_SECRET: rawEnv["MICROSOFT_CLIENT_SECRET"],
+    APPLE_SIGNIN_SERVICES_ID: rawEnv["APPLE_SIGNIN_SERVICES_ID"],
+    APPLE_SIGNIN_TEAM_ID: rawEnv["APPLE_SIGNIN_TEAM_ID"],
+    APPLE_SIGNIN_KEY_ID: rawEnv["APPLE_SIGNIN_KEY_ID"],
+    APPLE_SIGNIN_PRIVATE_KEY: rawEnv["APPLE_SIGNIN_PRIVATE_KEY"],
+    SYNC_CREDENTIAL_ENCRYPTION_KEY: rawEnv["SYNC_CREDENTIAL_ENCRYPTION_KEY"],
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
     MONGO_URI: rawEnv["MONGO_URI"],

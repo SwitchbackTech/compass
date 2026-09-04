@@ -251,6 +251,24 @@ generate_secret() {
   printf '%s\n' "$secret"
 }
 
+generate_base64_key() {
+  label=$1
+
+  if command -v openssl >/dev/null 2>&1; then
+    secret=$(openssl rand -base64 32 | tr -d '\n')
+  elif [ -r /dev/urandom ] && command -v base64 >/dev/null 2>&1; then
+    secret=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d '\n')
+  else
+    fail "Could not generate $label. Install openssl."
+  fi
+
+  if [ -z "$secret" ]; then
+    fail "Could not generate $label. Install openssl."
+  fi
+
+  printf '%s\n' "$secret"
+}
+
 validate_existing_secret() {
   key=$1
   placeholder=$2
@@ -337,8 +355,8 @@ write_config_if_missing() {
   supertokens_postgres_password=$(generate_secret "SuperTokens Postgres password") || exit 1
   supertokens_key=$(generate_secret "SuperTokens API key") || exit 1
   compass_sync_token=$(generate_secret "Compass sync token") || exit 1
-  gcal_notification_token=$(generate_secret "Google Calendar notification token") || exit 1
   sync_internal_auth_token=$(generate_secret "Sync internal auth token") || exit 1
+  credential_encryption_key=$(generate_base64_key "Sync credential encryption key") || exit 1
 
   umask 077
   TMP_ENV=$COMPASS_HOME/compass.yaml.$$
@@ -376,13 +394,20 @@ supertokens:
     password: $supertokens_postgres_password
     database: supertokens
 
-google:
-  notificationToken: $gcal_notification_token
-
 # google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
-#   channelExpirationMin: 10
+
+# microsoft:
+#   clientId: REPLACE_WITH_MICROSOFT_CLIENT_ID
+#   clientSecret: REPLACE_WITH_MICROSOFT_CLIENT_SECRET
+
+# apple:
+#   signIn:
+#     servicesId: REPLACE_WITH_APPLE_SERVICES_ID
+#     teamId: REPLACE_WITH_APPLE_TEAM_ID
+#     keyId: REPLACE_WITH_APPLE_KEY_ID
+#     privateKey: REPLACE_WITH_APPLE_PRIVATE_KEY
 
 # Compass Sync service — self-host runs the same architecture as Compass
 # Cloud. Uses the SAME bundled mongo as \`mongo:\` above, isolated to its own
@@ -400,6 +425,7 @@ sync:
   serviceUrl: http://sync:3010
   cloudMutationMode: enabled
   execution: active
+  credentialEncryptionKey: "$credential_encryption_key"
 EOF
 
   chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."

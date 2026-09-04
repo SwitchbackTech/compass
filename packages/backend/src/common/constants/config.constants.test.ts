@@ -6,6 +6,7 @@ import {
 import {
   isBillingBypassed,
   isGoogleConfigured,
+  isMicrosoftConfigured,
   isStripeConfigured,
 } from "@backend/common/constants/config.util";
 import { describe, expect, it } from "bun:test";
@@ -157,6 +158,94 @@ describe("config.constants", () => {
     });
 
     expect(isGoogleConfigured(env)).toBe(false);
+  });
+
+  it("rejects partially configured Microsoft credentials from env and yaml", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        MICROSOFT_CLIENT_ID: "ms-client-id",
+      }),
+    ).toThrow("Microsoft configuration requires both client ID and secret");
+
+    expect(() =>
+      parseRawConfig({
+        ...baseRawConfig,
+        microsoft: { clientId: "ms-client-id" },
+      }),
+    ).toThrow("Microsoft configuration requires both client ID and secret");
+  });
+
+  it("reports Microsoft as configured only when both credentials are present", () => {
+    const fromEnv = parseConfigFromEnv({
+      ...validEnv,
+      MICROSOFT_CLIENT_ID: "ms-client-id",
+      MICROSOFT_CLIENT_SECRET: "ms-client-secret",
+    });
+    expect(isMicrosoftConfigured(fromEnv)).toBe(true);
+
+    const fromFile = parseRawConfig({
+      ...baseRawConfig,
+      microsoft: {
+        clientId: "ms-file-id",
+        clientSecret: "ms-file-secret",
+      },
+    });
+    expect(fromFile.MICROSOFT_CLIENT_ID).toBe("ms-file-id");
+    expect(fromFile.MICROSOFT_CLIENT_SECRET).toBe("ms-file-secret");
+    expect(isMicrosoftConfigured(fromFile)).toBe(true);
+  });
+
+  it("rejects Apple sign-in when only three of four keys are set", () => {
+    const three = {
+      APPLE_SIGNIN_SERVICES_ID: "com.example.siwa",
+      APPLE_SIGNIN_TEAM_ID: "TEAMID12",
+      APPLE_SIGNIN_KEY_ID: "KEYID123",
+    };
+
+    expect(() => parseConfigFromEnv({ ...validEnv, ...three })).toThrow(
+      "Apple sign-in configuration requires servicesId, teamId, keyId, and privateKey together",
+    );
+
+    expect(() =>
+      parseRawConfig({
+        ...baseRawConfig,
+        apple: {
+          signIn: {
+            servicesId: "com.example.siwa",
+            teamId: "TEAMID12",
+            keyId: "KEYID123",
+          },
+        },
+      }),
+    ).toThrow(
+      "Apple sign-in configuration requires servicesId, teamId, keyId, and privateKey together",
+    );
+  });
+
+  it("reads Apple sign-in and credentialEncryptionKey from a raw config file", () => {
+    const key = Buffer.alloc(32, 9).toString("base64");
+    const fromFile = parseRawConfig({
+      ...baseRawConfig,
+      apple: {
+        signIn: {
+          servicesId: "com.example.siwa",
+          teamId: "TEAMID12",
+          keyId: "KEYID123",
+          privateKey: "dummy-private-key",
+        },
+      },
+      sync: {
+        ...baseRawConfig.sync,
+        credentialEncryptionKey: key,
+      },
+    });
+
+    expect(fromFile.APPLE_SIGNIN_SERVICES_ID).toBe("com.example.siwa");
+    expect(fromFile.APPLE_SIGNIN_TEAM_ID).toBe("TEAMID12");
+    expect(fromFile.APPLE_SIGNIN_KEY_ID).toBe("KEYID123");
+    expect(fromFile.APPLE_SIGNIN_PRIVATE_KEY).toBe("dummy-private-key");
+    expect(fromFile.SYNC_CREDENTIAL_ENCRYPTION_KEY).toBe(key);
   });
 
   it("parses a fully configured Sync client", () => {

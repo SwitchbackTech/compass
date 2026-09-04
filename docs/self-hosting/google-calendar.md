@@ -13,7 +13,7 @@ Compass Sync — the same service that runs Google Calendar sync for the hosted 
 | --- | --- | --- | --- |
 | **Off (default)** | Google sign-in and connect actions are hidden. Email/password signup works normally. | Nothing. | Everyone who doesn't need Google. |
 | **Local development sign-in & connect** | Google sign-in works. Connecting a calendar works and imports your existing events. Google can't reach `localhost`, so later changes made directly in Google Calendar won't arrive automatically until you set up a public URL. | A Google Cloud OAuth client that allows `http://localhost:9080` (sign-in) and `http://localhost:3010/sync/google` (connect), plus `google.clientId` and `google.clientSecret` in `compass.yaml`. | Bun-based local setups that want Google sign-in or to try connecting a calendar. |
-| **Public, fully-live sync** | Two-way sync: your Compass edits reach Google and Google's changes arrive in Compass, usually within seconds via push notifications (a periodic catch-up covers any it misses). | A public HTTPS URL Google can reach (`sync.callbackBaseUrl`), real Google OAuth credentials, and `google.notificationToken` set. | Server installs. See [Server hosting guide](./server-guide.md). |
+| **Public, fully-live sync** | Two-way sync: your Compass edits reach Google and Google's changes arrive in Compass, usually within seconds via push notifications (a periodic catch-up covers any it misses). | A public HTTPS URL Google can reach (`sync.callbackBaseUrl`) and real Google OAuth credentials. | Server installs. See [Server hosting guide](./server-guide.md). |
 
 Most self-hosters should start with **Off** or a public server setup. Continuous sync needs a public server because Google sends notifications over the public internet.
 
@@ -109,13 +109,6 @@ sync:
   callbackBaseUrl: https://cal.example.com
 ```
 
-Next, check the notification secret Compass uses to verify Google webhook calls. Keep `google.notificationToken` set:
-
-- If you installed with the self-host installer, leave the generated value in place.
-- If you are creating `compass.yaml` manually, set it to a long random secret.
-
-This is a Compass webhook secret, not a Google credential.
-
 Then restart so both changes take effect (`callbackBaseUrl` and rebuilding the web image for the OAuth values):
 
 ```bash
@@ -150,7 +143,6 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 
 - real Google OAuth credentials configured
 - `sync.callbackBaseUrl` reachable by Google over public HTTPS
-- `google.notificationToken` set
 - the `sync` container healthy (`docker compose ps`)
 
 To confirm sync is live: create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works after restart.

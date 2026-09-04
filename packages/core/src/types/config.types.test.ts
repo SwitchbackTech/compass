@@ -14,4 +14,17 @@ describe("AppConfigSchema", () => {
 
     expect(parsed.billing.publishableKey).toBeNull();
   });
+
+  it("derives providers from google.isConfigured when providers is omitted", () => {
+    const parsed = AppConfigSchema.parse({
+      google: { isConfigured: true },
+    });
+
+    expect(parsed.google.isConfigured).toBe(true);
+    expect(parsed.providers).toEqual({
+      google: { signIn: true, connect: true },
+      microsoft: { signIn: false, connect: false },
+      apple: { signIn: false, connect: false },
+    });
+  });
 });

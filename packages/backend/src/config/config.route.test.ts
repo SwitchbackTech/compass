@@ -22,6 +22,11 @@ describe("GET /api/config", () => {
         google: {
           isConfigured: false,
         },
+        providers: {
+          google: { signIn: false, connect: false },
+          microsoft: { signIn: false, connect: false },
+          apple: { signIn: false, connect: false },
+        },
         sync: {
           cloudMutationMode: "enabled",
           execution: "passive",
@@ -55,6 +60,11 @@ describe("GET /api/config", () => {
         google: {
           isConfigured: false,
         },
+        providers: {
+          google: { signIn: false, connect: false },
+          microsoft: { signIn: false, connect: false },
+          apple: { signIn: false, connect: false },
+        },
         sync: {
           cloudMutationMode: "enabled",
           execution: "passive",
@@ -82,5 +92,34 @@ describe("GET /api/config", () => {
       cloudMutationMode: "enabled",
       execution: "passive",
     });
+  });
+
+  it("returns providers.google.connect true on a Google-only config", async () => {
+    const originals = {
+      googleId: CONFIG.GOOGLE_CLIENT_ID,
+      googleSecret: CONFIG.GOOGLE_CLIENT_SECRET,
+      microsoftId: CONFIG.MICROSOFT_CLIENT_ID,
+      microsoftSecret: CONFIG.MICROSOFT_CLIENT_SECRET,
+    };
+    CONFIG.GOOGLE_CLIENT_ID = "client-id";
+    CONFIG.GOOGLE_CLIENT_SECRET = "client-secret";
+    CONFIG.MICROSOFT_CLIENT_ID = undefined;
+    CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
+
+    try {
+      const response = await baseDriver
+        .getServer()
+        .get("/api/config")
+        .expect(Status.OK);
+
+      expect(response.body.google.isConfigured).toBe(true);
+      expect(response.body.providers.google.connect).toBe(true);
+      expect(response.body.providers.microsoft.connect).toBe(false);
+    } finally {
+      CONFIG.GOOGLE_CLIENT_ID = originals.googleId;
+      CONFIG.GOOGLE_CLIENT_SECRET = originals.googleSecret;
+      CONFIG.MICROSOFT_CLIENT_ID = originals.microsoftId;
+      CONFIG.MICROSOFT_CLIENT_SECRET = originals.microsoftSecret;
+    }
   });
 });

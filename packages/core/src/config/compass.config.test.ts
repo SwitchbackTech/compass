@@ -113,6 +113,127 @@ google:
     expect(config.google?.clientSecret).toBe("my-client-secret");
   });
 
+  it("parses a file that only has google among the provider blocks", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+google:
+  clientId: my-client-id
+  clientSecret: my-client-secret
+`,
+      "compass.yaml",
+    );
+
+    expect(config.microsoft).toBeUndefined();
+    expect(config.apple).toBeUndefined();
+    expect(config.sync?.credentialEncryptionKey).toBeUndefined();
+  });
+
+  it("rejects microsoft when only one of the two keys is set", () => {
+    expect(() =>
+      parseCompassConfigText(
+        `${validYaml}
+microsoft:
+  clientId: ms-client-id
+`,
+        "compass.yaml",
+      ),
+    ).toThrow("Microsoft configuration requires both client ID and secret");
+
+    expect(() =>
+      parseCompassConfigText(
+        `${validYaml}
+microsoft:
+  clientSecret: ms-client-secret
+`,
+        "compass.yaml",
+      ),
+    ).toThrow("Microsoft configuration requires both client ID and secret");
+  });
+
+  it("parses microsoft when both keys are set", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+microsoft:
+  clientId: ms-client-id
+  clientSecret: ms-client-secret
+`,
+      "compass.yaml",
+    );
+
+    expect(config.microsoft?.clientId).toBe("ms-client-id");
+    expect(config.microsoft?.clientSecret).toBe("ms-client-secret");
+  });
+
+  it("rejects apple.signIn when only three of the four keys are set", () => {
+    expect(() =>
+      parseCompassConfigText(
+        `${validYaml}
+apple:
+  signIn:
+    servicesId: com.example.siwa
+    teamId: TEAMID12
+    keyId: KEYID123
+`,
+        "compass.yaml",
+      ),
+    ).toThrow(
+      "Apple sign-in configuration requires servicesId, teamId, keyId, and privateKey together",
+    );
+  });
+
+  it("parses apple.signIn when all four keys are set", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+apple:
+  signIn:
+    servicesId: com.example.siwa
+    teamId: TEAMID12
+    keyId: KEYID123
+    privateKey: dummy-private-key
+`,
+      "compass.yaml",
+    );
+
+    expect(config.apple?.signIn?.servicesId).toBe("com.example.siwa");
+    expect(config.apple?.signIn?.teamId).toBe("TEAMID12");
+    expect(config.apple?.signIn?.keyId).toBe("KEYID123");
+    expect(config.apple?.signIn?.privateKey).toBe("dummy-private-key");
+  });
+
+  it("rejects a credentialEncryptionKey shorter than 32 bytes", () => {
+    const shortKey = Buffer.alloc(16, 1).toString("base64");
+    expect(() =>
+      parseCompassConfigText(
+        `${validYaml}
+sync:
+  port: 3010
+  mongoUri: mongodb://localhost:27017/compass_sync
+  internalAuthToken: internal-token
+  callbackBaseUrl: http://localhost:3010
+  credentialEncryptionKey: ${shortKey}
+`,
+        "compass.yaml",
+      ),
+    ).toThrow("sync.credentialEncryptionKey must be 32 bytes of base64");
+  });
+
+  it("parses a 32-byte credentialEncryptionKey", () => {
+    const key = Buffer.alloc(32, 7).toString("base64");
+    const config = parseCompassConfigText(
+      `${validYaml}
+sync:
+  port: 3010
+  mongoUri: mongodb://localhost:27017/compass_sync
+  internalAuthToken: internal-token
+  callbackBaseUrl: http://localhost:3010
+  credentialEncryptionKey: ${key}
+`,
+      "compass.yaml",
+    );
+
+    expect(config.sync?.credentialEncryptionKey).toBe(key);
+  });
+
   it("throws a clear error for invalid YAML", () => {
     expect(() =>
       parseCompassConfigText("runtime:\n  nodeEnv: [", "broken.yaml"),

@@ -37,6 +37,20 @@ supertokens:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 
+# microsoft:
+#   clientId: REPLACE_WITH_MICROSOFT_CLIENT_ID
+#   clientSecret: REPLACE_WITH_MICROSOFT_CLIENT_SECRET
+# Entra /common app registration. Both values are required together.
+
+# apple:
+#   signIn:
+#     servicesId: REPLACE_WITH_APPLE_SERVICES_ID
+#     teamId: REPLACE_WITH_APPLE_TEAM_ID
+#     keyId: REPLACE_WITH_APPLE_KEY_ID
+#     privateKey: REPLACE_WITH_APPLE_PRIVATE_KEY
+# Sign in with Apple only. iCloud calendar connect uses an app-specific
+# password and sync.credentialEncryptionKey; it needs no Apple app credentials.
+
 # posthog:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
@@ -79,3 +93,4 @@ sync:
   # reservedPullLanes: 1 # of maxConcurrency, how many drains never claim initialImport/repair — keeps pulls from starving behind a wave of long imports. Must stay < maxConcurrency.
   # enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
   # compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
+  # credentialEncryptionKey: REPLACE_WITH_SYNC_CREDENTIAL_ENCRYPTION_KEY # 32-byte base64; required to enable Apple calendar connect

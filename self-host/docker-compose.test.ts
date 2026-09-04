@@ -262,8 +262,17 @@ describe("self-host installer", () => {
 
     expect(installer).toContain('generate_secret "Sync internal auth token"');
     expect(installer).toContain("internalAuthToken: $sync_internal_auth_token");
+    expect(installer).toContain(
+      'generate_base64_key "Sync credential encryption key"',
+    );
+    expect(installer).toContain(
+      'credentialEncryptionKey: "$credential_encryption_key"',
+    );
     expect(manual).toContain("SYNC_INTERNAL_AUTH_TOKEN=$(random_hex)");
     expect(manual).toContain("internalAuthToken: $SYNC_INTERNAL_AUTH_TOKEN");
+    expect(manual).toContain(
+      'credentialEncryptionKey: "$CREDENTIAL_ENCRYPTION_KEY"',
+    );
   });
 
   it("uses the shared config helper in every self-host entry point", () => {
@@ -526,17 +535,38 @@ describe("staging deploy workflow", () => {
     );
   });
 
-  it("writes the Google Calendar notification token with Google credentials", () => {
+  it("writes Microsoft, Apple, and credential encryption keys when present", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
-      "GCAL_NOTIFICATION_TOKEN: $".concat(
-        "{{ secrets.GCAL_NOTIFICATION_TOKEN }}",
+      "MICROSOFT_CLIENT_ID: $".concat("{{ vars.MICROSOFT_CLIENT_ID }}"),
+    );
+    expect(workflow).toContain(
+      "MICROSOFT_CLIENT_SECRET: $".concat(
+        "{{ secrets.MICROSOFT_CLIENT_SECRET }}",
       ),
     );
     expect(workflow).toContain(
-      'notificationToken: \\"$'.concat('{GCAL_NOTIFICATION_TOKEN}\\"'),
+      "APPLE_SIGNIN_PRIVATE_KEY: $".concat(
+        "{{ secrets.APPLE_SIGNIN_PRIVATE_KEY }}",
+      ),
     );
+    expect(workflow).toContain(
+      "SYNC_CREDENTIAL_ENCRYPTION_KEY: $".concat(
+        "{{ secrets.SYNC_CREDENTIAL_ENCRYPTION_KEY }}",
+      ),
+    );
+    expect(workflow).toContain("'microsoft:'");
+    expect(workflow).toContain("'apple:'");
+    expect(workflow).toContain(
+      'credentialEncryptionKey: \\"$'.concat(
+        '{SYNC_CREDENTIAL_ENCRYPTION_KEY}\\"',
+      ),
+    );
+    expect(workflow).toContain("APPLE_PK_YAML=");
+    expect(workflow).not.toContain("GCAL_NOTIFICATION_TOKEN");
+    expect(workflow).not.toContain("notificationToken");
+    expect(workflow).not.toContain("channelExpirationMin");
   });
 
   it("binds Stripe secrets directly and only writes the stripe block on hosted cloud", () => {

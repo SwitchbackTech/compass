@@ -8,6 +8,8 @@ If you only want to run Compass on your own computer, use the normal local devel
 
 Self-host does not require Stripe. Omit the `stripe:` block so billing stays off and every account remains writable. Hosted Compass uses a 7-day trial then a paid subscription; see [Billing And Trial](../features/billing.md).
 
+Optional calendar hosts: [Google Calendar](./google-calendar.md), [Microsoft Calendar](./microsoft-calendar.md), [iCloud Calendar](./apple-calendar.md).
+
 ## Compass architecture
 
 When you self-host Compass on a server, you get a stack of small services. Only the public website and API are reachable from your browser. The databases stay private inside Docker.

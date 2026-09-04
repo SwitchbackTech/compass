@@ -159,10 +159,10 @@ echo "  ✓ Directory ready: $COMPASS_HOME"
 #   - SuperTokens Postgres password: authenticates SuperTokens to its database
 #   - SuperTokens API key: authenticates the backend to SuperTokens
 #   - Compass sync token: authenticates sync requests between components
-#   - Google notification token: validates incoming webhook notifications
+#   - Sync credential encryption key: encrypts Apple app-specific passwords at rest
 #
-# Each secret is 64 hexadecimal characters (32 bytes of entropy).
-# This provides 256 bits of security, which is cryptographically strong.
+# Hex secrets are 64 hexadecimal characters (32 bytes of entropy).
+# The credential encryption key is 32 bytes encoded as base64.
 
 echo "Generating cryptographic secrets..."
 
@@ -187,10 +187,10 @@ MONGO_REPLICA_SET_KEY=$(random_hex) || exit 1
 SUPERTOKENS_POSTGRES_PASSWORD=$(random_hex) || exit 1
 SUPERTOKENS_KEY=$(random_hex) || exit 1
 COMPASS_SYNC_TOKEN=$(random_hex) || exit 1
-GCAL_NOTIFICATION_TOKEN=$(random_hex) || exit 1
 SYNC_INTERNAL_AUTH_TOKEN=$(random_hex) || exit 1
+CREDENTIAL_ENCRYPTION_KEY=$(openssl rand -base64 32 | tr -d '\n') || exit 1
 
-echo "  ✓ Generated 7 cryptographic secrets (64 hex chars each)"
+echo "  ✓ Generated cryptographic secrets"
 
 # ── Section 6: Create Config File ─────────────────────────────────────────────
 # The compass.yaml file contains all configuration for your Compass instance.
@@ -243,15 +243,22 @@ supertokens:
     password: $SUPERTOKENS_POSTGRES_PASSWORD
     database: supertokens
 
-google:
-  notificationToken: $GCAL_NOTIFICATION_TOKEN
-
 # To enable Google Calendar sign-in and calendar sync, uncomment and fill in
 # your OAuth credentials:
 # google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
-#   channelExpirationMin: 10
+
+# microsoft:
+#   clientId: REPLACE_WITH_MICROSOFT_CLIENT_ID
+#   clientSecret: REPLACE_WITH_MICROSOFT_CLIENT_SECRET
+
+# apple:
+#   signIn:
+#     servicesId: REPLACE_WITH_APPLE_SERVICES_ID
+#     teamId: REPLACE_WITH_APPLE_TEAM_ID
+#     keyId: REPLACE_WITH_APPLE_KEY_ID
+#     privateKey: REPLACE_WITH_APPLE_PRIVATE_KEY
 
 # Compass Sync service — self-host runs the same architecture as Compass
 # Cloud. Uses the SAME bundled mongo as `mongo:` above, isolated to its own
@@ -268,6 +275,7 @@ sync:
   serviceUrl: http://sync:3010
   cloudMutationMode: enabled
   execution: active
+  credentialEncryptionKey: "$CREDENTIAL_ENCRYPTION_KEY"
 EOF
 
   chmod 600 "$CONFIG_FILE"

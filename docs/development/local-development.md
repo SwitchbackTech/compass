@@ -65,7 +65,6 @@ Workflow: The backend loads `compass.yaml`, builds the runtime config object dir
 Google Integration
 
 - Google is disabled unless both `google.clientId` and `google.clientSecret` are set to real, non-placeholder values.
-- When Google is enabled and the effective Google webhook URL uses HTTPS, `google.notificationToken` is required for Google Calendar webhook validation.
 
 Derived backend values:
 

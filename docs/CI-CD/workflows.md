@@ -170,8 +170,10 @@ Secrets and variables are split between repository level (shared across workflow
 |---|---|
 | `SSH_PRIVATE_KEY` | Private key from the deploy keypair |
 | `COMPASS_SYNC_TOKEN` | Token for compass sync |
-| `GCAL_NOTIFICATION_TOKEN` | Google Calendar notification token |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |
+| `MICROSOFT_CLIENT_SECRET` | Entra app client secret |
+| `APPLE_SIGNIN_PRIVATE_KEY` | Sign in with Apple `.p8` private key |
+| `SYNC_CREDENTIAL_ENCRYPTION_KEY` | 32-byte base64 key for password credentials at rest |
 | `MONGO_PASSWORD` | MongoDB compass user password |
 | `MONGO_REPLICA_SET_KEY` | MongoDB replica set key (`staging-selfhosted`) |
 | `MONGO_URI` | Backend MongoDB URI |
@@ -188,6 +190,10 @@ Secrets and variables are split between repository level (shared across workflow
 | `BACKEND_API_URL` | Staging backend API URL |
 | `FRONTEND_URL` | Staging frontend URL |
 | `GOOGLE_CLIENT_ID` | OAuth client ID |
+| `MICROSOFT_CLIENT_ID` | Entra app client ID |
+| `APPLE_SIGNIN_SERVICES_ID` | Sign in with Apple Services ID |
+| `APPLE_SIGNIN_TEAM_ID` | Apple Developer team ID |
+| `APPLE_SIGNIN_KEY_ID` | Sign in with Apple key ID |
 | `COMPOSE_PROFILES` | Compose profiles (`selfhosted` on `staging-selfhosted`; sync is always appended by the deploy) |
 
 ---

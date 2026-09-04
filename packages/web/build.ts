@@ -46,6 +46,10 @@ const define: Record<string, string> = {
     NODE_ENV: config.runtime.nodeEnv || "production",
     API_BASEURL: config.backend.apiUrl,
     GOOGLE_CLIENT_ID: config.google?.clientId || "",
+    MICROSOFT_CLIENT_ID:
+      process.env.MICROSOFT_CLIENT_ID || config.microsoft?.clientId || "",
+    APPLE_SERVICES_ID:
+      process.env.APPLE_SERVICES_ID || config.apple?.signIn?.servicesId || "",
     POSTHOG_KEY: config.posthog?.key || "",
     POSTHOG_HOST: config.posthog?.host || "",
     PORT: String(config.backend.port ?? 3000),

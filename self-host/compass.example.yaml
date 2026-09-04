@@ -38,9 +38,17 @@ supertokens:
 # google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
-#   channelExpirationMin: 10
-#   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://cal.yourdomain.com/api
-#   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN
+
+# microsoft:
+#   clientId: REPLACE_WITH_MICROSOFT_CLIENT_ID
+#   clientSecret: REPLACE_WITH_MICROSOFT_CLIENT_SECRET
+
+# apple:
+#   signIn:
+#     servicesId: REPLACE_WITH_APPLE_SERVICES_ID
+#     teamId: REPLACE_WITH_APPLE_TEAM_ID
+#     keyId: REPLACE_WITH_APPLE_KEY_ID
+#     privateKey: REPLACE_WITH_APPLE_PRIVATE_KEY
 
 # stripe:
 #   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY
@@ -69,4 +77,5 @@ sync:
   # reservedPullLanes: 1 # of maxConcurrency, how many drains never claim initialImport/repair — keeps pulls from starving behind a wave of long imports. Must stay < maxConcurrency.
   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
+  # credentialEncryptionKey: REPLACE_WITH_SYNC_CREDENTIAL_ENCRYPTION_KEY # 32-byte base64; required to enable Apple calendar connect
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google

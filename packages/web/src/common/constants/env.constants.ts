@@ -20,6 +20,8 @@ const webEnvSchema = z.object({
   API_BASEURL: z.string().url(),
   BACKEND_BASEURL: z.string().url(),
   GOOGLE_CLIENT_ID: z.string().optional(),
+  MICROSOFT_CLIENT_ID: z.string().optional(),
+  APPLE_SERVICES_ID: z.string().optional(),
   NODE_ENV: z.string(),
   POSTHOG_KEY: z
     .string()
@@ -35,6 +37,8 @@ export const ENV_WEB = webEnvSchema.parse({
   API_BASEURL,
   BACKEND_BASEURL,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID,
+  APPLE_SERVICES_ID: process.env.APPLE_SERVICES_ID,
   NODE_ENV: process.env.NODE_ENV,
   POSTHOG_KEY: process.env.POSTHOG_KEY,
   POSTHOG_HOST: process.env.POSTHOG_HOST,
