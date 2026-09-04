@@ -22,7 +22,7 @@ import {
   validateWeekDateParam,
 } from "@web/routers/loaders";
 import { validateLifeSearch } from "@web/views/Life/life-search";
-import { NotFoundView } from "@web/views/NotFound";
+import { NotFoundView } from "@web/views/NotFound/NotFound";
 
 export const rootRoute = createRootRoute({
   component: lazyRouteComponent(
@@ -155,7 +155,7 @@ export const googleAuthCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.GOOGLE_AUTH_CALLBACK,
   component: lazyRouteComponent(
-    () => import("@web/views/GoogleAuthCallback"),
+    () => import("@web/views/GoogleAuthCallback/GoogleAuthCallback"),
     "GoogleAuthCallbackView",
   ),
 });

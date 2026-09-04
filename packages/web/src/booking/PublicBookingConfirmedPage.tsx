@@ -18,7 +18,9 @@ import {
   resolvePublicBookingReservationView,
 } from "@web/booking/public-booking.view";
 import {
+  guestActionUrlFromHistory,
   publicCancelUrlForReservation,
+  publicRescheduleUrlForReservation,
   tokenFromGuestActionUrl,
 } from "@web/booking/public-booking-search";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
@@ -60,16 +62,11 @@ const resolveConfirmedPageView = (
   });
 
 function cancelUrlFromHistory(state: unknown): string | undefined {
-  if (
-    state &&
-    typeof state === "object" &&
-    "cancelUrl" in state &&
-    typeof state.cancelUrl === "string" &&
-    state.cancelUrl.length > 0
-  ) {
-    return state.cancelUrl;
-  }
-  return undefined;
+  return guestActionUrlFromHistory(state, "cancelUrl");
+}
+
+function rescheduleUrlFromHistory(state: unknown): string | undefined {
+  return guestActionUrlFromHistory(state, "rescheduleUrl");
 }
 
 export function PublicBookingConfirmedPage() {
@@ -82,13 +79,27 @@ export function PublicBookingConfirmedPage() {
   const historyCancelUrl = useRouterState({
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),
   });
+  const historyRescheduleUrl = useRouterState({
+    select: (routerState) =>
+      rescheduleUrlFromHistory(routerState.location.state),
+  });
   const token =
     searchToken ||
-    (historyCancelUrl ? tokenFromGuestActionUrl(historyCancelUrl) : "");
+    (historyCancelUrl ? tokenFromGuestActionUrl(historyCancelUrl) : "") ||
+    (historyRescheduleUrl ? tokenFromGuestActionUrl(historyRescheduleUrl) : "");
   const cancelUrl =
     historyCancelUrl ??
     (token
       ? publicCancelUrlForReservation(
+          reservationId,
+          token,
+          window.location.origin,
+        )
+      : undefined);
+  const rescheduleUrl =
+    historyRescheduleUrl ??
+    (token
+      ? publicRescheduleUrlForReservation(
           reservationId,
           token,
           window.location.origin,
@@ -180,6 +191,7 @@ export function PublicBookingConfirmedPage() {
       timeZone={reservation.guestTimeZone}
       createsGoogleMeet={reservation.createsGoogleMeet}
       cancelUrl={cancelUrl}
+      rescheduleUrl={rescheduleUrl}
       onEditDetails={
         canEdit
           ? () => {

@@ -1,1 +1,0 @@
-export { GoogleAuthCallbackView } from "./GoogleAuthCallback";

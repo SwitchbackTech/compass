@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./index";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { describe, expect, it, mock } from "bun:test";
 
 describe("Tooltip interactive option", () => {
