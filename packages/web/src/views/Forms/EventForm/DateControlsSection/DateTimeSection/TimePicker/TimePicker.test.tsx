@@ -72,7 +72,12 @@ describe("TimePicker", () => {
 
   it("keeps the original time when Tabbing through without changing the draft", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<Harness initialValue={onePm} options={dayOptions} />);
+    const options = [
+      { value: "12:00 AM", label: "12 AM" },
+      onePm,
+      { value: "1:15 PM", label: "1:15 PM" },
+    ];
+    render(<Harness initialValue={onePm} options={options} />);
 
     await user.tab();
     await user.tab();
@@ -88,7 +93,7 @@ describe("TimePicker", () => {
 
   it("commits the next interval when ArrowDown then Tab", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<Harness initialValue={onePm} options={dayOptions} />);
+    render(<Harness initialValue={onePm} options={intervalOptions} />);
 
     await user.tab();
     await user.tab();
