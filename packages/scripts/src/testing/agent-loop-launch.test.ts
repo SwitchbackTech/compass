@@ -24,7 +24,7 @@ function writeExecutable(path: string, contents: string) {
 }
 
 function runLaunch(status: string, retryAfter = "") {
-  const directory = mkdtempSync(join(tmpdir(), "booking-loop-launch-"));
+  const directory = mkdtempSync(join(tmpdir(), "agent-loop-launch-"));
   temporaryDirectories.push(directory);
   const bin = join(directory, "bin");
   const log = join(directory, "commands.log");
@@ -33,7 +33,12 @@ function runLaunch(status: string, retryAfter = "") {
 
   writeExecutable(
     join(bin, "gh"),
-    `#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> "$BOOKING_LOOP_TEST_LOG"\n`,
+    `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$AGENT_LOOP_TEST_LOG"
+if [ "$1" = "issue" ] && [ "$2" = "view" ]; then
+  printf 'Compass Booking v1'
+fi
+`,
   );
   writeExecutable(
     join(bin, "curl"),
@@ -50,23 +55,23 @@ while [ "$#" -gt 0 ]; do
 done
 printf '{"error":"simulated"}' > "$response_file"
 if [ -n "$headers_file" ]; then
-  printf 'retry-after: %s\\r\\n' "$BOOKING_LOOP_TEST_RETRY_AFTER" > "$headers_file"
+  printf 'retry-after: %s\\r\\n' "$AGENT_LOOP_TEST_RETRY_AFTER" > "$headers_file"
 fi
-printf '%s' "$BOOKING_LOOP_TEST_STATUS"
+printf '%s' "$AGENT_LOOP_TEST_STATUS"
 `,
   );
 
   const result = spawnSync(
     "bash",
-    [".github/scripts/booking-loop-launch.sh", "42"],
+    [".github/scripts/agent-loop-launch.sh", "42"],
     {
       cwd: process.cwd(),
       encoding: "utf8",
       env: {
         ...process.env,
-        BOOKING_LOOP_TEST_LOG: log,
-        BOOKING_LOOP_TEST_RETRY_AFTER: retryAfter,
-        BOOKING_LOOP_TEST_STATUS: status,
+        AGENT_LOOP_TEST_LOG: log,
+        AGENT_LOOP_TEST_RETRY_AFTER: retryAfter,
+        AGENT_LOOP_TEST_STATUS: status,
         CURSOR_API_KEY: "test-key",
         GITHUB_OUTPUT: output,
         GITHUB_REPOSITORY: "example/compass",
@@ -77,13 +82,13 @@ printf '%s' "$BOOKING_LOOP_TEST_STATUS"
 
   return {
     ...result,
-    commands: readFileSync(log, "utf8"),
+    commands: existsSync(log) ? readFileSync(log, "utf8") : "",
     output: existsSync(output) ? readFileSync(output, "utf8") : "",
   };
 }
 
 function runPicker(retryAt: string) {
-  const directory = mkdtempSync(join(tmpdir(), "booking-loop-picker-"));
+  const directory = mkdtempSync(join(tmpdir(), "agent-loop-picker-"));
   temporaryDirectories.push(directory);
   const bin = join(directory, "bin");
   const output = join(directory, "github-output");
@@ -98,19 +103,20 @@ if [ "$1" = "issue" ]; then
   exit 0
 fi
 if [ "$1" = "api" ]; then
-  printf '<!-- booking-loop-quota-retry-at=%s -->\\n' "$BOOKING_LOOP_TEST_RETRY_AT"
+  printf '<!-- agent-loop-quota-retry-at=%s -->\\n' "$AGENT_LOOP_TEST_RETRY_AT"
   exit 0
 fi
 exit 1
 `,
   );
 
-  const result = spawnSync("bash", [".github/scripts/booking-loop-next.sh"], {
+  const result = spawnSync("bash", [".github/scripts/agent-loop-next.sh"], {
     cwd: process.cwd(),
     encoding: "utf8",
     env: {
       ...process.env,
-      BOOKING_LOOP_TEST_RETRY_AT: retryAt,
+      AGENT_LOOP_TEST_RETRY_AT: retryAt,
+      AGENT_LOOP_MILESTONES: "Compass Booking v1",
       GITHUB_OUTPUT: output,
       GITHUB_REPOSITORY: "example/compass",
       PATH: `${bin}:${process.env.PATH}`,
@@ -123,16 +129,14 @@ exit 1
   };
 }
 
-describe("booking-loop launch quota recovery", () => {
+describe("agent-loop launch quota recovery", () => {
   it("records HTTP 429 as an hourly-retryable credit wait", () => {
     const result = runLaunch("429", "120");
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.commands).toContain("booking-loop-waiting-for-credits");
-    expect(result.commands).toContain("booking-loop-quota-retry-at=");
-    expect(result.commands).not.toContain(
-      "--add-label booking-loop-needs-human",
-    );
+    expect(result.commands).toContain("agent-loop-waiting-for-credits");
+    expect(result.commands).toContain("agent-loop-quota-retry-at=");
+    expect(result.commands).not.toContain("--add-label agent-loop-needs-human");
     expect(result.output).toContain("launch_mode=quota-wait");
     expect(result.output).toContain("retry_after_seconds=3600");
   });
@@ -141,9 +145,9 @@ describe("booking-loop launch quota recovery", () => {
     const result = runLaunch("403");
 
     expect(result.status, result.stderr).toBe(1);
-    expect(result.commands).toContain("--add-label booking-loop-needs-human");
+    expect(result.commands).toContain("--add-label agent-loop-needs-human");
     expect(result.commands).not.toContain(
-      "--add-label booking-loop-waiting-for-credits",
+      "--add-label agent-loop-waiting-for-credits",
     );
   });
 

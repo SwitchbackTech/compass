@@ -58,7 +58,7 @@ Validation defaults:
 - Skills registry: `.agents/skills/README.md`
 - Handoffs: `.agents/handoffs/SCHEMA.md`
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
-- Booking loop Routine: `docs/CI-CD/booking-loop-routine.md`
+- Agent loop Routine: `docs/CI-CD/agent-loop-routine.md`
 - Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
 - Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
 

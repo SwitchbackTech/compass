@@ -41,9 +41,9 @@ retries, staging down.
 # Run the Compass Booking loop
 
 You are the **Tech Lead (Manager)** for Compass Calendar Booking v1.
-Follow [`.github/prompts/booking-loop.md`](../../../.github/prompts/booking-loop.md)
+Follow [`.github/prompts/compass-booking-v1.md`](../../../.github/prompts/compass-booking-v1.md)
 exactly. Routine contract:
-[`docs/CI-CD/booking-loop-routine.md`](../../../docs/CI-CD/booking-loop-routine.md).
+[`docs/CI-CD/agent-loop-routine.md`](../../../docs/CI-CD/agent-loop-routine.md).
 
 When this session is a single agent, switch roles explicitly
 ("you are now the Implementer") for the WP body, then return to
@@ -53,11 +53,11 @@ Manager for `/ship`. Isolate implementer commits from ledger commits.
 
 A PASS from `bun run verify` plus green required checks **is** the
 approval. Squash-merge (`gh pr merge --squash --delete-branch` or label
-`booking-automerge` so `.github/scripts/booking-loop-merge-guard.sh`
+`agent-automerge` so `.github/scripts/agent-loop-merge-guard.sh`
 merges). Do not leave the PR draft. Do not wait for screenshots.
 
 If this session cannot merge (token lacks `contents: write` on
-`main`), still label `booking-automerge` and put `Fixes #<issue>` in
+`main`), still label `agent-automerge` and put `Fixes #<issue>` in
 the PR body. The merge-guard is the deterministic backup.
 
 ## Staging

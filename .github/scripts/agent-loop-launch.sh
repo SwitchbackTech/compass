@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Launch one booking-loop agent for a GitHub issue.
+# Launch one agent-loop agent for a GitHub issue.
 # If CURSOR_API_KEY is set, POST https://api.cursor.com/v0/agents only.
 # Otherwise comment the exact pickup phrase for a Cursor Automation:
-#   booking-loop: pickup
+#   agent-loop: pickup
 # Never both (that would start two agents).
 set -euo pipefail
 
-ISSUE_NUMBER=${1:?usage: booking-loop-launch.sh <issue-number>}
+ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number>}
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/booking-loop-lib.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 if [ -z "$REPO" ]; then
   echo "GITHUB_REPOSITORY or GH_REPO is required" >&2
@@ -16,25 +16,33 @@ if [ -z "$REPO" ]; then
 fi
 
 issue_url="https://github.com/${REPO}/issues/${ISSUE_NUMBER}"
-prompt_file="${BOOKING_LOOP_SCRIPT_DIR}/../prompts/booking-loop.md"
+milestone_title=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json milestone --jq '.milestone.title // empty' 2>/dev/null || true)
+prompt_file=$(prompt_path_for_milestone "$milestone_title")
+prompt_rel=".github/prompts/$(basename "$prompt_file")"
 
 gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$RUNNING_LABEL" \
   --remove-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || \
   gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$RUNNING_LABEL"
 gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+  --remove-label "$LEGACY_NEEDS_HUMAN_LABEL" 2>/dev/null || true
+gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
   --remove-label "$QUOTA_WAITING_LABEL" 2>/dev/null || true
+gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+  --remove-label "$LEGACY_QUOTA_WAITING_LABEL" 2>/dev/null || true
 
 if [ -n "${CURSOR_API_KEY:-}" ]; then
   prompt_text=$(cat <<EOF
-You are running the Compass Calendar booking-loop Routine.
-Kill switch BOOKING_LOOP_ENABLED is true (this launch would not have happened otherwise).
+You are running the Compass Calendar agent-loop Routine.
+Kill switch BOOKING_LOOP_ENABLED or AGENT_LOOP_ENABLED is true (this launch would not have happened otherwise).
 Target issue: #${ISSUE_NUMBER}
 Issue URL: ${issue_url}
+Milestone: ${milestone_title}
 
-Read ${prompt_file##*/} at .github/prompts/booking-loop.md and follow it exactly.
-Also read .agents/skills/booking-loop/SKILL.md and docs/features/booking.md.
+Read ${prompt_rel} and follow it exactly.
+Also read .agents/skills/ship/SKILL.md and AGENTS.md.
+Read the Spec: link from the issue body (do not re-litigate locked decisions).
 
-Take only the work package for this issue from origin/main to a ready PR with Fixes #${ISSUE_NUMBER}, then squash-merge. Label the PR ${AUTOMERGE_LABEL}. Do not wait for a human. Never enter credentials on staging.
+Take only the work package for this issue from origin/main to a ready PR with Fixes #${ISSUE_NUMBER}, then squash-merge when the Approval boundary is allow. Label the PR ${AUTOMERGE_LABEL}. Do not wait for a human on allow WPs. Never enter credentials on staging.
 EOF
 )
 
@@ -82,15 +90,16 @@ PY
 )
     rm -f "$tmp" "$headers"
     gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<BODY
-booking-loop: Cursor quota exhausted (HTTP 429). Waiting until ${next_retry_at}, then the hourly watchdog will retry this WP.
+${COMMENT_PREFIX} Cursor quota exhausted (HTTP 429). Waiting until ${next_retry_at}, then the watchdog will retry this WP.
 
-<!-- booking-loop-quota-retry-at=${next_retry_at} -->
+<!-- ${QUOTA_RETRY_MARKER}${next_retry_at} -->
 BODY
 )"
     gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
       --add-label "$QUOTA_WAITING_LABEL" --remove-label "$RUNNING_LABEL" \
-      --remove-label "$NEEDS_HUMAN_LABEL"
-    notify "booking-loop: Cursor quota exhausted for #${ISSUE_NUMBER}; retrying after ${next_retry_at}"
+      --remove-label "$LEGACY_RUNNING_LABEL" \
+      --remove-label "$NEEDS_HUMAN_LABEL" --remove-label "$LEGACY_NEEDS_HUMAN_LABEL"
+    notify "${COMMENT_PREFIX} Cursor quota exhausted for #${ISSUE_NUMBER}; retrying after ${next_retry_at}"
     echo "Cursor quota exhausted for #${ISSUE_NUMBER}; retry after ${next_retry_at}."
     set_output launch_mode quota-wait
     set_output retry_after_seconds "$retry_after_seconds"
@@ -101,18 +110,19 @@ BODY
     body=$(head -c 800 "$tmp" || true)
     rm -f "$tmp" "$headers"
     gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<BODY
-booking-loop: Cursor API launch failed (HTTP ${http_code}). Not commenting \`${PICKUP_PHRASE}\` because \`CURSOR_API_KEY\` is set (dual-launch rule).
+${COMMENT_PREFIX} Cursor API launch failed (HTTP ${http_code}). Not commenting \`${PICKUP_PHRASE}\` because \`CURSOR_API_KEY\` is set (dual-launch rule).
 
 \`\`\`
 ${body}
 \`\`\`
 
-Added \`${NEEDS_HUMAN_LABEL}\`. Fix the API key or the payload, then re-dispatch Booking loop.
+Added \`${NEEDS_HUMAN_LABEL}\`. Fix the API key or the payload, then re-dispatch Agent loop.
 BODY
 )"
     gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
-      --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
-    notify "booking-loop: Cursor API launch failed for #${ISSUE_NUMBER} (HTTP ${http_code})"
+      --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" \
+      --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
+    notify "${COMMENT_PREFIX} Cursor API launch failed for #${ISSUE_NUMBER} (HTTP ${http_code})"
     echo "Cursor API launch failed HTTP ${http_code}" >&2
     exit 1
   fi
@@ -122,7 +132,7 @@ BODY
   rm -f "$tmp" "$headers"
 
   gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<BODY
-booking-loop: launched Cursor cloud agent \`${agent_id}\`.
+${COMMENT_PREFIX} launched Cursor cloud agent \`${agent_id}\`.
 ${agent_url}
 
 This launch used the Cloud Agents API, so this comment is **not** \`${PICKUP_PHRASE}\`.
@@ -137,6 +147,6 @@ fi
 # No API key: Cursor Automation path. Exact phrase is the trigger.
 gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "${PICKUP_PHRASE}
 
-Issue #${ISSUE_NUMBER}. Read .github/prompts/booking-loop.md and follow it exactly."
+Issue #${ISSUE_NUMBER}. Read ${prompt_rel} and follow it exactly."
 echo "Commented pickup phrase on #${ISSUE_NUMBER} (no CURSOR_API_KEY)"
 set_output launch_mode comment

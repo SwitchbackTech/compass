@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# After "Release on main": smoke staging, comment on the Booking issue if
-# this SHA came from a booking-automerge PR, then print smoke_ok for GHA.
+# After "Release on main": smoke staging, comment on the issue if this SHA
+# came from an agent-automerge PR, then print smoke_ok for GHA.
 set -euo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/booking-loop-lib.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 HEAD_SHA=${HEAD_SHA:-${GITHUB_SHA:-}}
 CONCLUSION=${CONCLUSION:-success}
@@ -29,27 +29,29 @@ if [ -n "$HEAD_SHA" ]; then
 fi
 
 issue_number=""
-is_booking=false
+is_loop_pr=false
 if [ -n "$pr_number" ]; then
   labels=$(gh pr view "$pr_number" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null || true)
-  if printf '%s\n' "$labels" | grep -qx "$AUTOMERGE_LABEL"; then
-    is_booking=true
+  if printf '%s\n' "$labels" | grep -qx "$AUTOMERGE_LABEL" \
+    || printf '%s\n' "$labels" | grep -qx "$LEGACY_AUTOMERGE_LABEL"; then
+    is_loop_pr=true
   fi
   issue_number=$(gh pr view "$pr_number" --repo "$REPO" --json body --jq '.body' 2>/dev/null |
     grep -oE '[Ff]ixes #[0-9]+' | grep -oE '[0-9]+' | head -n1 || true)
 fi
 
-if ! "${BOOKING_LOOP_SCRIPT_DIR}/booking-loop-staging-smoke.sh"; then
+if ! "${AGENT_LOOP_SCRIPT_DIR}/agent-loop-staging-smoke.sh"; then
   set_output smoke_ok false
   set_output launch_next false
   if [ -n "$issue_number" ]; then
     gh issue comment "$issue_number" --repo "$REPO" --body \
-      "booking-loop: staging smoke failed after #${pr_number} reached main. Added \`${NEEDS_HUMAN_LABEL}\`. Not launching the next WP." \
+      "${COMMENT_PREFIX} staging smoke failed after #${pr_number} reached main. Added \`${NEEDS_HUMAN_LABEL}\`. Not launching the next WP." \
       2>/dev/null || true
     gh issue edit "$issue_number" --repo "$REPO" \
-      --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
+      --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" \
+      --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
   fi
-  notify "booking-loop: staging smoke failed (PR #${pr_number:-unknown})"
+  notify "${COMMENT_PREFIX} staging smoke failed (PR #${pr_number:-unknown})"
   exit 1
 fi
 
@@ -57,12 +59,13 @@ set_output smoke_ok true
 set_output launch_next true
 
 if [ -n "$issue_number" ]; then
-  gh issue edit "$issue_number" --repo "$REPO" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
-  if [ "$is_booking" = true ]; then
+  gh issue edit "$issue_number" --repo "$REPO" --remove-label "$RUNNING_LABEL" \
+    --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
+  if [ "$is_loop_pr" = true ]; then
     gh issue comment "$issue_number" --repo "$REPO" --body \
-      "booking-loop: staging smoke passed on ${STAGING_URL} after #${pr_number}. Launching the next eligible WP if any." \
+      "${COMMENT_PREFIX} staging smoke passed on ${STAGING_URL} after #${pr_number}. Launching the next eligible WP if any." \
       2>/dev/null || true
   fi
 fi
 
-echo "post-deploy smoke ok (booking=${is_booking} pr=${pr_number:-none} issue=${issue_number:-none})"
+echo "post-deploy smoke ok (loop=${is_loop_pr} pr=${pr_number:-none} issue=${issue_number:-none})"
