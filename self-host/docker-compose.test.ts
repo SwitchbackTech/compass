@@ -128,8 +128,10 @@ describe("self-host docker compose", () => {
       ".github/docker/Dockerfile.web",
     ]) {
       const dockerfile = readRepoFile(file);
-      const installAt = dockerfile.indexOf("RUN bun install --frozen-lockfile");
-      const copySourceAt = dockerfile.indexOf("COPY . .");
+      const installAt = dockerfile.search(
+        /^RUN bun install --frozen-lockfile$/m,
+      );
+      const copySourceAt = dockerfile.search(/^COPY \. \.$/m);
       expect(installAt).toBeGreaterThan(-1);
       expect(copySourceAt).toBeGreaterThan(installAt);
     }
