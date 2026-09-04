@@ -63,13 +63,6 @@ workflow file snapshot from the failed attempt. Dispatch a **fresh** run
 (`workflow_dispatch` with the issue number) after removing the `autofix`
 label if preflight would skip it as already handled.
 
-## Handoff
-
-When the agent opens a PR, it writes `.agents/handoffs/<issue-number>.md`
-(WP-02 schema) **on the PR branch**. Status lives on the GitHub issue. It
-cannot write those files to `main` from the autofix job. `task_id` is the
-issue number.
-
 ## Drills (documented, not run)
 
 Operator checklist. Mark `documented` unless a human authorizes a live

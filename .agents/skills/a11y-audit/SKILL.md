@@ -28,7 +28,7 @@ Changed UI reviewed; no site-wide unrelated audit.
 ## Anti-patterns
 
 Do not expand into an unrelated site-wide audit. See
-[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+[`anti-patterns.md`](../anti-patterns.md).
 
 ## Escalate
 

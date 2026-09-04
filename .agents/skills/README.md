@@ -1,36 +1,30 @@
 # Skill registry
 
-Durable methods for Compass agents. One row per `.agents/skills/<name>/`
-directory. This is not a JS/TS barrel; import nothing from here.
+Durable procedures for Compass agents, one directory per skill. These are
+files to read and follow, not slash commands. This is not a JS/TS barrel;
+import nothing from here.
 
-Bump `version` in `SKILL.md` frontmatter when the method changes, add a
-one-line note in **Change log** below, and leave the previous body in
-git. Revert = `git revert`. Do not copy `SKILL.v1.md` unless a change is
-risky enough to warrant a side-by-side file.
+Bump `version` in `SKILL.md` frontmatter when the procedure changes and add a
+line to **Change log**. Revert = `git revert`.
 
-Shared stop rules: [`_evals/anti-patterns.md`](_evals/anti-patterns.md).
-Eval stubs: [`_evals/README.md`](_evals/README.md).
+Shared stop rules: [`anti-patterns.md`](anti-patterns.md).
 
-| name | version | owner | role | last_verified |
+| name | version | owner | last_verified | purpose |
 | --- | --- | --- | --- | --- |
-| a11y-audit | 1 | compass-maintainers | specialist | 2026-08-25 |
-| booking-loop | 2 | compass-maintainers | Manager | 2026-09-04 |
-| chaos | 1 | compass-maintainers | specialist | 2026-08-25 |
-| google-sync-debug | 1 | compass-maintainers | specialist | 2026-08-25 |
-| handoff | 1 | compass-maintainers | specialist | 2026-08-25 |
-| local-dev-bootstrap | 1 | compass-maintainers | specialist | 2026-08-25 |
-| qa-test-staging | 1 | compass-maintainers | specialist | 2026-08-25 |
-| review | 1 | compass-maintainers | reviewer | 2026-08-25 |
-| ship | 2 | compass-maintainers | Manager | 2026-08-25 |
-| simplify | 1 | compass-maintainers | specialist | 2026-08-25 |
-| verify-change | 1 | compass-maintainers | verifier | 2026-08-25 |
+| ship | 3 | compass-maintainers | 2026-09-04 | verify, PR, label `agent-automerge`, stop |
+| simplify | 2 | compass-maintainers | 2026-09-04 | behavior-preserving quality pass on a diff |
+| a11y-audit | 1 | compass-maintainers | 2026-08-25 | review changed UI for accessibility regressions |
+| chaos | 2 | compass-maintainers | 2026-09-04 | exploratory signed-in QA, then ship |
+| google-sync-debug | 2 | compass-maintainers | 2026-09-04 | trace OAuth, provider, job, webhook, SSE failures |
+| qa-test-staging | 1 | compass-maintainers | 2026-08-25 | post-deploy staging confidence sweep |
 
 ## Change log
 
-- 2026-09-04: `/booking-loop` v2 — alias for the milestone-driven agent-loop Routine.
-- 2026-08-30: `/booking-loop` v1 — autonomous Booking v1 WP → merge → staging.
-- 2026-08-27: `/ship` v2 — merge after verify without waiting for a human.
-- 2026-08-25: WP-05 — add `version` / `owner` / `last_verified` to all skills.
-
-`last_verified` on this date is the registry implementation date, not a
-production eval run.
+- 2026-09-04: retired `verify-change`, `review`, `handoff`, `booking-loop`,
+  `local-dev-bootstrap`, and the `_evals` stubs. `bun run verify --strict`
+  is the verdict; review is a CI job; status lives on the GitHub issue;
+  the loop is `docs/CI-CD/agent-loop-routine.md`; local setup is
+  `docs/development/local-development.md`.
+- 2026-09-04: `/booking-loop` v2 became the agent-loop Routine.
+- 2026-08-27: `/ship` v2 merged after verify without waiting for a human.
+- 2026-08-25: added `version` / `owner` / `last_verified` to all skills.
