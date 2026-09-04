@@ -144,6 +144,19 @@ class BookingReservationRepository {
     if (!result) return null;
     return BookingReservationRecordSchema.parse(result);
   }
+
+  async clearCalendarEventId(
+    id: ObjectId,
+  ): Promise<BookingReservationRecord | null> {
+    const now = new Date();
+    const result = await mongoService.bookingReservation.findOneAndUpdate(
+      { _id: id },
+      { $set: { calendarEventId: null, updatedAt: now } },
+      { returnDocument: "after" },
+    );
+    if (!result) return null;
+    return BookingReservationRecordSchema.parse(result);
+  }
 }
 
 export const bookingReservationRepository = new BookingReservationRepository();
