@@ -1277,6 +1277,60 @@ describe("BookingSettingsSection", () => {
       expect(savedBody).toMatchObject({ maxHorizonDays: 30 });
     });
   });
+
+  it("shows an inline error for out-of-range notice and blocks save", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(ctx.json({ ...(savedBody as object), isConfigured: true }));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const notice = await screen.findByLabelText("Minimum notice (hours)");
+    await user.clear(notice);
+    await user.type(notice, "1441");
+
+    expect(screen.getByText("Enter 0 to 1440 hours.")).toBeInTheDocument();
+    expect(notice).toHaveAttribute("aria-invalid", "true");
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    expect(
+      screen.getByText("Fix the highlighted number fields before saving."),
+    ).toBeInTheDocument();
+    expect(savedBody).toBeUndefined();
+
+    await user.clear(notice);
+    await user.type(notice, "4");
+    expect(
+      screen.queryByText("Enter 0 to 1440 hours."),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ minNoticeHours: 4 });
+    });
+  });
 });
 
 describe("BOOKING_SEQUENCE_FIELDS", () => {
