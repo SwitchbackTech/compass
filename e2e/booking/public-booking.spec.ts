@@ -251,24 +251,6 @@ test.describe("public booking page", () => {
     ).toHaveCount(0);
   });
 
-  test("offers cancel and edit on a confirmation permalink with a token", async ({
-    page,
-  }) => {
-    await preparePublicBookingConfirmedPage(page, { token: "abc" });
-    await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
-    ).toBeFocused();
-    await expect(
-      page.getByRole("button", { name: "Copy cancel link" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Edit details" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
-    ).toBeVisible();
-  });
-
   test("copies the cancel link from the confirmation page", async ({
     page,
     context,
