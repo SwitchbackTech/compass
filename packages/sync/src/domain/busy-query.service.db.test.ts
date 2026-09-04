@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type EventId } from "@core/types/domain-primitives";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type PrincipalId,
@@ -37,10 +38,11 @@ describe("queryBusyIntervals", () => {
     generation?: number;
     busy?: boolean;
     cancelled?: boolean;
+    eventId?: string;
   }) => {
     // Unique eventId + occurrenceKey per doc: the collection has a unique index
     // on (eventId, generation, occurrenceKey), so distinct seeds must not collide.
-    const eventId = objectId();
+    const eventId = input.eventId ?? objectId();
     return storage
       .db()
       .collection(SYNC_COLLECTIONS.eventOccurrences)
@@ -56,11 +58,13 @@ describe("queryBusyIntervals", () => {
         ...(input.end ? { endAt: new Date(input.end) } : {}),
         busy: input.busy ?? true,
         cancelled: input.cancelled ?? false,
-      });
+      })
+      .then(() => eventId);
   };
 
   const query = (
     calendars: Array<{ calendarId: SyncEventCalendarId; generation: number }>,
+    excludeEventIds?: readonly EventId[],
   ) =>
     queryBusyIntervals(
       { occurrences },
@@ -70,6 +74,7 @@ describe("queryBusyIntervals", () => {
         calendars,
         start: WINDOW_START,
         end: WINDOW_END,
+        excludeEventIds,
       },
     );
 
@@ -200,5 +205,67 @@ describe("queryBusyIntervals", () => {
     });
 
     expect(await query([{ calendarId: calendarA, generation: 0 }])).toEqual([]);
+  });
+
+  it("drops an excluded event before merge and keeps overlapping host busy", async () => {
+    const bookingId = objectId();
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T10:00Z",
+      end: "2026-07-14T11:00Z",
+    });
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T10:00Z",
+      end: "2026-07-14T10:30Z",
+      eventId: bookingId,
+    });
+
+    const result = await query(
+      [{ calendarId: calendarA, generation: 0 }],
+      [bookingId as EventId],
+    );
+
+    expect(iso(result)).toEqual([
+      ["2026-07-14T10:00:00.000Z", "2026-07-14T11:00:00.000Z"],
+    ]);
+  });
+
+  it("ignores unknown excludeEventIds", async () => {
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T10:00Z",
+      end: "2026-07-14T11:00Z",
+    });
+
+    const result = await query(
+      [{ calendarId: calendarA, generation: 0 }],
+      [objectId() as EventId],
+    );
+
+    expect(iso(result)).toEqual([
+      ["2026-07-14T10:00:00.000Z", "2026-07-14T11:00:00.000Z"],
+    ]);
+  });
+
+  it("matches today's merge when excludeEventIds is empty or omitted", async () => {
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T09:00Z",
+      end: "2026-07-14T10:00Z",
+    });
+    await seed({
+      calendarId: calendarA,
+      start: "2026-07-14T10:00Z",
+      end: "2026-07-14T11:00Z",
+    });
+
+    const omitted = await query([{ calendarId: calendarA, generation: 0 }]);
+    const empty = await query([{ calendarId: calendarA, generation: 0 }], []);
+
+    expect(iso(omitted)).toEqual([
+      ["2026-07-14T09:00:00.000Z", "2026-07-14T11:00:00.000Z"],
+    ]);
+    expect(iso(empty)).toEqual(iso(omitted));
   });
 });
