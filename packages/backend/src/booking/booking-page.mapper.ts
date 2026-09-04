@@ -6,10 +6,7 @@ import {
   BookingPageSchema,
   pickAdminPutBookingPageInput,
 } from "@core/types/booking.contracts";
-import {
-  CalendarIdSchema,
-  TimeZoneSchema,
-} from "@core/types/domain-primitives";
+import { CalendarIdSchema, type TimeZone } from "@core/types/domain-primitives";
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { CONFIG } from "@backend/common/constants/config.constants";
 
@@ -49,7 +46,7 @@ export const mapBookingPageRecordToAdminResponse = (
 /**
  * A record that was saved but never enabled has no slug and no public URL.
  * isConfigured: true tells the client the host's stored timezone is a real
- * choice that must not be re-seeded from the browser.
+ * choice that must not be re-seeded from the calendar view.
  */
 export const mapBookingPageRecordToSetupResponse = (
   record: Pick<
@@ -83,12 +80,14 @@ const PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
   "000000000000000000000001",
 );
 
-export const buildDefaultAdminPutInput = (): AdminPutBookingPageInput => ({
+export const buildDefaultAdminPutInput = (
+  timeZone: TimeZone,
+): AdminPutBookingPageInput => ({
   enabled: false,
   durationMinutes: 30,
   destinationCalendarId: PLACEHOLDER_CALENDAR_ID,
   blockingCalendarIds: [PLACEHOLDER_CALENDAR_ID],
-  timeZone: TimeZoneSchema.parse("UTC"),
+  timeZone,
   weeklyAvailability: [],
   welcomeText: null,
   minNoticeHours: 4,

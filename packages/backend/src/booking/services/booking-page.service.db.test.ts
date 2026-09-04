@@ -9,6 +9,7 @@ import {
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { seedGoogleCalendar } from "@backend/__tests__/helpers/event-propagation.test-helpers";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -146,11 +147,43 @@ describe("BookingPageService", () => {
         enabled: false,
         durationMinutes: 30,
         weeklyAvailability: [],
-        // Nothing saved, so the timeZone is a placeholder the client replaces.
         isConfigured: false,
       }),
     );
     expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
+  });
+
+  it("returns the host calendar timezone on GET before any PUT, not UTC", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    await seedGoogleCalendar(user._id, { timeZone: "America/Chicago" });
+
+    const page = await bookingPageService.getAdminPage(user._id);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        timeZone: "America/Chicago",
+        isConfigured: false,
+      }),
+    );
+    expect(page.timeZone).not.toBe("UTC");
+  });
+
+  it("returns a stored UTC timezone unchanged", async () => {
+    const userId = await createNamedUser("Utc Host");
+
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({ enabled: false, timeZone: "UTC" }),
+    );
+
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        timeZone: "UTC",
+      }),
+    );
   });
 
   it("reports a saved-but-never-enabled page as configured", async () => {
@@ -391,6 +424,42 @@ describe("BookingPageService", () => {
     ).rejects.toMatchObject({
       bookingCode: "BLOCKING_CALENDAR_INVALID",
     });
+  });
+
+  it("rejects enable when timezone is unset", async () => {
+    const userId = await createNamedUser("No Zone");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const { timeZone: _unused, ...withoutTimeZone } = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+
+    await expect(
+      bookingPageService.putAdminPage(userId, withoutTimeZone),
+    ).rejects.toMatchObject({
+      bookingCode: "TIMEZONE_REQUIRED",
+    });
+  });
+
+  it("enables when timezone is explicit, including UTC", async () => {
+    const userId = await createNamedUser("Explicit Zone");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+      timeZone: "UTC",
+    });
+
+    const page = await bookingPageService.putAdminPage(userId, input);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        timeZone: "UTC",
+      }),
+    );
   });
 });
 

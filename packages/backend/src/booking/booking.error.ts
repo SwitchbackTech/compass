@@ -8,6 +8,7 @@ const logger = Logger("app:booking.error");
 export const BookingErrorCodeSchema = z.enum([
   "GOOGLE_NOT_CONNECTED",
   "DESTINATION_NOT_WRITABLE",
+  "TIMEZONE_REQUIRED",
   "BLOCKING_CALENDAR_INVALID",
   "INVALID_INPUT",
   "BILLING_REQUIRED",
@@ -21,6 +22,7 @@ export type BookingErrorCode = z.infer<typeof BookingErrorCodeSchema>;
 const STATUS_BY_CODE: Record<BookingErrorCode, Status> = {
   GOOGLE_NOT_CONNECTED: Status.FORBIDDEN,
   DESTINATION_NOT_WRITABLE: Status.FORBIDDEN,
+  TIMEZONE_REQUIRED: Status.BAD_REQUEST,
   BLOCKING_CALENDAR_INVALID: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
   BILLING_REQUIRED: Status.FORBIDDEN,

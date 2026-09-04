@@ -446,8 +446,9 @@ export function pickAdminPutBookingPageInput(source: {
  * saved but never enabled (so no slug was allocated). `isConfigured` tells
  * those two apart, which the wire otherwise could not - both came back as a
  * bare input object. The client needs the distinction to know whether it may
- * seed the timezone from the browser: the server has no user timezone and can
- * only fill in a placeholder.
+ * seed the timezone from the calendar view: an unconfigured GET already
+ * returns the host calendar timezone, and the client must not overwrite a
+ * stored choice (including UTC) once isConfigured is true.
  */
 export const AdminGetBookingPageSetupResponseSchema =
   AdminPutBookingPageInputSchema.extend({ isConfigured: z.boolean() });
