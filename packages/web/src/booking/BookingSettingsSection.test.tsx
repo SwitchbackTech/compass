@@ -424,6 +424,63 @@ describe("BookingSettingsSection", () => {
     ]);
   });
 
+  it("explains invite-others cancel tradeoff and RSVP-strict occupancy", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/book/hostuser",
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(
+      await screen.findByRole("checkbox", { name: "Guest can invite others" }),
+    ).toBeChecked();
+    expect(
+      screen.getByText(
+        "When this is on, Compass cannot put the cancel link in the calendar description. Guests keep it from the confirmation page.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Pending, maybe, and declined invites do not hold booking times. Accepted invites and events the host organizes do.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ guestsCanInviteOthers: true });
+    });
+  });
+
   it("seeds the booking timezone from the user's zone when never configured", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
     // Pinned rather than relying on the browser zone: CI runs at TZ=UTC, where

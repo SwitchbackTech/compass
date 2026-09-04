@@ -440,6 +440,7 @@ describe("PublicBookingPage", () => {
       guestName: "Guest User",
       guestEmail: "guest@example.com",
       guestTimeZone: "UTC",
+      durationMinutes: 30,
     });
     expect(
       screen.getByRole("button", { name: "Copy cancel link" }),

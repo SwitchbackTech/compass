@@ -96,8 +96,14 @@ export function PublicBookingCancelPage() {
         setAction("not-found");
         return;
       }
+      inFlightRef.current = false;
       setAction("error");
     }
+  };
+
+  const handleRetry = () => {
+    inFlightRef.current = false;
+    setAction("idle");
   };
 
   const view = resolveCancelPageView(canLoad, action, reservationQuery);
@@ -126,7 +132,35 @@ export function PublicBookingCancelPage() {
   );
 
   if (view.kind === "status") {
-    return <PublicBookingStatusMessage {...view} />;
+    const bookingSlug = reservationQuery.data?.bookingSlug;
+    const showRetry = action === "error";
+    const showRebook =
+      (action === "cancelled" ||
+        reservationQuery.data?.status === "cancelled") &&
+      action !== "error" &&
+      action !== "not-found" &&
+      Boolean(bookingSlug);
+    return (
+      <PublicBookingStatusMessage {...view}>
+        {showRetry ? (
+          <button
+            type="button"
+            className="c-button c-button-primary mt-6"
+            onClick={handleRetry}
+          >
+            Retry
+          </button>
+        ) : null}
+        {showRebook && bookingSlug ? (
+          <a
+            href={`/book/${bookingSlug}`}
+            className="c-focus-ring mt-4 inline-block text-accent text-sm underline"
+          >
+            Book another time
+          </a>
+        ) : null}
+      </PublicBookingStatusMessage>
+    );
   }
 
   const { reservation } = view;
