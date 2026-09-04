@@ -78,7 +78,9 @@ describe("agent-loop Routine contract", () => {
       ".github/scripts/agent-loop-merge-guard.sh",
       "utf8",
     );
-    expect(guard).toContain("--auto --squash --delete-branch");
+    expect(guard).toMatch(/gh pr merge "\$pr_number" --repo "\$REPO" --auto;/);
+    // The merge queue rejects an explicit strategy or branch deletion.
+    expect(guard).not.toMatch(/gh pr merge[^\n]*(--squash|--delete-branch)/);
     expect(guard).not.toContain("gh pr checks");
     expect(guard).toContain("main_is_red");
     expect(guard).toContain("--disable-auto");

@@ -242,11 +242,14 @@ check_and_merge() {
     return 0
   fi
 
-  if ! gh pr merge "$pr_number" --repo "$REPO" --auto --squash --delete-branch; then
+  # The ruleset merge queue owns the strategy (SQUASH) and the repo deletes
+  # branches on merge; passing --squash or --delete-branch here is rejected
+  # ("Cannot use --delete-branch when merge queue enabled", 2026-09-04).
+  if ! gh pr merge "$pr_number" --repo "$REPO" --auto; then
     notify "Agent-loop PR #${pr_number} passed verification but \`gh pr merge --auto\` failed: https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi
-  printf 'enabled auto-merge on agent PR #%s; GitHub squash-merges when required checks pass\n' "$pr_number"
+  printf 'enabled auto-merge on agent PR #%s; the merge queue squash-merges when required checks pass\n' "$pr_number"
 }
 
 main() {
