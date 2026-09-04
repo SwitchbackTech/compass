@@ -67,7 +67,7 @@ const DESKTOP_BUDGETS = [
 ] as const;
 
 // Warn-only for now: this profile has no track record on CI runners, and its
-// job is to make the mobile number visible on every PR rather than to block.
+// job is to make the mobile number visible on main and nightly rather than to block.
 // Tighten and promote to "error" once a few runs establish its variance.
 const MOBILE_BUDGETS = [
   {
