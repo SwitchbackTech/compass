@@ -322,13 +322,18 @@ Unauthenticated:
 
 - `GET /api/booking/pages/:slug` — public page (host display name,
   duration, timezone, enabled, optional welcome text). `404` when
-  missing or disabled.
+  missing or disabled. A host who cannot write is `409` with
+  `This page is not accepting bookings.` (no billing, plan, or payment
+  wording).
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
   instants in the guest timezone for that window. The guest UI requests
   **one month at a time** (plus prefetch of adjacent months). Window
-  must be within the 60-day horizon.
+  must be within the 60-day horizon. A host who cannot write is
+  `{ slots: [], bookable: false }`.
 - `POST /api/booking/pages/:slug/reservations` — `{slotStart, guestName,
-  guestEmail, notes?, guestTimeZone}`. Re-checks busy, then creates.
+  guestEmail, notes?, guestTimeZone}`. Re-checks billing and busy, then
+  creates. A host who cannot write is the same `409` as GET page and
+  submits no create command.
 - `GET /api/booking/reservations/:id` — public confirmation payload
   (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
   `status`, `bookingSlug`, `guestName`, `notes`). `404` when missing. No
