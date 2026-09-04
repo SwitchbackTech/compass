@@ -1,0 +1,23 @@
+{
+  "watch": {
+    "resourceId": "res-1",
+    "expiration": "1767312000000"
+  },
+  "valid": {
+    "headers": {
+      "x-goog-channel-id": "chan-1",
+      "x-goog-channel-token": "chan-token",
+      "x-goog-resource-id": "res-1",
+      "x-goog-resource-state": "exists"
+    }
+  },
+  "tampered": {
+    "headers": {
+      "x-goog-resource-id": "res-1"
+    }
+  },
+  "validation": {
+    "headers": {},
+    "query": { "validationToken": "echo-me" }
+  }
+}
