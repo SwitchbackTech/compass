@@ -1,10 +1,12 @@
-name: Test
+name: Unit
 
 on:
   pull_request:
     branches:
       - main
   push:
+    branches:
+      - main
     paths-ignore:
       - ".gitignore"
       - "**/*.md"
@@ -13,6 +15,10 @@ on:
 permissions:
   contents: read
   pull-requests: read
+
+concurrency:
+  group: unit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Required status checks cannot come from a workflow that path filtering

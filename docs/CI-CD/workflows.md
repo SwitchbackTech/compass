@@ -4,9 +4,9 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Test | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
+| Unit (`test-unit.yml`) | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
 | PR body | Pull request | Fails empty template sections (including docs-only PRs) |
-| Test (e2e) | Push / PR to `main` | Playwright e2e (docs-only diffs skipped) |
+| E2E (`test-e2e.yml`) | Push / PR to `main` | Playwright e2e (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
 | Performance budget | Push / PR touching web/core | Lighthouse budget (not a required merge check) |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
@@ -29,7 +29,7 @@ switch (`BOOKING_LOOP_ENABLED`) stays a repo variable (default off).
 
 ---
 
-## Test Workflow
+## Unit workflow
 
 Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.yml)
 
