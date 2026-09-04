@@ -13,8 +13,8 @@ The user asks to hand off, or a gate needs a typed record.
 
 ## Steps
 
-Refuse if write-gate fields are missing. Write `.agents/handoffs/<task_id>.md`
-and update `.agents/ledger.md`.
+Refuse if write-gate fields are missing. Write `.agents/handoffs/<task_id>.md`.
+Status lives on the GitHub issue, not in a repo table.
 
 ## Output
 
@@ -55,9 +55,12 @@ tailor `to`, `artifact`, and `evidence` accordingly.
 4. If the workspace is not writable, escalate. Never write to OS temp.
 5. Write `.agents/handoffs/<task_id>.md` with YAML frontmatter matching the
    schema, then an optional short body. The body is not required to act.
-6. Update [`.agents/ledger.md`](../../ledger.md) in the same turn (create
-   it if absent): one row per in-flight `task_id`. Default `priority` to
-   `medium` if unknown. Change the row; do not append a transcript.
+6. Reflect `status` on the GitHub issue in the same turn: `running` is
+   the `booking-loop-running` label, `waiting` is
+   `booking-loop-waiting-for-credits`, `escalated` is
+   `booking-loop-needs-human`, `verifying` is the open PR with
+   `Fixes #<task_id>`, `done` is the closed issue. There is no shared
+   ledger file; one existed and every PR conflicted on it.
 7. Optionally include a "suggested skills" section in the body (not required
    to act).
 8. Do not duplicate PRDs, plans, ADRs, issues, commits, or diffs — link

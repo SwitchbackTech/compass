@@ -71,7 +71,7 @@ was empty; merged PRs #2865–#2869, #2872, and #2873 are the loop evidence.
 
 Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`):
 
-- `/ship`: Manager — route, ledger, PR/merge after specialist verdicts
+- `/ship`: Manager — route, issue status, PR/merge after specialist verdicts
 - `/booking-loop`: Manager — Booking v1 WP → merge → staging without a human
 - `/review`: read-only independent diff review
 - `/simplify`: reduce complexity without changing behavior
@@ -80,7 +80,7 @@ Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`
 - `/verify-change`: Verifier — `PASS | RETRY | ESCALATE` from the diff
 - `/local-dev-bootstrap`: prepare the lightest viable local environment
 - `/google-sync-debug`: trace OAuth, provider, job, webhook, and SSE failures
-- `/handoff`: write a typed in-repo handoff and ledger row
+- `/handoff`: write a typed in-repo handoff; status stays on the GitHub issue
 - `/chaos`: exploratory signed-in QA, then hand off to `/ship`
 
 ## Compass-Specific Rules

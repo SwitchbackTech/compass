@@ -15,16 +15,17 @@ click. Also when the user says "run the booking loop".
 ## Steps
 
 Pick next WP, implement only that WP, verify, simplify, review, open
-a ready PR, squash-merge, update issues, smoke staging.
+a ready PR, label it `booking-automerge`, stop. GitHub merges it.
 
 ## Output
 
-Merged PR, closed GitHub issue, next WP launched or a typed escalation.
+Ready PR labeled `booking-automerge` (GitHub merges it, closes the
+issue, and launches the next WP) or a typed escalation.
 
 ## Pass
 
 Exactly one current owner; finish line holds; `bun run verify` PASS;
-required GitHub checks green; squash-merged; staging health not 5xx.
+PR labeled `booking-automerge`; no sensitive path touched.
 
 ## Anti-patterns
 
@@ -47,18 +48,17 @@ exactly. Routine contract:
 
 When this session is a single agent, switch roles explicitly
 ("you are now the Implementer") for the WP body, then return to
-Manager for `/ship`. Isolate implementer commits from ledger commits.
+Manager for `/ship`. Status lives on the GitHub issue (labels, open
+PR, closed), not in a repo file.
 
 ## Non-negotiable merge rule
 
-A PASS from `bun run verify` plus green required checks **is** the
-approval. Squash-merge (`gh pr merge --squash --delete-branch` or label
-`booking-automerge` so `.github/scripts/booking-loop-merge-guard.sh`
-merges). Do not leave the PR draft. Do not wait for screenshots.
-
-If this session cannot merge (token lacks `contents: write` on
-`main`), still label `booking-automerge` and put `Fixes #<issue>` in
-the PR body. The merge-guard is the deterministic backup.
+A PASS from `bun run verify` **is** the approval. Put `Fixes #<issue>`
+in the PR body, label the PR `booking-automerge`, and stop.
+`.github/scripts/booking-loop-merge-guard.sh` checks size and sensitive
+paths and enables GitHub auto-merge; GitHub squash-merges when the
+required checks pass. Do not merge yourself, do not wait for CI, do
+not leave the PR draft, do not wait for screenshots.
 
 ## Staging
 

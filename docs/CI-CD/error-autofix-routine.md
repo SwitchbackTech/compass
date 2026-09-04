@@ -66,7 +66,7 @@ label if preflight would skip it as already handled.
 ## Handoff
 
 When the agent opens a PR, it writes `.agents/handoffs/<issue-number>.md`
-(WP-02 schema) and a `.agents/ledger.md` row **on the PR branch**. It
+(WP-02 schema) **on the PR branch**. Status lives on the GitHub issue. It
 cannot write those files to `main` from the autofix job. `task_id` is the
 issue number.
 

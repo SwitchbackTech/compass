@@ -13,14 +13,14 @@ ROUTINE: booking-loop
 PURPOSE: Walk Compass Booking issues from GitHub to merged-on-staging
   without a human in the loop, except the one-time setup listed below.
 OWNER: compass-maintainers
-TRIGGER: workflow_dispatch | hourly cron | Release on main completed | pull_request labeled booking-automerge
+TRIGGER: workflow_dispatch | hourly cron | Release on main completed | pull_request labeled booking-automerge | booking-automerge PR merged
 INPUT: GitHub issue in milestone Compass Booking v1
 SKILL/PROMPT: .github/prompts/booking-loop.md
-OUTPUT: ready PR with Fixes #<n>, squash-merge, staging smoke, next WP launched
+OUTPUT: ready PR with Fixes #<n> labeled booking-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
 IDEMPOTENCY: one in-flight agent; booking-loop-running; skip issues with an open Fixes PR
 RETRY: HTTP 429 waits for credits and retries on the hourly watchdog; dispatch a
   fresh run for all other retryable investigation (do not “Re-run jobs” on a failed snapshot)
-APPROVAL: booking-automerge + merge-guard; bun run verify PASS + required checks
+APPROVAL: booking-automerge + merge-guard (size, paths, main not red) + GitHub auto-merge on required checks
 STOP: repo var BOOKING_LOOP_ENABLED (must be string "true"; default off)
 HEARTBEAT: hourly cron watchdog when idle; Discord on merge-guard / smoke failure
 VERIFIER: .github/scripts/booking-loop-merge-guard.sh (not the LLM)
@@ -32,13 +32,13 @@ Sources of truth:
 
 | Concern | File |
 | --- | --- |
-| Trigger, concurrency, kill switch | `.github/workflows/booking-loop.yml` |
+| Trigger, concurrency, kill switch, launch on merge | `.github/workflows/booking-loop.yml` |
 | Agent instructions | `.github/prompts/booking-loop.md` |
 | Pick next WP | `.github/scripts/booking-loop-next.sh` |
 | Launch (Cursor API or pickup comment) | `.github/scripts/booking-loop-launch.sh` |
 | Merge-guard Verifier (no-auto-merge paths, size) | `.github/scripts/booking-loop-merge-guard.sh` |
 | Staging smoke | `.github/scripts/booking-loop-staging-smoke.sh` |
-| Post-deploy (smoke + annotate + launch-next flag) | `.github/scripts/booking-loop-postdeploy.sh` |
+| Post-deploy (smoke + annotate) | `.github/scripts/booking-loop-postdeploy.sh` |
 | Product spec | `docs/features/booking.md` |
 | Cursor Automation paste | this document (one-time setup) |
 
@@ -96,17 +96,28 @@ both channels are configured).
    successfully so the hourly watchdog can resume it. Other launch failures
    are `booking-loop-needs-human` stops.
 3. **Agent** follows `.github/prompts/booking-loop.md`: implement the WP, run
-   `bun run verify`, open a ready PR, add label `booking-automerge`.
-4. **Merge guard** (`.github/scripts/booking-loop-merge-guard.sh`): wait for
-   CI, then squash-merge when size is under the booking limits and no sensitive
-   path is in the diff. Otherwise add `booking-loop-needs-human` and stop.
-5. **Release on main** deploys staging (code paths only; docs-only merges skip
-   deploy). The hourly cron is the watchdog for docs-only WPs.
-6. **Post-deploy** (`booking-loop.yml` `workflow_run`): smoke staging, strip
-   `booking-loop-running`, launch the next WP. `Fixes #<n>` closes the issue.
+   `bun run verify`, open a ready PR, add label `booking-automerge`, stop.
+   The agent does not merge and does not wait for CI.
+4. **Merge guard** (`.github/scripts/booking-loop-merge-guard.sh`): when size
+   is under the booking limits, no sensitive path is in the diff, and the
+   latest `main` Unit and E2E push runs are not red, enable GitHub auto-merge
+   (`gh pr merge --auto --squash`). GitHub squash-merges when the required
+   checks pass. Otherwise add `booking-loop-needs-human` and stop; a red
+   `main` just waits for the hourly sweep. The guard never holds a runner
+   waiting on CI.
+5. **Launch next** (`booking-loop.yml` `pull_request` `closed` + merged):
+   smoke the staging that is live now, pick the next WP, launch it.
+   `Fixes #<n>` closes the merged issue. A failing smoke stops launches.
+6. **Release on main** deploys staging (code paths only). **Post-deploy**
+   (`workflow_run`) smokes the new release and annotates the issue; on
+   failure it labels the issue `booking-loop-needs-human`.
 
-`concurrency.group: booking-loop` with `cancel-in-progress: false` means a
-second trigger **waits**, it does not cancel the first run.
+Concurrency is per job. `merge-guard` runs in `booking-merge-<pr>` with
+`cancel-in-progress: true` (a newer push supersedes). `launch-next`,
+`post-deploy`, and `kick` share `booking-loop` with
+`cancel-in-progress: false`, so a second launch **waits** for the first.
+One group for everything made GitHub cancel queued launches whenever a
+merge-guard was waiting on CI (56 cancellations on 2026-09-03).
 
 ## Sensitive-path merge gate
 
@@ -147,10 +158,23 @@ Authenticated Settings (`/settings/booking`) is out of unattended smoke.
 `/qa-test-staging` remains the signed-in sweep when a human is present with
 `compasscaltest3@gmail.com` already signed in.
 
-## Handoff
+## Handoff and status
 
 When the agent opens a PR, it writes `.agents/handoffs/<issue-number>.md`
 (WP-02 schema) **on the PR branch**. `task_id` is the issue number.
+
+Status lives on the GitHub issue, not in a repo file. There is no ledger
+table: one row per WP in one file made every PR conflict with every other
+merge, and each conflict cost a merge-from-main commit and a full CI round.
+
+| Status | GitHub |
+| --- | --- |
+| queued | open, `agent-ready`, no running label |
+| running | `booking-loop-running` |
+| verifying | open PR with `Fixes #<n>` and `booking-automerge` |
+| waiting | `booking-loop-waiting-for-credits` |
+| escalated | `booking-loop-needs-human` |
+| done | closed by the merged PR |
 
 ## Labels
 
@@ -175,7 +199,8 @@ staging drill.
 | Merge-guard size fail | Same downgrade if files > `MAX_FILES=60` or lines > `MAX_LINES=4000` |
 | Staging 5xx | Smoke fails; next WP not launched |
 | Credentials | Smoke and prompt never enter a password or complete Google OAuth |
-| Second trigger while in flight | Queued behind `concurrency.group: booking-loop`; first run not cancelled |
+| Second launch while in flight | Queued behind `concurrency.group: booking-loop`; first run not cancelled |
+| Red main | Merge-guard prints "main is red" and does not enable auto-merge; hourly sweep retries |
 
 ## Recovery packet
 

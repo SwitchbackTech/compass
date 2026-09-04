@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# After "Release on main": smoke staging, comment on the Booking issue if
-# this SHA came from a booking-automerge PR, then print smoke_ok for GHA.
+# After "Release on main": smoke staging and comment on the Booking issue if
+# this SHA came from a booking-automerge PR. The next WP is launched by the
+# merge event in booking-loop.yml, not here.
 set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/booking-loop-lib.sh"
@@ -14,9 +15,8 @@ if [ -z "$REPO" ]; then
 fi
 
 if [ "$CONCLUSION" != "success" ]; then
-  echo "Release on main conclusion=${CONCLUSION}; not smoking or launching."
+  echo "Release on main conclusion=${CONCLUSION}; not smoking."
   set_output smoke_ok false
-  set_output launch_next false
   exit 0
 fi
 
@@ -41,10 +41,9 @@ fi
 
 if ! "${BOOKING_LOOP_SCRIPT_DIR}/booking-loop-staging-smoke.sh"; then
   set_output smoke_ok false
-  set_output launch_next false
   if [ -n "$issue_number" ]; then
     gh issue comment "$issue_number" --repo "$REPO" --body \
-      "booking-loop: staging smoke failed after #${pr_number} reached main. Added \`${NEEDS_HUMAN_LABEL}\`. Not launching the next WP." \
+      "booking-loop: staging smoke failed after #${pr_number} reached main. Added \`${NEEDS_HUMAN_LABEL}\`. New launches stop until staging passes smoke." \
       2>/dev/null || true
     gh issue edit "$issue_number" --repo "$REPO" \
       --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
@@ -54,13 +53,12 @@ if ! "${BOOKING_LOOP_SCRIPT_DIR}/booking-loop-staging-smoke.sh"; then
 fi
 
 set_output smoke_ok true
-set_output launch_next true
 
 if [ -n "$issue_number" ]; then
   gh issue edit "$issue_number" --repo "$REPO" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
   if [ "$is_booking" = true ]; then
     gh issue comment "$issue_number" --repo "$REPO" --body \
-      "booking-loop: staging smoke passed on ${STAGING_URL} after #${pr_number}. Launching the next eligible WP if any." \
+      "booking-loop: staging smoke passed on ${STAGING_URL} after #${pr_number}." \
       2>/dev/null || true
   fi
 fi
