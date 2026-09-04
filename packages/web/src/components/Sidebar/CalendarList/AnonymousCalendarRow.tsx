@@ -11,7 +11,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@web/components/Tooltip";
+} from "@web/components/Tooltip/Tooltip";
 
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 

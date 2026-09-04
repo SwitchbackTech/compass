@@ -3,7 +3,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
 import { routeTree } from "@web/routers/router.routes";
 
 export const router = createRouter({

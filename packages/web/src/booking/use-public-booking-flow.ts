@@ -285,10 +285,14 @@ export function usePublicBookingFlow() {
         to: ROOT_ROUTES.BOOK_CONFIRMED,
         params: { reservationId: result.reservationId },
         search: token ? { token } : undefined,
-        // History state still carries the absolute cancel URL from confirm.
-        // The permalink also writes `?token=` so a reload or bookmark keeps
-        // cancel and edit without publishing the token on the public GET.
-        state: { cancelUrl: result.cancelUrl } as never,
+        // History state still carries the absolute cancel and reschedule URLs
+        // from confirm. The permalink also writes `?token=` so a reload or
+        // bookmark keeps guest actions and edit without publishing the token
+        // on the public GET.
+        state: {
+          cancelUrl: result.cancelUrl,
+          rescheduleUrl: result.rescheduleUrl,
+        } as never,
       });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {

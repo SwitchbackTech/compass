@@ -16,6 +16,16 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 
+/** Stable, low-cardinality label for a panel's app-lock reason. */
+function lockLabel(name: string | undefined): string {
+  const slug = (name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 32);
+  return slug || "panel";
+}
+
 interface Props {
   /** Icon or element displayed at the top of the panel */
   icon?: ReactNode;
@@ -88,8 +98,12 @@ export const OverlayPanel = ({
   const baseId = useId();
   const titleId = `${baseId}-title`;
   const messageId = `${baseId}-message`;
-  // Unique per instance: app-lock reasons are a Set, not refcounted.
-  useAppLockReason(`overlayPanel:${baseId}`, true);
+  // Unique per instance: app-lock reasons are a Set, not refcounted. The
+  // title slug in the middle is what shortcut telemetry groups on.
+  useAppLockReason(
+    `overlayPanel:${lockLabel(title ?? ariaLabel)}:${baseId}`,
+    true,
+  );
   useOverlayEscape({ onDismiss, onShiftEscape });
 
   useEffect(() => {
