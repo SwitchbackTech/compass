@@ -108,7 +108,10 @@ jobs:
       - name: Lint workflows
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/repo" -w /repo \
-            rhysd/actionlint:1.7.7 -color
+            rhysd/actionlint:1.7.7 -color \
+            -ignore 'unexpected key "queue" for "concurrency" section'
+          # `queue:` is a real concurrency key (_deploy-environment.yml) that
+          # this actionlint release does not know yet; drop the ignore on upgrade.
 
       # The loop scripts' own tests (gh stub, dry-run guard). They need bash 4+.
       - name: Test agent-loop scripts
