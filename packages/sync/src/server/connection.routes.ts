@@ -27,6 +27,8 @@ import {
   type ConnectionId,
   ConnectionIdSchema,
   type PrincipalId,
+  type ProviderKind,
+  ProviderKindSchema,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
@@ -49,16 +51,11 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
-import {
-  authResolverForAdapter,
-  buildResolveAuth,
-} from "@sync/providers/google/build-provider-resolvers";
-import { CONTACTS_FEATURE_SCOPES } from "@sync/providers/google/google.scopes";
-import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
-import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
-import { type ContactsPort } from "@sync/providers/provider-contacts.port";
-import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import {
+  type ProviderRegistry,
+  resolveAuthFrom,
+} from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
@@ -113,18 +110,7 @@ export interface ConnectionApiDeps {
   mongo: SyncMongoService;
   // Disconnect and begin make provider calls, so they are gated on execution.
   execution: SyncExecutionMode;
-  // The provider authorization adapter, present only when the provider is
-  // configured. Absent (or passive mode) means no provider work is possible.
-  authAdapter?: ProviderAuthAdapter;
-  resolveAdapters?: ResolveProviderAdapters;
-  // The provider event writer, present only when the provider is configured.
-  // Not used by the connection routes themselves; carried here because this is
-  // the shared bag the command routes are wired from.
-  writer?: ProviderEventWriter;
-  // The provider contacts port, present only when the provider is configured.
-  // Not used by the connection routes themselves; carried here because this is
-  // the shared bag the contacts routes are wired from.
-  contacts?: ContactsPort;
+  registry: ProviderRegistry;
   // Secret the OAuth CSRF state is signed with, and the public base URL the
   // provider callback resolves against.
   stateSecret: string;
@@ -510,10 +496,26 @@ export function registerConnectionRoutes(
       if (!ensureConnected(deps.mongo, res)) return;
       // Authorizing touches the provider, so a passive or unconfigured service
       // refuses rather than handing back a URL it could never complete.
-      if (deps.execution === "passive" || !deps.authAdapter) {
+      if (deps.execution === "passive") {
         res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
         return;
       }
+
+      let provider: ProviderKind = "google";
+      const rawProvider = (req.body as { provider?: unknown })?.provider;
+      if (rawProvider !== undefined && rawProvider !== null) {
+        const parsedProvider = ProviderKindSchema.safeParse(rawProvider);
+        if (!parsedProvider.success) {
+          res.status(Status.BAD_REQUEST).json({ error: "invalid_provider" });
+          return;
+        }
+        provider = parsedProvider.data;
+      }
+      if (!deps.registry.has(provider)) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+      const registration = deps.registry.get(provider);
 
       // Optional connectionId means reconnect: validate it is a real id owned by
       // this principal, so the state cannot bind a flow to a foreign connection.
@@ -560,9 +562,7 @@ export function registerConnectionRoutes(
           res.status(Status.BAD_REQUEST).json({ error: "invalid_features" });
           return;
         }
-        if (parsed.data.includes("contacts")) {
-          extraScopes = [...CONTACTS_FEATURE_SCOPES];
-        }
+        extraScopes = [...registration.scopes.forFeatures(parsed.data)];
       }
 
       // A fresh connect by a principal that already has connections is an
@@ -592,15 +592,17 @@ export function registerConnectionRoutes(
         connectionId,
         issuedAt: (deps.now ?? Date.now)(),
       });
-      const authorizationUrl = deps.authAdapter.buildAuthorizationUrl({
-        state,
-        redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
-        selectAccount,
-        // Undefined (not an empty array) when no feature was asked for, so a
-        // plain begin's adapter input — and therefore its consent URL — stays
-        // byte-identical to before features existed.
-        ...(extraScopes.length > 0 ? { extraScopes } : {}),
-      });
+      const authorizationUrl = registration.adapters.auth.buildAuthorizationUrl(
+        {
+          state,
+          redirectUri: `${deps.callbackBaseUrl}${registration.callbackPath}`,
+          selectAccount,
+          // Undefined (not an empty array) when no feature was asked for, so a
+          // plain begin's adapter input — and therefore its consent URL — stays
+          // byte-identical to before features existed.
+          ...(extraScopes.length > 0 ? { extraScopes } : {}),
+        },
+      );
       res.status(Status.OK).json({ authorizationUrl });
     },
   );
@@ -616,7 +618,7 @@ export function registerConnectionRoutes(
       const auth = requireAuth(req, res);
       if (!auth) return;
       if (!ensureConnected(deps.mongo, res)) return;
-      if (deps.execution === "passive" || !deps.authAdapter) {
+      if (deps.execution === "passive" || !deps.registry.has("google")) {
         res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
         return;
       }
@@ -640,7 +642,6 @@ export function registerConnectionRoutes(
         );
         await linkConnection(
           deps,
-          deps.authAdapter,
           {
             tenantId: auth.tenantId,
             principalId: auth.principalId,
@@ -720,7 +721,7 @@ export function registerConnectionRoutes(
     const redirect = (status: string) =>
       redirectAfterConnect(deps, res, status);
 
-    if (deps.execution === "passive" || !deps.authAdapter) {
+    if (deps.execution === "passive" || !deps.registry.has("google")) {
       return redirect("error");
     }
     if (!deps.mongo.isConnected) return redirect("error");
@@ -740,14 +741,15 @@ export function registerConnectionRoutes(
     );
     if (!verified.ok) return redirect("error");
 
+    const google = deps.registry.get("google");
     let authorization: Awaited<
       ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
     >;
     try {
-      authorization = await deps.authAdapter.exchangeAuthorizationCode({
+      authorization = await google.adapters.auth.exchangeAuthorizationCode({
         code,
         // Must match the redirect_uri begin used to build the consent URL.
-        redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
+        redirectUri: `${deps.callbackBaseUrl}${google.callbackPath}`,
       });
     } catch (error) {
       // Bad code, no refresh token, unverifiable identity — nothing to link.
@@ -763,22 +765,15 @@ export function registerConnectionRoutes(
     // resource, surfacing as "Couldn't update your calendar" with no mention
     // of the actual cause. Catch it here, before any connection is created.
     if (
-      !googleCapabilitiesFromScopes(authorization.grantedScopes).includes(
-        "readEvents",
-      )
+      !google
+        .capabilitiesFromScopes(authorization.grantedScopes)
+        .includes("readEvents")
     ) {
       return redirect("missingScopes");
     }
 
     try {
-      // authAdapter is non-null here (gated above); pass it so the helper needs
-      // no assertion.
-      await linkConnection(
-        deps,
-        deps.authAdapter,
-        verified.payload,
-        authorization,
-      );
+      await linkConnection(deps, verified.payload, authorization);
       return redirect("connected");
     } catch (error) {
       logger.error(
@@ -801,7 +796,7 @@ export function registerConnectionRoutes(
       // Disconnect revokes at the provider, so a passive service (or one with no
       // provider configured) must refuse rather than half-disconnect: delete the
       // credential locally while leaving live authority at the provider.
-      if (deps.execution === "passive" || !deps.authAdapter) {
+      if (deps.execution === "passive" || deps.registry.kinds().length === 0) {
         res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
         return;
       }
@@ -826,12 +821,17 @@ export function registerConnectionRoutes(
           return;
         }
 
+        if (!deps.registry.has(connection.provider)) {
+          res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+          return;
+        }
+
         // Revoke + delete the credential first (the security-critical step), then
         // record the disconnect. Both are idempotent, so a retry after a partial
         // failure converges.
         const custody = new CredentialCustody(
           new CredentialRepository(deps.mongo.db),
-          resolveAuthForConnectionApi(deps),
+          resolveAuthFrom(deps.registry),
         );
         await custody.disconnect(id.data);
         await connections.markDisconnected(
@@ -851,14 +851,8 @@ export function registerConnectionRoutes(
 // Redirect the browser to the server-configured post-connect URL with a coarse
 // status. The base is from config, never the request, so it can't be abused as
 // an open redirect; status is a fixed label, carrying no provider detail.
-function resolveAuthForConnectionApi(
-  deps: ConnectionApiDeps,
-  authAdapter: ProviderAuthAdapter = deps.authAdapter!,
-) {
-  if (deps.resolveAdapters) {
-    return buildResolveAuth(deps.resolveAdapters);
-  }
-  return authResolverForAdapter(authAdapter);
+function resolveAuthForConnectionApi(deps: ConnectionApiDeps) {
+  return resolveAuthFrom(deps.registry);
 }
 
 function redirectAfterConnect(
@@ -878,7 +872,6 @@ function redirectAfterConnect(
 // import has not finished is "importing", not set arbitrarily.
 async function linkConnection(
   deps: ConnectionApiDeps,
-  authAdapter: ProviderAuthAdapter,
   state: {
     tenantId: TenantId;
     principalId: PrincipalId;
@@ -923,7 +916,9 @@ async function linkConnection(
     principalId: state.principalId,
     provider: "google",
     account: authorization.account,
-    capabilities: googleCapabilitiesFromScopes(authorization.grantedScopes),
+    capabilities: deps.registry
+      .get("google")
+      .capabilitiesFromScopes(authorization.grantedScopes),
     state: derived.state,
     stateReason: derived.reason,
   });
@@ -931,7 +926,7 @@ async function linkConnection(
   try {
     const custody = new CredentialCustody(
       repos.credentials,
-      resolveAuthForConnectionApi(deps, authAdapter),
+      resolveAuthForConnectionApi(deps),
     );
     await custody.store({
       connectionId: connection._id,

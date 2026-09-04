@@ -2,8 +2,10 @@ import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 import {
   GOOGLE_SCOPE_CALENDAR_EVENTS as CALENDAR_EVENTS,
   GOOGLE_SCOPE_CALENDAR_READONLY as CALENDAR_READONLY,
+  CONTACTS_FEATURE_SCOPES,
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY as CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY as CONTACTS_READONLY,
+  GOOGLE_SCOPES,
 } from "@sync/providers/google/google.scopes";
 
 // Derive connection capabilities from the scopes Google actually granted (which
@@ -38,3 +40,6 @@ export function googleCapabilitiesFromScopes(
 
   return capabilities;
 }
+
+export const GOOGLE_PROVIDER_CAPABILITIES: readonly ProviderCapability[] =
+  googleCapabilitiesFromScopes([...GOOGLE_SCOPES, ...CONTACTS_FEATURE_SCOPES]);

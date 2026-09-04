@@ -4,8 +4,10 @@ import { Logger } from "@core/logger/winston.logger";
 import { PrincipalPurgeResponseSchema } from "@core/types/sync/principal.contracts";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { purgePrincipal } from "@sync/domain/principal-purge.service";
-import { authResolverForAdapter } from "@sync/providers/google/build-provider-resolvers";
-import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import {
+  type ProviderRegistry,
+  resolveAuthFrom,
+} from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
@@ -23,10 +25,11 @@ export const PRINCIPAL_PATH = "/internal/principal";
 export interface PrincipalApiDeps {
   authMiddleware: RequestHandler;
   mongo: SyncMongoService;
-  // Optional: when present, credentials are revoked at the provider before
-  // local delete. Account deletion still proceeds without it (passive /
-  // unconfigured deployments) so Sync-held tokens are never stranded.
-  authAdapter?: ProviderAuthAdapter;
+  // Optional: when present with at least one kind, credentials are revoked at
+  // the provider before local delete. Account deletion still proceeds without
+  // it (passive / unconfigured deployments) so Sync-held tokens are never
+  // stranded.
+  registry: ProviderRegistry;
 }
 
 // Hard-delete every Sync-held row for the signed principal. Served in passive
@@ -50,12 +53,13 @@ export function registerPrincipalRoutes(
         const counts = await purgePrincipal(
           {
             ...repos,
-            custody: deps.authAdapter
-              ? new CredentialCustody(
-                  repos.credentials,
-                  authResolverForAdapter(deps.authAdapter),
-                )
-              : undefined,
+            custody:
+              deps.registry.kinds().length > 0
+                ? new CredentialCustody(
+                    repos.credentials,
+                    resolveAuthFrom(deps.registry),
+                  )
+                : undefined,
           },
           auth.tenantId,
           auth.principalId,

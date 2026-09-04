@@ -37,3 +37,9 @@ export const CONTACTS_FEATURE_SCOPES: readonly string[] = [
   GOOGLE_SCOPE_CONTACTS_READONLY,
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
 ];
+
+export function googleScopesForFeatures(
+  features: readonly string[],
+): readonly string[] {
+  return features.includes("contacts") ? CONTACTS_FEATURE_SCOPES : [];
+}

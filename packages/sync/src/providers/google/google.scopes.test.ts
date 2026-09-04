@@ -3,6 +3,7 @@ import {
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY,
   GOOGLE_SCOPES,
+  googleScopesForFeatures,
 } from "@sync/providers/google/google.scopes";
 import { describe, expect, it } from "bun:test";
 
@@ -23,10 +24,11 @@ describe("google scopes", () => {
     expect(GOOGLE_SCOPES).not.toContain(GOOGLE_SCOPE_CONTACTS_OTHER_READONLY);
   });
 
-  it("bundles both contacts scopes into the contacts feature", () => {
-    expect(CONTACTS_FEATURE_SCOPES).toEqual([
-      "https://www.googleapis.com/auth/contacts.readonly",
-      "https://www.googleapis.com/auth/contacts.other.readonly",
-    ]);
+  it("maps the contacts feature to the optional contacts scopes", () => {
+    expect(googleScopesForFeatures(["contacts"])).toEqual(
+      CONTACTS_FEATURE_SCOPES,
+    );
+    expect(googleScopesForFeatures([])).toEqual([]);
+    expect(googleScopesForFeatures(["other"])).toEqual([]);
   });
 });
