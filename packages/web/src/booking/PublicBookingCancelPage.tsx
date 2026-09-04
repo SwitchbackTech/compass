@@ -1,9 +1,6 @@
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import {
-  PublicBookingApi,
-  PublicBookingNotFoundError,
-} from "@web/api/public-booking.api";
+import { PublicBookingApi } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingSlotSummary } from "@web/booking/PublicBookingSlotSummary";
@@ -12,6 +9,10 @@ import {
   PublicBookingStatusMessage,
 } from "@web/booking/PublicBookingStatusMessage";
 import { usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
+import {
+  type PublicBookingReservationView,
+  resolvePublicBookingReservationView,
+} from "@web/booking/public-booking.view";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -45,40 +46,22 @@ const BOOKING_LOADING = {
   description: "One moment while we load this booking.",
 } as const;
 
-type CancelPageView =
-  | { kind: "status"; title: string; description: string }
-  | {
-      kind: "confirm";
-      reservation: NonNullable<
-        ReturnType<typeof usePublicBookingReservationQuery>["data"]
-      >;
-    };
-
 const resolveCancelPageView = (
   canLoad: boolean,
   action: CancelActionState,
   reservationQuery: ReturnType<typeof usePublicBookingReservationQuery>,
-): CancelPageView => {
+): PublicBookingReservationView => {
   if (!canLoad || action === "not-found") {
     return { kind: "status", ...BOOKING_NOT_FOUND };
   }
   if (action === "cancelled") return { kind: "status", ...BOOKING_CANCELED };
   if (action === "error") return { kind: "status", ...BOOKING_CANCEL_FAILED };
-  if (reservationQuery.isLoading) return { kind: "status", ...BOOKING_LOADING };
-  if (reservationQuery.isError) {
-    return {
-      kind: "status",
-      ...(reservationQuery.error instanceof PublicBookingNotFoundError
-        ? BOOKING_NOT_FOUND
-        : BOOKING_CANCEL_FAILED),
-    };
-  }
-  const reservation = reservationQuery.data;
-  if (!reservation) return { kind: "status", ...BOOKING_NOT_FOUND };
-  if (reservation.status === "cancelled") {
-    return { kind: "status", ...BOOKING_CANCELED };
-  }
-  return { kind: "confirm", reservation };
+  return resolvePublicBookingReservationView(reservationQuery, {
+    loading: BOOKING_LOADING,
+    notFound: BOOKING_NOT_FOUND,
+    loadFailed: BOOKING_CANCEL_FAILED,
+    cancelled: BOOKING_CANCELED,
+  });
 };
 
 export function PublicBookingCancelPage() {
@@ -119,7 +102,7 @@ export function PublicBookingCancelPage() {
 
   const view = resolveCancelPageView(canLoad, action, reservationQuery);
   const busy = action === "cancelling";
-  const isConfirmView = view.kind === "confirm";
+  const isConfirmView = view.kind === "reservation";
 
   // Escape on the confirm view returns to the confirmation page. OverlayPanel
   // (if any) peels first. In-flight cancel must not navigate or abort.
