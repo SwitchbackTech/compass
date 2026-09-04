@@ -49,8 +49,13 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
+import {
+  authResolverForAdapter,
+  buildResolveAuth,
+} from "@sync/providers/google/build-provider-resolvers";
 import { CONTACTS_FEATURE_SCOPES } from "@sync/providers/google/google.scopes";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
+import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ContactsPort } from "@sync/providers/provider-contacts.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
@@ -111,6 +116,7 @@ export interface ConnectionApiDeps {
   // The provider authorization adapter, present only when the provider is
   // configured. Absent (or passive mode) means no provider work is possible.
   authAdapter?: ProviderAuthAdapter;
+  resolveAdapters?: ResolveProviderAdapters;
   // The provider event writer, present only when the provider is configured.
   // Not used by the connection routes themselves; carried here because this is
   // the shared bag the command routes are wired from.
@@ -825,7 +831,7 @@ export function registerConnectionRoutes(
         // failure converges.
         const custody = new CredentialCustody(
           new CredentialRepository(deps.mongo.db),
-          deps.authAdapter,
+          resolveAuthForConnectionApi(deps),
         );
         await custody.disconnect(id.data);
         await connections.markDisconnected(
@@ -845,6 +851,16 @@ export function registerConnectionRoutes(
 // Redirect the browser to the server-configured post-connect URL with a coarse
 // status. The base is from config, never the request, so it can't be abused as
 // an open redirect; status is a fixed label, carrying no provider detail.
+function resolveAuthForConnectionApi(
+  deps: ConnectionApiDeps,
+  authAdapter: ProviderAuthAdapter = deps.authAdapter!,
+) {
+  if (deps.resolveAdapters) {
+    return buildResolveAuth(deps.resolveAdapters);
+  }
+  return authResolverForAdapter(authAdapter);
+}
+
 function redirectAfterConnect(
   deps: ConnectionApiDeps,
   res: Response,
@@ -913,7 +929,10 @@ async function linkConnection(
   });
 
   try {
-    const custody = new CredentialCustody(repos.credentials, authAdapter);
+    const custody = new CredentialCustody(
+      repos.credentials,
+      resolveAuthForConnectionApi(deps, authAdapter),
+    );
     await custody.store({
       connectionId: connection._id,
       provider: "google",

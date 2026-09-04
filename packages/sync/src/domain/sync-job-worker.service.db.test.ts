@@ -1,6 +1,8 @@
 import { faker } from "@faker-js/faker";
 import {
+  ensureEventsResource,
   FakeReader,
+  fakeResolveAdapters,
   pageOf,
   seedProviderCalendar,
   singleEvent as single,
@@ -11,7 +13,10 @@ import {
   SyncJobWorker,
   type SyncJobWorkerDeps,
 } from "@sync/domain/sync-job-worker.service";
-import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
+import {
+  type ProviderCalendarAdapter,
+  ProviderCalendarError,
+} from "@sync/providers/provider-calendar.port";
 import { ProviderEventReadError } from "@sync/providers/provider-event-reader.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type JobRecord } from "@sync/storage/contracts/job.contracts";
@@ -53,14 +58,49 @@ describe("SyncJobWorker", () => {
     invalidations = new InvalidationRepository(storage.db());
   });
 
-  const defaultDiscovery: SyncJobWorkerDeps["discovery"] = {
-    provider: "google",
+  const defaultDiscovery: ProviderCalendarAdapter = {
     discoverCalendars: async () => ({ calendars: [], cursor: null }),
+  };
+
+  const seedCalendar = async (
+    overrides: Parameters<typeof seedProviderCalendar>[1] = {},
+  ): Promise<ProviderCalendarRecord> => {
+    const tenantId =
+      overrides.tenantId ?? (objectId() as ProviderCalendarRecord["tenantId"]);
+    const principalId =
+      overrides.principalId ??
+      (objectId() as ProviderCalendarRecord["principalId"]);
+    const connection = await connections.upsertByProviderAccount({
+      tenantId,
+      principalId,
+      provider: "google",
+      account: {
+        email: "user@example.com",
+        displayName: "User",
+        providerAccountId: "google-subject",
+      },
+      capabilities: [
+        "readEvents",
+        "writeEvents",
+        "readBusy",
+        "inviteAttendees",
+        "changeNotifications",
+        "incrementalChanges",
+      ],
+      state: "healthy",
+      stateReason: null,
+    });
+    return seedProviderCalendar(calendars, {
+      tenantId,
+      principalId,
+      connectionId: connection._id,
+      ...overrides,
+    });
   };
 
   const deps = (
     reader: FakeReader,
-    discoveryOverride: SyncJobWorkerDeps["discovery"] = defaultDiscovery,
+    discoveryOverride: ProviderCalendarAdapter = defaultDiscovery,
   ): SyncJobWorkerDeps => ({
     events,
     occurrences,
@@ -68,17 +108,12 @@ describe("SyncJobWorker", () => {
     calendars,
     connections,
     credentials: new CredentialRepository(storage.db()),
-    discovery: discoveryOverride,
+    resolveAdapters: fakeResolveAdapters(reader, {
+      calendars: discoveryOverride,
+    }),
     commands,
     jobs,
-    reader,
     custody: tokenSource,
-    notifications: {
-      watch: async () => {
-        throw new Error("watch not used in worker tests");
-      },
-      stopChannel: async () => {},
-    },
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
   });
@@ -90,7 +125,7 @@ describe("SyncJobWorker", () => {
   // was taken (and why) rather than only that the job row vanished.
   const workerRecordingDrops = (
     reader: FakeReader,
-    discoveryOverride: SyncJobWorkerDeps["discovery"] = defaultDiscovery,
+    discoveryOverride: ProviderCalendarAdapter = defaultDiscovery,
   ) => {
     const drops: string[] = [];
     const w = new SyncJobWorker(deps(reader, discoveryOverride), OWNER, {
@@ -118,33 +153,14 @@ describe("SyncJobWorker", () => {
     options: { maxAttempts?: number; random?: () => number },
   ) => new SyncJobWorker(deps(reader), OWNER, { now, ...options });
 
-  const seedCalendar = (
-    overrides: Parameters<typeof seedProviderCalendar>[1] = {},
-  ): Promise<ProviderCalendarRecord> =>
-    seedProviderCalendar(calendars, overrides);
-
   const seedResource = async (
     calendar: ProviderCalendarRecord,
     cursor: string | null,
-  ): Promise<SyncResourceRecord> => {
-    const resource = await resources.ensure({
-      tenantId: calendar.tenantId,
-      principalId: calendar.principalId,
-      connectionId: calendar.connectionId,
-      resourceKind: "events",
-      calendarId: calendar._id,
+  ): Promise<SyncResourceRecord> =>
+    ensureEventsResource(resources, calendar, {
+      cursor: cursor ?? undefined,
+      now,
     });
-    if (cursor) {
-      await resources.advanceCursor(
-        calendar.tenantId,
-        calendar.principalId,
-        resource._id,
-        cursor,
-        now(),
-      );
-    }
-    return resource;
-  };
 
   const enqueue = (
     resource: Pick<

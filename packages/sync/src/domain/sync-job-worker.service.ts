@@ -234,6 +234,16 @@ export class SyncJobWorker {
         await this.#deps.jobs.complete(job._id, this.#owner);
         await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
         return;
+      case "fail":
+        this.#onFail(job, new Error(outcome.reason));
+        await this.#deps.jobs.fail(
+          job._id,
+          this.#owner,
+          outcome.reason,
+          this.#now(),
+        );
+        await refreshConnectionStateAfterJob(this.#deps, job, this.#now);
+        return;
       case "retry":
         await this.#settleFailure(job, new Error(outcome.reason));
         return;

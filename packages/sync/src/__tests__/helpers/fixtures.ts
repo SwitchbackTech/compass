@@ -1,5 +1,9 @@
 import { faker } from "@faker-js/faker";
 import {
+  type ProviderAdapters,
+  type ResolveProviderAdapters,
+} from "@sync/providers/provider-adapters";
+import {
   type ProviderEvent,
   type ProviderEventRead,
 } from "@sync/providers/provider-event.port";
@@ -177,3 +181,67 @@ export const fakeTokenSource = {
   discardRevoked: async () => {},
   invalidateAccessToken: async () => {},
 };
+
+const noopAuthAdapter = {
+  refreshAccessToken: async () => ({
+    accessToken: "access-token",
+    expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+  }),
+  revoke: async () => {},
+};
+
+const noopWriter = {
+  createEvent: async () => {
+    throw new Error("FakeWriter: createEvent not scripted");
+  },
+  fetchEvent: async () => {
+    throw new Error("FakeWriter: fetchEvent not scripted");
+  },
+  patchEvent: async () => {
+    throw new Error("FakeWriter: patchEvent not scripted");
+  },
+  deleteEvent: async () => {},
+  fetchInstanceAt: async () => {
+    throw new Error("FakeWriter: fetchInstanceAt not scripted");
+  },
+};
+
+const noopNotifications = {
+  watch: async (input: { channelId: string }) => ({
+    channelId: input.channelId,
+    resourceId: "provider-resource",
+    expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+  }),
+  stopChannel: async () => {},
+};
+
+const noopDiscovery = {
+  discoverCalendars: async () => ({
+    calendars: [],
+    cursor: null,
+  }),
+};
+
+// One adapter bundle for dispatch and custody tests. Override any port; reader
+// is required because most db tests script event pages through FakeReader.
+export function fakeAdapters(
+  reader: ProviderEventReader,
+  overrides: Partial<Omit<ProviderAdapters, "reader">> = {},
+): ProviderAdapters {
+  return {
+    auth: overrides.auth ?? noopAuthAdapter,
+    calendars: overrides.calendars ?? noopDiscovery,
+    reader,
+    writer: overrides.writer ?? noopWriter,
+    notifications: overrides.notifications ?? noopNotifications,
+    contacts: overrides.contacts,
+  };
+}
+
+export function fakeResolveAdapters(
+  reader: ProviderEventReader,
+  overrides: Partial<Omit<ProviderAdapters, "reader">> = {},
+): ResolveProviderAdapters {
+  const adapters = fakeAdapters(reader, overrides);
+  return () => adapters;
+}

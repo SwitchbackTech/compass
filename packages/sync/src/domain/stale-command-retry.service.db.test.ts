@@ -6,9 +6,13 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
-import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
+import {
+  fakeAdapters,
+  seedProviderCalendar,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import { type ProviderConnectionLookup } from "@sync/domain/provider-command.service";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -106,6 +110,13 @@ describe("retryStaleCommands", () => {
     timeZone: "America/Denver",
   };
 
+  const connections: ProviderConnectionLookup = {
+    findById: async () => ({
+      account: { email: "user@example.com" },
+      provider: "google",
+    }),
+  };
+
   const baseDeps = (writer: ProviderEventWriter) => ({
     commands,
     events,
@@ -113,8 +124,20 @@ describe("retryStaleCommands", () => {
     occurrences,
     resources,
     markers,
+    connections,
     execution: "active" as const,
-    provider: { writer, custody: tokenSource() },
+    provider: {
+      resolveAdapters: () =>
+        fakeAdapters(
+          {
+            listEventPage: async () => {
+              throw new Error("reader unused in stale-command-retry tests");
+            },
+          },
+          { writer },
+        ),
+      custody: tokenSource(),
+    },
   });
 
   // Seed a provider-linked event stuck deletionPending, plus its still-pending

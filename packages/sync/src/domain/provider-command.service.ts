@@ -15,6 +15,7 @@ import {
   type ConnectionId,
   type PrincipalId,
   type ProviderEventId,
+  type ProviderKind,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import {
@@ -66,6 +67,7 @@ export interface ProviderConnectionLookup {
     id: ConnectionId,
   ): Promise<{
     readonly account: { readonly email: string | null };
+    readonly provider: ProviderKind;
   } | null>;
 }
 

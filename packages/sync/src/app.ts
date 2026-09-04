@@ -34,12 +34,16 @@ import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
+import {
+  buildResolveAdapters,
+  buildResolveAuth,
+  googleProviderConfigured,
+  type ProviderAdapterOverrides,
+} from "@sync/providers/google/build-provider-resolvers";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
-import { GoogleCalendarAdapter } from "@sync/providers/google/google-calendar.adapter";
-import { GoogleEventReaderAdapter } from "@sync/providers/google/google-event-reader.adapter";
 import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
-import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { GooglePeopleAdapter } from "@sync/providers/google/google-people.adapter";
+import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ContactsPort } from "@sync/providers/provider-contacts.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
@@ -104,6 +108,7 @@ export function createSyncService(
     // Override the provider contacts port (tests inject a fake); production
     // builds it from config.
     contacts?: ContactsPort;
+    resolveAdapters?: ResolveProviderAdapters;
   } = {},
 ): SyncService {
   const identity = buildServiceIdentity({
@@ -124,6 +129,19 @@ export function createSyncService(
     );
   }
 
+  const adapterOverrides: ProviderAdapterOverrides =
+    deps.authAdapter || deps.writer || deps.contacts
+      ? {
+          google: {
+            auth: deps.authAdapter,
+            writer: deps.writer,
+            contacts: deps.contacts,
+          },
+        }
+      : {};
+  const resolveAdapters =
+    deps.resolveAdapters ?? buildResolveAdapters(config, adapterOverrides);
+
   // The internal connection API mounts only when storage is provided. Its
   // routes read the connected db per request, so the app is still built before
   // Mongo connects (liveness-first startup).
@@ -137,6 +155,7 @@ export function createSyncService(
         }),
         mongo: deps.mongo,
         execution: config.EXECUTION,
+        resolveAdapters,
         // The provider adapter is db-free, so it is built once here (gated on
         // provider config); the per-request custody/repos build from the db.
         authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
@@ -482,10 +501,10 @@ function buildSchedulers(
   sweeps: ReadonlyArray<readonly [name: string, sweep: SweepScheduler]>;
 } | null {
   if (config.EXECUTION !== "active") return null;
-  const authAdapter = buildAuthAdapter(config);
-  if (!authAdapter) return null;
-  const eventWriter = buildEventWriter(config);
-  if (!eventWriter) return null;
+  if (!googleProviderConfigured(config)) return null;
+
+  const resolveAdapters = buildResolveAdapters(config);
+  const resolveAuth = buildResolveAuth(resolveAdapters);
 
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;
@@ -509,12 +528,10 @@ function buildSchedulers(
         calendars: repos.calendars,
         connections: repos.connections,
         credentials: repos.credentials,
-        discovery: new GoogleCalendarAdapter(),
+        resolveAdapters,
         commands: repos.commands,
         jobs,
-        reader: new GoogleEventReaderAdapter(),
-        custody: new CredentialCustody(repos.credentials, authAdapter),
-        notifications: new GoogleNotificationAdapter(),
+        custody: new CredentialCustody(repos.credentials, resolveAuth),
         // Where the provider posts change notifications back; the callback route
         // verifies them against the stored subscription.
         callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
@@ -757,8 +774,8 @@ function buildSchedulers(
             markers: repos.deletionMarkers,
             execution: config.EXECUTION,
             provider: {
-              writer: eventWriter,
-              custody: new CredentialCustody(repos.credentials, authAdapter),
+              resolveAdapters,
+              custody: new CredentialCustody(repos.credentials, resolveAuth),
             },
             onRetryError: (error, commandId) =>
               logger.error(

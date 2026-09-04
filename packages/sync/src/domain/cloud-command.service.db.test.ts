@@ -7,11 +7,13 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { fakeAdapters } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   ProviderWriteUnavailableError,
   submitCloudCommand,
 } from "@sync/domain/cloud-command.service";
+import { type ProviderConnectionLookup } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -109,7 +111,15 @@ class FakeWriter implements ProviderEventWriter {
 }
 
 const provider = (writer: ProviderEventWriter) => ({
-  writer,
+  resolveAdapters: () =>
+    fakeAdapters(
+      {
+        listEventPage: async () => {
+          throw new Error("reader unused in cloud-command tests");
+        },
+      },
+      { writer },
+    ),
   custody: {
     getValidAccessToken: async () => "access-token",
     discardRevoked: async () => {},
@@ -125,6 +135,13 @@ describe("submitCloudCommand provider dispatch", () => {
   let resources: SyncResourceRepository;
   let calendars: ProviderCalendarRepository;
   let markers: DeletionMarkerRepository;
+
+  const connections: ProviderConnectionLookup = {
+    findById: async () => ({
+      account: { email: "user@example.com" },
+      provider: "google",
+    }),
+  };
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
 
@@ -146,6 +163,22 @@ describe("submitCloudCommand provider dispatch", () => {
         canInviteAttendees: true,
       },
     });
+
+  const commandDeps = (
+    writer?: FakeWriter,
+    extra: Record<string, unknown> = {},
+  ) => ({
+    commands,
+    events,
+    calendars,
+    occurrences,
+    resources,
+    markers,
+    connections,
+    execution: "active" as const,
+    ...(writer ? { provider: provider(writer) } : {}),
+    ...extra,
+  });
 
   const submitFor = (
     tenantId: TenantId,
@@ -196,16 +229,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       submitFor(tenantId, principalId, calendar._id),
       now,
     );
@@ -224,16 +248,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const submit = submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "passive",
-        provider: provider(writer),
-      },
+      commandDeps(writer, { execution: "passive" }),
       submitFor(tenantId, principalId, calendar._id),
       now,
     );
@@ -248,15 +263,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
     const submit = submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-      },
+      commandDeps(undefined, { provider: undefined }),
       submitFor(tenantId, principalId, calendar._id),
       now,
     );
@@ -270,16 +277,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       // A calendar id with no provider_calendars row is a Compass cloud calendar.
       submitFor(tenantId, principalId, objectId()),
       now,
@@ -309,15 +307,7 @@ describe("submitCloudCommand provider dispatch", () => {
     };
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-      },
+      commandDeps(undefined, { provider: undefined }),
       submit,
       now,
     );
@@ -339,15 +329,7 @@ describe("submitCloudCommand provider dispatch", () => {
     };
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-      },
+      commandDeps(undefined, { provider: undefined }),
       submit,
       now,
     );
@@ -470,16 +452,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       {
         tenantId,
         principalId,
@@ -529,16 +502,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       deleteFor(tenantId, principalId, eventId),
       now,
     );
@@ -572,16 +536,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       deleteFor(tenantId, principalId, eventId, "all"),
       now,
     );
@@ -607,16 +562,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       deleteFor(
         tenantId,
         principalId,
@@ -669,7 +615,10 @@ describe("submitCloudCommand provider dispatch", () => {
   });
 
   const selfConnection = {
-    findById: async () => ({ account: { email: "self@example.com" } }),
+    findById: async () => ({
+      account: { email: "self@example.com" },
+      provider: "google" as const,
+    }),
   };
 
   it("routes a provider-linked rsvp to the provider executor when active", async () => {
@@ -926,16 +875,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       updateSeriesFor(tenantId, principalId, eventId, "all"),
       now,
     );
@@ -984,16 +924,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const writer = new FakeWriter();
 
     const { command } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active",
-        provider: provider(writer),
-      },
+      commandDeps(writer),
       updateSeriesFor(
         tenantId,
         principalId,
@@ -1768,16 +1699,7 @@ describe("submitCloudCommand provider dispatch", () => {
         deliveryState: "confirmed",
       });
       const writer = new FakeWriter();
-      const activeDeps = {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active" as const,
-        provider: provider(writer),
-      };
+      const activeDeps = commandDeps(writer);
       const submit = deleteFor(tenantId, principalId, eventId);
 
       const first = await submitCloudCommand(activeDeps, submit, now);
@@ -1816,16 +1738,7 @@ describe("submitCloudCommand provider dispatch", () => {
         deliveryState: "confirmed",
       });
       const writer = new FakeWriter();
-      const activeDeps = {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        resources,
-        markers,
-        execution: "active" as const,
-        provider: provider(writer),
-      };
+      const activeDeps = commandDeps(writer);
       const submit = deleteFor(tenantId, principalId, eventId);
 
       await submitCloudCommand(activeDeps, submit, now);

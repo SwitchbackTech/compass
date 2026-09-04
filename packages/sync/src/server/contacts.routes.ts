@@ -10,6 +10,7 @@ import {
 } from "@core/types/contact.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { authResolverForAdapter } from "@sync/providers/google/build-provider-resolvers";
 import {
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY,
@@ -111,7 +112,7 @@ export function registerContactsRoutes(
 
         const custody = new CredentialCustody(
           repos.credentials,
-          deps.authAdapter,
+          authResolverForAdapter(deps.authAdapter),
         );
         const collected: ContactSuggestion[] = [];
         for (const connection of capable) {

@@ -38,6 +38,10 @@ import {
   remainderMasterId,
   reprojectMaster,
 } from "@sync/domain/series-exception";
+import {
+  ProviderNotConfiguredError,
+  type ResolveProviderAdapters,
+} from "@sync/providers/provider-adapters";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
@@ -89,7 +93,7 @@ export interface CloudCommandDeps {
   // provider work is enabled. Absent means a provider-targeted command is
   // refused (see ProviderWriteUnavailableError) rather than left pending.
   provider?: {
-    writer: ProviderEventWriter;
+    resolveAdapters: ResolveProviderAdapters;
     custody: CredentialCustody;
   };
 }
@@ -224,6 +228,25 @@ export async function retryCloudMutation(
   return applyCloudMutation(deps, command, now);
 }
 
+async function resolveProviderWriter(
+  deps: CloudCommandDeps,
+  calendar: ProviderCalendarRecord,
+): Promise<ProviderEventWriter | null> {
+  if (!deps.provider) return null;
+  const connection = await deps.connections.findById(
+    calendar.tenantId,
+    calendar.principalId,
+    calendar.connectionId,
+  );
+  if (!connection) return null;
+  try {
+    return deps.provider.resolveAdapters(connection.provider).writer;
+  } catch (error) {
+    if (error instanceof ProviderNotConfiguredError) return null;
+    throw error;
+  }
+}
+
 async function applyCloudCreateOrProvider(
   deps: CloudCommandDeps,
   command: CommandRecord,
@@ -239,6 +262,8 @@ async function applyCloudCreateOrProvider(
   );
   if (providerCalendar) {
     if (deps.execution === "active" && deps.provider) {
+      const writer = await resolveProviderWriter(deps, providerCalendar);
+      if (!writer) throw new ProviderWriteUnavailableError();
       return executeProviderCreate(
         {
           commands: deps.commands,
@@ -246,7 +271,7 @@ async function applyCloudCreateOrProvider(
           occurrences: deps.occurrences,
           resources: deps.resources,
           connections: deps.connections,
-          writer: deps.provider.writer,
+          writer,
           custody: deps.provider.custody,
         },
         command,
@@ -525,6 +550,8 @@ async function dispatchProviderMutation(
     event.calendarId as ProviderCalendarId,
   );
   if (!calendar) throw new ProviderWriteUnavailableError();
+  const writer = await resolveProviderWriter(deps, calendar);
+  if (!writer) throw new ProviderWriteUnavailableError();
   return execute(
     {
       commands: deps.commands,
@@ -532,7 +559,7 @@ async function dispatchProviderMutation(
       occurrences: deps.occurrences,
       resources: deps.resources,
       connections: deps.connections,
-      writer: deps.provider.writer,
+      writer,
       custody: deps.provider.custody,
       markers: deps.markers,
     },
