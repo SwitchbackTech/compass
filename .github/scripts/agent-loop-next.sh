@@ -171,7 +171,11 @@ prs_json=$(
     --json number,title,body
 )
 
-all_open='[]'
+picker_tmp=$(mktemp -d)
+trap 'rm -rf "$picker_tmp"' EXIT
+printf '%s' "$prs_json" >"${picker_tmp}/prs.json"
+
+open_numbers=()
 declare -A MILESTONE_ISSUES=()
 for milestone in "${MILESTONES[@]}"; do
   issues_json=$(
@@ -182,7 +186,9 @@ for milestone in "${MILESTONES[@]}"; do
     issues_json='[]'
   fi
   MILESTONE_ISSUES["$milestone"]=$issues_json
-  all_open=$(json_concat "$all_open" "$issues_json")
+  while IFS= read -r n; do
+    [ -n "$n" ] && open_numbers+=("$n")
+  done < <(printf '%s' "$issues_json" | issue_numbers_from_json)
 done
 
 selected=""
@@ -191,18 +197,19 @@ for milestone in "${MILESTONES[@]}"; do
   if [ -z "$issues_json" ] || [ "$issues_json" = "[]" ]; then
     continue
   fi
+  printf '%s' "$issues_json" >"${picker_tmp}/issues.json"
   selected=$(
-    ISSUES_JSON="$issues_json" PRS_JSON="$prs_json" ALL_OPEN_JSON="$all_open" \
+    OPEN_NUMBERS="${open_numbers[*]}" \
     SKIP_LABEL="$NEEDS_HUMAN_LABEL" LEGACY_SKIP_LABEL="$LEGACY_NEEDS_HUMAN_LABEL" \
     RUNNING_LABEL="$RUNNING_LABEL" LEGACY_RUNNING_LABEL="$LEGACY_RUNNING_LABEL" \
     QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" LEGACY_QUOTA_WAITING_LABEL="$LEGACY_QUOTA_WAITING_LABEL" \
     READY_LABEL="$READY_LABEL" \
-    python3 - <<'PY'
-import json, os, re
+    python3 - "${picker_tmp}/issues.json" "${picker_tmp}/prs.json" <<'PY'
+import json, os, re, sys
 
-issues = json.loads(os.environ["ISSUES_JSON"])
-prs = json.loads(os.environ["PRS_JSON"])
-all_open = json.loads(os.environ["ALL_OPEN_JSON"] or "[]")
+issues = json.load(open(sys.argv[1], encoding="utf-8"))
+prs = json.load(open(sys.argv[2], encoding="utf-8"))
+open_numbers = {int(n) for n in os.environ.get("OPEN_NUMBERS", "").split() if n}
 ready_label = os.environ["READY_LABEL"]
 skip_labels = {
     os.environ["SKIP_LABEL"],
@@ -212,7 +219,6 @@ skip_labels = {
     os.environ["QUOTA_WAITING_LABEL"],
     os.environ["LEGACY_QUOTA_WAITING_LABEL"],
 }
-open_numbers = {issue["number"] for issue in all_open}
 
 issues.sort(key=lambda i: i["number"])
 
