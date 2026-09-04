@@ -4,6 +4,7 @@ import {
   loadCompassConfig,
 } from "@core/config/compass.config";
 import { NodeEnv } from "@core/constants/core.constants";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 
 // Validated configuration for the Compass Sync service.
 // Execution defaults to `passive`: the service starts, serves health, and
@@ -14,6 +15,29 @@ import { NodeEnv } from "@core/constants/core.constants";
 const SYNC_PORT_DEFAULT = 3010;
 const SYNC_MAX_CONCURRENCY_DEFAULT = 4;
 const SYNC_RESERVED_PULL_LANES_DEFAULT = 1;
+export const RECONCILE_STALE_AFTER_MS_DEFAULT = 15 * 60_000;
+const RECONCILE_SWEEP_INTERVAL_MS_DEFAULT = 10 * 60_000;
+
+const PROVIDER_KINDS = [
+  "google",
+  "microsoft",
+  "apple",
+] as const satisfies readonly ProviderKind[];
+
+function perProviderIntFromEnv(
+  prefix: string,
+): Partial<Record<ProviderKind, number>> {
+  const out: Partial<Record<ProviderKind, number>> = {};
+  for (const kind of PROVIDER_KINDS) {
+    const raw = process.env[`${prefix}_${kind.toUpperCase()}`];
+    if (raw === undefined || raw.trim() === "") continue;
+    const parsed = Number(raw);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      out[kind] = parsed;
+    }
+  }
+  return out;
+}
 
 export const SyncExecutionModeSchema = z.enum(["passive", "active"]);
 export type SyncExecutionMode = z.infer<typeof SyncExecutionModeSchema>;
@@ -76,6 +100,15 @@ export const SyncConfigSchema = z
     // When absent, the health emitter no-ops (local/dev without analytics).
     POSTHOG_KEY: z.string().trim().min(1).optional(),
     POSTHOG_HOST: z.url().optional(),
+    RECONCILE_STALE_AFTER_MS: PositiveIntFromInput.default(
+      RECONCILE_STALE_AFTER_MS_DEFAULT,
+    ),
+    reconcileStaleAfterMsByKind: z
+      .partialRecord(z.enum(PROVIDER_KINDS), PositiveIntFromInput)
+      .default({}),
+    reconcileSweepIntervalMsByKind: z
+      .partialRecord(z.enum(PROVIDER_KINDS), PositiveIntFromInput)
+      .default({}),
   })
   .refine((cfg) => cfg.RESERVED_PULL_LANES < cfg.MAX_CONCURRENCY, {
     message: "sync.reservedPullLanes must be less than sync.maxConcurrency",
@@ -113,7 +146,32 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     CREDENTIAL_ENCRYPTION_KEY: config.sync.credentialEncryptionKey || undefined,
     POSTHOG_KEY: config.posthog?.key || undefined,
     POSTHOG_HOST: config.posthog?.host || undefined,
+    reconcileStaleAfterMsByKind: {
+      ...perProviderIntFromEnv("RECONCILE_STALE_AFTER_MS"),
+    },
+    reconcileSweepIntervalMsByKind: {
+      ...perProviderIntFromEnv("RECONCILE_SWEEP_INTERVAL_MS"),
+    },
   });
+}
+
+export function reconcileStaleAfterMsFor(
+  config: SyncConfig,
+  kind: ProviderKind,
+): number {
+  return (
+    config.reconcileStaleAfterMsByKind[kind] ?? config.RECONCILE_STALE_AFTER_MS
+  );
+}
+
+export function reconcileSweepIntervalMsFor(
+  config: SyncConfig,
+  kind: ProviderKind,
+): number {
+  return (
+    config.reconcileSweepIntervalMsByKind[kind] ??
+    RECONCILE_SWEEP_INTERVAL_MS_DEFAULT
+  );
 }
 
 export function loadSyncConfig(): SyncConfig {

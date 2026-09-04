@@ -123,6 +123,15 @@ const defaultGoogleConnection = (
   updatedAt: now(),
 });
 
+const googleProviderCapabilities = [
+  "readEvents",
+  "writeEvents",
+  "readBusy",
+  "inviteAttendees",
+  "changeNotifications",
+  "incrementalChanges",
+] as const;
+
 describe("dispatchSyncJob", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;
@@ -197,6 +206,7 @@ describe("dispatchSyncJob", () => {
     commands,
     custody,
     callbackUrlFor: () => "https://sync.example/sync/notifications/google",
+    providerCapabilities: () => googleProviderCapabilities,
     invalidations,
   });
 
@@ -1078,6 +1088,52 @@ describe("dispatchSyncJob", () => {
     // One from the import's own windowed-pass/full-finish notifications, one
     // more from unsupported completing bootstrap.
     expect(feed.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("completes bootstrap to ready when the provider lacks changeNotifications", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    notifications.watched = [];
+    const pollOnlyNotifications = {
+      ...notifications,
+      watch: async () => {
+        throw new Error("watch must not run for poll-only providers");
+      },
+    };
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], { nextSyncToken: "cursor-1" }),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      {
+        ...deps(new FakeReader([]), tokenSource, pollOnlyNotifications),
+        providerCapabilities: () => ["readEvents", "incrementalChanges"],
+      },
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toEqual({ result: "done" });
+    expect(notifications.watched).toHaveLength(0);
+
+    const saved = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(saved?.bootstrapState).toBe("ready");
+    expect(saved?.subscriptionId).toBeNull();
   });
 
   it("completes bootstrap on durable watchFailed instead of burning retries", async () => {

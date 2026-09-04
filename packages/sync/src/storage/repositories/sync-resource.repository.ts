@@ -4,6 +4,7 @@ import {
   type ConnectionId,
   type PrincipalId,
   type ProviderCalendarId,
+  type ProviderKind,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -31,7 +32,7 @@ import {
 // resources that already hold a live channel, which a credential-less
 // connection cannot renew into existence in the first place, and a renewal
 // attempt on one settles as a credential drop rather than burning a ladder.
-const EXCLUDE_CREDENTIALLESS_STAGES = [
+const CREDENTIAL_LOOKUP_STAGES = [
   {
     $lookup: {
       from: SYNC_COLLECTIONS.credentials,
@@ -41,8 +42,29 @@ const EXCLUDE_CREDENTIALLESS_STAGES = [
     },
   },
   { $match: { "_credential.0": { $exists: true } } },
-  { $project: { _credential: 0 } },
-];
+] as const;
+
+export interface ListStaleEventsOptions {
+  provider?: ProviderKind;
+  excludeProviders?: readonly ProviderKind[];
+}
+
+function credentialFilterStages(
+  options: ListStaleEventsOptions = {},
+): Record<string, unknown>[] {
+  const stages: Record<string, unknown>[] = [...CREDENTIAL_LOOKUP_STAGES];
+  if (options.provider !== undefined) {
+    stages.push({ $match: { "_credential.0.provider": options.provider } });
+  } else if (options.excludeProviders && options.excludeProviders.length > 0) {
+    stages.push({
+      $match: {
+        "_credential.0.provider": { $nin: [...options.excludeProviders] },
+      },
+    });
+  }
+  stages.push({ $project: { _credential: 0 } });
+  return stages;
+}
 
 interface SubscriptionInput {
   subscriptionId: string;
@@ -85,11 +107,12 @@ export class SyncResourceRepository {
     match: Record<string, unknown>,
     sort: Record<string, 1 | -1>,
     limit: number,
+    credentialFilter: ListStaleEventsOptions = {},
   ): Promise<SyncResourceRecord[]> {
     const records = await this.collection
       .aggregate<SyncResourceRecord>([
         { $match: match },
-        ...EXCLUDE_CREDENTIALLESS_STAGES,
+        ...credentialFilterStages(credentialFilter),
         { $sort: sort },
         { $limit: limit },
       ])
@@ -583,6 +606,7 @@ export class SyncResourceRepository {
   async listStaleEvents(
     before: Date,
     limit: number,
+    options: ListStaleEventsOptions = {},
   ): Promise<SyncResourceRecord[]> {
     // Round-robin by ATTEMPT, not success: never-attempted first (null sorts
     // lowest), then least-recently-attempted, so a resource that fails without
@@ -596,6 +620,7 @@ export class SyncResourceRepository {
       },
       { lastAttemptAt: 1, lastSuccessAt: 1 },
       limit,
+      options,
     );
   }
 
