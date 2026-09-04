@@ -4,7 +4,9 @@ import { existsSync, readFileSync } from "node:fs";
 describe("typed handoff ledger", () => {
   it("ships a v1 schema and in-repo /handoff write path", () => {
     expect(existsSync(".agents/handoffs/SCHEMA.md")).toBe(true);
-    expect(existsSync(".agents/ledger.md")).toBe(true);
+    // Status lives on the GitHub issue; a shared ledger table made every
+    // PR conflict with every other one.
+    expect(existsSync(".agents/ledger.md")).toBe(false);
     expect(existsSync(".agents/handoffs/issue-0.md")).toBe(true);
 
     const schema = readFileSync(".agents/handoffs/SCHEMA.md", "utf8");

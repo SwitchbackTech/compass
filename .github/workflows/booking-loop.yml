@@ -7,6 +7,14 @@ name: Booking loop
 # Kill switch: repo variable BOOKING_LOOP_ENABLED (string "true"; default off).
 # Manual re-runs: dispatch a fresh run instead of "Re-run jobs" on a failed
 # snapshot so workflow file fixes apply.
+#
+# Concurrency is per job, not per workflow. One shared group used to hold
+# every merge-guard, post-deploy, and launch in a single queue; GitHub keeps
+# one pending run per group and cancels the older one, so a merge-guard
+# waiting on CI cancelled the launch of the next WP (56 cancellations on
+# 2026-09-03). merge-guard now runs per PR and never waits on CI: it enables
+# GitHub auto-merge and exits. The loop-wide group only serialises the jobs
+# that launch agents.
 on:
   workflow_dispatch:
     inputs:
@@ -20,11 +28,7 @@ on:
     workflows: ["Release on main"]
     types: [completed]
   pull_request:
-    types: [labeled, synchronize, opened, reopened, ready_for_review]
-
-concurrency:
-  group: booking-loop
-  cancel-in-progress: false
+    types: [labeled, synchronize, opened, reopened, ready_for_review, closed]
 
 permissions:
   contents: read
@@ -37,6 +41,7 @@ jobs:
     if: >-
       vars.BOOKING_LOOP_ENABLED == 'true' &&
       github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (
         github.event.action != 'labeled' ||
@@ -44,45 +49,51 @@ jobs:
       ) &&
       contains(github.event.pull_request.labels.*.name, 'booking-automerge')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
+    # A newer push or label on the same PR supersedes the older guard run.
+    concurrency:
+      group: booking-merge-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Deterministic merge guard, verify, and squash-merge
+      - name: Deterministic merge guard, then enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
         run: .github/scripts/booking-loop-merge-guard.sh "${{ github.event.pull_request.number }}"
 
-  post-deploy:
-    name: Smoke staging and launch next WP
+  # The next WP launches when a booking PR merges, not when its release
+  # finishes deploying. The next agent's work never depended on staging;
+  # waiting on the 4-5 minute release added an hour across a day of WPs.
+  # Staging is still checked here (the previous release) so a broken staging
+  # stops new launches until a human looks.
+  launch-next:
+    name: Launch next WP after merge
     if: >-
       vars.BOOKING_LOOP_ENABLED == 'true' &&
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success'
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'booking-automerge')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    outputs:
-      launch_next: ${{ steps.postdeploy.outputs.launch_next }}
+    timeout-minutes: 10
+    concurrency:
+      group: booking-loop
+      cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: main
 
-      - name: Smoke staging and annotate the booking issue
-        id: postdeploy
+      - name: Smoke the staging that is live now
         env:
           GH_TOKEN: ${{ github.token }}
-          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-        run: .github/scripts/booking-loop-postdeploy.sh
+        run: .github/scripts/booking-loop-staging-smoke.sh
 
       - name: Pick next WP
-        if: steps.postdeploy.outputs.launch_next == 'true'
         id: next
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,6 +106,31 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: .github/scripts/booking-loop-launch.sh "${{ steps.next.outputs.issue_number }}"
 
+  post-deploy:
+    name: Smoke staging after release
+    if: >-
+      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: booking-loop
+      cancel-in-progress: false
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Smoke staging and annotate the booking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: .github/scripts/booking-loop-postdeploy.sh
+
   kick:
     name: Pick and launch a booking WP
     if: >-
@@ -102,9 +138,21 @@ jobs:
       (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: booking-loop
+      cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      # Hourly sweep of every labeled PR: catches a PR whose guard ran while
+      # main was red, or whose label event was missed.
+      - name: Re-run merge guard on labeled PRs
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+        run: .github/scripts/booking-loop-merge-guard.sh
 
       - name: Use dispatched issue number
         id: given

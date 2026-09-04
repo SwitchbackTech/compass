@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# Deterministic re-check, verification wait, and squash-merge for a Booking
-# loop PR.
+# Deterministic re-check for a Booking loop PR, then GitHub auto-merge.
 # The agent's `booking-automerge` label is necessary but not sufficient —
-# this script independently re-verifies size rails and sensitive paths.
+# this script independently re-verifies size rails and sensitive paths, and
+# refuses while main itself is red so the loop cannot stack merges on a
+# broken base.
+#
+# It does not wait on CI. `gh pr merge --auto` hands the wait to GitHub,
+# which squash-merges when the required checks pass; a runner that sat
+# watching checks for up to 20 minutes was what starved the loop's
+# concurrency group on 2026-09-03.
 #
 # Uses GH_TOKEN from BOOKING_LOOP_GITHUB_TOKEN or AUTOFIX_GITHUB_TOKEN so
 # the merge push triggers release-on-main (GITHUB_TOKEN merges do not).
@@ -43,6 +49,8 @@ downgrade() {
   local pr_number=$1
   local reason=$2
   notify "Booking-loop PR #${pr_number} ${reason}; leaving for human review: https://github.com/${REPO}/pull/${pr_number}"
+  # A later push can trip a rail after auto-merge was already enabled.
+  gh pr merge "$pr_number" --repo "$REPO" --disable-auto 2>/dev/null || true
   gh pr edit "$pr_number" --repo "$REPO" \
     --remove-label "$AUTOMERGE_LABEL" --add-label "$NEEDS_HUMAN_LABEL" 2>/dev/null || true
   local issue_number
@@ -105,16 +113,45 @@ check_and_merge() {
     return 0
   fi
 
-  if ! gh pr checks "$pr_number" --repo "$REPO" --watch --fail-fast; then
-    notify "Booking-loop PR #${pr_number} failed CI after merge-guard verification: https://github.com/${REPO}/pull/${pr_number}"
+  if main_is_red; then
+    printf 'main is red; not enabling auto-merge on PR #%s. The hourly sweep retries.\n' "$pr_number"
     return 0
   fi
 
-  if ! gh pr merge "$pr_number" --repo "$REPO" --squash --delete-branch; then
-    notify "Booking-loop PR #${pr_number} passed verification but direct squash-merge failed: https://github.com/${REPO}/pull/${pr_number}"
+  local auto_merge
+  auto_merge=$(gh pr view "$pr_number" --repo "$REPO" --json autoMergeRequest \
+    --jq '.autoMergeRequest.enabledAt // ""' 2>/dev/null || true)
+  if [ -n "$auto_merge" ]; then
+    printf 'auto-merge already enabled on PR #%s\n' "$pr_number"
     return 0
   fi
-  printf 'squash-merged booking PR #%s\n' "$pr_number"
+
+  if ! gh pr merge "$pr_number" --repo "$REPO" --auto --squash --delete-branch; then
+    notify "Booking-loop PR #${pr_number} passed verification but \`gh pr merge --auto\` failed: https://github.com/${REPO}/pull/${pr_number}"
+    return 0
+  fi
+  printf 'enabled auto-merge on booking PR #%s; GitHub squash-merges when required checks pass\n' "$pr_number"
+}
+
+# The latest push run of each required workflow on main. A red main means the
+# base is broken; merging more on top hides which change broke it (7 of 9
+# merges on 2026-09-04 landed on a red main). Fails closed: an unreadable
+# result counts as red.
+main_is_red() {
+  local workflow conclusion
+  for workflow in test-unit.yml test-e2e.yml; do
+    conclusion=$(gh run list --repo "$REPO" --workflow "$workflow" --branch main \
+      --event push --status completed --limit 1 --json conclusion \
+      --jq '.[0].conclusion // "unknown"' 2>/dev/null || echo "unknown")
+    case "$conclusion" in
+      success|skipped|cancelled) ;;
+      *)
+        printf 'main %s latest push run: %s\n' "$workflow" "$conclusion"
+        return 0
+        ;;
+    esac
+  done
+  return 1
 }
 
 main() {
