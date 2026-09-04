@@ -178,6 +178,28 @@ assert_contains "$out" "ISSUE_NUMBER=3222" "skips WP whose Depends on issue is s
 out=$(STUB_L_OPEN="$L_HUMAN" STUB_P0_OPEN="$P0_DEP" run_next)
 assert_contains "$out" "ISSUE_NUMBER=3236" "human leftovers on L do not block P0"
 
+if grep -q 'os.environ\["A"\]' "${ROOT}/.github/scripts/agent-loop-lib.sh"; then
+  echo "FAIL json_concat still passes JSON through the environment" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok json_concat does not use env vars for JSON payloads"
+  PASS=$((PASS + 1))
+fi
+if grep -q 'ISSUES_JSON=\|ALL_OPEN_JSON=' "${ROOT}/.github/scripts/agent-loop-next.sh"; then
+  echo "FAIL picker still passes issue JSON through the environment" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok picker reads issue JSON from files, not env"
+  PASS=$((PASS + 1))
+fi
+
+# shellcheck disable=SC1091
+source "${ROOT}/.github/scripts/agent-loop-lib.sh"
+big=$(python3 -c 'print("[" + ",".join(["{\"n\":%d}" % i for i in range(8000)]) + "]")')
+concat_out=$(json_concat "$big" "$big")
+concat_len=$(printf '%s' "$concat_out" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')
+assert_eq "$concat_len" "16000" "json_concat concatenates large arrays via a pipe"
+
 echo
 echo "passed=${PASS} failed=${FAIL}"
 if [ "$FAIL" -ne 0 ]; then

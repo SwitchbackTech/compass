@@ -74,12 +74,27 @@ milestone_slug() {
     | sed -E 's/[^a-z0-9.]+/-/g; s/^-+//; s/-+$//'
 }
 
+# Concatenate two JSON arrays. Payloads go through a pipe, not argv/env,
+# because issue bodies across a milestone can exceed ARG_MAX.
 json_concat() {
   local a=${1:-[]}
   local b=${2:-[]}
   if [ -z "$a" ]; then a='[]'; fi
   if [ -z "$b" ]; then b='[]'; fi
-  A="$a" B="$b" python3 -c 'import json,os; print(json.dumps(json.loads(os.environ["A"])+json.loads(os.environ["B"])))'
+  {
+    printf '%s' "$a"
+    printf '\0'
+    printf '%s' "$b"
+  } | python3 -c 'import json,sys
+raw = sys.stdin.buffer.read()
+a, b = raw.split(b"\0", 1)
+print(json.dumps(json.loads(a or b"[]") + json.loads(b or b"[]")))'
+}
+
+issue_numbers_from_json() {
+  python3 -c 'import json,sys
+for issue in json.loads(sys.stdin.read() or "[]"):
+    print(issue["number"])'
 }
 
 prompt_path_for_milestone() {
