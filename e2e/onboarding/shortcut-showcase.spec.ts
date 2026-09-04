@@ -9,6 +9,15 @@ const leaveWelcome = async (page: Page) => {
     name: "Welcome to Compass Calendar",
   });
   await expect(welcomeDialog).toBeVisible();
+  // Three screens, one primary action each: Enter advances.
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Get started for free" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Who is Compass for?" }),
+  ).toBeVisible();
+  await page.keyboard.press("Enter");
   await expect(
     welcomeDialog.getByRole("button", { name: "Explore without an account" }),
   ).toBeVisible();

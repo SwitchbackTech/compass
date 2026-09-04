@@ -9,9 +9,11 @@ export const WELCOME_JUMP_ATTR = "data-welcome-jump";
  * Press a number (with or without Mod) to toggle that FAQ or open a footer
  * link. Bare digits work because browsers steal Cmd/Ctrl+1–8 for tab switching.
  *
- * 1–5 toggle FAQ items. 6–0 activate matching `[data-welcome-jump]` links.
+ * 1–5 toggle FAQ items when `toggleFaqAt` is given (omit it on a screen with
+ * no FAQ). 6–0 activate matching `[data-welcome-jump]` links, and no-op when
+ * none is mounted.
  */
-export function useWelcomeJumpShortcuts(toggleFaqAt: (index: number) => void) {
+export function useWelcomeJumpShortcuts(toggleFaqAt?: (index: number) => void) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableKeyboardTarget(event)) return;
@@ -20,6 +22,7 @@ export function useWelcomeJumpShortcuts(toggleFaqAt: (index: number) => void) {
       if (index === null) return;
 
       if (index < FAQ_ITEMS.length) {
+        if (!toggleFaqAt) return;
         event.preventDefault();
         toggleFaqAt(index);
         return;

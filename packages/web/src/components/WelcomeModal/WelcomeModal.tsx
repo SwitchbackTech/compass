@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
@@ -13,15 +13,43 @@ import { hasPlayDeepLink } from "@web/components/ShortcutShowcase/play-link";
 import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
-import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
+import { pointerPassAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { PixelPirate } from "./PixelPirate";
-import {
-  flashedShortcutClass,
-  useFlashedWelcomeShortcut,
-} from "./useFlashedWelcomeShortcut";
-import { WelcomeGuideBody } from "./WelcomeGuideBody";
+import { useFaqDisclosure } from "./useFaqDisclosure";
+import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
+import { WelcomeFaqList } from "./WelcomeFaqList";
+import { WelcomeLinks } from "./WelcomeLinks";
 import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
+
+/** Commit (1) → learn (2) → choose how to start (3). */
+type WelcomeStep = 1 | 2 | 3;
+const WELCOME_STEPS: readonly WelcomeStep[] = [1, 2, 3];
+
+const PRIMARY_CTA_CLASS =
+  "c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full";
+const TEXT_CTA_CLASS =
+  "c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
+
+function WelcomeSteps({ step }: { step: WelcomeStep }) {
+  return (
+    <div className="flex w-full items-center justify-center gap-2">
+      <span className="sr-only">
+        Step {step} of {WELCOME_STEPS.length}
+      </span>
+      {WELCOME_STEPS.map((dot) => (
+        <span
+          key={dot}
+          aria-hidden
+          className={classNames(
+            "h-1.5 w-1.5 rounded-full transition-colors",
+            dot === step ? "bg-text" : "bg-border",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -35,6 +63,7 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome() && !hasPlayDeepLink(),
   );
+  const [step, setStep] = useState<WelcomeStep>(1);
   const { closing, beginDismiss, cancelDismiss } =
     useDismissTransition(MODAL_DISMISS_MS);
   // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
@@ -49,11 +78,15 @@ export function WelcomeModal() {
   const [hidingForAuth, setHidingForAuth] = useState(false);
   const hidingForAuthRef = useRef(false);
   const googleHandoffRef = useRef(false);
-  // Seat focus on the email signup button rather than the panel's first
-  // focusable (now Log in) or the Google button: Enter on an OAuth redirect
-  // would fling a first-time visitor off-site before they read anything.
-  const signUpButtonRef = useRef<HTMLButtonElement>(null);
-  const flashedKey = useFlashedWelcomeShortcut();
+  // Each screen has one primary button, and Enter is its native activation.
+  // On the last screen that is email signup rather than Google: Enter on an
+  // OAuth redirect would fling a first-time visitor off-site.
+  const primaryRef = useRef<HTMLButtonElement>(null);
+  const faqHintId = `${useId()}-faq-hint`;
+  const faq = useFaqDisclosure();
+  // Digits 1-5 only toggle FAQ on the screen that shows it; 6-0 no-op until
+  // the footer links mount on the last screen.
+  useWelcomeJumpShortcuts(step === 2 ? faq.toggleAt : undefined);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
@@ -83,6 +116,18 @@ export function WelcomeModal() {
     }
   }, [visible]);
 
+  // Each screen seats its own primary button (OverlayPanel only seats focus
+  // once, on mount) so Enter keeps meaning "the obvious next thing", and
+  // counts as viewed once no matter how often Back revisits it.
+  const viewedStepsRef = useRef(new Set<WelcomeStep>());
+  useEffect(() => {
+    if (!visible) return;
+    primaryRef.current?.focus();
+    if (viewedStepsRef.current.has(step)) return;
+    viewedStepsRef.current.add(step);
+    track("welcome_step_viewed", { step });
+  }, [step, visible]);
+
   useEffect(() => {
     welcomeGuideActions.setFirstVisitOpen(visible);
     return () => welcomeGuideActions.setFirstVisitOpen(false);
@@ -90,19 +135,32 @@ export function WelcomeModal() {
 
   if (!visible) return null;
 
+  // Auth handoffs win over everything else. The explore fade (`closing`) is
+  // not one of them: a login during that fade must still cancel the pending
+  // practice start, so only the step and explore actions check it.
+  const isHandingOff = () =>
+    hidingForAuthRef.current || googleHandoffRef.current || isGoogleAuthLoading;
+
+  const advance = () => {
+    if (closing || isHandingOff()) return;
+    setStep((current) => (current < 3 ? ((current + 1) as WelcomeStep) : 3));
+  };
+
+  // Escape, backdrop and the Back button all step back one screen. On the
+  // first screen they do nothing: a stray Escape must not drop a first-time
+  // visitor into the practice game before they chose anything.
+  const goBack = () => {
+    if (closing || isHandingOff()) return;
+    setStep((current) => (current > 1 ? ((current - 1) as WelcomeStep) : 1));
+  };
+
   // Fade the backdrop and gently scale the panel before unmounting, so the
   // first reveal of the sidebar underneath feels smooth rather than abrupt.
-  const dismiss = (cta: "explore" | "dismissed" = "dismissed") => {
-    if (
-      closing ||
-      hidingForAuthRef.current ||
-      googleHandoffRef.current ||
-      isGoogleAuthLoading
-    )
-      return;
+  const explore = () => {
+    if (closing || isHandingOff()) return;
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
-    track("welcome_modal_dismissed", { cta });
+    track("welcome_modal_dismissed", { cta: "explore" });
     startShowcaseAfterDismissRef.current = true;
     // Start after this dialog unmounts so the practice takeover does not
     // share a focus trap with the fading welcome overlay.
@@ -151,28 +209,39 @@ export function WelcomeModal() {
   };
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
-    if (
-      hidingForAuthRef.current ||
-      googleHandoffRef.current ||
-      isGoogleAuthLoading
-    )
+    // A held Enter auto-repeats native button clicks, which would blast
+    // through all three screens and into signup. Only the first press counts.
+    if (e.key === "Enter" && e.repeat) {
+      e.preventDefault();
       return;
+    }
+    if (isHandingOff()) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const key = keyboardKey(e).toLowerCase();
+    if (key === "i") {
+      e.preventDefault();
+      handOffToAuth("log_in");
+      return;
+    }
+    if (step !== 3) return;
     if (key === "g" && isGoogleAvailable) {
       e.preventDefault();
       handOffToGoogle();
     } else if (key === "u") {
       e.preventDefault();
       handOffToAuth("sign_up");
-    } else if (key === "i") {
-      e.preventDefault();
-      handOffToAuth("log_in");
     } else if (key === "s") {
       e.preventDefault();
-      dismiss("explore");
+      explore();
     }
   };
+
+  const backButton = (
+    <button type="button" onClick={goBack} className={TEXT_CTA_CLASS}>
+      Back
+      <ShortcutHint className="ml-2">Esc</ShortcutHint>
+    </button>
+  );
 
   return (
     <OverlayPanel
@@ -180,14 +249,22 @@ export function WelcomeModal() {
       ariaLabel="Welcome to Compass Calendar"
       backdropClassName="overflow-y-auto py-8"
       closing={closing}
-      initialFocusRef={signUpButtonRef}
-      onDismiss={dismiss}
+      initialFocusRef={primaryRef}
+      onDismiss={goBack}
       skipFocusRestoreRef={skipFocusRestoreRef}
       widthClassName="w-120"
     >
+      {/* The welcome overlay is the one calendar surface where the mouse
+          works: a landing page should behave like a normal site. Keyboard-only
+          starts once the visitor enters the calendar. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
-      <div className="flex w-full flex-col gap-6" onKeyDown={handleShortcutKey}>
-        {/* Top row: pirate top-left, auth pills top-right */}
+      <div
+        className="flex w-full flex-col gap-6"
+        onKeyDown={handleShortcutKey}
+        {...pointerPassAttributes}
+      >
+        {/* Top row: pirate top-left, Log in top-right, on every screen so a
+            returning user is never walked through the pitch. */}
         <div className="flex items-center justify-between">
           <div className="group relative flex items-center">
             <PixelPirate className="h-14 w-14 shrink-0" />
@@ -206,36 +283,93 @@ export function WelcomeModal() {
               type="button"
               onClick={() => handOffToAuth("log_in")}
               className="c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs"
-              {...pointerShortcutAttributes("i")}
             >
               Log in
-              <ShortcutHint
-                className={classNames(
-                  "ml-2",
-                  flashedShortcutClass(flashedKey, "i"),
-                )}
-              >
-                i
-              </ShortcutHint>
+              <ShortcutHint className="ml-2">i</ShortcutHint>
             </button>
           </div>
         </div>
 
-        <WelcomeGuideBody flashedKey={flashedKey}>
-          {/* CTA: connecting a calendar is the moment Compass starts being
-              useful, so the Google round trip - which signs up and grants
-              calendar access at once - leads, and everything else is a fallback
-              from it. */}
-          <div className="flex w-full flex-col items-center gap-3">
-            {isGoogleAvailable && (
-              <>
-                <div
-                  className={classNames(
-                    "w-full",
-                    flashedKey?.toLowerCase() === "g" && "c-shortcut-flash",
-                  )}
-                  {...pointerShortcutAttributes("G")}
-                >
+        {step === 1 && (
+          <>
+            <div className="flex w-full flex-col gap-2">
+              <h1 className="font-bold text-2xl text-text leading-snug">
+                The Keyboard Calendar
+              </h1>
+              <p className="text-text-muted">
+                Rediscover the joy of shortcuts as you build your perfect
+                schedule. No clicks allowed.
+              </p>
+              <p className="text-sm text-text-muted">
+                Compass is a faster, simpler, open-source calendar for busy
+                professionals who live at their keyboard.
+              </p>
+            </div>
+            <div className="flex w-full flex-col items-center gap-3">
+              <button
+                type="button"
+                ref={primaryRef}
+                onClick={advance}
+                className={PRIMARY_CTA_CLASS}
+              >
+                Get started for free
+                <ShortcutHint className="ml-2">Enter</ShortcutHint>
+              </button>
+              <p className="text-center text-text-muted text-xs">
+                No account needed.
+              </p>
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <div className="flex w-full flex-col gap-2">
+              <h2 className="font-bold text-2xl text-text leading-snug">
+                How Compass works
+              </h2>
+              <p id={faqHintId} className="text-text-muted">
+                Press a number to open a question.
+              </p>
+            </div>
+            <WelcomeFaqList
+              describedById={faqHintId}
+              expanded={faq.expanded}
+              flashedKey={null}
+              onToggle={faq.toggle}
+            />
+            <div className="flex w-full flex-col items-center gap-3">
+              <button
+                type="button"
+                ref={primaryRef}
+                onClick={advance}
+                className={PRIMARY_CTA_CLASS}
+              >
+                Next
+                <ShortcutHint className="ml-2">Enter</ShortcutHint>
+              </button>
+              {backButton}
+            </div>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <div className="flex w-full flex-col gap-2">
+              <h2 className="font-bold text-2xl text-text leading-snug">
+                Ready when you are
+              </h2>
+              <p className="text-text-muted">
+                Pick how you want to start. You can sign up later.
+              </p>
+            </div>
+            {/* Connecting a calendar is the moment Compass starts being
+                useful, so the Google round trip, which signs up and grants
+                calendar access at once, leads; everything else is a fallback
+                from it. */}
+            <div className="flex w-full flex-col items-center gap-3">
+              {isGoogleAvailable && (
+                <>
                   <GoogleButton
                     onClick={handOffToGoogle}
                     disabled={isGoogleAuthLoading}
@@ -243,47 +377,36 @@ export function WelcomeModal() {
                     shortcutKey="G"
                     style={{ width: "100%" }}
                   />
-                </div>
-                <p className="text-center text-text-muted text-xs">
-                  Signs you up and connects your Google Calendar.
-                </p>
-              </>
-            )}
-            <button
-              type="button"
-              ref={signUpButtonRef}
-              onClick={() => handOffToAuth("sign_up")}
-              className="c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full"
-              {...pointerShortcutAttributes("U")}
-            >
-              {isGoogleAvailable ? "Sign up with email" : "Sign up"}
-              <ShortcutHint
-                className={classNames(
-                  "ml-2",
-                  flashedShortcutClass(flashedKey, "U"),
-                )}
+                  <p className="text-center text-text-muted text-xs">
+                    Signs you up and connects your Google Calendar.
+                  </p>
+                </>
+              )}
+              <button
+                type="button"
+                ref={primaryRef}
+                onClick={() => handOffToAuth("sign_up")}
+                className={PRIMARY_CTA_CLASS}
               >
-                U
-              </ShortcutHint>
-            </button>
-            <button
-              type="button"
-              onClick={() => dismiss("explore")}
-              className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
-              {...pointerShortcutAttributes("S")}
-            >
-              Explore without an account
-              <ShortcutHint
-                className={classNames(
-                  "ml-2",
-                  flashedShortcutClass(flashedKey, "S"),
-                )}
+                {isGoogleAvailable ? "Sign up with email" : "Sign up"}
+                <ShortcutHint className="ml-2">U</ShortcutHint>
+              </button>
+              <button
+                type="button"
+                onClick={explore}
+                className={TEXT_CTA_CLASS}
               >
-                S
-              </ShortcutHint>
-            </button>
-          </div>
-        </WelcomeGuideBody>
+                Explore without an account
+                <ShortcutHint className="ml-2">S</ShortcutHint>
+              </button>
+              {backButton}
+            </div>
+          </>
+        )}
+
+        <WelcomeSteps step={step} />
+
+        {step === 3 && <WelcomeLinks flashedKey={null} />}
       </div>
     </OverlayPanel>
   );

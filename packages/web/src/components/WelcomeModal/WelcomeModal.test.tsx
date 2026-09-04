@@ -68,6 +68,18 @@ const { STORAGE_KEYS } =
 const { useShortcutShowcaseStore, initialShortcutShowcaseState } =
   require("@web/components/ShortcutShowcase/showcase.store") as typeof import("@web/components/ShortcutShowcase/showcase.store");
 
+const WELCOME_DIALOG = { name: "Welcome to Compass Calendar" };
+
+// Screens 1 and 2 each seat focus on one primary button, and Enter is its
+// native activation. Two presses reach the screen with the auth choices.
+const goToChooseScreen = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.keyboard("{Enter}");
+  await user.keyboard("{Enter}");
+  expect(
+    screen.getByRole("button", { name: "Explore without an account" }),
+  ).toBeTruthy();
+};
+
 describe("WelcomeModal", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -129,7 +141,9 @@ describe("WelcomeModal", () => {
         <WelcomeModal />
       </>,
     );
-    expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Get started for free" }),
+    ).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "Log in" }));
     authModalState.isOpen = true;
@@ -166,10 +180,107 @@ describe("WelcomeModal", () => {
     ).toBeTruthy();
   });
 
-  it("expands and collapses FAQ answers", async () => {
+  it("opens on a single Get started action with the headline as the page heading", () => {
+    render(<WelcomeModal />);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "The Keyboard Calendar" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Get started for free" }),
+    ).toHaveFocus();
+    expect(screen.getByText("No account needed.")).toBeTruthy();
+    for (const name of [
+      "Sign up",
+      "Continue with Google",
+      "Explore without an account",
+      "Who is Compass for?",
+    ]) {
+      expect(screen.queryByRole("button", { name })).toBeNull();
+    }
+    expect(screen.queryByRole("link", { name: "Terms" })).toBeNull();
+  });
+
+  it("advances with Enter or a click, and Escape steps back", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Step 2 of 3")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Who is Compass for?" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Step 3 of 3")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(screen.getByText("Step 2 of 3")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+
+    // Escape on the first screen is a no-op: the dialog stays and nothing
+    // starts the practice game behind the visitor's back.
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", WELCOME_DIALOG)).toBeTruthy();
+    expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
+  });
+
+  it("ignores the auth shortcuts before the last screen, except Log in", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("s");
+    await user.keyboard("u");
+    await user.keyboard("g");
+
+    expect(mockOpenModal).not.toHaveBeenCalled();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
+    expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+
+    await user.keyboard("i");
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+  });
+
+  it("toggles FAQ with digits only on the second screen", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("1");
+    await user.keyboard("{Enter}");
+
+    // The press on screen 1 did not pre-open the row.
+    const question = screen.getByRole("button", {
+      name: "Who is Compass for?",
+    });
+    expect(question).toHaveAttribute("aria-expanded", "false");
+
+    await user.keyboard("1");
+    expect(question).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("lets the mouse through on the welcome overlay", () => {
+    render(<WelcomeModal />);
+
+    expect(
+      screen
+        .getByRole("button", { name: "Get started for free" })
+        .closest("[data-pointer-pass]"),
+    ).not.toBeNull();
+  });
+
+  it("expands and collapses FAQ answers on the second screen", async () => {
     const user = userEvent.setup();
 
     render(<WelcomeModal />);
+    await user.keyboard("{Enter}");
 
     const questionButton = screen.getByRole("button", {
       name: "Who is Compass for?",
@@ -198,8 +309,10 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("data-state", "closed");
   });
 
-  it("shows shortcut keycaps on auth and explore actions without hover", () => {
+  it("shows shortcut keycaps on auth and explore actions without hover", async () => {
+    const user = userEvent.setup();
     render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     for (const [name, key] of [
       ["Sign up", "U"],
@@ -214,6 +327,7 @@ describe("WelcomeModal", () => {
   it("opens sign up with the U shortcut", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     await user.keyboard("u");
 
@@ -235,6 +349,7 @@ describe("WelcomeModal", () => {
     const user = userEvent.setup();
 
     render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     await user.keyboard("s");
 
@@ -254,6 +369,7 @@ describe("WelcomeModal", () => {
   it("cancels a pending practice start when login opens during dismiss", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     await user.keyboard("s");
     await user.keyboard("i");
@@ -283,6 +399,7 @@ describe("WelcomeModal", () => {
   it("does not start practice if explore is pressed after login before auth opens", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     await user.keyboard("i");
     expect(mockOpenModal).toHaveBeenCalledWith("login");
@@ -317,6 +434,7 @@ describe("WelcomeModal", () => {
   it("defers the practice offer to after signup", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);
+    await goToChooseScreen(user);
 
     await user.click(screen.getByRole("button", { name: "Sign up" }));
 
@@ -331,11 +449,13 @@ describe("WelcomeModal", () => {
 
   it("ignores KeyboardEvents with no key instead of throwing", () => {
     render(<WelcomeModal />);
-    const signUp = screen.getByRole("button", { name: "Sign up" });
+    const getStarted = screen.getByRole("button", {
+      name: "Get started for free",
+    });
 
     expect(() => {
       act(() => {
-        dispatchMissingKey("keydown", signUp);
+        dispatchMissingKey("keydown", getStarted);
       });
     }).not.toThrow();
 
@@ -362,6 +482,8 @@ describe("WelcomeModal", () => {
         <WelcomeModal />
       </>,
     );
+
+    await goToChooseScreen(user);
 
     // Not the panel's first focusable (Log in): the primary action is signing
     // up, so that is where focus lands.
@@ -402,8 +524,10 @@ describe("WelcomeModal", () => {
       resetGoogleAvailabilityForTests();
     });
 
-    it("leads with the Google round trip that also connects the calendar", () => {
+    it("leads with the Google round trip that also connects the calendar", async () => {
+      const user = userEvent.setup();
       render(<WelcomeModal />);
+      await goToChooseScreen(user);
 
       expect(
         screen.getByRole("button", { name: "Continue with Google" }),
@@ -425,6 +549,7 @@ describe("WelcomeModal", () => {
     it("starts Google auth from the button and queues the practice offer", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
+      await goToChooseScreen(user);
 
       await user.click(
         screen.getByRole("button", { name: "Continue with Google" }),
@@ -440,6 +565,7 @@ describe("WelcomeModal", () => {
     it("starts Google auth with the G shortcut", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
+      await goToChooseScreen(user);
 
       await user.keyboard("g");
 

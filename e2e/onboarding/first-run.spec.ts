@@ -28,6 +28,22 @@ test("welcomes a first-time user and seeds sample events", async ({
   });
   await expect(welcomeDialog).toBeVisible();
 
+  // The welcome overlay is the one calendar surface where the mouse works,
+  // so the first screen's only action is proven by a real click. Escape
+  // steps back a screen; the second Enter reaches the auth choices.
+  await welcomeDialog
+    .getByRole("button", { name: "Get started for free" })
+    .click();
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Who is Compass for?" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    welcomeDialog.getByRole("button", { name: "Get started for free" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+
   // The welcome modal advertises S for this action; prove the shortcut.
   await expect(
     welcomeDialog.getByRole("button", { name: "Explore without an account" }),
