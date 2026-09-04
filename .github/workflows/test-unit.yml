@@ -102,13 +102,12 @@ jobs:
         run: |
           bun run type-check
 
-  # A skipped MATRIX job collapses to one check run named `unit`, so the
-  # required `unit (core)` ... `unit (web, 2)` contexts would never report and
-  # a docs-only PR would still be BLOCKED. Let the legs start and skip every
-  # step instead: each reports its own name, in a few seconds, for free.
-  # Job display names are the required-check contexts: `unit (web, 1)` and
-  # `unit (web, 2)` each cover half the suite as two sequential shards
-  # (`WEB_TEST_SHARDS=4` with index `1,2` / `3,4`) so RSS stays under 7 GB.
+  # A skipped MATRIX job collapses to one check run, so the `unit` rollup
+  # below would see `skipped` for a docs-only PR only if every leg started.
+  # Let the legs start and skip every step instead: each reports in a few
+  # seconds, for free. `unit-leg (web, 1)` and `unit-leg (web, 2)` each cover
+  # half the suite as two sequential shards (`WEB_TEST_SHARDS=4` with index
+  # `1,2` / `3,4`) so RSS stays under 7 GB.
   unit-leg:
     needs: changes
     runs-on: ubuntu-latest

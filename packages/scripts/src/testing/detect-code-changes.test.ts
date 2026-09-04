@@ -90,7 +90,7 @@ describe("detect-code-changes", () => {
     expect(unit).toMatch(/^ {2}merge_group:$/m);
     expect(e2e).toMatch(/^ {2}merge_group:$/m);
     expect(unit).toContain("static:");
-    expect(unit).toContain("name: unit (${{ matrix.name }})");
+    expect(unit).toContain("name: unit-leg (${{ matrix.name }})");
     expect(unit).toContain("WEB_TEST_SHARD_INDEX");
     expect(unit).toContain("name: web, 1");
     expect(unit).toContain("name: web, 2");
