@@ -50,9 +50,11 @@ jobs:
           image_version="${release_tag#v}"
           minor_tag="${image_version%.*}"
 
-          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          echo "image_version=${image_version}" >> "$GITHUB_OUTPUT"
-          echo "minor_tag=${minor_tag}" >> "$GITHUB_OUTPUT"
+          {
+            echo "release_tag=${release_tag}"
+            echo "image_version=${image_version}"
+            echo "minor_tag=${minor_tag}"
+          } >> "$GITHUB_OUTPUT"
 
           echo "Release tag: ${release_tag}"
           echo "Image version: ${image_version}"
