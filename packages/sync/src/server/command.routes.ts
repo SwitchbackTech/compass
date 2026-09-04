@@ -13,10 +13,11 @@ import {
   ProviderWriteUnavailableError,
   submitCloudCommand,
 } from "@sync/domain/cloud-command.service";
-import { buildResolveAuth } from "@sync/providers/google/build-provider-resolvers";
-import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
-import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
-import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import {
+  type ProviderRegistry,
+  resolveAdaptersFrom,
+  resolveAuthFrom,
+} from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
@@ -38,13 +39,9 @@ export interface CommandApiDeps {
   // Whether provider work is enabled. A provider-targeted create executes only
   // when active; otherwise it is recorded pending.
   execution: SyncExecutionMode;
-  // Provider write + auth adapters, present only when a provider is configured.
-  // Both are needed to execute a provider create (the writer performs it, the
-  // auth adapter backs the per-request credential custody). Absent leaves
-  // provider-targeted commands pending.
-  writer?: ProviderEventWriter;
-  authAdapter?: ProviderAuthAdapter;
-  resolveAdapters?: ResolveProviderAdapters;
+  // Provider registry, present only when at least one provider is configured.
+  // A provider-targeted create executes through the connection's kind.
+  registry: ProviderRegistry;
   // Injectable clock so local confirmation timestamps are deterministic in
   // tests.
   now?: () => number;
@@ -82,12 +79,12 @@ export function registerCommandRoutes(
         // custody is per-request (it holds the request's db-backed credential
         // repo), the writer is shared.
         const provider =
-          deps.resolveAdapters && deps.authAdapter
+          deps.registry.kinds().length > 0
             ? {
-                resolveAdapters: deps.resolveAdapters,
+                resolveAdapters: resolveAdaptersFrom(deps.registry),
                 custody: new CredentialCustody(
                   repos.credentials,
-                  buildResolveAuth(deps.resolveAdapters),
+                  resolveAuthFrom(deps.registry),
                 ),
               }
             : undefined;

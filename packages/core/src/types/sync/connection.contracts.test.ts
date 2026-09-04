@@ -210,6 +210,18 @@ describe("Sync connection contracts", () => {
           .success,
       ).toBe(false);
     });
+
+    it("accepts an optional provider, defaulting to omit", () => {
+      expect(
+        ConnectionBeginRequestSchema.parse({ provider: "google" }),
+      ).toEqual({ provider: "google" });
+      expect(
+        ConnectionBeginRequestSchema.parse({ provider: "microsoft" }),
+      ).toEqual({ provider: "microsoft" });
+      expect(
+        ConnectionBeginRequestSchema.safeParse({ provider: "yahoo" }).success,
+      ).toBe(false);
+    });
   });
 
   describe("ProviderAccountFactsSchema", () => {

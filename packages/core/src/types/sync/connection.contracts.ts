@@ -196,6 +196,10 @@ export type ConnectionListResponse = z.infer<
 export const ConnectionBeginRequestSchema = z.strictObject({
   connectionId: ConnectionIdSchema.optional(),
   features: ConnectionBeginFeaturesSchema.optional(),
+  // Defaults to google at the route when omitted so existing callers stay
+  // byte-identical. Other kinds are accepted here and resolved against the
+  // provider registry.
+  provider: ProviderKindSchema.optional(),
 });
 export type ConnectionBeginRequest = z.infer<
   typeof ConnectionBeginRequestSchema
