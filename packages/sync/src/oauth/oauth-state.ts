@@ -3,6 +3,8 @@ import {
   ConnectionIdSchema,
   type PrincipalId,
   PrincipalIdSchema,
+  type ProviderKind,
+  ProviderKindSchema,
   type TenantId,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
@@ -21,6 +23,9 @@ export interface OAuthStatePayload {
   // Present when re-authorizing a specific existing connection (reconnect),
   // absent for a first-time connect.
   readonly connectionId: ConnectionId | null;
+  // Which provider kind this consent flow was minted for. Callback routes
+  // reject a state presented on a different provider's path (stateMismatch).
+  readonly provider: ProviderKind;
   // Milliseconds since the epoch when the state was issued.
   readonly issuedAt: number;
 }
@@ -49,18 +54,28 @@ export function signOAuthState(
   return `${encoded}.${sign(secret, encoded)}`;
 }
 
-export type OAuthStateFailure = "malformed" | "invalidSignature" | "expired";
+export type OAuthStateFailure =
+  | "malformed"
+  | "invalidSignature"
+  | "expired"
+  | "stateMismatch";
 
 export type OAuthStateResult =
   | { readonly ok: true; readonly payload: OAuthStatePayload }
   | { readonly ok: false; readonly reason: OAuthStateFailure };
 
+export interface VerifyOAuthStateOptions {
+  ttlMs?: number;
+  expectedProvider?: ProviderKind;
+}
+
 export function verifyOAuthState(
   secret: string,
   token: string,
   now: number,
-  ttlMs: number = DEFAULT_OAUTH_STATE_TTL_MS,
+  options: VerifyOAuthStateOptions = {},
 ): OAuthStateResult {
+  const ttlMs = options.ttlMs ?? DEFAULT_OAUTH_STATE_TTL_MS;
   const dot = token.indexOf(".");
   if (dot <= 0 || dot === token.length - 1) {
     return { ok: false, reason: "malformed" };
@@ -79,6 +94,12 @@ export function verifyOAuthState(
   if (now - payload.issuedAt > ttlMs || payload.issuedAt > now) {
     return { ok: false, reason: "expired" };
   }
+  if (
+    options.expectedProvider !== undefined &&
+    payload.provider !== options.expectedProvider
+  ) {
+    return { ok: false, reason: "stateMismatch" };
+  }
   return { ok: true, payload };
 }
 
@@ -96,6 +117,7 @@ function encodePayload(payload: OAuthStatePayload): string {
     t: payload.tenantId,
     p: payload.principalId,
     c: payload.connectionId,
+    k: payload.provider,
     i: payload.issuedAt,
   });
   return Buffer.from(json, "utf8").toString("base64url");
@@ -128,10 +150,15 @@ function decodePayload(encoded: string): OAuthStatePayload | null {
     connectionId = parsed.data;
   }
 
+  // States minted before provider was bound to the payload default to google.
+  const providerParsed = ProviderKindSchema.safeParse(record["k"] ?? "google");
+  if (!providerParsed.success) return null;
+
   return {
     tenantId: tenantId.data,
     principalId: principalId.data,
     connectionId,
+    provider: providerParsed.data,
     issuedAt,
   };
 }

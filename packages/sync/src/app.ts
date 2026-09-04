@@ -45,7 +45,6 @@ import {
   resolveAuthFrom,
 } from "@sync/providers/provider-registry";
 import { redactedCause } from "@sync/safety/redact-error";
-import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
 import {
@@ -493,7 +492,8 @@ function buildSchedulers(
         custody: new CredentialCustody(repos.credentials, resolveAuth),
         // Where the provider posts change notifications back; the callback route
         // verifies them against the stored subscription.
-        callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
+        callbackUrlFor: (kind) =>
+          registry.callbackUrlFor(config.CALLBACK_BASE_URL, kind),
         invalidations: repos.invalidations,
         log: logger,
       },

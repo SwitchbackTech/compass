@@ -77,6 +77,7 @@ export function buildSyncApp(deps: {
     registerNotificationRoutes(app, {
       mongo: deps.connectionApi.mongo,
       execution: deps.connectionApi.execution,
+      registry: deps.connectionApi.registry,
       now: deps.connectionApi.now,
     });
   }

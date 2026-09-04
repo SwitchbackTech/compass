@@ -1,4 +1,9 @@
-import { type Express, type RequestHandler, type Response } from "express";
+import {
+  type Express,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { decryptInternalCredential } from "@core/security/internal-credential-envelope";
@@ -53,6 +58,8 @@ import {
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import {
+  GOOGLE_CALLBACK_PATH,
+  OAUTH_CALLBACK_PARAM_PATH,
   type ProviderRegistry,
   resolveAuthFrom,
 } from "@sync/providers/provider-registry";
@@ -90,9 +97,9 @@ export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
-// Public reverse-proxy path (Caddy `/sync/*` → sync). Must match the Google
-// OAuth client authorized redirect URI (`/sync/google`).
-export const OAUTH_CALLBACK_PATH = "/sync/google";
+// Legacy alias: Google OAuth callback path (also registered under
+// OAUTH_CALLBACK_PARAM_PATH with provider=google).
+export const OAUTH_CALLBACK_PATH = GOOGLE_CALLBACK_PATH;
 
 // The rolling window Sync materializes occurrences for (shared with the
 // projection layer via @sync/domain/horizon). A query's range is clamped to it
@@ -590,6 +597,7 @@ export function registerConnectionRoutes(
         tenantId: auth.tenantId,
         principalId: auth.principalId,
         connectionId,
+        provider,
         issuedAt: (deps.now ?? Date.now)(),
       });
       const authorizationUrl = registration.adapters.auth.buildAuthorizationUrl(
@@ -646,6 +654,7 @@ export function registerConnectionRoutes(
             tenantId: auth.tenantId,
             principalId: auth.principalId,
             connectionId: null,
+            provider: "google",
           },
           { ...parsed.data, refreshToken },
         );
@@ -711,77 +720,85 @@ export function registerConnectionRoutes(
     },
   );
 
-  // The public OAuth callback the provider redirects the browser to after
-  // consent. It carries NO internal-auth — the signed state is the only trust,
-  // so it is verified before any work. On every outcome the browser is sent to
-  // a server-configured URL (never a request-controlled one), so there is no
-  // open-redirect surface. Nothing here pulls provider data; it only links the
-  // account and stores the credential.
-  app.get(OAUTH_CALLBACK_PATH, internalRateLimit, async (req, res) => {
-    const redirect = (status: string) =>
-      redirectAfterConnect(deps, res, status);
+  const handleOAuthCallback =
+    (routeProvider: ProviderKind) => async (req: Request, res: Response) => {
+      const redirect = (status: string) =>
+        redirectAfterConnect(deps, res, routeProvider, status);
 
-    if (deps.execution === "passive" || !deps.registry.has("google")) {
-      return redirect("error");
-    }
-    if (!deps.mongo.isConnected) return redirect("error");
-    // The user declined consent, or the provider returned an error.
-    if (typeof req.query["error"] === "string") return redirect("declined");
+      if (deps.execution === "passive" || !deps.registry.has(routeProvider)) {
+        return redirect("error");
+      }
+      if (!deps.mongo.isConnected) return redirect("error");
+      // The user declined consent, or the provider returned an error.
+      if (typeof req.query["error"] === "string") return redirect("declined");
 
-    const code = req.query["code"];
-    const state = req.query["state"];
-    if (typeof code !== "string" || typeof state !== "string") {
-      return redirect("error");
-    }
+      const code = req.query["code"];
+      const state = req.query["state"];
+      if (typeof code !== "string" || typeof state !== "string") {
+        return redirect("error");
+      }
 
-    const verified = verifyOAuthState(
-      deps.stateSecret,
-      state,
-      (deps.now ?? Date.now)(),
-    );
-    if (!verified.ok) return redirect("error");
-
-    const google = deps.registry.get("google");
-    let authorization: Awaited<
-      ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
-    >;
-    try {
-      authorization = await google.adapters.auth.exchangeAuthorizationCode({
-        code,
-        // Must match the redirect_uri begin used to build the consent URL.
-        redirectUri: `${deps.callbackBaseUrl}${google.callbackPath}`,
-      });
-    } catch (error) {
-      // Bad code, no refresh token, unverifiable identity — nothing to link.
-      logger.error("OAuth code exchange failed", redactedCause(error));
-      return redirect("error");
-    }
-
-    // Google grants a SUBSET of the requested scopes when the user unchecks
-    // one on the consent screen (e.g. leaves the calendar box unticked).
-    // Unlike the signup path (complete-google-authorization.ts, which checks
-    // client-side before ever reaching here), this route previously linked
-    // the connection anyway - discovery would then 403 and durably fail the
-    // resource, surfacing as "Couldn't update your calendar" with no mention
-    // of the actual cause. Catch it here, before any connection is created.
-    if (
-      !google
-        .capabilitiesFromScopes(authorization.grantedScopes)
-        .includes("readEvents")
-    ) {
-      return redirect("missingScopes");
-    }
-
-    try {
-      await linkConnection(deps, verified.payload, authorization);
-      return redirect("connected");
-    } catch (error) {
-      logger.error(
-        "Failed to link connection after OAuth consent",
-        redactedCause(error),
+      const verified = verifyOAuthState(
+        deps.stateSecret,
+        state,
+        (deps.now ?? Date.now)(),
+        { expectedProvider: routeProvider },
       );
-      return redirect("error");
+      if (!verified.ok) {
+        return redirect(
+          verified.reason === "stateMismatch" ? "stateMismatch" : "error",
+        );
+      }
+
+      const registration = deps.registry.get(routeProvider);
+      let authorization: Awaited<
+        ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
+      >;
+      try {
+        authorization =
+          await registration.adapters.auth.exchangeAuthorizationCode({
+            code,
+            // Must match the redirect_uri begin used to build the consent URL.
+            redirectUri: `${deps.callbackBaseUrl}${registration.callbackPath}`,
+          });
+      } catch (error) {
+        // Bad code, no refresh token, unverifiable identity — nothing to link.
+        logger.error("OAuth code exchange failed", redactedCause(error));
+        return redirect("error");
+      }
+
+      if (
+        !registration
+          .capabilitiesFromScopes(authorization.grantedScopes)
+          .includes("readEvents")
+      ) {
+        return redirect("missingScopes");
+      }
+
+      try {
+        await linkConnection(deps, verified.payload, authorization);
+        return redirect("connected");
+      } catch (error) {
+        logger.error(
+          "Failed to link connection after OAuth consent",
+          redactedCause(error),
+        );
+        return redirect("error");
+      }
+    };
+
+  app.get(
+    OAUTH_CALLBACK_PATH,
+    internalRateLimit,
+    handleOAuthCallback("google"),
+  );
+  app.get(OAUTH_CALLBACK_PARAM_PATH, internalRateLimit, (req, res) => {
+    const parsed = ProviderKindSchema.safeParse(req.params["provider"]);
+    if (!parsed.success || !deps.registry.has(parsed.data)) {
+      res.status(Status.NOT_FOUND).end();
+      return;
     }
+    return handleOAuthCallback(parsed.data)(req, res);
   });
 
   app.delete(
@@ -858,10 +875,11 @@ function resolveAuthForConnectionApi(deps: ConnectionApiDeps) {
 function redirectAfterConnect(
   deps: ConnectionApiDeps,
   res: Response,
+  provider: ProviderKind,
   status: string,
 ): void {
   const url = new URL(deps.postConnectRedirectUrl);
-  url.searchParams.set("provider", "google");
+  url.searchParams.set("provider", provider);
   url.searchParams.set("status", status);
   res.redirect(url.toString());
 }
@@ -876,6 +894,7 @@ async function linkConnection(
     tenantId: TenantId;
     principalId: PrincipalId;
     connectionId: ConnectionId | null;
+    provider: ProviderKind;
   },
   authorization: Awaited<
     ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
@@ -883,6 +902,7 @@ async function linkConnection(
 ): Promise<void> {
   const repos = syncRepositories(deps.mongo);
   const connections = repos.connections;
+  const registration = deps.registry.get(state.provider);
 
   // Reconnect: the state named a specific connection to re-authorize. Require
   // the account Google just returned to match that connection's account.
@@ -914,11 +934,11 @@ async function linkConnection(
   const connection = await connections.upsertByProviderAccount({
     tenantId: state.tenantId,
     principalId: state.principalId,
-    provider: "google",
+    provider: state.provider,
     account: authorization.account,
-    capabilities: deps.registry
-      .get("google")
-      .capabilitiesFromScopes(authorization.grantedScopes),
+    capabilities: registration.capabilitiesFromScopes(
+      authorization.grantedScopes,
+    ),
     state: derived.state,
     stateReason: derived.reason,
   });
@@ -930,7 +950,7 @@ async function linkConnection(
     );
     await custody.store({
       connectionId: connection._id,
-      provider: "google",
+      provider: state.provider,
       refreshToken: authorization.refreshToken,
       scopes: [...authorization.grantedScopes],
     });

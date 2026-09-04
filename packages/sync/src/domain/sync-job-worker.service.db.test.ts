@@ -114,7 +114,7 @@ describe("SyncJobWorker", () => {
     commands,
     jobs,
     custody: tokenSource,
-    callbackUrl: "https://sync.example/sync/notifications/google",
+    callbackUrlFor: () => "https://sync.example/sync/notifications/google",
     invalidations,
   });
 

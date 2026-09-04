@@ -21,6 +21,7 @@ const payload = (
   tenantId: objectId() as TenantId,
   principalId: objectId() as PrincipalId,
   connectionId: null,
+  provider: "google",
   issuedAt: 1_000_000,
   ...overrides,
 });
@@ -97,6 +98,35 @@ describe("oauth-state", () => {
       ok: false,
       reason: "expired",
     });
+  });
+
+  it("rejects a state minted for one provider on another provider's callback", () => {
+    const original = payload({ provider: "google" });
+    const token = signOAuthState(SECRET, original);
+
+    expect(
+      verifyOAuthState(SECRET, token, original.issuedAt, {
+        expectedProvider: "microsoft",
+      }),
+    ).toEqual({ ok: false, reason: "stateMismatch" });
+  });
+
+  it("defaults legacy payloads without a provider field to google", () => {
+    const encoded = Buffer.from(
+      JSON.stringify({
+        t: objectId(),
+        p: objectId(),
+        c: null,
+        i: 1_000_000,
+      }),
+    ).toString("base64url");
+    const signature = createHmac("sha256", SECRET)
+      .update(encoded)
+      .digest("hex");
+    const token = `${encoded}.${signature}`;
+
+    const result = verifyOAuthState(SECRET, token, 1_000_000);
+    expect(result.ok && result.payload.provider).toBe("google");
   });
 
   it("rejects a structurally malformed token", () => {

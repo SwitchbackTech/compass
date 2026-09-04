@@ -1,3 +1,4 @@
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { MAX_REFRESH_FAILED_ATTEMPTS } from "@sync/credentials/refresh-failure.constants";
 import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
@@ -5,7 +6,10 @@ import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { refreshConnectionStateAfterJob } from "@sync/domain/connection-state-refresh.service";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
-import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
+import {
+  maintainSubscription,
+  type SubscriptionMaintenanceDeps,
+} from "@sync/domain/subscription-maintenance.service";
 import {
   type ProviderAdapters,
   ProviderNotConfiguredError,
@@ -53,7 +57,7 @@ export interface SyncJobDispatchDeps {
   // pullCalendarChanges consults pending commands before deleting an event.
   commands: CommandRepository;
   custody: AccessTokenSource;
-  callbackUrl: string;
+  callbackUrlFor: (provider: ProviderKind) => string;
   // Content-free outbox so Compass API can push typed browser SSE after a
   // provider pull. Without this, incremental pulls update Sync storage but the
   // open SPA never refetches (S40 gap).
@@ -348,7 +352,12 @@ async function runSyncJob(
         reason: "calendar-list resource only accepts subscriptionMaintain",
       };
     }
-    await maintainSubscription(executionDeps, null, resource, now);
+    await maintainSubscription(
+      subscriptionDeps(executionDeps, deps, connection.provider),
+      null,
+      resource,
+      now,
+    );
     return { result: "done" };
   }
   if (!resource.calendarId) {
@@ -576,7 +585,7 @@ async function runSyncJob(
       // including durable watchFailed, which maintainSubscription folds into
       // unsupported. A transient watch failure throws and the worker retries.
       const subscription = await maintainSubscription(
-        executionDeps,
+        subscriptionDeps(executionDeps, deps, connection.provider),
         calendar,
         resource,
         now,
@@ -766,4 +775,17 @@ async function appendCalendarInvalidation(
     },
     emittedAt,
   });
+}
+
+function subscriptionDeps(
+  executionDeps: SyncJobExecutionDeps,
+  deps: SyncJobDispatchDeps,
+  provider: ProviderKind,
+): SubscriptionMaintenanceDeps {
+  return {
+    resources: executionDeps.resources,
+    notifications: executionDeps.notifications,
+    custody: executionDeps.custody,
+    callbackUrl: deps.callbackUrlFor(provider),
+  };
 }

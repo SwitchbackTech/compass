@@ -8,6 +8,14 @@ import {
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
+import { parseGoogleNotification } from "@sync/providers/google/google-notifications.adapter";
+import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
+import {
+  buildProviderRegistry,
+  NOTIFICATIONS_PARAM_PATH,
+  ProviderRegistry,
+  type ProviderRegistry as ProviderRegistryType,
+} from "@sync/providers/provider-registry";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -25,6 +33,8 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
     MONGO_URI: uri,
     INTERNAL_AUTH_TOKEN: "secret",
     CALLBACK_BASE_URL: "http://localhost:3010",
+    GOOGLE_CLIENT_ID: "test-client",
+    GOOGLE_CLIENT_SECRET: "test-secret",
     EXECUTION: "active",
     MAX_CONCURRENCY: 4,
     ...overrides,
@@ -50,8 +60,11 @@ describe("POST /sync/notifications/google", () => {
   let service: SyncService;
   let base: string;
 
-  const startService = async (config: SyncConfig = testConfig()) => {
-    service = createSyncService(config, { mongo });
+  const startService = async (
+    config: SyncConfig = testConfig(),
+    registry?: ProviderRegistryType,
+  ) => {
+    service = createSyncService(config, { mongo, registry });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -81,8 +94,37 @@ describe("POST /sync/notifications/google", () => {
     return resource;
   };
 
-  const post = (headers: Record<string, string>) =>
-    fetch(`${base}${NOTIFICATIONS_PATH}`, { method: "POST", headers });
+  const post = (path: string, headers: Record<string, string>) =>
+    fetch(`${base}${path}`, { method: "POST", headers });
+
+  const registryWithMicrosoft = (
+    notifications: ProviderNotificationAdapter,
+  ) => {
+    const google = buildProviderRegistry(testConfig()).get("google");
+    return new ProviderRegistry(
+      new Map([
+        ["google", google],
+        [
+          "microsoft",
+          {
+            ...google,
+            callbackPath: "/sync/microsoft",
+            notificationsCallbackPath: "/sync/notifications/microsoft",
+            adapters: { ...google.adapters, notifications },
+          },
+        ],
+      ]),
+    );
+  };
+
+  const microsoftNotificationsFromGoogleHeaders =
+    (): ProviderNotificationAdapter => ({
+      watch: async () => {
+        throw new Error("unused in route test");
+      },
+      stopChannel: async () => {},
+      parseNotification: (request) => parseGoogleNotification(request.headers),
+    });
 
   const jobCount = (coalescingKey: string) =>
     mongo.db
@@ -102,8 +144,8 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    const first = await post(googHeaders());
-    const second = await post(googHeaders()); // duplicate delivery
+    const first = await post(NOTIFICATIONS_PATH, googHeaders());
+    const second = await post(NOTIFICATIONS_PATH, googHeaders()); // duplicate delivery
 
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
@@ -119,7 +161,7 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    const res = await post(googHeaders());
+    const res = await post(NOTIFICATIONS_PATH, googHeaders());
 
     expect(res.status).toBe(200);
     const stored = await mongo.db
@@ -132,7 +174,10 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    await post(googHeaders({ "x-goog-channel-token": "wrong" }));
+    await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-channel-token": "wrong" }),
+    );
 
     const stored = await mongo.db
       .collection(SYNC_COLLECTIONS.syncResources)
@@ -144,7 +189,10 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    const res = await post(googHeaders({ "x-goog-resource-state": "sync" }));
+    const res = await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-resource-state": "sync" }),
+    );
 
     expect(res.status).toBe(200);
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
@@ -154,7 +202,10 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    const res = await post(googHeaders({ "x-goog-channel-token": "wrong" }));
+    const res = await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-channel-token": "wrong" }),
+    );
 
     // 200 so a spoofer learns nothing and triggers no retry — but no work.
     expect(res.status).toBe(200);
@@ -164,7 +215,10 @@ describe("POST /sync/notifications/google", () => {
   it("enqueues nothing for an unknown channel", async () => {
     await startService();
 
-    const res = await post(googHeaders({ "x-goog-channel-id": "unknown" }));
+    const res = await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-channel-id": "unknown" }),
+    );
 
     expect(res.status).toBe(200);
     expect(
@@ -176,7 +230,10 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();
 
-    const res = await post(googHeaders({ "x-goog-resource-id": "other-res" }));
+    const res = await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-resource-id": "other-res" }),
+    );
 
     expect(res.status).toBe(200);
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
@@ -188,7 +245,7 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    const res = await post(googHeaders());
+    const res = await post(NOTIFICATIONS_PATH, googHeaders());
 
     expect(res.status).toBe(200);
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
@@ -197,7 +254,9 @@ describe("POST /sync/notifications/google", () => {
   it("rejects a request with no recognizable notification headers", async () => {
     await startService();
 
-    const res = await post({ "x-goog-resource-state": "exists" });
+    const res = await post(NOTIFICATIONS_PATH, {
+      "x-goog-resource-state": "exists",
+    });
 
     expect(res.status).toBe(400);
   });
@@ -210,7 +269,7 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    const res = await post(googHeaders());
+    const res = await post(NOTIFICATIONS_PATH, googHeaders());
 
     expect(res.status).toBe(200);
     expect(await jobCount(`calendarListSync:${resource.connectionId}`)).toBe(1);
@@ -238,7 +297,7 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    await post(googHeaders());
+    await post(NOTIFICATIONS_PATH, googHeaders());
 
     const stored = await mongo.db
       .collection(SYNC_COLLECTIONS.syncResources)
@@ -264,7 +323,7 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    await post(googHeaders());
+    await post(NOTIFICATIONS_PATH, googHeaders());
 
     const stored = await mongo.db
       .collection(SYNC_COLLECTIONS.syncResources)
@@ -289,7 +348,10 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    await post(googHeaders({ "x-goog-channel-token": "wrong" }));
+    await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-channel-token": "wrong" }),
+    );
 
     const stored = await mongo.db
       .collection(SYNC_COLLECTIONS.syncResources)
@@ -316,8 +378,8 @@ describe("POST /sync/notifications/google", () => {
     );
     await startService();
 
-    await post(googHeaders());
-    await post(googHeaders()); // duplicate delivery, coalesces
+    await post(NOTIFICATIONS_PATH, googHeaders());
+    await post(NOTIFICATIONS_PATH, googHeaders()); // duplicate delivery, coalesces
 
     expect(await jobCount(`calendarListSync:${resource.connectionId}`)).toBe(1);
     const stored = await mongo.db
@@ -330,9 +392,53 @@ describe("POST /sync/notifications/google", () => {
     const { _id: resourceId } = await seedSubscription();
     await startService(testConfig({ EXECUTION: "passive" }));
 
-    const res = await post(googHeaders());
+    const res = await post(NOTIFICATIONS_PATH, googHeaders());
 
     expect(res.status).toBe(200);
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
+  });
+
+  it("routes a google-shaped push on the microsoft path through verification", async () => {
+    const { _id: resourceId } = await seedSubscription();
+    await startService(
+      testConfig(),
+      registryWithMicrosoft(microsoftNotificationsFromGoogleHeaders()),
+    );
+
+    const res = await post("/sync/notifications/microsoft", googHeaders());
+
+    expect(res.status).toBe(200);
+    expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(1);
+  });
+
+  it("returns 404 for an unknown provider notification path", async () => {
+    await startService();
+
+    const res = await post(
+      `${NOTIFICATIONS_PARAM_PATH.replace(":provider", "apple")}`,
+      googHeaders(),
+    );
+
+    expect(res.status).toBe(404);
+  });
+
+  it("echoes a validation handshake as text/plain", async () => {
+    const validationAdapter: ProviderNotificationAdapter = {
+      watch: async () => {
+        throw new Error("unused in route test");
+      },
+      stopChannel: async () => {},
+      parseNotification: () => ({
+        kind: "validation",
+        body: "validation-token",
+      }),
+    };
+    await startService(testConfig(), registryWithMicrosoft(validationAdapter));
+
+    const res = await post("/sync/notifications/microsoft", {});
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/plain");
+    expect(await res.text()).toBe("validation-token");
   });
 });
