@@ -5,6 +5,20 @@ import { resolve } from "node:path";
 
 const optionalString = z.string().nullish();
 
+const isPresent = (value: string | null | undefined): boolean =>
+  Boolean(value && value.trim() !== "");
+
+const presentCount = (...values: Array<string | null | undefined>): number =>
+  values.filter(isPresent).length;
+
+const isBase64Key32 = (value: string): boolean => {
+  try {
+    return Buffer.from(value, "base64").length === 32;
+  } catch {
+    return false;
+  }
+};
+
 const CompassConfigSchema = z
   .object({
     web: z.object({
@@ -44,6 +58,24 @@ const CompassConfigSchema = z
       .object({
         clientId: optionalString,
         clientSecret: optionalString,
+      })
+      .nullish(),
+    microsoft: z
+      .object({
+        clientId: optionalString,
+        clientSecret: optionalString,
+      })
+      .nullish(),
+    apple: z
+      .object({
+        signIn: z
+          .object({
+            servicesId: optionalString,
+            teamId: optionalString,
+            keyId: optionalString,
+            privateKey: optionalString,
+          })
+          .nullish(),
       })
       .nullish(),
     // Accepted but ignored. Compass no longer sends email; the list is
@@ -120,10 +152,53 @@ const CompassConfigSchema = z
         enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),
         // The Compass API's database name, used by the least-privilege check.
         compassApiDatabase: z.string().optional(),
+        // 32-byte base64 key for password credentials at rest (Apple). Required
+        // when Apple calendar connect is enabled; omit to leave connect off.
+        credentialEncryptionKey: optionalString,
       })
       .nullish(),
   })
-  .strict();
+  .strict()
+  .superRefine((config, context) => {
+    const microsoftCount = presentCount(
+      config.microsoft?.clientId,
+      config.microsoft?.clientSecret,
+    );
+    if (microsoftCount === 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Microsoft configuration requires both client ID and secret",
+        path: isPresent(config.microsoft?.clientId)
+          ? ["microsoft", "clientSecret"]
+          : ["microsoft", "clientId"],
+      });
+    }
+
+    const appleSignIn = config.apple?.signIn;
+    const appleCount = presentCount(
+      appleSignIn?.servicesId,
+      appleSignIn?.teamId,
+      appleSignIn?.keyId,
+      appleSignIn?.privateKey,
+    );
+    if (appleCount > 0 && appleCount < 4) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Apple sign-in configuration requires servicesId, teamId, keyId, and privateKey together",
+        path: ["apple", "signIn"],
+      });
+    }
+
+    const credentialKey = config.sync?.credentialEncryptionKey?.trim();
+    if (credentialKey && !isBase64Key32(credentialKey)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "sync.credentialEncryptionKey must be 32 bytes of base64",
+        path: ["sync", "credentialEncryptionKey"],
+      });
+    }
+  });
 
 export type CompassConfig = z.infer<typeof CompassConfigSchema>;
 

@@ -63,11 +63,28 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 |---|---|---|
 | `google.clientId` | No | Google OAuth client ID. Rebuild the web image after changing it. |
 | `google.clientSecret` | No | Google OAuth client secret. Backend-only. |
-| `google.channelExpirationMin` | No | Google Calendar watch channel lifetime in minutes. Defaults to `10080` (7 days). Watch repair renews a channel once it's within a 3-day buffer of expiring. Short values (e.g. single-digit minutes) are a dev/test override, not a self-hosting setting. |
-| `google.webhookUrl` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
-| `google.notificationToken` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
 See [Google Calendar](../self-hosting/google-calendar.md) for full setup instructions.
+
+## Microsoft
+
+Both `microsoft.clientId` and `microsoft.clientSecret` must be set together. Setting only one causes startup to fail. See [Microsoft Calendar](../self-hosting/microsoft-calendar.md).
+
+| key | Required | Description |
+|---|---|---|
+| `microsoft.clientId` | No | Entra app client ID (`/common`). Rebuild the web image after changing it. |
+| `microsoft.clientSecret` | No | Entra app client secret. Backend-only. |
+
+## Apple
+
+Sign in with Apple is all-four-or-none. iCloud calendar connect is separate and needs `sync.credentialEncryptionKey`. See [iCloud Calendar](../self-hosting/apple-calendar.md).
+
+| key | Required | Description |
+|---|---|---|
+| `apple.signIn.servicesId` | No | Sign in with Apple Services ID. Baked into the web bundle. |
+| `apple.signIn.teamId` | No | Apple Developer team ID. |
+| `apple.signIn.keyId` | No | Sign in with Apple key ID. |
+| `apple.signIn.privateKey` | No | `.p8` private key contents. |
 
 ## Sync Service
 
@@ -91,6 +108,7 @@ database and must not share the backend's database user/data.
 | `sync.maxConcurrency` | No | Job concurrency hint for Sync workers. |
 | `sync.enforceLeastPrivilege` | No | When `true`, Sync verifies its Mongo user cannot read the API database. |
 | `sync.compassApiDatabase` | No | API database name the least-privilege check must be denied access to. |
+| `sync.credentialEncryptionKey` | No | 32-byte base64 key that encrypts password credentials at rest. Required to enable Apple calendar connect. |
 
 ## Optional Integrations
 

@@ -22,6 +22,7 @@ supertokens:
 
 google:
   clientId: test-client-id
+  clientSecret: unused-e2e-build
 
 posthog:
   key: test-posthog-key

@@ -19,3 +19,4 @@ supertokens:
   key: unused-perf-build
 google:
   clientId: unused-perf-build
+  clientSecret: unused-perf-build

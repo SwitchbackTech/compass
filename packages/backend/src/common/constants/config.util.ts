@@ -12,6 +12,33 @@ export const isGoogleConfigured = (
   isGoogleClientIdValid(env.GOOGLE_CLIENT_ID) &&
   isGoogleClientSecretValid(env.GOOGLE_CLIENT_SECRET);
 
+const isConfiguredValue = (value?: string): boolean =>
+  Boolean(value && value !== "undefined");
+
+export const isMicrosoftConfigured = (
+  env: Pick<Config, "MICROSOFT_CLIENT_ID" | "MICROSOFT_CLIENT_SECRET">,
+): boolean =>
+  isConfiguredValue(env.MICROSOFT_CLIENT_ID) &&
+  isConfiguredValue(env.MICROSOFT_CLIENT_SECRET);
+
+export const isAppleSignInConfigured = (
+  env: Pick<
+    Config,
+    | "APPLE_SIGNIN_SERVICES_ID"
+    | "APPLE_SIGNIN_TEAM_ID"
+    | "APPLE_SIGNIN_KEY_ID"
+    | "APPLE_SIGNIN_PRIVATE_KEY"
+  >,
+): boolean =>
+  isConfiguredValue(env.APPLE_SIGNIN_SERVICES_ID) &&
+  isConfiguredValue(env.APPLE_SIGNIN_TEAM_ID) &&
+  isConfiguredValue(env.APPLE_SIGNIN_KEY_ID) &&
+  isConfiguredValue(env.APPLE_SIGNIN_PRIVATE_KEY);
+
+export const isAppleConnectConfigured = (
+  env: Pick<Config, "SYNC_CREDENTIAL_ENCRYPTION_KEY">,
+): boolean => isConfiguredValue(env.SYNC_CREDENTIAL_ENCRYPTION_KEY);
+
 const isStripeValueValid = (value?: string): boolean =>
   Boolean(value && value !== "undefined");
 
