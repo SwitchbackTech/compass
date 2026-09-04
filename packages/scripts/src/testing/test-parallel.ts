@@ -144,29 +144,41 @@ export function webSuiteShardCount(opts: {
 
 /**
  * 1-based shard pick from `WEB_TEST_SHARD_INDEX`. Unset means run every
- * shard sequentially (local `bun test:web`). CI sets the index so each
- * `unit (web, N)` leg runs one slice in its own process.
+ * shard sequentially (local `bun test:web`). A comma list runs those
+ * shards in order so CI can pack four RSS-safe processes into two legs
+ * (`1,2` and `3,4`) while still exposing `unit (web, 1)` / `unit (web, 2)`.
  */
 export function webSuiteShardIndex(opts: {
   envIndex?: string;
   shardCount: number;
-}): number | "all" {
+}): number[] | "all" {
   const raw = opts.envIndex;
   if (raw === undefined || raw === "") {
     return "all";
   }
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > opts.shardCount) {
-    throw new Error(
-      `WEB_TEST_SHARD_INDEX must be an integer from 1 to ${opts.shardCount}, got ${JSON.stringify(raw)}`,
-    );
+  const parts = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0) {
+    return "all";
   }
-  return parsed;
+  const indices: number[] = [];
+  for (const part of parts) {
+    const parsed = Number(part);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > opts.shardCount) {
+      throw new Error(
+        `WEB_TEST_SHARD_INDEX must be integers from 1 to ${opts.shardCount}, got ${JSON.stringify(raw)}`,
+      );
+    }
+    indices.push(parsed);
+  }
+  return indices;
 }
 
 export function selectWebShards(
   shards: string[][],
-  index: number | "all",
+  index: number[] | "all",
 ): { index: number; shard: string[] }[] {
   if (index === "all") {
     return shards.map((shard, shardIndex) => ({
@@ -174,13 +186,15 @@ export function selectWebShards(
       shard,
     }));
   }
-  const shard = shards[index - 1];
-  if (shard === undefined) {
-    throw new Error(
-      `WEB_TEST_SHARD_INDEX ${index} is out of range for ${shards.length} shards`,
-    );
-  }
-  return [{ index: index - 1, shard }];
+  return index.map((oneBased) => {
+    const shard = shards[oneBased - 1];
+    if (shard === undefined) {
+      throw new Error(
+        `WEB_TEST_SHARD_INDEX ${oneBased} is out of range for ${shards.length} shards`,
+      );
+    }
+    return { index: oneBased - 1, shard };
+  });
 }
 
 export function testArgvFor(

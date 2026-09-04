@@ -104,7 +104,8 @@ jobs:
   # a docs-only PR would still be BLOCKED. Let the legs start and skip every
   # step instead: each reports its own name, in a few seconds, for free.
   # Job display names are the required-check contexts: `unit (web, 1)` and
-  # `unit (web, 2)` each run one half of the suite via WEB_TEST_SHARD_INDEX.
+  # `unit (web, 2)` each cover half the suite as two sequential shards
+  # (`WEB_TEST_SHARDS=4` with index `1,2` / `3,4`) so RSS stays under 7 GB.
   unit:
     needs: changes
     runs-on: ubuntu-latest
@@ -120,10 +121,10 @@ jobs:
             project: sync
           - name: web, 1
             project: web
-            shard: "1"
+            shard: "1,2"
           - name: web, 2
             project: web
-            shard: "2"
+            shard: "3,4"
           - name: backend
             project: backend
           - name: scripts
@@ -168,7 +169,7 @@ jobs:
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
-          WEB_TEST_SHARDS: "2"
+          WEB_TEST_SHARDS: "4"
           WEB_TEST_SHARD_INDEX: ${{ matrix.shard }}
         run: |
           bun run test:web

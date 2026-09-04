@@ -81,7 +81,13 @@ describe("webSuiteShardIndex", () => {
   });
 
   it("picks a 1-based shard for CI legs", () => {
-    expect(webSuiteShardIndex({ shardCount: 2, envIndex: "2" })).toBe(2);
+    expect(webSuiteShardIndex({ shardCount: 2, envIndex: "2" })).toEqual([2]);
+  });
+
+  it("accepts a comma list so one CI leg can run two RSS-safe shards", () => {
+    expect(webSuiteShardIndex({ shardCount: 4, envIndex: "3,4" })).toEqual([
+      3, 4,
+    ]);
   });
 
   it("rejects an index outside the shard count", () => {
@@ -108,7 +114,14 @@ describe("selectWebShards", () => {
   });
 
   it("runs only the second half when WEB_TEST_SHARD_INDEX=2", () => {
-    expect(selectWebShards(shards, 2)).toEqual([
+    expect(selectWebShards(shards, [2])).toEqual([
+      { index: 1, shard: ["c", "d"] },
+    ]);
+  });
+
+  it("runs two sequential shards from a comma list", () => {
+    expect(selectWebShards(shards, [1, 2])).toEqual([
+      { index: 0, shard: ["a", "b"] },
       { index: 1, shard: ["c", "d"] },
     ]);
   });

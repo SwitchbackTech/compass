@@ -44,9 +44,12 @@ shared budget without reimplementing them by hand, so the job-level
 timeout is the practical equivalent.
 
 Jobs that only run Bun do not install Node. `unit (web, 1)` and
-`unit (web, 2)` each run one half of the web suite via
-`WEB_TEST_SHARDS=2` and `WEB_TEST_SHARD_INDEX`. Local `bun test:web`
-still runs every shard sequentially.
+`unit (web, 2)` each cover half the web suite. CI uses `WEB_TEST_SHARDS=4`
+with `WEB_TEST_SHARD_INDEX=1,2` and `3,4` so each leg runs two sequential
+processes of about 96 files (a single 191-file process exceeds the 7 GB
+runner). Local `bun test:web` still runs every shard sequentially.
+`WEB_TEST_SHARDS=2 WEB_TEST_SHARD_INDEX=2 bun test:web` still runs only
+the second half.
 
 **Known flakiness**: a job can occasionally hang for several minutes on
 runner/network flakiness unrelated to the diff, while the identical job on

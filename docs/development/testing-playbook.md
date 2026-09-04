@@ -45,8 +45,9 @@ Unit workflow (`test-unit.yml`):
 - runs a matrix across `core`, `sync`, `web, 1`, `web, 2`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
-- runs `unit (web, 1)` and `unit (web, 2)` with `WEB_TEST_SHARDS=2` and
-  `WEB_TEST_SHARD_INDEX` so each leg is one half of the suite
+- runs `unit (web, 1)` and `unit (web, 2)` with `WEB_TEST_SHARDS=4` and
+  `WEB_TEST_SHARD_INDEX` `1,2` / `3,4` so each leg is two sequential
+  RSS-safe processes covering half the suite
 - runs every lane with `TZ: Etc/UTC` set
 - does not install Node on Bun-only jobs
 - `bun run lint` also runs `check-semantic-colors.ts` and
