@@ -308,6 +308,7 @@ function defaultSpawn(): SpawnFn {
         stderr: decodeSpawnOutput(result.stderr),
       };
     }
+    // Concurrent checks need overlapping processes; spawnSync would serialize.
     const proc = Bun.spawn({
       cmd,
       cwd: process.cwd(),
