@@ -157,6 +157,22 @@ Plan:
   `booking-loop-needs-human` and stops further launches. The next agent's work
   never depended on staging.
 
+## What landed on 2026-09-04
+
+| Cause | Change | PR |
+| --- | --- | ---: |
+| 1 | Four web shards with a 5 GB RSS guard that names the shard; the weakened TimePicker assertions restored and green under that layout | #3300, #3301 |
+| 1, 2, 8 | Merge guard enables GitHub auto-merge after the size, path and red-main checks; per-PR guard concurrency; next WP launches on merge; the agent labels and stops instead of self-merging | #3299 |
+| 3 | Unit runs once per PR push | #3284 |
+| 4 | Lighthouse on `main` and nightly only; `serve` from the bun install; script budget recalibrated to 1,000 KB | #3292, #3300 |
+| 5 | e2e in four shards behind one required `e2e` gate: 6.5 min to about 3.5 min wall | #3300 |
+| 6 | Scripts runner exits on Bun's summary instead of a four-minute hang | #3300 |
+| 7 | `.agents/ledger.md` deleted; status is the issue's labels, PR and closed state | #3299 |
+| 8 | Docker layer cache, one Bun pin | #3293 |
+
+Open loop PRs that still add a ledger row (#3283, #3294) will conflict on
+the deleted file; drop the row when rebasing them.
+
 ## Order of work
 
 1. Merge the three blocked providers L PRs today: #3284 (unit once), #3292
