@@ -17,7 +17,7 @@ const SECRET_PATTERNS: readonly RegExp[] = [
 export const PROVIDER_LEAK_MARKERS: Record<ProviderKind, readonly RegExp[]> = {
   google: [/"conferenceData"\s*:/i, /"hangoutLink"\s*:/i],
   microsoft: [/"@odata\.etag"\s*:/i, /"onlineMeeting"\s*:/i],
-  apple: [/BEGIN:VEVENT/i],
+  apple: [/BEGIN:VEVENT/i, /BEGIN:VCALENDAR/i],
 };
 
 const SHARED_EVENT_CONTENT_PATTERNS: readonly RegExp[] = [
