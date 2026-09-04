@@ -46,6 +46,7 @@ const CAPABILITIES = {
     canWrite: true,
     canManage: true,
     canWatchEvents: true,
+    canInviteAttendees: true,
   },
   reader: {
     canReadAvailability: true,
@@ -53,6 +54,7 @@ const CAPABILITIES = {
     canWrite: false,
     canManage: false,
     canWatchEvents: true,
+    canInviteAttendees: false,
   },
 };
 

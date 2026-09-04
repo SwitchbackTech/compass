@@ -1,4 +1,7 @@
-import { type Calendar } from "@core/types/calendar.contracts";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
 import { describe, expect, it } from "bun:test";
 
@@ -13,11 +16,10 @@ function makeCalendar(overrides: Partial<Calendar>): Calendar {
     provider: "local",
     access: "owner",
     capabilities: {
-      canReadAvailability: true,
-      canReadDetails: true,
-      canWrite: true,
+      ...getCalendarCapabilities("owner"),
       canManage: false,
       canWatchEvents: false,
+      canInviteAttendees: false,
     },
     isPrimary: false,
     isVisible: true,

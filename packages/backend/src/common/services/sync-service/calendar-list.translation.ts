@@ -9,6 +9,7 @@ import {
   type ProviderCalendar,
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 
 // Legacy's default calendar colours (map.calendar.ts), reused so a sync-served
 // calendar looks identical to a legacy one when the provider omits a colour.
@@ -51,6 +52,7 @@ const mapCalendarAccessRole = (
 // reported no email.
 const syncCalendarToBrowser = (
   calendar: ProviderCalendar,
+  provider: ProviderKind,
   accountEmail?: string,
 ): Calendar => {
   const access = mapCalendarAccessRole(calendar.accessRole);
@@ -68,9 +70,12 @@ const syncCalendarToBrowser = (
     timeZone: null,
     foregroundColor: DEFAULT_FOREGROUND,
     backgroundColor,
-    provider: "google",
+    provider,
     access,
-    capabilities: getCalendarCapabilities(access),
+    capabilities: {
+      ...getCalendarCapabilities(access),
+      canInviteAttendees: calendar.capabilities.canWriteEvents,
+    },
     isPrimary: calendar.primary,
     isVisible: true,
     isActive: calendar.active,
@@ -80,21 +85,20 @@ const syncCalendarToBrowser = (
 };
 
 // Translate a principal's sync calendars to the browser contract, joining each
-// calendar to its owning connection's account email by connectionId.
+// calendar to its owning connection's provider and account email by connectionId.
 export const syncCalendarsToBrowser = (
   calendars: readonly ProviderCalendar[],
   connections: readonly ProviderConnection[],
 ): Calendar[] => {
-  const emailByConnectionId = new Map(
-    connections.map((connection) => [
-      connection.id,
-      connection.account.email ?? undefined,
-    ]),
+  const connectionById = new Map(
+    connections.map((connection) => [connection.id, connection]),
   );
-  return calendars.map((calendar) =>
-    syncCalendarToBrowser(
+  return calendars.map((calendar) => {
+    const connection = connectionById.get(calendar.connectionId);
+    return syncCalendarToBrowser(
       calendar,
-      emailByConnectionId.get(calendar.connectionId),
-    ),
-  );
+      connection?.provider ?? "google",
+      connection?.account.email ?? undefined,
+    );
+  });
 };

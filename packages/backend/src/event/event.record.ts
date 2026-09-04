@@ -59,7 +59,27 @@ export const GoogleEventReferenceSchema = z.strictObject({
 });
 export type GoogleEventReference = z.infer<typeof GoogleEventReferenceSchema>;
 
-export const ExternalEventReferenceSchema = GoogleEventReferenceSchema;
+export const MicrosoftEventReferenceSchema = z.strictObject({
+  provider: z.literal("microsoft"),
+  eventId: z.string().min(1),
+  recurringEventId: z.string().min(1).nullable(),
+});
+export type MicrosoftEventReference = z.infer<
+  typeof MicrosoftEventReferenceSchema
+>;
+
+export const AppleEventReferenceSchema = z.strictObject({
+  provider: z.literal("apple"),
+  eventId: z.string().min(1),
+  recurringEventId: z.string().min(1).nullable(),
+});
+export type AppleEventReference = z.infer<typeof AppleEventReferenceSchema>;
+
+export const ExternalEventReferenceSchema = z.discriminatedUnion("provider", [
+  GoogleEventReferenceSchema,
+  MicrosoftEventReferenceSchema,
+  AppleEventReferenceSchema,
+]);
 export type ExternalEventReference = z.infer<
   typeof ExternalEventReferenceSchema
 >;
