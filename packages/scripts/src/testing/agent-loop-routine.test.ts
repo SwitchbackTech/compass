@@ -43,6 +43,11 @@ describe("agent-loop Routine contract", () => {
     expect(prompt).toContain("Never enter credentials");
     expect(prompt).toContain("Open a **draft** PR");
     expect(prompt).toContain("review_draft_pull_requests: false");
+    expect(prompt).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(prompt).toContain("different partition");
+    expect(prompt).not.toContain("Do not change this model here");
+    const providersL = readFileSync(".github/prompts/providers-l.md", "utf8");
+    expect(providersL).not.toContain("Do not change the concurrency model");
     const ship = readFileSync(".agents/skills/ship/SKILL.md", "utf8");
     expect(ship).toContain("Mark it ready only after");
     expect(ship).toContain("`bun run verify` passes");
@@ -116,6 +121,8 @@ describe("agent-loop Routine contract", () => {
     const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
     expect(launch).toContain("https://api.cursor.com/v0/agents");
     expect(launch).toContain("agent-loop: pickup");
+    expect(launch).toContain("different partitions");
+    expect(launch).toContain("Open a draft PR");
     expect(launch).toContain(`if [ -n "\${CURSOR_API_KEY:-}" ]`);
     expect(launch).toContain("Not commenting");
     expect(launch).toContain("dual-launch");
@@ -130,6 +137,9 @@ describe("agent-loop Routine contract", () => {
     expect(next).toContain("READY_LABEL");
     expect(next).toContain("is_human_approval");
     expect(next).toContain("has_open_dependency");
+    expect(next).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(next).toContain("PARTITION_LABELS");
+    expect(next).toContain("issue_numbers");
 
     const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
     expect(workflow).toContain("vars.BOOKING_LOOP_ENABLED == 'true'");
@@ -141,6 +151,16 @@ describe("agent-loop Routine contract", () => {
     expect(workflow).toContain("agent-loop-postdeploy.sh");
     expect(workflow).toContain("agent-loop-next.sh");
     expect(workflow).toContain("agent-loop-launch.sh");
+    expect(workflow).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(workflow).toContain("steps.next.outputs.issue_numbers");
+
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
+    const routine = readFileSync("docs/CI-CD/agent-loop-routine.md", "utf8");
+    expect(unit).toMatch(/^ {2}merge_group:$/m);
+    expect(e2e).toMatch(/^ {2}merge_group:$/m);
+    expect(routine).toContain("grouping_strategy:");
+    expect(routine).toContain("ALLGREEN");
   });
 
   it("smokes staging without logging in", () => {

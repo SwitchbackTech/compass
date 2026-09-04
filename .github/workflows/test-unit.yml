@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  # Merge queue re-tests the combination against current main. Without this
+  # trigger the required checks never run on merge_group and the queue stalls.
+  merge_group:
   push:
     branches:
       - main

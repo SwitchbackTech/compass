@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# Launch one agent-loop agent for a GitHub issue.
+# Launch one or more agent-loop agents for GitHub issues.
 # If CURSOR_API_KEY is set, POST https://api.cursor.com/v0/agents only.
 # Otherwise comment the exact pickup phrase for a Cursor Automation:
 #   agent-loop: pickup
 # Never both (that would start two agents).
 set -euo pipefail
 
-ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number>}
+ISSUE_NUMBER=${1:?usage: agent-loop-launch.sh <issue-number> [issue-number...]}
+
+if [ "$#" -gt 1 ]; then
+  for n in "$@"; do
+    "$0" "$n"
+  done
+  exit 0
+fi
 
 # shellcheck disable=SC1091
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
@@ -43,7 +50,7 @@ Read ${prompt_rel} and follow it exactly.
 Also read .agents/skills/ship/SKILL.md and AGENTS.md.
 Read the Spec: link from the issue body (do not re-litigate locked decisions).
 
-Take only the work package for this issue from origin/main to a ready PR with Fixes #${ISSUE_NUMBER}. Label the PR ${AUTOMERGE_LABEL} when the Approval boundary is allow, then stop. Do not merge yourself and do not wait for CI. Never enter credentials on staging.
+Take only the work package for this issue from origin/main. Open a draft PR with Fixes #${ISSUE_NUMBER}, mark it ready after bun run verify, and label it ${AUTOMERGE_LABEL} when the Approval boundary is allow, then stop. Other in-flight issues on different partitions are expected. Do not merge yourself and do not wait for CI. Never enter credentials on staging.
 EOF
 )
 

@@ -22,7 +22,7 @@ TRIGGER: workflow_dispatch | */15 cron | Release on main completed | pull_reques
 INPUT: GitHub issue in the first AGENT_LOOP_MILESTONES entry that has an eligible WP
 SKILL/PROMPT: .github/prompts/<milestone-slug>.md or .github/prompts/agent-loop.md
 OUTPUT: draft PR marked ready after bun run verify, Fixes #<n>, labeled agent-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
-IDEMPOTENCY: one in-flight agent; agent-loop-running; skip issues with an open Fixes PR
+IDEMPOTENCY: up to AGENT_LOOP_CONCURRENCY in-flight agents with non-overlapping partitions; agent-loop-running; skip issues with an open Fixes PR
 RETRY: HTTP 429 waits for credits and retries on the 15-minute watchdog; dispatch a
   fresh run for all other retryable investigation (do not "Re-run jobs" on a failed snapshot)
 APPROVAL: agent-automerge + merge-guard (size, paths, main not red) + GitHub auto-merge on required checks
@@ -56,6 +56,7 @@ Sources of truth:
 | `AGENT_LOOP_ENABLED` | repo var | Kill switch. String `"true"` turns the workflow on. |
 | `BOOKING_LOOP_ENABLED` | repo var | Alias notes: still accepted as the kill switch for one release. |
 | `AGENT_LOOP_MILESTONES` | repo var | Ordered milestone titles, comma or newline separated. Higher entries drain first. Example: `Providers L: loop + CI acceleration,Booking v1.5`. Empty falls back to `Compass Booking v1`. |
+| `AGENT_LOOP_CONCURRENCY` | repo var | Max in-flight WPs (default 3). The picker never launches two issues that share a partition label. |
 | `AGENT_LOOP_GITHUB_TOKEN` | secret | PAT with `contents:write` + `pull_requests:write` so squash-merge triggers `release-on-main`. |
 | `BOOKING_LOOP_GITHUB_TOKEN` | secret | Alias notes: still accepted if `AGENT_LOOP_GITHUB_TOKEN` is unset. |
 | `CURSOR_API_KEY` | secret | Cloud Agents API. When set, launch never comments the pickup phrase. |
@@ -101,13 +102,16 @@ both channels are configured).
 ## Loop
 
 1. **Pick next WP** (`.github/scripts/agent-loop-next.sh`): walk
-   `AGENT_LOOP_MILESTONES` in order. Take the lowest `agent-ready` issue
-   in the first milestone that has one, skipping `agent-loop-running` /
+   `AGENT_LOOP_MILESTONES` in order. Skip `agent-loop-running` /
    `agent-loop-needs-human`, Approval boundary `human`, open `Depends on:`
-   issues, and issues with an open PR with `Fixes #<n>`. If any issue has
-   a fresh running label, idle (concurrency 1). Labels older than 3 hours
+   issues, and issues with an open PR with `Fixes #<n>`. Select up to
+   `AGENT_LOOP_CONCURRENCY` (default 3) issues whose partition labels do
+   not overlap. Partition labels are `sync-core`, `sync-microsoft`,
+   `sync-apple`, `web`, `backend`, `core`, `scripts`, `e2e`, `docs`.
+   `fresh_count` idles only when it reaches N. Labels older than 3 hours
    are treated as abandoned and cleared across every listed milestone.
-2. **Launch** (`.github/scripts/agent-loop-launch.sh`): POST the Cloud
+2. **Launch** (`.github/scripts/agent-loop-launch.sh`): accepts one or
+   more issue numbers. POST the Cloud
    Agents API when `CURSOR_API_KEY` is set; otherwise comment
    `agent-loop: pickup`. Never both. HTTP 429 records the provider's retry
    time, labels the issue `agent-loop-waiting-for-credits`, and exits
@@ -128,19 +132,26 @@ both channels are configured).
    `main` just waits for the scheduled sweep. The guard never holds a
    runner waiting on CI.
 5. **Launch next** (`agent-loop.yml` `pull_request` `closed` + merged):
-   smoke the staging that is live now, pick the next WP, launch it.
-   `Fixes #<n>` closes the merged issue. A failing smoke stops launches.
+   smoke the staging that is live now, pick WPs to top the fleet up to N,
+   launch them. `Fixes #<n>` closes the merged issue. A failing smoke
+   stops launches.
 6. **Release on main** deploys staging (code paths only; docs-only merges
    skip deploy). The 15-minute cron is the watchdog for docs-only WPs.
-7. **Post-deploy** (`workflow_run`): smokes the new release and annotates
-   the issue; on failure it labels the issue `agent-loop-needs-human`.
+7. **Post-deploy** (`workflow_run`): smokes the new release, annotates
+   the issue, and tops the fleet up to N; on failure it labels the issue
+   `agent-loop-needs-human` and does not launch.
 
 Concurrency is per job. `merge-guard` runs in `agent-merge-<pr>` with
 `cancel-in-progress: true` (a newer push supersedes). `launch-next`,
 `post-deploy`, and `kick` share `agent-loop` with
 `cancel-in-progress: false`, so a second launch **waits** for the first.
-Do not put those jobs back under one workflow-level group. Concurrency
-of N is Providers L WP-02.
+Do not put those jobs back under one workflow-level group. The picker
+fills up to `AGENT_LOOP_CONCURRENCY` (default 3) issues whose partition
+labels do not overlap. Untested combinations cannot land: the Copilot PR
+Review ruleset (8388539) requires a merge queue (`grouping_strategy:
+ALLGREEN`, squash). Unit and E2E workflows listen for `merge_group` so
+the queue can emit the required checks. If the queue rule cannot be
+written, the equivalent is `strict_required_status_checks_policy: true`.
 
 ## Sensitive-path merge gate
 
@@ -206,7 +217,10 @@ Alias notes: `booking-automerge`, `booking-loop-running`,
 `booking-loop-waiting-for-credits`, and `booking-loop-needs-human`
 still count for one release.
 
-## Local tests (until WP-05 lands them in the `static` CI job)
+## Local tests
+
+Picker and merge-guard shell tests run from `bun test:scripts` via
+`packages/scripts/src/testing/agent-loop-next.test.ts`.
 
 ```bash
 bash .github/scripts/agent-loop-next.test.sh

@@ -4,9 +4,9 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Unit (`test-unit.yml`) | Push / PR to `main` | Runs `static` (lint, knip, type-check) and unit tests |
+| Unit (`test-unit.yml`) | Push / PR / merge_group to `main` | Runs `static` (lint, knip, type-check) and unit tests |
 | PR body | Pull request | Fails empty template sections (including docs-only PRs) |
-| E2E (`test-e2e.yml`) | Push / PR to `main` | Playwright e2e in four shards behind one required `e2e` gate (docs-only diffs skipped) |
+| E2E (`test-e2e.yml`) | Push / PR / merge_group to `main` | Playwright e2e in four shards behind one required `e2e` gate (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
 | Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
