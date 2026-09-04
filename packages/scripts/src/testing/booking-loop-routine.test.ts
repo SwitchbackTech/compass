@@ -58,18 +58,29 @@ describe("booking-loop Routine contract", () => {
     expect(routine).toContain("do not widen from this doc");
   });
 
-  it("waits for checks and squash-merges without GitHub auto-merge", () => {
+  it("enables GitHub auto-merge instead of holding a runner on CI", () => {
     const guard = readFileSync(
       ".github/scripts/booking-loop-merge-guard.sh",
       "utf8",
     );
-    const checksIndex = guard.indexOf("gh pr checks");
-    const mergeIndex = guard.indexOf("gh pr merge");
+    expect(guard).toContain("--auto --squash --delete-branch");
+    expect(guard).not.toContain("gh pr checks");
+    expect(guard).toContain("main_is_red");
+    expect(guard).toContain("--disable-auto");
+  });
 
-    expect(checksIndex).toBeGreaterThan(-1);
-    expect(mergeIndex).toBeGreaterThan(checksIndex);
-    expect(guard).toContain("--squash --delete-branch");
-    expect(guard).not.toContain("--auto --squash");
+  it("launches the next WP on merge with per-job concurrency", () => {
+    const workflow = readFileSync(".github/workflows/booking-loop.yml", "utf8");
+    expect(workflow).toContain("github.event.pull_request.merged == true");
+    expect(workflow).toContain(
+      "group: booking-merge-${{ github.event.pull_request.number }}",
+    );
+    expect(workflow).not.toMatch(/^concurrency:/m);
+    const postdeploy = readFileSync(
+      ".github/scripts/booking-loop-postdeploy.sh",
+      "utf8",
+    );
+    expect(postdeploy).not.toContain("launch_next");
   });
 
   it("still blocks the sensitive paths from auto-merging", () => {

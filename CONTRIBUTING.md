@@ -54,7 +54,7 @@ These are the criteria we use to assess the quality of your work. If you don't m
 1. If this is your first time contributing, pick an issue in the `Ready` state for the _next_ quarter that has a `Good first issue` tag. Working on an issue in the next quarter gives you time to familiarize yourself with the codebase while still working on a priority change. It also gives us the chance to assess the quality of work and your reliability before giving you more responsibility.
 1. Find an issue you'd like to work on. Agent sessions should prefer issues
    opened from the **Agent task** template (label `agent-ready`); see
-   `.github/ISSUE_TEMPLATE/3-agent-task.yml` and `.agents/ledger.md`.
+   `.github/ISSUE_TEMPLATE/3-agent-task.yml`.
 1. Fork the repository
 1. Create a new branch with a descriptive name
 1. Make your changes, following the coding conventions
