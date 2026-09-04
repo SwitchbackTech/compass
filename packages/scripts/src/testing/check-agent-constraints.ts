@@ -3,8 +3,6 @@ import { join, relative } from "node:path";
 
 const repoRoot = join(import.meta.dir, "../../../..");
 
-const APP_ENTRY = "packages/web/src/index.tsx";
-
 const SOURCE_EXT = /\.(ts|tsx)$/;
 
 export type ConstraintAllow = { glob: string; reason: string };
