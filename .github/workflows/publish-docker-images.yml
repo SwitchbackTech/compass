@@ -29,6 +29,8 @@ on:
 
 permissions:
   contents: read
+  # type=gha cache-to needs to write the Actions cache.
+  actions: write
 
 jobs:
   publish:
@@ -71,6 +73,8 @@ jobs:
           context: .
           file: self-host/Dockerfile.backend
           push: ${{ github.event_name == 'push' || inputs.push_images }}
+          cache-from: type=gha,scope=compass-backend
+          cache-to: type=gha,mode=max,scope=compass-backend
           tags: |
             switchbacktech/compass-backend:${{ steps.version.outputs.image_version }}
             switchbacktech/compass-backend:${{ steps.version.outputs.minor_tag }}
@@ -82,6 +86,8 @@ jobs:
           context: .
           file: self-host/Dockerfile.sync
           push: ${{ github.event_name == 'push' || inputs.push_images }}
+          cache-from: type=gha,scope=compass-sync
+          cache-to: type=gha,mode=max,scope=compass-sync
           tags: |
             switchbacktech/compass-sync:${{ steps.version.outputs.image_version }}
             switchbacktech/compass-sync:${{ steps.version.outputs.minor_tag }}
@@ -93,6 +99,8 @@ jobs:
           context: .
           file: self-host/Dockerfile.mongo
           push: ${{ github.event_name == 'push' || inputs.push_images }}
+          cache-from: type=gha,scope=compass-mongo
+          cache-to: type=gha,mode=max,scope=compass-mongo
           tags: |
             switchbacktech/compass-mongo:${{ steps.version.outputs.image_version }}
             switchbacktech/compass-mongo:${{ steps.version.outputs.minor_tag }}
@@ -104,6 +112,8 @@ jobs:
           context: .
           file: self-host/Dockerfile.web
           push: ${{ github.event_name == 'push' || inputs.push_images }}
+          cache-from: type=gha,scope=compass-web
+          cache-to: type=gha,mode=max,scope=compass-web
           # backend.apiUrl and google.clientId are baked into the web bundle at build time.
           # The published image ships with localhost defaults, which work for local installs.
           # Users who need a custom API domain or real Google credentials must rebuild

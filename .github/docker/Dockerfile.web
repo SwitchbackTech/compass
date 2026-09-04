@@ -1,6 +1,16 @@
 FROM oven/bun:1.3.14 AS build
 
 WORKDIR /app
+
+# Install before COPY . . so source edits do not bust the install layer.
+COPY package.json bun.lock bunfig.toml ./
+COPY patches ./patches
+COPY packages/backend/package.json packages/backend/package.json
+COPY packages/core/package.json packages/core/package.json
+COPY packages/scripts/package.json packages/scripts/package.json
+COPY packages/sync/package.json packages/sync/package.json
+COPY packages/web/package.json packages/web/package.json
+RUN bun install --frozen-lockfile
 COPY . .
 
 ARG BASEURL=http://localhost:3000/api
@@ -40,7 +50,6 @@ RUN if [ -n "$POSTHOG_KEY" ] && [ -n "$POSTHOG_HOST" ]; then \
     >> compass.yaml; \
   fi
 
-RUN bun install --frozen-lockfile
 RUN cd packages/web && bun run build.ts
 
 FROM oven/bun:1.3.14-slim AS runtime
