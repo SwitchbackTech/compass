@@ -367,15 +367,14 @@ export async function preparePublicBookingPage(
       if (typeof body.guestTimeZone === "string") {
         postedTimeZone = body.guestTimeZone;
       }
-      const origin = new URL(page.url()).origin;
       return route.fulfill(
         jsonResponse({
           reservationId,
           slotStart: body.slotStart,
           slotEnd: postedSlotEnd,
           guestTimeZone: body.guestTimeZone,
-          cancelUrl: `${origin}/book/cancel/${reservationId}?token=abc`,
-          rescheduleUrl: `${origin}/book/reschedule/${reservationId}?token=abc`,
+          cancelUrl: `https://compasscalendar.com/book/cancel/${reservationId}?token=abc`,
+          rescheduleUrl: `https://compasscalendar.com/book/reschedule/${reservationId}?token=abc`,
         }),
       );
     }

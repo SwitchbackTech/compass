@@ -40,7 +40,16 @@ test.describe("public booking reschedule", () => {
       page.getByRole("link", { name: "Reschedule this booking" }),
     ).toBeVisible();
 
-    await page.getByRole("link", { name: "Reschedule this booking" }).click();
+    const rescheduleHref = await page
+      .getByRole("link", { name: "Reschedule this booking" })
+      .getAttribute("href");
+    expect(rescheduleHref).toContain(
+      "/book/reschedule/000000000000000000000099?token=abc",
+    );
+    // Create returns an absolute compasscalendar.com URL; follow its path on
+    // the Playwright origin instead of leaving the stubbed app.
+    const rescheduleUrl = new URL(rescheduleHref ?? "", page.url());
+    await page.goto(`${rescheduleUrl.pathname}${rescheduleUrl.search}`);
 
     await expect(page).toHaveURL(
       /\/book\/reschedule\/000000000000000000000099\?token=abc/,
