@@ -62,7 +62,7 @@ export default class CompassCLI {
       .helpOption(false)
       .allowUnknownOption(true)
       .description(
-        "Report connected Google accounts that are another Compass user's login identity (read-only)",
+        "Report connected provider accounts that are another Compass user's login identity (read-only; optional --provider)",
       );
 
     program

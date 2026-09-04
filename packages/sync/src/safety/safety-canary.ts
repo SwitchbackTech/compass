@@ -1,3 +1,5 @@
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
+
 /**
  * Patterns that must never appear in Sync operational logs, SSE payloads, or
  * error cause chains (R-SEC / S43). Used by tests as canaries; not a runtime
@@ -11,12 +13,17 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /"refresh_token"\s*:\s*"[^"]+"/i,
 ];
 
-const EVENT_CONTENT_PATTERNS: readonly RegExp[] = [
+/** Provider-native payload shapes that must not leak into logs or SSE. */
+export const PROVIDER_LEAK_MARKERS: Record<ProviderKind, readonly RegExp[]> = {
+  google: [/"conferenceData"\s*:/i, /"hangoutLink"\s*:/i],
+  microsoft: [/"@odata\.etag"\s*:/i, /"onlineMeeting"\s*:/i],
+  apple: [/BEGIN:VEVENT/i],
+};
+
+const SHARED_EVENT_CONTENT_PATTERNS: readonly RegExp[] = [
   /"title"\s*:\s*"[^"]+"/i,
   /"description"\s*:\s*"[^"]+"/i,
   /"attendees"\s*:\s*\[/i,
-  /"conferenceData"\s*:/i,
-  /"hangoutLink"\s*:/i,
   // People API shapes (WP-05 contact suggestions). A person payload or a
   // suggestion list serialized into a log/error is a contact-data leak.
   /"emailAddresses"\s*:/i,
@@ -33,6 +40,17 @@ function serializeForCanary(value: unknown): string {
   }
 }
 
+function findProviderLeakMarkerHit(text: string): string | null {
+  for (const patterns of Object.values(PROVIDER_LEAK_MARKERS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) {
+        return `eventContent:${pattern.source}`;
+      }
+    }
+  }
+  return null;
+}
+
 /** Return the first matching canary pattern label, or null if clean. */
 export function findSafetyCanaryHit(
   value: unknown,
@@ -47,7 +65,9 @@ export function findSafetyCanaryHit(
     }
   }
   if (kinds.includes("eventContent")) {
-    for (const pattern of EVENT_CONTENT_PATTERNS) {
+    const providerHit = findProviderLeakMarkerHit(text);
+    if (providerHit) return providerHit;
+    for (const pattern of SHARED_EVENT_CONTENT_PATTERNS) {
       if (pattern.test(text)) {
         return `eventContent:${pattern.source}`;
       }
