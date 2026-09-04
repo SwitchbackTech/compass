@@ -102,8 +102,10 @@ Welcome → signup → first-event contract:
   page jump, and `Mod+K` palette, all simulated inside the arena) against a
   ghost target slot, with scoring and streaks; task keycaps derive from the
   application's keymap and the exact next key pulses on the task card. The
-  first run is untimed; the end screen offers a timed rematch, and a timed
-  run whose clock expires keeps going with the score frozen at the buzzer.
+  queue is authored one task per primitive with one press per key and never
+  the same key twice in a row. The first run is untimed; the end screen
+  offers a timed rematch, and a timed run whose clock expires keeps going
+  with the score frozen at the buzzer.
   Esc skips the current task (leaving mid-run is the two-click Leave button),
   anonymous players get signup as the end screen's primary CTA, and
   graduation hands off to `FirstEventPrompt`. A reload mid-run re-offers a

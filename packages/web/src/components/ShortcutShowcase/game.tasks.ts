@@ -80,9 +80,16 @@ export type GameTask =
       target: GameSlot;
     })
   | (GameTaskBase & {
-      type: "nudge" | "resize";
+      type: "nudge";
       targetEventId: string;
       target: GameSlot;
+    })
+  | (GameTaskBase & {
+      type: "resize";
+      targetEventId: string;
+      target: GameSlot;
+      /** Which edge Tab must land on before Shift+Arrow resizes it. */
+      edge: "start" | "end";
     })
   | (GameTaskBase & { type: "delete"; targetEventId: string })
   | (GameTaskBase & {
@@ -139,67 +146,36 @@ export const RUN_TASKS: readonly GameTask[] = [
     target: { dayIndex: 0, startMin: t(9), endMin: t(9, 30) },
   },
   {
-    id: "quicktime-lunch",
+    id: "quicktime-coffee",
     type: "quickTime",
-    title: "Lunch",
-    instruction: "Just type the time, then lock it in.",
-    hint: "Type 1 2 3 0 and the piece appears at 12:30. Enter locks it.",
-    keycaps: ["1", "2", "3", "0", "Enter"],
-    piece: { id: "piece-lunch", title: "Lunch", color: "mint" },
-    target: { dayIndex: 0, startMin: t(12, 30), endMin: t(13) },
-  },
-  {
-    id: "place-review",
-    type: "place",
-    title: "Design review",
-    instruction: "Wednesday afternoon. You know the drill.",
-    hint: "Each Right tap moves the piece one day. Two taps reach Wednesday.",
-    keycaps: [
-      ...KEYMAP.createEvent.keycaps,
-      "ArrowRight",
-      "ArrowRight",
-      "Enter",
-    ],
-    piece: { id: "piece-review", title: "Design review", color: "indigo" },
-    spawn: { dayIndex: 0, startMin: t(14), endMin: t(15) },
-    target: { dayIndex: 2, startMin: t(14), endMin: t(15) },
+    title: "Coffee",
+    instruction: "Type 930 for 9:30, then lock it in.",
+    hint: "Type 9 3 0 and Coffee appears at 9:30. Enter locks it.",
+    keycaps: ["9", "3", "0", "Enter"],
+    piece: { id: "piece-coffee", title: "Coffee", color: "mint" },
+    target: { dayIndex: 2, startMin: t(9, 30), endMin: t(10) },
   },
   {
     id: "nudge-standup",
     type: "nudge",
     title: "Standup moved",
-    instruction: "Push it down to 10:00. Hold Shift and tap the arrow.",
-    hint: "Keep tapping. Each Shift Down tap moves it 15 minutes; four taps reach 10:00.",
-    keycaps: ["Shift", "ArrowDown", "ArrowDown", "ArrowDown", "ArrowDown"],
+    instruction: "Hold Shift and tap Down to reach 9:15.",
+    hint: "Hold Shift and tap Down once. Each tap moves it 15 minutes.",
+    keycaps: ["Shift", "ArrowDown"],
     targetEventId: "piece-standup",
-    target: { dayIndex: 0, startMin: t(10), endMin: t(10, 30) },
+    target: { dayIndex: 0, startMin: t(9, 15), endMin: t(9, 45) },
   },
   {
     id: "resize-one-on-one",
     type: "resize",
     title: "1:1 running long",
     instruction:
-      "Press Tab until the bottom edge lights up, then hold Shift and tap Down to reach 11:00.",
-    hint: "Tab cycles what your arrows grab: whole block, top edge, bottom edge. Tab again until the bottom edge lights up, then Shift Down twice.",
-    keycaps: [
-      KEYMAP.edgeFocus.hotkey,
-      KEYMAP.edgeFocus.hotkey,
-      "Shift",
-      "ArrowDown",
-      "ArrowDown",
-    ],
+      "Press Tab to light the top edge, then hold Shift and tap Up to start at 9:45.",
+    hint: "Tab cycles what your arrows grab: whole block, top edge, bottom edge. Tab once for the top edge, then Shift Up.",
+    keycaps: [KEYMAP.edgeFocus.hotkey, "Shift", "ArrowUp"],
     targetEventId: "game-one-on-one",
-    target: { dayIndex: 1, startMin: t(10), endMin: t(11) },
-  },
-  {
-    id: "quicktime-focus",
-    type: "quickTime",
-    title: "Focus block",
-    instruction: "Guard Tuesday at 4. Just type the time.",
-    hint: "Times here are 24-hour. Type 1 6 0 0 for 4:00 pm, then Enter.",
-    keycaps: ["1", "6", "0", "0", "Enter"],
-    piece: { id: "piece-focus", title: "Deep work", color: "slate" },
-    target: { dayIndex: 1, startMin: t(16), endMin: t(17) },
+    target: { dayIndex: 1, startMin: t(9, 45), endMin: t(10, 30) },
+    edge: "start",
   },
   {
     id: "delete-gym",
@@ -224,7 +200,8 @@ export const RUN_TASKS: readonly GameTask[] = [
     id: "legend-peek",
     type: "legend",
     title: "Blanking on a move?",
-    instruction: "The legend lists every shortcut. Open it, then close it.",
+    instruction:
+      "The legend lists every shortcut. Open it, then close it with Esc.",
     hint: "The ? key is Shift and /. Open the legend, take a peek, then Esc closes it.",
     keycaps: ["?"],
   },
@@ -256,24 +233,14 @@ export const RUN_TASKS: readonly GameTask[] = [
     keycaps: KEYMAP.commandPalette.keycaps,
   },
   {
-    id: "nudge-review",
-    type: "nudge",
-    title: "Review slid to Tuesday",
-    instruction: "Walk it one day left.",
-    hint: "Hold Shift and tap Left once. Sideways moves shift whole days.",
-    keycaps: ["Shift", "ArrowLeft"],
-    targetEventId: "piece-review",
-    target: { dayIndex: 1, startMin: t(14), endMin: t(15) },
-  },
-  {
     id: "place-party",
     type: "place",
     title: "Ship-it party",
     instruction: "Wednesday at 5. Bring it home.",
-    hint: "Press C to drop it, tap Down to reach 5:00, then Enter. Last one.",
-    keycaps: [...KEYMAP.createEvent.keycaps, "ArrowDown", "ArrowDown", "Enter"],
+    hint: "Press C to drop it, tap Down once to reach 5:00, then Enter. Last one.",
+    keycaps: [...KEYMAP.createEvent.keycaps, "ArrowDown", "Enter"],
     piece: { id: "piece-party", title: "Ship-it party", color: "coral" },
-    spawn: { dayIndex: 2, startMin: t(16, 30), endMin: t(17, 30) },
+    spawn: { dayIndex: 2, startMin: t(16, 45), endMin: t(17, 45) },
     target: { dayIndex: 2, startMin: t(17), endMin: t(18) },
   },
 ];
