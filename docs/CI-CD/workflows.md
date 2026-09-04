@@ -5,12 +5,12 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | Unit (`test-unit.yml`) | Push / PR / merge_group to `main` | Runs `static` (lint, knip, type-check) and unit tests |
-| PR body | Pull request | Fails empty template sections (including docs-only PRs) |
 | E2E (`test-e2e.yml`) | Push / PR / merge_group to `main` | Playwright e2e in four shards behind one required `e2e` gate (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
 | Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
+| Agent review (`agent-review.yml`) | PR opened / ready / synchronize, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check) |
 | Agent loop (`agent-loop.yml`) | `workflow_dispatch` / `*/15` cron / `Release on main` / `agent-automerge` PRs | Governed Routine: next milestone WP → merge → staging smoke |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |

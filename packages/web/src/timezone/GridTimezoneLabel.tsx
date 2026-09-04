@@ -44,6 +44,7 @@ export const GridTimezoneLabel = () => {
     : null;
 
   return (
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: role="group" is set under the same isTraveling condition as the label
     <div
       aria-label={isTraveling ? "Time travel timezones" : undefined}
       className={

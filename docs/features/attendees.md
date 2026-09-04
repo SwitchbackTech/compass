@@ -302,10 +302,8 @@ later without revisiting the product decision.
 `packages/sync/src/safety/safety-canary.ts` forbids attendee/contact JSON
 shapes in sync logs, SSE payloads, and error causes; this is asserted
 end-to-end for guest-list writes, RSVP writes, and contact suggestion
-failures across the sync and backend safety-canary suites (see the
-Evidence sections of WP-02, WP-05, WP-07 in
-`wip/attendee-support/` while that pack still exists, or the sync/backend
-`*safety*` test files directly after it is deleted).
+failures across the sync and backend safety-canary suites (the sync and
+backend `*safety*` test files).
 
 ## E2E Coverage
 

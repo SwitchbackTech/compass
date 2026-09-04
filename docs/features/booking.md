@@ -292,8 +292,9 @@ There is no host reservation inbox.
   neither reschedule secret. Cancel and edit use `?token=` on the
   confirmation URL (see Guest cancel and edit details).
 - `/book/reschedule/:id?token=` reuses the public month/slot picker. Do
-  not re-collect name, email, or notes. Duration comes from current page
-  settings (same in-flight duration wart as confirm).
+  not re-collect name, email, or notes. Confirm and reschedule both pin
+  `durationMinutes` from the page the guest saw: a mismatch with the
+  current page duration is `409`.
 - In-place Google PATCH of the existing event: same `calendarEventId`,
   same Meet URL, same attendees. `invitation: "all"`,
   `attendeesEdit: "preserve"`. Compass still sends no email.
@@ -366,9 +367,10 @@ Unauthenticated:
   adjacent months). Window must be within the 60-day horizon. A host who
   cannot write is `{ slots: [], bookable: false }`.
 - `POST /api/booking/pages/:slug/reservations` — `{slotStart, guestName,
-  guestEmail, notes?, guestTimeZone}`. Re-checks billing and busy, then
-  creates. A host who cannot write is the same `409` as GET page and
-  submits no create command.
+  guestEmail, notes?, guestTimeZone, durationMinutes}`. `durationMinutes`
+  must match the page. Mismatch is `409` with no Google event. Re-checks
+  billing and busy, then creates. A host who cannot write is the same
+  `409` as GET page and submits no create command.
 - `GET /api/booking/reservations/:id` — public confirmation payload
   (`slotStart`, `guestTimeZone`, `durationMinutes`, `hostDisplayName`,
   `status`, `bookingSlug`, `guestName`, `notes`). `404` when missing. No
@@ -382,8 +384,9 @@ Unauthenticated:
   — bookable instants excluding this reservation from occupancy and
   max-per-day. Same window rules as the public page slots endpoint.
 - `POST /api/booking/reservations/:id/reschedule` — `{token, slotStart,
-  guestTimeZone}`. In-place calendar PATCH. Same slot is an idempotent
-  success. Create response includes `rescheduleUrl`.
+  guestTimeZone, durationMinutes}`. `durationMinutes` must match the page
+  (same pin as confirm). In-place calendar PATCH. Same slot is an
+  idempotent success. Create response includes `rescheduleUrl`.
 
 Authenticated (host session + writable billing, same as event writes):
 
@@ -463,11 +466,6 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
   disappear and confirm returns `409`.
 - **Google-only destination** calendars; password-only hosts see a connect-Google
   prompt in Settings.
-- **A duration change re-prices in-flight confirms.** A guest who picked a
-  slot before the host changed the duration books at the new duration when
-  the engine still allows that start (the server recomputes `slotEnd` from
-  current settings); otherwise the re-check rejects with `409` and the guest
-  re-picks. Accepted for v1.
 
 ## Related docs
 

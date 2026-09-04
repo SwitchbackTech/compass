@@ -101,7 +101,8 @@ main() {
     return 0
   fi
 
-  if ! gh pr merge "$pr_number" --repo "$REPO" --auto --squash --delete-branch; then
+  # Merge queue owns the strategy and the repo deletes branches on merge.
+  if ! gh pr merge "$pr_number" --repo "$REPO" --auto; then
     notify "Autofix PR #${pr_number} (issue #${ISSUE_NUMBER}) passed the merge guard but \`gh pr merge --auto\` failed — needs a human to enable merge manually — https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi

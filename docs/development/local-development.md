@@ -139,7 +139,10 @@ checkout; if its ports are already claimed by another worktree's
 `compass.yaml`, it rewrites `web.port`, `web.url`, `backend.port`,
 `backend.apiUrl`, and the localhost `originsAllowed` entries to the next free
 pair (9081/3001, 9082/3002, ...). Comments and secrets in the file are
-preserved, and reruns are no-ops.
+preserved, and reruns are no-ops. Once `mongo.uri` is present, the preflight
+also fills in a missing `sync:` block (local `internalAuthToken`, derived
+`serviceUrl`/`callbackBaseUrl`, and an isolated `mongoUri` on the same host);
+nothing needs to be authored by hand for that case.
 
 The preflight only mutates gitignored local config. It does not rewrite tracked
 tooling files such as `.claude/launch.json`; see

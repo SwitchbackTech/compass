@@ -127,7 +127,8 @@ both channels are configured).
    is under the rails, no sensitive path is in the diff (unless a
    per-milestone allowlist re-allows that prefix), and the latest `main`
    Unit and E2E push runs are not red, enable GitHub auto-merge
-   (`gh pr merge --auto --squash`). GitHub squash-merges when the required
+   (`gh pr merge --auto`; the ruleset merge queue squash-merges and the
+   repo deletes the branch). GitHub squash-merges when the required
    checks pass. Otherwise add `agent-loop-needs-human` and stop; a red
    `main` just waits for the scheduled sweep. The guard never holds a
    runner waiting on CI.
@@ -196,13 +197,8 @@ Override per run with env `AGENT_LOOP_MAX_FILES` and
 not yet shipped). The smoke script never logs in.
 
 Authenticated Settings is out of unattended smoke.
-`/qa-test-staging` remains the signed-in sweep when a human is present
+The `qa-test-staging` skill remains the signed-in sweep when a human is present
 with a connected profile already signed in.
-
-## Handoff
-
-When the agent opens a PR, it writes `.agents/handoffs/<issue-number>.md`
-(WP-02 schema) **on the PR branch**. `task_id` is the issue number.
 
 ## Labels
 
@@ -267,7 +263,7 @@ human_decision: <re-dispatch | leave | revert>
 ## Related
 
 - Prompt: [`.github/prompts/agent-loop.md`](../../.github/prompts/agent-loop.md)
-- Booking skill (alias notes: name unchanged): [`.agents/skills/booking-loop/SKILL.md`](../../.agents/skills/booking-loop/SKILL.md)
+- Ship skill: [`.agents/skills/ship/SKILL.md`](../../.agents/skills/ship/SKILL.md)
 - Providers spec: [`docs/features/calendar-providers.md`](../features/calendar-providers.md)
 - Booking spec: [`docs/features/booking.md`](../features/booking.md)
 - Staging QA: [`.agents/skills/qa-test-staging/SKILL.md`](../../.agents/skills/qa-test-staging/SKILL.md)

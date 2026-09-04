@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "packages/core/src/**/*.ts",
+    "packages/backend/src/**/*.ts",
+    "packages/sync/src/**/*.ts",
+    "packages/scripts/src/**/*.ts",
+    "packages/scripts/src/**/*.d.ts"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["bun-types", "bun-types/test-globals", "node"],
+    "noEmit": true,
+    "outDir": "build/node/tests"
+  }
+}

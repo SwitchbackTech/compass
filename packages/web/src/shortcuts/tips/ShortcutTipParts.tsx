@@ -27,8 +27,8 @@ export const ShortcutTipParts: FC<{
             // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
             <span key={i}>{part}</span>
           ) : (
-            // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
             <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal
               key={i}
               className="inline-flex whitespace-nowrap align-middle"
             >

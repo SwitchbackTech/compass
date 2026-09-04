@@ -27,7 +27,7 @@ export const GameSimOverlays: FC<{ overlay: GameSimOverlay }> = ({
     // the real reveal's "every region gets a digit" shape.
     return (
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <span className="c-keycap -translate-x-1/2 absolute top-1/2 left-[45%] scale-150">
+        <span className="c-keycap absolute top-1/2 left-[45%] -translate-x-1/2 scale-150">
           1
         </span>
         <span className="c-keycap absolute top-1/2 right-8 scale-150">2</span>

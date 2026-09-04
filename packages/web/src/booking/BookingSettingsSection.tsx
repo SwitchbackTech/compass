@@ -594,6 +594,10 @@ export function BookingSettingsSection({
               {ungrouped.map(renderBlockingCalendar)}
             </>
           )}
+          <p className="text-text-muted text-xs">
+            Pending, maybe, and declined invites do not hold booking times.
+            Accepted invites and events the host organizes do.
+          </p>
         </fieldset>
 
         <div {...bookingFieldAttrs("timezone")}>
@@ -731,6 +735,10 @@ export function BookingSettingsSection({
           >
             Guest can invite others
           </BookingCheckboxRow>
+          <p className="text-text-muted text-xs">
+            When this is on, Compass cannot put the cancel link in the calendar
+            description. Guests keep it from the confirmation page.
+          </p>
         </fieldset>
 
         <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>

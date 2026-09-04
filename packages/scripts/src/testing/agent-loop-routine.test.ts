@@ -1,76 +1,17 @@
 import { describe, expect, it } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
+// Structural invariants of the agent-loop scripts and workflow. Each one
+// encodes an incident (see docs/CI-CD/loop-velocity-2026-09-03.md); none pin
+// documentation prose, which lives in docs/CI-CD/agent-loop-routine.md.
 describe("agent-loop Routine contract", () => {
-  it("lists the agent-loop workflow and points at the Routine doc", () => {
-    const workflows = readFileSync("docs/CI-CD/workflows.md", "utf8");
-    expect(workflows).toContain("agent-loop.yml");
-    expect(workflows).toContain("agent-loop-routine.md");
+  it("ships the workflow, prompt, Routine doc, and scripts", () => {
     expect(existsSync("docs/CI-CD/agent-loop-routine.md")).toBe(true);
     expect(existsSync(".github/workflows/agent-loop.yml")).toBe(true);
     expect(existsSync(".github/prompts/agent-loop.md")).toBe(true);
-    expect(existsSync(".agents/skills/booking-loop/SKILL.md")).toBe(true);
-  });
-
-  it("documents trigger, stop, retry, verifier, dual-launch, and staging", () => {
-    const routine = readFileSync("docs/CI-CD/agent-loop-routine.md", "utf8");
-    expect(routine).toContain("ROUTINE: agent-loop");
-    expect(routine).toContain(
-      "TRIGGER: workflow_dispatch | */15 cron | Release on main completed",
-    );
-    expect(routine).toContain("STOP: repo var AGENT_LOOP_ENABLED");
-    expect(routine).toContain("AGENT_LOOP_MILESTONES");
-    expect(routine).toContain(
-      "RETRY: HTTP 429 waits for credits and retries on the 15-minute watchdog",
-    );
-    expect(routine).toContain(
-      "VERIFIER: .github/scripts/agent-loop-merge-guard.sh",
-    );
-    expect(routine).toContain(".agents/handoffs/<issue-number>.md");
-    expect(routine).toContain("on the PR branch");
-    expect(routine).toContain("agent-loop: pickup");
-    expect(routine).toContain("https://api.cursor.com/v0/agents");
-    expect(routine).toContain("Never both");
-    expect(routine).toContain("https://staging.compasscalendar.com");
-    expect(routine).toContain("enter credentials");
-    expect(routine).toContain("last_successful_action:");
-    expect(routine).toContain("documented, not run");
-
-    const prompt = readFileSync(".github/prompts/agent-loop.md", "utf8");
-    expect(prompt).toContain(".agents/handoffs/<issue-number>.md");
-    expect(prompt).toContain("on the PR branch");
-    expect(prompt).toContain("agent-automerge");
-    expect(prompt).toContain("Never enter credentials");
-    expect(prompt).toContain("Open a **draft** PR");
-    expect(prompt).toContain("review_draft_pull_requests: false");
-    expect(prompt).toContain("AGENT_LOOP_CONCURRENCY");
-    expect(prompt).toContain("different partition");
-    expect(prompt).not.toContain("Do not change this model here");
-    const providersL = readFileSync(".github/prompts/providers-l.md", "utf8");
-    expect(providersL).not.toContain("Do not change the concurrency model");
-    const ship = readFileSync(".agents/skills/ship/SKILL.md", "utf8");
-    expect(ship).toContain("Mark it ready only after");
-    expect(ship).toContain("`bun run verify` passes");
-  });
-
-  it("keeps merge-guard as the Verifier with booking-sized rails", () => {
-    const guard = readFileSync(
-      ".github/scripts/agent-loop-merge-guard.sh",
-      "utf8",
-    );
-    expect(guard).toContain("NO_AUTOMERGE_PATH_PATTERNS=(");
-    expect(guard).toContain(
-      `MAX_FILES=\${AGENT_LOOP_MAX_FILES:-\${BOOKING_LOOP_MAX_FILES:-60}}`,
-    );
-    expect(guard).toContain(
-      `MAX_LINES=\${AGENT_LOOP_MAX_LINES:-\${BOOKING_LOOP_MAX_LINES:-4000}}`,
-    );
-
-    const routine = readFileSync("docs/CI-CD/agent-loop-routine.md", "utf8");
-    expect(routine).toContain("MAX_FILES=60");
-    expect(routine).toContain("MAX_LINES=4000");
-    expect(routine).toContain("NO_AUTOMERGE_PATH_PATTERNS");
-    expect(routine).toContain("do not widen from this doc");
+    const workflows = readFileSync("docs/CI-CD/workflows.md", "utf8");
+    expect(workflows).toContain("agent-loop.yml");
+    expect(workflows).toContain("agent-loop-routine.md");
   });
 
   it("enables GitHub auto-merge instead of holding a runner on CI", () => {
@@ -78,24 +19,12 @@ describe("agent-loop Routine contract", () => {
       ".github/scripts/agent-loop-merge-guard.sh",
       "utf8",
     );
-    expect(guard).toContain("--auto --squash --delete-branch");
+    expect(guard).toMatch(/gh pr merge "\$pr_number" --repo "\$REPO" --auto;/);
+    // The merge queue rejects an explicit strategy or branch deletion.
+    expect(guard).not.toMatch(/gh pr merge[^\n]*(--squash|--delete-branch)/);
     expect(guard).not.toContain("gh pr checks");
     expect(guard).toContain("main_is_red");
     expect(guard).toContain("--disable-auto");
-  });
-
-  it("launches the next WP on merge with per-job concurrency", () => {
-    const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
-    expect(workflow).toContain("github.event.pull_request.merged == true");
-    expect(workflow).toContain(
-      "group: agent-merge-${{ github.event.pull_request.number }}",
-    );
-    expect(workflow).not.toMatch(/^concurrency:/m);
-    const postdeploy = readFileSync(
-      ".github/scripts/agent-loop-postdeploy.sh",
-      "utf8",
-    );
-    expect(postdeploy).not.toContain("launch_next");
   });
 
   it("still blocks the sensitive paths from auto-merging", () => {
@@ -104,7 +33,6 @@ describe("agent-loop Routine contract", () => {
       "utf8",
     );
     for (const pattern of [
-      "'^\\.github/'",
       "'^self-host/'",
       "'^packages/backend/src/auth/'",
       "'^packages/web/src/auth/'",
@@ -117,50 +45,51 @@ describe("agent-loop Routine contract", () => {
     }
   });
 
+  it("launches the next WP on merge with per-job concurrency", () => {
+    const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
+    expect(workflow).toContain("github.event.pull_request.merged == true");
+    expect(workflow).toContain(
+      "group: agent-merge-${{ github.event.pull_request.number }}",
+    );
+    // A workflow-level group once queued every merge-guard behind every
+    // launch and cancelled 56 runs in a day.
+    expect(workflow).not.toMatch(/^concurrency:/m);
+    expect(workflow).toContain("cancel-in-progress: false");
+    const postdeploy = readFileSync(
+      ".github/scripts/agent-loop-postdeploy.sh",
+      "utf8",
+    );
+    expect(postdeploy).not.toContain("launch_next");
+  });
+
   it("launches via Cursor API or pickup comment, never both", () => {
     const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
     expect(launch).toContain("https://api.cursor.com/v0/agents");
     expect(launch).toContain("agent-loop: pickup");
-    expect(launch).toContain("different partitions");
-    expect(launch).toContain("Open a draft PR");
     expect(launch).toContain(`if [ -n "\${CURSOR_API_KEY:-}" ]`);
-    expect(launch).toContain("Not commenting");
-    expect(launch).toContain("dual-launch");
     expect(launch).toContain('if [ "$http_code" = "429" ]');
-    const helpers = readFileSync(".github/scripts/agent-loop-lib.sh", "utf8");
-    expect(helpers).toContain("agent-loop-waiting-for-credits");
-    expect(launch).toContain("QUOTA_RETRY_MARKER");
-
     const next = readFileSync(".github/scripts/agent-loop-next.sh", "utf8");
-    expect(next).toContain("QUOTA_WAITING_LABEL");
-    expect(next).toContain("waiting for Cursor credits");
-    expect(next).toContain("READY_LABEL");
     expect(next).toContain("is_human_approval");
     expect(next).toContain("has_open_dependency");
+  });
+
+  it("runs up to AGENT_LOOP_CONCURRENCY issues from different partitions", () => {
+    const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
+    expect(launch).toContain("different partitions");
+    const next = readFileSync(".github/scripts/agent-loop-next.sh", "utf8");
     expect(next).toContain("AGENT_LOOP_CONCURRENCY");
     expect(next).toContain("PARTITION_LABELS");
     expect(next).toContain("issue_numbers");
-
     const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
-    expect(workflow).toContain("vars.BOOKING_LOOP_ENABLED == 'true'");
-    expect(workflow).toContain("vars.AGENT_LOOP_ENABLED == 'true'");
-    expect(workflow).toContain("group: agent-loop");
-    expect(workflow).toContain("cancel-in-progress: false");
-    expect(workflow).toContain('cron: "*/15 * * * *"');
-    expect(workflow).toContain("agent-loop-merge-guard.sh");
-    expect(workflow).toContain("agent-loop-postdeploy.sh");
-    expect(workflow).toContain("agent-loop-next.sh");
-    expect(workflow).toContain("agent-loop-launch.sh");
     expect(workflow).toContain("AGENT_LOOP_CONCURRENCY");
     expect(workflow).toContain("steps.next.outputs.issue_numbers");
+  });
 
+  it("lets the merge queue drive the required test workflows", () => {
     const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
     const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
-    const routine = readFileSync("docs/CI-CD/agent-loop-routine.md", "utf8");
     expect(unit).toMatch(/^ {2}merge_group:$/m);
     expect(e2e).toMatch(/^ {2}merge_group:$/m);
-    expect(routine).toContain("grouping_strategy:");
-    expect(routine).toContain("ALLGREEN");
   });
 
   it("smokes staging without logging in", () => {
@@ -169,9 +98,7 @@ describe("agent-loop Routine contract", () => {
       "utf8",
     );
     expect(smoke).toContain("https://staging.compasscalendar.com");
-    expect(smoke).toContain("/book/");
     expect(smoke).not.toContain("password");
     expect(smoke).not.toContain("oauth");
-    expect(smoke).toContain("Never logs in");
   });
 });

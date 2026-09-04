@@ -92,6 +92,7 @@ export const DescriptionEditor = ({
   // on every keystroke (onUpdate → onChange → parent re-render → this prop
   // ticks), for a value TipTap would just discard. Deliberately keyed on
   // resetKey only, matching useEditor's own [resetKey] below.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on resetKey only, see the comment above
   const initialContent = useMemo(
     () => sanitizeDescriptionHtml(value),
     [resetKey],

@@ -115,7 +115,7 @@ export function PublicBookingConfirmedPage() {
 
   const view = resolveConfirmedPageView(reservationQuery);
   const bookingSlug =
-    view.kind === "reservation" ? view.reservation.bookingSlug : "";
+    view.kind === "reservation" ? (view.reservation.bookingSlug ?? "") : "";
   const canEdit = view.kind === "reservation" && token.length > 0;
 
   // Escape returns to the host's public page. OverlayPanel peels first.

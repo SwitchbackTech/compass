@@ -1,8 +1,8 @@
 ---
 name: chaos
-version: 1
+version: 2
 owner: compass-maintainers
-last_verified: 2026-08-25
+last_verified: 2026-09-04
 description: Exercise Compass as a real signed-in user, first through the intended flow and then with focused adversarial behavior; diagnose and fix confirmed UX, security, reliability, performance, accessibility, or data-integrity defects; simplify and ship the result. Use before a production release, when asked to perform exploratory or chaos testing, or when a realistic browser pass should drive a fix through merge.
 ---
 
@@ -25,7 +25,7 @@ Happy path worked; probes were focused; credentials were not entered by the agen
 ## Anti-patterns
 
 Do not enter credentials. See
-[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+[`anti-patterns.md`](../anti-patterns.md).
 
 ## Escalate
 
@@ -61,8 +61,9 @@ smallest fix that removes a confirmed defect.
 
 1. Read `AGENTS.md`, inspect the current branch and diff, and identify the
    release-critical and recently changed user-visible flows.
-2. Read the relevant acceptance docs and tests. Use `/local-dev-bootstrap` if
-   the required local services or configuration are not healthy.
+2. Read the relevant acceptance docs and tests. Follow
+   `docs/development/local-development.md` if the required local services or
+   configuration are not healthy.
 3. Select the best available real-browser surface that holds the signed-in test
    session. Honor an explicitly requested browser. Prefer a user-connected
    browser or Chrome session for authenticated flows; use Computer Use only
@@ -132,21 +133,18 @@ report from a speculative concern.
 3. Add a focused regression test when it protects real behavior. Keep the
    original user-flow reproduction as a manual acceptance check.
 4. Re-run the affected browser scenario and inspect console/network state.
-   Run `/verify-change` to select focused automated checks; include lint and
-   type checking whenever the changed boundary requires them.
+   Run `bun run verify --strict`; include lint and type checking whenever the
+   changed boundary requires them.
 5. If a finding cannot be safely reproduced or fixed within scope, do not paper
    over it. Report its evidence, impact, and recommended owner/action.
 
 ## 5. Simplify, review, and release
 
-At handoff boundaries, write a typed record per `.agents/handoffs/SCHEMA.md`.
-
-1. Invoke `/simplify` on the complete base-to-head diff after the fix. Apply
+1. Run the `simplify` skill on the complete base-to-head diff after the fix. Apply
    behavior-preserving simplifications, commit them separately when they change
    code, and re-run behavior-adjacent checks.
-2. Use `/ship` to perform the repository's final review, commit, ready-PR,
-   CI, merge, and post-merge verification gates. Do not bypass its safeguards.
-   Do not skip `/review`.
+2. Follow the `ship` skill for verify, ready PR, and the `agent-automerge`
+   label. Do not bypass its safeguards.
 3. Do not create or merge a pull request if validation is incomplete, an
    unrelated dirty change overlaps, a material finding remains unresolved, or
    the target/base branch is unclear. State the blocker instead.

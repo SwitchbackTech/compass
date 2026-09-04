@@ -26,7 +26,7 @@ Expected test profile verified; core flows exercised.
 ## Anti-patterns
 
 Do not substitute an isolated browser when a signed-in profile is required.
-See [`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+See [`anti-patterns.md`](../anti-patterns.md).
 
 ## Escalate
 

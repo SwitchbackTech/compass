@@ -1,14 +1,14 @@
 ---
 name: simplify
-version: 1
+version: 2
 owner: compass-maintainers
-last_verified: 2026-08-25
-description: Reviews changed Compass code for duplication, unnecessary complexity, weak boundaries, and overused React state/effects, then applies behavior-preserving improvements using repo conventions. Use when asked to simplify, clean up, make DRY, reduce complexity, or improve maintainability, and during the simplification gate in /ship.
+last_verified: 2026-09-04
+description: Reviews changed Compass code for duplication, unnecessary complexity, weak boundaries, and overused React state/effects, then applies behavior-preserving improvements using repo conventions. Use when asked to simplify, clean up, make DRY, reduce complexity, or improve maintainability.
 ---
 
 ## When
 
-Asked to simplify, clean up, make DRY, or during `/ship` simplify gate.
+Asked to simplify, clean up, or make DRY; also the nightly cleanup sweep.
 
 ## Steps
 
@@ -25,7 +25,7 @@ No behavior change; conventions from `AGENTS.md` kept.
 ## Anti-patterns
 
 Do not “improve” by rewriting unrelated files. See
-[`_evals/anti-patterns.md`](../_evals/anti-patterns.md).
+[`anti-patterns.md`](../anti-patterns.md).
 
 ## Escalate
 
@@ -34,8 +34,7 @@ A simplification that would change public behavior or contracts.
 # Simplify Compass code
 
 Favor the smallest, clearest implementation. This is a quality pass, not a
-correctness or security review. `/ship` invokes this skill rather than
-inlining these detectors.
+correctness or security review.
 
 ## Scope
 
@@ -104,13 +103,13 @@ DOM handles, or own isolated UI state. Record why they remain.
 - Preserve semantic web test queries and `user-event`.
 - Use Tailwind semantic colors and canonical scale utilities.
 - Prefer existing package locations:
-  - shared logic: `packages/core/src/util` or `validators`
+  - shared logic: `packages/core/src/util`
   - web helpers: `packages/web/src/common`
   - backend helpers: `packages/backend/src/common`
   - sync ownership: `packages/sync/src`
 
-Read the applicable `.cursor/rules` and linked docs before changing package or
-test architecture.
+Read `docs/development/testing-playbook.md` before changing test
+architecture.
 
 ## Verify
 
@@ -123,12 +122,12 @@ Run the smallest checks that cover touched behavior:
 - `packages/scripts` → `bun run test:scripts`
 - shared contracts → affected package tests plus `bun run type-check`
 
-Use `/verify-change` for a diff-derived selection. Run `bun run lint` for
+`bun run verify` selects checks from the diff. Run `bun run lint` for
 non-docs changes.
 
 ## Commit and report
 
-When `/simplify` was explicitly invoked to change code, commit the
+When this skill was explicitly invoked to change code, commit the
 simplification separately from implementation after verification, using a
 lower-case conventional message such as:
 

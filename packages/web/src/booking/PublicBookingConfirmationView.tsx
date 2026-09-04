@@ -87,6 +87,7 @@ export function PublicBookingConfirmationView({
           </button>
         ) : null}
         {cancelUrl || rescheduleUrl ? (
+          // biome-ignore lint/a11y/useSemanticElements: fieldset's min-inline-size breaks the flex column; role="group" is the accessible equivalent
           <div
             className="flex flex-col items-start gap-3"
             role="group"

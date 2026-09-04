@@ -24,9 +24,12 @@ the package has a fast script and the diff has no `*.db.test.ts` and no
 `/storage/` or `/repositories/` paths) for each detected package, plus
 `type-check`, `lint`, and `knip`. Those independent checks run concurrently.
 Web or `e2e/` changes also select `test:a11y` and `test:e2e` after that wave.
-Pass `--serial` to run checks one after another. Read the printed skip list
-before treating a green run as CI-complete: missing Playwright Chromium skips
-those jobs and reports incomplete parity instead of claiming they passed.
+Pass `--serial` to run checks one after another. The last line is always
+`VERDICT: PASS`, `VERDICT: INCOMPLETE`, or `VERDICT: FAIL`. `INCOMPLETE`
+means every selected check passed but a Playwright check was skipped (no
+Chromium; install with `bunx playwright install chromium`), so CI parity is
+not proven. It exits 0 by default so you can iterate; pass `--strict` before
+labeling a PR so `INCOMPLETE` exits 1.
 GitHub still runs the Unit workflow matrix and the E2E workflow on every
 non-docs PR; this helper does not.
 
@@ -50,9 +53,16 @@ Unit workflow (`test-unit.yml`):
   RSS-safe processes covering half the suite
 - runs every lane with `TZ: Etc/UTC` set
 - does not install Node on Bun-only jobs
-- `bun run lint` also runs `check-semantic-colors.ts` and
-  `check-agent-constraints.ts` (barrels, web-test locators, backend/sync
-  `mongoService` imports, duplicate `EventSchema`)
+- `bun run lint` runs `check-semantic-colors.ts`, `check-agent-constraints.ts`
+  (barrels, web-test locators, backend/sync `mongoService` imports, duplicate
+  `EventSchema`, Bun pins, Zod import path, em-dashes in web strings, raw
+  keydown listeners), and Biome with `--error-on-warnings`. All three run
+  even when an earlier one fails, so one run reports every class of error.
+  Every constraint hit prints how to fix it and which allowlist documents
+  exceptions.
+- `bun run type-check:tests` type-checks the core/backend/sync/scripts test
+  files (`tsconfig.tests.json`). It is informational until the backlog it
+  exposed is cleared; run it on the test files you touch.
 
 Local parity commands:
 
