@@ -27,10 +27,12 @@ export function Tooltip({
   );
 }
 
-export const TooltipTrigger = forwardRef<
-  HTMLElement,
-  HTMLProps<HTMLElement> & { asChild?: boolean }
->(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
+type TooltipTriggerProps = HTMLProps<HTMLElement> & {
+  asChild?: boolean;
+  "data-state"?: "open" | "closed";
+};
+
+export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
   const context = useTooltipContext();
 
   const childrenRef = isValidElement(children)
@@ -39,16 +41,14 @@ export const TooltipTrigger = forwardRef<
   const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
   // `asChild` allows the user to pass any element as the anchor
-  if (asChild && isValidElement(children)) {
-    return cloneElement(
-      children,
-      context.getReferenceProps({
-        ref,
-        ...props,
-        ...children.props,
-        "data-state": context.open ? "open" : "closed",
-      }),
-    );
+  if (asChild && isValidElement<TooltipTriggerProps>(children)) {
+    const childProps: TooltipTriggerProps = {
+      ref,
+      ...props,
+      ...children.props,
+      "data-state": context.open ? "open" : "closed",
+    };
+    return cloneElement(children, context.getReferenceProps(childProps));
   }
 
   return (
