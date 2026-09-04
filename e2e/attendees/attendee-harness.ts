@@ -32,6 +32,7 @@ const googleCalendar = {
     canWrite: true,
     canManage: true,
     canWatchEvents: true,
+    canInviteAttendees: true,
   },
   isPrimary: true,
   isVisible: true,

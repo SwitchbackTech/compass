@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { DateTimeSchema } from "@core/types/domain-primitives";
+import { ProviderKindSchema } from "@core/types/sync/identity.contracts";
 
 // Sanitized, bounded-cardinality sync health snapshot (R-OPS / S44).
 // Emitted as `sync_health_snapshot` every five minutes. Counts and ages only —
@@ -57,7 +58,7 @@ export type SyncHealthFreshness = z.infer<typeof SyncHealthFreshnessSchema>;
 export const SyncHealthSnapshotSchema = z.strictObject({
   environment: z.string().min(1),
   execution: z.enum(["passive", "active"]),
-  provider: z.literal("google"),
+  provider: ProviderKindSchema,
   service: z.literal("compass-sync"),
   connections: SyncHealthConnectionCountsSchema,
   jobs: SyncHealthJobBacklogSchema,

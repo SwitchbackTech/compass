@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { getCalendarCapabilities } from "@core/types/calendar.contracts";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { PAGE_JUMP_ATTRIBUTE } from "@web/shortcuts/page-jump/page-jump.targets";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
@@ -11,13 +12,7 @@ const personal = createMockCalendar({ name: "Personal" });
 const holidays = createMockCalendar({
   name: "Holidays",
   access: "reader",
-  capabilities: {
-    canReadAvailability: true,
-    canReadDetails: true,
-    canWrite: false,
-    canManage: false,
-    canWatchEvents: true,
-  },
+  capabilities: getCalendarCapabilities("reader"),
 });
 
 describe("DayCalendarColumnHeaders", () => {

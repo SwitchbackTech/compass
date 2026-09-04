@@ -116,6 +116,14 @@ describe("Sync identity contracts", () => {
       expect(ProviderKindSchema.safeParse("google").success).toBe(true);
     });
 
+    it("accepts microsoft", () => {
+      expect(ProviderKindSchema.safeParse("microsoft").success).toBe(true);
+    });
+
+    it("accepts apple", () => {
+      expect(ProviderKindSchema.safeParse("apple").success).toBe(true);
+    });
+
     it("rejects an unknown provider", () => {
       expect(ProviderKindSchema.safeParse("caldav").success).toBe(false);
     });

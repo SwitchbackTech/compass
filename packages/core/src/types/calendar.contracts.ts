@@ -5,7 +5,12 @@ import {
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 
-export const CalendarProviderSchema = z.enum(["local", "google"]);
+export const CalendarProviderSchema = z.enum([
+  "local",
+  "google",
+  "microsoft",
+  "apple",
+]);
 export type CalendarProvider = z.infer<typeof CalendarProviderSchema>;
 
 export const CalendarAccessSchema = z.enum([
@@ -22,6 +27,7 @@ export const CalendarCapabilitiesSchema = z.strictObject({
   canWrite: z.boolean(),
   canManage: z.boolean(),
   canWatchEvents: z.boolean(),
+  canInviteAttendees: z.boolean(),
 });
 export type CalendarCapabilities = z.infer<typeof CalendarCapabilitiesSchema>;
 
@@ -62,6 +68,7 @@ export const CAPABILITIES_BY_ACCESS = {
     canWrite: true,
     canManage: true,
     canWatchEvents: true,
+    canInviteAttendees: true,
   },
   writer: {
     canReadAvailability: true,
@@ -69,6 +76,7 @@ export const CAPABILITIES_BY_ACCESS = {
     canWrite: true,
     canManage: false,
     canWatchEvents: true,
+    canInviteAttendees: true,
   },
   reader: {
     canReadAvailability: true,
@@ -76,6 +84,7 @@ export const CAPABILITIES_BY_ACCESS = {
     canWrite: false,
     canManage: false,
     canWatchEvents: true,
+    canInviteAttendees: false,
   },
   freeBusyReader: {
     canReadAvailability: true,
@@ -83,6 +92,7 @@ export const CAPABILITIES_BY_ACCESS = {
     canWrite: false,
     canManage: false,
     canWatchEvents: false,
+    canInviteAttendees: false,
   },
 } as const satisfies Record<CalendarAccess, CalendarCapabilities>;
 
