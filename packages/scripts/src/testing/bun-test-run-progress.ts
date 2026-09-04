@@ -22,10 +22,12 @@ export function ingestBunTestOutput(
   progress: BunTestRunProgress,
 ): void {
   for (const line of text.split(/\r?\n/)) {
-    if (/\(pass\)/.test(line)) {
+    // Anchored: a passing test whose name mentions "(fail)" must not count
+    // as a failure. Bun prints result lines as `(pass) ...` / `(fail) ...`.
+    if (/^\s*\(pass\)/.test(line)) {
       progress.sawPass = true;
     }
-    if (/\(fail\)/.test(line) || /\(error\)/.test(line)) {
+    if (/^\s*\(fail\)/.test(line) || /^\s*\(error\)/.test(line)) {
       progress.failed += 1;
     }
     const failCount = line.match(/^\s*(\d+) (fail|error)s?$/);

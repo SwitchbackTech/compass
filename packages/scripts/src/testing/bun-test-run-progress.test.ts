@@ -39,7 +39,7 @@ describe("ingestBunTestOutput", () => {
     expect(bunTestRunExitCode(progress)).toBe(1);
   });
 
-  it("counts per-test (fail) lines when the summary never appears", () => {
+  it("counts per-test fail result lines when the summary never appears", () => {
     const progress = createBunTestRunProgress();
     ingestBunTestOutput("(pass) ok [1ms]\n(fail) broken [2ms]\n", progress);
 
@@ -47,6 +47,18 @@ describe("ingestBunTestOutput", () => {
     expect(progress.failed).toBe(1);
     expect(bunTestRunLooksFinished(progress)).toBe(true);
     expect(bunTestRunExitCode(progress)).toBe(1);
+  });
+
+  it("does not count a passing test whose name mentions fail", () => {
+    const progress = createBunTestRunProgress();
+    ingestBunTestOutput(
+      "(pass) ingestBunTestOutput > counts per-test (fail) lines when the summary never appears [0.05ms]\n",
+      progress,
+    );
+
+    expect(progress.sawPass).toBe(true);
+    expect(progress.failed).toBe(0);
+    expect(bunTestRunExitCode(progress)).toBe(0);
   });
 
   it("does not treat silence with no tests as finished", () => {
