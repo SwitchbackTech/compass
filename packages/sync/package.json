@@ -12,6 +12,7 @@
     "express-rate-limit": "^7.5.0",
     "fast-xml-parser": "^5.11.1",
     "google-auth-library": "^10.6.2",
+    "ical.js": "^2.2.1",
     "mongodb": "^7.2.0",
     "rrule": "^2.7.2",
     "tslib": "^2.4.0",
