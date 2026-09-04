@@ -133,6 +133,12 @@ describe("EventForm attendee editor gating", () => {
     expect(screen.getByLabelText("Guest One, yes")).toBeInTheDocument();
     // Existing guests appear as chips (displayName preferred).
     expect(screen.getByText("Guest One")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy attendee list" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "copy guest@example.com" }),
+    ).toBeInTheDocument();
   });
 
   it("jumps focus to the guest combobox with Mod+8", () => {
@@ -214,6 +220,12 @@ describe("EventForm attendee editor gating", () => {
       screen.queryByRole("combobox", { name: "Guests" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText(/1 guest/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy attendee list" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "copy guest@example.com" }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the read-only guest list on a read-only calendar", () => {
@@ -229,6 +241,12 @@ describe("EventForm attendee editor gating", () => {
       screen.queryByRole("combobox", { name: "Guests" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText(/1 guest/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy attendee list" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "copy guest@example.com" }),
+    ).toBeInTheDocument();
   });
 
   it("shows no editor on a non-Google (local) calendar", () => {

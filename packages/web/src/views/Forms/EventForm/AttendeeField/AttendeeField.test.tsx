@@ -6,6 +6,10 @@ import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import { AttendeeField } from "./AttendeeField";
 import { describe, expect, it, mock } from "bun:test";
 
+mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
+  copyText: mock(async () => true),
+}));
+
 const alice: AttendeeInput = { email: "alice@example.com", displayName: null };
 const bob: AttendeeInput = { email: "bob@example.com", displayName: "Bob B" };
 
@@ -121,6 +125,41 @@ describe("AttendeeField", () => {
     await user.click(screen.getByRole("button", { name: "Remove Bob B" }));
 
     expect(onValueChange).toHaveBeenCalledWith([alice]);
+  });
+
+  it("offers a copy button per guest that copies that guest's email", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={[alice, bob]} />);
+
+    expect(
+      screen.queryByRole("button", { name: "copy attendee list" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "copy alice@example.com" }),
+    );
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "copy bob@example.com" }),
+    ).toBeInTheDocument();
+  });
+
+  it("copies a guest email when the copy button is activated from the keyboard", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={[alice]} />);
+
+    screen.getByRole("button", { name: "copy alice@example.com" }).focus();
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
+  });
+
+  it("does not show a copy button when there are no guests", () => {
+    render(<Harness />);
+
+    expect(
+      screen.queryByRole("button", { name: /copy / }),
+    ).not.toBeInTheDocument();
   });
 
   it("paints provider RSVP on chips from the display-only status map", () => {

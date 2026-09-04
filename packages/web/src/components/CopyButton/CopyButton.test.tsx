@@ -10,19 +10,35 @@ mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
 describe("CopyButton", () => {
   it("copies text and shows a checkmark label", async () => {
     const user = userEvent.setup();
-    render(<CopyButton label="copy event title" text="Standup" />);
+    render(
+      <CopyButton label="copy guest@example.com" text="guest@example.com" />,
+    );
 
-    const button = screen.getByRole("button", { name: "copy event title" });
+    const button = screen.getByRole("button", {
+      name: "copy guest@example.com",
+    });
     expect(button).toHaveAttribute("data-pointer-pass", "");
     await user.click(button);
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
   });
 
+  it("copies when activated from the keyboard", async () => {
+    const user = userEvent.setup();
+    render(
+      <CopyButton label="copy guest@example.com" text="guest@example.com" />,
+    );
+
+    screen.getByRole("button", { name: "copy guest@example.com" }).focus();
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
+  });
+
   it("is disabled when there is nothing to copy", () => {
-    render(<CopyButton label="copy event title" text="   " />);
+    render(<CopyButton label="copy guest@example.com" text="   " />);
     expect(
-      screen.getByRole("button", { name: "copy event title" }),
+      screen.getByRole("button", { name: "copy guest@example.com" }),
     ).toBeDisabled();
   });
 });

@@ -311,12 +311,19 @@ describe("EventForm", () => {
     expect(
       within(actionRow).getByRole("button", { name: "Close" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy event" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("stacks the title input above its underline so the copy button does not squeeze the field", () => {
+  it("does not render field-level copy buttons", () => {
     renderWithStore(
       <EventForm
-        draft={createEditDraft({ title: "Standup" })}
+        draft={createEditDraft({
+          title: "Standup",
+          location: "Room 4",
+          description: "Plan the launch",
+        })}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
@@ -327,17 +334,19 @@ describe("EventForm", () => {
       />,
     );
 
-    const title = screen.getByPlaceholderText("Title");
-    const copyTitle = screen.getByRole("button", { name: "copy event title" });
-
-    // Focusable renders the input and a decorative underline as a fragment.
-    // They must share a wrapping box; if they land as flex siblings of the
-    // copy button, the 100%-wide underline collapses the input to a bar.
-    expect(title.parentElement).not.toBe(copyTitle.parentElement);
-    expect(title.parentElement?.contains(copyTitle)).toBe(false);
-    expect(copyTitle.parentElement?.contains(title)).toBe(true);
-    expect(title.nextElementSibling).not.toBe(copyTitle);
-    expect(title).toHaveValue("Standup");
+    expect(screen.getByPlaceholderText("Title")).toHaveValue("Standup");
+    expect(
+      screen.queryByRole("button", { name: "copy event title" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy event location" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy event description" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "copy attendee list" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders as a transparent sidebar column with the save footer after the fields", () => {
