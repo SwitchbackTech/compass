@@ -6,6 +6,11 @@ import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { refreshConnectionStateAfterJob } from "@sync/domain/connection-state-refresh.service";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
+import {
+  type ProviderAdapters,
+  ProviderNotConfiguredError,
+  type ResolveProviderAdapters,
+} from "@sync/providers/provider-adapters";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ProviderCalendarAdapter,
@@ -22,6 +27,7 @@ import {
   resourceJob,
 } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
+import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -42,15 +48,11 @@ export interface SyncJobDispatchDeps {
   // discovers its calendars, and enqueues an initial import per active calendar.
   connections: ProviderConnectionRepository;
   credentials: CredentialRepository;
-  discovery: ProviderCalendarAdapter;
+  resolveAdapters: ResolveProviderAdapters;
   jobs: JobRepository;
   // pullCalendarChanges consults pending commands before deleting an event.
   commands: CommandRepository;
-  reader: ProviderEventReader;
   custody: AccessTokenSource;
-  // maintainSubscription opens/renews the calendar's push channel; the callback
-  // url is where the provider posts change notifications back to this service.
-  notifications: ProviderNotificationAdapter;
   callbackUrl: string;
   // Content-free outbox so Compass API can push typed browser SSE after a
   // provider pull. Without this, incremental pulls update Sync storage but the
@@ -67,6 +69,42 @@ export interface SyncJobDispatchDeps {
   };
 }
 
+// Per-connection adapter ports resolved from the connection's provider kind.
+export interface SyncJobExecutionDeps extends SyncJobDispatchDeps {
+  reader: ProviderEventReader;
+  discovery: ProviderCalendarAdapter;
+  notifications: ProviderNotificationAdapter;
+}
+
+export function executionDepsForAdapters(
+  deps: SyncJobDispatchDeps,
+  adapters: ProviderAdapters,
+): SyncJobExecutionDeps {
+  return {
+    ...deps,
+    reader: adapters.reader,
+    discovery: adapters.calendars,
+    notifications: adapters.notifications,
+  };
+}
+
+function resolveConnectionAdapters(
+  deps: SyncJobDispatchDeps,
+  connection: ProviderConnectionRecord,
+): SyncJobExecutionDeps | { result: "fail"; reason: "providerNotConfigured" } {
+  try {
+    return executionDepsForAdapters(
+      deps,
+      deps.resolveAdapters(connection.provider),
+    );
+  } catch (error) {
+    if (error instanceof ProviderNotConfiguredError) {
+      return { result: "fail", reason: "providerNotConfigured" };
+    }
+    throw error;
+  }
+}
+
 // The decision a dispatch makes about a claimed job. The worker loop (a later
 // slice) owns the lease and turns this into a JobRepository call; keeping the
 // decision pure keeps dispatch trivially testable without a queue.
@@ -78,7 +116,9 @@ export type SyncJobOutcome =
   | { readonly result: "retry"; readonly reason: string }
   // Nothing to act on — the job's target vanished (resource/calendar deleted) or
   // the job is malformed for its kind. Settle complete; retrying can't help.
-  | { readonly result: "drop"; readonly reason: string };
+  | { readonly result: "drop"; readonly reason: string }
+  // The connection's provider has no configured adapter set; retrying cannot help.
+  | { readonly result: "fail"; readonly reason: "providerNotConfigured" };
 
 // Run one claimed sync job (calendarListSync / initialImport / incrementalPull /
 // repair / subscriptionMaintain) and report how to settle it. calendarListSync
@@ -238,13 +278,15 @@ async function runSyncJob(
     if (!connection) {
       return { result: "drop", reason: "connection no longer exists" };
     }
+    const executionDeps = resolveConnectionAdapters(deps, connection);
+    if ("result" in executionDeps) return executionDeps;
     // Re-list while notifications land mid-pass, mirroring pullUntilQuiet: a
     // webhook that arrives while this job is CLAIMED coalesces onto it and
     // vanishes, so the moved change marker is the only signal that this pass
     // listed a snapshot from before the change. On giving up the marker stays
     // set and the daily rediscovery sweep covers the remainder.
     const { last: list, gaveUp } = await repeatWhileChanged(
-      () => syncCalendarList(deps, connection, now),
+      () => syncCalendarList(executionDeps, connection, now),
       (result) => result.changedDuringSync,
       (pass) =>
         deps.log?.info?.(
@@ -277,6 +319,17 @@ async function runSyncJob(
     return { result: "done" };
   }
 
+  const connection = await deps.connections.findById(
+    job.tenantId,
+    job.principalId,
+    job.connectionId,
+  );
+  if (!connection) {
+    return { result: "drop", reason: "connection no longer exists" };
+  }
+  const executionDeps = resolveConnectionAdapters(deps, connection);
+  if ("result" in executionDeps) return executionDeps;
+
   if (!job.resourceId) {
     return { result: "drop", reason: "job has no resourceId" };
   }
@@ -295,7 +348,7 @@ async function runSyncJob(
         reason: "calendar-list resource only accepts subscriptionMaintain",
       };
     }
-    await maintainSubscription(deps, null, resource, now);
+    await maintainSubscription(executionDeps, null, resource, now);
     return { result: "done" };
   }
   if (!resource.calendarId) {
@@ -378,7 +431,7 @@ async function runSyncJob(
       // Idempotent: a resource that already holds a cursor no-ops inside.
       // Notify the browser after the windowed horizon pass so events in the
       // current view can appear before the full historical scrape finishes.
-      await importCalendarEvents(deps, calendar, now, {
+      await importCalendarEvents(executionDeps, calendar, now, {
         onWindowedPassComplete: async () => {
           await appendCalendarInvalidation(deps, calendar, now());
         },
@@ -407,7 +460,7 @@ async function runSyncJob(
       };
     }
     case "incrementalPull": {
-      const pull = await pullUntilQuiet(deps, calendar, now);
+      const pull = await pullUntilQuiet(executionDeps, calendar, now);
       if (pull.status === "applied") {
         // The stored cursor worked, so whatever streak it had is over. Guarded
         // so the overwhelmingly common healthy pull writes nothing.
@@ -471,7 +524,7 @@ async function runSyncJob(
       // provider watch durable. It deliberately has its own job kind so an
       // unrelated reconcile/manual pull can never make a new connection look
       // ready before watch setup has completed.
-      const pull = await pullUntilQuiet(deps, calendar, now);
+      const pull = await pullUntilQuiet(executionDeps, calendar, now);
       if (pull.status === "applied") {
         await deps.resources.setBootstrapState(
           resource.tenantId,
@@ -498,7 +551,7 @@ async function runSyncJob(
       };
     }
     case "repair": {
-      const repair = await repairCalendar(deps, calendar, now);
+      const repair = await repairCalendar(executionDeps, calendar, now);
       // An incomplete repair (the pass yielded no durable cursor) left the old
       // generation intact; retry the whole rebuild later rather than settle.
       if (repair.status === "repaired") {
@@ -523,7 +576,7 @@ async function runSyncJob(
       // including durable watchFailed, which maintainSubscription folds into
       // unsupported. A transient watch failure throws and the worker retries.
       const subscription = await maintainSubscription(
-        deps,
+        executionDeps,
         calendar,
         resource,
         now,
@@ -636,7 +689,7 @@ async function repeatWhileChanged<T>(
 }
 
 async function pullUntilQuiet(
-  deps: SyncJobDispatchDeps,
+  deps: SyncJobExecutionDeps,
   calendar: ProviderCalendarRecord,
   now: () => Date,
 ): Promise<Awaited<ReturnType<typeof pullCalendarChanges>>> {

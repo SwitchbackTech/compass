@@ -4,6 +4,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { PrincipalPurgeResponseSchema } from "@core/types/sync/principal.contracts";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { purgePrincipal } from "@sync/domain/principal-purge.service";
+import { authResolverForAdapter } from "@sync/providers/google/build-provider-resolvers";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { redactedCause } from "@sync/safety/redact-error";
 import {
@@ -50,7 +51,10 @@ export function registerPrincipalRoutes(
           {
             ...repos,
             custody: deps.authAdapter
-              ? new CredentialCustody(repos.credentials, deps.authAdapter)
+              ? new CredentialCustody(
+                  repos.credentials,
+                  authResolverForAdapter(deps.authAdapter),
+                )
               : undefined,
           },
           auth.tenantId,

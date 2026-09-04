@@ -1,4 +1,5 @@
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { type ResolveProviderAuth } from "@sync/providers/provider-adapters";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,
@@ -27,7 +28,7 @@ export class CredentialCustody {
 
   constructor(
     private readonly credentials: CredentialRepository,
-    private readonly adapter: ProviderAuthAdapter,
+    private readonly resolveAuth: ResolveProviderAuth,
     private readonly now: () => Date = () => new Date(),
     private readonly refreshSkewMs: number = DEFAULT_REFRESH_SKEW_MS,
   ) {}
@@ -61,7 +62,9 @@ export class CredentialCustody {
     const credential = await this.credentials.findByConnection(connectionId);
     await this.credentials.deleteByConnection(connectionId);
     if (credential) {
-      await this.adapter.revoke({ token: credential.refreshToken });
+      await this.resolveAuth(credential.provider).revoke({
+        token: credential.refreshToken,
+      });
     }
   }
 
@@ -101,7 +104,9 @@ export class CredentialCustody {
       ReturnType<ProviderAuthAdapter["refreshAccessToken"]>
     >;
     try {
-      refreshed = await this.adapter.refreshAccessToken({
+      refreshed = await this.resolveAuth(
+        credential.provider,
+      ).refreshAccessToken({
         refreshToken: credential.refreshToken,
       });
     } catch (error) {

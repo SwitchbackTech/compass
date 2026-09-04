@@ -485,9 +485,13 @@ describe("executeProviderCreate", () => {
     await storeCredential(credentials, calendar.connectionId);
     const custody = new CredentialCustody(
       credentials,
-      new RevokedAuthAdapter({
-        refreshError: new ProviderAuthError("authorizationRevoked", "revoked"),
-      }),
+      () =>
+        new RevokedAuthAdapter({
+          refreshError: new ProviderAuthError(
+            "authorizationRevoked",
+            "revoked",
+          ),
+        }),
     );
 
     const result = await executeProviderCreate(
@@ -927,7 +931,7 @@ describe("executeProviderUpdate", () => {
     });
     const custody = new CredentialCustody(
       credentials,
-      new RevokedAuthAdapter(),
+      () => new RevokedAuthAdapter(),
     );
     const writer = new FakeUpdateWriter();
     writer.fetchError = new ProviderWriteError(
@@ -2989,7 +2993,7 @@ describe("attendeesEdit replace", () => {
   });
 
   const connectionsWith = (email: string | null): ProviderConnectionLookup => ({
-    findById: async () => ({ account: { email } }),
+    findById: async () => ({ account: { email }, provider: "google" }),
   });
   const missingConnection: ProviderConnectionLookup = {
     findById: async () => null,
@@ -3691,7 +3695,7 @@ describe("executeProviderRsvp", () => {
   });
 
   const connectionsWith = (email: string | null): ProviderConnectionLookup => ({
-    findById: async () => ({ account: { email } }),
+    findById: async () => ({ account: { email }, provider: "google" }),
   });
   const missingConnection: ProviderConnectionLookup = {
     findById: async () => null,

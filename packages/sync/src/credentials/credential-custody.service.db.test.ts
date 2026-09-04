@@ -84,7 +84,7 @@ describe("CredentialCustody", () => {
         grantedScopes: [],
       },
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     const token = await custody.getValidAccessToken(connectionId);
@@ -98,7 +98,7 @@ describe("CredentialCustody", () => {
   it("serves the cached token without refreshing when it is still valid", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter();
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
     await repo.cacheAccessToken(
       connectionId,
@@ -121,7 +121,7 @@ describe("CredentialCustody", () => {
         grantedScopes: [],
       },
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
     await repo.cacheAccessToken(
       connectionId,
@@ -145,7 +145,12 @@ describe("CredentialCustody", () => {
         grantedScopes: [],
       },
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow, 60_000);
+    const custody = new CredentialCustody(
+      repo,
+      () => adapter,
+      fixedNow,
+      60_000,
+    );
     await custody.store(baseCredential(connectionId));
     // Expires 30s after now — inside the 60s skew, so it must be refreshed.
     await repo.cacheAccessToken(
@@ -175,7 +180,7 @@ describe("CredentialCustody", () => {
       // Hold the refresh open until both callers are queued.
       onRefresh: () => gate,
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     const first = custody.getValidAccessToken(connectionId);
@@ -198,7 +203,7 @@ describe("CredentialCustody", () => {
         grantedScopes: [],
       },
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     await custody.getValidAccessToken(connectionId);
@@ -209,7 +214,7 @@ describe("CredentialCustody", () => {
 
   it("rejects with missingRefreshToken when no credential exists", async () => {
     const adapter = new FakeAdapter();
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
 
     const error = (await custody
       .getValidAccessToken(objectId() as ConnectionId)
@@ -225,7 +230,7 @@ describe("CredentialCustody", () => {
     const adapter = new FakeAdapter({
       refreshError: new ProviderAuthError("authorizationRevoked", "revoked"),
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     const error = (await custody
@@ -242,7 +247,7 @@ describe("CredentialCustody", () => {
     const adapter = new FakeAdapter({
       refreshError: new ProviderAuthError("refreshFailed", "blip"),
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     await expect(
@@ -256,7 +261,7 @@ describe("CredentialCustody", () => {
   it("discardRevoked deletes the credential and is idempotent", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter();
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     await custody.discardRevoked(connectionId);
@@ -294,7 +299,7 @@ describe("CredentialCustody", () => {
         return gate;
       },
     });
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     // Start a refresh; the rejection handler attaches immediately so the
@@ -320,7 +325,7 @@ describe("CredentialCustody", () => {
   it("deletes the credential and revokes it on disconnect", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter();
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
     await custody.disconnect(connectionId);
@@ -331,7 +336,7 @@ describe("CredentialCustody", () => {
 
   it("disconnecting an unknown connection revokes nothing and does not throw", async () => {
     const adapter = new FakeAdapter();
-    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    const custody = new CredentialCustody(repo, () => adapter, fixedNow);
 
     await custody.disconnect(objectId() as ConnectionId);
 

@@ -43,6 +43,7 @@ export function buildSyncApp(deps: {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
       execution: deps.connectionApi.execution,
+      resolveAdapters: deps.connectionApi.resolveAdapters,
       writer: deps.connectionApi.writer,
       authAdapter: deps.connectionApi.authAdapter,
       now: deps.connectionApi.now,

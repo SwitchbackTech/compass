@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import {
   ensureEventsResource,
   FakeReader,
+  fakeResolveAdapters,
   pageOf as page,
   seedProviderCalendar,
   singleEvent as single,
@@ -12,8 +13,12 @@ import {
   dispatchSyncJob,
   type SyncJobDispatchDeps,
 } from "@sync/domain/sync-job-dispatch.service";
+import { ProviderNotConfiguredError } from "@sync/providers/provider-adapters";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
-import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
+import {
+  type ProviderCalendarAdapter,
+  ProviderCalendarError,
+} from "@sync/providers/provider-calendar.port";
 import {
   ProviderEventReadError,
   type ProviderEventReader,
@@ -86,6 +91,38 @@ const discovery = {
   }),
 };
 
+const defaultGoogleConnection = (
+  tenantId: ProviderConnectionRecord["tenantId"],
+  principalId: ProviderConnectionRecord["principalId"],
+  id: ProviderConnectionRecord["_id"],
+): ProviderConnectionRecord => ({
+  _id: id,
+  tenantId,
+  principalId,
+  provider: "google",
+  account: {
+    email: "user@example.com",
+    displayName: "User",
+    providerAccountId: "google-subject",
+  },
+  capabilities: [
+    "readEvents",
+    "writeEvents",
+    "readBusy",
+    "inviteAttendees",
+    "changeNotifications",
+    "incrementalChanges",
+  ],
+  state: "healthy",
+  stateReason: null,
+  diagnosticKey: "0123456789abcdef0123456789abcdef",
+  disconnectedAt: null,
+  lastSyncedAt: null,
+  lastHealthyAt: null,
+  createdAt: now(),
+  updatedAt: now(),
+});
+
 describe("dispatchSyncJob", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;
@@ -98,7 +135,8 @@ describe("dispatchSyncJob", () => {
   let credentials: CredentialRepository;
   // Dispatch resolves the connection for a calendarListSync job; a test sets what
   // findById returns without seeding a full connection record.
-  let stubbedConnection: ProviderConnectionRecord | null;
+  // undefined: synthesize a google connection; null: no connection; else: use stub.
+  let stubbedConnection: ProviderConnectionRecord | null | undefined;
 
   beforeEach(() => {
     events = new EventRepository(storage.db());
@@ -109,11 +147,19 @@ describe("dispatchSyncJob", () => {
     jobs = new JobRepository(storage.db());
     invalidations = new InvalidationRepository(storage.db());
     credentials = new CredentialRepository(storage.db());
-    stubbedConnection = null;
+    stubbedConnection = undefined;
   });
 
   const connections = {
-    findById: async () => stubbedConnection,
+    findById: async (
+      tenantId: ProviderConnectionRecord["tenantId"],
+      principalId: ProviderConnectionRecord["principalId"],
+      id: ProviderConnectionRecord["_id"],
+    ) => {
+      if (stubbedConnection === null) return null;
+      if (stubbedConnection) return stubbedConnection;
+      return defaultGoogleConnection(tenantId, principalId, id);
+    },
     updateDerivedState: async (
       tenantId: ProviderConnectionRecord["tenantId"],
       principalId: ProviderConnectionRecord["principalId"],
@@ -134,8 +180,8 @@ describe("dispatchSyncJob", () => {
   const deps = (
     reader: FakeReader,
     custody: SyncJobDispatchDeps["custody"] = tokenSource,
-    notificationsOverride: SyncJobDispatchDeps["notifications"] = notifications,
-    discoveryOverride: SyncJobDispatchDeps["discovery"] = discovery,
+    notificationsOverride = notifications,
+    discoveryOverride = discovery,
   ): SyncJobDispatchDeps => ({
     events,
     occurrences,
@@ -143,12 +189,13 @@ describe("dispatchSyncJob", () => {
     calendars,
     connections,
     credentials,
-    discovery: discoveryOverride,
+    resolveAdapters: fakeResolveAdapters(reader, {
+      calendars: discoveryOverride,
+      notifications: notificationsOverride,
+    }),
     jobs,
     commands,
-    reader,
     custody,
-    notifications: notificationsOverride,
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
   });
@@ -281,7 +328,10 @@ describe("dispatchSyncJob", () => {
     };
 
     await dispatchSyncJob(
-      { ...deps(new FakeReader([])), reader },
+      {
+        ...deps(new FakeReader([])),
+        resolveAdapters: fakeResolveAdapters(reader),
+      },
       jobFor(resource, "incrementalPull"),
       now,
     );
@@ -321,7 +371,7 @@ describe("dispatchSyncJob", () => {
     await dispatchSyncJob(
       {
         ...deps(new FakeReader([])),
-        reader,
+        resolveAdapters: fakeResolveAdapters(reader),
         log: { warn: (message) => warnings.push(message) },
       },
       jobFor(resource, "incrementalPull"),
@@ -1187,7 +1237,15 @@ describe("dispatchSyncJob", () => {
     const failingDeps: SyncJobDispatchDeps = {
       ...deps(new FakeReader([page([], { nextSyncToken: "cursor-2" })])),
       connections: {
-        findById: async () => stubbedConnection,
+        findById: async (
+          tenantId: ProviderConnectionRecord["tenantId"],
+          principalId: ProviderConnectionRecord["principalId"],
+          id: ProviderConnectionRecord["_id"],
+        ) => {
+          if (stubbedConnection === null) return null;
+          if (stubbedConnection) return stubbedConnection;
+          return defaultGoogleConnection(tenantId, principalId, id);
+        },
         updateDerivedState: async () => {
           throw new Error("derived-state write failed");
         },
@@ -1287,7 +1345,7 @@ describe("dispatchSyncJob", () => {
     // provider (its enqueue coalesced onto this very job and vanished); the
     // moved marker must make dispatch go round again.
     let calls = 0;
-    const restlessDiscovery: SyncJobDispatchDeps["discovery"] = {
+    const restlessDiscovery: ProviderCalendarAdapter = {
       discoverCalendars: async () => {
         calls += 1;
         if (calls === 1) {
@@ -1422,8 +1480,9 @@ describe("dispatchSyncJob", () => {
       _id: connectionId,
       tenantId,
       principalId,
+      provider: "google",
     } as ProviderConnectionRecord;
-    const failingDiscovery: SyncJobDispatchDeps["discovery"] = {
+    const failingDiscovery: ProviderCalendarAdapter = {
       discoverCalendars: async () => {
         throw new ProviderCalendarError(
           "discoveryFailed",
@@ -1467,8 +1526,9 @@ describe("dispatchSyncJob", () => {
       _id: connectionId,
       tenantId,
       principalId,
+      provider: "google",
     } as ProviderConnectionRecord;
-    const transientDiscovery: SyncJobDispatchDeps["discovery"] = {
+    const transientDiscovery: ProviderCalendarAdapter = {
       discoverCalendars: async () => {
         throw new ProviderCalendarError(
           "transient",
@@ -1490,5 +1550,50 @@ describe("dispatchSyncJob", () => {
         now,
       ),
     ).rejects.toMatchObject({ reason: "transient" });
+  });
+
+  it("fails a resource job with providerNotConfigured without touching the resource", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const before = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    stubbedConnection = defaultGoogleConnection(
+      resource.tenantId,
+      resource.principalId,
+      resource.connectionId,
+    );
+    stubbedConnection = {
+      ...stubbedConnection,
+      provider: "microsoft",
+    };
+
+    const reader = new FakeReader([]);
+    const outcome = await dispatchSyncJob(
+      {
+        ...deps(reader),
+        resolveAdapters: (provider) => {
+          if (provider === "microsoft") {
+            throw new ProviderNotConfiguredError("microsoft");
+          }
+          return fakeResolveAdapters(reader)();
+        },
+      },
+      jobFor(resource, "initialImport"),
+      now,
+    );
+
+    expect(outcome).toEqual({
+      result: "fail",
+      reason: "providerNotConfigured",
+    });
+    const after = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(after).toEqual(before);
   });
 });

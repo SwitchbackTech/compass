@@ -13,6 +13,8 @@ import {
   ProviderWriteUnavailableError,
   submitCloudCommand,
 } from "@sync/domain/cloud-command.service";
+import { buildResolveAuth } from "@sync/providers/google/build-provider-resolvers";
+import { type ResolveProviderAdapters } from "@sync/providers/provider-adapters";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { redactedCause } from "@sync/safety/redact-error";
@@ -42,6 +44,7 @@ export interface CommandApiDeps {
   // provider-targeted commands pending.
   writer?: ProviderEventWriter;
   authAdapter?: ProviderAuthAdapter;
+  resolveAdapters?: ResolveProviderAdapters;
   // Injectable clock so local confirmation timestamps are deterministic in
   // tests.
   now?: () => number;
@@ -79,12 +82,12 @@ export function registerCommandRoutes(
         // custody is per-request (it holds the request's db-backed credential
         // repo), the writer is shared.
         const provider =
-          deps.writer && deps.authAdapter
+          deps.resolveAdapters && deps.authAdapter
             ? {
-                writer: deps.writer,
+                resolveAdapters: deps.resolveAdapters,
                 custody: new CredentialCustody(
                   repos.credentials,
-                  deps.authAdapter,
+                  buildResolveAuth(deps.resolveAdapters),
                 ),
               }
             : undefined;
