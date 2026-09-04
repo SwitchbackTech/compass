@@ -826,6 +826,27 @@ describe("PublicBookingService", () => {
     expect(response.slots.map((slot) => slot.slotStart)).not.toContain(booked);
   });
 
+  it("returns the same slot set for two different guest timeZone values", async () => {
+    const { slug } = await enableBookingPage();
+    const window = {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+    };
+
+    const utc = await service.getSlots(slug, {
+      ...window,
+      timeZone: "UTC",
+    });
+    const tokyo = await service.getSlots(slug, {
+      ...window,
+      timeZone: "Asia/Tokyo",
+    });
+
+    expect(utc.bookable).toBe(true);
+    expect(utc.slots.length).toBeGreaterThan(0);
+    expect(tokyo).toEqual(utc);
+  });
+
   it("does not fetch a confirmed reservation far outside the requested window", async () => {
     const { slug, pageId } = await enableBookingPage();
     await seedConfirmedReservation(

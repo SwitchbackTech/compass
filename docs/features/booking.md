@@ -328,10 +328,11 @@ Unauthenticated:
   `This page is not accepting bookings.` (no billing, plan, or payment
   wording).
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
-  instants in the guest timezone for that window. The guest UI requests
-  **one month at a time** (plus prefetch of adjacent months). Window
-  must be within the 60-day horizon. A host who cannot write is
-  `{ slots: [], bookable: false }`.
+  instants for that window, computed in the **host** timezone. `timeZone`
+  is required (guest rendering and logs) and does not change the slot
+  set. The guest UI requests **one month at a time** (plus prefetch of
+  adjacent months). Window must be within the 60-day horizon. A host who
+  cannot write is `{ slots: [], bookable: false }`.
 - `POST /api/booking/pages/:slug/reservations` — `{slotStart, guestName,
   guestEmail, notes?, guestTimeZone}`. Re-checks billing and busy, then
   creates. A host who cannot write is the same `409` as GET page and
