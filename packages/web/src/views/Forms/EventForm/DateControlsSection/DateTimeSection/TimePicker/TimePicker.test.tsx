@@ -19,15 +19,12 @@ const nineFortyFive = { label: "9:45 AM", value: "9:45 AM" };
 function Harness({
   initialValue = intervalOptions[0],
   options = intervalOptions,
-  freshOptions = false,
 }: {
   initialValue?: SelectOption<string>;
   options?: SelectOption<string>[];
-  freshOptions?: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
-  const resolvedOptions = freshOptions ? getTimeOptions() : options;
 
   return (
     <div>
@@ -37,7 +34,7 @@ function Harness({
         inputId="startTimePicker"
         isMenuOpen={isMenuOpen}
         onChange={setValue}
-        options={resolvedOptions}
+        options={options}
         setIsMenuOpen={setIsMenuOpen}
         value={value}
       />
@@ -75,7 +72,7 @@ describe("TimePicker", () => {
 
   it("keeps the original time when Tabbing through without changing the draft", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    render(<Harness initialValue={onePm} options={dayOptions} />);
 
     await user.tab();
     await user.tab();
@@ -206,13 +203,7 @@ describe("TimePicker arrow-key focus", () => {
 describe("TimePicker Enter commit", () => {
   it("commits an explicit meridiem typed after the clock", async () => {
     const user = userEvent.setup({ delay: null });
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -226,13 +217,7 @@ describe("TimePicker Enter commit", () => {
 
   it("commits a clicked filtered option instead of the announced first match", async () => {
     const user = userEvent.setup({ delay: null });
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -248,13 +233,7 @@ describe("TimePicker Enter commit", () => {
 
   it("commits the first filtered match on Enter without arrowing", async () => {
     const user = userEvent.setup({ delay: null });
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -268,13 +247,7 @@ describe("TimePicker Enter commit", () => {
 
   it("commits the parsed hour on Enter instead of a substring match like 12 AM", async () => {
     const user = userEvent.setup({ delay: null });
-    render(
-      <Harness
-        initialValue={nineFortyFive}
-        options={dayOptions}
-        freshOptions
-      />,
-    );
+    render(<Harness initialValue={nineFortyFive} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -288,7 +261,7 @@ describe("TimePicker Enter commit", () => {
 
   it("commits a glued meridiem like 8p as 8 PM", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    render(<Harness initialValue={onePm} options={dayOptions} />);
 
     const combobox = screen.getByRole("combobox", { name: "Start time" });
     await user.click(combobox);
@@ -301,7 +274,7 @@ describe("TimePicker Enter commit", () => {
 
   it("keeps the original time when Enter is pressed without changing the draft", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+    render(<Harness initialValue={onePm} options={dayOptions} />);
 
     await user.tab();
     await user.tab();
