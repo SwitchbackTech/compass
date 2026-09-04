@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-router";
 import {
   validateBookingCancelSearch,
+  validateBookingRescheduleSearch,
   validatePublicBookingSearch,
 } from "@web/booking/public-booking-search";
 import {
@@ -59,6 +60,16 @@ export const publicBookCancelRoute = createRoute({
   component: lazyRouteComponent(
     () => import("@web/booking/PublicBookingCancelPage"),
     "PublicBookingCancelPage",
+  ),
+});
+
+export const publicBookRescheduleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROOT_ROUTES.BOOK_RESCHEDULE,
+  validateSearch: validateBookingRescheduleSearch,
+  component: lazyRouteComponent(
+    () => import("@web/booking/PublicBookingReschedulePage"),
+    "PublicBookingReschedulePage",
   ),
 });
 
@@ -175,7 +186,12 @@ const calendarShellChildren = calendarShellRoute.addChildren([
 export const routeTree = rootRoute.addChildren([
   calendarShellChildren,
   ...(IS_BOOKING_ENABLED
-    ? [publicBookConfirmedRoute, publicBookCancelRoute, publicBookRoute]
+    ? [
+        publicBookConfirmedRoute,
+        publicBookCancelRoute,
+        publicBookRescheduleRoute,
+        publicBookRoute,
+      ]
     : []),
   googleAuthCallbackRoute,
 ]);

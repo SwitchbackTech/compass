@@ -1,4 +1,6 @@
 import {
+  type BookingReservationSlotsQuery,
+  BookingReservationSlotsQuerySchema,
   type BookingSlotsQuery,
   BookingSlotsQuerySchema,
   type BookingSlotsResponse,
@@ -15,6 +17,10 @@ import {
   PublicGetBookingPageResponseSchema,
   type PublicGetBookingReservationResponse,
   PublicGetBookingReservationResponseSchema,
+  type RescheduleBookingReservationInput,
+  RescheduleBookingReservationInputSchema,
+  type RescheduleBookingReservationResponse,
+  RescheduleBookingReservationResponseSchema,
 } from "@core/types/booking.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 import { getErrorStatus } from "@web/api/util/api.util";
@@ -120,6 +126,52 @@ const PublicBookingApi = {
       parsed,
       { skipSessionRecovery: true },
     );
+  },
+
+  async getReservationSlots(
+    reservationId: string,
+    query: BookingReservationSlotsQuery,
+    signal?: AbortSignal,
+  ): Promise<BookingSlotsResponse> {
+    const parsed = BookingReservationSlotsQuerySchema.parse(query);
+    const params = new URLSearchParams({
+      token: parsed.token,
+      start: parsed.start,
+      end: parsed.end,
+      timeZone: parsed.timeZone,
+    });
+    try {
+      const response = await BaseApi.get<unknown>(
+        `/booking/reservations/${encodeURIComponent(reservationId)}/slots?${params.toString()}`,
+        { skipSessionRecovery: true, signal },
+      );
+      return BookingSlotsResponseSchema.parse(response.data);
+    } catch (error) {
+      if (getErrorStatus(error) === 404) {
+        throw new PublicBookingNotFoundError();
+      }
+      throw error;
+    }
+  },
+
+  async rescheduleReservation(
+    reservationId: string,
+    input: RescheduleBookingReservationInput,
+  ): Promise<RescheduleBookingReservationResponse> {
+    const parsed = RescheduleBookingReservationInputSchema.parse(input);
+    try {
+      const response = await BaseApi.post<unknown>(
+        `/booking/reservations/${encodeURIComponent(reservationId)}/reschedule`,
+        parsed,
+        { skipSessionRecovery: true },
+      );
+      return RescheduleBookingReservationResponseSchema.parse(response.data);
+    } catch (error) {
+      if (getErrorStatus(error) === 404) {
+        throw new PublicBookingNotFoundError();
+      }
+      throw error;
+    }
   },
 };
 
