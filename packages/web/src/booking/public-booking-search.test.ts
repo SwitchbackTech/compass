@@ -1,7 +1,10 @@
 import {
+  guestActionUrlFromHistory,
   publicCancelUrlForReservation,
+  publicRescheduleUrlForReservation,
   tokenFromGuestActionUrl,
   validateBookingCancelSearch,
+  validateBookingRescheduleSearch,
   validatePublicBookingSearch,
 } from "@web/booking/public-booking-search";
 import { describe, expect, it } from "bun:test";
@@ -67,6 +70,26 @@ describe("validateBookingCancelSearch", () => {
   });
 });
 
+describe("validateBookingRescheduleSearch", () => {
+  it("keeps token and picker selection together", () => {
+    expect(
+      validateBookingRescheduleSearch({
+        token: "abc",
+        month: "2026-09",
+        date: "2026-09-07",
+        slot: "2026-09-07T10:00:00.000Z",
+        tz: "UTC",
+      }),
+    ).toEqual({
+      token: "abc",
+      month: "2026-09",
+      date: "2026-09-07",
+      slot: "2026-09-07T10:00:00.000Z",
+      tz: "UTC",
+    });
+  });
+});
+
 describe("tokenFromGuestActionUrl", () => {
   it("reads token from an absolute cancel URL", () => {
     expect(
@@ -99,5 +122,47 @@ describe("publicCancelUrlForReservation", () => {
     ).toBe(
       "https://staging.compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
     );
+  });
+});
+
+describe("publicRescheduleUrlForReservation", () => {
+  it("builds an origin-absolute reschedule URL", () => {
+    expect(
+      publicRescheduleUrlForReservation(
+        "000000000000000000000099",
+        "abc",
+        "https://staging.compasscalendar.com",
+      ),
+    ).toBe(
+      "https://staging.compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+    );
+  });
+});
+
+describe("guestActionUrlFromHistory", () => {
+  it("reads cancel and reschedule URLs from history state", () => {
+    expect(
+      guestActionUrlFromHistory(
+        { cancelUrl: "https://example.com/cancel?token=a" },
+        "cancelUrl",
+      ),
+    ).toBe("https://example.com/cancel?token=a");
+    expect(
+      guestActionUrlFromHistory(
+        { rescheduleUrl: "https://example.com/reschedule?token=a" },
+        "rescheduleUrl",
+      ),
+    ).toBe("https://example.com/reschedule?token=a");
+  });
+
+  it("ignores missing, empty, and non-string values", () => {
+    expect(guestActionUrlFromHistory(undefined, "cancelUrl")).toBeUndefined();
+    expect(guestActionUrlFromHistory({}, "rescheduleUrl")).toBeUndefined();
+    expect(
+      guestActionUrlFromHistory({ cancelUrl: "" }, "cancelUrl"),
+    ).toBeUndefined();
+    expect(
+      guestActionUrlFromHistory({ cancelUrl: 12 }, "cancelUrl"),
+    ).toBeUndefined();
   });
 });

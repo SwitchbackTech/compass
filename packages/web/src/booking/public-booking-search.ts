@@ -55,6 +55,19 @@ export function validateBookingCancelSearch(search: Record<string, unknown>): {
   };
 }
 
+export interface PublicBookingRescheduleSearch extends PublicBookingSearch {
+  token?: string;
+}
+
+export function validateBookingRescheduleSearch(
+  search: Record<string, unknown>,
+): PublicBookingRescheduleSearch {
+  return {
+    ...validatePublicBookingSearch(search),
+    ...validateBookingCancelSearch(search),
+  };
+}
+
 export function tokenFromGuestActionUrl(url: string): string {
   try {
     return (
@@ -71,7 +84,45 @@ export function publicCancelUrlForReservation(
   token: string,
   origin: string,
 ): string {
-  const url = new URL(`/book/cancel/${reservationId}`, origin);
+  return publicGuestActionUrlForReservation(
+    "cancel",
+    reservationId,
+    token,
+    origin,
+  );
+}
+
+export function publicRescheduleUrlForReservation(
+  reservationId: string,
+  token: string,
+  origin: string,
+): string {
+  return publicGuestActionUrlForReservation(
+    "reschedule",
+    reservationId,
+    token,
+    origin,
+  );
+}
+
+export function guestActionUrlFromHistory(
+  state: unknown,
+  key: "cancelUrl" | "rescheduleUrl",
+): string | undefined {
+  if (!state || typeof state !== "object") {
+    return undefined;
+  }
+  const value = (state as Record<string, unknown>)[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function publicGuestActionUrlForReservation(
+  action: "cancel" | "reschedule",
+  reservationId: string,
+  token: string,
+  origin: string,
+): string {
+  const url = new URL(`/book/${action}/${reservationId}`, origin);
   url.searchParams.set("token", token);
   return url.toString();
 }

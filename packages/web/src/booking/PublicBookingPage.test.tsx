@@ -445,7 +445,13 @@ describe("PublicBookingPage", () => {
       screen.getByRole("button", { name: "Copy cancel link" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "Copy reschedule link" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("link", { name: "Cancel this booking" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Reschedule this booking" }),
     ).toBeInTheDocument();
   });
 
@@ -1433,6 +1439,9 @@ describe("PublicBookingConfirmedPage", () => {
       screen.queryByRole("button", { name: "Copy cancel link" }),
     ).not.toBeInTheDocument();
     expect(
+      screen.queryByRole("button", { name: "Copy reschedule link" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: "Edit details" }),
     ).not.toBeInTheDocument();
   });
@@ -1450,6 +1459,9 @@ describe("PublicBookingConfirmedPage", () => {
       screen.getByRole("button", { name: "Copy cancel link" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "Copy reschedule link" }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Edit details" }),
     ).toBeInTheDocument();
     expect(
@@ -1457,6 +1469,12 @@ describe("PublicBookingConfirmedPage", () => {
     ).toHaveAttribute(
       "href",
       `${window.location.origin}/book/cancel/000000000000000000000099?token=abc`,
+    );
+    expect(
+      screen.getByRole("link", { name: "Reschedule this booking" }),
+    ).toHaveAttribute(
+      "href",
+      `${window.location.origin}/book/reschedule/000000000000000000000099?token=abc`,
     );
     expect(
       screen.getByText("A Google Meet invite is on its way to your email."),
@@ -1561,6 +1579,15 @@ describe("PublicBookingConfirmedPage", () => {
         name: "This booking was canceled",
       }),
     ).toHaveFocus();
+    expect(
+      screen.queryByRole("button", { name: "Copy cancel link" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Copy reschedule link" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Reschedule this booking" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a calm state for an unknown reservation", async () => {
@@ -1643,10 +1670,17 @@ describe("PublicBookingConfirmedPage", () => {
       "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
     );
     expect(
+      screen.getByRole("link", { name: "Reschedule this booking" }),
+    ).toHaveAttribute(
+      "href",
+      "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+    );
+    expect(
       screen.queryByRole("link", {
         name: "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
       }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByText(/token=abc/)).not.toBeInTheDocument();
     await user.click(
       await screen.findByRole("button", { name: "Copy cancel link" }),
     );
