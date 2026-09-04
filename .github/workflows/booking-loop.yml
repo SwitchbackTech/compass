@@ -149,6 +149,8 @@ jobs:
       # main was red, or whose label event was missed.
       - name: Re-run merge guard on labeled PRs
         if: github.event_name == 'schedule'
+        # Best effort: a missing PAT or a gh hiccup must not stop the launch.
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
