@@ -1,4 +1,7 @@
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import {
+  type ProviderCapability,
+  type ProviderKind,
+} from "@core/types/sync/identity.contracts";
 import { MAX_REFRESH_FAILED_ATTEMPTS } from "@sync/credentials/refresh-failure.constants";
 import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
@@ -58,6 +61,9 @@ export interface SyncJobDispatchDeps {
   commands: CommandRepository;
   custody: AccessTokenSource;
   callbackUrlFor: (provider: ProviderKind) => string;
+  providerCapabilities: (
+    provider: ProviderKind,
+  ) => readonly ProviderCapability[];
   // Content-free outbox so Compass API can push typed browser SSE after a
   // provider pull. Without this, incremental pulls update Sync storage but the
   // open SPA never refetches (S40 gap).
@@ -790,5 +796,8 @@ function subscriptionDeps(
     notifications: executionDeps.notifications,
     custody: executionDeps.custody,
     callbackUrl: deps.callbackUrlFor(provider),
+    supportsChangeNotifications: deps
+      .providerCapabilities(provider)
+      .includes("changeNotifications"),
   };
 }

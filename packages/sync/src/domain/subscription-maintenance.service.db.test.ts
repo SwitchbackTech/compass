@@ -83,6 +83,17 @@ describe("maintainSubscription", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
 
+  const maintenanceDeps = (
+    notifications: FakeNotifications,
+    supportsChangeNotifications = true,
+  ) => ({
+    resources,
+    notifications,
+    custody,
+    callbackUrl: "https://sync/cb",
+    supportsChangeNotifications,
+  });
+
   beforeEach(() => {
     resources = new SyncResourceRepository(storage.db());
   });
@@ -158,7 +169,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -188,7 +199,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -216,7 +227,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -239,7 +250,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -265,18 +276,15 @@ describe("maintainSubscription", () => {
     );
 
     const outcome = await maintainSubscription(
-      {
-        resources,
-        notifications: new FakeNotifications({
+      maintenanceDeps(
+        new FakeNotifications({
           channel: {
             channelId: "",
             resourceId: "res-retry",
             expiresAt: new Date("2026-07-17T00:00:00.000Z"),
           },
         }),
-        custody,
-        callbackUrl: "https://sync/cb",
-      },
+      ),
       cal,
       resource,
       now,
@@ -313,10 +321,8 @@ describe("maintainSubscription", () => {
 
     const outcome = await maintainSubscription(
       {
-        resources,
-        notifications,
+        ...maintenanceDeps(notifications),
         custody: discardingCustody,
-        callbackUrl: "https://sync/cb",
       },
       cal,
       resource,
@@ -338,12 +344,7 @@ describe("maintainSubscription", () => {
     });
 
     await expect(
-      maintainSubscription(
-        { resources, notifications, custody, callbackUrl: "https://sync/cb" },
-        cal,
-        resource,
-        now,
-      ),
+      maintainSubscription(maintenanceDeps(notifications), cal, resource, now),
     ).rejects.toThrow("try later");
   });
 
@@ -363,7 +364,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -387,7 +388,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       cal,
       resource,
       now,
@@ -415,7 +416,7 @@ describe("maintainSubscription", () => {
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      maintenanceDeps(notifications),
       null,
       resource,
       now,
@@ -427,5 +428,30 @@ describe("maintainSubscription", () => {
     ]);
     const saved = await resources.findById(tenantId, principalId, resource._id);
     expect(saved?.subscriptionResourceId).toBe("res-list");
+  });
+
+  it("returns unsupported without calling watch when changeNotifications is false", async () => {
+    const cal = calendar(objectId());
+    const resource = await seedResource(cal);
+    const notifications = new FakeNotifications({
+      channel: {
+        channelId: "",
+        resourceId: "res-poll",
+        expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+      },
+    });
+
+    const outcome = await maintainSubscription(
+      maintenanceDeps(notifications, false),
+      cal,
+      resource,
+      now,
+    );
+
+    expect(outcome).toEqual({ status: "unsupported" });
+    expect(notifications.watched).toHaveLength(0);
+    const saved = await reload(resource);
+    expect(saved?.watchUnsupportedAt).toEqual(now());
+    expect(saved?.subscriptionId).toBeNull();
   });
 });

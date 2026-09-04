@@ -3,6 +3,7 @@ import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -499,5 +500,73 @@ describe("SyncResourceRepository", () => {
     );
     expect(byConnection).toHaveLength(1);
     expect(byConnection[0]?._id).toBe(resource._id);
+  });
+
+  describe("listStaleEvents provider filter", () => {
+    let credentials: CredentialRepository;
+    const staleBefore = new Date("2026-07-09T00:00:00.000Z");
+
+    beforeEach(() => {
+      credentials = new CredentialRepository(db);
+    });
+
+    const seedStale = async (
+      provider: "google" | "apple",
+    ): Promise<{ _id: string }> => {
+      const tenantId = objectId() as SyncResourceUpsert["tenantId"];
+      const principalId = objectId() as SyncResourceUpsert["principalId"];
+      const connectionId = objectId() as SyncResourceUpsert["connectionId"];
+      const resource = await repo.ensure(
+        upsert({ tenantId, principalId, connectionId }),
+      );
+      if (provider === "google") {
+        await credentials.store({
+          connectionId,
+          provider: "google",
+          refreshToken: "google-refresh",
+          scopes: [],
+        });
+      } else {
+        await credentials.storePassword({
+          connectionId,
+          provider: "apple",
+          username: "user@icloud.com",
+          secretCiphertext: "cipher",
+          secretIv: "iv",
+          secretTag: "tag",
+          keyVersion: 1,
+        });
+      }
+      await repo.advanceCursor(
+        tenantId,
+        principalId,
+        resource._id,
+        "cursor",
+        new Date("2026-07-01T00:00:00.000Z"),
+      );
+      return resource;
+    };
+
+    it("returns only apple resources when provider is apple", async () => {
+      const apple = await seedStale("apple");
+      await seedStale("google");
+
+      const results = await repo.listStaleEvents(staleBefore, 10, {
+        provider: "apple",
+      });
+
+      expect(results.map((r) => r._id)).toEqual([apple._id]);
+    });
+
+    it("excludes providers listed in excludeProviders on the default call", async () => {
+      await seedStale("apple");
+      const google = await seedStale("google");
+
+      const results = await repo.listStaleEvents(staleBefore, 10, {
+        excludeProviders: ["apple"],
+      });
+
+      expect(results.map((r) => r._id)).toEqual([google._id]);
+    });
   });
 });
