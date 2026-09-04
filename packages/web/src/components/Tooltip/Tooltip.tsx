@@ -27,40 +27,42 @@ export function Tooltip({
   );
 }
 
-export const TooltipTrigger = forwardRef<
-  HTMLElement,
-  HTMLProps<HTMLElement> & { asChild?: boolean }
->(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
-  const context = useTooltipContext();
+type TooltipTriggerProps = HTMLProps<HTMLElement> & {
+  asChild?: boolean;
+  "data-state"?: "open" | "closed";
+};
 
-  const childrenRef = isValidElement(children)
-    ? (children as { ref?: Ref<HTMLElement> }).ref
-    : undefined;
-  const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
+export const TooltipTrigger = forwardRef<HTMLElement, TooltipTriggerProps>(
+  function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
+    const context = useTooltipContext();
 
-  // `asChild` allows the user to pass any element as the anchor
-  if (asChild && isValidElement(children)) {
-    return cloneElement(
-      children,
-      context.getReferenceProps({
+    const childrenRef = isValidElement(children)
+      ? (children as { ref?: Ref<HTMLElement> }).ref
+      : undefined;
+    const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
+
+    // `asChild` allows the user to pass any element as the anchor
+    if (asChild && isValidElement<TooltipTriggerProps>(children)) {
+      const childProps: TooltipTriggerProps = {
         ref,
         ...props,
         ...children.props,
         "data-state": context.open ? "open" : "closed",
-      }),
-    );
-  }
+      };
+      return cloneElement(children, context.getReferenceProps(childProps));
+    }
 
-  return (
-    <div
-      ref={ref}
-      data-state={context.open ? "open" : "closed"}
-      {...context.getReferenceProps(props)}
-    >
-      {children}
-    </div>
-  );
-});
+    return (
+      <div
+        ref={ref}
+        data-state={context.open ? "open" : "closed"}
+        {...context.getReferenceProps(props)}
+      >
+        {children}
+      </div>
+    );
+  },
+);
 
 export const TooltipContent = forwardRef<
   HTMLDivElement,
