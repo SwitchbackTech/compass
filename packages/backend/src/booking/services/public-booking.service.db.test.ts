@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { AdminPutBookingPageInputSchema } from "@core/types/booking.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -14,7 +15,10 @@ import { bookingReservationRepository } from "@backend/booking/booking-reservati
 import bookingPageService from "@backend/booking/services/booking-page.service";
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
-import { PublicBookingService } from "@backend/booking/services/public-booking.service";
+import {
+  PublicBookingService,
+  publicBookingCompensationLog,
+} from "@backend/booking/services/public-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
@@ -729,6 +733,59 @@ describe("PublicBookingService", () => {
         new Date("2026-09-07T12:00:00.000Z"),
       );
     expect(survivors).toHaveLength(1);
+  });
+
+  it("logs a failed race compensation without changing SLOT_UNAVAILABLE", async () => {
+    const { slug, pageId, userId, calendarId } = await enableBookingPage();
+    createBookingEvent.mockImplementation(async () => {
+      await seedConfirmedReservation(
+        pageId,
+        "2026-09-07T10:15:00.000Z",
+        "2026-09-07T10:45:00.000Z",
+      );
+      return "our-evt";
+    });
+    deleteBookingEvent.mockImplementation(async () => {
+      throw new BaseError(
+        "SYNC_UNAVAILABLE",
+        "could not delete the orphaned event",
+        Status.SERVICE_UNAVAILABLE,
+        true,
+      );
+    });
+    const logSpy = spyOn(publicBookingCompensationLog, "failed");
+
+    try {
+      await expect(
+        service.createReservation(slug, {
+          slotStart: "2026-09-07T10:00:00.000Z",
+          guestName: "Ada Lovelace",
+          guestEmail: "ada@example.com",
+          guestTimeZone: "Europe/London",
+        }),
+      ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
+
+      expect(logSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy.mock.calls[0]?.[0]).toMatchObject({
+        result: "SYNC_UNAVAILABLE",
+      });
+      expect(logSpy.mock.calls[0]?.[1]).toMatchObject({
+        tenantId: userId.toString(),
+        principalId: userId.toString(),
+        calendarId,
+        eventId: "our-evt",
+        slotStart: "2026-09-07T10:00:00.000Z",
+      });
+      const survivors =
+        await bookingReservationRepository.listConfirmedOverlapping(
+          pageId,
+          new Date("2026-09-07T09:00:00.000Z"),
+          new Date("2026-09-07T12:00:00.000Z"),
+        );
+      expect(survivors).toHaveLength(1);
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 
   it("translates a same-start duplicate insert into SLOT_UNAVAILABLE", async () => {

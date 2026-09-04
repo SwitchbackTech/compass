@@ -4,6 +4,8 @@ import {
   computeBookingSlots,
 } from "@core/booking/compute-booking-slots";
 import { occupiesBookingSlot } from "@core/booking/occupies-booking-slot";
+import { BaseError } from "@core/errors/errors.base";
+import { Logger } from "@core/logger/winston.logger";
 import {
   BookingDurationMinutesSchema,
   BookingSlotsQuerySchema,
@@ -44,8 +46,34 @@ import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 
+const logger = Logger("app:booking.public");
+
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
+
+const compensationFailureCause = (error: unknown): string => {
+  if (error instanceof BaseError) return error.result;
+  if (error instanceof Error) return error.message;
+  return String(error);
+};
+
+export const publicBookingCompensationLog = {
+  failed(
+    error: unknown,
+    context: {
+      tenantId: string;
+      principalId: string;
+      calendarId: string;
+      eventId: string;
+      slotStart: string;
+    },
+  ): void {
+    logger.error(
+      `Failed to compensate booking calendar event ${context.eventId}: ${compensationFailureCause(error)}`,
+      context,
+    );
+  },
+};
 
 const buildGuestActionUrl = (
   action: "cancel" | "reschedule",
@@ -424,11 +452,21 @@ export class PublicBookingService {
       });
     } catch (error) {
       if (calendarEventId) {
+        const eventId = calendarEventId;
+        const principal = toSyncPrincipal(page.userId.toString());
         await this.calendarBooking
           .deleteBookingEvent(page.userId.toString(), {
-            eventId: calendarEventId,
+            eventId,
           })
-          .catch(() => undefined);
+          .catch((compensationError: unknown) => {
+            publicBookingCompensationLog.failed(compensationError, {
+              tenantId: principal.tenantId,
+              principalId: principal.principalId,
+              calendarId: page.destinationCalendarId,
+              eventId,
+              slotStart: slotStart.toISOString(),
+            });
+          });
       }
       if (isDuplicateSlotError(error)) {
         throw bookingError(
