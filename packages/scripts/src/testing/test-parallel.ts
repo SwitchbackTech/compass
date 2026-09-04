@@ -142,6 +142,61 @@ export function webSuiteShardCount(opts: {
   return Math.floor(parsed);
 }
 
+/**
+ * 1-based shard pick from `WEB_TEST_SHARD_INDEX`. Unset means run every
+ * shard sequentially (local `bun test:web`). A comma list runs those
+ * shards in order so CI can pack four RSS-safe processes into two legs
+ * (`1,2` and `3,4`) while still exposing `unit (web, 1)` / `unit (web, 2)`.
+ */
+export function webSuiteShardIndex(opts: {
+  envIndex?: string;
+  shardCount: number;
+}): number[] | "all" {
+  const raw = opts.envIndex;
+  if (raw === undefined || raw === "") {
+    return "all";
+  }
+  const parts = raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0) {
+    return "all";
+  }
+  const indices: number[] = [];
+  for (const part of parts) {
+    const parsed = Number(part);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > opts.shardCount) {
+      throw new Error(
+        `WEB_TEST_SHARD_INDEX must be integers from 1 to ${opts.shardCount}, got ${JSON.stringify(raw)}`,
+      );
+    }
+    indices.push(parsed);
+  }
+  return indices;
+}
+
+export function selectWebShards(
+  shards: string[][],
+  index: number[] | "all",
+): { index: number; shard: string[] }[] {
+  if (index === "all") {
+    return shards.map((shard, shardIndex) => ({
+      index: shardIndex,
+      shard,
+    }));
+  }
+  return index.map((oneBased) => {
+    const shard = shards[oneBased - 1];
+    if (shard === undefined) {
+      throw new Error(
+        `WEB_TEST_SHARD_INDEX ${oneBased} is out of range for ${shards.length} shards`,
+      );
+    }
+    return { index: oneBased - 1, shard };
+  });
+}
+
 export function testArgvFor(
   profile: ProfileName,
   opts: {
@@ -200,6 +255,22 @@ async function runCli(): Promise<void> {
           }),
         )
       : [targets];
+  let selectedShards: { index: number; shard: string[] }[];
+  try {
+    selectedShards =
+      profile === "web"
+        ? selectWebShards(
+            shards,
+            webSuiteShardIndex({
+              envIndex: process.env["WEB_TEST_SHARD_INDEX"],
+              shardCount: shards.length,
+            }),
+          )
+        : shards.map((shard, index) => ({ index, shard }));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(2);
+  }
 
   const started = Date.now();
   const spawnEnv =
@@ -207,7 +278,7 @@ async function runCli(): Promise<void> {
       ? backendTestSpawnEnv(FAST_MONGO_URI)
       : { ...process.env, TZ: "Etc/UTC", NODE_ENV: "test" };
 
-  for (const [index, shard] of shards.entries()) {
+  for (const { index, shard } of selectedShards) {
     const shardLabel =
       shards.length > 1
         ? `${label} shard ${index + 1}/${shards.length} (${shard.length} files)`
