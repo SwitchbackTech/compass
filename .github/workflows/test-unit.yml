@@ -152,6 +152,15 @@ jobs:
         run: |
           bun install --frozen-lockfile
 
+      - name: Cache TypeScript incremental build info
+        uses: actions/cache@v5
+        with:
+          path: |
+            **/*.tsbuildinfo
+          key: ${{ runner.os }}-tsc-${{ hashFiles('bun.lock', 'tsconfig.json', 'tsconfig.typecheck.json', 'packages/**/tsconfig*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-tsc-${{ hashFiles('bun.lock') }}-
+
       - name: Run type-check
         run: |
           bun run type-check
