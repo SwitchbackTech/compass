@@ -56,11 +56,12 @@ tailor `to`, `artifact`, and `evidence` accordingly.
 5. Write `.agents/handoffs/<task_id>.md` with YAML frontmatter matching the
    schema, then an optional short body. The body is not required to act.
 6. Reflect `status` on the GitHub issue in the same turn: `running` is
-   the `booking-loop-running` label, `waiting` is
-   `booking-loop-waiting-for-credits`, `escalated` is
-   `booking-loop-needs-human`, `verifying` is the open PR with
+   the `agent-loop-running` label, `waiting` is
+   `agent-loop-waiting-for-credits`, `escalated` is
+   `agent-loop-needs-human`, `verifying` is the open PR with
    `Fixes #<task_id>`, `done` is the closed issue. There is no shared
    ledger file; one existed and every PR conflicted on it.
+   Alias notes: `booking-loop-*` labels still count for one release.
 7. Optionally include a "suggested skills" section in the body (not required
    to act).
 8. Do not duplicate PRDs, plans, ADRs, issues, commits, or diffs — link

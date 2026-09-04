@@ -1,0 +1,4 @@
+# Paths that may auto-merge even when they match NO_AUTOMERGE_PATH_PATTERNS.
+# One extended-regex per line. Comments and blank lines are ignored.
+^packages/sync/src/providers/
+^packages/sync/src/providers/__contract__/

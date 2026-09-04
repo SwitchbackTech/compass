@@ -1,12 +1,12 @@
-name: Booking loop
+name: Agent loop
 
-# Autonomous manager loop for Compass Booking GitHub issues.
-# Contract: docs/CI-CD/booking-loop-routine.md
-# Prompt: .github/prompts/booking-loop.md
+# Autonomous manager loop for Compass GitHub issues across ordered milestones.
+# Contract: docs/CI-CD/agent-loop-routine.md
+# Prompt: .github/prompts/agent-loop.md (or .github/prompts/<milestone-slug>.md)
 #
-# Kill switch: repo variable BOOKING_LOOP_ENABLED (string "true"; default off).
-# Manual re-runs: dispatch a fresh run instead of "Re-run jobs" on a failed
-# snapshot so workflow file fixes apply.
+# Kill switch: repo variable AGENT_LOOP_ENABLED or BOOKING_LOOP_ENABLED
+# (string "true"; default off). Manual re-runs: dispatch a fresh run instead
+# of "Re-run jobs" on a failed snapshot so workflow file fixes apply.
 #
 # Concurrency is per job, not per workflow. One shared group used to hold
 # every merge-guard, post-deploy, and launch in a single queue; GitHub keeps
@@ -15,15 +15,18 @@ name: Booking loop
 # 2026-09-03). merge-guard now runs per PR and never waits on CI: it enables
 # GitHub auto-merge and exits. The loop-wide group only serialises the jobs
 # that launch agents.
+#
+# Alias notes: booking-automerge and BOOKING_LOOP_ENABLED still arm the
+# workflow for one release.
 on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: "Booking issue number to launch (blank = pick next eligible WP)"
+        description: "Issue number to launch (blank = pick next eligible WP)"
         required: false
         type: string
   schedule:
-    - cron: "17 * * * *"
+    - cron: "*/15 * * * *"
   workflow_run:
     workflows: ["Release on main"]
     types: [completed]
@@ -37,22 +40,25 @@ permissions:
 
 jobs:
   merge-guard:
-    name: Merge booking-automerge PRs
+    name: Merge agent-automerge PRs
     if: >-
-      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (
         github.event.action != 'labeled' ||
+        github.event.label.name == 'agent-automerge' ||
         github.event.label.name == 'booking-automerge'
       ) &&
-      contains(github.event.pull_request.labels.*.name, 'booking-automerge')
+      (
+        contains(github.event.pull_request.labels.*.name, 'agent-automerge') ||
+        contains(github.event.pull_request.labels.*.name, 'booking-automerge')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # A newer push or label on the same PR supersedes the older guard run.
     concurrency:
-      group: booking-merge-${{ github.event.pull_request.number }}
+      group: agent-merge-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     steps:
       - name: Check out repository
@@ -60,27 +66,26 @@ jobs:
 
       - name: Deterministic merge guard, then enable auto-merge
         env:
-          GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
-        run: .github/scripts/booking-loop-merge-guard.sh "${{ github.event.pull_request.number }}"
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-merge-guard.sh "${{ github.event.pull_request.number }}"
 
-  # The next WP launches when a booking PR merges, not when its release
-  # finishes deploying. The next agent's work never depended on staging;
-  # waiting on the 4-5 minute release added an hour across a day of WPs.
-  # Staging is still checked here (the previous release) so a broken staging
-  # stops new launches until a human looks.
   launch-next:
     name: Launch next WP after merge
     if: >-
-      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
       github.event_name == 'pull_request' &&
       github.event.action == 'closed' &&
       github.event.pull_request.merged == true &&
-      contains(github.event.pull_request.labels.*.name, 'booking-automerge')
+      (
+        contains(github.event.pull_request.labels.*.name, 'agent-automerge') ||
+        contains(github.event.pull_request.labels.*.name, 'booking-automerge')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
-      group: booking-loop
+      group: agent-loop
       cancel-in-progress: false
     steps:
       - name: Check out repository
@@ -91,31 +96,33 @@ jobs:
       - name: Smoke the staging that is live now
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/booking-loop-staging-smoke.sh
+        run: .github/scripts/agent-loop-staging-smoke.sh
 
       - name: Pick next WP
         id: next
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/booking-loop-next.sh
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-next.sh
 
       - name: Launch next agent
         if: steps.next.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-        run: .github/scripts/booking-loop-launch.sh "${{ steps.next.outputs.issue_number }}"
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-launch.sh "${{ steps.next.outputs.issue_number }}"
 
   post-deploy:
     name: Smoke staging after release
     if: >-
-      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
-      group: booking-loop
+      group: agent-loop
       cancel-in-progress: false
     steps:
       - name: Check out repository
@@ -123,38 +130,36 @@ jobs:
         with:
           ref: main
 
-      - name: Smoke staging and annotate the booking issue
+      - name: Smoke staging and annotate the issue
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-        run: .github/scripts/booking-loop-postdeploy.sh
+        run: .github/scripts/agent-loop-postdeploy.sh
 
   kick:
-    name: Pick and launch a booking WP
+    name: Pick and launch a WP
     if: >-
-      vars.BOOKING_LOOP_ENABLED == 'true' &&
+      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
       (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
-      group: booking-loop
+      group: agent-loop
       cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      # Hourly sweep of every labeled PR: catches a PR whose guard ran while
-      # main was red, or whose label event was missed.
       - name: Re-run merge guard on labeled PRs
         if: github.event_name == 'schedule'
-        # Best effort: a missing PAT or a gh hiccup must not stop the launch.
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
-        run: .github/scripts/booking-loop-merge-guard.sh
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-merge-guard.sh
 
       - name: Use dispatched issue number
         id: given
@@ -168,16 +173,18 @@ jobs:
         if: steps.given.outputs.found != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/booking-loop-next.sh
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
+        run: .github/scripts/agent-loop-next.sh
 
       - name: Launch agent
         if: steps.given.outputs.found == 'true' || steps.next.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
         run: |
           n="${{ steps.given.outputs.issue_number }}"
           if [ -z "$n" ]; then
             n="${{ steps.next.outputs.issue_number }}"
           fi
-          .github/scripts/booking-loop-launch.sh "$n"
+          .github/scripts/agent-loop-launch.sh "$n"

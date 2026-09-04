@@ -11,7 +11,7 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
-| Booking loop (`booking-loop.yml`) | `workflow_dispatch` / hourly cron / `Release on main` / `booking-automerge` PRs | Governed Routine: next Booking WP → merge → staging smoke |
+| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / `*/15` cron / `Release on main` / `agent-automerge` PRs | Governed Routine: next milestone WP → merge → staging smoke |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
@@ -23,9 +23,10 @@ Error autofix is a governed Routine. Contract, drills, and recovery packet:
 [error-autofix-routine.md](./error-autofix-routine.md). Kill switch
 (`ERROR_AUTOFIX_ENABLED`) and mode (`AUTOFIX_MODE`) stay as repo variables.
 
-Booking loop is a governed Routine. Contract, kill switch, dual-launch, and
-staging smoke: [booking-loop-routine.md](./booking-loop-routine.md). Kill
-switch (`BOOKING_LOOP_ENABLED`) stays a repo variable (default off).
+Agent loop is a governed Routine. Contract, kill switch, dual-launch, and
+staging smoke: [agent-loop-routine.md](./agent-loop-routine.md). Kill
+switch (`AGENT_LOOP_ENABLED` or alias `BOOKING_LOOP_ENABLED`) stays a
+repo variable (default off). Ordered queue: `AGENT_LOOP_MILESTONES`.
 
 ---
 
