@@ -1,4 +1,11 @@
+import {
+  formatHotkey,
+  type RegisterableHotkey,
+  rawHotkeyToParsedHotkey,
+} from "@tanstack/react-hotkeys";
 import { track } from "@web/auth/posthog/track";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { getAppLockReasons } from "@web/shortcuts/app-lock";
 import {
   readShortcutUsageProfile,
   type ShortcutActionUsage,
@@ -119,19 +126,63 @@ export function recordShortcutInvocation(
   }
 }
 
+const VIEW_BY_ROUTE = [
+  [ROOT_ROUTES.WEEK, "week_view"],
+  [ROOT_ROUTES.DAY, "day_view"],
+  [ROOT_ROUTES.LIFE, "life_view"],
+] as const;
+
+/** The calendar surface a shortcut was attempted on, from the URL alone. */
+function viewFromPathname(pathname: string): string {
+  const match = VIEW_BY_ROUTE.find(
+    ([route]) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+  return match?.[1] ?? "other";
+}
+
+/** Static registration string for a hotkey (e.g. "Shift+ArrowLeft"). */
+function registeredHotkeyLabel(hotkey: RegisterableHotkey): string {
+  if (typeof hotkey === "string") return hotkey;
+  return formatHotkey(rawHotkeyToParsedHotkey(hotkey));
+}
+
+export type ShortcutUnavailableAttempt = {
+  /** The hotkey as registered, never the raw key the user typed. */
+  hotkey: RegisterableHotkey;
+  /** The keydown/keyup that matched the registration. */
+  event: Pick<
+    KeyboardEvent,
+    "altKey" | "ctrlKey" | "metaKey" | "shiftKey" | "repeat"
+  >;
+};
+
 /** A registered shortcut reached the app handler but an app-level lock owned
- * the keyboard. No typed value, DOM content, or key value is captured. */
+ * the keyboard. `context` names the lock owner(s) (settingsModal,
+ * commandPalette, billingGate...) so we can tell "pressed Tab inside a modal
+ * form" apart from "wanted to create an event behind the billing gate".
+ * Only the static registration string, lock names, view name, modifier
+ * flags, and the focused element's tag are captured. No typed value, DOM
+ * content, or raw key value is captured. */
 export function recordShortcutUnavailableAttempt(
   hintId: ShortcutHintId,
   reasonCode: "app_locked",
+  attempt: ShortcutUnavailableAttempt,
 ): void {
   const hint = getShortcutHint(hintId);
+  const { event } = attempt;
   track("shortcut_unavailable_attempt", {
     action_id: hint.actionId,
+    active_element: document.activeElement?.tagName.toLowerCase() ?? "none",
+    context: getAppLockReasons().join("+") || "unknown",
     feature_area: hint.featureArea,
+    is_repeat: event.repeat,
     outcome: "unavailable",
     reason_code: reasonCode,
+    shortcut_key: registeredHotkeyLabel(attempt.hotkey),
     source: "keyboard",
+    view: viewFromPathname(window.location.pathname),
+    was_modifier_held:
+      event.altKey || event.ctrlKey || event.metaKey || event.shiftKey,
   });
 }
 

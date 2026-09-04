@@ -39,6 +39,8 @@ export function createReasonRegistry(onChange?: (anyActive: boolean) => void) {
     },
     isAnyActive: () => reasons.size > 0,
     has: (reason: string) => reasons.has(reason),
+    /** Sorted snapshot of the active reasons (stable for telemetry keys). */
+    active: () => [...reasons].sort(),
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => {
