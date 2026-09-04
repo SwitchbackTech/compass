@@ -254,6 +254,7 @@ export type PublicGetBookingPageResponse = z.infer<
   typeof PublicGetBookingPageResponseSchema
 >;
 
+/** Guest IANA zone is required for rendering and logs. Availability uses the host page timezone. */
 export const BookingSlotsQuerySchema = z.strictObject({
   start: DateTimeSchema,
   end: DateTimeSchema,

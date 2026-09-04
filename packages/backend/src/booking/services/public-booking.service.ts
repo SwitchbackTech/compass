@@ -355,6 +355,8 @@ export class PublicBookingService {
       });
     }
     const query = parseSlotsQuery(rawQuery);
+    // Guest `timeZone` is required on the wire for rendering and logs.
+    // Availability is always computed in `page.timeZone`.
     const now = new Date();
     const windowStart = new Date(query.start);
     const requestedEnd = new Date(query.end);
