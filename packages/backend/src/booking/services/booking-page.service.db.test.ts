@@ -1,6 +1,11 @@
 import { ObjectId } from "mongodb";
+import { ZodError } from "zod/v4";
 import { Status } from "@core/errors/status.codes";
-import { AdminPutBookingPageInputSchema } from "@core/types/booking.contracts";
+import {
+  AdminPutBookingPageInputSchema,
+  BOOKING_MAX_BUFFER_MINUTES,
+  BOOKING_MAX_MIN_NOTICE_HOURS,
+} from "@core/types/booking.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
@@ -221,6 +226,38 @@ describe("BookingPageService", () => {
     expect(page).toEqual(
       expect.objectContaining({
         welcomeText: "30 minutes to talk through Compass Calendar.",
+      }),
+    );
+  });
+
+  it("rejects a PUT with out-of-range notice or buffer and does not persist", async () => {
+    const userId = await createNamedUser("Bound Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+    await bookingPageService.putAdminPage(userId, input);
+
+    await expect(
+      bookingPageService.putAdminPage(userId, {
+        ...input,
+        minNoticeHours: BOOKING_MAX_MIN_NOTICE_HOURS + 1,
+      }),
+    ).rejects.toBeInstanceOf(ZodError);
+    await expect(
+      bookingPageService.putAdminPage(userId, {
+        ...input,
+        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES + 1,
+      }),
+    ).rejects.toBeInstanceOf(ZodError);
+
+    const page = await bookingPageService.getAdminPage(userId);
+    expect(page).toEqual(
+      expect.objectContaining({
+        minNoticeHours: 4,
+        bufferMinutes: null,
       }),
     );
   });

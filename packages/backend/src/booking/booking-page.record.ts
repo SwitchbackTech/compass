@@ -1,5 +1,7 @@
 import { z } from "zod/v4";
 import {
+  BOOKING_MAX_HORIZON_DAYS,
+  BOOKING_MAX_MIN_NOTICE_HOURS,
   BookingBufferMinutesSchema,
   BookingDurationMinutesSchema,
   BookingMaxBookingsPerDaySchema,
@@ -29,8 +31,12 @@ export const BookingPageRecordSchema = z.object({
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
-  minNoticeHours: z.number().int().nonnegative(),
-  maxHorizonDays: z.number().int().positive().max(60),
+  minNoticeHours: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(BOOKING_MAX_MIN_NOTICE_HOURS),
+  maxHorizonDays: z.number().int().positive().max(BOOKING_MAX_HORIZON_DAYS),
   bufferMinutes: BookingBufferMinutesSchema,
   maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
   guestsCanInviteOthers: z.boolean(),

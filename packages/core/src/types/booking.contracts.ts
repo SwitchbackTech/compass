@@ -29,6 +29,12 @@ export const BOOKING_RESERVED_SLUGS = [
 
 export type BookingReservedSlug = (typeof BOOKING_RESERVED_SLUGS)[number];
 
+export const BOOKING_MAX_HORIZON_DAYS = 60;
+/** Hours in the longest bookable horizon; notice beyond this can never yield a slot. */
+export const BOOKING_MAX_MIN_NOTICE_HOURS = BOOKING_MAX_HORIZON_DAYS * 24;
+/** A buffer longer than a working day is not a buffer. */
+export const BOOKING_MAX_BUFFER_MINUTES = 24 * 60;
+
 export const BookingPageIdSchema =
   ObjectIdStringSchema.brand<"BookingPageId">();
 export type BookingPageId = z.infer<typeof BookingPageIdSchema>;
@@ -157,6 +163,7 @@ export type BookingWelcomeText = z.infer<typeof BookingWelcomeTextSchema>;
 export const BookingBufferMinutesSchema = z
   .int()
   .positive()
+  .max(BOOKING_MAX_BUFFER_MINUTES)
   .nullable()
   .default(null);
 export type BookingBufferMinutes = z.infer<typeof BookingBufferMinutesSchema>;
@@ -181,8 +188,18 @@ export const BookingPageSchema = z.strictObject({
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
-  minNoticeHours: z.number().int().nonnegative().default(4),
-  maxHorizonDays: z.number().int().positive().max(60).default(60),
+  minNoticeHours: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(BOOKING_MAX_MIN_NOTICE_HOURS)
+    .default(4),
+  maxHorizonDays: z
+    .number()
+    .int()
+    .positive()
+    .max(BOOKING_MAX_HORIZON_DAYS)
+    .default(BOOKING_MAX_HORIZON_DAYS),
   bufferMinutes: BookingBufferMinutesSchema,
   maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
   guestsCanInviteOthers: z.boolean().default(true),
@@ -196,7 +213,7 @@ export const PublicBookingPageSchema = z.strictObject({
   durationMinutes: BookingDurationMinutesSchema,
   timeZone: TimeZoneSchema,
   enabled: z.boolean(),
-  maxHorizonDays: z.number().int().positive().max(60),
+  maxHorizonDays: z.number().int().positive().max(BOOKING_MAX_HORIZON_DAYS),
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   createsGoogleMeet: z.boolean().default(true),
 });
@@ -368,8 +385,18 @@ export const AdminPutBookingPageInputSchema = z.strictObject({
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
-  minNoticeHours: z.number().int().nonnegative().default(4),
-  maxHorizonDays: z.number().int().positive().max(60).default(60),
+  minNoticeHours: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(BOOKING_MAX_MIN_NOTICE_HOURS)
+    .default(4),
+  maxHorizonDays: z
+    .number()
+    .int()
+    .positive()
+    .max(BOOKING_MAX_HORIZON_DAYS)
+    .default(BOOKING_MAX_HORIZON_DAYS),
   bufferMinutes: BookingBufferMinutesSchema,
   maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
   guestsCanInviteOthers: z.boolean().default(true),
