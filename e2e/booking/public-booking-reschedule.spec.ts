@@ -78,6 +78,7 @@ test.describe("public booking reschedule", () => {
     expect(captured.reschedulePosts[0]).toMatchObject({
       token: "abc",
       slotStart: second.slotStart,
+      durationMinutes: 30,
     });
   });
 
@@ -115,6 +116,7 @@ test.describe("public booking reschedule", () => {
     expect(captured.reschedulePosts[0]).toMatchObject({
       token: "abc",
       slotStart,
+      durationMinutes: 30,
     });
   });
 

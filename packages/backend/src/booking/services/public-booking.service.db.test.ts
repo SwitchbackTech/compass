@@ -245,6 +245,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     expect(createBookingEvent).toHaveBeenCalledTimes(1);
@@ -258,6 +259,72 @@ describe("PublicBookingService", () => {
     expect(response.rescheduleUrl).toContain("/book/reschedule/");
   });
 
+  it("confirms at the pinned duration and calls createBookingEvent once", async () => {
+    const { slug } = await enableBookingPage();
+    const slotStart = "2026-09-07T10:00:00.000Z";
+
+    const response = await service.createReservation(slug, {
+      slotStart,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(createBookingEvent).toHaveBeenCalledTimes(1);
+    expect(createBookingEvent.mock.calls[0]?.[1]).toMatchObject({
+      start: slotStart,
+      end: "2026-09-07T10:30:00.000Z",
+    });
+    expect(response.slotStart).toBe(slotStart);
+    expect(response.slotEnd).toBe("2026-09-07T10:30:00.000Z");
+  });
+
+  it("rejects confirm when pinned duration does not match the page", async () => {
+    const { slug, userId, calendarId } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendarId,
+        blockingCalendarIds: [calendarId],
+        durationMinutes: 45,
+      }),
+    );
+
+    await expect(
+      service.createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+      }),
+    ).rejects.toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      statusCode: Status.CONFLICT,
+    });
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects confirm extra keys before creating an event", async () => {
+    const { slug } = await enableBookingPage();
+
+    await expect(
+      service.createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+        extra: true,
+      }),
+    ).rejects.toThrow();
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
   it("rejects confirm when bookable is false without creating an event", async () => {
     const { slug } = await enableBookingPage();
     getAvailability.mockImplementation(async () => busyResponse(false));
@@ -268,6 +335,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
@@ -289,6 +357,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       })
       .catch((caught: unknown) => caught);
 
@@ -361,6 +430,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
@@ -509,6 +579,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
     expect(createBookingEvent).not.toHaveBeenCalled();
@@ -557,6 +628,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const publicReservation = await service.getPublicReservation(
       new ObjectId(created.reservationId),
@@ -634,6 +706,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const token = new URL(created.cancelUrl).searchParams.get("token");
@@ -656,6 +729,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     expect(token).toBeTruthy();
@@ -683,6 +757,7 @@ describe("PublicBookingService", () => {
       guestName: "Grace Hopper",
       guestEmail: "grace@example.com",
       guestTimeZone: "America/New_York",
+      durationMinutes: 30,
     });
     expect(retry.reservationId).toBeTruthy();
 
@@ -729,6 +804,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "secret notes",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const publicReservation = await service.getPublicReservation(
@@ -759,6 +835,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "secret notes",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
@@ -786,6 +863,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     await service.cancelReservation(new ObjectId(created.reservationId), {
@@ -813,6 +891,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const response = await service.getSlots(slug, {
@@ -951,6 +1030,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const second = await service.createReservation(slug, {
@@ -958,6 +1038,7 @@ describe("PublicBookingService", () => {
       guestName: "Grace Hopper",
       guestEmail: "grace@example.com",
       guestTimeZone: "America/New_York",
+      durationMinutes: 30,
     });
 
     expect(second.reservationId).toBeTruthy();
@@ -984,6 +1065,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
@@ -1027,6 +1109,7 @@ describe("PublicBookingService", () => {
           guestName: "Ada Lovelace",
           guestEmail: "ada@example.com",
           guestTimeZone: "Europe/London",
+          durationMinutes: 30,
         }),
       ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
@@ -1070,6 +1153,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
@@ -1085,6 +1169,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "bring coffee",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
@@ -1105,6 +1190,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
@@ -1138,6 +1224,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
     expect(submitCommand).toHaveBeenCalledTimes(1);
@@ -1154,6 +1241,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "bring coffee",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1185,6 +1273,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "bring coffee",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const reservationId = new ObjectId(created.reservationId);
 
@@ -1209,6 +1298,7 @@ describe("PublicBookingService", () => {
       guestEmail: "ada@example.com",
       notes: "bring coffee",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1265,6 +1355,7 @@ describe("PublicBookingService", () => {
         guestName: "Ada Lovelace",
         guestEmail: "not-an-email",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "INVALID_INPUT" });
   });
@@ -1276,6 +1367,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1286,6 +1378,7 @@ describe("PublicBookingService", () => {
       token,
       slotStart: "2026-09-07T11:00:00.000Z",
       guestTimeZone: "America/Denver",
+      durationMinutes: 30,
     });
 
     expect(updateBookingEvent).toHaveBeenCalledTimes(1);
@@ -1305,6 +1398,46 @@ describe("PublicBookingService", () => {
     expect(stored?.calendarEventId).toBeTruthy();
   });
 
+  it("rejects reschedule when pinned duration does not match the page", async () => {
+    const { slug, userId, calendarId } = await enableBookingPage();
+    const created = await service.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+    const token = new URL(created.cancelUrl).searchParams.get("token");
+    const reservationId = new ObjectId(created.reservationId);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendarId,
+        blockingCalendarIds: [calendarId],
+        durationMinutes: 45,
+      }),
+    );
+    createBookingEvent.mockClear();
+    updateBookingEvent.mockClear();
+
+    await expect(
+      service.rescheduleReservation(reservationId, {
+        token,
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+      }),
+    ).rejects.toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      statusCode: Status.CONFLICT,
+    });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
   it("treats a second reschedule to the same slot as idempotent", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
@@ -1312,6 +1445,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1319,6 +1453,7 @@ describe("PublicBookingService", () => {
       token,
       slotStart: "2026-09-07T11:00:00.000Z",
       guestTimeZone: "America/Denver",
+      durationMinutes: 30,
     });
     updateBookingEvent.mockClear();
 
@@ -1326,6 +1461,7 @@ describe("PublicBookingService", () => {
       token,
       slotStart: "2026-09-07T11:00:00.000Z",
       guestTimeZone: "UTC",
+      durationMinutes: 30,
     });
 
     expect(updateBookingEvent).not.toHaveBeenCalled();
@@ -1340,6 +1476,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     await seedConfirmedReservation(
       pageId,
@@ -1355,6 +1492,7 @@ describe("PublicBookingService", () => {
         token,
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
     expect(updateBookingEvent).not.toHaveBeenCalled();
@@ -1367,6 +1505,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1378,6 +1517,7 @@ describe("PublicBookingService", () => {
         token,
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
     expect(updateBookingEvent).not.toHaveBeenCalled();
@@ -1390,6 +1530,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const reservationId = new ObjectId(created.reservationId);
     updateBookingEvent.mockClear();
@@ -1399,12 +1540,14 @@ describe("PublicBookingService", () => {
         token: "not-the-token",
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
     await expect(
       service.rescheduleReservation(reservationId, {
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
     await expect(
@@ -1412,6 +1555,7 @@ describe("PublicBookingService", () => {
         token: "a".repeat(32),
         slotStart: "2026-09-07T11:00:00.000Z",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
     expect(updateBookingEvent).not.toHaveBeenCalled();
@@ -1424,6 +1568,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1459,6 +1604,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
     const token = new URL(created.cancelUrl).searchParams.get("token");
     getAvailability.mockImplementation(async () => ({
@@ -1664,6 +1810,7 @@ describe("Public booking routes", () => {
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
+        durationMinutes: 30,
       })
       .expect(Status.CONFLICT);
   });

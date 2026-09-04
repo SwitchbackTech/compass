@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 
@@ -7,11 +8,13 @@ export const PUBLIC_BOOKING_HEADING_CLASS =
 interface PublicBookingStatusMessageProps {
   title: string;
   description: string;
+  children?: ReactNode;
 }
 
 export function PublicBookingStatusMessage({
   title,
   description,
+  children,
 }: PublicBookingStatusMessageProps) {
   const headingRef = useBookingHeadingFocus(title);
 
@@ -27,6 +30,7 @@ export function PublicBookingStatusMessage({
           {title}
         </h1>
         <p className="mt-2 text-sm text-text-muted">{description}</p>
+        {children}
       </section>
     </PublicBookingLayout>
   );

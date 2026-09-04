@@ -125,6 +125,7 @@ test.describe("public booking page", () => {
       slotStart,
       guestName: "Guest User",
       guestEmail: "guest@example.com",
+      durationMinutes: 30,
     });
   });
 
