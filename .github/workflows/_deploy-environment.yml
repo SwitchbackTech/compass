@@ -201,13 +201,15 @@ jobs:
             fi
             if [ -n "$APPLE_SIGNIN_SERVICES_ID" ] && [ -n "$APPLE_SIGNIN_TEAM_ID" ] &&
               [ -n "$APPLE_SIGNIN_KEY_ID" ] && [ -n "$APPLE_SIGNIN_PRIVATE_KEY" ]; then
+              # PEM keys contain newlines; encode them for a double-quoted yaml scalar.
+              APPLE_PK_YAML=$(python3 -c 'import os, json; print(json.dumps(os.environ["APPLE_SIGNIN_PRIVATE_KEY"])[1:-1])')
               printf '%s\n' \
                 'apple:' \
                 '  signIn:' \
                 "    servicesId: \"${APPLE_SIGNIN_SERVICES_ID}\"" \
                 "    teamId: \"${APPLE_SIGNIN_TEAM_ID}\"" \
                 "    keyId: \"${APPLE_SIGNIN_KEY_ID}\"" \
-                "    privateKey: \"${APPLE_SIGNIN_PRIVATE_KEY}\""
+                "    privateKey: \"${APPLE_PK_YAML}\""
             fi
             if [ -n "$POSTHOG_KEY" ] && [ -n "$POSTHOG_HOST" ]; then
               printf '%s\n' \

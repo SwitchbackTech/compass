@@ -563,6 +563,7 @@ describe("staging deploy workflow", () => {
         '{SYNC_CREDENTIAL_ENCRYPTION_KEY}\\"',
       ),
     );
+    expect(workflow).toContain("APPLE_PK_YAML=");
     expect(workflow).not.toContain("GCAL_NOTIFICATION_TOKEN");
     expect(workflow).not.toContain("notificationToken");
     expect(workflow).not.toContain("channelExpirationMin");
