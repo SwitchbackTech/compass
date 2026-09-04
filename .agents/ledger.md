@@ -13,7 +13,7 @@ Status: `queued` | `running` | `waiting` | `verifying` | `done` | `escalated`
 
 | task_id | priority | owner | status | artifact | evidence | next_deadline | retry | approval |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 3214 | high | Verifier | verifying | .github/workflows/test-unit.yml | pending bun run verify | 2026-09-04T14:00:00Z | 0 | human |
+| 3214 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3284 | bun run verify PASS (scripts, type-check, lint, knip); review: no confirmed findings | 2026-09-04T14:00:00Z | 0 | human |
 | 3140 | high | Manager | verifying | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3281 | bun run verify PASS (web, type-check, lint, knip, a11y, e2e 110); review: no confirmed findings | 2026-09-04T06:00:00Z | 0 | none |
 | 3139 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3204 | squash-merged 964fd28ab; bun run verify PASS; review: no confirmed findings | null | 0 | none |
 | 3138 | high | Manager | done | https://github.com/KeepSoftwareSimple/compass-calendar/pull/3202 | squash-merged 144c0690f; bun run verify PASS; review: no confirmed findings | null | 0 | none |
