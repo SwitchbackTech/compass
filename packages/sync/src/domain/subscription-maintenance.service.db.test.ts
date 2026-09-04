@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import {
@@ -302,7 +303,7 @@ describe("maintainSubscription", () => {
       expiresAt: new Date("2026-07-10T01:00:00.000Z"),
     });
     const credentials = new CredentialRepository(storage.db());
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId,
       provider: "google",
       refreshToken: "stored-refresh-token",

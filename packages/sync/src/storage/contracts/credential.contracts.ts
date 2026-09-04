@@ -17,26 +17,48 @@ import {
 // Token-shaped fields must never reach a log or error — use `redactCredential`
 // for any diagnostic output.
 
-export const OauthRefreshCredentialRecordSchema = z.strictObject({
-  credentialKind: z.literal("oauthRefresh").default("oauthRefresh"),
-  // One credential document per connection; the connection id is the key.
-  _id: ConnectionIdSchema,
-  provider: ProviderKindSchema,
-  refreshToken: z.string().min(1),
-  // Cached access token and its absolute expiry. Null until first refresh, and
-  // whenever the cached token has been invalidated.
-  accessToken: z.string().min(1).nullable(),
-  accessTokenExpiresAt: z.date().nullable(),
-  // Consecutive token-endpoint refreshFailed counts. Reset on a successful
-  // mint. After MAX_REFRESH_FAILED_ATTEMPTS the connection is treated as
-  // authorizationExpired so the UI can prompt reconnect instead of looping
-  // 401s. Defaulted: docs predating this field must still parse.
-  refreshFailureCount: z.number().int().min(0).default(0),
-  // The scopes the credential was granted, for capability checks.
-  scopes: z.array(z.string()),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
+export const OauthRefreshCredentialRecordSchema = z
+  .strictObject({
+    credentialKind: z.literal("oauthRefresh").default("oauthRefresh"),
+    // One credential document per connection; the connection id is the key.
+    _id: ConnectionIdSchema,
+    provider: ProviderKindSchema,
+    // Legacy plaintext refresh token. New writes store ciphertext fields only.
+    refreshToken: z.string().min(1).optional(),
+    refreshTokenCiphertext: z.string().min(1).optional(),
+    refreshTokenIv: z.string().min(1).optional(),
+    refreshTokenTag: z.string().min(1).optional(),
+    keyVersion: z.number().int().positive().optional(),
+    // Cached access token and its absolute expiry. Null until first refresh, and
+    // whenever the cached token has been invalidated.
+    accessToken: z.string().min(1).nullable(),
+    accessTokenExpiresAt: z.date().nullable(),
+    // Consecutive token-endpoint refreshFailed counts. Reset on a successful
+    // mint. After MAX_REFRESH_FAILED_ATTEMPTS the connection is treated as
+    // authorizationExpired so the UI can prompt reconnect instead of looping
+    // 401s. Defaulted: docs predating this field must still parse.
+    refreshFailureCount: z.number().int().min(0).default(0),
+    // The scopes the credential was granted, for capability checks.
+    scopes: z.array(z.string()),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+  })
+  .superRefine((value, ctx) => {
+    const hasPlaintext = Boolean(value.refreshToken);
+    const hasCiphertext = Boolean(
+      value.refreshTokenCiphertext &&
+        value.refreshTokenIv &&
+        value.refreshTokenTag &&
+        value.keyVersion,
+    );
+    if (hasPlaintext === hasCiphertext) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "oauth refresh credential must store either plaintext refreshToken or encrypted refreshTokenCiphertext fields, not both or neither",
+      });
+    }
+  });
 export type OauthRefreshCredentialRecord = z.infer<
   typeof OauthRefreshCredentialRecordSchema
 >;
@@ -90,6 +112,20 @@ export function isPasswordCredential(
   return record.credentialKind === "password";
 }
 
+function oauthRefreshTokenIsStored(
+  record: OauthRefreshCredentialRecord,
+): boolean {
+  if (record.refreshToken && record.refreshToken.length > 0) {
+    return true;
+  }
+  return Boolean(
+    record.refreshTokenCiphertext &&
+      record.refreshTokenIv &&
+      record.refreshTokenTag &&
+      record.keyVersion,
+  );
+}
+
 // What a caller provides to store or replace an OAuth credential. Sync owns
 // _id, createdAt, and updatedAt; _id doubles as connectionId, so it is picked
 // back in under that name rather than omitted. Storing a fresh refresh token
@@ -102,6 +138,19 @@ export const CredentialUpsertSchema = z.strictObject({
   scopes: z.array(z.string()),
 });
 export type CredentialUpsert = z.infer<typeof CredentialUpsertSchema>;
+
+export const OauthRefreshStoredUpsertSchema = z.strictObject({
+  connectionId: ConnectionIdSchema,
+  provider: ProviderKindSchema,
+  refreshTokenCiphertext: z.string().min(1),
+  refreshTokenIv: z.string().min(1),
+  refreshTokenTag: z.string().min(1),
+  keyVersion: z.number().int().positive(),
+  scopes: z.array(z.string()),
+});
+export type OauthRefreshStoredUpsert = z.infer<
+  typeof OauthRefreshStoredUpsertSchema
+>;
 
 export const PasswordCredentialUpsertSchema = z.strictObject({
   connectionId: ConnectionIdSchema,
@@ -148,7 +197,7 @@ export function redactCredential(record: CredentialRecord): RedactedCredential {
     connectionId: record._id,
     provider: record.provider,
     credentialKind: "oauthRefresh",
-    hasRefreshToken: record.refreshToken.length > 0,
+    hasRefreshToken: oauthRefreshTokenIsStored(record),
     hasAccessToken: record.accessToken !== null,
     hasPasswordSecret: false,
     accessTokenExpiresAt: record.accessTokenExpiresAt,

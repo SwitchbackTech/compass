@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import {
   ensureEventsResource,
   FakeReader,
@@ -786,7 +787,7 @@ describe("dispatchSyncJob", () => {
   it("drops a job after consecutive refreshFailed attempts so 401s do not burn the ladder", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: calendar.connectionId,
       provider: "google",
       refreshToken: "refresh",
@@ -825,7 +826,7 @@ describe("dispatchSyncJob", () => {
   it("does not drop a refreshFailed job just because other retries already ran", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: calendar.connectionId,
       provider: "google",
       refreshToken: "refresh",
@@ -1199,7 +1200,7 @@ describe("dispatchSyncJob", () => {
       state: "importing",
       stateReason: null,
     });
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "refresh",

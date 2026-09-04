@@ -127,8 +127,7 @@ by Google or Microsoft."
 
 ## Named warts
 
-- OAuth refresh tokens are stored in plaintext today; only password credentials
-  are encrypted at rest until milestone C closes the gap.
+- OAuth refresh tokens are encrypted at rest with `sync.credentialEncryptionKey` as of milestone C; legacy plaintext rows are backfilled with `encrypt-credentials` and lazily re-encrypted on refresh until the follow-up release drops plaintext acceptance.
 - `GOOGLE_REVOKED` stays as an alias of `CONNECTION_REVOKED` on the SSE wire
   until every client reads the new code.
 - The health snapshot reports `provider: "google"` for the whole fleet until
