@@ -1,6 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
+import { decryptCredentialAtRest } from "@core/security/credential-at-rest";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import {
+  TEST_CREDENTIAL_ENCRYPTION_KEY,
+  toStoredOauthCredentialUpsert,
+} from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
@@ -33,18 +38,26 @@ describe("CredentialRepository", () => {
 
   it("stores and reads back a credential keyed by connection id", async () => {
     const input = baseCredential();
-    const stored = await repo.store(input);
+    const stored = await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
 
     expect(stored._id).toBe(input.connectionId);
-    expect(stored.refreshToken).toBe("refresh-token-secret");
+    expect(stored.refreshTokenCiphertext).toBeString();
     expect(stored.accessToken).toBeNull();
     expect(stored.createdAt).toBeInstanceOf(Date);
 
     const read = await repo.findByConnection(input.connectionId);
     expect(read).toMatchObject({
       credentialKind: "oauthRefresh",
-      refreshToken: "refresh-token-secret",
+      refreshTokenCiphertext: stored.refreshTokenCiphertext,
     });
+
+    const raw = await db
+      .collection(SYNC_COLLECTIONS.credentials)
+      .findOne({ _id: input.connectionId });
+    expect(raw).not.toHaveProperty("refreshToken");
+    expect(JSON.stringify(raw)).not.toContain("refresh-token-secret");
   });
 
   it("returns null when no credential exists for the connection", async () => {
@@ -53,7 +66,9 @@ describe("CredentialRepository", () => {
 
   it("caches an access token and clears it when a new refresh token is stored", async () => {
     const input = baseCredential();
-    await repo.store(input);
+    await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
 
     const expiresAt = new Date(Date.now() + 3600_000);
     const cached = await repo.cacheAccessToken(
@@ -64,20 +79,63 @@ describe("CredentialRepository", () => {
     expect(cached?.accessToken).toBe("access-token-value");
     expect(cached?.accessTokenExpiresAt).toEqual(expiresAt);
 
-    // Re-authorizing (new refresh token) must invalidate the cached access
-    // token so a token from the superseded grant is never served.
-    const reAuthed = await repo.store({
-      ...input,
-      refreshToken: "rotated-refresh-token",
-    });
-    expect(reAuthed.refreshToken).toBe("rotated-refresh-token");
+    const reAuthed = await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, {
+        ...input,
+        refreshToken: "rotated-refresh-token",
+      }),
+    );
+    expect(reAuthed.refreshTokenCiphertext).toBeString();
     expect(reAuthed.accessToken).toBeNull();
     expect(reAuthed.accessTokenExpiresAt).toBeNull();
   });
 
+  it("reencrypts a legacy plaintext refresh token", async () => {
+    const input = baseCredential();
+    await db.collection(SYNC_COLLECTIONS.credentials).insertOne({
+      _id: input.connectionId,
+      credentialKind: "oauthRefresh",
+      provider: input.provider,
+      refreshToken: input.refreshToken,
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshFailureCount: 0,
+      scopes: input.scopes,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const sealed = toStoredOauthCredentialUpsert(
+      TEST_CREDENTIAL_ENCRYPTION_KEY,
+      input,
+    );
+    const updated = await repo.reencryptOauthRefresh(input.connectionId, {
+      refreshTokenCiphertext: sealed.refreshTokenCiphertext,
+      refreshTokenIv: sealed.refreshTokenIv,
+      refreshTokenTag: sealed.refreshTokenTag,
+      keyVersion: sealed.keyVersion,
+    });
+
+    expect(updated?.refreshTokenCiphertext).toBe(sealed.refreshTokenCiphertext);
+    const raw = await db
+      .collection(SYNC_COLLECTIONS.credentials)
+      .findOne({ _id: input.connectionId });
+    expect(raw).not.toHaveProperty("refreshToken");
+    expect(
+      decryptCredentialAtRest(TEST_CREDENTIAL_ENCRYPTION_KEY, {
+        ciphertext: String(raw?.refreshTokenCiphertext),
+        iv: String(raw?.refreshTokenIv),
+        tag: String(raw?.refreshTokenTag),
+        keyVersion: Number(raw?.keyVersion),
+      }),
+    ).toBe("refresh-token-secret");
+  });
+
   it("does not resurrect a credential that was deleted mid-refresh", async () => {
     const input = baseCredential();
-    await repo.store(input);
+    await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
     await repo.deleteByConnection(input.connectionId);
 
     const result = await repo.cacheAccessToken(
@@ -91,7 +149,9 @@ describe("CredentialRepository", () => {
 
   it("reports whether a delete removed anything", async () => {
     const input = baseCredential();
-    await repo.store(input);
+    await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
 
     expect(await repo.deleteByConnection(input.connectionId)).toBe(true);
     expect(await repo.deleteByConnection(input.connectionId)).toBe(false);
@@ -99,10 +159,10 @@ describe("CredentialRepository", () => {
 
   it("keeps credentials out of the provider_connections collection", async () => {
     const input = baseCredential();
-    await repo.store(input);
+    await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
 
-    // Credentials live in their own collection; nothing about a connection
-    // read touches them.
     const inConnections = await db
       .collection(SYNC_COLLECTIONS.providerConnections)
       .findOne({ _id: input.connectionId });
@@ -115,7 +175,10 @@ describe("CredentialRepository", () => {
   });
 
   it("redacts token-shaped fields for logging", async () => {
-    const stored = await repo.store(baseCredential());
+    const input = baseCredential();
+    const stored = await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
     await repo.cacheAccessToken(
       stored._id,
       "access-token-value",
@@ -127,7 +190,6 @@ describe("CredentialRepository", () => {
     expect(redacted.hasRefreshToken).toBe(true);
     expect(redacted.hasAccessToken).toBe(true);
     expect(redacted.scopeCount).toBe(1);
-    // No token value can appear anywhere in the log-safe view.
     const serialized = JSON.stringify(redacted);
     expect(serialized).not.toContain("refresh-token-secret");
     expect(serialized).not.toContain("access-token-value");

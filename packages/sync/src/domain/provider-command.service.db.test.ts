@@ -9,6 +9,10 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import {
+  seedOauthCredential,
+  TEST_CREDENTIAL_ENCRYPTION_KEY,
+} from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { truncateRulesBefore } from "@sync/domain/occurrence-projection";
@@ -128,7 +132,7 @@ const storeCredential = async (
   connectionId: ConnectionId,
   accessToken?: { token: string; expiresAt: Date },
 ) => {
-  await credentials.store({
+  await seedOauthCredential(credentials, {
     connectionId,
     provider: "google",
     refreshToken: "stored-refresh-token",
@@ -492,6 +496,9 @@ describe("executeProviderCreate", () => {
             "revoked",
           ),
         }),
+      undefined,
+      undefined,
+      TEST_CREDENTIAL_ENCRYPTION_KEY,
     );
 
     const result = await executeProviderCreate(
@@ -932,6 +939,9 @@ describe("executeProviderUpdate", () => {
     const custody = new CredentialCustody(
       credentials,
       () => new RevokedAuthAdapter(),
+      undefined,
+      undefined,
+      TEST_CREDENTIAL_ENCRYPTION_KEY,
     );
     const writer = new FakeUpdateWriter();
     writer.fetchError = new ProviderWriteError(

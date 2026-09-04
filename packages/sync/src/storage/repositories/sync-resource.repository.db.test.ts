@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
@@ -520,7 +521,7 @@ describe("SyncResourceRepository", () => {
         upsert({ tenantId, principalId, connectionId }),
       );
       if (provider === "google") {
-        await credentials.store({
+        await seedOauthCredential(credentials, {
           connectionId,
           provider: "google",
           refreshToken: "google-refresh",

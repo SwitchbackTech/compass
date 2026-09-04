@@ -1,6 +1,7 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
 import { runBackfillBilling } from "@scripts/commands/backfill-billing";
+import { runEncryptCredentials } from "@scripts/commands/encrypt-credentials";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { Command } from "commander";
@@ -30,6 +31,9 @@ export default class CompassCLI {
         break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
+        break;
+      case cmd === "encrypt-credentials":
+        await runEncryptCredentials();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -63,6 +67,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Report connected provider accounts that are another Compass user's login identity (read-only; optional --provider)",
+      );
+
+    program
+      .command("encrypt-credentials")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Encrypt legacy plaintext OAuth refresh tokens in Sync credentials (--apply to write)",
       );
 
     program

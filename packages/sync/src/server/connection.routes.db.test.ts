@@ -8,6 +8,10 @@ import {
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
+  seedOauthCredential,
+  TEST_CREDENTIAL_ENCRYPTION_KEY,
+} from "@sync/__tests__/helpers/credential-encryption";
+import {
   ensureEventsResource,
   seedProviderCalendar,
 } from "@sync/__tests__/helpers/fixtures";
@@ -18,6 +22,7 @@ import {
   signServiceRequest,
 } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
+import { openOauthRefreshToken } from "@sync/credentials/oauth-refresh-at-rest";
 import {
   deriveOAuthStateSecret,
   signOAuthState,
@@ -77,6 +82,7 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
     CALLBACK_BASE_URL: "http://localhost:3010",
     EXECUTION: "passive",
     MAX_CONCURRENCY: 4,
+    CREDENTIAL_ENCRYPTION_KEY: TEST_CREDENTIAL_ENCRYPTION_KEY,
     ...overrides,
   }) as SyncConfig;
 
@@ -204,7 +210,7 @@ describe("GET /internal/connections", () => {
     email: string,
   ) => {
     const connection = await seedConnection(repo, tenantId, principalId, email);
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "stored-refresh-token",
@@ -369,7 +375,7 @@ describe("DELETE /internal/connections/:id", () => {
       principalId,
       "connected@example.com",
     );
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "stored-refresh-token",
@@ -753,7 +759,11 @@ describe("GET /sync/google", () => {
     expect(linked[0].capabilities).toContain("writeEvents");
 
     const stored = await credentials.findByConnection(linked[0]._id);
-    expect(stored?.refreshToken).toBe("granted-refresh-token");
+    expect(
+      stored?.credentialKind === "oauthRefresh"
+        ? openOauthRefreshToken(TEST_CREDENTIAL_ENCRYPTION_KEY, stored)
+        : null,
+    ).toBe("granted-refresh-token");
   });
 
   it("derives suggestContacts when the callback's grant includes a contacts scope", async () => {
@@ -1125,7 +1135,11 @@ describe("POST /internal/connections/adopt-google-authorization", () => {
       "google-sub-from-signin",
     );
     const stored = await credentials.findByConnection(connection!._id);
-    expect(stored?.refreshToken).toBe("server-exchanged-refresh-token");
+    expect(
+      stored?.credentialKind === "oauthRefresh"
+        ? openOauthRefreshToken(TEST_CREDENTIAL_ENCRYPTION_KEY, stored)
+        : null,
+    ).toBe("server-exchanged-refresh-token");
     const job = await mongo.db.collection(SYNC_COLLECTIONS.jobs).findOne({
       coalescingKey: `calendarListSync:${connection!._id}`,
     });

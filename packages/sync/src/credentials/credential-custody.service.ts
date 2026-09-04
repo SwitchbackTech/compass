@@ -7,6 +7,11 @@ import {
   type ConnectionId,
   type ProviderKind,
 } from "@core/types/sync/identity.contracts";
+import {
+  isPlaintextOauthRefresh,
+  openOauthRefreshToken,
+  sealOauthRefreshToken,
+} from "@sync/credentials/oauth-refresh-at-rest";
 import { type ResolveProviderAuth } from "@sync/providers/provider-adapters";
 import {
   type ProviderAuthAdapter,
@@ -26,7 +31,7 @@ import { type CredentialRepository } from "@sync/storage/repositories/credential
 const DEFAULT_REFRESH_SKEW_MS = 60_000;
 
 const MISSING_AT_REST_KEY =
-  "password credentials require sync.credentialEncryptionKey";
+  "stored credentials require sync.credentialEncryptionKey";
 
 // Owns the credential lifecycle for one provider: store the durable refresh
 // token (or sealed password), serve valid access tokens (refreshing on demand),
@@ -55,7 +60,17 @@ export class CredentialCustody {
 
   // Persist a freshly authorized OAuth credential (or replace an existing one).
   async store(input: CredentialUpsert): Promise<CredentialRecord> {
-    return this.credentials.store(input);
+    const key = this.#requireAtRestKey();
+    const sealed = sealOauthRefreshToken(key, input.refreshToken);
+    return this.credentials.store({
+      connectionId: input.connectionId,
+      provider: input.provider,
+      scopes: input.scopes,
+      refreshTokenCiphertext: sealed.ciphertext,
+      refreshTokenIv: sealed.iv,
+      refreshTokenTag: sealed.tag,
+      keyVersion: sealed.keyVersion,
+    });
   }
 
   // Seal and persist an app-specific password. The plaintext secret never
@@ -107,7 +122,7 @@ export class CredentialCustody {
     await this.credentials.deleteByConnection(connectionId);
     if (credential && !isPasswordCredential(credential)) {
       await this.resolveAuth(credential.provider).revoke({
-        token: credential.refreshToken,
+        token: openOauthRefreshToken(this.#requireAtRestKey(), credential),
       });
     }
   }
@@ -147,6 +162,11 @@ export class CredentialCustody {
       });
     }
 
+    const refreshToken = openOauthRefreshToken(
+      this.#requireAtRestKey(),
+      credential,
+    );
+
     if (
       credential.accessToken &&
       credential.accessTokenExpiresAt &&
@@ -163,7 +183,7 @@ export class CredentialCustody {
       refreshed = await this.resolveAuth(
         credential.provider,
       ).refreshAccessToken({
-        refreshToken: credential.refreshToken,
+        refreshToken,
       });
     } catch (error) {
       if (
@@ -193,6 +213,18 @@ export class CredentialCustody {
         "missingRefreshToken",
         "Credential was removed during refresh",
       );
+    }
+    if (isPlaintextOauthRefresh(credential)) {
+      const sealed = sealOauthRefreshToken(
+        this.#requireAtRestKey(),
+        refreshToken,
+      );
+      await this.credentials.reencryptOauthRefresh(credential._id, {
+        refreshTokenCiphertext: sealed.ciphertext,
+        refreshTokenIv: sealed.iv,
+        refreshTokenTag: sealed.tag,
+        keyVersion: sealed.keyVersion,
+      });
     }
     return refreshed.accessToken;
   }

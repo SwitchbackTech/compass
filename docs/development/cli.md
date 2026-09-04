@@ -18,7 +18,29 @@ Primary file:
 | `bun run cli backfill-billing [--apply] [--batch-size 500] [--cutoff ISO]` | `packages/scripts/src/commands/backfill-billing.ts` | Places existing accounts without billing status into awaiting_checkout. Defaults to dry-run. |
 | `bun run cli purge-corrupt-sync-events [--apply]` | `packages/scripts/src/commands/purge-corrupt-sync-events.ts` | Deletes invalid Sync event documents. Defaults to dry-run. |
 | `bun run cli refresh-connection-states [--apply]` | `packages/scripts/src/commands/refresh-connection-states.ts` | Re-derives Sync connection state. Defaults to dry-run. |
+| `bun run cli encrypt-credentials [--apply] [--batch-size 200]` | `packages/scripts/src/commands/encrypt-credentials.ts` | Encrypts legacy plaintext OAuth refresh tokens in Sync credentials. Defaults to dry-run. |
 | `bun run cli manage-failed-jobs <list\|clear\|requeue> …` | `packages/scripts/src/commands/manage-failed-jobs.ts` | Operator tooling for Sync jobs that exhausted the self-heal requeue budget. Defaults to dry-run; pass `--apply` to persist. |
+
+### Encrypt OAuth refresh tokens at rest
+
+Requires `SYNC_MONGO_URI` or `sync.mongoUri`, and `SYNC_CREDENTIAL_ENCRYPTION_KEY` or `sync.credentialEncryptionKey`.
+
+```bash
+export SYNC_MONGO_URI='…'
+export SYNC_CREDENTIAL_ENCRYPTION_KEY='…'
+
+# Inventory plaintext rows (JSON to stdout)
+bun run cli encrypt-credentials
+
+# Write encrypted rows
+bun run cli encrypt-credentials --apply
+```
+
+Run on staging, confirm the report shows zero matched rows, then run on production. After production converges, a follow-up release can drop plaintext acceptance.
+
+#### Key rotation (procedure only)
+
+Each encrypted field carries a `keyVersion` (currently `1`). Rotating `sync.credentialEncryptionKey` is not automated in v1: decrypt with the old key and re-seal with the new key under a higher version, then deploy the new key. Implementing rotation tooling is deferred.
 
 ### Manage exhausted Sync jobs
 
