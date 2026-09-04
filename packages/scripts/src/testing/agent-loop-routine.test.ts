@@ -20,7 +20,7 @@ describe("agent-loop Routine contract", () => {
       "utf8",
     );
     expect(guard).toContain("NO_AUTOMERGE_PATH_PATTERNS=(");
-    expect(guard).toContain("--auto --squash --delete-branch");
+    expect(guard).toMatch(/gh pr merge "\$pr_number" --repo "\$REPO" --auto/);
     expect(guard).not.toContain("gh pr checks");
     expect(guard).toContain("main_is_red");
     expect(guard).toContain("--disable-auto");
