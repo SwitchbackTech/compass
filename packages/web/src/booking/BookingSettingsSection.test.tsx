@@ -438,7 +438,8 @@ describe("BookingSettingsSection", () => {
             durationMinutes: 30,
             destinationCalendarId: writableCalendar.id,
             blockingCalendarIds: [writableCalendar.id],
-            // The server placeholder: it has no user timezone to offer.
+            // Fallback when the host has no calendar timezone yet. Settings
+            // still seeds the calendar-view zone for an unconfigured page.
             timeZone: "UTC",
             weeklyAvailability: [],
             minNoticeHours: 4,

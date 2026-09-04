@@ -170,9 +170,9 @@ const buildInitialForm = (
           availabilityCalendars,
         );
 
-  // The server has no user timezone, so an unconfigured page carries a "UTC"
-  // placeholder. Seed the browser's zone there, but leave a configured page's
-  // stored zone alone - a host who deliberately picked UTC must keep it.
+  // Unconfigured pages seed from the calendar-view zone (the same
+  // default-timezone the rest of the app uses). A configured page's stored
+  // zone stays, including UTC.
   const timeZone =
     page && !isUnconfiguredBookingPage(page)
       ? base.timeZone

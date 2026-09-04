@@ -5,6 +5,7 @@ import {
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
 } from "@core/types/booking.contracts";
+import { type TimeZone, TimeZoneSchema } from "@core/types/domain-primitives";
 import { type ProviderCalendar } from "@core/types/sync/connection.contracts";
 import { assertBillingAllowsWrites } from "@backend/billing/billing.guard";
 import { bookingError } from "@backend/booking/booking.error";
@@ -23,8 +24,39 @@ import { throwSyncProxyFailure } from "@backend/common/services/sync-service/syn
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 
 const SLUG_ALLOCATION_MAX_ATTEMPTS = 8;
+const FALLBACK_HOST_TIME_ZONE = TimeZoneSchema.parse("UTC");
 
 const emailLocalPart = (email: string): string => email.split("@")[0] ?? email;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const resolveHostTimeZone = async (userId: ObjectId): Promise<TimeZone> => {
+  const calendars = await calendarService.list(userId);
+  const ranked = [
+    ...calendars.filter((calendar) => calendar.isPrimary),
+    ...calendars.filter((calendar) => !calendar.isPrimary),
+  ];
+  for (const calendar of ranked) {
+    if (calendar.timeZone) {
+      return TimeZoneSchema.parse(calendar.timeZone);
+    }
+  }
+  return FALLBACK_HOST_TIME_ZONE;
+};
+
+const assertTimeZoneForEnable = (rawInput: unknown): void => {
+  if (!isRecord(rawInput) || rawInput["enabled"] !== true) {
+    return;
+  }
+  const timeZone = rawInput["timeZone"];
+  if (typeof timeZone !== "string" || timeZone.trim() === "") {
+    throw bookingError(
+      "TIMEZONE_REQUIRED",
+      "Choose a booking timezone before enabling",
+    );
+  }
+};
 
 const assertHealthyGoogleForEnable = async (userId: string): Promise<void> => {
   const client = getSyncServiceClient();
@@ -119,9 +151,8 @@ class BookingPageService {
   async getAdminPage(userId: ObjectId): Promise<AdminGetBookingPageResult> {
     const record = await bookingPageRepository.findByUserId(userId);
     if (!record) {
-      // Nothing saved yet, so the timeZone below is only a placeholder - the
-      // client seeds the real one off isConfigured: false.
-      return { ...buildDefaultAdminPutInput(), isConfigured: false };
+      const timeZone = await resolveHostTimeZone(userId);
+      return { ...buildDefaultAdminPutInput(timeZone), isConfigured: false };
     }
 
     if (!record.bookingSlug) {
@@ -138,6 +169,7 @@ class BookingPageService {
     userId: ObjectId,
     rawInput: unknown,
   ): Promise<AdminGetBookingPageResult> {
+    assertTimeZoneForEnable(rawInput);
     const input = AdminPutBookingPageInputSchema.parse(rawInput);
 
     if (input.enabled) {
