@@ -16,6 +16,9 @@ export interface SubscriptionMaintenanceDeps {
   // the notifications route). Passed to the provider on watch; the callback then
   // arrives here and is matched to the stored subscription.
   callbackUrl: string;
+  // From the connection provider's registry capabilities. Poll-only providers
+  // (changeNotifications: false) short-circuit before any adapter call.
+  supportsChangeNotifications: boolean;
 }
 
 export interface SubscriptionMaintenanceOptions {
@@ -83,6 +86,23 @@ export async function maintainSubscription(
     resource.subscriptionExpiresAt.getTime() - now().getTime() > renewBeforeMs
   ) {
     return { status: "current" };
+  }
+
+  if (!deps.supportsChangeNotifications) {
+    if (resource.subscriptionId) {
+      await deps.resources.clearSubscription(
+        resource.tenantId,
+        resource.principalId,
+        resource._id,
+      );
+    }
+    await deps.resources.markWatchUnsupported(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
+    return { status: "unsupported" };
   }
 
   const accessToken = await deps.custody.getValidAccessToken(

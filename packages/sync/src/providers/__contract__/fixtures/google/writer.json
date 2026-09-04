@@ -1,0 +1,37 @@
+{
+  "insert": {
+    "kind": "calendar#event",
+    "id": "abc12deadbeef00000000000",
+    "etag": "\"v1\"",
+    "status": "confirmed",
+    "summary": "Contract create",
+    "start": {
+      "dateTime": "2025-01-15T09:00:00-05:00",
+      "timeZone": "America/New_York"
+    },
+    "end": {
+      "dateTime": "2025-01-15T10:00:00-05:00",
+      "timeZone": "America/New_York"
+    }
+  },
+  "instance": {
+    "kind": "calendar#event",
+    "id": "series-1_20250115T140000Z",
+    "etag": "\"v1\"",
+    "status": "confirmed",
+    "summary": "T",
+    "recurringEventId": "series-1",
+    "originalStartTime": {
+      "dateTime": "2025-01-15T09:00:00-05:00",
+      "timeZone": "America/New_York"
+    },
+    "start": {
+      "dateTime": "2025-01-15T09:00:00-05:00",
+      "timeZone": "America/New_York"
+    },
+    "end": {
+      "dateTime": "2025-01-15T10:00:00-05:00",
+      "timeZone": "America/New_York"
+    }
+  }
+}

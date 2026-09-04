@@ -13,7 +13,10 @@ const PROVIDER_MARKER_SAMPLES: Record<
     { "@odata.etag": 'W/"abc"' },
     { onlineMeeting: { joinUrl: "https://teams.example.com/join" } },
   ],
-  apple: ["BEGIN:VEVENT\nUID:1\nEND:VEVENT"],
+  apple: [
+    "BEGIN:VEVENT\nUID:1\nEND:VEVENT",
+    "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR",
+  ],
 };
 
 describe("SECRET_PATTERNS", () => {

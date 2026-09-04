@@ -4,6 +4,7 @@ import {
   type ProviderCalendarId,
   type ProviderCalendarSourceId,
 } from "@core/types/sync/identity.contracts";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { BOOTSTRAP_STALLED_AFTER_MS } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
@@ -50,7 +51,7 @@ describe("refreshConnectionState", () => {
       state: "importing",
       stateReason: null,
     });
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "refresh",

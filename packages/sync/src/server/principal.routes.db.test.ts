@@ -6,6 +6,10 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { type PrincipalPurgeResponse } from "@core/types/sync/principal.contracts";
+import {
+  seedOauthCredential,
+  TEST_CREDENTIAL_ENCRYPTION_KEY,
+} from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
@@ -41,6 +45,7 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
     CALLBACK_BASE_URL: "http://localhost:3010",
     EXECUTION: "passive",
     MAX_CONCURRENCY: 4,
+    CREDENTIAL_ENCRYPTION_KEY: TEST_CREDENTIAL_ENCRYPTION_KEY,
     ...overrides,
   }) as SyncConfig;
 
@@ -141,13 +146,13 @@ describe("DELETE /internal/principal", () => {
 
     const mine = await seedConnection(connections, tenantId, principalId);
     const theirs = await seedConnection(connections, tenantId, stranger);
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: mine._id,
       provider: "google",
       refreshToken: "mine-refresh",
       scopes: ["https://www.googleapis.com/auth/calendar.events"],
     });
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: theirs._id,
       provider: "google",
       refreshToken: "theirs-refresh",
@@ -233,7 +238,7 @@ describe("DELETE /internal/principal", () => {
     const connections = new ProviderConnectionRepository(mongo.db);
     const credentials = new CredentialRepository(mongo.db);
     const connection = await seedConnection(connections, tenantId, principalId);
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id as ConnectionId,
       provider: "google",
       refreshToken: "local-only",

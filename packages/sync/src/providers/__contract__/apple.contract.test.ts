@@ -1,5 +1,7 @@
 import { type DiscoveryContractCase } from "@sync/providers/__contract__/discovery.contract";
+import { type NormalizerContractCase } from "@sync/providers/__contract__/normalizer.contract";
 import { AppleCalendarAdapter } from "@sync/providers/apple/apple-calendar.adapter";
+import { normalizeAppleEventResource } from "@sync/providers/apple/apple-event.normalizer";
 import {
   type CaldavFetch,
   createCaldavClient,
@@ -143,6 +145,81 @@ describe("apple discovery contract", () => {
           createCaldavClient({ username, password }, discoveryFetch()),
       );
       await testCase.run(adapter);
+    });
+  }
+});
+
+const APPLE_NORMALIZER_CASES: NormalizerContractCase[] = [
+  {
+    name: "normalizes a timed master to a single event read",
+    input: {
+      ics: `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:contract-timed@icloud.com
+DTSTAMP:20250101T120000Z
+DTSTART:20250115T090000Z
+DTEND:20250115T100000Z
+SUMMARY:Contract timed
+END:VEVENT
+END:VCALENDAR`,
+      href: "/calendars/home/contract-timed.ics",
+      etag: '"contract-etag"',
+      connectionTimeZone: "UTC",
+    },
+    run: (reads) => {
+      expect(reads).toHaveLength(1);
+      expect(reads[0]?.kind).toBe("event");
+      if (reads[0]?.kind !== "event") return;
+      expect(reads[0].providerEventId).toBe("contract-timed@icloud.com");
+      expect(reads[0].providerVersion).toBe('"contract-etag"');
+      expect(reads[0].recurrence).toEqual({ kind: "single" });
+    },
+  },
+  {
+    name: "normalizes a recurring master and one exception",
+    input: {
+      ics: `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:contract-series@icloud.com
+DTSTAMP:20250101T120000Z
+DTSTART:20250115T090000Z
+DTEND:20250115T100000Z
+RRULE:FREQ=DAILY;COUNT=3
+SUMMARY:Contract series
+END:VEVENT
+BEGIN:VEVENT
+UID:contract-series@icloud.com
+DTSTAMP:20250101T120001Z
+DTSTART:20250116T100000Z
+DTEND:20250116T110000Z
+RECURRENCE-ID:20250116T090000Z
+SUMMARY:Contract exception
+END:VEVENT
+END:VCALENDAR`,
+      href: "/calendars/home/contract-series.ics",
+      etag: '"contract-series-etag"',
+      connectionTimeZone: "UTC",
+    },
+    run: (reads) => {
+      expect(reads).toHaveLength(2);
+      expect(reads[0]?.recurrence).toEqual({
+        kind: "seriesMaster",
+        rules: ["RRULE:FREQ=DAILY;COUNT=3"],
+      });
+      expect(reads[1]?.kind).toBe("event");
+      if (reads[1]?.kind !== "event") return;
+      expect(reads[1].recurrence.kind).toBe("instance");
+    },
+  },
+];
+
+describe("apple normalizer contract", () => {
+  for (const testCase of APPLE_NORMALIZER_CASES) {
+    it(testCase.name, async () => {
+      const reads = normalizeAppleEventResource(testCase.input);
+      await testCase.run(reads);
     });
   }
 });

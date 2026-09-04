@@ -1,0 +1,56 @@
+name: Live provider smoke
+
+# Nightly and manual only. Never on pull requests. Secrets come from the
+# `provider-smoke` Environment, not from staging/production deploy secrets.
+# Contract: docs/CI-CD/live-provider-smoke.md
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:20 UTC, offset from the top-of-hour scheduled-workflow stampede.
+    - cron: "20 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-provider-smoke
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Live adapter contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: provider-smoke
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run live provider smoke
+        env:
+          DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
+          MICROSOFT_CLIENT_SECRET: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
+          SMOKE_GOOGLE_REFRESH_TOKEN: ${{ secrets.SMOKE_GOOGLE_REFRESH_TOKEN }}
+          SMOKE_MICROSOFT_REFRESH_TOKEN: ${{ secrets.SMOKE_MICROSOFT_REFRESH_TOKEN }}
+          SMOKE_APPLE_EMAIL: ${{ secrets.SMOKE_APPLE_EMAIL }}
+          SMOKE_APPLE_APP_PASSWORD: ${{ secrets.SMOKE_APPLE_APP_PASSWORD }}
+        run: bash .github/scripts/live-provider-smoke.sh

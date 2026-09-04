@@ -26,6 +26,10 @@ import {
   FAILED_JOB_MAX_REQUEUES,
   requeueFailedJobs,
 } from "@sync/domain/failed-job-requeue.service";
+import {
+  buildReconcileSweepRows,
+  listStaleEventsForRow,
+} from "@sync/domain/reconcile-sweep-rows";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
@@ -304,8 +308,6 @@ async function start(): Promise<void> {
 // at least this long — long enough that a real provider outage has had a
 // chance to clear before we burn another retry ladder on it.
 const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
-// A resource not synced within this window is swept for a reconcile pull.
-const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
 // The bootstrap-recovery sweep below and connection-state's own bootstrapOverdue
 // evidence share BOOTSTRAP_STALLED_AFTER_MS (imported from connection-state.ts)
 // so the UI and the self-heal sweep agree on which resources are stuck.
@@ -501,6 +503,7 @@ function buildSchedulers(
         // verifies them against the stored subscription.
         callbackUrlFor: (kind) =>
           registry.callbackUrlFor(config.CALLBACK_BASE_URL, kind),
+        providerCapabilities: (kind) => registry.get(kind).capabilities,
         invalidations: repos.invalidations,
         log: logger,
       },
@@ -575,6 +578,38 @@ function buildSchedulers(
         error,
       );
 
+  const reconcileSweepRows = buildReconcileSweepRows(registry, config).map(
+    (row) => ({
+      name: row.name,
+      windowMs: row.windowMs,
+      intervalMs: row.intervalMs,
+      run: async (before: Date) => {
+        const enqueued = await enqueueForResources(
+          { jobs, onEnqueueError: onEnqueueError(row.name) },
+          listStaleEventsForRow(resources, row),
+          (r, n) => resourceJob(r, "incrementalPull", n()),
+          before,
+          () => new Date(),
+        );
+        if (enqueued > 0) {
+          logger.info(`Sync ${row.name} sweep enqueued ${enqueued} pull(s)`);
+        }
+        if (row.name === "reconcile") {
+          await captureSafely(posthog, {
+            event: SYNC_RECONCILE_SWEEP_EVENT,
+            distinctId: "compass-sync",
+            properties: SyncReconcileSweepEventSchema.parse({
+              environment: identity.environment,
+              service: "compass-sync",
+              enqueued,
+            }),
+          });
+        }
+        return enqueued;
+      },
+    }),
+  );
+
   // One row per background sweep: `run` is the sweep's whole distinctive body
   // (finder, job kind, and its own logging/telemetry — they genuinely differ,
   // which is why #2588 stopped short of a fully shared implementation).
@@ -583,45 +618,10 @@ function buildSchedulers(
   const sweepRows: ReadonlyArray<{
     name: string;
     windowMs: number;
+    intervalMs?: number;
     run: (before: Date) => Promise<number>;
   }> = [
-    {
-      // The reconcile fallback looks BACK: enqueue a pull for any events
-      // resource not synced within the stale window (negative offset from now).
-      name: "reconcile",
-      windowMs: -RECONCILE_STALE_AFTER_MS,
-      run: async (before) => {
-        const enqueued = await enqueueForResources(
-          { jobs, onEnqueueError: onEnqueueError("reconcile") },
-          (b, l) => resources.listStaleEvents(b, l),
-          (r, n) => resourceJob(r, "incrementalPull", n()),
-          before,
-          () => new Date(),
-        );
-        // One line per cycle with work: silence here previously meant either
-        // "all fresh" or "sweep dead", indistinguishably.
-        if (enqueued > 0) {
-          logger.info(`Sync reconcile sweep enqueued ${enqueued} pull(s)`);
-        }
-        // Captured on every cycle, including enqueued: 0 — this is a
-        // liveness heartbeat, not a backlog report (the health snapshot's
-        // jobs.pending already covers backlog, and is too coarse a sample
-        // rate to catch a queue that drains in seconds; see the event's own
-        // doc comment). An alert built on "N of these landed in the last
-        // hour" can't be fooled by sampling gaps the way a periodic gauge
-        // read can.
-        await captureSafely(posthog, {
-          event: SYNC_RECONCILE_SWEEP_EVENT,
-          distinctId: "compass-sync",
-          properties: SyncReconcileSweepEventSchema.parse({
-            environment: identity.environment,
-            service: "compass-sync",
-            enqueued,
-          }),
-        });
-        return enqueued;
-      },
-    },
+    ...reconcileSweepRows,
     {
       // Subscription maintenance looks AHEAD: enqueue a renewal for any push
       // channel expiring within the renew window (positive offset from now),
@@ -796,13 +796,14 @@ function buildSchedulers(
   ];
 
   const sweeps = sweepRows.map(
-    ({ name, windowMs, run }) =>
+    ({ name, windowMs, intervalMs, run }) =>
       [
         name,
         new SweepScheduler(
           { sweep: run },
           {
             windowMs,
+            ...(intervalMs !== undefined ? { intervalMs } : {}),
             startupJitterMs: STARTUP_SWEEP_JITTER_MS,
             onError: (error) =>
               logSyncLoopError(`Sync ${name} sweep failed`, error),
