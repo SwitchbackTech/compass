@@ -55,6 +55,19 @@ export function validateBookingCancelSearch(search: Record<string, unknown>): {
   };
 }
 
+export interface PublicBookingRescheduleSearch extends PublicBookingSearch {
+  token?: string;
+}
+
+export function validateBookingRescheduleSearch(
+  search: Record<string, unknown>,
+): PublicBookingRescheduleSearch {
+  return {
+    ...validatePublicBookingSearch(search),
+    ...validateBookingCancelSearch(search),
+  };
+}
+
 export function tokenFromGuestActionUrl(url: string): string {
   try {
     return (
