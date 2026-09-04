@@ -240,7 +240,8 @@ decides whether a busy interval occupies a slot
   description carries it too only when guests cannot invite others (see
   above). A permalink without the token does not invent a cancel path.
 - Token is unguessable and stored hashed on the reservation as
-  `cancelTokenHash`.
+  `cancelTokenHash`. It stays valid until `slotEnd` and then returns
+  the same generic not-found as an unknown token.
 - Cancel deletes the calendar event (host as organizer) and marks the
   reservation cancelled. Idempotent: a second cancel is a no-op success.
 - Expired / unknown tokens return a generic not-found page, not a
@@ -399,6 +400,11 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
   per instance: N replicas yield about N times that, and a client that
   reconnects to a different replica resets its bucket. Accepted for v1
   while `isBookingEnabled` stays false in production.
+- **Cancel and edit tokens travel in the query string.** The bearer
+  lives in `?token=` on `/book/confirmed/:id` and `/book/cancel/:id`,
+  so it can appear in browser history, Referer headers, and access
+  logs. Accepted for v1: a fragment or POST landing page would break
+  the confirmation permalink. Tokens stop working at `slotEnd`.
 - **Guest email is not editable after confirm.** The attendee identity and
   Google invite are bound to the address collected at booking. Changing it
   would send a new invitation, which v1.5 does not do.
