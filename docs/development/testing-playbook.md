@@ -41,10 +41,15 @@ Unit workflow (`test-unit.yml`):
 
 - triggers on `pull_request` to `main` and `push` to `main`
 - uses `concurrency` so a new PR push cancels the previous PR run
-- runs a matrix across `core`, `sync`, `web`, `backend`, and `scripts`
+- runs one `static` job (lint, knip, type-check as separate steps)
+- runs a matrix across `core`, `sync`, `web, 1`, `web, 2`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
+- runs `unit (web, 1)` and `unit (web, 2)` with `WEB_TEST_SHARDS=4` and
+  `WEB_TEST_SHARD_INDEX` `1,2` / `3,4` so each leg is two sequential
+  RSS-safe processes covering half the suite
 - runs every lane with `TZ: Etc/UTC` set
+- does not install Node on Bun-only jobs
 - `bun run lint` also runs `check-semantic-colors.ts` and
   `check-agent-constraints.ts` (barrels, web-test locators, backend/sync
   `mongoService` imports, duplicate `EventSchema`)
@@ -66,7 +71,7 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been removed.
 
 - `bun run test:core` — `test-parallel.ts core`: `bun test --parallel` with `core.preload.ts`.
-- `bun run test:web` — `test-parallel.ts web`: one `bun test` process with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams). Files run sequentially — not `--parallel` — because MSW/jsdom globals do not survive Bun's per-file `--isolate`. See [Web native parallel (future / blocked)](#web-native-parallel-future--blocked).
+- `bun run test:web` — `test-parallel.ts web`: sequential `bun test` processes with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams). Files run sequentially inside each process — not `--parallel` — because MSW/jsdom globals do not survive Bun's per-file `--isolate`. Default local behavior is four sequential shards (`WEB_TEST_SHARDS`). Set `WEB_TEST_SHARD_INDEX` to run only one shard (CI uses two shards as `unit (web, 1)` and `unit (web, 2)`). See [Web native parallel (future / blocked)](#web-native-parallel-future--blocked).
 - `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
 - `bun run test:backend:fast`, `bun run test:sync:fast`, and `bun run test:scripts:fast` — `test-parallel.ts` with mongo-free preloads; excludes `*.db.test.*` via `--path-ignore-patterns`. No mongod boot — use these for day-to-day backend/sync/scripts work that does not touch persistence.
 - Backend and web SuperTokens, toast, and Google-auth behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `session.port`, `emailpassword.port`, `toast.port`, `useStartGoogleAuthorization.registry`, `useCompleteAuthentication.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
@@ -76,7 +81,7 @@ Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been remo
 
 **Web test seams.** Session, toast, Google authorization, email/password, and complete-authentication use injectable ports/registries registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web no longer needs preload `mock.module` clusters or a per-file process launcher.
 
-**Web sequential runner.** Web runs in one Bun process with files executed sequentially. Native `--parallel` is intentionally disabled — see [Web native parallel (future / blocked)](#web-native-parallel-future--blocked) below. Core/backend still use `--parallel`.
+**Web sequential runner.** Web runs sequential Bun processes (shards) with files executed sequentially inside each process. Native `--parallel` is intentionally disabled — see [Web native parallel (future / blocked)](#web-native-parallel-future--blocked) below. Core/backend still use `--parallel`. `WEB_TEST_SHARD_INDEX` selects one shard; unset, `bun test:web` still runs every shard.
 
 **IndexedDB in tests.** `ensureIndexedDbTestEnv()` re-applies fake-indexeddb globals when needed.
 
@@ -589,7 +594,7 @@ Browser-based accessibility checks are appropriate for CI and pre-push
 verification. Keep commit hooks limited to fast static checks so normal commits
 do not need to start a browser. There is no Husky/git-hook setup in this repo;
 run `bun run verify web` yourself before pushing web/JSX/CSS changes, and rely
-on `test-unit.yml` (lint, type-check) and `test-e2e.yml` (`bun run test:e2e`,
+on `test-unit.yml` (`static`, including lint and type-check) and `test-e2e.yml` (`bun run test:e2e`,
 which includes `e2e/accessibility`) in CI as the enforcement backstop. Both
 workflows trigger on any push/PR that isn't docs-only, so web changes are
 always covered.
