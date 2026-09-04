@@ -45,8 +45,5 @@ export function getToastDefaultOptions(
     closeOnClick: true,
     theme: theme === "dark-abyss" ? "dark" : "light",
     style: TOAST_CHROME_STYLE,
-    progressStyle: {
-      background: "var(--text-muted)",
-    },
   };
 }

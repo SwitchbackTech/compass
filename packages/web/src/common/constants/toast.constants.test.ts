@@ -11,11 +11,7 @@ describe("getToastDefaultOptions", () => {
         color: "var(--text)",
       }),
     );
-    expect(options.progressStyle).toEqual(
-      expect.objectContaining({
-        background: "var(--text-muted)",
-      }),
-    );
+
   });
 
   it("keeps the same chrome tokens in light theme", () => {

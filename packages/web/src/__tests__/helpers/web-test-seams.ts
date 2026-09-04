@@ -59,8 +59,6 @@ export function createTestToastPort() {
   const toastIsActive = mock(() => false);
 
   const toast = Object.assign(toastFn, {
-    POSITION: actualReactToastify.toast.POSITION,
-    TYPE: actualReactToastify.toast.TYPE,
     dismiss: toastDismiss,
     error: toastError,
     info: toastInfo,
