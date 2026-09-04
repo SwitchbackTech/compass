@@ -10,6 +10,10 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import * as billingGuard from "@backend/billing/billing.guard";
+import {
+  generateCancelToken,
+  hashCancelToken,
+} from "@backend/booking/booking-cancel-token";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { bookingReservationRepository } from "@backend/booking/booking-reservation.repository";
 import bookingPageService from "@backend/booking/services/booking-page.service";
@@ -22,6 +26,7 @@ import {
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
+import { eventMutationError } from "@backend/event/event.error";
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,
@@ -267,6 +272,75 @@ describe("PublicBookingService", () => {
     ).rejects.toMatchObject({ bookingCode: "SLOT_UNAVAILABLE" });
 
     expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects confirm when the host cannot write and submits no create command", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .createReservation(slug, {
+        slotStart: "2026-09-07T10:00:00.000Z",
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+      })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
+    expect(createBookingEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns unbookable slots when the host cannot write", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const response = await service.getSlots(slug, {
+      start: "2026-09-07T00:00:00.000Z",
+      end: "2026-09-08T00:00:00.000Z",
+      timeZone: "UTC",
+    });
+
+    expect(response).toEqual({ slots: [], bookable: false });
+    expect(getAvailability).not.toHaveBeenCalled();
+  });
+
+  it("rejects public page GET when the host cannot write without billing wording", async () => {
+    const { slug } = await enableBookingPage();
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockRejectedValue(
+      eventMutationError(
+        "BILLING_REQUIRED",
+        "A paid subscription is required to make changes",
+      ),
+    );
+
+    const error = await service
+      .getPublicPage(slug)
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      bookingCode: "SLOT_UNAVAILABLE",
+      message: "This page is not accepting bookings.",
+    });
+    expect(JSON.stringify(error)).not.toMatch(
+      /billing|plan|payment|paid|subscription/i,
+    );
   });
 
   it("rejects slot not in engine output", async () => {
@@ -572,6 +646,32 @@ describe("PublicBookingService", () => {
     expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
     const stored = await bookingReservationRepository.findById(reservationId);
     expect(stored?.status).toBe("cancelled");
+  });
+
+  it("rejects an expired cancel token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: null,
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.cancelReservation(reservationId, { token }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(deleteBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.status).toBe("confirmed");
   });
 
   it("returns minimal public reservation details", async () => {
@@ -1054,6 +1154,35 @@ describe("PublicBookingService", () => {
     const stored = await bookingReservationRepository.findById(reservationId);
     expect(stored?.guestName).toBe("Ada Lovelace");
     expect(stored?.status).toBe("cancelled");
+  });
+
+  it("rejects an expired patch token at slotEnd with RESERVATION_NOT_FOUND", async () => {
+    const { pageId } = await enableBookingPage();
+    const token = generateCancelToken();
+    const reservationId = new ObjectId();
+    await bookingReservationRepository.insert({
+      _id: reservationId,
+      pageId,
+      slotStart: new Date("2025-09-07T10:00:00.000Z"),
+      slotEnd: new Date("2025-09-07T10:30:00.000Z"),
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "bring coffee",
+      guestTimeZone: "UTC",
+      status: "confirmed",
+      calendarEventId: "past-evt",
+      cancelTokenHash: hashCancelToken(token),
+    });
+
+    await expect(
+      service.patchPublicReservation(reservationId, {
+        token,
+        name: "Grace Hopper",
+      }),
+    ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
+    expect(updateBookingEvent).not.toHaveBeenCalled();
+    const stored = await bookingReservationRepository.findById(reservationId);
+    expect(stored?.guestName).toBe("Ada Lovelace");
   });
 
   it("rejects invalid guest email", async () => {
