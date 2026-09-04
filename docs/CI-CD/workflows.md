@@ -34,8 +34,10 @@ repo variable (default off). Ordered queue: `AGENT_LOOP_MILESTONES`.
 
 Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.yml)
 
-`static` (lint, knip, and type-check as separate steps) and `unit` each
-carry a 10-minute job timeout. Unit test-run steps are separately capped
+`static` (lint, knip, and type-check as separate steps) and each `unit-leg`
+carry a 10-minute job timeout. A rollup `unit` job requires every leg, so
+the ruleset needs only `static`, `unit`, and `e2e`; legs can change without
+touching branch protection. Unit test-run steps are separately capped
 at 5 minutes each, leaving headroom for checkout, setup-bun, cache, and
 install. These bound a hung job to a fixed, small window instead of
 GitHub's 360-minute default. GitHub Actions has no native way to give
