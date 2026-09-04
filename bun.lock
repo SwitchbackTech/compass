@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "compass",
@@ -173,7 +172,7 @@
         "@testing-library/react": "^14.0.0",
         "@testing-library/user-event": "^14.4.3",
         "@types/react": "^18.0.8",
-        "@types/react-datepicker": "^4.1.7",
+        "@types/react-datepicker": "^7.0.0",
         "@types/react-dom": "^18.0.3",
         "@types/testing-library__jest-dom": "^5.9.1",
         "@types/tinycolor2": "^1.4.6",
@@ -649,7 +648,7 @@
 
     "@types/react": ["@types/react@18.3.28", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.2.2" } }, "sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw=="],
 
-    "@types/react-datepicker": ["@types/react-datepicker@4.19.6", "", { "dependencies": { "@popperjs/core": "^2.9.2", "@types/react": "*", "date-fns": "^2.0.1", "react-popper": "^2.2.5" } }, "sha512-uH5fzxt9eXxnc+hDCy/iRSFqU2+9lR/q2lAmaG4WILMai1o3IOdpcV+VSypzBFJLTEC2jrfeDXcdol0CJVMq4g=="],
+    "@types/react-datepicker": ["@types/react-datepicker@7.0.0", "", { "dependencies": { "react-datepicker": "*" } }, "sha512-4tWwOUq589tozyQPBVEqGNng5DaZkomx5IVNuur868yYdgjH6RaL373/HKiVt1IDoNNXYiTGspm1F7kjrarM8Q=="],
 
     "@types/react-dom": ["@types/react-dom@18.3.7", "", { "peerDependencies": { "@types/react": "^18.0.0" } }, "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ=="],
 
