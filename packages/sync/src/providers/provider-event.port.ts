@@ -36,6 +36,8 @@ export interface ProviderEvent {
   // the same meeting on different accounts share it, unlike providerEventId.
   // Absent when the provider reported none.
   readonly icalUid?: string;
+  // CalDAV resource href for resolving sync-collection deletions.
+  readonly resourceHref?: string;
   readonly recurrence: ProviderEventRecurrence;
 }
 
