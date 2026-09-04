@@ -216,18 +216,58 @@ export interface PublicBookingStubOptions {
   reservationNotFound?: boolean;
   /** When set, GET /reservations/:id returns this status instead of 200. */
   reservationGetStatus?: number;
+  /** Confirmation permalink `?token=`. Omit for a cold load with no secret. */
+  token?: string;
+  guestName?: string;
+  notes?: string | null;
 }
 
 export interface CapturedBookingRequests {
   reservationPosts: Array<Record<string, unknown>>;
+  reservationPatches: Array<Record<string, unknown>>;
   slotGets: number;
   slotQueries: Array<{ start: string | null; end: string | null }>;
+}
+
+function reservationPayload(input: {
+  slotStart: string;
+  guestTimeZone: string;
+  durationMinutes: number;
+  hostDisplayName: string;
+  status: "confirmed" | "cancelled";
+  bookingSlug: string;
+  guestName: string;
+  notes: string | null;
+}) {
+  return {
+    slotStart: input.slotStart,
+    guestTimeZone: input.guestTimeZone,
+    durationMinutes: input.durationMinutes,
+    hostDisplayName: input.hostDisplayName,
+    status: input.status,
+    bookingSlug: input.bookingSlug,
+    guestName: input.guestName,
+    notes: input.notes,
+  };
+}
+
+function applyReservationPatch(
+  body: Record<string, unknown>,
+  current: { guestName: string; notes: string | null },
+): { guestName: string; notes: string | null } {
+  const guestName =
+    typeof body.name === "string" && body.name.trim().length > 0
+      ? body.name.trim()
+      : current.guestName;
+  const notes = typeof body.notes === "string" ? body.notes : current.notes;
+  return { guestName, notes };
 }
 
 /**
  * Stub public booking APIs for the shipped two-pane picker: month-window
  * slot GETs (filtered by `start`/`end`), day-scoped slot buttons, the
- * details step, confirmation permalink GET, and cancel POST-on-confirm.
+ * details step, confirmation permalink GET, guest details PATCH, and
+ * cancel POST-on-confirm.
  */
 export async function preparePublicBookingPage(
   page: Page,
@@ -236,12 +276,19 @@ export async function preparePublicBookingPage(
   const slug = options.slug ?? "tylerdane";
   const captured: CapturedBookingRequests = {
     reservationPosts: [],
+    reservationPatches: [],
     slotGets: 0,
     slotQueries: [],
   };
   const slot =
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
   const slots = options.slots ?? [slot];
+  const hostDisplayName = options.hostDisplayName ?? "Tyler Dane";
+  const durationMinutes = options.durationMinutes ?? 30;
+  let guestName = options.guestName ?? "Guest User";
+  let notes = options.notes ?? null;
+  let postedSlotStart = slot.slotStart;
+  let postedTimeZone = "UTC";
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -251,8 +298,8 @@ export async function preparePublicBookingPage(
     if (path === `/api/booking/pages/${slug}` && request.method() === "GET") {
       return route.fulfill(
         jsonResponse({
-          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
-          durationMinutes: options.durationMinutes ?? 30,
+          hostDisplayName,
+          durationMinutes,
           timeZone: "America/Chicago",
           enabled: true,
           maxHorizonDays: 60,
@@ -304,6 +351,16 @@ export async function preparePublicBookingPage(
       if (options.confirmStatus === 409) {
         return route.fulfill(jsonResponse({}, 409));
       }
+      if (typeof body.guestName === "string") {
+        guestName = body.guestName;
+      }
+      notes = typeof body.notes === "string" ? body.notes : null;
+      if (typeof body.slotStart === "string") {
+        postedSlotStart = body.slotStart;
+      }
+      if (typeof body.guestTimeZone === "string") {
+        postedTimeZone = body.guestTimeZone;
+      }
       return route.fulfill(
         jsonResponse({
           reservationId: "000000000000000000000099",
@@ -320,34 +377,49 @@ export async function preparePublicBookingPage(
 
     if (
       /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
+      request.method() === "PATCH"
+    ) {
+      const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      captured.reservationPatches.push(body);
+      const next = applyReservationPatch(body, { guestName, notes });
+      guestName = next.guestName;
+      notes = next.notes;
+      return route.fulfill(
+        jsonResponse(
+          reservationPayload({
+            slotStart: postedSlotStart,
+            guestTimeZone: postedTimeZone,
+            durationMinutes,
+            hostDisplayName,
+            status: options.reservationStatus ?? "confirmed",
+            bookingSlug: slug,
+            guestName,
+            notes,
+          }),
+        ),
+      );
+    }
+
+    if (
+      /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
       request.method() === "GET"
     ) {
       if (options.reservationNotFound) {
         return route.fulfill(jsonResponse({}, 404));
       }
-      const lastPost = captured.reservationPosts.at(-1);
-      const postedSlotStart =
-        typeof lastPost?.slotStart === "string"
-          ? lastPost.slotStart
-          : slot.slotStart;
-      const postedTimeZone =
-        typeof lastPost?.guestTimeZone === "string"
-          ? lastPost.guestTimeZone
-          : "UTC";
       return route.fulfill(
-        jsonResponse({
-          slotStart: postedSlotStart,
-          guestTimeZone: postedTimeZone,
-          durationMinutes: options.durationMinutes ?? 30,
-          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
-          status: options.reservationStatus ?? "confirmed",
-          bookingSlug: slug,
-          guestName:
-            typeof lastPost?.guestName === "string"
-              ? lastPost.guestName
-              : "Guest User",
-          notes: typeof lastPost?.notes === "string" ? lastPost.notes : null,
-        }),
+        jsonResponse(
+          reservationPayload({
+            slotStart: postedSlotStart,
+            guestTimeZone: postedTimeZone,
+            durationMinutes,
+            hostDisplayName,
+            status: options.reservationStatus ?? "confirmed",
+            bookingSlug: slug,
+            guestName,
+            notes,
+          }),
+        ),
       );
     }
 
@@ -365,15 +437,51 @@ export async function preparePublicBookingPage(
 export async function preparePublicBookingConfirmedPage(
   page: Page,
   options: PublicBookingStubOptions & { reservationId?: string } = {},
-): Promise<void> {
+): Promise<CapturedBookingRequests> {
   const reservationId = options.reservationId ?? "000000000000000000000099";
   const slot =
     options.slots?.[0] ?? buildBookableSlot(options.durationMinutes ?? 30);
+  const hostDisplayName = options.hostDisplayName ?? "Tyler Dane";
+  const durationMinutes = options.durationMinutes ?? 30;
+  const slug = options.slug ?? "tylerdane";
+  let guestName = options.guestName ?? "Guest User";
+  let notes = options.notes ?? null;
+  const captured: CapturedBookingRequests = {
+    reservationPosts: [],
+    reservationPatches: [],
+    slotGets: 0,
+    slotQueries: [],
+  };
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
+
+    if (
+      /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
+      request.method() === "PATCH"
+    ) {
+      const body = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      captured.reservationPatches.push(body);
+      const next = applyReservationPatch(body, { guestName, notes });
+      guestName = next.guestName;
+      notes = next.notes;
+      return route.fulfill(
+        jsonResponse(
+          reservationPayload({
+            slotStart: slot.slotStart,
+            guestTimeZone: "UTC",
+            durationMinutes,
+            hostDisplayName,
+            status: options.reservationStatus ?? "confirmed",
+            bookingSlug: slug,
+            guestName,
+            notes,
+          }),
+        ),
+      );
+    }
 
     if (
       /^\/api\/booking\/reservations\/[^/]+$/.test(path) &&
@@ -386,25 +494,32 @@ export async function preparePublicBookingConfirmedPage(
         return route.fulfill(jsonResponse({}, options.reservationGetStatus));
       }
       return route.fulfill(
-        jsonResponse({
-          slotStart: slot.slotStart,
-          guestTimeZone: "UTC",
-          durationMinutes: options.durationMinutes ?? 30,
-          hostDisplayName: options.hostDisplayName ?? "Tyler Dane",
-          status: options.reservationStatus ?? "confirmed",
-          bookingSlug: options.slug ?? "tylerdane",
-          guestName: "Guest User",
-          notes: null,
-        }),
+        jsonResponse(
+          reservationPayload({
+            slotStart: slot.slotStart,
+            guestTimeZone: "UTC",
+            durationMinutes,
+            hostDisplayName,
+            status: options.reservationStatus ?? "confirmed",
+            bookingSlug: slug,
+            guestName,
+            notes,
+          }),
+        ),
       );
     }
 
     return route.fulfill(jsonResponse({}));
   });
 
-  await page.goto(`/book/confirmed/${reservationId}`, {
+  const search = options.token
+    ? `?token=${encodeURIComponent(options.token)}`
+    : "";
+  await page.goto(`/book/confirmed/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
+
+  return captured;
 }
 
 export interface PublicBookingCancelStubOptions {
@@ -730,4 +845,17 @@ export function formatSlotButtonLabel(
   }).format(new Date(slotStart));
   const escaped = time.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(escaped, "i");
+}
+
+export function formatMonthDayButtonLabel(
+  slotStart: string,
+  timeZone = "UTC",
+): string {
+  return new Intl.DateTimeFormat(undefined, {
+    timeZone,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(slotStart));
 }
