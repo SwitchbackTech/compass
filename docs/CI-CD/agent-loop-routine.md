@@ -21,7 +21,7 @@ OWNER: compass-maintainers
 TRIGGER: workflow_dispatch | */15 cron | Release on main completed | pull_request labeled agent-automerge
 INPUT: GitHub issue in the first AGENT_LOOP_MILESTONES entry that has an eligible WP
 SKILL/PROMPT: .github/prompts/<milestone-slug>.md or .github/prompts/agent-loop.md
-OUTPUT: ready PR with Fixes #<n> labeled agent-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
+OUTPUT: draft PR marked ready after bun run verify, Fixes #<n>, labeled agent-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
 IDEMPOTENCY: one in-flight agent; agent-loop-running; skip issues with an open Fixes PR
 RETRY: HTTP 429 waits for credits and retries on the 15-minute watchdog; dispatch a
   fresh run for all other retryable investigation (do not "Re-run jobs" on a failed snapshot)
@@ -115,10 +115,10 @@ both channels are configured).
    failures are `agent-loop-needs-human` stops. The prompt file is
    `.github/prompts/<milestone-slug>.md` when that file exists, else
    `.github/prompts/agent-loop.md`.
-3. **Agent** follows that prompt: implement the WP, run `bun run verify`,
-   open a ready PR, add label `agent-automerge` when the Approval
-   boundary is `allow`, and stop. The agent does not merge and does not
-   wait for CI.
+3. **Agent** follows that prompt: implement the WP, open a draft PR, run
+   `bun run verify`, mark the PR ready, add label `agent-automerge` when
+   the Approval boundary is `allow`, and stop. The agent does not merge
+   and does not wait for CI.
 4. **Merge guard** (`.github/scripts/agent-loop-merge-guard.sh`): when size
    is under the rails, no sensitive path is in the diff (unless a
    per-milestone allowlist re-allows that prefix), and the latest `main`
