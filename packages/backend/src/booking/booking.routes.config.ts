@@ -10,6 +10,10 @@ import { CONFIG } from "@backend/common/constants/config.constants";
 const bookingSlugKey = (req: express.Request): string =>
   `${req.ip ?? "unknown"}:${req.params["slug"] ?? "unknown"}`;
 
+// All booking limiters in this file are in-memory per-process buckets.
+// With N replicas the advertised limit is really Nx the number here, and
+// a client that lands on another replica starts a fresh bucket. Accepted
+// for v1: booking is off in production.
 const publicPageLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 60,
