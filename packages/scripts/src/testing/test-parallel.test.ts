@@ -61,8 +61,8 @@ describe("webSuiteShardCount", () => {
     expect(webSuiteShardCount({ explicitPathCount: 1 })).toBe(1);
   });
 
-  it("defaults the full suite to two processes", () => {
-    expect(webSuiteShardCount({ explicitPathCount: 0 })).toBe(2);
+  it("defaults the full suite to four processes", () => {
+    expect(webSuiteShardCount({ explicitPathCount: 0 })).toBe(4);
   });
 
   it("honors WEB_TEST_SHARDS when focusing the full suite", () => {

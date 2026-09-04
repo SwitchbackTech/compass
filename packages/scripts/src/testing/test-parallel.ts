@@ -13,6 +13,7 @@ import {
   resolveTestTargets,
   warnIfBunVersionMismatch,
 } from "./runner-utils";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export type ProfileName =
@@ -61,7 +62,48 @@ const PROFILES: Record<
 // Sequential files in one process is still far faster than the old per-file
 // launcher. The full web suite then runs as a few sequential processes so
 // jsdom/MSW RSS is released between shards — a single 3k-test process has
-// been SIGKILL'd (exit 137) on 7 GB GitHub runners.
+// been SIGKILL'd (exit 137) on 7 GB GitHub runners, and on 2026-09-04 a
+// 191-file shard took the whole runner down with it ("The runner has
+// received a shutdown signal"), which reads as a hang rather than memory.
+// Four shards keep each process well under the runner; the RSS guard below
+// names the shard when one still runs away.
+const DEFAULT_WEB_SHARDS = 4;
+
+/**
+ * Kill a shard that outgrows the CI runner before the runner itself dies.
+ * ubuntu-latest has 7 GB; a shard past 5 GB is allocating without bound, not
+ * running a big test. Linux only (reads /proc); elsewhere it is a no-op.
+ */
+const MAX_SHARD_RSS_MB = Number(process.env["WEB_TEST_MAX_RSS_MB"] ?? 5_000);
+
+function readRssMb(pid: number): number | null {
+  try {
+    const status = readFileSync(`/proc/${pid}/status`, "utf8");
+    const kb = status.match(/^VmRSS:\s+(\d+) kB/m)?.[1];
+    return kb === undefined ? null : Number(kb) / 1024;
+  } catch {
+    return null;
+  }
+}
+
+function guardRss(
+  proc: ReturnType<typeof Bun.spawn>,
+  label: string,
+): () => void {
+  const timer = setInterval(() => {
+    const rss = readRssMb(proc.pid);
+    if (rss !== null && rss > MAX_SHARD_RSS_MB) {
+      console.error(
+        `\n${label} exceeded ${MAX_SHARD_RSS_MB} MB RSS (${Math.round(rss)} MB). ` +
+          `A test in this shard is allocating without bound; the file named ` +
+          `above is where it stopped. This is memory, not a slow test.`,
+      );
+      proc.kill();
+    }
+  }, 1_000);
+  return () => clearInterval(timer);
+}
+
 export function parallelArgsFor(profile: ProfileName): string[] {
   return profile === "web" ? [] : ["--parallel"];
 }
@@ -91,11 +133,11 @@ export function webSuiteShardCount(opts: {
   }
   const raw = opts.envShards;
   if (raw === undefined || raw === "") {
-    return 2;
+    return DEFAULT_WEB_SHARDS;
   }
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed < 1) {
-    return 2;
+    return DEFAULT_WEB_SHARDS;
   }
   return Math.floor(parsed);
 }
@@ -184,7 +226,9 @@ async function runCli(): Promise<void> {
         stderr: "inherit",
       },
     );
+    const stopGuard = guardRss(proc, shardLabel);
     const code = await proc.exited;
+    stopGuard();
     if (code !== 0) {
       console.log(`\n${shardLabel}: finished in ${formatDuration(started)}s`);
       process.exit(code ?? 1);
