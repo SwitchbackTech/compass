@@ -35,9 +35,16 @@ The guest's selection lives in `/book/:slug` search params
 picker, refresh keeps the selection, and the link is shareable. Invalid
 params drop to defaults; they never error.
 
-Confirmation permalink: `/book/confirmed/:reservationId` (survives
-refresh; cancel and reschedule copy is only present when the guest just
-confirmed or just rescheduled, via history state).
+Confirmation permalink: `/book/confirmed/:reservationId?token=…`.
+The cancel (and post-confirm edit) capability is that unguessable token,
+not the reservation id. Just-confirmed navigation writes `?token=` into
+the permalink so a reload, bookmark, or self-sent link keeps cancel and
+edit. The public reservation GET does not return `cancelUrl` or the
+token. A permalink without `token` still shows the booking from GET,
+with no cancel or edit actions, and does not tell the guest to look for
+a cancel link in the invite: that URL is omitted from the event
+description when guests can invite others, which is the default.
+Reschedule copy stays history-only (v1.3).
 
 Cancel: `/book/cancel/:reservationId?token=…`.
 
@@ -149,8 +156,9 @@ times (and, on details, before the form).
 On confirm, Compass creates a timed Google Calendar event on the
 host's destination calendar, invites the guest, auto-adds a Google
 Meet link, and Google emails the invite. Compass shows a confirmation
-screen with the booked time (guest timezone) and cancel plus
-reschedule links (history state only).
+screen with the booked time (guest timezone). Cancel and edit-details
+are present when the permalink carries `?token=`. Reschedule links stay
+history state only (v1.3).
 
 **Event title:** `{Guest name} and {Host name}`.
 
@@ -227,8 +235,10 @@ decides whether a busy interval occupies a slot
 
 ## Guest cancel
 
-- Confirmation page includes a tokenized cancel URL; the event description
-  carries it too only when guests cannot invite others (see above).
+- Confirmation page includes a tokenized cancel URL when `?token=` is on
+  the permalink (just-confirmed navigation writes it there). The event
+  description carries it too only when guests cannot invite others (see
+  above). A permalink without the token does not invent a cancel path.
 - Token is unguessable and stored hashed on the reservation as
   `cancelTokenHash`.
 - Cancel deletes the calendar event (host as organizer) and marks the
@@ -244,7 +254,8 @@ There is no host reservation inbox.
 - Reuses `cancelTokenHash` / `?token=`. No second secret.
 - Confirmation shows **Reschedule** (link + **Copy reschedule link**) next
   to cancel when history state has `rescheduleUrl`. Cold permalink has
-  neither secret.
+  neither reschedule secret. Cancel and edit use `?token=` on the
+  confirmation URL (see Guest cancel).
 - `/book/reschedule/:id?token=` reuses the public month/slot picker. Do
   not re-collect name, email, or notes. Duration comes from current page
   settings (same in-flight duration wart as confirm).

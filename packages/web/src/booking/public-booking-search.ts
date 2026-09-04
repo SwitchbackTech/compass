@@ -40,9 +40,9 @@ export function validatePublicBookingSearch(
 }
 
 /**
- * The cancel link's `?token=` must survive on its own route: previously it
- * lived only because the root route's auth-modal whitelist happened to share
- * the param name.
+ * Guest-action `?token=` on cancel and confirmation permalinks. Previously
+ * it lived only because the root route's auth-modal whitelist happened to
+ * share the param name.
  */
 export function validateBookingCancelSearch(search: Record<string, unknown>): {
   token?: string;
@@ -53,4 +53,25 @@ export function validateBookingCancelSearch(search: Record<string, unknown>): {
         ? search["token"]
         : undefined,
   };
+}
+
+export function tokenFromGuestActionUrl(url: string): string {
+  try {
+    return (
+      new URL(url, "https://compasscalendar.com").searchParams.get("token") ??
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+export function publicCancelUrlForReservation(
+  reservationId: string,
+  token: string,
+  origin: string,
+): string {
+  const url = new URL(`/book/cancel/${reservationId}`, origin);
+  url.searchParams.set("token", token);
+  return url.toString();
 }

@@ -1,4 +1,9 @@
-import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
+import {
+  useNavigate,
+  useParams,
+  useRouterState,
+  useSearch,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
 import { getErrorStatus } from "@web/api/util/api.util";
@@ -9,6 +14,10 @@ import {
   usePatchPublicBookingReservationMutation,
   usePublicBookingReservationQuery,
 } from "@web/booking/public-booking.query";
+import {
+  publicCancelUrlForReservation,
+  tokenFromGuestActionUrl,
+} from "@web/booking/public-booking-search";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import { requestPublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -79,26 +88,28 @@ function cancelUrlFromHistory(state: unknown): string | undefined {
   return undefined;
 }
 
-function tokenFromCancelUrl(cancelUrl: string): string {
-  try {
-    return (
-      new URL(cancelUrl, "https://compasscalendar.com").searchParams.get(
-        "token",
-      ) ?? ""
-    );
-  } catch {
-    return "";
-  }
-}
-
 export function PublicBookingConfirmedPage() {
   const { reservationId } = useParams({
     from: "/book/confirmed/$reservationId",
   });
-  const cancelUrl = useRouterState({
+  const { token: searchToken } = useSearch({
+    from: "/book/confirmed/$reservationId",
+  });
+  const historyCancelUrl = useRouterState({
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),
   });
-  const token = cancelUrl ? tokenFromCancelUrl(cancelUrl) : "";
+  const token =
+    searchToken ||
+    (historyCancelUrl ? tokenFromGuestActionUrl(historyCancelUrl) : "");
+  const cancelUrl =
+    historyCancelUrl ??
+    (token
+      ? publicCancelUrlForReservation(
+          reservationId,
+          token,
+          window.location.origin,
+        )
+      : undefined);
   const reservationQuery = usePublicBookingReservationQuery(reservationId);
   const patchReservation =
     usePatchPublicBookingReservationMutation(reservationId);

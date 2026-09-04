@@ -259,6 +259,13 @@ describe("PublicBookingCancelPage", () => {
     expect(router.state.location.pathname).toBe(
       `/book/confirmed/${reservationId}`,
     );
+    expect(router.state.location.search).toEqual({ token: "abc" });
+    expect(
+      screen.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Edit details" }),
+    ).toBeInTheDocument();
     expect(cancelPosts).toBe(0);
   });
 

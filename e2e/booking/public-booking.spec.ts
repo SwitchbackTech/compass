@@ -113,7 +113,7 @@ test.describe("public booking page", () => {
       page.getByText("A Google Meet invite is on its way to your email."),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this booking" }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", {
@@ -199,7 +199,7 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099$/,
+      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
     );
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
@@ -214,11 +214,20 @@ test.describe("public booking page", () => {
     await expect(page.getByText("Duration")).toBeVisible();
     await expect(page.getByText("30 minutes")).toBeVisible();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099$/,
+      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
     );
+    await expect(
+      page.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Cancel this booking" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Edit details" }),
+    ).toBeVisible();
   });
 
-  test("does not show a cancel copy button on a cold confirmation permalink", async ({
+  test("does not promise an invite cancel link on a cold confirmation permalink", async ({
     page,
   }) => {
     await preparePublicBookingConfirmedPage(page);
@@ -229,7 +238,16 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this booking" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Edit details" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("A Google Meet invite is on its way to your email."),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/To cancel, use the link in that invite/),
     ).toHaveCount(0);
   });
 
@@ -249,7 +267,7 @@ test.describe("public booking page", () => {
     await page.getByRole("button", { name: "Confirm booking" }).click();
 
     await expect(
-      page.getByRole("link", { name: "cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute(
       "href",
       "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",

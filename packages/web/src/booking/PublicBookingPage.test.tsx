@@ -445,7 +445,7 @@ describe("PublicBookingPage", () => {
       screen.getByRole("button", { name: "Copy cancel link" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this booking" }),
     ).toBeInTheDocument();
   });
 
@@ -1423,16 +1423,46 @@ describe("PublicBookingConfirmedPage", () => {
     expect(screen.getByText("Duration")).toBeInTheDocument();
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "A Google Meet invite is on its way to your email. To cancel, use the link in that invite.",
-      ),
+      screen.getByText("A Google Meet invite is on its way to your email."),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/To cancel, use the link in that invite/),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Guest User")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Copy cancel link" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Edit details" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers cancel and edit on a cold permalink with a token", async () => {
+    server.use(reservationGetHandler());
+    renderBookingRoute("/book/confirmed/000000000000000000000099?token=abc");
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "You are booked with Tyler Dane",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy cancel link" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Edit details" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Cancel this booking" }),
+    ).toHaveAttribute(
+      "href",
+      `${window.location.origin}/book/cancel/000000000000000000000099?token=abc`,
+    );
+    expect(
+      screen.getByText("A Google Meet invite is on its way to your email."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/To cancel, use the link in that invite/),
     ).not.toBeInTheDocument();
   });
 
@@ -1446,10 +1476,11 @@ describe("PublicBookingConfirmedPage", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "A calendar invite is on its way to your email. To cancel, use the link in that invite.",
-      ),
+      screen.getByText("A calendar invite is on its way to your email."),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/To cancel, use the link in that invite/),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/A Google Meet invite is on its way to your email/),
     ).not.toBeInTheDocument();
@@ -1606,7 +1637,7 @@ describe("PublicBookingConfirmedPage", () => {
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
     await user.click(screen.getByRole("button", { name: "Confirm booking" }));
     expect(
-      await screen.findByRole("link", { name: "cancel this booking" }),
+      await screen.findByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute(
       "href",
       "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",

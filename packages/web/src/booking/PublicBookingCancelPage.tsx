@@ -136,6 +136,7 @@ export function PublicBookingCancelPage() {
       void navigate({
         to: ROOT_ROUTES.BOOK_CONFIRMED,
         params: { reservationId },
+        search: token ? { token } : undefined,
       });
     },
     { enabled: isConfirmView && !busy, ignoreInputs: false },

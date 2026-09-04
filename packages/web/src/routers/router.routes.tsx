@@ -65,6 +65,7 @@ export const publicBookCancelRoute = createRoute({
 export const publicBookConfirmedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.BOOK_CONFIRMED,
+  validateSearch: validateBookingCancelSearch,
   component: lazyRouteComponent(
     () => import("@web/booking/PublicBookingConfirmedPage"),
     "PublicBookingConfirmedPage",
