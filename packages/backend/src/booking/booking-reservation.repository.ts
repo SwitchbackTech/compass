@@ -145,6 +145,31 @@ class BookingReservationRepository {
     return BookingReservationRecordSchema.parse(result);
   }
 
+  async updateSlotTimes(
+    id: ObjectId,
+    slot: {
+      slotStart: Date;
+      slotEnd: Date;
+      guestTimeZone: BookingReservationRecord["guestTimeZone"];
+    },
+  ): Promise<BookingReservationRecord | null> {
+    const now = new Date();
+    const result = await mongoService.bookingReservation.findOneAndUpdate(
+      { _id: id, status: "confirmed" },
+      {
+        $set: {
+          slotStart: slot.slotStart,
+          slotEnd: slot.slotEnd,
+          guestTimeZone: slot.guestTimeZone,
+          updatedAt: now,
+        },
+      },
+      { returnDocument: "after" },
+    );
+    if (!result) return null;
+    return BookingReservationRecordSchema.parse(result);
+  }
+
   async clearCalendarEventId(
     id: ObjectId,
   ): Promise<BookingReservationRecord | null> {

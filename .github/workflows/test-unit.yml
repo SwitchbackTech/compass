@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  # Merge queue re-tests the combination against current main. Without this
+  # trigger the required checks never run on merge_group and the queue stalls.
+  merge_group:
   push:
     branches:
       - main
@@ -46,20 +49,18 @@ jobs:
             "${{ github.repository }}" \
             "${{ github.event.pull_request.number }}"
 
-  lint:
+  # lint, knip, and type-check share node_modules and nothing else. One job
+  # with three steps keeps failures attributable without paying checkout /
+  # setup-bun / bun install three times. Bun-only: no actions/setup-node.
+  static:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v6
-
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -82,75 +83,11 @@ jobs:
         run: |
           bun run lint
 
-  knip:
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v6
-
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install Dependencies
-        run: |
-          bun install --frozen-lockfile
-
-      # Guards against dead-file/dead-export regrowth (scoped to files/exports —
+      # Guards against dead-file/dead-export regrowth (scoped to files/exports;
       # dependency and type-only findings are noisier and out of scope here).
       - name: Run knip
         run: |
           bun run knip
-
-  type-check:
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v6
-
-      - name: Install Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-
-      - name: Install Dependencies
-        run: |
-          bun install --frozen-lockfile
 
       - name: Cache TypeScript incremental build info
         uses: actions/cache@v5
@@ -166,28 +103,40 @@ jobs:
           bun run type-check
 
   # A skipped MATRIX job collapses to one check run named `unit`, so the
-  # required `unit (core)` ... `unit (scripts)` contexts would never report and
+  # required `unit (core)` ... `unit (web, 2)` contexts would never report and
   # a docs-only PR would still be BLOCKED. Let the legs start and skip every
   # step instead: each reports its own name, in a few seconds, for free.
+  # Job display names are the required-check contexts: `unit (web, 1)` and
+  # `unit (web, 2)` each cover half the suite as two sequential shards
+  # (`WEB_TEST_SHARDS=4` with index `1,2` / `3,4`) so RSS stays under 7 GB.
   unit:
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    name: unit (${{ matrix.name }})
     strategy:
       fail-fast: false
       matrix:
-        project: [core, sync, web, backend, scripts]
+        include:
+          - name: core
+            project: core
+          - name: sync
+            project: sync
+          - name: web, 1
+            project: web
+            shard: "1,2"
+          - name: web, 2
+            project: web
+            shard: "3,4"
+          - name: backend
+            project: backend
+          - name: scripts
+            project: scripts
 
     steps:
       - name: Check out Git repository
         if: needs.changes.outputs.code == 'true'
         uses: actions/checkout@v6
-
-      - name: Install Node.js
-        if: needs.changes.outputs.code == 'true'
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
 
       - name: Install Bun
         if: needs.changes.outputs.code == 'true'
@@ -223,6 +172,8 @@ jobs:
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
+          WEB_TEST_SHARDS: "4"
+          WEB_TEST_SHARD_INDEX: ${{ matrix.shard }}
         run: |
           bun run test:web
 

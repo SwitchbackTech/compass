@@ -61,8 +61,9 @@ Playwright. Docs index: `docs/README.md`.
   present tense: `fix(web): handle disconnected google state`.
 - Stage explicit paths. Never force-push, rewrite published history, weaken
   tests, or widen timeouts to go green.
-- Ship: implement, `bun run verify --strict`, open a ready PR with
-  `Fixes #N` and the `VERDICT:` line, label it `agent-automerge`, stop.
+- Ship: implement, `bun run verify --strict`, open a draft PR with
+  `Fixes #N` and the `VERDICT:` line, mark it ready once the verdict is
+  `PASS`, label it `agent-automerge`, stop.
   `.github/scripts/agent-loop-merge-guard.sh` checks size and sensitive paths
   and enables GitHub auto-merge. Do not merge yourself, wait on CI, or wait
   for a human. Procedure: `.agents/skills/ship/SKILL.md`.

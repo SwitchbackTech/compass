@@ -72,6 +72,25 @@ describe("agent-loop Routine contract", () => {
     expect(next).toContain("has_open_dependency");
   });
 
+  it("runs up to AGENT_LOOP_CONCURRENCY issues from different partitions", () => {
+    const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
+    expect(launch).toContain("different partitions");
+    const next = readFileSync(".github/scripts/agent-loop-next.sh", "utf8");
+    expect(next).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(next).toContain("PARTITION_LABELS");
+    expect(next).toContain("issue_numbers");
+    const workflow = readFileSync(".github/workflows/agent-loop.yml", "utf8");
+    expect(workflow).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(workflow).toContain("steps.next.outputs.issue_numbers");
+  });
+
+  it("lets the merge queue drive the required test workflows", () => {
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
+    expect(unit).toMatch(/^ {2}merge_group:$/m);
+    expect(e2e).toMatch(/^ {2}merge_group:$/m);
+  });
+
   it("smokes staging without logging in", () => {
     const smoke = readFileSync(
       ".github/scripts/agent-loop-staging-smoke.sh",

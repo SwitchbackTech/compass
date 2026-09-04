@@ -87,14 +87,27 @@ describe("detect-code-changes", () => {
     expect(unit).toContain(
       "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
     );
+    expect(unit).toMatch(/^ {2}merge_group:$/m);
+    expect(e2e).toMatch(/^ {2}merge_group:$/m);
+    expect(unit).toContain("static:");
+    expect(unit).toContain("name: unit (${{ matrix.name }})");
+    expect(unit).toContain("WEB_TEST_SHARD_INDEX");
+    expect(unit).toContain("name: web, 1");
+    expect(unit).toContain("name: web, 2");
+    expect(unit).not.toContain("uses: actions/setup-node");
+    expect(unit).not.toMatch(/^ {2}lint:/m);
+    expect(unit).not.toMatch(/^ {2}knip:/m);
+    expect(unit).not.toMatch(/^ {2}type-check:/m);
   });
 
   it("runs checks for non-pull-request events without calling GitHub", () => {
-    const result = runDetector("push");
+    for (const eventName of ["push", "merge_group"]) {
+      const result = runDetector(eventName);
 
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\n");
-    expect(result.command).toBe("");
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.output).toBe("code=true\n");
+      expect(result.command).toBe("");
+    }
   });
 
   it("skips checks for docs-only pull requests", () => {

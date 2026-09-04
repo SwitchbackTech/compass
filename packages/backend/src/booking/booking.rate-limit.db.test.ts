@@ -59,6 +59,29 @@ describe("Public booking rate limits", () => {
     expect(throttled.status).toBe(429);
   });
 
+  it("throttles POST reschedule after 10 requests in a minute", async () => {
+    const server = baseDriver.getServer();
+    const id = "0000000000000000000000ee";
+    for (let i = 0; i < 10; i += 1) {
+      await server
+        .post(`/api/booking/reservations/${id}/reschedule`)
+        .send({
+          token: "a".repeat(64),
+          slotStart: "2026-09-07T11:00:00.000Z",
+          guestTimeZone: "UTC",
+        })
+        .expect(Status.NOT_FOUND);
+    }
+    const throttled = await server
+      .post(`/api/booking/reservations/${id}/reschedule`)
+      .send({
+        token: "a".repeat(64),
+        slotStart: "2026-09-07T11:00:00.000Z",
+        guestTimeZone: "UTC",
+      });
+    expect(throttled.status).toBe(429);
+  });
+
   it("throttles PATCH reservation after 10 requests in a minute", async () => {
     const server = baseDriver.getServer();
     const id = "0000000000000000000000bb";

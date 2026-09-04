@@ -25,10 +25,12 @@ the repo records it.
    data loss. If the diff added more than a screen of new abstraction, run
    the `simplify` skill. Confirmed problems become isolated fix commits, then
    rerun step 2.
-4. **PR.** Open a ready (not draft) PR against `main` using
+4. **PR.** Open a **draft** PR against `main` using
    `.github/PULL_REQUEST_TEMPLATE.md`: `Fixes #N`, what changed and why, the
    pasted `VERDICT:` line and checks run. No unchecked manual-testing boxes.
-5. **Label and stop.** Add `agent-automerge`. The merge guard enables GitHub
+   Mark it ready only after `VERDICT: PASS`; reviews run on ready PRs only,
+   so a draft that never becomes ready is a stop, not a handoff.
+5. **Label and stop.** Mark the PR ready and add `agent-automerge`. The merge guard enables GitHub
    auto-merge; GitHub squash-merges when required checks pass and the merge
    launches the next work package. Do not merge yourself, wait on CI,
    close/reopen the PR, push empty commits, or merge `main` in just to re-run

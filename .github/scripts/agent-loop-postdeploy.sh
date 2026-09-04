@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # After "Release on main": smoke staging and comment on the issue if
-# this SHA came from an agent-automerge PR. The next WP is launched by the
-# merge event in agent-loop.yml, not here.
+# this SHA came from an agent-automerge PR. Topping the fleet up to N
+# happens in agent-loop.yml after this script succeeds.
 set -euo pipefail
 
 # shellcheck disable=SC1091
