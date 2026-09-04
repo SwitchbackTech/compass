@@ -1,5 +1,7 @@
 import {
+  guestActionUrlFromHistory,
   publicCancelUrlForReservation,
+  publicRescheduleUrlForReservation,
   tokenFromGuestActionUrl,
   validateBookingCancelSearch,
   validatePublicBookingSearch,
@@ -99,5 +101,47 @@ describe("publicCancelUrlForReservation", () => {
     ).toBe(
       "https://staging.compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
     );
+  });
+});
+
+describe("publicRescheduleUrlForReservation", () => {
+  it("builds an origin-absolute reschedule URL", () => {
+    expect(
+      publicRescheduleUrlForReservation(
+        "000000000000000000000099",
+        "abc",
+        "https://staging.compasscalendar.com",
+      ),
+    ).toBe(
+      "https://staging.compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+    );
+  });
+});
+
+describe("guestActionUrlFromHistory", () => {
+  it("reads cancel and reschedule URLs from history state", () => {
+    expect(
+      guestActionUrlFromHistory(
+        { cancelUrl: "https://example.com/cancel?token=a" },
+        "cancelUrl",
+      ),
+    ).toBe("https://example.com/cancel?token=a");
+    expect(
+      guestActionUrlFromHistory(
+        { rescheduleUrl: "https://example.com/reschedule?token=a" },
+        "rescheduleUrl",
+      ),
+    ).toBe("https://example.com/reschedule?token=a");
+  });
+
+  it("ignores missing, empty, and non-string values", () => {
+    expect(guestActionUrlFromHistory(undefined, "cancelUrl")).toBeUndefined();
+    expect(guestActionUrlFromHistory({}, "rescheduleUrl")).toBeUndefined();
+    expect(
+      guestActionUrlFromHistory({ cancelUrl: "" }, "cancelUrl"),
+    ).toBeUndefined();
+    expect(
+      guestActionUrlFromHistory({ cancelUrl: 12 }, "cancelUrl"),
+    ).toBeUndefined();
   });
 });

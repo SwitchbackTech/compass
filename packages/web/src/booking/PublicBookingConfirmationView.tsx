@@ -1,5 +1,6 @@
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
+import { PublicBookingCopyRescheduleUrl } from "@web/booking/PublicBookingCopyRescheduleUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
 import { PublicBookingSlotSummary } from "@web/booking/PublicBookingSlotSummary";
 import { PUBLIC_BOOKING_HEADING_CLASS } from "@web/booking/PublicBookingStatusMessage";
@@ -14,6 +15,7 @@ interface PublicBookingConfirmationViewProps {
   timeZone: string;
   createsGoogleMeet?: boolean;
   cancelUrl?: string;
+  rescheduleUrl?: string;
   onEditDetails?: () => void;
 }
 
@@ -26,6 +28,7 @@ export function PublicBookingConfirmationView({
   timeZone,
   createsGoogleMeet = true,
   cancelUrl,
+  rescheduleUrl,
   onEditDetails,
 }: PublicBookingConfirmationViewProps) {
   const headingRef = useBookingHeadingFocus(hostDisplayName);
@@ -83,8 +86,19 @@ export function PublicBookingConfirmationView({
             Edit details
           </button>
         ) : null}
-        {cancelUrl ? (
-          <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
+        {cancelUrl || rescheduleUrl ? (
+          <div
+            className="flex flex-col items-start gap-3"
+            role="group"
+            aria-label="Booking actions"
+          >
+            {cancelUrl ? (
+              <PublicBookingCopyCancelUrl cancelUrl={cancelUrl} />
+            ) : null}
+            {rescheduleUrl ? (
+              <PublicBookingCopyRescheduleUrl rescheduleUrl={rescheduleUrl} />
+            ) : null}
+          </div>
         ) : null}
       </section>
     </PublicBookingLayout>
