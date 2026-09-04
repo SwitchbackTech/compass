@@ -21,6 +21,7 @@ import {
   type AttendeeInput,
   type AttendeeResponseStatus,
 } from "@core/types/event-attendance.contracts";
+import { CopyButton } from "@web/components/CopyButton/CopyButton";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { AttendeeRsvpStatus } from "@web/views/Forms/EventForm/AttendeeRsvpStatus";
 import {
@@ -94,14 +95,18 @@ const AttendeeMenu = (
 
 const AttendeeMultiValueLabel = (
   props: MultiValueGenericProps<AttendeeOption, true>,
-) => (
-  <selectComponents.MultiValueLabel {...props}>
-    <span className="inline-flex items-center gap-1">
-      <AttendeeRsvpStatus status={props.data.responseStatus} />
-      {props.children}
-    </span>
-  </selectComponents.MultiValueLabel>
-);
+) => {
+  const email = props.data.attendee.email;
+  return (
+    <selectComponents.MultiValueLabel {...props}>
+      <span className="inline-flex items-center gap-1">
+        <AttendeeRsvpStatus status={props.data.responseStatus} />
+        {props.children}
+        <CopyButton label={`copy ${email}`} text={email} />
+      </span>
+    </selectComponents.MultiValueLabel>
+  );
+};
 
 const AttendeeMultiValue = (props: MultiValueProps<AttendeeOption, true>) => (
   <selectComponents.MultiValue

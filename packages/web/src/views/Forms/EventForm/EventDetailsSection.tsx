@@ -1,5 +1,5 @@
 import { UsersIcon, VideoCameraIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { type EventContent } from "@core/types/event.contracts";
 import { CopyButton } from "@web/components/CopyButton/CopyButton";
 import { AttendeeRsvpStatus } from "@web/views/Forms/EventForm/AttendeeRsvpStatus";
@@ -46,17 +46,6 @@ export const EventDetailsSection = ({
     ? attendees
     : attendees.slice(0, MAX_VISIBLE_ATTENDEES);
   const hiddenAttendeeCount = attendees.length - visibleAttendees.length;
-  const attendeeListPlainText = useMemo(
-    () =>
-      attendees
-        .map((attendee) => {
-          const name = attendee.displayName ?? attendee.email;
-          const isOrganizer = organizer?.email === attendee.email;
-          return isOrganizer ? `${name} (organizer)` : name;
-        })
-        .join("\n"),
-    [attendees, organizer?.email],
-  );
 
   return (
     <div className="flex flex-col gap-2 rounded-md bg-surface-overlay p-3 text-text text-xs">
@@ -87,10 +76,6 @@ export const EventDetailsSection = ({
                 attendees.map((attendee) => attendee.responseStatus),
               )}
             </span>
-            <CopyButton
-              label="copy attendee list"
-              text={attendeeListPlainText}
-            />
           </div>
           <ul className="flex flex-col gap-1 pl-6">
             {visibleAttendees.map((attendee) => {
@@ -111,6 +96,10 @@ export const EventDetailsSection = ({
                     {name}
                     {isOrganizer && " (organizer)"}
                   </span>
+                  <CopyButton
+                    label={`copy ${attendee.email}`}
+                    text={attendee.email}
+                  />
                 </li>
               );
             })}

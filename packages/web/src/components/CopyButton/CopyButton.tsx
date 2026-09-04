@@ -12,7 +12,7 @@ const ICON_SIZE = 16;
 export interface CopyButtonProps {
   /** Text written to the clipboard on click. */
   text: string;
-  /** Accessible name, e.g. "copy event title". */
+  /** Accessible name, e.g. "copy guest@example.com". */
   label: string;
   className?: string;
   /** Called after a successful copy (for confusion-score telemetry). */
@@ -70,7 +70,21 @@ export function CopyButton({
         className,
       )}
       disabled={!text.trim()}
-      onClick={handleCopy}
+      onClick={(event) => {
+        event.stopPropagation();
+        handleCopy();
+      }}
+      onKeyDown={(event) => {
+        // Nested in chips/comboboxes, Enter/Space must not bubble to a parent
+        // that preventDefault's them (which would block the native button click).
+        if (event.key === "Enter" || event.key === " ") {
+          event.stopPropagation();
+        }
+      }}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       size="small"
       tabIndex={0}
       type="button"
