@@ -459,6 +459,8 @@ export class PublicBookingService {
             eventId,
           })
           .catch((compensationError: unknown) => {
+            // The guest still gets SLOT_UNAVAILABLE. Log enough to find and
+            // remove the orphaned Google event by hand.
             publicBookingCompensationLog.failed(compensationError, {
               tenantId: principal.tenantId,
               principalId: principal.principalId,
