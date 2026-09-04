@@ -127,7 +127,8 @@ both channels are configured).
    is under the rails, no sensitive path is in the diff (unless a
    per-milestone allowlist re-allows that prefix), and the latest `main`
    Unit and E2E push runs are not red, enable GitHub auto-merge
-   (`gh pr merge --auto --squash`). GitHub squash-merges when the required
+   (`gh pr merge --auto`; the ruleset merge queue squash-merges and the
+   repo deletes the branch). GitHub squash-merges when the required
    checks pass. Otherwise add `agent-loop-needs-human` and stop; a red
    `main` just waits for the scheduled sweep. The guard never holds a
    runner waiting on CI.
