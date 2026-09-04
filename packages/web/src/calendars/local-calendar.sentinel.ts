@@ -46,6 +46,7 @@ export function synthesizeLocalCalendar(id: CalendarId): Calendar {
       canWrite: true,
       canManage: false,
       canWatchEvents: false,
+      canInviteAttendees: false,
     },
     isPrimary: true,
     isVisible: true,

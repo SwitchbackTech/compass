@@ -36,16 +36,21 @@ const providerCalendar = (
   });
 
 // The suite exercises the per-calendar translation through the public list
-// entry point: one calendar, joined (when the case needs an email) to a
-// minimal connection stub carrying only the fields the join reads.
-const syncCalendarToBrowser = (calendar: ProviderCalendar, email?: string) =>
+// entry point: one calendar, joined (when the case needs an email or provider)
+// to a minimal connection stub carrying only the fields the join reads.
+const syncCalendarToBrowser = (
+  calendar: ProviderCalendar,
+  connection?: Partial<ProviderConnection>,
+) =>
   syncCalendarsToBrowser(
     [calendar],
-    email !== undefined
+    connection
       ? [
           {
             id: calendar.connectionId,
-            account: { email },
+            provider: "google",
+            account: { email: connection.account?.email },
+            ...connection,
           } as unknown as ProviderConnection,
         ]
       : [],
@@ -106,7 +111,9 @@ describe("syncCalendarToBrowser", () => {
   });
 
   it("carries the owning account's email when the caller supplies one", () => {
-    const result = syncCalendarToBrowser(providerCalendar(), "bob@acme.co");
+    const result = syncCalendarToBrowser(providerCalendar(), {
+      account: { email: "bob@acme.co" },
+    });
     expect(result.accountEmail).toBe("bob@acme.co");
   });
 
@@ -123,12 +130,59 @@ describe("syncCalendarToBrowser", () => {
     ["viewer", "reader"],
     ["busyOnly", "freeBusyReader"],
   ] as const)("maps sync access role %s to browser access %s and derives capabilities", (syncRole, browserAccess) => {
+    const canWrite = syncRole === "owner" || syncRole === "editor";
     const result = syncCalendarToBrowser(
-      providerCalendar({ accessRole: syncRole }),
+      providerCalendar({
+        accessRole: syncRole,
+        capabilities: {
+          canReadEvents: true,
+          canWriteEvents: canWrite,
+          canReadBusy: true,
+          canInviteAttendees: canWrite,
+        },
+      }),
     );
     expect(result.access).toBe(browserAccess);
-    // Capabilities are derived from the access role, matching the legacy mapper.
-    expect(result.capabilities).toEqual(getCalendarCapabilities(browserAccess));
+    const baseCapabilities = getCalendarCapabilities(browserAccess);
+    expect(result.capabilities).toEqual({
+      ...baseCapabilities,
+      canInviteAttendees: canWrite,
+    });
+  });
+
+  it("maps a microsoft connection's provider through to the calendar", () => {
+    const calendar = providerCalendar();
+    const result = syncCalendarToBrowser(calendar, { provider: "microsoft" });
+    expect(result.provider).toBe("microsoft");
+  });
+
+  it("derives canInviteAttendees from sync write capability for a writable calendar", () => {
+    const result = syncCalendarToBrowser(
+      providerCalendar({
+        capabilities: {
+          canReadEvents: true,
+          canWriteEvents: true,
+          canReadBusy: true,
+          canInviteAttendees: true,
+        },
+      }),
+    );
+    expect(result.capabilities.canInviteAttendees).toBe(true);
+  });
+
+  it("derives canInviteAttendees false for a read-only sync calendar", () => {
+    const result = syncCalendarToBrowser(
+      providerCalendar({
+        accessRole: "viewer",
+        capabilities: {
+          canReadEvents: true,
+          canWriteEvents: false,
+          canReadBusy: true,
+          canInviteAttendees: false,
+        },
+      }),
+    );
+    expect(result.capabilities.canInviteAttendees).toBe(false);
   });
 
   it("maps createsGoogleMeet through", () => {

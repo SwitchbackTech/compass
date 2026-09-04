@@ -29,7 +29,7 @@ export type SyncCommandId = z.infer<typeof SyncCommandIdSchema>;
 export const SyncJobIdSchema = ObjectIdStringSchema.brand<"SyncJobId">();
 export type SyncJobId = z.infer<typeof SyncJobIdSchema>;
 
-export const ProviderKindSchema = z.enum(["google"]);
+export const ProviderKindSchema = z.enum(["google", "microsoft", "apple"]);
 export type ProviderKind = z.infer<typeof ProviderKindSchema>;
 
 // Stable subject issued by the provider for one authorized account (for

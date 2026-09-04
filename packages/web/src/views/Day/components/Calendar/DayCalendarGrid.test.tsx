@@ -1,7 +1,10 @@
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
 import { act } from "react";
-import { type Calendar } from "@core/types/calendar.contracts";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
@@ -176,13 +179,7 @@ const makeCalendar = (
   backgroundColor: "#2563eb",
   provider: "google",
   access: "owner",
-  capabilities: {
-    canReadAvailability: true,
-    canReadDetails: true,
-    canWrite: true,
-    canManage: true,
-    canWatchEvents: true,
-  },
+  capabilities: getCalendarCapabilities("owner"),
   isPrimary: false,
   isVisible: true,
   isActive: true,
@@ -580,13 +577,7 @@ describe("DayCalendarGrid", () => {
     // must land on primary so the grid column matches the form.
     const holidays = makeCalendar("Holidays in United States", {
       access: "reader",
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
     const primary = makeCalendar("compasscaltest3@gmail.com", {
       isPrimary: true,
@@ -612,13 +603,7 @@ describe("DayCalendarGrid", () => {
   it("seeds CREATE_ALLDAY_DRAFT with the default target calendar, not column 0", async () => {
     const holidays = makeCalendar("Holidays in United States", {
       access: "reader",
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
     const primary = makeCalendar("compasscaltest3@gmail.com", {
       isPrimary: true,

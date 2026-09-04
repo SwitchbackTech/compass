@@ -1,3 +1,4 @@
+import { getCalendarCapabilities } from "@core/types/calendar.contracts";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { createSyncLocalEventsToCloud } from "./local-event-sync.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -33,11 +34,10 @@ const localCalendar = {
   provider: "local",
   access: "owner",
   capabilities: {
-    canReadAvailability: true,
-    canReadDetails: true,
-    canWrite: true,
+    ...getCalendarCapabilities("owner"),
     canManage: false,
     canWatchEvents: false,
+    canInviteAttendees: false,
   },
   isPrimary: true,
   isVisible: true,

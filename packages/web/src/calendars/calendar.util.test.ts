@@ -1,4 +1,7 @@
-import { type Calendar } from "@core/types/calendar.contracts";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   compareCalendars,
@@ -21,11 +24,10 @@ function makeCalendar(overrides: Partial<Calendar>): Calendar {
     provider: "local",
     access: "owner",
     capabilities: {
-      canReadAvailability: true,
-      canReadDetails: true,
-      canWrite: true,
+      ...getCalendarCapabilities("owner"),
       canManage: false,
       canWatchEvents: false,
+      canInviteAttendees: false,
     },
     isPrimary: false,
     isVisible: true,
@@ -59,13 +61,7 @@ describe("getWritableCalendars", () => {
   it("excludes a non-writable or inactive calendar regardless of connection state", () => {
     const readOnly = makeCalendar({
       provider: "google",
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: false,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
     const inactive = makeCalendar({ provider: "google", isActive: false });
     expect(getWritableCalendars([readOnly, inactive])).toEqual([]);
@@ -147,13 +143,7 @@ describe("getDefaultTargetCalendar", () => {
       provider: "google",
       isPrimary: true,
       id: "507f1f77bcf86cd799439013" as Calendar["id"],
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
     expect(
       getDefaultTargetCalendar([local, secondaryGoogle, readOnlyPrimary]),
@@ -227,13 +217,7 @@ describe("getDefaultTargetCalendar", () => {
       isPrimary: true,
       accountEmail: "user@example.com",
       id: "507f1f77bcf86cd799439012" as Calendar["id"],
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
 
     expect(
@@ -266,13 +250,7 @@ describe("getDefaultTargetCalendar", () => {
     const demoted = makeCalendar({
       provider: "google",
       id: "507f1f77bcf86cd799439013" as Calendar["id"],
-      capabilities: {
-        canReadAvailability: true,
-        canReadDetails: true,
-        canWrite: false,
-        canManage: false,
-        canWatchEvents: true,
-      },
+      capabilities: getCalendarCapabilities("reader"),
     });
 
     expect(

@@ -16,9 +16,23 @@ export const GoogleCalendarSourceRecordSchema = z.strictObject({
   etag: z.string().min(1),
 });
 
+export const MicrosoftCalendarSourceRecordSchema = z.strictObject({
+  provider: z.literal("microsoft"),
+  calendarId: z.string().min(1),
+  etag: z.string().min(1).optional(),
+});
+
+export const AppleCalendarSourceRecordSchema = z.strictObject({
+  provider: z.literal("apple"),
+  calendarId: z.string().min(1),
+  etag: z.string().min(1).optional(),
+});
+
 export const CalendarSourceRecordSchema = z.discriminatedUnion("provider", [
   LocalCalendarSourceRecordSchema,
   GoogleCalendarSourceRecordSchema,
+  MicrosoftCalendarSourceRecordSchema,
+  AppleCalendarSourceRecordSchema,
 ]);
 export type CalendarSourceRecord = z.infer<typeof CalendarSourceRecordSchema>;
 

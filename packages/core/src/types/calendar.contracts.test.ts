@@ -64,6 +64,7 @@ describe("Calendar Contracts", () => {
         canWrite: true,
         canManage: true,
         canWatchEvents: true,
+        canInviteAttendees: true,
       });
     });
 
@@ -74,6 +75,7 @@ describe("Calendar Contracts", () => {
         canWrite: true,
         canManage: false,
         canWatchEvents: true,
+        canInviteAttendees: true,
       });
     });
 
@@ -84,6 +86,7 @@ describe("Calendar Contracts", () => {
         canWrite: false,
         canManage: false,
         canWatchEvents: true,
+        canInviteAttendees: false,
       });
     });
 
@@ -94,6 +97,7 @@ describe("Calendar Contracts", () => {
         canWrite: false,
         canManage: false,
         canWatchEvents: false,
+        canInviteAttendees: false,
       });
     });
 
