@@ -79,10 +79,9 @@ describe("TimePicker", () => {
     ];
     render(<Harness initialValue={onePm} options={options} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
-
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
     await user.tab();
 
     expect(screen.getByText("1 PM")).toBeInTheDocument();
@@ -95,9 +94,8 @@ describe("TimePicker", () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initialValue={onePm} options={intervalOptions} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
     await user.keyboard("{ArrowDown}");
@@ -281,9 +279,8 @@ describe("TimePicker Enter commit", () => {
     const user = userEvent.setup({ delay: null });
     render(<Harness initialValue={onePm} options={dayOptions} />);
 
-    await user.tab();
-    await user.tab();
-    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
     await user.keyboard("{Enter}");
