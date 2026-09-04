@@ -1,0 +1,153 @@
+{
+  "page1": {
+    "items": [
+      {
+        "kind": "calendar#event",
+        "etag": "\"2702446420000000\"",
+        "id": "kjatossbl8ctt7ub64363pibek",
+        "status": "confirmed",
+        "summary": "Meeting with Stan",
+        "description": "Sign Lease and pick apartment",
+        "location": "PH",
+        "updated": "2012-10-26T03:46:50.000Z",
+        "organizer": {
+          "email": "foo@gmail.com",
+          "displayName": "foo user",
+          "self": true
+        },
+        "start": {
+          "dateTime": "2012-10-26T13:00:00-06:00",
+          "timeZone": "America/Chicago"
+        },
+        "end": {
+          "dateTime": "2012-10-26T14:00:00-06:00",
+          "timeZone": "America/Chicago"
+        },
+        "iCalUID": "kjatossbl8ctt7ub64363pibek@google.com"
+      },
+      {
+        "kind": "calendar#event",
+        "etag": "\"3291861297900000\"",
+        "id": "1evdi8c1s5knlt5ofhncl654u9",
+        "status": "confirmed",
+        "summary": "Feb 22",
+        "start": { "date": "2022-02-22" },
+        "end": { "date": "2022-02-23" },
+        "transparency": "transparent",
+        "iCalUID": "1evdi8c1s5knlt5ofhncl654u9@google.com"
+      },
+      {
+        "kind": "calendar#event",
+        "etag": "\"3515450151133918\"",
+        "id": "15chil19v5nskedvmo93ei4nl8",
+        "status": "confirmed",
+        "summary": "recurring event",
+        "start": {
+          "dateTime": "2025-09-07T02:30:00+01:00",
+          "timeZone": "Africa/Lagos"
+        },
+        "end": {
+          "dateTime": "2025-09-07T03:30:00+01:00",
+          "timeZone": "Africa/Lagos"
+        },
+        "recurrence": ["RRULE:FREQ=DAILY;UNTIL=20250916T225959Z"],
+        "iCalUID": "15chil19v5nskedvmo93ei4nl8@google.com"
+      },
+      {
+        "kind": "calendar#event",
+        "etag": "\"3515450151133918\"",
+        "id": "15chil19v5nskedvmo93ei4nl8_20250908T013000Z",
+        "status": "confirmed",
+        "summary": "recurring event (exception)",
+        "recurringEventId": "15chil19v5nskedvmo93ei4nl8",
+        "originalStartTime": {
+          "dateTime": "2025-09-08T02:30:00+01:00",
+          "timeZone": "Africa/Lagos"
+        },
+        "start": {
+          "dateTime": "2025-09-08T03:00:00+01:00",
+          "timeZone": "Africa/Lagos"
+        },
+        "end": {
+          "dateTime": "2025-09-08T04:00:00+01:00",
+          "timeZone": "Africa/Lagos"
+        }
+      },
+      {
+        "kind": "calendar#event",
+        "etag": "\"2734519593376000\"",
+        "id": "tlf9q8uk5vjl2i2868q36dpi28_20130508T220000Z",
+        "status": "cancelled",
+        "recurringEventId": "tlf9q8uk5vjl2i2868q36dpi28",
+        "originalStartTime": {
+          "dateTime": "2013-05-08T16:00:00-06:00"
+        }
+      },
+      {
+        "kind": "calendar#event",
+        "etag": "\"v-guests\"",
+        "id": "attendee-conference-color",
+        "status": "confirmed",
+        "summary": "Standup",
+        "colorId": "7",
+        "hangoutLink": "https://meet.google.com/abc-defg-hij",
+        "attendees": [
+          {
+            "email": "a@x.com",
+            "displayName": "A",
+            "responseStatus": "accepted"
+          }
+        ],
+        "conferenceData": {
+          "conferenceSolution": { "name": "Google Meet" }
+        },
+        "start": {
+          "dateTime": "2025-01-15T09:00:00-05:00",
+          "timeZone": "America/New_York"
+        },
+        "end": {
+          "dateTime": "2025-01-15T09:30:00-05:00",
+          "timeZone": "America/New_York"
+        }
+      },
+      {
+        "kind": "calendar#event",
+        "id": "no-etag",
+        "status": "confirmed",
+        "summary": "structurally unusable",
+        "start": {
+          "dateTime": "2025-01-15T09:00:00-05:00",
+          "timeZone": "America/New_York"
+        },
+        "end": {
+          "dateTime": "2025-01-15T10:00:00-05:00",
+          "timeZone": "America/New_York"
+        }
+      }
+    ],
+    "nextPageToken": "page-2",
+    "nextSyncToken": null
+  },
+  "page2": {
+    "items": [
+      {
+        "kind": "calendar#event",
+        "etag": "\"page2\"",
+        "id": "paged-event",
+        "status": "confirmed",
+        "summary": "Second page",
+        "start": {
+          "dateTime": "2025-02-01T09:00:00-05:00",
+          "timeZone": "America/New_York"
+        },
+        "end": {
+          "dateTime": "2025-02-01T10:00:00-05:00",
+          "timeZone": "America/New_York"
+        }
+      }
+    ],
+    "nextPageToken": null,
+    "nextSyncToken": "sync-1"
+  },
+  "expiredCursor": "expired-sync-token"
+}

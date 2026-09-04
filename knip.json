@@ -23,7 +23,11 @@
         "src/app.ts",
         "src/__tests__/sync.preload.ts",
         "src/__tests__/sync.preload.fast.ts",
-        "src/__tests__/helpers/mongo-memory.ts"
+        "src/__tests__/helpers/mongo-memory.ts",
+        "src/providers/__contract__/adapter-contract.ts",
+        "src/providers/__contract__/google-contract.factory.ts",
+        "src/providers/__contract__/recording-api.ts",
+        "src/providers/__contract__/discovery.contract.ts"
       ],
       "project": ["src/**/*.ts!"]
     },

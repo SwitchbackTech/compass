@@ -1,30 +1,29 @@
 # Provider adapter contract suite
 
-Shared discovery checks run every registered adapter against the same bar.
-Add a provider by listing `DiscoveryContractCase` entries in
-`<kind>.contract.test.ts` and replaying request/response pairs through the
-adapter's injectable narrow API (for Apple, the CalDAV client's `fetch`).
+Shared checks that every calendar adapter must pass. Google runs against a
+recorded fixture corpus under `fixtures/google/` (synthesized from the
+existing adapter tests; no live account). Set `LIVE_PROVIDER=<kind>` to run
+the same cases against the real API factory (L-10).
 
-The full suite (auth, reader, writer, notifications, normalizer) lands in P0
-WP-11 (#3236). This directory currently carries discovery cases only.
-
-## Add Apple-style discovery coverage
+## Add a provider (under 30 lines)
 
 ```typescript
-import { type DiscoveryContractCase } from "@sync/providers/__contract__/discovery.contract";
+import { describeProviderContract } from "@sync/providers/__contract__/adapter-contract";
+import { type ProviderAdapters } from "@sync/providers/provider-adapters";
 
-const CASES: DiscoveryContractCase[] = [
-  {
-    name: "detects primary",
-    username: email,
-    password: secret,
-    run: async (adapter) => {
-      const result = await adapter.discoverCalendars({ accessToken: secret });
-      expect(result.cursor).toBeNull();
-    },
-  },
-];
+export function microsoftRecordedFactory(corpusDir: string): ProviderAdapters {
+  return replayFrom(corpusDir); // replay fixtures/microsoft/*.json
+}
+
+describeProviderContract("microsoft", microsoftRecordedFactory);
 ```
 
-Record live fixtures with the founder account in A-11 (#3275); redact secrets
-before committing.
+Record live request/response pairs with `recordingApi(realApi, corpusDir, caseName)`
+(used by M-12 / A-11). Redact before committing:
+
+- `Authorization` headers and any `*token*`, `*secret*`, `*password*` keys
+- email addresses
+- `Bearer …` values
+
+Apple discovery-only cases stay in `apple.contract.test.ts` until the rest of
+the Apple adapter set lands (A-11).
