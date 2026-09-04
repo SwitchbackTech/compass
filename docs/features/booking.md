@@ -1,4 +1,4 @@
-# Compass Calendar Booking (v1 / v1.1 / v1.5)
+# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5)
 
 Locked product spec for public scheduling on Compass Cloud
 (`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
@@ -6,17 +6,17 @@ RSVP-strict occupancy and public page identity (date-specific
 availability exceptions were removed in v1.2). v1.5 shipped keyboard
 Escape paths, guest edit-details after confirm, confirmation permalink
 tokens, and the audit fixes on milestone Booking v1.5. v1.3 (guest
-reschedule) remains specified here and is not shipped.
+reschedule) is specified here and implemented; the production gate stays
+off.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1, v1.1, and v1.5 are implemented in the Compass monorepo (public
-`/book/:username`, host Settings, backend APIs, guest cancel and
-edit-details). v1.3 (guest reschedule) is specified here and is not
-implemented. Booking is enabled in development and staging
+v1, v1.1, v1.3, and v1.5 are implemented in the Compass monorepo (public
+`/book/:username`, host Settings, backend APIs, guest cancel, guest
+reschedule, and edit-details). Booking is enabled in development and staging
 (`runtime.nodeEnv` other than `production`) and disabled in production.
 Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
@@ -379,11 +379,11 @@ Unauthenticated:
   the token is invalid.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
 - `GET /api/booking/reservations/:id/slots?token=&start=&end=&timeZone=`
-  — v1.3, not shipped. Would return bookable instants excluding this
-  reservation from occupancy and max-per-day.
-- `POST /api/booking/reservations/:id/reschedule` — v1.3, not shipped.
-  `{token, slotStart, guestTimeZone}`. Create response still includes
-  `rescheduleUrl` for that specified flow.
+  — bookable instants excluding this reservation from occupancy and
+  max-per-day. Same window rules as the public page slots endpoint.
+- `POST /api/booking/reservations/:id/reschedule` — `{token, slotStart,
+  guestTimeZone}`. In-place calendar PATCH. Same slot is an idempotent
+  success. Create response includes `rescheduleUrl`.
 
 Authenticated (host session + writable billing, same as event writes):
 
@@ -422,14 +422,14 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Slot engine | `packages/core/src/booking/compute-booking-slots.ts` |
 | Occupancy policy | `packages/core/src/booking/occupies-booking-slot.ts` |
 | Backend admin API | `packages/backend/src/booking/controllers/booking.controller.ts`, `services/booking-page.service.ts` |
-| Backend public API | `packages/backend/src/booking/services/public-booking.service.ts` |
+| Backend public API | `packages/backend/src/booking/booking.routes.config.ts`, `services/public-booking.service.ts` |
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
-| Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts`, `services/calendar-booking.service.ts` |
+| Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
 | Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
-| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingEditDetailsForm.tsx` |
+| Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyRescheduleUrl.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
-| E2e | `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts` |
+| E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
 
 ### Named warts
 
@@ -439,11 +439,12 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
   per instance: N replicas yield about N times that, and a client that
   reconnects to a different replica resets its bucket. Accepted for v1
   while `isBookingEnabled` stays false in production.
-- **Cancel and edit tokens travel in the query string.** The bearer
-  lives in `?token=` on `/book/confirmed/:id` and `/book/cancel/:id`,
-  so it can appear in browser history, Referer headers, and access
-  logs. Accepted for v1: a fragment or POST landing page would break
-  the confirmation permalink. Tokens stop working at `slotEnd`.
+- **Cancel, edit, and reschedule tokens travel in the query string.** The
+  bearer lives in `?token=` on `/book/confirmed/:id`, `/book/cancel/:id`,
+  and `/book/reschedule/:id`, so it can appear in browser history, Referer
+  headers, and access logs. Accepted for v1: a fragment or POST landing
+  page would break the confirmation permalink. Tokens stop working at
+  `slotEnd`.
 - **Guest email is not editable after confirm.** The attendee identity and
   Google invite are bound to the address collected at booking. Changing it
   would send a new invitation, which v1.5 does not do.
@@ -454,9 +455,10 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
   into the store in a drive-by.
 - **Slug is not editable in v1.** Allocation runs once on first enable; changing
   slugs needs a migration with redirects.
-- **Guest reschedule is v1.3, not v1.** In-place PATCH; same cancel token.
-  Host-edited events still use `expectedVersion: null` on the booking
-  update path.
+- **Host-edited etag overwrite uses `expectedVersion: null`.** Guest
+  reschedule PATCHes the same Google event in place. Host-edited events
+  still omit a stored etag on the booking update path, so a concurrent
+  host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
 - **Google-only destination** calendars; password-only hosts see a connect-Google
