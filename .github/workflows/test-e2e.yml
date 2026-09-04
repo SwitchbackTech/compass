@@ -42,7 +42,7 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Detect non-docs changes
         id: filter
@@ -78,7 +78,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Bun setup prerequisites
         run: apt-get update && apt-get install -y --no-install-recommends unzip

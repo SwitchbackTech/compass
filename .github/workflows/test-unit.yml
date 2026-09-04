@@ -37,7 +37,7 @@ jobs:
       code: ${{ steps.filter.outputs.code }}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Detect non-docs changes
         id: filter
@@ -60,7 +60,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -153,7 +153,7 @@ jobs:
     steps:
       - name: Check out Git repository
         if: needs.changes.outputs.code == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Bun
         if: needs.changes.outputs.code == 'true'
