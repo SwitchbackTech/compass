@@ -32,7 +32,7 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
-import * as realSavesection from "@web/views/Forms/EventForm/SaveSection";
+import * as realSavesection from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 /**
@@ -93,13 +93,17 @@ mock.module(
   }),
 );
 
-mockModuleForFile("@web/views/Forms/EventForm/SaveSection", realSavesection, {
-  SaveSection: ({ onSubmit }: { onSubmit: () => void }) => (
-    <button type="button" onClick={onSubmit}>
-      Save
-    </button>
-  ),
-});
+mockModuleForFile(
+  "@web/views/Forms/EventForm/SaveSection/SaveSection",
+  realSavesection,
+  {
+    SaveSection: ({ onSubmit }: { onSubmit: () => void }) => (
+      <button type="button" onClick={onSubmit}>
+        Save
+      </button>
+    ),
+  },
+);
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 

@@ -10,7 +10,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@web/components/Tooltip";
+} from "@web/components/Tooltip/Tooltip";
 import { type TooltipOptions } from "@web/components/Tooltip/tooltip.types";
 import { pointerShortcutAttributes } from "@web/shortcuts/keyboard-only/pointer-action";
 import { ShortcutHint } from "../Shortcuts/ShortcutHint";

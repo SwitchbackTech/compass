@@ -3,12 +3,12 @@ import {
   ShortcutProBadge,
 } from "@web/billing/ShortcutProBadge";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { TooltipDescription } from "@web/components/Tooltip/Description/TooltipDescription";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@web/components/Tooltip";
-import { TooltipDescription } from "@web/components/Tooltip/Description/TooltipDescription";
+} from "@web/components/Tooltip/Tooltip";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 
 const ROW_CLASSNAME =

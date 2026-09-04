@@ -74,7 +74,7 @@ import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/Ev
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
 import { FormActionsRow } from "@web/views/Forms/EventForm/FormActionsRow";
 import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
-import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
+import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import {
   type GridEventFormProps,
   type SetEventFormSchedule,

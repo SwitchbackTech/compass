@@ -3,7 +3,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@web/components/Tooltip";
+} from "@web/components/Tooltip/Tooltip";
 import { getLifeDotLabel, WEEKS_PER_ROW } from "./life.utils";
 
 interface LifeGridProps {
