@@ -355,6 +355,7 @@ describe("typed-time deferred commit", () => {
           }),
         );
         type(["1", "2", "3", "0"]);
+        dispatch(keydown("Enter"));
       });
 
       const start = createAt.mock.calls[0]?.[0] as Dayjs;
@@ -379,6 +380,127 @@ describe("typed-time deferred commit", () => {
 
       expect(createAt).not.toHaveBeenCalled();
       expect(useEventJumpStore.getState().isActive).toBe(false);
+    });
+  });
+
+  describe("with a Friday column of four events", () => {
+    const FRIDAY = TARGET_DAY.day() === 5 ? TARGET_DAY : TARGET_DAY.day(5);
+    const fridayIds = [1, 2, 3, 4].map((n) =>
+      EventIdSchema.parse(`f${"a".repeat(23)}${n}`),
+    );
+    const fridayElements: HTMLButtonElement[] = [];
+
+    const mountFriday = () => {
+      const createAt = mock((_start: Dayjs) => {});
+      const openEvent = mock((_eventId: string) => {});
+      const events = fridayIds.map((id, index) => {
+        const hour = 9 + index * 2;
+        return {
+          _id: id,
+          startDate: FRIDAY.hour(hour).format(),
+          endDate: FRIDAY.hour(hour + 1).format(),
+          title: `Friday ${index + 1}`,
+          isAllDay: false,
+        } as unknown as GridEvent;
+      });
+
+      fridayElements.splice(0, fridayElements.length);
+      for (const id of fridayIds) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.textContent = id;
+        el.dataset.eventId = id;
+        el.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          openEvent(id);
+        });
+        document.body.appendChild(el);
+        fridayElements.push(el);
+      }
+
+      renderHook(() =>
+        useShiftHoldEventHints({
+          createAtTime: (start) => createAt(start),
+          focus: (target) => {
+            target.element.focus();
+          },
+          getQuickTimeDay: () => TARGET_DAY,
+          listVisible: () =>
+            fridayIds.map((eventId, index) => ({
+              eventId,
+              eventType: "timed" as const,
+              element: fridayElements[index]!,
+            })),
+          timedEvents: events,
+        }),
+      );
+
+      const pressFriday = () => {
+        dispatch(keydown("F", { shiftKey: true }));
+      };
+
+      return { createAt, openEvent, pressFriday };
+    };
+
+    afterEach(() => {
+      for (const el of fridayElements) {
+        el.remove();
+      }
+      fridayElements.splice(0, fridayElements.length);
+    });
+
+    it("opens the fourth Friday event on f then 4 then Enter, with no draft", () => {
+      const { createAt, openEvent, pressFriday } = mountFriday();
+      const fourthId = fridayIds[3]!;
+      const fourthEl = fridayElements[3]!;
+
+      pressFriday();
+      dispatch(digit("4"));
+      const enter = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "Enter",
+      });
+      act(() => {
+        fourthEl.dispatchEvent(enter);
+      });
+
+      expect(document.activeElement).toBe(fourthEl);
+      expect(enter.defaultPrevented).toBe(true);
+      expect(openEvent).toHaveBeenCalledTimes(1);
+      expect(openEvent).toHaveBeenCalledWith(fourthId);
+      expect(createAt).not.toHaveBeenCalled();
+    });
+
+    it("opens the fourth Friday event on f then 4 after the burst window, with no draft", async () => {
+      const { createAt, openEvent, pressFriday } = mountFriday();
+      const fourthId = fridayIds[3]!;
+      const fourthEl = fridayElements[3]!;
+
+      pressFriday();
+      dispatch(digit("4"));
+
+      await act(
+        () =>
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, DIGIT_AMBIGUOUS_COMMIT_MS * 2 + 50);
+          }),
+      );
+
+      const enter = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "Enter",
+      });
+      act(() => {
+        fourthEl.dispatchEvent(enter);
+      });
+
+      expect(document.activeElement).toBe(fourthEl);
+      expect(openEvent).toHaveBeenCalledTimes(1);
+      expect(openEvent).toHaveBeenCalledWith(fourthId);
+      expect(createAt).not.toHaveBeenCalled();
     });
   });
 });
