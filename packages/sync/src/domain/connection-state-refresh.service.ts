@@ -185,7 +185,9 @@ export async function gatherConnectionStateEvidence(
 function credentialState(
   credential: Awaited<ReturnType<CredentialRepository["findByConnection"]>>,
 ): CredentialState {
-  if (!credential?.refreshToken) return "revoked";
+  if (!credential) return "revoked";
+  if (credential.credentialKind === "password") return "valid";
+  if (!credential.refreshToken) return "revoked";
   if (credential.refreshFailureCount >= MAX_REFRESH_FAILED_ATTEMPTS) {
     return "expired";
   }

@@ -9,10 +9,16 @@ import {
 // can ever return credential material — reading a connection never touches this
 // collection. Only the Sync database user can read it.
 //
-// The refresh token is the durable secret; the access token is a short-lived
-// cache re-minted from it on demand. Both are token-shaped and must never reach
-// a log or error — use `redactCredential` for any diagnostic output.
-export const CredentialRecordSchema = z.strictObject({
+// Discriminated on credentialKind. `oauthRefresh` is the Google/Microsoft
+// grant: the refresh token is the durable secret and the access token is a
+// short-lived cache. `password` is the Apple app-specific password: a static
+// secret sealed with AES-256-GCM, no refresh, no scopes, no revoke. Existing
+// documents without credentialKind parse as oauthRefresh (no migration).
+// Token-shaped fields must never reach a log or error — use `redactCredential`
+// for any diagnostic output.
+
+export const OauthRefreshCredentialRecordSchema = z.strictObject({
+  credentialKind: z.literal("oauthRefresh").default("oauthRefresh"),
   // One credential document per connection; the connection id is the key.
   _id: ConnectionIdSchema,
   provider: ProviderKindSchema,
@@ -31,19 +37,84 @@ export const CredentialRecordSchema = z.strictObject({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
+export type OauthRefreshCredentialRecord = z.infer<
+  typeof OauthRefreshCredentialRecordSchema
+>;
+
+export const PasswordCredentialRecordSchema = z.strictObject({
+  credentialKind: z.literal("password"),
+  _id: ConnectionIdSchema,
+  provider: ProviderKindSchema,
+  username: z.string().min(1),
+  secretCiphertext: z.string().min(1),
+  secretIv: z.string().min(1),
+  secretTag: z.string().min(1),
+  keyVersion: z.number().int().positive(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type PasswordCredentialRecord = z.infer<
+  typeof PasswordCredentialRecordSchema
+>;
+
+function defaultOauthCredentialKind(value: unknown): unknown {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    !("credentialKind" in value)
+  ) {
+    return { ...value, credentialKind: "oauthRefresh" };
+  }
+  return value;
+}
+
+export const CredentialRecordSchema = z.preprocess(
+  defaultOauthCredentialKind,
+  z.discriminatedUnion("credentialKind", [
+    OauthRefreshCredentialRecordSchema,
+    PasswordCredentialRecordSchema,
+  ]),
+);
 export type CredentialRecord = z.infer<typeof CredentialRecordSchema>;
 
-// What a caller provides to store or replace a connection's credential. Sync
-// owns _id, createdAt, and updatedAt; _id doubles as connectionId, so it is
-// picked back in under that name rather than omitted. Storing a fresh refresh
-// token clears any cached access token so a stale one can never be served
-// after re-authorization.
-export const CredentialUpsertSchema = CredentialRecordSchema.pick({
-  provider: true,
-  refreshToken: true,
-  scopes: true,
-}).extend({ connectionId: ConnectionIdSchema });
+export function isOauthRefreshCredential(
+  record: CredentialRecord,
+): record is OauthRefreshCredentialRecord {
+  return record.credentialKind === "oauthRefresh";
+}
+
+export function isPasswordCredential(
+  record: CredentialRecord,
+): record is PasswordCredentialRecord {
+  return record.credentialKind === "password";
+}
+
+// What a caller provides to store or replace an OAuth credential. Sync owns
+// _id, createdAt, and updatedAt; _id doubles as connectionId, so it is picked
+// back in under that name rather than omitted. Storing a fresh refresh token
+// clears any cached access token so a stale one can never be served after
+// re-authorization.
+export const CredentialUpsertSchema = z.strictObject({
+  connectionId: ConnectionIdSchema,
+  provider: ProviderKindSchema,
+  refreshToken: z.string().min(1),
+  scopes: z.array(z.string()),
+});
 export type CredentialUpsert = z.infer<typeof CredentialUpsertSchema>;
+
+export const PasswordCredentialUpsertSchema = z.strictObject({
+  connectionId: ConnectionIdSchema,
+  provider: ProviderKindSchema,
+  username: z.string().min(1),
+  secretCiphertext: z.string().min(1),
+  secretIv: z.string().min(1),
+  secretTag: z.string().min(1),
+  keyVersion: z.number().int().positive(),
+});
+export type PasswordCredentialUpsert = z.infer<
+  typeof PasswordCredentialUpsertSchema
+>;
 
 // A log-safe view of a credential. Token-shaped fields are reduced to presence
 // booleans so a diagnostic can say "has a refresh token, access token expired"
@@ -52,18 +123,34 @@ export type CredentialUpsert = z.infer<typeof CredentialUpsertSchema>;
 export interface RedactedCredential {
   readonly connectionId: string;
   readonly provider: string;
+  readonly credentialKind: "oauthRefresh" | "password";
   readonly hasRefreshToken: boolean;
   readonly hasAccessToken: boolean;
+  readonly hasPasswordSecret: boolean;
   readonly accessTokenExpiresAt: Date | null;
   readonly scopeCount: number;
 }
 
 export function redactCredential(record: CredentialRecord): RedactedCredential {
+  if (record.credentialKind === "password") {
+    return {
+      connectionId: record._id,
+      provider: record.provider,
+      credentialKind: "password",
+      hasRefreshToken: false,
+      hasAccessToken: false,
+      hasPasswordSecret: true,
+      accessTokenExpiresAt: null,
+      scopeCount: 0,
+    };
+  }
   return {
     connectionId: record._id,
     provider: record.provider,
+    credentialKind: "oauthRefresh",
     hasRefreshToken: record.refreshToken.length > 0,
     hasAccessToken: record.accessToken !== null,
+    hasPasswordSecret: false,
     accessTokenExpiresAt: record.accessTokenExpiresAt,
     scopeCount: record.scopes.length,
   };

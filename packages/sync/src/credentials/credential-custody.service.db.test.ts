@@ -8,8 +8,10 @@ import {
   ProviderAuthError,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type CredentialUpsert } from "@sync/storage/contracts/credential.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { randomBytes } from "node:crypto";
 
 const objectId = () => faker.database.mongodbObjectId();
 
@@ -92,7 +94,10 @@ describe("CredentialCustody", () => {
     expect(token).toBe("fresh-token");
     expect(adapter.refreshCalls).toBe(1);
     const cached = await repo.findByConnection(connectionId);
-    expect(cached?.accessToken).toBe("fresh-token");
+    expect(cached).toMatchObject({
+      credentialKind: "oauthRefresh",
+      accessToken: "fresh-token",
+    });
   });
 
   it("serves the cached token without refreshing when it is still valid", async () => {
@@ -254,8 +259,11 @@ describe("CredentialCustody", () => {
       custody.getValidAccessToken(connectionId),
     ).rejects.toMatchObject({ reason: "refreshFailed" });
     const after = await repo.findByConnection(connectionId);
-    expect(after?.refreshFailureCount).toBe(1);
-    expect(after?.refreshToken).toBe("stored-refresh-token");
+    expect(after).toMatchObject({
+      credentialKind: "oauthRefresh",
+      refreshFailureCount: 1,
+      refreshToken: "stored-refresh-token",
+    });
   });
 
   it("discardRevoked deletes the credential and is idempotent", async () => {
@@ -340,6 +348,48 @@ describe("CredentialCustody", () => {
 
     await custody.disconnect(objectId() as ConnectionId);
 
+    expect(adapter.revokedTokens).toEqual([]);
+  });
+
+  it("returns a password secret without refreshing and never revokes on disconnect", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const adapter = new FakeAdapter();
+    const key = randomBytes(32).toString("base64");
+    const secret = "apple-app-password-fixture";
+    const custody = new CredentialCustody(
+      repo,
+      () => adapter,
+      fixedNow,
+      undefined,
+      key,
+    );
+
+    await custody.storePassword(
+      connectionId,
+      "apple",
+      "user@icloud.com",
+      secret,
+    );
+
+    const token = await custody.getValidAccessToken(connectionId);
+    expect(token).toBe(secret);
+    expect(adapter.refreshCalls).toBe(0);
+
+    await custody.invalidateAccessToken(connectionId);
+    expect(await custody.getValidAccessToken(connectionId)).toBe(secret);
+    expect(adapter.refreshCalls).toBe(0);
+
+    const raw = await db
+      .collection(SYNC_COLLECTIONS.credentials)
+      .findOne({ _id: connectionId });
+    expect(raw).not.toBeNull();
+    const serialized = JSON.stringify(raw);
+    expect(serialized).not.toContain(secret);
+    expect(raw).not.toHaveProperty("refreshToken");
+    expect(raw).toHaveProperty("secretCiphertext");
+
+    await custody.disconnect(connectionId);
+    expect(await repo.findByConnection(connectionId)).toBeNull();
     expect(adapter.revokedTokens).toEqual([]);
   });
 });

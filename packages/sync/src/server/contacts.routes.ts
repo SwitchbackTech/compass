@@ -30,6 +30,7 @@ import {
   requireAuth,
   respondInternalError,
 } from "@sync/server/internal-http";
+import { isOauthRefreshCredential } from "@sync/storage/contracts/credential.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -45,6 +46,7 @@ export interface ContactsApiDeps {
   // Suggestions call the provider, so a passive deployment refuses.
   execution: SyncExecutionMode;
   registry: ProviderRegistry;
+  credentialAtRestKey?: string;
 }
 
 // Internal, authenticated attendee-suggestion lookup. Principal-scoped: the
@@ -110,6 +112,9 @@ export function registerContactsRoutes(
         const custody = new CredentialCustody(
           repos.credentials,
           resolveAuthFrom(deps.registry),
+          undefined,
+          undefined,
+          deps.credentialAtRestKey,
         );
         const collected: ContactSuggestion[] = [];
         for (const connection of capable) {
@@ -190,7 +195,7 @@ async function searchConnection(
   query: string,
 ): Promise<ContactSuggestion[]> {
   const credential = await credentials.findByConnection(connection._id);
-  if (!credential) return [];
+  if (!credential || !isOauthRefreshCredential(credential)) return [];
   const granted = new Set(credential.scopes);
   const sources = {
     contacts: granted.has(GOOGLE_SCOPE_CONTACTS_READONLY),
