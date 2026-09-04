@@ -5,15 +5,17 @@ import { existsSync } from "node:fs";
  * Local required-check subset for AI coding loops.
  *
  * Detects packages from the merge-base vs origin/main plus the working tree,
- * then runs the matching `test:<pkg>` scripts plus type-check, lint, and knip.
- * Web or e2e/ changes also select Playwright a11y and e2e, unless Chromium is
- * missing — in that case the helper skips those checks and reports incomplete
- * CI parity instead of a silent pass.
+ * then runs the matching `test:<pkg>` (or `test:<pkg>:fast`) scripts plus
+ * type-check, lint, and knip. Independent checks run concurrently unless
+ * `--serial` is passed. Web or e2e/ changes also select Playwright a11y and
+ * e2e after that wave, unless Chromium is missing — in that case the helper
+ * skips those checks and reports incomplete CI parity instead of a silent pass.
  *
  * Usage:
  *   bun run verify              — auto-detect from git
  *   bun run verify web          — run web suite + required static checks
  *   bun run verify core web     — run specific suites + required static checks
+ *   bun run verify --serial     — run checks one after another (debugging)
  */
 
 const VALID_PACKAGES = ["core", "sync", "web", "backend", "scripts"] as const;
@@ -27,6 +29,10 @@ const MERGE_BASE_REFS = ["origin/main", "main", "master"] as const;
 export const PLAYWRIGHT_INSTALL_COMMAND = "bunx playwright install chromium";
 const CHROMIUM_MISSING_REASON = `Playwright Chromium missing; install with: ${PLAYWRIGHT_INSTALL_COMMAND}`;
 const PLAYWRIGHT_CHECKS = ["test:a11y", "test:e2e"] as const;
+const FAST_TEST_PACKAGES = new Set<Package>(["backend", "sync", "scripts"]);
+export const SERIAL_FLAG = "--serial";
+const FAST_TIER_REASON =
+  "no *.db.test.ts and no /storage/ or /repositories/ paths";
 
 export type GitCommands = {
   hasRef(ref: string): boolean;
@@ -48,7 +54,7 @@ export type SpawnFn = (
     env?: Record<string, string | undefined>;
     stdio?: "inherit" | "pipe";
   },
-) => SpawnResult;
+) => SpawnResult | Promise<SpawnResult>;
 
 export type Logger = {
   log(message: string): void;
@@ -58,6 +64,7 @@ export type Logger = {
 export type PlannedCheck = {
   id: string;
   cmd: string[];
+  reason?: string;
 };
 
 export type PlannedSkip = {
@@ -76,7 +83,7 @@ export type VerifyDeps = {
   git: GitCommands;
   spawn: SpawnFn;
   log: Logger;
-  chromiumAvailable?: (spawn: SpawnFn) => boolean;
+  chromiumAvailable?: (spawn: SpawnFn) => boolean | Promise<boolean>;
 };
 
 function isPackage(value: string): value is Package {
@@ -116,10 +123,11 @@ export function chromiumInstallLocationFromDryRun(
   return match?.[1] ?? null;
 }
 
-function detectChromiumAvailable(spawn: SpawnFn): boolean {
-  const result = spawn(
-    ["bunx", "playwright", "install", "--dry-run", "chromium"],
-    { stdio: "pipe" },
+async function detectChromiumAvailable(spawn: SpawnFn): Promise<boolean> {
+  const result = await Promise.resolve(
+    spawn(["bunx", "playwright", "install", "--dry-run", "chromium"], {
+      stdio: "pipe",
+    }),
   );
   const location = chromiumInstallLocationFromDryRun(
     combinedSpawnOutput(result),
@@ -127,15 +135,66 @@ function detectChromiumAvailable(spawn: SpawnFn): boolean {
   return location != null && existsSync(location);
 }
 
+function filesForPackage(pkg: Package, files: string[]): string[] {
+  const prefix = `packages/${pkg}/`;
+  return files.filter((file) => file.startsWith(prefix));
+}
+
+function fileForcesFullPackageSuite(file: string): boolean {
+  return (
+    file.endsWith(".db.test.ts") ||
+    file.includes("/storage/") ||
+    file.includes("/repositories/")
+  );
+}
+
+export function selectPackageTestCheck(
+  pkg: Package,
+  files: string[],
+): PlannedCheck {
+  const fullId = `test:${pkg}`;
+  const fullCmd = ["bun", "run", fullId];
+  if (!FAST_TEST_PACKAGES.has(pkg)) {
+    return { id: fullId, cmd: fullCmd };
+  }
+
+  const pkgFiles = filesForPackage(pkg, files);
+  if (pkgFiles.length === 0) {
+    return {
+      id: fullId,
+      cmd: fullCmd,
+      reason: "changed files unavailable; using full suite",
+    };
+  }
+
+  const hit = pkgFiles.find(fileForcesFullPackageSuite);
+  if (hit) {
+    const why = hit.endsWith(".db.test.ts")
+      ? `${hit} is a *.db.test.ts`
+      : hit.includes("/storage/")
+        ? `${hit} contains /storage/`
+        : `${hit} contains /repositories/`;
+    return { id: fullId, cmd: fullCmd, reason: why };
+  }
+
+  const fastId = `test:${pkg}:fast`;
+  return {
+    id: fastId,
+    cmd: ["bun", "run", fastId],
+    reason: FAST_TIER_REASON,
+  };
+}
+
 export function planVerify(input: {
   packages: Package[];
+  files?: string[];
   playwrightChromiumAvailable: boolean;
 }): VerifyPlan {
   const packages = VALID_PACKAGES.filter((pkg) => input.packages.includes(pkg));
-  const checks: PlannedCheck[] = packages.map((pkg) => ({
-    id: `test:${pkg}`,
-    cmd: ["bun", "run", `test:${pkg}`],
-  }));
+  const files = input.files ?? [];
+  const checks: PlannedCheck[] = packages.map((pkg) =>
+    selectPackageTestCheck(pkg, files),
+  );
 
   checks.push({ id: "type-check", cmd: ["bun", "run", "type-check"] });
   checks.push({ id: "lint", cmd: ["bun", "run", "lint"] });
@@ -232,76 +291,166 @@ function defaultGit(): GitCommands {
 
 function defaultSpawn(): SpawnFn {
   return (cmd, options) => {
-    const inherit = options?.stdio !== "pipe";
-    const result = Bun.spawnSync({
+    const inherit = options?.stdio === "inherit";
+    const env = options?.env ?? { ...process.env };
+    if (inherit) {
+      const result = Bun.spawnSync({
+        cmd,
+        cwd: process.cwd(),
+        env,
+        stderr: "inherit",
+        stdin: "inherit",
+        stdout: "inherit",
+      });
+      return {
+        exitCode: result.exitCode,
+        stdout: decodeSpawnOutput(result.stdout),
+        stderr: decodeSpawnOutput(result.stderr),
+      };
+    }
+    const proc = Bun.spawn({
       cmd,
       cwd: process.cwd(),
-      env: options?.env ?? { ...process.env },
-      stderr: inherit ? "inherit" : "pipe",
-      stdin: inherit ? "inherit" : "pipe",
-      stdout: inherit ? "inherit" : "pipe",
+      env,
+      stderr: "pipe",
+      stdin: "ignore",
+      stdout: "pipe",
     });
-    return {
-      exitCode: result.exitCode,
-      stdout: decodeSpawnOutput(result.stdout),
-      stderr: decodeSpawnOutput(result.stderr),
-    };
+    return Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited,
+    ]).then(([stdout, stderr, exitCode]) => ({
+      exitCode,
+      stdout,
+      stderr,
+    }));
   };
 }
 
-export function runVerify(
+function parseVerifyArgs(
+  args: string[],
+):
+  | { ok: true; serial: boolean; packages: Package[] | null }
+  | { ok: false; error: string } {
+  const serial = args.includes(SERIAL_FLAG);
+  const rest = args.filter((arg) => arg !== SERIAL_FLAG);
+  const invalid = rest.filter((arg) => !isPackage(arg));
+  if (invalid.length > 0) {
+    return {
+      ok: false,
+      error: `Unknown package(s): ${invalid.join(", ")}. Valid: ${VALID_PACKAGES.join(", ")}`,
+    };
+  }
+  return {
+    ok: true,
+    serial,
+    packages: rest.length > 0 ? rest.filter(isPackage) : null,
+  };
+}
+
+function tryCollectChangedFiles(git: GitCommands): {
+  files: string[];
+  mergeBase?: { sha: string; ref: string };
+  error?: string;
+} {
+  try {
+    const mergeBase = resolveMergeBase(git);
+    return {
+      files: collectChangedFiles(git, mergeBase.sha),
+      mergeBase,
+    };
+  } catch (error) {
+    return {
+      files: [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function formatOutputBlock(id: string, result: SpawnResult): string {
+  const body = [result.stdout, result.stderr]
+    .filter((part) => part.length > 0)
+    .join("\n")
+    .trimEnd();
+  return body.length > 0 ? `\n── ${id} ──\n${body}` : `\n── ${id} ──`;
+}
+
+export async function runVerify(
   args: string[],
   deps: VerifyDeps = {
     git: defaultGit(),
     spawn: defaultSpawn(),
     log: { log: console.log, error: console.error },
   },
-): number {
+): Promise<number> {
   const { git, spawn, log } = deps;
   const chromiumAvailable = deps.chromiumAvailable ?? detectChromiumAvailable;
 
-  let packages: Package[];
+  const parsed = parseVerifyArgs(args);
+  if (!parsed.ok) {
+    log.error(parsed.error);
+    return 1;
+  }
 
-  if (args.length > 0) {
-    const invalid = args.filter((arg) => !isPackage(arg));
-    if (invalid.length > 0) {
-      log.error(
-        `Unknown package(s): ${invalid.join(", ")}. Valid: ${VALID_PACKAGES.join(", ")}`,
-      );
+  const collected = tryCollectChangedFiles(git);
+  let packages: Package[];
+  const files = collected.files;
+
+  if (parsed.packages) {
+    packages = parsed.packages;
+  } else {
+    if (collected.error) {
+      log.error(collected.error);
       return 1;
     }
-    packages = args.filter(isPackage);
-  } else {
-    try {
-      const mergeBase = resolveMergeBase(git);
-      const files = collectChangedFiles(git, mergeBase.sha);
-      packages = mapFilesToPackages(files);
-      log.log(`merge-base: ${mergeBase.sha} (${mergeBase.ref})`);
+    packages = mapFilesToPackages(files);
+    if (collected.mergeBase) {
       log.log(
-        `files used for detection (${files.length}): ${
-          files.length > 0 ? files.join(", ") : "(none)"
-        }`,
+        `merge-base: ${collected.mergeBase.sha} (${collected.mergeBase.ref})`,
       );
-      if (packages.length === 0) {
-        log.log("no packages detected");
-      } else {
-        log.log(`Detected changes in: ${packages.join(", ")}`);
-      }
-    } catch (error) {
-      log.error(error instanceof Error ? error.message : String(error));
-      return 1;
+    }
+    log.log(
+      `files used for detection (${files.length}): ${
+        files.length > 0 ? files.join(", ") : "(none)"
+      }`,
+    );
+    if (packages.length === 0) {
+      log.log("no packages detected");
+    } else {
+      log.log(`Detected changes in: ${packages.join(", ")}`);
     }
   }
 
   const playwrightSelected = packages.includes("web");
   const plan = planVerify({
     packages,
+    files,
     playwrightChromiumAvailable: playwrightSelected
-      ? chromiumAvailable(spawn)
+      ? await Promise.resolve(chromiumAvailable(spawn))
       : true,
   });
 
-  log.log(`Running: ${plan.checks.map((check) => check.id).join(" → ")}`);
+  const independent = plan.checks.filter(
+    (check) => !isPlaywrightCheck(check.id),
+  );
+  const playwright = plan.checks.filter((check) => isPlaywrightCheck(check.id));
+
+  for (const check of independent) {
+    if (check.reason) {
+      log.log(`Tier ${check.id}: ${check.reason}`);
+    }
+  }
+
+  const runningLabel = parsed.serial ? "serial" : "concurrent";
+  log.log(
+    `Running ${runningLabel}: ${independent.map((check) => check.id).join(", ")}`,
+  );
+  if (playwright.length > 0) {
+    log.log(
+      `Then Playwright: ${playwright.map((check) => check.id).join(" → ")}`,
+    );
+  }
   if (plan.skips.length > 0) {
     for (const skip of plan.skips) {
       log.log(`Skipping ${skip.id}: ${skip.reason}`);
@@ -311,27 +460,63 @@ export function runVerify(
   const failed: string[] = [];
   const skips = [...plan.skips];
   const executed: string[] = [];
-  for (const check of plan.checks) {
-    log.log(`\n→ ${check.id}`);
-    const inheritIo = !isPlaywrightCheck(check.id);
-    const result = spawn(check.cmd, {
-      env: spawnEnvFor(check.id),
-      stdio: inheritIo ? "inherit" : "pipe",
-    });
-    if (!inheritIo) {
-      if (result.stdout) process.stdout.write(result.stdout);
-      if (result.stderr) process.stderr.write(result.stderr);
-    }
+
+  const recordResult = (check: PlannedCheck, result: SpawnResult): void => {
     if (result.exitCode !== 0) {
       if (isMissingPlaywrightBrowser(result, check.id)) {
         skips.push({ id: check.id, reason: CHROMIUM_MISSING_REASON });
         log.log(`Skipping ${check.id}: ${CHROMIUM_MISSING_REASON}`);
-        continue;
+        return;
       }
       failed.push(check.id);
-      continue;
+      return;
     }
     executed.push(check.id);
+  };
+
+  const runCaptured = async (check: PlannedCheck): Promise<SpawnResult> => {
+    const result = await Promise.resolve(
+      spawn(check.cmd, {
+        env: spawnEnvFor(check.id),
+        stdio: "pipe",
+      }),
+    );
+    log.log(formatOutputBlock(check.id, result));
+    return result;
+  };
+
+  const runInherited = async (check: PlannedCheck): Promise<SpawnResult> => {
+    log.log(`\n→ ${check.id}`);
+    const result = await Promise.resolve(
+      spawn(check.cmd, {
+        env: spawnEnvFor(check.id),
+        stdio: isPlaywrightCheck(check.id) ? "pipe" : "inherit",
+      }),
+    );
+    if (isPlaywrightCheck(check.id)) {
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+    }
+    return result;
+  };
+
+  if (parsed.serial) {
+    for (const check of [...independent, ...playwright]) {
+      recordResult(check, await runInherited(check));
+    }
+  } else {
+    const independentResults = await Promise.all(
+      independent.map(async (check) => ({
+        check,
+        result: await runCaptured(check),
+      })),
+    );
+    for (const { check, result } of independentResults) {
+      recordResult(check, result);
+    }
+    for (const check of playwright) {
+      recordResult(check, await runCaptured(check));
+    }
   }
 
   const ciParityComplete = skips.length === 0;
@@ -435,5 +620,5 @@ function decodeSpawnOutput(value: Uint8Array | string | undefined): string {
 }
 
 if (import.meta.main) {
-  process.exit(runVerify(process.argv.slice(2)));
+  process.exit(await runVerify(process.argv.slice(2)));
 }

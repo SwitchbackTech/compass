@@ -19,12 +19,16 @@ bun run verify
 Avoid defaulting to `bun run test` unless you really need the full suite.
 
 `bun run verify` selects the **required-check subset** from the merge-base vs
-`origin/main` plus the working tree: `test:<pkg>` for each detected package,
-then `type-check`, `lint`, and `knip`. Web or `e2e/` changes also select
-`test:a11y` and `test:e2e`. Read the printed skip list before treating a green
-run as CI-complete — missing Playwright Chromium skips those jobs and reports
-incomplete parity instead of claiming they passed. GitHub still runs the full
-unit matrix and e2e on every non-docs PR; this helper does not.
+`origin/main` plus the working tree: `test:<pkg>` (or `test:<pkg>:fast` when
+the package has a fast script and the diff has no `*.db.test.ts` and no
+`/storage/` or `/repositories/` paths) for each detected package, plus
+`type-check`, `lint`, and `knip`. Those independent checks run concurrently.
+Web or `e2e/` changes also select `test:a11y` and `test:e2e` after that wave.
+Pass `--serial` to run checks one after another. Read the printed skip list
+before treating a green run as CI-complete: missing Playwright Chromium skips
+those jobs and reports incomplete parity instead of claiming they passed.
+GitHub still runs the full unit matrix and e2e on every non-docs PR; this
+helper does not.
 
 ## CI Unit Test Workflow
 
