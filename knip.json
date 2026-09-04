@@ -27,7 +27,8 @@
         "src/providers/__contract__/adapter-contract.ts",
         "src/providers/__contract__/google-contract.factory.ts",
         "src/providers/__contract__/recording-api.ts",
-        "src/providers/__contract__/discovery.contract.ts"
+        "src/providers/__contract__/discovery.contract.ts",
+        "src/providers/__contract__/live-provider-smoke.ts"
       ],
       "project": ["src/**/*.ts!"]
     },
