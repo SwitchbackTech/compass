@@ -83,6 +83,7 @@ describe("auditConnectionIdentity (db)", () => {
       {
         connectingUserId: attacker,
         connectionId: expect.any(String),
+        provider: "google",
         accountEmail: "victim@example.com",
         loginOwnerUserId: victim,
         loginOwnerEmail: "victim@example.com",
@@ -124,7 +125,7 @@ describe("auditConnectionIdentity (db)", () => {
 
     const report = await run();
 
-    expect(report.usersWithGoogleLogin).toBe(1);
+    expect(report.loginIdentitiesIndexed).toBe(1);
     expect(report.collisions).toEqual([]);
   });
 });
