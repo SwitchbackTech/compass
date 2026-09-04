@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
 
 const REDIRECT_DELAY_MS = 3000;
 

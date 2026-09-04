@@ -1,9 +1,14 @@
 import {
+  BARREL_ALLOWLIST,
   duplicateEventSchemaHits,
   isBarrelSource,
   locatorHits,
+  MONGO_SERVICE_TEST_ALLOWLIST,
+  matchesConstraintAllow,
+  matchGlob,
   mongoServiceImportHits,
   scanConstraints,
+  WEB_LOCATOR_ALLOWLIST,
 } from "./check-agent-constraints";
 import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -118,6 +123,102 @@ describe("scanConstraints", () => {
     expect(
       hits.some((hit) => hit.includes("packages/web/src/Widget.tsx")),
     ).toBe(false);
+  });
+
+  it("does not require checker edits for new provider test files", () => {
+    const root = mkdtempSync(join(tmpdir(), "provider-tests-"));
+    writeTree(root, {
+      "packages/web/src/index.tsx":
+        'import { init } from "@web/auth/posthog/posthog.bootstrap";\nvoid import("./app.bootstrap");\n',
+      "packages/sync/src/providers/microsoft/x.test.ts":
+        'describe("x", () => {\n  it("ok", () => {\n    expect(true).toBe(true);\n  });\n});\n',
+      "packages/web/src/auth/providers/y.test.tsx":
+        'it("renders a named control", () => {\n  expect("Save").toBe("Save");\n});\n',
+    });
+
+    const hits = scanConstraints(root);
+    expect(
+      hits.filter(
+        (hit) =>
+          hit.path.includes("providers/microsoft") ||
+          hit.path.includes("auth/providers"),
+      ),
+    ).toEqual([]);
+  });
+
+  it("still flags locators in new web tests outside documented globs", () => {
+    const root = mkdtempSync(join(tmpdir(), "locator-new-"));
+    writeTree(root, {
+      "packages/web/src/index.tsx":
+        'import { init } from "@web/auth/posthog/posthog.bootstrap";\nvoid import("./app.bootstrap");\n',
+      "packages/web/src/auth/providers/y.test.tsx":
+        'screen.getByTestId("provider-row");\n',
+    });
+
+    expect(
+      scanConstraints(root).map((hit) => `${hit.rule}:${hit.path}`),
+    ).toContain("web-locator:packages/web/src/auth/providers/y.test.tsx");
+  });
+});
+
+describe("constraint allowlist globs", () => {
+  it("matches nested shortcut tests and not auth provider tests", () => {
+    expect(
+      matchGlob(
+        "packages/web/src/shortcuts/edit-sequence/EditSequenceMenu.test.tsx",
+        "packages/web/src/shortcuts/**/*.test.tsx",
+      ),
+    ).toBe(true);
+    expect(
+      matchesConstraintAllow(
+        "packages/web/src/auth/providers/y.test.tsx",
+        WEB_LOCATOR_ALLOWLIST,
+      ),
+    ).toBe(false);
+    expect(
+      matchesConstraintAllow(
+        "packages/web/src/views/Forms/EventForm/EventForm.readOnly.test.tsx",
+        WEB_LOCATOR_ALLOWLIST,
+      ),
+    ).toBe(true);
+    expect(
+      matchesConstraintAllow(
+        "packages/web/src/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection.test.tsx",
+        WEB_LOCATOR_ALLOWLIST,
+      ),
+    ).toBe(true);
+  });
+
+  it("covers backend db tests and the mongoService unit test", () => {
+    expect(
+      matchesConstraintAllow(
+        "packages/backend/src/billing/billing.guard.db.test.ts",
+        MONGO_SERVICE_TEST_ALLOWLIST,
+      ),
+    ).toBe(true);
+    expect(
+      matchesConstraintAllow(
+        "packages/backend/src/common/services/mongo.service.test.ts",
+        MONGO_SERVICE_TEST_ALLOWLIST,
+      ),
+    ).toBe(true);
+    expect(
+      matchesConstraintAllow(
+        "packages/backend/src/new.service.test.ts",
+        MONGO_SERVICE_TEST_ALLOWLIST,
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps allowlists empty or glob entries with a reason", () => {
+    expect(BARREL_ALLOWLIST).toEqual([]);
+    for (const entry of [
+      ...WEB_LOCATOR_ALLOWLIST,
+      ...MONGO_SERVICE_TEST_ALLOWLIST,
+    ]) {
+      expect(entry.glob.includes("*")).toBe(true);
+      expect(entry.reason.length).toBeGreaterThan(0);
+    }
   });
 });
 
