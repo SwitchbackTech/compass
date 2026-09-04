@@ -102,6 +102,24 @@ jobs:
         run: |
           bun run type-check
 
+      # Workflow files may auto-merge (see NO_AUTOMERGE_PATH_PATTERNS in
+      # agent-loop-merge-guard.sh), so they are linted here instead of by a
+      # human. Pinned; the image bundles shellcheck for run: steps.
+      - name: Lint workflows
+        run: |
+          docker run --rm -v "${GITHUB_WORKSPACE}:/repo" -w /repo \
+            rhysd/actionlint:1.7.7 -color \
+            -ignore 'unexpected key "queue" for "concurrency" section'
+          # `queue:` is a real concurrency key (_deploy-environment.yml) that
+          # this actionlint release does not know yet; drop the ignore on upgrade.
+
+      # The loop scripts' own tests (gh stub, dry-run guard). They need bash 4+.
+      - name: Test agent-loop scripts
+        run: |
+          bash -n .github/scripts/*.sh
+          bash .github/scripts/agent-loop-next.test.sh
+          bash .github/scripts/agent-loop-merge-guard.test.sh
+
   # A skipped MATRIX job collapses to one check run, so the `unit` rollup
   # below would see `skipped` for a docs-only PR only if every leg started.
   # Let the legs start and skip every step instead: each reports in a few

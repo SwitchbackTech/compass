@@ -159,7 +159,12 @@ written, the equivalent is `strict_required_status_checks_policy: true`.
 The agent may *author* the code. The merge guard refuses to merge if the
 PR touches:
 
-- `.github/`
+- `.github/`: deploy, release, docs-sync, agent-loop, agent-review, and
+  error-autofix workflows; the `agent-loop-*`, `autofix-*`, `deploy-*`, and
+  `discord-*` scripts; `prompts/`, `agent-loop/` allowlists, and `docker/`.
+  Test, e2e, and perf workflows, `detect-code-changes.sh`, issue and PR
+  templates, dependabot, and stale config may auto-merge; `actionlint` and
+  the loop script tests run in the `static` job.
 - `self-host/`
 - `packages/backend/src/auth/`
 - `packages/web/src/auth/`
@@ -213,7 +218,7 @@ Alias notes: `booking-automerge`, `booking-loop-running`,
 `booking-loop-waiting-for-credits`, and `booking-loop-needs-human`
 still count for one release.
 
-## Local tests
+## Script tests (also run in the `static` CI job)
 
 Picker and merge-guard shell tests run from `bun test:scripts` via
 `packages/scripts/src/testing/agent-loop-next.test.ts`.

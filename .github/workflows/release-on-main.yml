@@ -9,6 +9,12 @@ on:
       - "**/*.md"
       - "docs/**"
 
+# Two merges landing close together raced on the tag and the deploy; the
+# retry loop in tag-release was the only protection. Queue releases instead.
+concurrency:
+  group: release-on-main
+  cancel-in-progress: false
+
 permissions:
   contents: write
   # publish-docker-images.yml exports type=gha layer cache; the reusable

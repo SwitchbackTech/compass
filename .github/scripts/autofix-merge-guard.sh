@@ -106,11 +106,10 @@ main() {
     notify "Autofix PR #${pr_number} (issue #${ISSUE_NUMBER}) passed the merge guard but \`gh pr merge --auto\` failed — needs a human to enable merge manually — https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi
+  # Do not watch CI here: this job runs under a cancel-in-progress:false
+  # queue, so a runner sitting in `gh pr checks --watch` blocked the next
+  # PostHog issue for up to 15 minutes. GitHub merges when checks pass.
   printf 'enabled auto-merge on PR #%s\n' "$pr_number"
-
-  if ! gh pr checks "$pr_number" --repo "$REPO" --watch --fail-fast; then
-    notify "Autofix PR #${pr_number} (issue #${ISSUE_NUMBER}) failed CI after auto-merge was enabled — https://github.com/${REPO}/pull/${pr_number}"
-  fi
 }
 
 main

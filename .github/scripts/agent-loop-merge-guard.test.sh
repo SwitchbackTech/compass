@@ -60,6 +60,38 @@ out=$(run_guard $'packages/sync/src/providers/microsoft/foo.ts\npackages/sync/sr
 assert_contains "$out" "downgrade:" "mixed diff still refuses telemetry"
 assert_not_contains "$out" "proceed" "mixed diff does not proceed"
 
+# .github/ self-service: CI-speed files may merge, agent and deploy files may not.
+for allowed in \
+  ".github/workflows/test-unit.yml" \
+  ".github/workflows/test-e2e.yml" \
+  ".github/workflows/perf-budget.yml" \
+  ".github/scripts/detect-code-changes.sh" \
+  ".github/dependabot.yml" \
+  ".github/ISSUE_TEMPLATE/3-agent-task.yml"; do
+  out=$(run_guard "$allowed" "$MS_M")
+  assert_contains "$out" "proceed" "${allowed} proceeds"
+  assert_not_contains "$out" "downgrade:" "${allowed} is not refused"
+done
+
+for refused in \
+  ".github/workflows/deploy-production.yml" \
+  ".github/workflows/_deploy-environment.yml" \
+  ".github/workflows/release-on-main.yml" \
+  ".github/workflows/agent-loop.yml" \
+  ".github/workflows/agent-review.yml" \
+  ".github/workflows/error-autofix.yml" \
+  ".github/scripts/agent-loop-merge-guard.sh" \
+  ".github/scripts/autofix-preflight.sh" \
+  ".github/scripts/deploy-health-check.sh" \
+  ".github/scripts/discord-notify.sh" \
+  ".github/prompts/agent-loop.md" \
+  ".github/agent-loop/allowlists/providers-m.txt" \
+  ".github/docker/Dockerfile.web"; do
+  out=$(run_guard "$refused" "$MS_M")
+  assert_contains "$out" "downgrade:" "${refused} is refused"
+  assert_not_contains "$out" "proceed" "${refused} does not proceed"
+done
+
 echo
 echo "passed=${PASS} failed=${FAIL}"
 if [ "$FAIL" -ne 0 ]; then
