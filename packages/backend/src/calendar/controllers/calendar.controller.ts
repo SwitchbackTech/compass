@@ -13,6 +13,7 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { parseCommaSeparatedQueryParam } from "@backend/common/helpers/query-param";
 import { syncCalendarsToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { throwSyncProxyFailure } from "@backend/common/services/sync-service/sync-proxy-error";
@@ -44,17 +45,11 @@ const assertBoundedAvailabilityRange = (query: AvailabilityQuery) => {
   }
 };
 
-// calendarIds travels as a single comma-separated query param -
-// the web api client (availability.api.ts) must format requests this way.
 const parseAvailabilityQuery = (query: SessionRequest["query"]) => {
-  const calendarIdsParam = query["calendarIds"];
-  const calendarIds =
-    typeof calendarIdsParam === "string" && calendarIdsParam.length > 0
-      ? calendarIdsParam.split(",")
-      : [];
+  const calendarIds = parseCommaSeparatedQueryParam(query["calendarIds"]);
 
   return AvailabilityQuerySchema.parse({
-    calendarIds,
+    calendarIds: calendarIds ?? [],
     start: query["start"],
     end: query["end"],
   });

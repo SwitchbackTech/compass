@@ -1,5 +1,6 @@
 import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
 import { Logger } from "@core/logger/winston.logger";
+import { configureHttpServer } from "@core/server/http-server";
 import {
   SYNC_JOB_TERMINAL_FAILURE_EVENT,
   SYNC_RECONCILE_SWEEP_EVENT,
@@ -173,7 +174,7 @@ export function createSyncService(
     : undefined;
 
   const app = buildSyncApp({ identity, readiness, connectionApi });
-  const httpServer = createServer(app);
+  const httpServer = configureHttpServer(createServer(app));
 
   const stop = async (): Promise<void> => {
     // Phase 1: stop accepting new connections before anything drains, so no

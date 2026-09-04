@@ -4,6 +4,7 @@ import {
   errorHandler as supertokensErrorHandler,
   middleware as supertokensMiddleware,
 } from "supertokens-node/framework/express";
+import { configureHttpServer } from "@core/server/http-server";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import {
   BillingRoutes,
@@ -25,6 +26,7 @@ import { EventRoutes } from "@backend/event/event.routes.config";
 import { HealthRoutes } from "@backend/health/health.routes.config";
 import { EventsRoutes } from "@backend/servers/sse/events-stream.routes.config";
 import { UserRoutes } from "@backend/user/user.routes.config";
+import { createServer } from "node:http";
 
 export const initExpressServer = () => {
   /* Express Configuration */
@@ -32,6 +34,10 @@ export const initExpressServer = () => {
   // Caddy terminates TLS and proxies `/api/*` with X-Forwarded-For. One hop
   // of trust keeps express-rate-limit from treating every visitor as Caddy.
   app.set("trust proxy", 1);
+  // All supported query parameters are flat. The simple parser preserves
+  // repeated keys as arrays without qs's nesting work or array-size quirks,
+  // which also makes native-client encodings behave consistently with sync.
+  app.set("query parser", "simple");
 
   initSupertokens();
 
@@ -65,3 +71,6 @@ export const initExpressServer = () => {
 
   return app;
 };
+
+export const createBackendHttpServer = () =>
+  configureHttpServer(createServer(initExpressServer()));

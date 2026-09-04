@@ -2,16 +2,15 @@ import { ensureBillingIndexes } from "@backend/billing/billing-indexes";
 import { ensureBookingIndexes } from "@backend/booking/booking-indexes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
-import { initExpressServer } from "@backend/servers/express/express.server";
+import { createBackendHttpServer } from "@backend/servers/express/express.server";
 import { foregroundSyncRefresh } from "@backend/servers/sse/foreground-sync-refresh";
 import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
 import userService from "@backend/user/services/user.service";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
-import { createServer, type Server } from "node:http";
+import { type Server } from "node:http";
 
-const app = initExpressServer();
-const httpServer: Server = createServer(app);
+const httpServer: Server = createBackendHttpServer();
 
 function onClose() {
   logger.info(`Http server terminated`);
