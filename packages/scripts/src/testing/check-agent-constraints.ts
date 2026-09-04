@@ -1,9 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const repoRoot = join(import.meta.dir, "../../../..");
 
 const APP_ENTRY = "packages/web/src/index.tsx";
+const CI_WORKFLOW = ".github/workflows/test-unit.yml";
+const CI_BUN_VERSION = /bun-version:\s*([\d.]+)/g;
+const OVEN_BUN_TAG = /oven\/bun:([^\s]+)/g;
+const DOCKERFILE_DIRS = ["self-host", ".github/docker"];
 
 const SOURCE_EXT = /\.(ts|tsx)$/;
 
@@ -86,6 +90,46 @@ export function mongoServiceImportHits(source: string): number[] {
 
 export function duplicateEventSchemaHits(source: string): number[] {
   return lineNumbers(source, DUPLICATE_EVENT_SCHEMA);
+}
+
+export function ovenBunVersion(tag: string): string {
+  return tag.replace(/-slim$/, "");
+}
+
+export function scanBunDockerfilePins(root = repoRoot): ConstraintHit[] {
+  const hits: ConstraintHit[] = [];
+  const workflowPath = join(root, CI_WORKFLOW);
+  if (!existsSync(workflowPath)) {
+    hits.push({ path: CI_WORKFLOW, rule: "bun-pin", line: 1 });
+    return hits;
+  }
+
+  const workflow = readFileSync(workflowPath, "utf8");
+  const ciVersions = [
+    ...new Set([...workflow.matchAll(CI_BUN_VERSION)].map((match) => match[1])),
+  ];
+  if (ciVersions.length !== 1 || ciVersions[0] === undefined) {
+    hits.push({ path: CI_WORKFLOW, rule: "bun-pin", line: 1 });
+    return hits;
+  }
+  const expected = ciVersions[0];
+
+  for (const relDir of DOCKERFILE_DIRS) {
+    const absDir = join(root, relDir);
+    if (!existsSync(absDir)) continue;
+    for (const name of readdirSync(absDir)) {
+      if (!name.startsWith("Dockerfile")) continue;
+      const rel = `${relDir}/${name}`;
+      const source = readFileSync(join(root, rel), "utf8");
+      for (const match of source.matchAll(OVEN_BUN_TAG)) {
+        const tag = match[1] ?? "";
+        if (ovenBunVersion(tag) === expected) continue;
+        const line = source.slice(0, match.index ?? 0).split("\n").length;
+        hits.push({ path: rel, rule: "bun-pin", line });
+      }
+    }
+  }
+  return hits;
 }
 
 export function scanConstraints(root = repoRoot): ConstraintHit[] {
@@ -177,7 +221,7 @@ function posixRel(root: string, file: string): string {
 }
 
 if (import.meta.main) {
-  const hits = scanConstraints();
+  const hits = [...scanConstraints(), ...scanBunDockerfilePins()];
   if (hits.length > 0) {
     console.error("Agent constraint violations:");
     for (const hit of hits) {

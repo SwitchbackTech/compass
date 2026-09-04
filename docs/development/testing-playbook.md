@@ -27,19 +27,20 @@ Web or `e2e/` changes also select `test:a11y` and `test:e2e` after that wave.
 Pass `--serial` to run checks one after another. Read the printed skip list
 before treating a green run as CI-complete: missing Playwright Chromium skips
 those jobs and reports incomplete parity instead of claiming they passed.
-GitHub still runs the full unit matrix and e2e on every non-docs PR; this
-helper does not.
+GitHub still runs the Unit workflow matrix and the E2E workflow on every
+non-docs PR; this helper does not.
 
 ## CI Unit Test Workflow
 
 Source of truth:
 
-- `.github/workflows/test-unit.yml`
-- `.github/workflows/test-e2e.yml`
+- `.github/workflows/test-unit.yml` (workflow name: `Unit`)
+- `.github/workflows/test-e2e.yml` (workflow name: `E2E`)
 
 Unit workflow (`test-unit.yml`):
 
-- triggers on `push`
+- triggers on `pull_request` to `main` and `push` to `main`
+- uses `concurrency` so a new PR push cancels the previous PR run
 - runs a matrix across `core`, `sync`, `web`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install

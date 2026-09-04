@@ -4,11 +4,11 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Test | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
+| Unit (`test-unit.yml`) | Push / PR to `main` | Runs lint, knip, type-check, and unit tests |
 | PR body | Pull request | Fails empty template sections (including docs-only PRs) |
-| Test (e2e) | Push / PR to `main` | Playwright e2e (docs-only diffs skipped) |
+| E2E (`test-e2e.yml`) | Push / PR to `main` | Playwright e2e (docs-only diffs skipped) |
 | CodeQL | Push / PR to `main` | Static security analysis |
-| Performance budget | Push / PR touching web/core | Lighthouse budget (not a required merge check) |
+| Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
 | Booking loop (`booking-loop.yml`) | `workflow_dispatch` / hourly cron / `Release on main` / `booking-automerge` PRs | Governed Routine: next Booking WP → merge → staging smoke |
@@ -29,7 +29,7 @@ switch (`BOOKING_LOOP_ENABLED`) stays a repo variable (default off).
 
 ---
 
-## Test Workflow
+## Unit workflow
 
 Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.yml)
 
@@ -105,6 +105,13 @@ Source: [`.github/workflows/publish-docker-images.yml`](../../.github/workflows/
    - `switchbacktech/compass-mongo`
    - `switchbacktech/compass-web`
 4. Each image gets all three tags: `1.2.3`, `1.2`, and `latest`.
+
+Each `docker/build-push-action` step exports a per-image GitHub Actions
+cache (`cache-from`/`cache-to` `type=gha,mode=max`). Bun images copy
+`package.json`, `bun.lock`, `bunfig.toml`, `patches/`, and workspace
+`package.json` files and run `bun install --frozen-lockfile` before
+`COPY . .`. Every `oven/bun:` tag must match the `bun-version` in
+`.github/workflows/test-unit.yml` (`packages/scripts/src/testing/check-agent-constraints.ts`).
 
 ### Tag pattern rules
 

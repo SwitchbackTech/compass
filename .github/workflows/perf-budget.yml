@@ -1,13 +1,19 @@
 name: Performance budget
 
+# Not a required merge check. Ordinary web PRs used to run two Lighthouse
+# profiles x 3 and stall agents watching `gh pr checks` on a red
+# non-blocking `lighthouse` job. PRs now run this only when the budget
+# itself changes. Main, nightly, and manual dispatch still measure the
+# production-shaped bundle.
 on:
+  workflow_dispatch:
+  schedule:
+    # 05:15 UTC so the run is not in the top-of-hour scheduled-workflow stampede.
+    - cron: "15 5 * * *"
   pull_request:
     branches:
       - main
     paths:
-      - "packages/web/**"
-      - "packages/core/**"
-      - "bun.lock"
       - ".github/perf/**"
       - ".github/workflows/perf-budget.yml"
   push:

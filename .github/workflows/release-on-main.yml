@@ -11,6 +11,9 @@ on:
 
 permissions:
   contents: write
+  # publish-docker-images.yml exports type=gha layer cache; the reusable
+  # workflow cannot request more than the caller grants.
+  actions: write
 
 jobs:
   tag-release:

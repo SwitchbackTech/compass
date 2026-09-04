@@ -76,6 +76,15 @@ const assertHostAllowsGuestWrites = async (userId: ObjectId): Promise<void> => {
   }
 };
 
+/**
+ * Every guest-facing lookup failure - unknown id, wrong or expired token,
+ * cancelled reservation, missing page - answers with the same 404. Minting it
+ * in one place keeps the code and the message from drifting apart and
+ * accidentally telling a guest which of those it was.
+ */
+const reservationNotFound = () =>
+  bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
 
@@ -178,26 +187,74 @@ const durationMinutesForReservation = (
     : pageDurationMinutes;
 };
 
-const toPublicReservation = (
+/**
+ * Load a reservation the guest's token actually authorizes, or 404.
+ *
+ * The cancel and patch entrypoints both stand on exactly this check, so it
+ * lives here once: a token that no longer authorizes must never reach the
+ * calendar calls below it.
+ */
+const loadGuestAuthorizedReservation = async (
+  reservationId: ObjectId,
+  token: string,
+): Promise<BookingReservationRecord> => {
+  const reservation =
+    await bookingReservationRepository.findById(reservationId);
+  if (
+    !reservation ||
+    !guestActionTokenAuthorizes(
+      reservation.cancelTokenHash,
+      token,
+      reservation.slotEnd,
+    )
+  ) {
+    throw reservationNotFound();
+  }
+  return reservation;
+};
+
+const resolveReservationPage = async (
   reservation: BookingReservationRecord,
-  bookingSlug: string,
+): Promise<BookingPageRecord> => {
+  const page = await bookingPageRepository.findById(reservation.pageId);
+  if (!page) {
+    throw reservationNotFound();
+  }
+  return page;
+};
+
+/** As above, but for the reads that have to hand the guest back a slug. */
+const resolveReservationPublicPage = async (
+  reservation: BookingReservationRecord,
+): Promise<BookingPageRecord & { bookingSlug: string }> => {
+  const page = await resolveReservationPage(reservation);
+  if (!page.bookingSlug) {
+    throw reservationNotFound();
+  }
+  return { ...page, bookingSlug: page.bookingSlug };
+};
+
+const presentReservation = async (
+  reservation: BookingReservationRecord,
+  page: BookingPageRecord & { bookingSlug: string },
   hostDisplayName: string,
-  pageDurationMinutes: number,
-  createsGoogleMeet: boolean,
-): PublicGetBookingReservationResponse =>
+): Promise<PublicGetBookingReservationResponse> =>
   PublicGetBookingReservationResponseSchema.parse({
     slotStart: reservation.slotStart.toISOString(),
     guestTimeZone: reservation.guestTimeZone,
     durationMinutes: durationMinutesForReservation(
       reservation,
-      pageDurationMinutes,
+      page.durationMinutes,
     ),
     hostDisplayName,
     status: reservation.status,
-    bookingSlug,
+    bookingSlug: page.bookingSlug,
     guestName: reservation.guestName,
     notes: reservation.notes,
-    createsGoogleMeet,
+    createsGoogleMeet: await destinationCreatesGoogleMeet(
+      page.userId,
+      page.destinationCalendarId,
+    ),
   });
 
 const nextGuestNotes = (
@@ -528,51 +585,29 @@ export class PublicBookingService {
     const reservation =
       await bookingReservationRepository.findById(reservationId);
     if (!reservation) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+      throw reservationNotFound();
     }
 
-    const page = await bookingPageRepository.findById(reservation.pageId);
-    if (!page?.bookingSlug) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
-    }
-
-    const hostDisplayName = await getHostDisplayName(page.userId);
-    const createsGoogleMeet = await destinationCreatesGoogleMeet(
-      page.userId,
-      page.destinationCalendarId,
-    );
-    return toPublicReservation(
+    const page = await resolveReservationPublicPage(reservation);
+    return presentReservation(
       reservation,
-      page.bookingSlug,
-      hostDisplayName,
-      page.durationMinutes,
-      createsGoogleMeet,
+      page,
+      await getHostDisplayName(page.userId),
     );
   }
 
   async patchPublicReservation(reservationId: ObjectId, rawInput: unknown) {
     const input = PatchBookingReservationInputSchema.parse(rawInput);
-    const reservation =
-      await bookingReservationRepository.findById(reservationId);
-    if (
-      !reservation ||
-      !guestActionTokenAuthorizes(
-        reservation.cancelTokenHash,
-        input.token,
-        reservation.slotEnd,
-      )
-    ) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
-    }
+    const reservation = await loadGuestAuthorizedReservation(
+      reservationId,
+      input.token,
+    );
 
     if (reservation.status === "cancelled") {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+      throw reservationNotFound();
     }
 
-    const page = await bookingPageRepository.findById(reservation.pageId);
-    if (!page?.bookingSlug) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
-    }
+    const page = await resolveReservationPublicPage(reservation);
 
     const guestName = input.name ?? reservation.guestName;
     const notes = nextGuestNotes(input.notes, reservation.notes);
@@ -607,20 +642,10 @@ export class PublicBookingService {
       { guestName, notes },
     );
     if (!updated) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+      throw reservationNotFound();
     }
 
-    const createsGoogleMeet = await destinationCreatesGoogleMeet(
-      page.userId,
-      page.destinationCalendarId,
-    );
-    return toPublicReservation(
-      updated,
-      page.bookingSlug,
-      hostDisplayName,
-      page.durationMinutes,
-      createsGoogleMeet,
-    );
+    return presentReservation(updated, page, hostDisplayName);
   }
 
   async cancelReservation(
@@ -628,25 +653,11 @@ export class PublicBookingService {
     rawInput: unknown,
   ): Promise<void> {
     const { token } = CancelBookingReservationInputSchema.parse(rawInput);
-    const reservation =
-      await bookingReservationRepository.findById(reservationId);
-    if (
-      !reservation ||
-      !guestActionTokenAuthorizes(
-        reservation.cancelTokenHash,
-        token,
-        reservation.slotEnd,
-      )
-    ) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
-    }
-
-    const pageRecord = await mongoService.bookingPage.findOne({
-      _id: reservation.pageId,
-    });
-    if (!pageRecord) {
-      throw bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
-    }
+    const reservation = await loadGuestAuthorizedReservation(
+      reservationId,
+      token,
+    );
+    const page = await resolveReservationPage(reservation);
 
     // Cancel local state first so a crash after the provider delete cannot
     // leave a confirmed row occupying the slot. Retry still deletes while
@@ -659,10 +670,9 @@ export class PublicBookingService {
       return;
     }
 
-    await this.calendarBooking.deleteBookingEvent(
-      pageRecord.userId.toString(),
-      { eventId: reservation.calendarEventId as EventId },
-    );
+    await this.calendarBooking.deleteBookingEvent(page.userId.toString(), {
+      eventId: reservation.calendarEventId as EventId,
+    });
     await bookingReservationRepository.clearCalendarEventId(reservationId);
   }
 }
