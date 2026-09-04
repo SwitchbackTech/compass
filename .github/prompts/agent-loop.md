@@ -42,9 +42,16 @@ on the newest open tracking issue and **exit without a PR**.
 
 ## Concurrency
 
-Apply `agent-loop-running` to the issue as soon as you start.
-If another open issue already has a fresh running label (younger than
-3 hours), exit as a no-op. Do not change this model here; that is WP-02.
+Take only the named issue. Other issues may already have
+`agent-loop-running` on a different partition; that is expected up to
+`AGENT_LOOP_CONCURRENCY` (default 3). Do not pick a second WP. Do not
+exit as a no-op just because another issue is running.
+
+Apply `agent-loop-running` to this issue as soon as you start (the
+launcher may already have applied it). If this same issue already has a
+fresh running label (younger than 3 hours) and another agent is alive on
+it, exit as a no-op. If the running label is stale (older than 3 hours)
+and the agent is dead, continue.
 
 ## Status lives on GitHub
 

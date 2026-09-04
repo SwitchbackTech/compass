@@ -50,7 +50,7 @@ Read ${prompt_rel} and follow it exactly.
 Also read .agents/skills/ship/SKILL.md and AGENTS.md.
 Read the Spec: link from the issue body (do not re-litigate locked decisions).
 
-Take only the work package for this issue from origin/main to a ready PR with Fixes #${ISSUE_NUMBER}. Label the PR ${AUTOMERGE_LABEL} when the Approval boundary is allow, then stop. Do not merge yourself and do not wait for CI. Never enter credentials on staging.
+Take only the work package for this issue from origin/main. Open a draft PR with Fixes #${ISSUE_NUMBER}, mark it ready after bun run verify, and label it ${AUTOMERGE_LABEL} when the Approval boundary is allow, then stop. Other in-flight issues on different partitions are expected. Do not merge yourself and do not wait for CI. Never enter credentials on staging.
 EOF
 )
 

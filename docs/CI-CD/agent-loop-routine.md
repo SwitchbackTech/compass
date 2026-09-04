@@ -22,7 +22,7 @@ TRIGGER: workflow_dispatch | */15 cron | Release on main completed | pull_reques
 INPUT: GitHub issue in the first AGENT_LOOP_MILESTONES entry that has an eligible WP
 SKILL/PROMPT: .github/prompts/<milestone-slug>.md or .github/prompts/agent-loop.md
 OUTPUT: draft PR marked ready after bun run verify, Fixes #<n>, labeled agent-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
-IDEMPOTENCY: one in-flight agent; agent-loop-running; skip issues with an open Fixes PR
+IDEMPOTENCY: up to AGENT_LOOP_CONCURRENCY in-flight agents with non-overlapping partitions; agent-loop-running; skip issues with an open Fixes PR
 RETRY: HTTP 429 waits for credits and retries on the 15-minute watchdog; dispatch a
   fresh run for all other retryable investigation (do not "Re-run jobs" on a failed snapshot)
 APPROVAL: agent-automerge + merge-guard (size, paths, main not red) + GitHub auto-merge on required checks

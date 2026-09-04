@@ -43,6 +43,11 @@ describe("agent-loop Routine contract", () => {
     expect(prompt).toContain("Never enter credentials");
     expect(prompt).toContain("Open a **draft** PR");
     expect(prompt).toContain("review_draft_pull_requests: false");
+    expect(prompt).toContain("AGENT_LOOP_CONCURRENCY");
+    expect(prompt).toContain("different partition");
+    expect(prompt).not.toContain("Do not change this model here");
+    const providersL = readFileSync(".github/prompts/providers-l.md", "utf8");
+    expect(providersL).not.toContain("Do not change the concurrency model");
     const ship = readFileSync(".agents/skills/ship/SKILL.md", "utf8");
     expect(ship).toContain("Mark it ready only after");
     expect(ship).toContain("`bun run verify` passes");
@@ -116,6 +121,8 @@ describe("agent-loop Routine contract", () => {
     const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
     expect(launch).toContain("https://api.cursor.com/v0/agents");
     expect(launch).toContain("agent-loop: pickup");
+    expect(launch).toContain("different partitions");
+    expect(launch).toContain("Open a draft PR");
     expect(launch).toContain(`if [ -n "\${CURSOR_API_KEY:-}" ]`);
     expect(launch).toContain("Not commenting");
     expect(launch).toContain("dual-launch");
