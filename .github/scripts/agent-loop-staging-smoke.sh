@@ -3,7 +3,8 @@
 # Never logs in. 404 is success (disabled or unknown booking page). 5xx fails.
 set -euo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/booking-loop-lib.sh"
+# shellcheck disable=SC1091
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 base="${STAGING_URL:-https://staging.compasscalendar.com}"
 base="${base%/}"
@@ -16,7 +17,7 @@ check_url() {
   tmp=$(mktemp)
   http_code=$(
     curl -sS -o "$tmp" -w "%{http_code}" -L --max-time 30 \
-      -A "compass-booking-loop-smoke" \
+      -A "compass-agent-loop-smoke" \
       "$url"
   ) || http_code="000"
   rm -f "$tmp"

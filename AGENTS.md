@@ -58,7 +58,7 @@ Validation defaults:
 - Skills registry: `.agents/skills/README.md`
 - Handoffs: `.agents/handoffs/SCHEMA.md`
 - Error autofix Routine: `docs/CI-CD/error-autofix-routine.md`
-- Booking loop Routine: `docs/CI-CD/booking-loop-routine.md`
+- Agent loop Routine: `docs/CI-CD/agent-loop-routine.md`
 - Agent-ready issues: `.github/ISSUE_TEMPLATE/3-agent-task.yml`
 - Temporary attendee-support work pack (delete when done): `wip/attendee-support/README.md`
 
@@ -72,7 +72,7 @@ was empty; merged PRs #2865–#2869, #2872, and #2873 are the loop evidence.
 Project workflows live in `.agents/skills` (registry: `.agents/skills/README.md`):
 
 - `/ship`: Manager — route, issue status, PR/merge after specialist verdicts
-- `/booking-loop`: Manager — Booking v1 WP → merge → staging without a human
+- `/booking-loop`: Manager — milestone WP → merge → staging without a human (alias notes: the Routine is now agent-loop)
 - `/review`: read-only independent diff review
 - `/simplify`: reduce complexity without changing behavior
 - `/a11y-audit`: review changed UI for accessibility regressions
