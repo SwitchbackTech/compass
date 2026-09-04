@@ -393,6 +393,12 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 
 ### Named warts
 
+- **Public booking rate limits are per process.** `express-rate-limit`
+  buckets live in memory on each app replica. The numbers in
+  `booking.routes.config.ts` (for example 10 confirms per minute) are
+  per instance: N replicas yield about N times that, and a client that
+  reconnects to a different replica resets its bucket. Accepted for v1
+  while `isBookingEnabled` stays false in production.
 - **Guest email is not editable after confirm.** The attendee identity and
   Google invite are bound to the address collected at booking. Changing it
   would send a new invitation, which v1.5 does not do.
