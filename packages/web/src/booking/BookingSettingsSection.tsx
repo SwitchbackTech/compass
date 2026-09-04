@@ -90,6 +90,20 @@ export const BOOKING_SETTINGS_HINT_PARTS: readonly ShortcutTipPart[] = [
 const DEFAULT_BUFFER_MINUTES = 30;
 const DEFAULT_MAX_BOOKINGS_PER_DAY = 4;
 
+// Same reasoning: the textarea's hard cap, the two guards, and the message
+// that quotes the number all have to agree, so they read it from one place.
+const WELCOME_TEXT_MAX_LENGTH = 500;
+const WELCOME_TEXT_TOO_LONG_MESSAGE = `Welcome text must be ${WELCOME_TEXT_MAX_LENGTH} characters or fewer.`;
+
+const isWelcomeTextTooLong = (
+  welcomeText: string | null | undefined,
+): boolean => (welcomeText?.length ?? 0) > WELCOME_TEXT_MAX_LENGTH;
+
+// The duration and destination pickers are the same control; keeping one class
+// string stops a style fix landing on only one of them.
+const BOOKING_SELECT_CLASS_NAME =
+  "c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel";
+
 const isSavedBookingPage = (
   page: AdminPutBookingPageInput | AdminGetBookingPageResponse,
 ): page is AdminGetBookingPageResponse => "bookingUrl" in page;
@@ -383,8 +397,8 @@ export function BookingSettingsSection({
       setEnableError("Fix the weekly hours that could not be read.");
       return;
     }
-    if ((form.welcomeText?.length ?? 0) > 500) {
-      setEnableError("Welcome text must be 500 characters or fewer.");
+    if (isWelcomeTextTooLong(form.welcomeText)) {
+      setEnableError(WELCOME_TEXT_TOO_LONG_MESSAGE);
       return;
     }
     if (minNoticeInvalid || horizonInvalid) {
@@ -473,7 +487,7 @@ export function BookingSettingsSection({
           </BookingFieldLabel>
           <select
             {...bookingFieldAttrs("duration")}
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+            className={BOOKING_SELECT_CLASS_NAME}
             id="booking-duration"
             onChange={(event) =>
               updateForm({
@@ -505,7 +519,7 @@ export function BookingSettingsSection({
             aria-describedby={
               destinationCannotMintMeet ? destinationMeetWarningId : undefined
             }
-            className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+            className={BOOKING_SELECT_CLASS_NAME}
             id="booking-destination-calendar"
             onChange={(event) =>
               handleDestinationChange(event.target.value as CalendarId)
@@ -614,11 +628,11 @@ export function BookingSettingsSection({
           <textarea
             {...bookingFieldAttrs("welcome")}
             aria-invalid={
-              (form.welcomeText?.length ?? 0) > 500 ? true : undefined
+              isWelcomeTextTooLong(form.welcomeText) ? true : undefined
             }
             className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
             id="booking-welcome"
-            maxLength={500}
+            maxLength={WELCOME_TEXT_MAX_LENGTH}
             onChange={(event) =>
               updateForm({
                 welcomeText:
@@ -627,9 +641,9 @@ export function BookingSettingsSection({
             }
             value={form.welcomeText ?? ""}
           />
-          {(form.welcomeText?.length ?? 0) > 500 ? (
+          {isWelcomeTextTooLong(form.welcomeText) ? (
             <p className="text-error text-xs" role="alert">
-              Welcome text must be 500 characters or fewer.
+              {WELCOME_TEXT_TOO_LONG_MESSAGE}
             </p>
           ) : null}
         </div>
