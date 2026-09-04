@@ -106,6 +106,13 @@ Source: [`.github/workflows/publish-docker-images.yml`](../../.github/workflows/
    - `switchbacktech/compass-web`
 4. Each image gets all three tags: `1.2.3`, `1.2`, and `latest`.
 
+Each `docker/build-push-action` step exports a per-image GitHub Actions
+cache (`cache-from`/`cache-to` `type=gha,mode=max`). Bun images copy
+`package.json`, `bun.lock`, `bunfig.toml`, `patches/`, and workspace
+`package.json` files and run `bun install --frozen-lockfile` before
+`COPY . .`. Every `oven/bun:` tag must match the `bun-version` in
+`.github/workflows/test-unit.yml` (`packages/scripts/src/testing/check-agent-constraints.ts`).
+
 ### Tag pattern rules
 
 Only clean semver tags trigger this workflow from a tag push. Tags with suffixes
