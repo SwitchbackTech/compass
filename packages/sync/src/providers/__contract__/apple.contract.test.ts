@@ -1,11 +1,18 @@
+import {
+  type AuthContractCapabilities,
+  type AuthContractCase,
+  OAUTH_AUTH_CONTRACT_CASES,
+} from "@sync/providers/__contract__/auth.contract";
 import { type DiscoveryContractCase } from "@sync/providers/__contract__/discovery.contract";
 import { type NormalizerContractCase } from "@sync/providers/__contract__/normalizer.contract";
+import { AppleAuthAdapter } from "@sync/providers/apple/apple-auth.adapter";
 import { AppleCalendarAdapter } from "@sync/providers/apple/apple-calendar.adapter";
 import { normalizeAppleEventResource } from "@sync/providers/apple/apple-event.normalizer";
 import {
   type CaldavFetch,
   createCaldavClient,
 } from "@sync/providers/apple/caldav-client";
+import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 
 const PRINCIPAL_XML = `<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:">
@@ -148,6 +155,34 @@ describe("apple discovery contract", () => {
     });
   }
 });
+
+describeOAuthAuthContract(
+  "apple",
+  { oauthRedirect: false },
+  OAUTH_AUTH_CONTRACT_CASES,
+  () => new AppleAuthAdapter(),
+);
+
+function describeOAuthAuthContract(
+  label: string,
+  capabilities: AuthContractCapabilities,
+  cases: AuthContractCase[],
+  factory: () => ProviderAuthAdapter,
+): void {
+  describe(`${label} oauth auth contract`, () => {
+    for (const testCase of cases) {
+      if (!capabilities[testCase.requires]) {
+        it(`${testCase.name} [not applicable: ${testCase.requires} unsupported]`, () => {
+          expect(capabilities[testCase.requires]).toBe(false);
+        });
+        continue;
+      }
+      it(testCase.name, async () => {
+        await testCase.run(factory());
+      });
+    }
+  });
+}
 
 const APPLE_NORMALIZER_CASES: NormalizerContractCase[] = [
   {

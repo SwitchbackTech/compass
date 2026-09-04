@@ -77,6 +77,7 @@ export type ProviderAuthErrorReason =
   | "missingIdentity" // the account could not be identified from the grant
   | "invalidIdToken" // the id token was absent or failed verification
   | "authorizationRevoked" // the refresh token is no longer valid (revoked/expired)
-  | "refreshFailed"; // the token refresh failed for a transient/unknown reason
+  | "refreshFailed" // the token refresh failed for a transient/unknown reason
+  | "unsupported"; // the operation does not apply to this provider's auth model
 
 export class ProviderAuthError extends ProviderError<ProviderAuthErrorReason> {}
