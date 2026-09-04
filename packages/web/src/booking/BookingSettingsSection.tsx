@@ -9,6 +9,8 @@ import {
   type AdminGetBookingPageResponse,
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
+  BOOKING_MAX_HORIZON_DAYS,
+  BOOKING_MAX_MIN_NOTICE_HOURS,
   type BookingDurationMinutes,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
@@ -112,10 +114,9 @@ const parseBookingCount = (
   return value;
 };
 
-// Bounds mirror AdminPutBookingPageInputSchema (nonnegative notice; 1-60 day
-// horizon). Notice has no schema max, so any nonnegative integer parses.
-const MIN_NOTICE_BOUNDS = { min: 0, max: Number.MAX_SAFE_INTEGER };
-const HORIZON_BOUNDS = { min: 1, max: 60 };
+// Bounds mirror AdminPutBookingPageInputSchema.
+const MIN_NOTICE_BOUNDS = { min: 0, max: BOOKING_MAX_MIN_NOTICE_HOURS };
+const HORIZON_BOUNDS = { min: 1, max: BOOKING_MAX_HORIZON_DAYS };
 
 const buildInitialForm = (
   page: AdminGetBookingPageResult | undefined,
@@ -639,8 +640,9 @@ export function BookingSettingsSection({
             field="notice"
             id="booking-min-notice"
             invalid={minNoticeInvalid}
-            invalidMessage="Enter 0 or more hours."
+            invalidMessage={`Enter 0 to ${BOOKING_MAX_MIN_NOTICE_HOURS} hours.`}
             label="Minimum notice (hours)"
+            max={BOOKING_MAX_MIN_NOTICE_HOURS}
             min={0}
             onChange={(raw) => {
               setMinNoticeText(raw);
@@ -656,9 +658,9 @@ export function BookingSettingsSection({
             field="horizon"
             id="booking-max-horizon"
             invalid={horizonInvalid}
-            invalidMessage="Enter 1 to 60 days."
+            invalidMessage={`Enter 1 to ${BOOKING_MAX_HORIZON_DAYS} days.`}
             label="Maximum horizon (days)"
-            max={60}
+            max={BOOKING_MAX_HORIZON_DAYS}
             min={1}
             onChange={(raw) => {
               setHorizonText(raw);

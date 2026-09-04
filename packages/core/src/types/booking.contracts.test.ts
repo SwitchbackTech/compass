@@ -3,6 +3,8 @@ import {
   AdminGetBookingPageResponseSchema,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
+  BOOKING_MAX_BUFFER_MINUTES,
+  BOOKING_MAX_MIN_NOTICE_HOURS,
   BookingPageSchema,
   BookingReservationSlotsQuerySchema,
   BookingSlugSchema,
@@ -94,6 +96,47 @@ describe("BookingPageSchema", () => {
       BookingPageSchema.safeParse({
         ...fullAdminPage(),
         maxHorizonDays: 61,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts minNoticeHours and bufferMinutes at their caps and rejects above", () => {
+    const base = {
+      enabled: true,
+      durationMinutes: 30,
+      destinationCalendarId: calendarId(),
+      blockingCalendarIds: [calendarId()],
+      timeZone: "UTC",
+      weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
+      minNoticeHours: 4,
+      maxHorizonDays: 60,
+      bufferMinutes: null as number | null,
+      maxBookingsPerDay: null,
+      guestsCanInviteOthers: true,
+    };
+
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        minNoticeHours: BOOKING_MAX_MIN_NOTICE_HOURS,
+      }).success,
+    ).toBe(true);
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        minNoticeHours: BOOKING_MAX_MIN_NOTICE_HOURS + 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES,
+      }).success,
+    ).toBe(true);
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...base,
+        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES + 1,
       }).success,
     ).toBe(false);
   });
