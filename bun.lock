@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "compass",
@@ -44,7 +43,7 @@
         "stripe": "^18.5.0",
         "supertokens-node": "^23.0.1",
         "tslib": "^2.4.0",
-        "zod": "^3.25.76",
+        "zod": "^4.5.4",
       },
       "devDependencies": {
         "@faker-js/faker": "^9.6.0",
@@ -79,7 +78,7 @@
         "winston": "^3.8.1",
         "winston-transport": "^4.7.0",
         "yaml": "^2.9.0",
-        "zod": "^3.25.76",
+        "zod": "^4.5.4",
       },
       "devDependencies": {
         "@faker-js/faker": "^9.6.0",
@@ -103,7 +102,7 @@
         "mongodb": "^7.2.0",
         "mongodb-memory-server": "^9.2.0",
         "typescript": "^7.0.2",
-        "zod": "^3.25.76",
+        "zod": "^4.5.4",
       },
     },
     "packages/sync": {
@@ -121,7 +120,7 @@
         "mongodb": "^7.2.0",
         "rrule": "^2.7.2",
         "tslib": "^2.4.0",
-        "zod": "^3.25.76",
+        "zod": "^4.5.4",
       },
       "devDependencies": {
         "@faker-js/faker": "^9.6.0",
@@ -163,7 +162,7 @@
         "supertokens-web-js": "^0.16.0",
         "supertokens-website": "^20.1.5",
         "tinycolor2": "^1.6.0",
-        "zod": "^3.25.76",
+        "zod": "^4.5.4",
         "zustand": "^5.0.14",
       },
       "devDependencies": {
@@ -1829,7 +1828,7 @@
 
     "yauzl": ["yauzl@3.3.0", "", { "dependencies": { "buffer-crc32": "~0.2.3", "pend": "~1.2.0" } }, "sha512-PtGEvEP30p7sbIBJKUBjUnqgTVOyMURc4dLo9iNyAJnNIEz9pm88cCXF21w94Kg3k6RXkeZh5DHOGS0qEONvNQ=="],
 
-    "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+    "zod": ["zod@4.5.4", "", {}, "sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA=="],
 
     "zustand": ["zustand@5.0.14", "", { "peerDependencies": { "@types/react": ">=18.0.0", "immer": ">=9.0.6", "react": ">=18.0.0", "use-sync-external-store": ">=1.2.0" }, "optionalPeers": ["@types/react", "immer", "react", "use-sync-external-store"] }, "sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g=="],
 
