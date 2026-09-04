@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { rediscoverStaleCalendarLists } from "@sync/domain/calendar-list-rediscovery.service";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -57,7 +58,7 @@ describe("calendar-list rediscovery sweep (rediscoverStaleCalendarLists)", () =>
       calendarId: null,
     });
     if (options.withCredential ?? true) {
-      await credentials.store({
+      await seedOauthCredential(credentials, {
         connectionId,
         provider: "google",
         refreshToken: "refresh-token",
@@ -214,7 +215,7 @@ describe("calendar-list rediscovery sweep (rediscoverStaleCalendarLists)", () =>
       resourceKind: "calendarList",
       calendarId: null,
     });
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId,
       provider: "google",
       refreshToken: "refresh-token",

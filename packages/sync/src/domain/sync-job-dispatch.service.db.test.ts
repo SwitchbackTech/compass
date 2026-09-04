@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import {
   ensureEventsResource,
   FakeReader,
@@ -123,6 +124,15 @@ const defaultGoogleConnection = (
   updatedAt: now(),
 });
 
+const googleProviderCapabilities = [
+  "readEvents",
+  "writeEvents",
+  "readBusy",
+  "inviteAttendees",
+  "changeNotifications",
+  "incrementalChanges",
+] as const;
+
 describe("dispatchSyncJob", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;
@@ -197,6 +207,7 @@ describe("dispatchSyncJob", () => {
     commands,
     custody,
     callbackUrlFor: () => "https://sync.example/sync/notifications/google",
+    providerCapabilities: () => googleProviderCapabilities,
     invalidations,
   });
 
@@ -776,7 +787,7 @@ describe("dispatchSyncJob", () => {
   it("drops a job after consecutive refreshFailed attempts so 401s do not burn the ladder", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: calendar.connectionId,
       provider: "google",
       refreshToken: "refresh",
@@ -815,7 +826,7 @@ describe("dispatchSyncJob", () => {
   it("does not drop a refreshFailed job just because other retries already ran", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: calendar.connectionId,
       provider: "google",
       refreshToken: "refresh",
@@ -1080,6 +1091,52 @@ describe("dispatchSyncJob", () => {
     expect(feed.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("completes bootstrap to ready when the provider lacks changeNotifications", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    notifications.watched = [];
+    const pollOnlyNotifications = {
+      ...notifications,
+      watch: async () => {
+        throw new Error("watch must not run for poll-only providers");
+      },
+    };
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], { nextSyncToken: "cursor-1" }),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      {
+        ...deps(new FakeReader([]), tokenSource, pollOnlyNotifications),
+        providerCapabilities: () => ["readEvents", "incrementalChanges"],
+      },
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toEqual({ result: "done" });
+    expect(notifications.watched).toHaveLength(0);
+
+    const saved = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(saved?.bootstrapState).toBe("ready");
+    expect(saved?.subscriptionId).toBeNull();
+  });
+
   it("completes bootstrap on durable watchFailed instead of burning retries", async () => {
     // 2026-08-07 prod: ProviderNotificationError watchFailed ("Google refused
     // to open the channel") was rethrown from maintainSubscription, hit the
@@ -1143,7 +1200,7 @@ describe("dispatchSyncJob", () => {
       state: "importing",
       stateReason: null,
     });
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "refresh",

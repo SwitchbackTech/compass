@@ -1,3 +1,4 @@
+import { hasStoredOauthRefreshToken } from "@sync/credentials/oauth-refresh-at-rest";
 import { MAX_REFRESH_FAILED_ATTEMPTS } from "@sync/credentials/refresh-failure.constants";
 import {
   BOOTSTRAP_STALLED_AFTER_MS,
@@ -187,7 +188,7 @@ function credentialState(
 ): CredentialState {
   if (!credential) return "revoked";
   if (credential.credentialKind === "password") return "valid";
-  if (!credential.refreshToken) return "revoked";
+  if (!hasStoredOauthRefreshToken(credential)) return "revoked";
   if (credential.refreshFailureCount >= MAX_REFRESH_FAILED_ATTEMPTS) {
     return "expired";
   }

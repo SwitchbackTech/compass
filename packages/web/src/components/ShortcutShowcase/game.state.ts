@@ -528,7 +528,7 @@ export const handleGameKey = (
  * The chips the task card shows. Usually the task's static keycaps, but a
  * card can change chips as the move unfolds: the jump card carries the
  * target's live letter (assigned by board order, so it shifts with skips),
- * and the palette card's hint becomes the Esc that closes it.
+ * and the palette and legend cards swap to Esc once those overlays are open.
  */
 export const getDisplayKeycaps = (
   task: GameTask,
@@ -538,7 +538,10 @@ export const getDisplayKeycaps = (
     const letter = getJumpLetters(state.practice)[task.targetEventId];
     return letter ? [...task.keycaps, letter.toUpperCase()] : task.keycaps;
   }
-  if (task.type === "palette" && state.simOverlay === "palette") {
+  if (
+    (task.type === "palette" && state.simOverlay === "palette") ||
+    (task.type === "legend" && state.simOverlay === "legend")
+  ) {
     return ["Esc"];
   }
   return task.keycaps;
@@ -595,20 +598,23 @@ export const getNextKeycapIndex = (
       );
     }
     case "resize": {
-      const onEndEdge =
-        practice.focusedId === task.targetEventId && practice.edge === "end";
-      if (!onEndEdge) {
-        // Walk the Tab chips: second Tab once the start edge is focused.
-        return practice.focusedId === task.targetEventId &&
-          practice.edge === "start"
-          ? 1
+      const tabCount = task.keycaps.indexOf("Shift");
+      const tabsDone =
+        practice.focusedId === task.targetEventId
+          ? ([null, "start", "end"] as const).indexOf(practice.edge)
           : 0;
+      if (practice.edge !== task.edge) {
+        // Overshooting to the far edge wraps to chip 0: Tab again.
+        return Math.min(tabsDone, tabCount - 1);
       }
       const block = blockById(practice, task.targetEventId);
-      const shiftIndex = task.keycaps.indexOf("Shift");
+      const shiftIndex = tabCount;
       if (!block) return shiftIndex + 1;
       const remaining =
-        Math.abs(block.endMin - task.target.endMin) / PRACTICE_NUDGE_MIN;
+        Math.abs(
+          (task.edge === "start" ? block.startMin : block.endMin) -
+            (task.edge === "start" ? task.target.startMin : task.target.endMin),
+        ) / PRACTICE_NUDGE_MIN;
       return Math.min(
         Math.max(task.keycaps.length - remaining, shiftIndex + 1),
         task.keycaps.length - 1,

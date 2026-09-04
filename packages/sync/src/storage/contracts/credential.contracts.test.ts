@@ -30,6 +30,50 @@ describe("CredentialRecordSchema", () => {
     expect(parsed.refreshToken).toBe("refresh-token-secret");
   });
 
+  it("parses an encrypted oauth refresh row", () => {
+    const parsed = CredentialRecordSchema.parse({
+      credentialKind: "oauthRefresh",
+      _id: objectId(),
+      provider: "google",
+      refreshTokenCiphertext: "cipher",
+      refreshTokenIv: "iv",
+      refreshTokenTag: "tag",
+      keyVersion: 1,
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshFailureCount: 0,
+      scopes: [],
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      updatedAt: new Date("2026-01-01T00:00:00Z"),
+    });
+    expect(parsed.credentialKind).toBe("oauthRefresh");
+    if (parsed.credentialKind !== "oauthRefresh") {
+      throw new Error("expected oauthRefresh");
+    }
+    expect(parsed.refreshTokenCiphertext).toBe("cipher");
+    expect(parsed.refreshToken).toBeUndefined();
+  });
+
+  it("rejects oauth rows with both plaintext and ciphertext refresh tokens", () => {
+    const result = CredentialRecordSchema.safeParse({
+      credentialKind: "oauthRefresh",
+      _id: objectId(),
+      provider: "google",
+      refreshToken: "plain",
+      refreshTokenCiphertext: "cipher",
+      refreshTokenIv: "iv",
+      refreshTokenTag: "tag",
+      keyVersion: 1,
+      accessToken: null,
+      accessTokenExpiresAt: null,
+      refreshFailureCount: 0,
+      scopes: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects a password row without ciphertext fields", () => {
     const result = CredentialRecordSchema.safeParse({
       credentialKind: "password",

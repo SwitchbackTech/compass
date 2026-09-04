@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -69,7 +70,7 @@ describe("reconcile sweep (enqueueForResources + listStaleEvents)", () => {
       calendarId: objectId() as SyncResourceRecord["calendarId"],
     });
     if (options.withCredential ?? true) {
-      await credentials.store({
+      await seedOauthCredential(credentials, {
         connectionId,
         provider: "google",
         refreshToken: "refresh-token",

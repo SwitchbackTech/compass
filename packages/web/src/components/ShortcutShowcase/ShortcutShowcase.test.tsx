@@ -62,30 +62,20 @@ const playWinningRun = async () => {
   pressKey("c");
   pressKey("ArrowLeft");
   pressKey("Enter");
-  // quicktime-lunch
-  typeDigits("1230");
-  pressKey("Enter");
-  // place-review
-  pressKey("c");
-  pressKey("ArrowRight");
-  pressKey("ArrowRight");
+  // quicktime-coffee
+  typeDigits("930");
   pressKey("Enter");
   // nudge-standup
-  for (let i = 0; i < 4; i += 1) pressKey("ArrowDown", { shiftKey: true });
+  pressKey("ArrowDown", { shiftKey: true });
   // resize-one-on-one
   pressKey("Tab");
-  pressKey("Tab");
-  pressKey("ArrowDown", { shiftKey: true });
-  pressKey("ArrowDown", { shiftKey: true });
-  // quicktime-focus
-  typeDigits("1600");
-  pressKey("Enter");
+  pressKey("ArrowUp", { shiftKey: true });
   // delete-gym, undo-gym
   pressKey("Delete");
   pressKey("z", modInit());
-  // legend-peek: open the practice legend, close it again
+  // legend-peek: open the practice legend, Esc closes it
   pressKey("?", { shiftKey: true });
-  pressKey("?", { shiftKey: true });
+  pressKey("Escape");
   // jump-to-kickoff: reveal jump letters, take the kickoff one
   pressKey("h");
   pressKey("s");
@@ -96,11 +86,9 @@ const playWinningRun = async () => {
   // palette-peek: open the practice palette, Esc closes it
   pressKey("k", modInit());
   pressKey("Escape");
-  // nudge-review
-  pressKey("ArrowLeft", { shiftKey: true });
   // place-party
   pressKey("c");
-  for (let i = 0; i < 2; i += 1) pressKey("ArrowDown");
+  pressKey("ArrowDown");
   pressKey("Enter");
 };
 
@@ -209,7 +197,7 @@ describe("ShortcutShowcase", () => {
 
     // Esc-skip to the jump task. With every board task skipped, letters run
     // over the three seed events alone, so kickoff's chip is A here.
-    for (let i = 0; i < 9; i += 1) pressKey("Escape");
+    for (let i = 0; i < 7; i += 1) pressKey("Escape");
     expect(screen.getByText("Fly across the board")).toBeTruthy();
     expect(screen.getByText("A")).toBeTruthy();
     pressKey("h");
@@ -368,7 +356,7 @@ describe("ShortcutShowcase", () => {
     act(() => shortcutShowcaseActions.replay());
     pressKey("Enter");
     // Esc through the board tasks until the legend task is up.
-    for (let i = 0; i < 8; i += 1) pressKey("Escape");
+    for (let i = 0; i < 6; i += 1) pressKey("Escape");
     expect(screen.getByText("Blanking on a move?")).toBeTruthy();
 
     pressKey("?", { shiftKey: true });

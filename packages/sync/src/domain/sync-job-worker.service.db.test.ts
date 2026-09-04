@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import {
   ensureEventsResource,
   FakeReader,
@@ -115,6 +116,7 @@ describe("SyncJobWorker", () => {
     jobs,
     custody: tokenSource,
     callbackUrlFor: () => "https://sync.example/sync/notifications/google",
+    providerCapabilities: () => googleProviderCapabilities,
     invalidations,
   });
 
@@ -241,7 +243,7 @@ describe("SyncJobWorker", () => {
       stateReason: "providerErrors",
     });
     const credentials = new CredentialRepository(storage.db());
-    await credentials.store({
+    await seedOauthCredential(credentials, {
       connectionId: connection._id,
       provider: "google",
       refreshToken: "refresh",

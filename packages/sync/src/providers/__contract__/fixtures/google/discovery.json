@@ -1,0 +1,35 @@
+{
+  "pages": [
+    {
+      "items": [
+        {
+          "kind": "calendar#calendarListEntry",
+          "id": "primary-cal",
+          "summary": "Primary",
+          "primary": true,
+          "backgroundColor": "#112233",
+          "accessRole": "owner"
+        },
+        {
+          "kind": "calendar#calendarListEntry",
+          "id": "work-cal",
+          "summary": "Work",
+          "backgroundColor": "#AABBCC",
+          "accessRole": "writer"
+        },
+        {
+          "kind": "calendar#calendarListEntry",
+          "id": "holidays",
+          "summary": "Holidays",
+          "backgroundColor": "#FFD700",
+          "accessRole": "reader"
+        }
+      ],
+      "nextPageToken": null,
+      "nextSyncToken": "sync-token-1"
+    }
+  ],
+  "labelsById": {
+    "primary-cal": [{ "id": "label-1", "hex": "#009688" }]
+  }
+}
