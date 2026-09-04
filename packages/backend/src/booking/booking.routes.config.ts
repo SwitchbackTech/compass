@@ -57,6 +57,22 @@ const publicCancelLimiter = rateLimit({
   keyGenerator: bookingReservationKey,
 });
 
+const publicReservationSlotsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingReservationKey,
+});
+
+const publicRescheduleLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: bookingReservationKey,
+});
+
 const publicReservationPatchLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 10,
@@ -128,6 +144,17 @@ export class BookingRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/booking/reservations/:id/cancel`)
       .post(publicCancelLimiter, bookingController.cancelReservation);
+
+    this.app
+      .route(`/api/booking/reservations/:id/slots`)
+      .get(
+        publicReservationSlotsLimiter,
+        bookingController.getReservationSlots,
+      );
+
+    this.app
+      .route(`/api/booking/reservations/:id/reschedule`)
+      .post(publicRescheduleLimiter, bookingController.rescheduleReservation);
 
     return this.app;
   }

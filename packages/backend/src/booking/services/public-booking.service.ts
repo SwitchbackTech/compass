@@ -8,6 +8,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import {
   BookingDurationMinutesSchema,
+  BookingReservationSlotsQuerySchema,
   BookingSlotsQuerySchema,
   type BookingSlotsResponse,
   BookingSlotsResponseSchema,
@@ -20,6 +21,8 @@ import {
   PublicBookingPageSchema,
   type PublicGetBookingReservationResponse,
   PublicGetBookingReservationResponseSchema,
+  RescheduleBookingReservationInputSchema,
+  RescheduleBookingReservationResponseSchema,
   toPublicBookingPage,
 } from "@core/types/booking.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
@@ -84,6 +87,19 @@ const assertHostAllowsGuestWrites = async (userId: ObjectId): Promise<void> => {
  */
 const reservationNotFound = () =>
   bookingError("RESERVATION_NOT_FOUND", "Reservation not found");
+
+const guestTokenFrom = (raw: unknown): string => {
+  if (
+    raw === null ||
+    typeof raw !== "object" ||
+    !("token" in raw) ||
+    typeof raw.token !== "string" ||
+    raw.token.trim() === ""
+  ) {
+    throw reservationNotFound();
+  }
+  return raw.token;
+};
 
 const isDuplicateSlotError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
@@ -170,8 +186,14 @@ const bookingEventDescription = (
   notes: string | null | undefined,
   guestsCanInviteOthers: boolean,
   cancelUrl: string,
+  rescheduleUrl: string,
 ): string =>
-  [notes?.trim() || null, guestsCanInviteOthers ? null : `Cancel: ${cancelUrl}`]
+  [
+    notes?.trim() || null,
+    guestsCanInviteOthers
+      ? null
+      : `Cancel: ${cancelUrl}\nReschedule: ${rescheduleUrl}`,
+  ]
     .filter(Boolean)
     .join("\n\n");
 
@@ -355,8 +377,50 @@ export class PublicBookingService {
       });
     }
     const query = parseSlotsQuery(rawQuery);
-    // Guest `timeZone` is required on the wire for rendering and logs.
-    // Availability is always computed in `page.timeZone`.
+    return this.computeSlotsForPage(page, query);
+  }
+
+  async getReservationSlots(
+    reservationId: ObjectId,
+    rawQuery: unknown,
+  ): Promise<BookingSlotsResponse> {
+    guestTokenFrom(rawQuery);
+    const query = BookingReservationSlotsQuerySchema.parse(rawQuery);
+    const reservation = await loadGuestAuthorizedReservation(
+      reservationId,
+      query.token,
+    );
+    if (reservation.status === "cancelled") {
+      throw reservationNotFound();
+    }
+    const page = await resolveReservationPublicPage(reservation);
+    if (!(await hostAllowsGuestWrites(page.userId))) {
+      return BookingSlotsResponseSchema.parse({
+        slots: [],
+        bookable: false,
+      });
+    }
+    parseSlotsQuery({
+      start: query.start,
+      end: query.end,
+      timeZone: query.timeZone,
+    });
+    return this.computeSlotsForPage(page, query, {
+      excludeEventIds: reservation.calendarEventId
+        ? [reservation.calendarEventId as EventId]
+        : undefined,
+      omitReservationStart: reservation.slotStart,
+    });
+  }
+
+  private async computeSlotsForPage(
+    page: BookingPageRecord,
+    query: { start: string; end: string },
+    options: {
+      excludeEventIds?: readonly EventId[];
+      omitReservationStart?: Date;
+    } = {},
+  ): Promise<BookingSlotsResponse> {
     const now = new Date();
     const windowStart = new Date(query.start);
     const requestedEnd = new Date(query.end);
@@ -375,8 +439,11 @@ export class PublicBookingService {
       page.userId.toString(),
       {
         calendarIds: page.blockingCalendarIds,
-        start: query.start,
+        start: DateTimeSchema.parse(query.start),
         end: DateTimeSchema.parse(windowEnd.toISOString()),
+        ...(options.excludeEventIds
+          ? { excludeEventIds: options.excludeEventIds }
+          : {}),
       },
     );
 
@@ -387,11 +454,13 @@ export class PublicBookingService {
       });
     }
 
-    const confirmedStarts =
+    const omitStartMs = options.omitReservationStart?.getTime();
+    const confirmedStarts = (
       await bookingReservationRepository.listConfirmedStartsByPageId(
         page._id,
         confirmedReservationScanRange(page, windowStart, windowEnd),
-      );
+      )
+    ).filter((start) => start.getTime() !== omitStartMs);
     const slotStarts = computeBookingSlots(
       slotEngineInputForPage(page, availability, confirmedStarts, {
         now,
@@ -412,14 +481,15 @@ export class PublicBookingService {
     });
   }
 
-  async createReservation(slug: string, rawInput: unknown) {
-    const page = await resolveEnabledPage(slug);
-    await assertHostAllowsGuestWrites(page.userId);
-    const input = CreateBookingReservationInputSchema.parse(rawInput);
-    assertGuestEmail(input.guestEmail);
-
-    const slotStart = new Date(input.slotStart);
-    const slotEnd = slotEndForStart(slotStart, page.durationMinutes);
+  private async assertSlotAvailable(
+    page: BookingPageRecord,
+    slotStart: Date,
+    slotEnd: Date,
+    options: {
+      excludeEventIds?: readonly EventId[];
+      omitReservationStart?: Date;
+    } = {},
+  ): Promise<void> {
     const now = new Date();
     const minNoticeMs = page.minNoticeHours * 60 * 60 * 1000;
     if (slotStart.getTime() < now.getTime() + minNoticeMs) {
@@ -433,8 +503,11 @@ export class PublicBookingService {
       page.userId.toString(),
       {
         calendarIds: page.blockingCalendarIds,
-        start: input.slotStart,
+        start: DateTimeSchema.parse(slotStart.toISOString()),
         end: DateTimeSchema.parse(slotEnd.toISOString()),
+        ...(options.excludeEventIds
+          ? { excludeEventIds: options.excludeEventIds }
+          : {}),
       },
     );
     if (!availability.bookable) {
@@ -444,11 +517,13 @@ export class PublicBookingService {
       );
     }
 
-    const confirmedStarts =
+    const omitStartMs = options.omitReservationStart?.getTime();
+    const confirmedStarts = (
       await bookingReservationRepository.listConfirmedStartsByPageId(
         page._id,
         confirmedReservationScanRange(page, slotStart, slotEnd),
-      );
+      )
+    ).filter((start) => start.getTime() !== omitStartMs);
     const allowedStarts = new Set(
       computeBookingSlots(
         slotEngineInputForPage(page, availability, confirmedStarts, {
@@ -458,13 +533,23 @@ export class PublicBookingService {
         }),
       ).map((start) => Date.parse(start)),
     );
-
     if (!allowedStarts.has(slotStart.getTime())) {
       throw bookingError(
         "SLOT_UNAVAILABLE",
         "Selected slot is no longer available",
       );
     }
+  }
+
+  async createReservation(slug: string, rawInput: unknown) {
+    const page = await resolveEnabledPage(slug);
+    await assertHostAllowsGuestWrites(page.userId);
+    const input = CreateBookingReservationInputSchema.parse(rawInput);
+    assertGuestEmail(input.guestEmail);
+
+    const slotStart = new Date(input.slotStart);
+    const slotEnd = slotEndForStart(slotStart, page.durationMinutes);
+    await this.assertSlotAvailable(page, slotStart, slotEnd);
 
     const hostDisplayName = await getHostDisplayName(page.userId);
     const cancelToken = generateCancelToken();
@@ -494,6 +579,7 @@ export class PublicBookingService {
             input.notes,
             page.guestsCanInviteOthers,
             cancelUrl,
+            rescheduleUrl,
           ),
           start: input.slotStart,
           end: DateTimeSchema.parse(slotEnd.toISOString()),
@@ -619,6 +705,11 @@ export class PublicBookingService {
       reservationId.toString(),
       input.token,
     );
+    const rescheduleUrl = buildGuestActionUrl(
+      "reschedule",
+      reservationId.toString(),
+      input.token,
+    );
 
     if (reservation.calendarEventId) {
       await this.calendarBooking.updateBookingEvent(page.userId.toString(), {
@@ -628,6 +719,7 @@ export class PublicBookingService {
           notes,
           page.guestsCanInviteOthers,
           cancelUrl,
+          rescheduleUrl,
         ),
         start: DateTimeSchema.parse(reservation.slotStart.toISOString()),
         end: DateTimeSchema.parse(reservation.slotEnd.toISOString()),
@@ -648,6 +740,102 @@ export class PublicBookingService {
     }
 
     return presentReservation(updated, page, hostDisplayName);
+  }
+
+  async rescheduleReservation(reservationId: ObjectId, rawInput: unknown) {
+    guestTokenFrom(rawInput);
+    const input = RescheduleBookingReservationInputSchema.parse(rawInput);
+    const reservation = await loadGuestAuthorizedReservation(
+      reservationId,
+      input.token,
+    );
+    if (reservation.status === "cancelled") {
+      throw reservationNotFound();
+    }
+    const page = await resolveReservationPublicPage(reservation);
+    await assertHostAllowsGuestWrites(page.userId);
+
+    const slotStart = new Date(input.slotStart);
+    const slotEnd = slotEndForStart(slotStart, page.durationMinutes);
+    const hostDisplayName = await getHostDisplayName(page.userId);
+    const cancelUrl = buildGuestActionUrl(
+      "cancel",
+      reservationId.toString(),
+      input.token,
+    );
+    const rescheduleUrl = buildGuestActionUrl(
+      "reschedule",
+      reservationId.toString(),
+      input.token,
+    );
+    const present = (record: BookingReservationRecord) =>
+      RescheduleBookingReservationResponseSchema.parse({
+        reservationId: record._id.toString(),
+        slotStart: record.slotStart.toISOString(),
+        slotEnd: record.slotEnd.toISOString(),
+        guestTimeZone: record.guestTimeZone,
+        durationMinutes: durationMinutesForReservation(
+          record,
+          page.durationMinutes,
+        ),
+        hostDisplayName,
+        status: record.status,
+        bookingSlug: page.bookingSlug,
+      });
+
+    if (slotStart.getTime() === reservation.slotStart.getTime()) {
+      return present(reservation);
+    }
+
+    await this.assertSlotAvailable(page, slotStart, slotEnd, {
+      excludeEventIds: reservation.calendarEventId
+        ? [reservation.calendarEventId as EventId]
+        : undefined,
+      omitReservationStart: reservation.slotStart,
+    });
+
+    if (reservation.calendarEventId) {
+      await this.calendarBooking.updateBookingEvent(page.userId.toString(), {
+        eventId: reservation.calendarEventId as EventId,
+        title: `${reservation.guestName} and ${hostDisplayName}`,
+        description: bookingEventDescription(
+          reservation.notes,
+          page.guestsCanInviteOthers,
+          cancelUrl,
+          rescheduleUrl,
+        ),
+        start: input.slotStart,
+        end: DateTimeSchema.parse(slotEnd.toISOString()),
+        timeZone: page.timeZone,
+        guest: {
+          email: reservation.guestEmail,
+          displayName: reservation.guestName,
+        },
+      });
+    }
+
+    try {
+      const updated = await bookingReservationRepository.updateSlotTimes(
+        reservationId,
+        {
+          slotStart,
+          slotEnd,
+          guestTimeZone: input.guestTimeZone,
+        },
+      );
+      if (!updated) {
+        throw reservationNotFound();
+      }
+      return present(updated);
+    } catch (error) {
+      if (isDuplicateSlotError(error)) {
+        throw bookingError(
+          "SLOT_UNAVAILABLE",
+          "Selected slot is no longer available",
+        );
+      }
+      throw error;
+    }
   }
 
   async cancelReservation(
