@@ -336,6 +336,32 @@ describe("scanBunDockerfilePins", () => {
     expect(scanBunDockerfilePins()).toEqual([]);
   });
 
+  it("fails when the e2e npm bun@ install differs from CI", () => {
+    const root = mkdtempSync(join(tmpdir(), "bun-pin-"));
+    writeTree(root, {
+      ".github/workflows/test-unit.yml": "bun-version: 1.3.14\n",
+      ".github/workflows/test-e2e.yml":
+        "run: |\n  npm install --global --no-audit --no-fund bun@1.2.18\n",
+    });
+
+    const hits = scanBunDockerfilePins(root);
+    expect(hits.map((hit) => `${hit.rule}:${hit.path}:${hit.detail}`)).toEqual([
+      "bun-pin:.github/workflows/test-e2e.yml:bun@1.2.18 but CI pins 1.3.14",
+    ]);
+  });
+
+  it("fails when the e2e workflow has no npm bun@ install", () => {
+    const root = mkdtempSync(join(tmpdir(), "bun-pin-"));
+    writeTree(root, {
+      ".github/workflows/test-unit.yml": "bun-version: 1.3.14\n",
+      ".github/workflows/test-e2e.yml": "uses: oven-sh/setup-bun@v2\n",
+    });
+
+    expect(scanBunDockerfilePins(root).map((hit) => hit.path)).toEqual([
+      ".github/workflows/test-e2e.yml",
+    ]);
+  });
+
   it("fails when one Dockerfile oven/bun tag differs from CI", () => {
     const root = mkdtempSync(join(tmpdir(), "bun-pin-"));
     writeTree(root, {
