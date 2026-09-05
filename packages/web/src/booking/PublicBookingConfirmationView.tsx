@@ -1,4 +1,9 @@
 import { CheckCircleIcon } from "@phosphor-icons/react";
+import { type CalendarConference } from "@core/types/calendar.contracts";
+import {
+  BOOKING_CONFERENCE_INVITE_COPY,
+  resolveBookingConference,
+} from "@web/booking/booking-conference.copy";
 import { PublicBookingCopyCancelUrl } from "@web/booking/PublicBookingCopyCancelUrl";
 import { PublicBookingCopyRescheduleUrl } from "@web/booking/PublicBookingCopyRescheduleUrl";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
@@ -13,6 +18,7 @@ interface PublicBookingConfirmationViewProps {
   durationMinutes: number;
   slotStart: string;
   timeZone: string;
+  conference?: CalendarConference;
   createsGoogleMeet?: boolean;
   cancelUrl?: string;
   rescheduleUrl?: string;
@@ -26,6 +32,7 @@ export function PublicBookingConfirmationView({
   durationMinutes,
   slotStart,
   timeZone,
+  conference,
   createsGoogleMeet = true,
   cancelUrl,
   rescheduleUrl,
@@ -73,9 +80,11 @@ export function PublicBookingConfirmationView({
           ) : null}
         </dl>
         <p className="text-sm text-text">
-          {createsGoogleMeet
-            ? "A Google Meet invite is on its way to your email."
-            : "A calendar invite is on its way to your email."}
+          {
+            BOOKING_CONFERENCE_INVITE_COPY[
+              resolveBookingConference(conference, createsGoogleMeet)
+            ]
+          }
         </p>
         {onEditDetails ? (
           <button

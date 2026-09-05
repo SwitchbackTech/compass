@@ -1,5 +1,9 @@
 import { z } from "zod/v4";
 import {
+  type CalendarConference,
+  CalendarConferenceSchema,
+} from "@core/types/calendar.contracts";
+import {
   CalendarIdSchema,
   DateTimeSchema,
   TimeZoneSchema,
@@ -216,6 +220,7 @@ export const PublicBookingPageSchema = z.strictObject({
   maxHorizonDays: z.number().int().positive().max(BOOKING_MAX_HORIZON_DAYS),
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   createsGoogleMeet: z.boolean().default(true),
+  conference: CalendarConferenceSchema.default("meet"),
 });
 export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 
@@ -229,7 +234,7 @@ export const toPublicBookingPage = (
     | "welcomeText"
   >,
   hostDisplayName: string,
-  createsGoogleMeet: boolean,
+  conference: CalendarConference,
 ): PublicBookingPage =>
   PublicBookingPageSchema.parse({
     hostDisplayName,
@@ -238,7 +243,8 @@ export const toPublicBookingPage = (
     enabled: page.enabled,
     maxHorizonDays: page.maxHorizonDays,
     welcomeText: page.welcomeText ?? null,
-    createsGoogleMeet,
+    conference,
+    createsGoogleMeet: conference === "meet",
   });
 
 export const BookingReservationStatusSchema = z.enum([
@@ -314,6 +320,7 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   guestName: z.string().trim().min(1).max(256),
   notes: z.string().trim().max(4000).nullable(),
   createsGoogleMeet: z.boolean().default(true),
+  conference: CalendarConferenceSchema.default("meet"),
 });
 export type PublicGetBookingReservationResponse = z.infer<
   typeof PublicGetBookingReservationResponseSchema

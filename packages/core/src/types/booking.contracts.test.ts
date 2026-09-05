@@ -170,12 +170,13 @@ describe("PublicBookingPageSchema", () => {
       "maxHorizonDays",
       "welcomeText",
       "createsGoogleMeet",
+      "conference",
     ]);
   });
 
   it("projects an admin page without calendar ids or date overrides", () => {
     const admin = BookingPageSchema.parse(fullAdminPage());
-    const pub = toPublicBookingPage(admin, "Tyler Dane", true);
+    const pub = toPublicBookingPage(admin, "Tyler Dane", "meet");
 
     expect(PublicBookingPageSchema.safeParse(pub).success).toBe(true);
     expect(pub).toEqual({
@@ -186,6 +187,7 @@ describe("PublicBookingPageSchema", () => {
       maxHorizonDays: 60,
       welcomeText: null,
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(Object.keys(pub)).not.toContain("destinationCalendarId");
     expect(Object.keys(pub)).not.toContain("blockingCalendarIds");
@@ -410,6 +412,9 @@ describe("HTTP booking contracts", () => {
       PublicGetBookingReservationResponseSchema.parse(publicGet)
         .createsGoogleMeet,
     ).toBe(true);
+    expect(
+      PublicGetBookingReservationResponseSchema.parse(publicGet).conference,
+    ).toBe("meet");
     expect(
       PublicGetBookingReservationResponseSchema.safeParse({
         slotStart: "2026-09-01T15:00:00.000Z",

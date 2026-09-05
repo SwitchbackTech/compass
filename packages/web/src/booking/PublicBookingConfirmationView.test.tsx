@@ -115,7 +115,51 @@ describe("PublicBookingConfirmationView", () => {
     );
 
     expect(
-      screen.getByText("A calendar invite is on its way to your email."),
+      screen.getByText("The calendar invite is on its way to your email."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("A Google Meet invite is on its way to your email."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("promises a Teams invite when the destination conference is teams", () => {
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        conference="teams"
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.getByText("A Microsoft Teams invite is on its way to your email."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("A Google Meet invite is on its way to your email."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("promises a calendar invite when the destination conference is none", () => {
+    render(
+      <PublicBookingConfirmationView
+        cancelUrl={cancelUrl}
+        conference="none"
+        durationMinutes={30}
+        hostDisplayName="Tyler Dane"
+        guestName="Ada Lovelace"
+        notes={null}
+        slotStart={slotStart}
+        timeZone={timeZone}
+      />,
+    );
+
+    expect(
+      screen.getByText("The calendar invite is on its way to your email."),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("A Google Meet invite is on its way to your email."),

@@ -25,6 +25,10 @@ import {
   RescheduleBookingReservationResponseSchema,
   toPublicBookingPage,
 } from "@core/types/booking.contracts";
+import {
+  type CalendarConference,
+  conferenceForProvider,
+} from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
 import {
   BUSY_QUERY_MAX_WINDOW_MS,
@@ -272,8 +276,12 @@ const presentReservation = async (
   reservation: BookingReservationRecord,
   page: BookingPageRecord & { bookingSlug: string },
   hostDisplayName: string,
-): Promise<PublicGetBookingReservationResponse> =>
-  PublicGetBookingReservationResponseSchema.parse({
+): Promise<PublicGetBookingReservationResponse> => {
+  const conference = await destinationConference(
+    page.userId,
+    page.destinationCalendarId,
+  );
+  return PublicGetBookingReservationResponseSchema.parse({
     slotStart: reservation.slotStart.toISOString(),
     guestTimeZone: reservation.guestTimeZone,
     durationMinutes: durationMinutesForReservation(
@@ -285,11 +293,10 @@ const presentReservation = async (
     bookingSlug: page.bookingSlug,
     guestName: reservation.guestName,
     notes: reservation.notes,
-    createsGoogleMeet: await destinationCreatesGoogleMeet(
-      page.userId,
-      page.destinationCalendarId,
-    ),
+    createsGoogleMeet: conference === "meet",
+    conference,
   });
+};
 
 const nextGuestNotes = (
   incoming: string | undefined,
@@ -301,27 +308,38 @@ const nextGuestNotes = (
   return incoming.length > 0 ? incoming : null;
 };
 
-const destinationCreatesGoogleMeet = async (
+const destinationConference = async (
   userId: ObjectId,
   destinationCalendarId: string,
-): Promise<boolean> => {
+): Promise<CalendarConference> => {
   const local = await calendarService.getLocalCalendar(userId);
   if (local && local._id.toHexString() === destinationCalendarId) {
-    return false;
+    return "none";
   }
 
   const client = getSyncServiceClient();
-  const result = await client.listCalendars(toSyncPrincipal(userId.toString()));
-  if (!result.ok) {
-    return true;
+  const principal = toSyncPrincipal(userId.toString());
+  const calendarsResult = await client.listCalendars(principal);
+  if (!calendarsResult.ok) {
+    return "meet";
   }
-  const destination = result.value.calendars.find(
+  const destination = calendarsResult.value.calendars.find(
     (calendar) => (calendar.id as string) === destinationCalendarId,
   );
   if (!destination) {
-    return false;
+    return "none";
   }
-  return destination.createsGoogleMeet !== false;
+
+  const connectionsResult = await client.listConnections(principal);
+  const connection = connectionsResult.ok
+    ? connectionsResult.value.connections.find(
+        (candidate) => candidate.id === destination.connectionId,
+      )
+    : undefined;
+  return conferenceForProvider(
+    connection?.provider ?? "google",
+    destination.createsGoogleMeet !== false,
+  );
 };
 
 /**
@@ -368,12 +386,12 @@ export class PublicBookingService {
     const page = await resolveEnabledPage(slug);
     await assertHostAllowsGuestWrites(page.userId);
     const hostDisplayName = await getHostDisplayName(page.userId);
-    const createsGoogleMeet = await destinationCreatesGoogleMeet(
+    const conference = await destinationConference(
       page.userId,
       page.destinationCalendarId,
     );
     return PublicBookingPageSchema.parse(
-      toPublicBookingPage(page, hostDisplayName, createsGoogleMeet),
+      toPublicBookingPage(page, hostDisplayName, conference),
     );
   }
 

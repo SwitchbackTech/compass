@@ -6,6 +6,7 @@ import { Logger } from "@core/logger/winston.logger";
 const logger = Logger("app:booking.error");
 
 export const BookingErrorCodeSchema = z.enum([
+  "CALENDAR_NOT_CONNECTED",
   "GOOGLE_NOT_CONNECTED",
   "DESTINATION_NOT_WRITABLE",
   "TIMEZONE_REQUIRED",
@@ -20,6 +21,7 @@ export const BookingErrorCodeSchema = z.enum([
 export type BookingErrorCode = z.infer<typeof BookingErrorCodeSchema>;
 
 const STATUS_BY_CODE: Record<BookingErrorCode, Status> = {
+  CALENDAR_NOT_CONNECTED: Status.FORBIDDEN,
   GOOGLE_NOT_CONNECTED: Status.FORBIDDEN,
   DESTINATION_NOT_WRITABLE: Status.FORBIDDEN,
   TIMEZONE_REQUIRED: Status.BAD_REQUEST,
