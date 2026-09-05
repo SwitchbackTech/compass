@@ -265,6 +265,32 @@ Each alias names the release that removes it.
 - Microsoft category colors are read but never written back.
 - Apple freshness depends on polling and is bounded by iCloud rate limits.
 
+## Microsoft Graph event reads
+
+WP-05 spike (Graph documentation, confirmed against the normalizer fixture corpus):
+
+| Endpoint | `type` values returned | Compass use |
+|---|---|---|
+| `GET /me/calendars/{id}/events/delta` | `singleInstance`, `seriesMaster`, `exception` (no `occurrence`) | Primary incremental reader |
+| `GET /me/calendars/{id}/calendarView/delta` | `singleInstance`, `occurrence`, `exception` (expanded instances) | Windowed bootstrap pass only |
+
+Compass reads masters and exceptions, never occurrences. The reader uses
+`events/delta` for full and incremental passes (`startDateTime` bounded to the
+sync horizon: 12 months past through 18 months future). When the import worker
+supplies a bounded working window with both ends, the reader uses
+`calendarView/delta` because `events/delta` does not accept `endDateTime`.
+Occurrence rows from `calendarView/delta` are skipped and counted in `skipped`.
+
+Initial and incremental requests send `Prefer: odata.maxpagesize=200` and
+`outlook.timezone="UTC"`. `@odata.nextLink` becomes `nextPageToken`;
+`@odata.deltaLink` becomes `nextSyncToken` (stored as `syncCursor`). Removed
+items arrive as `{id, "@removed": {reason}}` and map to cancellations. A `410`
+or `syncStateNotFound` response maps to `cursorExpired`.
+
+If a future Graph change returns occurrence-only rows from `events/delta`, fall
+back to `calendarView/delta` over the horizon plus a `GET /me/events/{seriesMasterId}`
+hop for masters, and update this section.
+
 ## Apple polling cadence
 
 Apple has no push channel (`changeNotifications` is absent from the
