@@ -151,11 +151,15 @@ export function createProviderAvailability({
   const setProviderAvailabilityForTests = (
     kind: ProviderKind,
     availability: BackendProviderAvailability,
+    mode?: ProviderAvailabilityMode,
   ) => {
     const ready = availability === "available";
+    const previous = flags[kind];
     flags = {
       ...flags,
-      [kind]: { signIn: ready, connect: ready },
+      [kind]: mode
+        ? { ...previous, [mode]: ready }
+        : { signIn: ready, connect: ready },
     };
     loadPromise = Promise.resolve();
     emit();

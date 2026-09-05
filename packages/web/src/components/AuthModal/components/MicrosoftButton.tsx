@@ -2,26 +2,30 @@ import classNames from "classnames";
 import type React from "react";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
-const MicrosoftLogo = ({ size = 18 }: { size?: number }) => (
+/**
+ * Monochrome Microsoft four-square logo SVG, rendered in currentColor to
+ * match the Google button's single-ink treatment.
+ */
+export const MicrosoftLogo = ({ size = 18 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 21 21"
+    viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <rect x="1" y="1" width="9" height="9" fill="#F25022" />
-    <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
-    <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
-    <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+    <path d="M3 3h8v8H3V3z" fill="currentColor" />
+    <path d="M13 3h8v8h-8V3z" fill="currentColor" />
+    <path d="M3 13h8v8H3v-8z" fill="currentColor" />
+    <path d="M13 13h8v8h-8v-8z" fill="currentColor" />
   </svg>
 );
 
 export const MicrosoftButton = ({
   onClick,
   disabled,
-  label = "Continue with Microsoft",
+  label = "Connect Microsoft",
   shortcutKey,
   style,
 }: {
@@ -44,7 +48,7 @@ export const MicrosoftButton = ({
           : "c-button-elevated cursor-pointer hover:bg-[#f8f8f8]",
       )}
       style={{
-        fontFamily: "'Segoe UI', sans-serif",
+        fontFamily: "'Roboto', sans-serif",
         ...style,
       }}
     >

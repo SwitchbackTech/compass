@@ -233,6 +233,14 @@ describe("WelcomeModal", () => {
 
     await user.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByText("Step 3 of 3")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Connect the calendar you use" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "If you view your calendar in Apple Calendar, it may still be hosted by Google or Microsoft.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
 
@@ -629,6 +637,9 @@ describe("WelcomeModal", () => {
         screen.getByText("Signs you up and connects your Outlook calendar."),
       ).toBeTruthy();
       expect(screen.getByText("You'll pick your calendar next.")).toBeTruthy();
+      expect(
+        screen.queryByRole("button", { name: "Connect Microsoft" }),
+      ).toBeNull();
     });
 
     it("renders only Google when it is the sole configured provider", async () => {
@@ -674,6 +685,34 @@ describe("WelcomeModal", () => {
       await user.keyboard("m");
 
       expect(startMicrosoftAuthorization).toHaveBeenCalled();
+    });
+  });
+
+  describe("with Microsoft connect available", () => {
+    beforeEach(() => {
+      setProviderAvailabilityForTests("microsoft", "available", "connect");
+    });
+
+    afterEach(() => {
+      cleanup();
+      resetProviderAvailabilityForTests();
+    });
+
+    it("offers a Connect Microsoft button and the host explainer", async () => {
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      expect(
+        screen.getByRole("heading", { name: "Connect the calendar you use" }),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Connect Microsoft" }),
+      ).toBeTruthy();
+      await user.click(
+        screen.getByRole("button", { name: "Connect Microsoft" }),
+      );
+      expect(mockOpenModal).toHaveBeenCalledWith("signUp");
     });
   });
 });

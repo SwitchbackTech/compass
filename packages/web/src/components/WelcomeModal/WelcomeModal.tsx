@@ -3,10 +3,16 @@ import { useContext, useEffect, useId, useRef, useState } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
+import {
+  CALENDAR_HOST_EXPLAINER,
+  CONNECT_THE_CALENDAR_YOU_USE,
+} from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
+import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
+import { MicrosoftButton } from "@web/components/AuthModal/components/MicrosoftButton";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
@@ -58,6 +64,16 @@ export function WelcomeModal() {
   const { available, isLoading, loadingKind, startSignIn } =
     useSignInProviders();
   const hasSignInProviders = available.length > 0;
+  const isMicrosoftSignInAvailable = useIsProviderAvailable(
+    "microsoft",
+    "signIn",
+  );
+  const isMicrosoftConnectAvailable = useIsProviderAvailable(
+    "microsoft",
+    "connect",
+  );
+  const showMicrosoftConnectCta =
+    isMicrosoftConnectAvailable && !isMicrosoftSignInAvailable;
   // A ?play= deep link goes straight to the practice game. This initializer
   // runs before ShowcasePlayLink's consume effect can mark welcome seen, so
   // the param itself has to keep this modal closed.
@@ -226,6 +242,9 @@ export function WelcomeModal() {
     if (providerKind) {
       e.preventDefault();
       handOffToProvider(providerKind);
+    } else if (key === "m" && showMicrosoftConnectCta) {
+      e.preventDefault();
+      handOffToAuth("sign_up");
     } else if (key === "u") {
       e.preventDefault();
       handOffToAuth("sign_up");
@@ -356,10 +375,13 @@ export function WelcomeModal() {
           <>
             <div className="flex w-full flex-col gap-2">
               <h2 className="font-bold text-2xl text-text leading-snug">
-                Ready when you are
+                {CONNECT_THE_CALENDAR_YOU_USE}
               </h2>
               <p className="text-text-muted">
                 Pick how you want to start. You can sign up later.
+              </p>
+              <p className="text-text-muted text-xs">
+                {CALENDAR_HOST_EXPLAINER}
               </p>
             </div>
             {/* Connecting a calendar is the moment Compass starts being
@@ -374,6 +396,20 @@ export function WelcomeModal() {
                   onSignIn={handOffToProvider}
                   variant="welcome"
                 />
+              ) : null}
+              {showMicrosoftConnectCta ? (
+                <>
+                  <MicrosoftButton
+                    onClick={() => handOffToAuth("sign_up")}
+                    disabled={isLoading}
+                    label="Connect Microsoft"
+                    shortcutKey="M"
+                    style={{ width: "100%" }}
+                  />
+                  <p className="text-center text-text-muted text-xs">
+                    Create an account, then connect Microsoft from Settings.
+                  </p>
+                </>
               ) : null}
               <button
                 type="button"
