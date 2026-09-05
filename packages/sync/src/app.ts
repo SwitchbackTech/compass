@@ -266,7 +266,13 @@ async function start(): Promise<void> {
     if (posthog) {
       service.shutdown.register("posthog", () => posthog.shutdown());
     }
-    const health = buildHealthSnapshotSweep(service.identity, mongo, posthog);
+    const registry = buildProviderRegistry(config);
+    const health = buildHealthSnapshotSweep(
+      service.identity,
+      mongo,
+      posthog,
+      registry,
+    );
     service.shutdown.register("health", () => health.stop());
     health.start();
 
@@ -353,21 +359,22 @@ function buildPostHogClient(config: SyncConfig): PostHogCaptureClient | null {
 // memory: a restart re-arming the hour is fine for a condition that persisted
 // for nine days, and it keeps a diagnostic counter out of the storage schema.
 const PUSH_SILENCE_ALERT_AFTER_SAMPLES = 12;
-let pushSilenceStreak = 0;
+const pushSilenceStreaks = new Map<string, number>();
 
 function buildHealthSnapshotSweep(
   identity: ReturnType<typeof buildServiceIdentity>,
   mongo: SyncMongoService,
   client: PostHogCaptureClient | null,
+  registry: ProviderRegistry,
 ): SweepScheduler {
   return new SweepScheduler(
     {
       // SweepScheduler always passes `before`; health ignore it and use now.
       sweep: async () => {
         // A single Atlas/DNS blip must not skip the whole 5-minute gauge.
-        const snapshot = await withTransientMongoRetry(() =>
+        const snapshots = await withTransientMongoRetry(() =>
           emitHealthSnapshot({
-            deps: { mongo, identity },
+            deps: { mongo, identity, registry },
             client,
           }),
         );
@@ -386,19 +393,30 @@ function buildHealthSnapshotSweep(
         // sit idle. Firing on the first sample would have cried wolf on the
         // very deploy that FIXED this. Requiring an hour of consecutive
         // samples costs nothing against a nine-day outage.
-        const { neverNotified, healthy, renewSoon } = snapshot.subscriptions;
-        const live = healthy + renewSoon;
-        if (live > 0 && neverNotified >= live) {
-          pushSilenceStreak += 1;
-          if (pushSilenceStreak === PUSH_SILENCE_ALERT_AFTER_SAMPLES) {
-            logger.error(
-              `Sync push delivery looks broken: all ${live} live subscription(s) have gone without a single notification for over an hour. Check that the reverse proxy routes /sync/* to this service.`,
-            );
+        for (const snapshot of snapshots) {
+          if (
+            !registry
+              .get(snapshot.provider)
+              .capabilities.includes("changeNotifications")
+          ) {
+            continue;
           }
-        } else {
-          pushSilenceStreak = 0;
+          const { neverNotified, healthy, renewSoon } = snapshot.subscriptions;
+          const live = healthy + renewSoon;
+          const streakKey = snapshot.provider;
+          if (live > 0 && neverNotified >= live) {
+            const streak = (pushSilenceStreaks.get(streakKey) ?? 0) + 1;
+            pushSilenceStreaks.set(streakKey, streak);
+            if (streak === PUSH_SILENCE_ALERT_AFTER_SAMPLES) {
+              logger.error(
+                `Sync push delivery looks broken for ${snapshot.provider}: all ${live} live subscription(s) have gone without a single notification for over an hour. Check that the reverse proxy routes /sync/* to this service.`,
+              );
+            }
+          } else {
+            pushSilenceStreaks.set(streakKey, 0);
+          }
         }
-        return 1;
+        return snapshots.length;
       },
     },
     {

@@ -269,9 +269,12 @@ backend:
     - https://compass.example.com
 sync:
   callbackBaseUrl: https://compass.example.com
+  credentialEncryptionKey: <32-byte-base64>
 ```
 
-`sync.callbackBaseUrl` is what makes Google Calendar connect and push notifications work — it defaults to `http://localhost:3010` (installer default, fine for local-only setups), which Google can never reach. Skip this if you don't plan to connect Google Calendar.
+`sync.callbackBaseUrl` is what makes Google Calendar and Microsoft Outlook connect and push notifications work. It defaults to `http://localhost:3010` (installer default, fine for local-only setups), which external providers can never reach. Skip this if you do not plan to connect a calendar host.
+
+`sync.credentialEncryptionKey` encrypts OAuth refresh tokens and Apple app-specific passwords at rest. The self-host installer generates it on a fresh install. For key rotation procedure, see [CLI key rotation](../development/cli.md#key-rotation-procedure-only).
 
 ### Apply config changes
 

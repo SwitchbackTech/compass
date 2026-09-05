@@ -26,6 +26,8 @@ flowchart TD
     supertokens[SuperTokens Core<br/>signup, login]
     postgres[(Postgres<br/>auth data)]
     google[Google Calendar]
+    microsoft[Microsoft Outlook]
+    apple[iCloud Calendar]
 
     browser -->|loads Compass| caddy
     caddy -->|web traffic| web
@@ -37,10 +39,14 @@ flowchart TD
     backend --> supertokens
     sync -->|Docker volume, own database| mongo
     sync <-->|OAuth, push notifications| google
+    sync <-->|OAuth, push notifications| microsoft
+    sync <-->|CalDAV, polling| apple
     supertokens -->|Docker volume| postgres
 ```
 
-Compass Sync owns Google Calendar sync end to end (OAuth, webhooks, and incremental pulls) in its own isolated database on the same bundled MongoDB — the backend never reads Google credentials directly. Sign-in with Google is the one exception: it stays a direct backend↔Google exchange, separate from calendar sync.
+Compass Sync owns calendar sync end to end (OAuth or app-specific password, webhooks or polling, and incremental pulls) in its own isolated database on the same bundled MongoDB. The backend never reads provider credentials directly. Sign-in with Google, Microsoft, or Apple stays a direct backend exchange, separate from calendar connect.
+
+Google and Microsoft use push notifications for near-real-time updates. Apple has no push channel, so Sync polls iCloud on a dedicated reconcile sweep (see [Calendar providers](../features/calendar-providers.md#apple-polling-cadence)).
 
 ## Start here
 
