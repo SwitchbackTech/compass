@@ -143,9 +143,10 @@ jobs:
           GOOGLE_CLIENT_ID: test-client-id
           API_BASEURL: http://localhost:3000/api
           SPECS: ${{ matrix.specs }}
-        # Unquoted on purpose: each directory is a separate file filter.
-        # shellcheck disable=SC2086
-        run: bunx playwright test $SPECS
+        run: |
+          # Unquoted on purpose: each directory is a separate file filter.
+          # shellcheck disable=SC2086
+          bunx playwright test $SPECS
 
   # The one required status check. Reports success when every shard passed
   # or when the `changes` gate skipped them all, and fails on a shard
