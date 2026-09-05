@@ -5,6 +5,7 @@ import {
   type SessionContainerInterface,
   type VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
+import { Status } from "@core/errors/status.codes";
 import {
   type LoggerFactoryFn,
   registerLoggerFactory,
@@ -62,7 +63,7 @@ function createTestVerifySession(): ReturnType<
   typeof import("supertokens-node/recipe/session/framework/express").verifySession
 > {
   return (_options?: VerifySessionOptions) => {
-    return (req: SessionRequest, _res: Response, next?: NextFunction) => {
+    return (req: SessionRequest, res: Response, next?: NextFunction) => {
       try {
         const cookies = (req.headers.cookie?.split(";") ?? [])?.reduce(
           (items, item) => {
@@ -74,6 +75,10 @@ function createTestVerifySession(): ReturnType<
         );
 
         const sessionString = cookies["session"];
+        if (typeof sessionString !== "string") {
+          res.status(Status.UNAUTHORIZED).json({ message: "Session required" });
+          return;
+        }
         const now = new Date();
         const tId = randomUUID();
         const sessionHandle = randomUUID();

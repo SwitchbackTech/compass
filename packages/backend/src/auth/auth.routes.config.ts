@@ -1,8 +1,22 @@
 import type express from "express";
+import rateLimit from "express-rate-limit";
 import { verifySession } from "@backend/auth/session/session.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authController from "./controllers/auth.controller";
 import authMiddleware from "./middleware/auth.middleware";
+
+export const credentialConnectLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const session = (
+      req as express.Request & { session?: { getUserId(): string } }
+    ).session;
+    return session?.getUserId() ?? req.ip ?? "anonymous";
+  },
+});
 
 /**
  * Routes with the verifyIsDev middleware are
@@ -33,6 +47,13 @@ export class AuthRoutes extends CommonRoutesConfig {
       .all(requireSession)
       .post((req, res) => {
         authController.beginConnection(req, res);
+      });
+
+    this.app
+      .route(`/api/auth/connections/credential`)
+      .all(requireSession)
+      .post(credentialConnectLimiter, (req, res) => {
+        authController.connectCredential(req, res);
       });
 
     this.app

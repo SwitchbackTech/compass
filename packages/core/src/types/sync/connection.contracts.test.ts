@@ -5,6 +5,8 @@ import {
   ConnectionBeginFeaturesSchema,
   ConnectionBeginRequestSchema,
   ConnectionBeginResponseSchema,
+  ConnectionCredentialRequestSchema,
+  ConnectionCredentialResponseSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
   GoogleConnectionAdoptionRequestSchema,
@@ -278,6 +280,54 @@ describe("Sync connection contracts", () => {
         kind: "redirect",
         authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
       });
+    });
+  });
+
+  describe("ConnectionCredentialRequestSchema", () => {
+    it("accepts an Apple credential envelope", () => {
+      expect(
+        ConnectionCredentialRequestSchema.safeParse({
+          provider: "apple",
+          envelope: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+        }).success,
+      ).toBe(true);
+    });
+
+    it("rejects other providers and unknown fields", () => {
+      expect(
+        ConnectionCredentialRequestSchema.safeParse({
+          provider: "google",
+          envelope: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+        }).success,
+      ).toBe(false);
+      expect(
+        ConnectionCredentialRequestSchema.safeParse({
+          provider: "apple",
+          envelope: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+          principalId: objectId(),
+        }).success,
+      ).toBe(false);
+    });
+  });
+
+  describe("ConnectionCredentialResponseSchema", () => {
+    it("accepts a connection id", () => {
+      const connectionId = objectId();
+      expect(
+        ConnectionCredentialResponseSchema.parse({ connectionId }),
+      ).toEqual({ connectionId });
     });
   });
 

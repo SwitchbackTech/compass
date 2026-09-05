@@ -103,7 +103,7 @@ describe("UserController", () => {
     it("should not delete anyone when there is no session", async () => {
       const { user } = await UtilDriver.setupTestUser();
 
-      await userDriver.deleteAccount(undefined, Status.INTERNAL_SERVER);
+      await userDriver.deleteAccount(undefined, Status.UNAUTHORIZED);
 
       expect(await mongoService.user.findOne({ _id: user._id })).not.toBeNull();
     });
