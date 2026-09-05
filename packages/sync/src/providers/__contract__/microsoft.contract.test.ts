@@ -1,9 +1,15 @@
 import { generateKeyPair, type KeyLike, SignJWT } from "jose";
+import { defaultCorpusDir } from "@sync/providers/__contract__/adapter-contract";
 import { type AuthContractCase } from "@sync/providers/__contract__/auth.contract";
 import exchangeFixture from "@sync/providers/__contract__/fixtures/microsoft/exchange-success.json";
 import normalizerFixture from "@sync/providers/__contract__/fixtures/microsoft/normalizer.json";
 import refreshRevokedFixture from "@sync/providers/__contract__/fixtures/microsoft/refresh-invalid-grant.json";
 import refreshSuccessFixture from "@sync/providers/__contract__/fixtures/microsoft/refresh-success.json";
+import {
+  defaultMicrosoftReaderCorpus,
+  microsoftReaderMasterCategories,
+  microsoftRecordedReader,
+} from "@sync/providers/__contract__/microsoft-contract.factory";
 import {
   MicrosoftAuthAdapter,
   type MicrosoftIdTokenVerifier,
@@ -16,6 +22,10 @@ import {
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { ProviderEventError } from "@sync/providers/provider-event.port";
+import {
+  type ProviderEventReadError,
+  type ProviderEventReader,
+} from "@sync/providers/provider-event-reader.port";
 
 const CLIENT_ID = "microsoft-client-id";
 const CLIENT_SECRET = "microsoft-client-secret";
@@ -264,3 +274,77 @@ describe("microsoft normalizer contract", () => {
     expect(read.content.colorHex).toBe("#0078D4");
   });
 });
+
+const readerCorpusDir = defaultCorpusDir("microsoft");
+const readerAdapter = microsoftRecordedReader(readerCorpusDir);
+const readerCorpus = defaultMicrosoftReaderCorpus();
+
+describe("microsoft reader contract", () => {
+  it("pages, yields nextSyncToken only at the end, and counts skipped events", async () => {
+    const first = await readerAdapter.listEventPage({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      colorLabels: microsoftReaderMasterCategories(),
+    });
+    expect(first.skipped).toBeGreaterThanOrEqual(1);
+
+    let page = first;
+    let pages = 1;
+    while (page.nextPageToken) {
+      expect(page.nextSyncToken).toBeNull();
+      page = await readerAdapter.listEventPage({
+        accessToken: "contract-access-token",
+        calendarId: "primary",
+        pageToken: page.nextPageToken,
+        colorLabels: microsoftReaderMasterCategories(),
+      });
+      pages += 1;
+    }
+    expect(pages).toBe(2);
+    expect(page.nextPageToken).toBeNull();
+    expect(page.nextSyncToken).toBe(readerCorpus.page2.deltaLink);
+  });
+
+  it("maps an expired cursor to cursorExpired", async () => {
+    try {
+      await readerAdapter.listEventPage({
+        accessToken: "contract-access-token",
+        calendarId: "primary",
+        cursor: readerCorpus.expiredDeltaLink,
+      });
+      throw new Error("expected cursorExpired");
+    } catch (caught) {
+      expect((caught as ProviderEventReadError).reason).toBe("cursorExpired");
+    }
+  });
+
+  it("keeps masters and exceptions and does not expand occurrences", async () => {
+    const events = await collectReaderEvents(readerAdapter);
+    const masters = events.filter(
+      (event) =>
+        event.kind === "event" && event.recurrence.kind === "seriesMaster",
+    );
+    const instances = events.filter(
+      (event) => event.kind === "event" && event.recurrence.kind === "instance",
+    );
+    expect(masters.length).toBeGreaterThanOrEqual(1);
+    expect(instances.length).toBeGreaterThanOrEqual(1);
+    expect(instances.length).toBeLessThan(5);
+  });
+});
+
+async function collectReaderEvents(reader: ProviderEventReader) {
+  const events = [];
+  let pageToken: string | null = null;
+  do {
+    const page = await reader.listEventPage({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      pageToken,
+      colorLabels: microsoftReaderMasterCategories(),
+    });
+    events.push(...page.events);
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return events;
+}
