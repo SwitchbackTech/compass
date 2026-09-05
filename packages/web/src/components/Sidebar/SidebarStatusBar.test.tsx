@@ -5,7 +5,7 @@ import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
-import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { type GoogleUiState } from "@web/auth/providers/connect.types";
 import {
   initialFirstEventPromptState,
   useFirstEventPromptStore,
@@ -57,13 +57,13 @@ import {
 // AccountSectionHeader.test.tsx - the real hook is captured up front and a
 // flag (flipped in afterAll) decides which one runs.
 const actualUseConnectGoogle = (
-  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+  await import("@web/auth/providers/useConnectProvider")
 ).useConnectGoogle;
 let isConnectGoogleMocked = true;
 let googleState: GoogleUiState = "HEALTHY";
 let isConnecting = false;
 let connection: GoogleSyncConnectionSummary | null = null;
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+mock.module("@web/auth/providers/useConnectProvider", () => ({
   useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
       ? {

@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/providers/useConnectProvider";
 import {
   rememberPendingDelayed,
   shouldDeferAttentionToasts,

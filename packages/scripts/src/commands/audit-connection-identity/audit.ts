@@ -1,8 +1,9 @@
-import { type Db } from "mongodb";
+import { type Db, type WithId } from "mongodb";
 import {
   type ProviderKind,
   ProviderKindSchema,
 } from "@core/types/sync/identity.contracts";
+import { type Schema_User } from "@core/types/user.types";
 import { Collections } from "@backend/common/constants/collections";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 
@@ -30,19 +31,6 @@ export type AuditConnectionIdentityOptions = {
   /** When omitted, every provider kind is audited. */
   provider?: ProviderKind;
 };
-
-interface UserLoginIdentityDoc {
-  provider: ProviderKind;
-  subjectId: string;
-  email?: string;
-}
-
-interface UserLoginDoc {
-  _id: unknown;
-  email: string;
-  google?: { googleId?: string };
-  identities?: UserLoginIdentityDoc[];
-}
 
 interface ConnectionDoc {
   _id: unknown;
@@ -91,7 +79,7 @@ function connectionQuery(providers: readonly ProviderKind[]) {
 }
 
 function indexUserLoginIdentities(
-  user: UserLoginDoc,
+  user: WithId<Schema_User>,
   providers: ReadonlySet<ProviderKind>,
   loginByKey: Map<string, { userId: string; email: string }>,
 ): void {
@@ -138,7 +126,7 @@ export async function auditConnectionIdentity(
   const loginByKey = new Map<string, { userId: string; email: string }>();
 
   const users = compassDb
-    .collection<UserLoginDoc>(Collections.USER)
+    .collection<Schema_User>(Collections.USER)
     .find(userLoginQuery(providers));
   for await (const user of users) {
     indexUserLoginIdentities(user, providerSet, loginByKey);

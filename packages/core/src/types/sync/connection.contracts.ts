@@ -246,6 +246,17 @@ export type CredentialConnectPayload = z.infer<
   typeof CredentialConnectPayloadSchema
 >;
 
+// Browser-submitted credential connect body over HTTPS. The Compass API
+// seals this into an envelope before forwarding to Sync.
+export const ConnectionCredentialBrowserRequestSchema = z.strictObject({
+  provider: z.literal("apple"),
+  username: CredentialConnectPayloadSchema.shape.username,
+  secret: CredentialConnectPayloadSchema.shape.secret,
+});
+export type ConnectionCredentialBrowserRequest = z.infer<
+  typeof ConnectionCredentialBrowserRequestSchema
+>;
+
 // Session-authed Compass API and Sync-internal credential connect body. The
 // principal always comes from the signed session / internal auth, never the
 // body.
@@ -255,6 +266,14 @@ export const ConnectionCredentialRequestSchema = z.strictObject({
 });
 export type ConnectionCredentialRequest = z.infer<
   typeof ConnectionCredentialRequestSchema
+>;
+
+export const ConnectionCredentialSubmitRequestSchema = z.union([
+  ConnectionCredentialBrowserRequestSchema,
+  ConnectionCredentialRequestSchema,
+]);
+export type ConnectionCredentialSubmitRequest = z.infer<
+  typeof ConnectionCredentialSubmitRequestSchema
 >;
 
 export const ConnectionCredentialResponseSchema = z.strictObject({

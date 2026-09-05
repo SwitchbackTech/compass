@@ -1,5 +1,19 @@
 import type SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
+import { type ProviderKind } from "./sync/identity.contracts";
 import { type WithId } from "./type.utils";
+
+/**
+ * One login method on a Compass user. Identity is `(provider, subjectId)`;
+ * `email` is display data and is never the lookup key by itself.
+ */
+export interface Schema_UserIdentity {
+  provider: ProviderKind;
+  subjectId: string;
+  email: string;
+  displayName?: string;
+  picture?: string;
+  linkedAt: Date;
+}
 
 export interface Schema_User {
   email: string;
@@ -7,6 +21,11 @@ export interface Schema_User {
   lastName: string;
   name: string;
   locale: string;
+  /**
+   * Login methods linked to this Compass user. `google.googleId` stays
+   * populated for one release while rows are dual-written and backfilled.
+   */
+  identities?: Schema_UserIdentity[];
   google?: {
     googleId: string;
     picture: string;

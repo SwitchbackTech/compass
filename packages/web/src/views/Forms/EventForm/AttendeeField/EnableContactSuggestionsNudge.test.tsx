@@ -28,7 +28,7 @@ import {
 // wire threading is covered by useConnectGoogle.scope.test.tsx, which runs
 // before any module mock exists.
 const actualUseConnectGoogle = (
-  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+  await import("@web/auth/providers/useConnectProvider")
 ).useConnectGoogle;
 let isConnectGoogleMocked = true;
 const connectMock = mock();
@@ -44,7 +44,7 @@ const mockUseConnectGoogle = mock(
     state: "HEALTHY" as const,
   }),
 );
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+mock.module("@web/auth/providers/useConnectProvider", () => ({
   useConnectGoogle: (
     ...args: Parameters<typeof actualUseConnectGoogle>
   ): ReturnType<typeof actualUseConnectGoogle> =>

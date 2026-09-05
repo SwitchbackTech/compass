@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import * as userQueries from "@backend/user/queries/user.queries";
 import {
   determineGoogleAuthMode,
+  determineThirdPartyAuthMode,
   parseReconnectGoogleParams,
 } from "./google.auth.util";
 import { describe, expect, it, spyOn } from "bun:test";
@@ -22,7 +23,8 @@ describe("determineGoogleAuthMode", () => {
     });
 
     expect(userQueries.findCanonicalCompassUser).toHaveBeenCalledWith({
-      googleUserId,
+      provider: "google",
+      subjectId: googleUserId,
       email: null,
     });
   });
@@ -54,8 +56,30 @@ describe("determineGoogleAuthMode", () => {
     });
 
     expect(userQueries.findCanonicalCompassUser).toHaveBeenCalledWith({
-      googleUserId,
+      provider: "google",
+      subjectId: googleUserId,
       email: " Existing@Example.com ",
+    });
+  });
+});
+
+describe("determineThirdPartyAuthMode", () => {
+  it("looks up by provider subject and returns the same SIGNUP / SIGNIN outcomes", async () => {
+    const subjectId = faker.string.uuid();
+    spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValue(null);
+
+    await expect(
+      determineThirdPartyAuthMode("microsoft", subjectId, null, true),
+    ).resolves.toEqual({
+      authMode: "SIGNUP",
+      compassUserId: null,
+      createdNewRecipeUser: true,
+    });
+
+    expect(userQueries.findCanonicalCompassUser).toHaveBeenCalledWith({
+      provider: "microsoft",
+      subjectId,
+      email: null,
     });
   });
 });

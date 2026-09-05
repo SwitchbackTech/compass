@@ -12,7 +12,7 @@ import { AuthApi } from "@web/api/auth.api";
 import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";

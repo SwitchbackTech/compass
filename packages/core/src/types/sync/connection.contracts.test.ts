@@ -7,6 +7,7 @@ import {
   ConnectionBeginResponseSchema,
   ConnectionCredentialRequestSchema,
   ConnectionCredentialResponseSchema,
+  ConnectionCredentialSubmitRequestSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
   GoogleConnectionAdoptionRequestSchema,
@@ -293,6 +294,16 @@ describe("Sync connection contracts", () => {
             ciphertext: "Y2lwaGVydGV4dA==",
             authTag: "dGFn",
           },
+        }).success,
+      ).toBe(true);
+    });
+
+    it("accepts a browser credential payload in the submit union", () => {
+      expect(
+        ConnectionCredentialSubmitRequestSchema.safeParse({
+          provider: "apple",
+          username: "user@icloud.com",
+          secret: "app-specific-password",
         }).success,
       ).toBe(true);
     });

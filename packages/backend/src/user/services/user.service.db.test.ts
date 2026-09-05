@@ -85,6 +85,13 @@ describe("UserService", () => {
       expect(storedUser?.google?.googleId).toBe(gUser.sub);
       // The credential lives only in Sync now.
       expect(storedUser?.google?.gRefreshToken).toBeUndefined();
+      expect(storedUser?.identities).toEqual([
+        expect.objectContaining({
+          provider: "google",
+          subjectId: gUser.sub,
+          email: gUser.email,
+        }),
+      ]);
     });
   });
 
@@ -124,7 +131,8 @@ describe("UserService", () => {
 
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: user.google?.googleId,
+          provider: "google",
+          subjectId: user.google?.googleId,
           email: faker.internet.email(),
         }),
       ).resolves.toBe(user._id.toString());
@@ -135,12 +143,16 @@ describe("UserService", () => {
       const normalizedEmail = user.email.toLowerCase();
       await mongoService.user.updateOne(
         { _id: user._id },
-        { $set: { email: normalizedEmail }, $unset: { google: "" } },
+        {
+          $set: { email: normalizedEmail },
+          $unset: { google: "", identities: "" },
+        },
       );
 
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: faker.string.uuid(),
+          provider: "google",
+          subjectId: faker.string.uuid(),
           email: ` ${normalizedEmail.toUpperCase()} `,
         }),
       ).resolves.toBe(user._id.toString());
@@ -149,7 +161,8 @@ describe("UserService", () => {
     it("returns null when neither lookup finds a Compass user", async () => {
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: faker.string.uuid(),
+          provider: "google",
+          subjectId: faker.string.uuid(),
           email: faker.internet.email(),
         }),
       ).resolves.toBeNull();

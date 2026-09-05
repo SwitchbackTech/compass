@@ -14,6 +14,8 @@ import {
   connectionHasReconnectRequired,
   getGoogleConnectionConfig,
 } from "@web/auth/providers/connect.util";
+import { connectAppleActions } from "@web/auth/providers/connect-apple.store";
+import { usesCredentialFormConnect } from "@web/auth/providers/provider-connect-flow.util";
 import {
   connectionProvider,
   relabelConnectCommand,
@@ -25,6 +27,7 @@ import {
 } from "@web/auth/providers/sync.refresh";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { useGoogleUiState } from "@web/auth/providers/useProviderUiState";
+import { finishCredentialConnect } from "@web/auth/providers/useSubmitAppleCredential";
 import {
   selectSyncConnections,
   useUserMetadataStore,
@@ -111,12 +114,21 @@ export const useConnectProvider = (
       return;
     }
 
+    settingsActions.closeCmdPalette();
+
+    if (usesCredentialFormConnect(kind)) {
+      const prefillEmail =
+        syncConnection?.stateReason === "authorizationExpired"
+          ? (syncConnection.accountEmail ?? "")
+          : "";
+      connectAppleActions.open(prefillEmail);
+      return;
+    }
+
     isConnectingRef.current = true;
     setIsConnecting(true);
 
     const start = async () => {
-      settingsActions.closeCmdPalette();
-
       try {
         const beginRequest = {
           ...(options?.newAccount ||
@@ -133,6 +145,10 @@ export const useConnectProvider = (
           window.location.assign(result.authorizationUrl);
           return;
         }
+        if (result.kind === "connected") {
+          finishCredentialConnect(kind);
+          void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+        }
         stopConnecting();
       } catch {
         stopConnecting();
@@ -148,9 +164,12 @@ export const useConnectProvider = (
     kind,
     options?.features,
     options?.newAccount,
+    queryClient,
     state,
     stopConnecting,
+    syncConnection?.accountEmail,
     syncConnection?.id,
+    syncConnection?.stateReason,
   ]);
 
   const onRefresh = useCallback(

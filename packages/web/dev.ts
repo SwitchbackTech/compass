@@ -1,6 +1,5 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
-import { LEGACY_GOOGLE_MODULE_ALIASES } from "./legacy-google-aliases";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { watch } from "node:fs";
 import path from "node:path";
@@ -63,7 +62,6 @@ async function build() {
     define,
     plugins: [postcssPlugin],
     publicPath: "/",
-    alias: LEGACY_GOOGLE_MODULE_ALIASES,
   });
 
   if (!result.success) {
