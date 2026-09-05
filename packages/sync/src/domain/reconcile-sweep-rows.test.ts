@@ -3,7 +3,11 @@ import {
   type ProviderKind,
 } from "@core/types/sync/identity.contracts";
 import {
+  RECONCILE_STALE_AFTER_MS_APPLE_DEFAULT,
   RECONCILE_STALE_AFTER_MS_DEFAULT,
+  RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT,
+  RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT,
+  RECONCILE_SWEEP_LIMIT_DEFAULT,
   SyncConfigSchema,
 } from "@sync/config/sync.config";
 import {
@@ -59,16 +63,44 @@ describe("buildReconcileSweepRows", () => {
       {
         name: "reconcile",
         windowMs: -RECONCILE_STALE_AFTER_MS_DEFAULT,
+        limit: RECONCILE_SWEEP_LIMIT_DEFAULT,
         listOptions: {},
       },
     ]);
   });
 
-  it("splits poll-only providers into dedicated rows with distinct cadence", () => {
+  it("splits poll-only providers into dedicated rows with Apple defaults", () => {
+    const registry = fakeRegistry({
+      google: ["readEvents", "changeNotifications"],
+      apple: ["readEvents", "incrementalChanges"],
+    });
+
+    const rows = buildReconcileSweepRows(registry, baseConfig);
+
+    expect(pollOnlyProviderKinds(registry)).toEqual(["apple"]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      name: "reconcile",
+      windowMs: -RECONCILE_STALE_AFTER_MS_DEFAULT,
+      limit: RECONCILE_SWEEP_LIMIT_DEFAULT,
+      listOptions: { excludeProviders: ["apple"] },
+    });
+    expect(rows[1]).toMatchObject({
+      name: "reconcile-apple",
+      windowMs: -RECONCILE_STALE_AFTER_MS_APPLE_DEFAULT,
+      intervalMs: RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT,
+      limit: RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT,
+      listOptions: { provider: "apple" },
+    });
+    expect(rows[0]?.intervalMs).not.toBe(rows[1]?.intervalMs);
+  });
+
+  it("honors per-provider overrides for stale window, interval, and limit", () => {
     const config = SyncConfigSchema.parse({
       ...baseConfig,
       reconcileStaleAfterMsByKind: { apple: 90_000 },
       reconcileSweepIntervalMsByKind: { apple: 60_000 },
+      reconcileSweepLimitByKind: { apple: 250 },
     });
     const registry = fakeRegistry({
       google: ["readEvents", "changeNotifications"],
@@ -77,39 +109,30 @@ describe("buildReconcileSweepRows", () => {
 
     const rows = buildReconcileSweepRows(registry, config);
 
-    expect(pollOnlyProviderKinds(registry)).toEqual(["apple"]);
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({
-      name: "reconcile",
-      windowMs: -RECONCILE_STALE_AFTER_MS_DEFAULT,
-      listOptions: { excludeProviders: ["apple"] },
-    });
     expect(rows[1]).toMatchObject({
       name: "reconcile-apple",
       windowMs: -90_000,
       intervalMs: 60_000,
+      limit: 250,
       listOptions: { provider: "apple" },
     });
-    expect(rows[0]?.intervalMs).not.toBe(rows[1]?.intervalMs);
   });
 
   it("runs default and poll-only reconcile schedulers on separate intervals", async () => {
-    const config = SyncConfigSchema.parse({
-      ...baseConfig,
-      reconcileSweepIntervalMsByKind: { apple: 30_000 },
-    });
     const registry = fakeRegistry({
       google: ["readEvents", "changeNotifications"],
       apple: ["readEvents"],
     });
-    const rows = buildReconcileSweepRows(registry, config);
+    const rows = buildReconcileSweepRows(registry, baseConfig);
     const ran: string[] = [];
+    const limits: number[] = [];
 
     for (const row of rows) {
       const scheduler = new SweepScheduler(
         {
-          sweep: async () => {
+          sweep: async (_before) => {
             ran.push(row.name);
+            limits.push(row.limit);
             return 0;
           },
         },
@@ -123,8 +146,13 @@ describe("buildReconcileSweepRows", () => {
     }
 
     expect(ran).toEqual(["reconcile", "reconcile-apple"]);
+    expect(limits).toEqual([
+      RECONCILE_SWEEP_LIMIT_DEFAULT,
+      RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT,
+    ]);
     expect(rows.map((row) => row.intervalMs ?? 600_000)).toEqual([
-      600_000, 30_000,
+      600_000,
+      RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT,
     ]);
   });
 });

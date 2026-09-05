@@ -81,7 +81,9 @@ Foundation work adds:
   `parseNotification`, which also answers Microsoft's validation handshake.
 - Poll-only providers: subscription maintenance settles `unsupported` when the
   registry says `changeNotifications: false`, and a per-provider reconcile
-  sweep row sets the polling cadence.
+  sweep row sets the polling cadence. Apple uses a dedicated row with a 60 s
+  stale window, a 30 s sweep interval (±20% jitter), and a batch limit of 500
+  calendars per cycle.
 - Credentials discriminated on `credentialKind: "oauthRefresh" | "password"`.
   Password credentials are encrypted at rest with `sync.credentialEncryptionKey`.
 
@@ -140,6 +142,41 @@ by Google or Microsoft."
   milestone C splits it per provider.
 - Microsoft category colors are read but never written back.
 - Apple freshness depends on polling and is bounded by iCloud rate limits.
+
+## Apple polling cadence
+
+Apple has no push channel (`changeNotifications: false`). Freshness comes from
+the dedicated `reconcile-apple` sweep row in the sync service.
+
+| Setting | Default | Env override |
+|---|---|---|
+| Stale threshold | 60 s | `RECONCILE_STALE_AFTER_MS_APPLE` |
+| Sweep interval | 30 s (±20% jitter) | `RECONCILE_SWEEP_INTERVAL_MS_APPLE` |
+| Batch limit | 500 calendars per sweep | `RECONCILE_SWEEP_LIMIT_APPLE` |
+
+When a connection has N calendars, the effective per-calendar cadence is:
+
+`cadence = interval × ceil(N / limit)`
+
+Example: 1,000 calendars at limit 500 and interval 30 s needs two cycles, so
+each calendar is eligible roughly every 60 s (plus the 60 s stale window).
+
+### Throttle measurement
+
+Founder soak uses `bun run cli apple-poll-throttle` with
+`SMOKE_APPLE_EMAIL` and `SMOKE_APPLE_APP_PASSWORD`. The script polls one
+calendar with RFC 6578 `sync-collection` every `--interval-seconds` for
+`--duration-seconds` (default 30 minutes) and records HTTP status codes.
+
+| Measurement | Value |
+|---|---|
+| Shortest interval without 429/503 over 30 min | pending founder soak (`apple-poll-throttle`) |
+| Provisional floor (pre-soak) | 20 s |
+| Chosen default interval (1.5× provisional floor) | 30 s |
+| Chosen stale threshold | 60 s |
+
+Re-run the probe after iCloud behavior changes and replace the provisional
+floor with the measured minimum.
 
 ## Deferred
 

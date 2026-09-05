@@ -590,6 +590,7 @@ function buildSchedulers(
           (r, n) => resourceJob(r, "incrementalPull", n()),
           before,
           () => new Date(),
+          row.limit,
         );
         if (enqueued > 0) {
           logger.info(`Sync ${row.name} sweep enqueued ${enqueued} pull(s)`);
