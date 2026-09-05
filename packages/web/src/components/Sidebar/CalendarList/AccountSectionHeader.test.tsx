@@ -19,7 +19,12 @@ const onSelect = mock();
 const commandActionFor = (state: GoogleUiState, provider = "google") =>
   state === "RECONNECT_REQUIRED"
     ? {
-        label: `Reconnect ${provider === "google" ? "Google" : "Microsoft"} Calendar`,
+        label:
+          provider === "google"
+            ? "Reconnect Google Calendar"
+            : provider === "microsoft"
+              ? "Reconnect Outlook"
+              : "Reconnect Apple Calendar",
         onSelect,
       }
     : null;
@@ -144,7 +149,7 @@ describe("AccountSectionHeader", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: `Reconnect Microsoft Calendar for ${EMAIL}`,
+        name: `Reconnect Outlook for ${EMAIL}`,
       }),
     );
     expect(onSelect).toHaveBeenCalledTimes(1);

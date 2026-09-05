@@ -3,12 +3,12 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import "./common/styles/toastify-theme.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
-import { configureGoogleRevocationApiHandler } from "@web/auth/providers/revocation-api.config";
 import {
   readConnectStatus,
   refreshUserMetadataAfterConnect,
   showConnectStatusToast,
 } from "@web/auth/providers/connect-status.util";
+import { configureGoogleRevocationApiHandler } from "@web/auth/providers/revocation-api.config";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,

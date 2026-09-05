@@ -30,7 +30,7 @@ import {
 const actualUseConnectProvider = (
   await import("@web/auth/providers/useConnectProvider")
 ).useConnectProvider;
-const isConnectProviderMocked = true;
+let isConnectProviderMocked = true;
 const connectMock = mock();
 const mockUseConnectProvider = mock(
   (..._args: Parameters<typeof actualUseConnectProvider>) => ({
