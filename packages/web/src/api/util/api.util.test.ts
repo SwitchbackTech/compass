@@ -323,6 +323,26 @@ describe("handleErrorResponse", () => {
     expect(onGoogleRevoked).toHaveBeenCalledWith({ calendarId: "cal-123" });
   });
 
+  it.each([
+    Status.UNAUTHORIZED,
+    Status.GONE,
+  ])("delegates connection revocation for status %s and rethrows the API error", async (status) => {
+    const onGoogleRevoked = mock();
+    const error = createApiError(
+      {
+        data: { code: "CONNECTION_REVOKED" },
+        status,
+      },
+      { body: { calendarId: "cal-456" } },
+    );
+
+    await expect(handleErrorResponse(error, { onGoogleRevoked })).rejects.toBe(
+      error,
+    );
+
+    expect(onGoogleRevoked).toHaveBeenCalledWith({ calendarId: "cal-456" });
+  });
+
   it("does not delegate unrelated API errors", async () => {
     const onGoogleRevoked = mock();
     const error = createApiError(

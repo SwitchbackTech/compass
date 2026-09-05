@@ -108,17 +108,23 @@ const setupTwoAccountWeek = async (page: Page) => {
     }
     if (pathname.endsWith("/api/user/metadata")) {
       return json({
+        connections: [
+          connection("conn-work", WORK_EMAIL),
+          connection("conn-personal", PERSONAL_EMAIL),
+        ],
         google: {
           connectionState: "HEALTHY",
-          connections: [
-            connection("conn-work", WORK_EMAIL),
-            connection("conn-personal", PERSONAL_EMAIL),
-          ],
         },
       });
     }
     if (pathname.endsWith("/api/config")) {
-      return json({ google: { isConfigured: true } });
+      return json({
+        providers: {
+          google: { signIn: true, connect: true },
+          microsoft: { signIn: false, connect: false },
+          apple: { signIn: false, connect: false },
+        },
+      });
     }
     if (pathname.endsWith("/api/calendars/availability")) {
       return json({ busyPeriods: [] });

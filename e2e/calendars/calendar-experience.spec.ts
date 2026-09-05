@@ -252,10 +252,19 @@ async function setupCalendarExperiencePage(
       });
     }
     if (pathname.endsWith("/api/user/metadata")) {
-      return json({ google: { connectionState: "HEALTHY" } });
+      return json({
+        connections: [],
+        google: { connectionState: "HEALTHY" },
+      });
     }
     if (pathname.endsWith("/api/config")) {
-      return json({ google: { isConfigured: true } });
+      return json({
+        providers: {
+          google: { signIn: true, connect: true },
+          microsoft: { signIn: false, connect: false },
+          apple: { signIn: false, connect: false },
+        },
+      });
     }
     if (pathname.endsWith("/api/calendars/availability")) {
       return json({ busyPeriods: [] });

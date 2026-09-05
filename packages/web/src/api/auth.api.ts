@@ -31,8 +31,8 @@ const AuthApi = {
     request: ConnectionBeginRequest = {},
   ): Promise<{ authorizationUrl: string }> {
     const response = await BaseApi.post<ConnectionBeginResponse>(
-      `/auth/google/connect/begin`,
-      request,
+      `/auth/connections/begin`,
+      { ...request, provider: "google" },
     );
 
     const parsed = ConnectionBeginResponseSchema.parse(response.data);
@@ -63,14 +63,14 @@ const AuthApi = {
   // their Compass sign-in, are unaffected.
   async disconnectGoogleConnection(connectionId: string): Promise<void> {
     await BaseApi.delete(
-      `/auth/google/connect/${encodeURIComponent(connectionId)}`,
+      `/auth/connections/${encodeURIComponent(connectionId)}`,
     );
   },
 
   // Enqueue Sync catch-up pulls for the signed-in user's calendars.
   async refreshGoogleSync(): Promise<ConnectionRefreshResponse> {
     const response = await BaseApi.post<ConnectionRefreshResponse>(
-      `/auth/google/sync/refresh`,
+      `/auth/connections/refresh`,
       {},
     );
 

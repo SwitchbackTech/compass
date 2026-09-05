@@ -8,6 +8,7 @@ import {
 } from "@web/auth/google/state/google.reconnect.state";
 import {
   findPrimaryGoogleSyncConnectionFromMetadata,
+  findSyncConnectionsFromMetadata,
   userMetadataActions,
 } from "@web/auth/state/user-metadata.store";
 import {
@@ -30,7 +31,7 @@ let metadataFetchEpoch = 0;
  * metadata payload, whether it arrived from REST refresh or SSE.
  */
 export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
-  const connections = metadata.google?.connections ?? [];
+  const connections = findSyncConnectionsFromMetadata(metadata);
   syncReconnectRequiredFromConnections(connections);
 
   const needsReconnect =
