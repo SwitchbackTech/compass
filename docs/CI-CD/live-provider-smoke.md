@@ -29,8 +29,8 @@ Environment secrets:
 |---|---|
 | `SMOKE_GOOGLE_REFRESH_TOKEN` | Refresh token for the Google test account that owns `compass-smoke` |
 | `SMOKE_MICROSOFT_REFRESH_TOKEN` | Refresh token for the Microsoft test account |
-| `SMOKE_APPLE_EMAIL` | iCloud email for the Apple test account (after A-11) |
-| `SMOKE_APPLE_APP_PASSWORD` | iCloud app-specific password (after A-11) |
+| `SMOKE_APPLE_EMAIL` | iCloud email for the Apple test account |
+| `SMOKE_APPLE_APP_PASSWORD` | iCloud app-specific password |
 | `GOOGLE_CLIENT_SECRET` | Same Google OAuth client secret as staging |
 | `MICROSOFT_CLIENT_SECRET` | Same Entra client secret as staging |
 | `DISCORD_ERRORS_WEBHOOK_URL` | Discord errors webhook (duplicate of the repo secret so this Environment does not read repo secrets) |
@@ -54,6 +54,5 @@ and never writes to any other calendar.
 gh workflow run live-provider-smoke.yml
 ```
 
-Apple as skipped. Microsoft runs once `SMOKE_MICROSOFT_REFRESH_TOKEN` and
-Entra client credentials are present in the `provider-smoke` Environment. Apple
-lands in A-11.
+Apple runs when `SMOKE_APPLE_EMAIL` and `SMOKE_APPLE_APP_PASSWORD` are present
+in the `provider-smoke` Environment.
