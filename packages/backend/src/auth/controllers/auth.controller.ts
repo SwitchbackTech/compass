@@ -98,8 +98,6 @@ class AuthController {
   ): void => {
     if (rejectIfMaintenance(res)) return;
 
-    const client = getSyncServiceClient();
-    const userId = zObjectId.parse(req.session?.getUserId()).toString();
     const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
     const provider = forcedProvider ?? request.provider ?? "google";
     ProviderKindSchema.parse(provider);
@@ -110,6 +108,9 @@ class AuthController {
       res.promise(Promise.reject(err));
       return;
     }
+
+    const client = getSyncServiceClient();
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
 
     res.promise(
       beginSyncConnection(client, toSyncPrincipal(userId), {
