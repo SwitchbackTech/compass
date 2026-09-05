@@ -1,4 +1,5 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import {
@@ -6,12 +7,17 @@ import {
   type ParsedReconnectGoogleParams,
 } from "../google.auth.types";
 
-export async function determineGoogleAuthMode(
-  googleUserId: string,
+export async function determineThirdPartyAuthMode(
+  provider: ProviderKind,
+  subjectId: string,
   email: string | null | undefined,
   createdNewRecipeUser: boolean,
 ): Promise<AuthDecision> {
-  const user = await findCanonicalCompassUser({ googleUserId, email });
+  const user = await findCanonicalCompassUser({
+    provider,
+    subjectId,
+    email,
+  });
 
   if (!user) {
     return {
@@ -26,6 +32,19 @@ export async function determineGoogleAuthMode(
     compassUserId: user._id.toString(),
     createdNewRecipeUser,
   };
+}
+
+export async function determineGoogleAuthMode(
+  googleUserId: string,
+  email: string | null | undefined,
+  createdNewRecipeUser: boolean,
+): Promise<AuthDecision> {
+  return determineThirdPartyAuthMode(
+    "google",
+    googleUserId,
+    email,
+    createdNewRecipeUser,
+  );
 }
 
 export function parseReconnectGoogleParams(

@@ -6,6 +6,7 @@ import { createBackendHttpServer } from "@backend/servers/express/express.server
 import { foregroundSyncRefresh } from "@backend/servers/sse/foreground-sync-refresh";
 import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
 import userService from "@backend/user/services/user.service";
+import { ensureUserIndexes } from "@backend/user/user-indexes";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
 import { type Server } from "node:http";
@@ -21,6 +22,7 @@ async function start() {
     await mongoService.start();
     await ensureBillingIndexes();
     await ensureBookingIndexes();
+    await ensureUserIndexes();
 
     await new Promise((resolve) =>
       httpServer.listen(CONFIG.PORT, () => {

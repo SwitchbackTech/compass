@@ -1,7 +1,11 @@
 import { type TokenPayload } from "google-auth-library";
 import { type ClientSession, ObjectId, type WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { mapUserToCompass } from "@core/mappers/map.user";
+import {
+  mapUserToCompass,
+  mergeGoogleLoginIdentity,
+} from "@core/mappers/map.user";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import { type Schema_User, type UserProfile } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
@@ -101,8 +105,9 @@ class UserService {
   };
 
   getCanonicalCompassUserId = async (input: {
+    provider: ProviderKind;
+    subjectId?: string | null;
     email?: string | null;
-    googleUserId?: string | null;
   }): Promise<string | null> => {
     const user = await findCanonicalCompassUser(input);
     return user?._id.toString() ?? null;
@@ -142,6 +147,12 @@ class UserService {
 
     // Preserve existing Google data, but allow override from input
     const google = input.google ?? existingUser?.google;
+    const identities = mergeGoogleLoginIdentity(
+      existingUser?.identities,
+      google,
+      email,
+      name,
+    );
 
     const nextUser: Schema_User = {
       email,
@@ -152,6 +163,7 @@ class UserService {
       signedUpAt,
       lastLoggedInAt: new Date(),
       ...(google ? { google } : {}),
+      ...(identities ? { identities } : {}),
     };
 
     const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;

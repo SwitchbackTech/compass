@@ -52,6 +52,7 @@ describe("auditConnectionIdentity provider filter (db)", () => {
                 provider: "microsoft",
                 subjectId: identities.microsoft.subjectId,
                 email: identities.microsoft.email ?? email,
+                linkedAt: new Date("2026-01-01T00:00:00.000Z"),
               },
             ],
           }
