@@ -574,6 +574,21 @@ export async function preparePublicBookingPage(
   await expect(
     page.getByRole("heading", { name: "Book with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
+  // The h1 renders before the slots request settles, and while slots are
+  // pending the picker shows a skeleton without the "Pick a time" heading.
+  // A test that starts typing right away (Tab to the skip link, Enter) would
+  // race that request: the skip link finds no target and focus goes nowhere.
+  // Wait for the picker itself unless the test is deliberately observing the
+  // pending, failed, or unavailable state.
+  if (
+    options.bookable !== false &&
+    !options.slotFailGate &&
+    !options.holdFirstSlots
+  ) {
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeVisible();
+  }
 
   return captured;
 }
