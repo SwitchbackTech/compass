@@ -12,7 +12,10 @@ import {
   openOauthRefreshToken,
   sealOauthRefreshToken,
 } from "@sync/credentials/oauth-refresh-at-rest";
-import { type ResolveProviderAuth } from "@sync/providers/provider-adapters";
+import {
+  ProviderNotConfiguredError,
+  type ResolveProviderAuth,
+} from "@sync/providers/provider-adapters";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,
@@ -121,7 +124,16 @@ export class CredentialCustody {
     const credential = await this.credentials.findByConnection(connectionId);
     await this.credentials.deleteByConnection(connectionId);
     if (credential && !isPasswordCredential(credential)) {
-      await this.resolveAuth(credential.provider).revoke({
+      let auth: ProviderAuthAdapter;
+      try {
+        auth = this.resolveAuth(credential.provider);
+      } catch (error) {
+        // Account deletion and mixed-provider deploys still wipe the local
+        // row when this kind is not registered (for example Apple-only).
+        if (error instanceof ProviderNotConfiguredError) return;
+        throw error;
+      }
+      await auth.revoke({
         token: openOauthRefreshToken(this.#credentialEncryptionKey, credential),
       });
     }

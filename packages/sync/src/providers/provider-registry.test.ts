@@ -64,6 +64,13 @@ describe("ProviderRegistry", () => {
     expect(
       buildProviderRegistry(
         baseConfig({
+          CREDENTIAL_ENCRYPTION_KEY: TEST_CREDENTIAL_ENCRYPTION_KEY,
+        }),
+      ).kinds(),
+    ).toEqual(["apple"]);
+    expect(
+      buildProviderRegistry(
+        baseConfig({
           GOOGLE_CLIENT_ID: "id",
           GOOGLE_CLIENT_SECRET: "secret",
         }),

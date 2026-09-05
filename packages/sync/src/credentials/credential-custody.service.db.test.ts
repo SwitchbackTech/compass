@@ -4,6 +4,7 @@ import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { TEST_CREDENTIAL_ENCRYPTION_KEY } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { ProviderNotConfiguredError } from "@sync/providers/provider-adapters";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,
@@ -439,6 +440,24 @@ describe("CredentialCustody", () => {
     await custody.disconnect(objectId() as ConnectionId);
 
     expect(adapter.revokedTokens).toEqual([]);
+  });
+
+  it("deletes the credential and skips revoke when the provider is not configured", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const custody = new CredentialCustody(
+      repo,
+      () => {
+        throw new ProviderNotConfiguredError("google");
+      },
+      fixedNow,
+      undefined,
+      TEST_CREDENTIAL_ENCRYPTION_KEY,
+    );
+    await custody.store(baseCredential(connectionId));
+
+    await custody.disconnect(connectionId);
+
+    expect(await repo.findByConnection(connectionId)).toBeNull();
   });
 
   it("returns a password secret without refreshing and never revokes on disconnect", async () => {
