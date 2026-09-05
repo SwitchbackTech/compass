@@ -1,3 +1,5 @@
+import { MicrosoftAuthAdapter } from "@sync/providers/microsoft/microsoft-auth.adapter";
+import { MicrosoftCalendarAdapter } from "@sync/providers/microsoft/microsoft-calendar.adapter";
 import { type GraphEvent } from "@sync/providers/microsoft/microsoft-event.normalizer";
 import {
   type GraphEventDeltaItem,
@@ -15,6 +17,7 @@ import {
   type MicrosoftSubscriptionCreateBody,
   type MicrosoftSubscriptionsApi,
 } from "@sync/providers/microsoft/microsoft-notifications.adapter";
+import { type ProviderAdapters } from "@sync/providers/provider-adapters";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -168,6 +171,26 @@ class CorpusEventWriteApi implements MicrosoftEventWriteApi {
   }> {
     return this.corpus.meetingSettings;
   }
+}
+
+export function microsoftLiveFactory(_corpusDir: string): ProviderAdapters {
+  const clientId = process.env["MICROSOFT_CLIENT_ID"] ?? "";
+  const clientSecret = process.env["MICROSOFT_CLIENT_SECRET"] ?? "";
+  return {
+    auth: new MicrosoftAuthAdapter(clientId, clientSecret),
+    calendars: new MicrosoftCalendarAdapter(),
+    reader: new MicrosoftEventReaderAdapter(),
+    writer: new MicrosoftEventWriter(),
+    notifications: new MicrosoftNotificationAdapter(),
+  };
+}
+
+export function hasMicrosoftLiveCredentials(): boolean {
+  return Boolean(
+    process.env["MICROSOFT_CLIENT_ID"] &&
+      process.env["MICROSOFT_CLIENT_SECRET"] &&
+      process.env["SMOKE_MICROSOFT_REFRESH_TOKEN"],
+  );
 }
 
 /** Replay `fixtures/microsoft/reader.json` through the event reader adapter. */

@@ -3,6 +3,10 @@ import {
   googleLiveFactory,
   hasGoogleLiveCredentials,
 } from "@sync/providers/__contract__/google-contract.factory";
+import {
+  hasMicrosoftLiveCredentials,
+  microsoftLiveFactory,
+} from "@sync/providers/__contract__/microsoft-contract.factory";
 import { describe, it } from "bun:test";
 
 const liveKind = process.env["LIVE_PROVIDER"];
@@ -19,6 +23,19 @@ if (!liveKind) {
     skipAuthExchange: true,
     skipAuthRevoked: true,
     skipWatch: true,
+  });
+} else if (
+  liveKind === "microsoft" &&
+  hasMicrosoftLiveCredentials() &&
+  calendarId
+) {
+  describeProviderContract("microsoft", microsoftLiveFactory, {
+    calendarId,
+    refreshToken: process.env["SMOKE_MICROSOFT_REFRESH_TOKEN"],
+    skipAuthExchange: true,
+    skipAuthRevoked: true,
+    skipWatch: true,
+    skipNotifications: true,
   });
 } else {
   describe.skip(`live provider contract (${liveKind})`, () => {
