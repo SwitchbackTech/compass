@@ -27,7 +27,7 @@ import {
 } from "@core/types/booking.contracts";
 import {
   type CalendarConference,
-  conferenceForProvider,
+  conferenceForDestination,
 } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
 import {
@@ -336,9 +336,10 @@ const destinationConference = async (
         (candidate) => candidate.id === destination.connectionId,
       )
     : undefined;
-  return conferenceForProvider(
+  return conferenceForDestination(
     connection?.provider ?? "google",
     destination.createsGoogleMeet !== false,
+    connection?.capabilities,
   );
 };
 

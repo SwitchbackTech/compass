@@ -2,7 +2,8 @@ import {
   type Calendar,
   type CalendarAccess,
   CalendarSchema,
-  conferenceForProvider,
+  conferenceForDestination,
+  conferenceKindsForConference,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { HexColorSchema } from "@core/types/domain-primitives";
@@ -55,11 +56,13 @@ const syncCalendarToBrowser = (
   calendar: ProviderCalendar,
   provider: ProviderKind,
   accountEmail?: string,
+  connectionCapabilities?: ProviderConnection["capabilities"],
 ): Calendar => {
   const access = mapCalendarAccessRole(calendar.accessRole);
-  const conference = conferenceForProvider(
+  const conference = conferenceForDestination(
     provider,
     calendar.createsGoogleMeet !== false,
+    connectionCapabilities,
   );
   // Sync stores the provider colour as a loose string; the browser Calendar
   // requires a hex colour. Fall back to the default rather than 500 the whole
@@ -80,6 +83,7 @@ const syncCalendarToBrowser = (
     capabilities: {
       ...getCalendarCapabilities(access),
       canInviteAttendees: calendar.capabilities.canWriteEvents,
+      conferenceKinds: conferenceKindsForConference(conference),
     },
     isPrimary: calendar.primary,
     isVisible: true,
@@ -105,6 +109,7 @@ export const syncCalendarsToBrowser = (
       calendar,
       connection?.provider ?? "google",
       connection?.account.email ?? undefined,
+      connection?.capabilities,
     );
   });
 };

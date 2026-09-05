@@ -93,6 +93,19 @@ const appleConnection = () => ({
   },
 });
 
+const microsoftConnection = (withTeams = true) => ({
+  ...healthyConnection(),
+  provider: "microsoft" as const,
+  account: {
+    providerAccountId: "microsoft-principal",
+    email: "host@outlook.com",
+    displayName: "Microsoft Host",
+  },
+  capabilities: withTeams
+    ? (["readEvents", "writeEvents", "createTeamsMeeting"] as const)
+    : (["readEvents", "writeEvents"] as const),
+});
+
 const samplePutInput = (overrides: Record<string, unknown> = {}) => {
   const destination = calendarId();
   return AdminPutBookingPageInputSchema.parse({
@@ -713,6 +726,110 @@ describe("PublicBookingService", () => {
     );
     expect(publicReservation.createsGoogleMeet).toBe(false);
     expect(publicReservation.conference).toBe("none");
+  });
+
+  it("books through a Microsoft destination with Teams conferencing", async () => {
+    const userId = await createNamedUser("Teams Host");
+    const calendar = writableCalendar();
+    const connection = microsoftConnection(true);
+    mockHealthySync([calendar], connection);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.createsGoogleMeet).toBe(false);
+    expect(publicPage.conference).toBe("teams");
+
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    const created = await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(true);
+    expect(request.input.content.conference).toBeNull();
+
+    const publicReservation = await bookingService.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.conference).toBe("teams");
+  });
+
+  it("books through a Microsoft destination without Teams conferencing", async () => {
+    const userId = await createNamedUser("No Teams Host");
+    const calendar = writableCalendar();
+    const connection = microsoftConnection(false);
+    mockHealthySync([calendar], connection);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.conference).toBe("none");
+
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(false);
+    expect(request.input.content.conference).toBeNull();
   });
 
   it("clamps a requested window that extends past the host horizon", async () => {

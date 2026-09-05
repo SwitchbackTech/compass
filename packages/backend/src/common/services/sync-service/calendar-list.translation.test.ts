@@ -147,13 +147,18 @@ describe("syncCalendarToBrowser", () => {
     expect(result.capabilities).toEqual({
       ...baseCapabilities,
       canInviteAttendees: canWrite,
+      conferenceKinds: ["meet"],
     });
   });
 
   it("maps a microsoft connection's provider through to the calendar", () => {
     const calendar = providerCalendar();
-    const result = syncCalendarToBrowser(calendar, { provider: "microsoft" });
+    const result = syncCalendarToBrowser(calendar, {
+      provider: "microsoft",
+      capabilities: ["readEvents", "writeEvents", "createTeamsMeeting"],
+    });
     expect(result.provider).toBe("microsoft");
+    expect(result.conference).toBe("teams");
   });
 
   it("derives canInviteAttendees from sync write capability for a writable calendar", () => {
@@ -202,12 +207,35 @@ describe("syncCalendarToBrowser", () => {
         .conference,
     ).toBe("none");
     expect(
-      syncCalendarToBrowser(providerCalendar(), { provider: "microsoft" })
-        .conference,
+      syncCalendarToBrowser(providerCalendar(), {
+        provider: "microsoft",
+        capabilities: ["readEvents", "writeEvents", "createTeamsMeeting"],
+      }).conference,
     ).toBe("teams");
+    expect(
+      syncCalendarToBrowser(providerCalendar(), {
+        provider: "microsoft",
+        capabilities: ["readEvents", "writeEvents"],
+      }).conference,
+    ).toBe("none");
     expect(
       syncCalendarToBrowser(providerCalendar(), { provider: "apple" })
         .conference,
     ).toBe("none");
+  });
+
+  it("exposes conferenceKinds on calendar capabilities", () => {
+    expect(
+      syncCalendarToBrowser(providerCalendar(), {
+        provider: "microsoft",
+        capabilities: ["readEvents", "writeEvents", "createTeamsMeeting"],
+      }).capabilities.conferenceKinds,
+    ).toEqual(["teams"]);
+    expect(
+      syncCalendarToBrowser(providerCalendar({ createsGoogleMeet: false }), {
+        provider: "microsoft",
+        capabilities: ["readEvents", "writeEvents", "createTeamsMeeting"],
+      }).capabilities.conferenceKinds,
+    ).toEqual([]);
   });
 });

@@ -1014,7 +1014,7 @@ describe("BookingSettingsSection", () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it("labels a Google primary destination calendar with the calendar name only", async () => {
+  it("labels a Google primary destination calendar with Google Meet in the chooser", async () => {
     const primary = createMockCalendar({
       name: "host@example.com",
       accountEmail: "host@example.com",
@@ -1049,7 +1049,7 @@ describe("BookingSettingsSection", () => {
       name: "Destination calendar",
     });
     const option = within(combobox).getByRole("option");
-    expect(option.textContent).toBe("host@example.com");
+    expect(option.textContent).toBe("host@example.com (Google Meet)");
     expect(
       within(combobox).getByRole("group", { name: "host@example.com" }),
     ).toBeInTheDocument();
@@ -1147,6 +1147,55 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByRole("combobox", { name: "Destination calendar" }),
     ).toHaveAccessibleDescription(BOOKING_APPLE_DESTINATION_HINT);
+  });
+
+  it("labels a Microsoft destination with Microsoft Teams in the chooser", async () => {
+    const microsoftCalendar = createMockCalendar({
+      name: "Work",
+      accountEmail: "host@outlook.com",
+      provider: "microsoft",
+      conference: "teams",
+      createsGoogleMeet: false,
+    });
+
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+      connections: [
+        createMockConnection("host@outlook.com", { provider: "microsoft" }),
+      ],
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: microsoftCalendar.id,
+            blockingCalendarIds: [microsoftCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [microsoftCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const combobox = await screen.findByRole("combobox", {
+      name: "Destination calendar",
+    });
+    expect(within(combobox).getByRole("option").textContent).toBe(
+      "Work (Microsoft Teams)",
+    );
   });
 
   it("does not warn when the destination can mint Meet", async () => {

@@ -85,6 +85,10 @@ export const ProviderCapabilitySchema = z.enum([
   // suffices — partial grants are normal); its absence is an ordinary state,
   // never an error.
   "suggestContacts",
+  // The connection's mailbox can mint a Microsoft Teams meeting link when
+  // Graph reports a Teams online-meeting provider. Derived from meeting
+  // settings at connect time, not from OAuth scopes alone.
+  "createTeamsMeeting",
 ]);
 export type ProviderCapability = z.infer<typeof ProviderCapabilitySchema>;
 

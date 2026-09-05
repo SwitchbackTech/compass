@@ -269,6 +269,7 @@ describe("EventForm attendee editor gating", () => {
         canManage: false,
         canWatchEvents: false,
         canInviteAttendees: false,
+        conferenceKinds: [],
       },
     });
     const event = createMockEvent({
