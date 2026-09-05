@@ -94,7 +94,7 @@ export const SyncConfigSchema = z
     // the Google adapter refuses to construct when either is absent.
     GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
-    // Microsoft OAuth client. Read-only in this WP; registration is M-09.
+    // Microsoft OAuth client. Both must be set for ProviderRegistry registration.
     MICROSOFT_CLIENT_ID: z.string().trim().min(1).optional(),
     MICROSOFT_CLIENT_SECRET: z.string().trim().min(1).optional(),
     // AES-256-GCM key for password credentials at rest (Apple). Read-only in
