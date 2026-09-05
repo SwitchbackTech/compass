@@ -25,6 +25,7 @@ import {
 } from "@core/types/sync/event.contracts";
 import { assertBillingAllowsWrites } from "@backend/billing/billing.guard";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { parseCommaSeparatedQueryParam } from "@backend/common/helpers/query-param";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import {
   toCreateSubmitRequest,
@@ -120,11 +121,7 @@ const send = (res: Response, e: unknown) => {
 };
 
 const parseListQuery = (query: Request["query"]): EventListQuery => {
-  const calendarIdsParam = query["calendarIds"];
-  const calendarIds =
-    typeof calendarIdsParam === "string" && calendarIdsParam.length > 0
-      ? calendarIdsParam.split(",")
-      : undefined;
+  const calendarIds = parseCommaSeparatedQueryParam(query["calendarIds"]);
 
   return EventListQuerySchema.parse({
     kind: "range",

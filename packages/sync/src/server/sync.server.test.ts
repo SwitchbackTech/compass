@@ -1,4 +1,5 @@
 import { NodeEnv } from "@core/constants/core.constants";
+import { HTTP_SERVER_LIMITS } from "@core/server/http-server";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
@@ -43,6 +44,16 @@ describe("Sync HTTP server health endpoints", () => {
 
   afterEach(async () => {
     await service.stop();
+  });
+
+  it("uses the shared bounded HTTP connection limits", () => {
+    service = createSyncService(testConfig());
+    expect(service.httpServer.requestTimeout).toBe(
+      HTTP_SERVER_LIMITS.requestTimeoutMs,
+    );
+    expect(service.httpServer.headersTimeout).toBe(
+      HTTP_SERVER_LIMITS.headersTimeoutMs,
+    );
   });
 
   it("serves liveness with structured, content-free identity", async () => {
