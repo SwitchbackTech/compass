@@ -11,6 +11,10 @@ import {
   MICROSOFT_REQUEST_TIMEOUT_MS,
 } from "@sync/providers/microsoft/microsoft-http.constants";
 import {
+  rankContactSuggestions,
+  toContactSuggestion,
+} from "@sync/providers/provider-contact-suggestions";
+import {
   type ContactsPort,
   ContactsSearchError,
   type ContactsSearchInput,
@@ -72,7 +76,7 @@ export class MicrosoftPeopleAdapter implements ContactsPort {
     }
 
     const candidates = page.value.flatMap((person) => toSuggestions(person));
-    return rankSuggestions(candidates, input.query).slice(
+    return rankContactSuggestions(candidates, input.query).slice(
       0,
       CONTACT_SUGGESTION_MAX_RESULTS,
     );
@@ -123,49 +127,15 @@ class FetchMicrosoftPeopleApi implements MicrosoftPeopleApi {
   }
 }
 
+// Graph returns each person's addresses with a relevance score; take them
+// most-relevant first so equal-ranking candidates keep Graph's own ordering.
 function toSuggestions(person: GraphPersonMatch): ContactSuggestion[] {
-  const rawName = (person.displayName ?? "").trim();
-  const displayName =
-    rawName.length > 0 && rawName.length <= 256 ? rawName : null;
-
   const addresses = [...(person.scoredEmailAddresses ?? [])].sort(
     (a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0),
   );
-  const suggestions: ContactSuggestion[] = [];
-  for (const entry of addresses) {
-    const email = (entry.address ?? "").trim();
-    if (email.length === 0 || email.length > 320) continue;
-    suggestions.push({ email, displayName });
-  }
-  return suggestions;
-}
-
-function rankSuggestions(
-  candidates: readonly ContactSuggestion[],
-  query: string,
-): ContactSuggestion[] {
-  const needle = query.trim().toLowerCase();
-  const rank = (suggestion: ContactSuggestion): number => {
-    const email = suggestion.email.toLowerCase();
-    const name = suggestion.displayName?.toLowerCase() ?? "";
-    if (email.startsWith(needle) || name.startsWith(needle)) return 0;
-    if (email.includes(needle) || name.includes(needle)) return 1;
-    return 2;
-  };
-
-  const ranked = candidates
-    .map((suggestion, index) => ({ suggestion, index, rank: rank(suggestion) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index);
-
-  const seen = new Set<string>();
-  const unique: ContactSuggestion[] = [];
-  for (const { suggestion } of ranked) {
-    const key = suggestion.email.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(suggestion);
-  }
-  return unique;
+  return addresses
+    .map((entry) => toContactSuggestion(entry.address, person.displayName))
+    .filter((suggestion) => suggestion !== null);
 }
 
 function toContactsSearchError(error: unknown): ContactsSearchError {
