@@ -20,6 +20,7 @@ import {
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
+import { CONNECTION_BANNER_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
 let hasShownReconnectToastThisLoad = false;
 let lastReconnectTarget: GoogleReconnectTarget = {};
@@ -103,7 +104,10 @@ export const GoogleReconnectToast = ({
           ? `Access for ${namedAccount} expired or was revoked. Your events are still safe in Google. Reconnect and Compass will re-import them.`
           : "This happens when access expires or is revoked. Your events are still safe in Google. Reconnect and Compass will re-import them."}
       </p>
-      <ToastActionButton onClick={handleReconnect}>
+      <ToastActionButton
+        onClick={handleReconnect}
+        shortcutKey={CONNECTION_BANNER_SHORTCUT_KEY}
+      >
         Reconnect Google Calendar
       </ToastActionButton>
     </ToastNotice>

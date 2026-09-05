@@ -113,9 +113,12 @@ describe("CalendarConnectionBanner", () => {
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
-  it("runs Refresh with G", () => {
+  it("runs Refresh with G, the same letter as the delayed toast", () => {
     const onAction = mock();
     renderBanner("delayed", onAction);
+
+    const button = screen.getByRole("button", { name: "Refresh" });
+    expect(within(button).getByText("G")).toBeTruthy();
 
     pressKey("G");
 
