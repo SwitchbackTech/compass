@@ -74,6 +74,17 @@ describe("detect-code-changes", () => {
     }
   });
 
+  it("gates the e2e shards on the e2e output and the unit legs on code", () => {
+    const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
+    const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
+
+    expect(e2e).toContain("e2e: ${{ steps.filter.outputs.e2e }}");
+    expect(e2e).toContain("if: needs.changes.outputs.e2e == 'true'");
+    expect(e2e).not.toContain("needs.changes.outputs.code");
+    expect(unit).toContain("code: ${{ steps.filter.outputs.code }}");
+    expect(unit).not.toContain("outputs.e2e");
+  });
+
   it("runs Unit once per PR push and names Unit vs E2E", () => {
     const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
     const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
@@ -105,7 +116,7 @@ describe("detect-code-changes", () => {
       const result = runDetector(eventName);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\n");
+      expect(result.output).toBe("code=true\ne2e=true\n");
       expect(result.command).toBe("");
     }
   });
@@ -117,7 +128,36 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=false\n");
+    expect(result.output).toBe("code=false\ne2e=false\n");
+  });
+
+  it("skips only e2e for backend, sync, and scripts pull requests", () => {
+    const result = runDetector(
+      "pull_request",
+      "packages/backend/src/app.ts\npackages/sync/src/jobs.ts\npackages/scripts/src/cli.ts\ndocs/sync.md",
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.output).toBe("code=true\ne2e=false\n");
+  });
+
+  it("runs e2e when a backend pull request also touches anything else", () => {
+    for (const other of [
+      "packages/core/src/types.ts",
+      "packages/web/src/app.tsx",
+      "e2e/timed/event-smoke.spec.ts",
+      "playwright.config.ts",
+      "bun.lock",
+      ".github/workflows/test-e2e.yml",
+    ]) {
+      const result = runDetector(
+        "pull_request",
+        `packages/backend/src/app.ts\n${other}`,
+      );
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.output, other).toBe("code=true\ne2e=true\n");
+    }
   });
 
   it("runs checks for pull requests containing code", () => {
@@ -127,7 +167,7 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\n");
+    expect(result.output).toBe("code=true\ne2e=true\n");
     expect(result.command).toContain(
       "api --paginate repos/example/compass/pulls/42/files --jq .[].filename",
     );
@@ -141,7 +181,7 @@ describe("detect-code-changes", () => {
       const result = runDetector("pull_request", files, ghStatus);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\n");
+      expect(result.output).toBe("code=true\ne2e=true\n");
     }
   });
 });
