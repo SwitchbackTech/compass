@@ -14,6 +14,7 @@ import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnect
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
+import { CALENDAR_HOST_EXPLAINER } from "@web/auth/providers/provider-copy.util";
 import {
   selectSyncConnections,
   useUserMetadataStore,
@@ -419,6 +420,7 @@ const AccountsSection: FC<AccountsSectionProps> = ({
           variant="overlay-primary"
         />
       </OverlayPanelActions>
+      <p className="text-text-muted text-xs">{CALENDAR_HOST_EXPLAINER}</p>
     </div>
   );
 };

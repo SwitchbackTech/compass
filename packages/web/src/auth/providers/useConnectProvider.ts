@@ -196,6 +196,7 @@ export const useConnectProvider = (
     },
     {
       refreshGaveUp: refreshSnapshot.gaveUp,
+      provider: kind,
     },
   );
 
