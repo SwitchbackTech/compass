@@ -6,6 +6,8 @@ import {
   buildProviderRegistry,
   GOOGLE_CALLBACK_PATH,
   GOOGLE_NOTIFICATIONS_PATH,
+  MICROSOFT_CALLBACK_PATH,
+  MICROSOFT_NOTIFICATIONS_PATH,
 } from "@sync/providers/provider-registry";
 import { describe, expect, it } from "bun:test";
 
@@ -60,11 +62,48 @@ describe("ProviderRegistry", () => {
         baseConfig({
           GOOGLE_CLIENT_ID: "id",
           GOOGLE_CLIENT_SECRET: "secret",
+        }),
+      ).kinds(),
+    ).toEqual(["google"]);
+    expect(
+      buildProviderRegistry(
+        baseConfig({
           MICROSOFT_CLIENT_ID: "ms-id",
           MICROSOFT_CLIENT_SECRET: "ms-secret",
         }),
       ).kinds(),
-    ).toEqual(["google"]);
+    ).toEqual(["microsoft"]);
+    expect(
+      buildProviderRegistry(
+        baseConfig({
+          GOOGLE_CLIENT_ID: "id",
+          GOOGLE_CLIENT_SECRET: "secret",
+          MICROSOFT_CLIENT_ID: "ms-id",
+          MICROSOFT_CLIENT_SECRET: "ms-secret",
+        }),
+      ).kinds(),
+    ).toEqual(["google", "microsoft"]);
+  });
+
+  it("registers microsoft only when both client id and secret are present", () => {
+    expect(
+      buildProviderRegistry(baseConfig({ MICROSOFT_CLIENT_ID: "ms-id" })).has(
+        "microsoft",
+      ),
+    ).toBe(false);
+    expect(
+      buildProviderRegistry(
+        baseConfig({ MICROSOFT_CLIENT_SECRET: "ms-secret" }),
+      ).has("microsoft"),
+    ).toBe(false);
+    expect(
+      buildProviderRegistry(
+        baseConfig({
+          MICROSOFT_CLIENT_ID: "ms-id",
+          MICROSOFT_CLIENT_SECRET: "ms-secret",
+        }),
+      ).has("microsoft"),
+    ).toBe(true);
   });
 
   it("returns capabilities per kind", () => {
@@ -101,6 +140,45 @@ describe("ProviderRegistry", () => {
       "https://www.googleapis.com/auth/contacts.other.readonly",
     ]);
     expect(google.scopes.forFeatures([])).toEqual([]);
+  });
+
+  it("returns microsoft capabilities and paths when configured", () => {
+    const registry = buildProviderRegistry(
+      baseConfig({
+        MICROSOFT_CLIENT_ID: "ms-id",
+        MICROSOFT_CLIENT_SECRET: "ms-secret",
+      }),
+    );
+    const microsoft = registry.get("microsoft");
+    expect(microsoft.callbackPath).toBe(MICROSOFT_CALLBACK_PATH);
+    expect(microsoft.notificationsCallbackPath).toBe(
+      MICROSOFT_NOTIFICATIONS_PATH,
+    );
+    expect(registry.callbackUrlFor("https://example.test", "microsoft")).toBe(
+      "https://example.test/sync/notifications/microsoft",
+    );
+    expect(microsoft.capabilities).toEqual(
+      expect.arrayContaining([
+        "readEvents",
+        "writeEvents",
+        "readBusy",
+        "inviteAttendees",
+        "changeNotifications",
+        "incrementalChanges",
+        "suggestContacts",
+      ]),
+    );
+    expect(microsoft.capabilitiesFromScopes(["Calendars.ReadWrite"])).toContain(
+      "changeNotifications",
+    );
+    expect(
+      microsoft.capabilitiesFromScopes(["Calendars.ReadWrite"]),
+    ).not.toContain("suggestContacts");
+    expect(
+      microsoft.capabilitiesFromScopes(["Calendars.ReadWrite", "People.Read"]),
+    ).toContain("suggestContacts");
+    expect(microsoft.scopes.forFeatures(["contacts"])).toEqual(["People.Read"]);
+    expect(microsoft.scopes.forFeatures([])).toEqual([]);
   });
 
   it("registers google from a test auth override without yaml credentials", () => {

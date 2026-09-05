@@ -14,6 +14,15 @@ import {
   googleCapabilitiesFromScopes,
 } from "@sync/providers/google/google-capabilities";
 import {
+  microsoftAdapters,
+  microsoftProviderConfigured,
+} from "@sync/providers/microsoft/build-provider-resolvers";
+import {
+  MICROSOFT_PROVIDER_CAPABILITIES,
+  microsoftCapabilitiesFromScopes,
+  microsoftScopesForFeatures,
+} from "@sync/providers/microsoft/microsoft-scopes";
+import {
   type ProviderAdapters,
   ProviderNotConfiguredError,
   type ResolveProviderAdapters,
@@ -64,6 +73,8 @@ export class ProviderRegistry {
 
 export const GOOGLE_CALLBACK_PATH = "/sync/google";
 export const GOOGLE_NOTIFICATIONS_PATH = "/sync/notifications/google";
+export const MICROSOFT_CALLBACK_PATH = "/sync/microsoft";
+export const MICROSOFT_NOTIFICATIONS_PATH = "/sync/notifications/microsoft";
 export const OAUTH_CALLBACK_PARAM_PATH = "/sync/:provider";
 export const NOTIFICATIONS_PARAM_PATH = "/sync/notifications/:provider";
 
@@ -72,8 +83,6 @@ export function buildProviderRegistry(
   overrides: ProviderAdapterOverrides = {},
 ): ProviderRegistry {
   const registrations = new Map<ProviderKind, ProviderRegistration>();
-  // Microsoft and Apple registration lands in M-09 / A-08. Config for those
-  // kinds is read into SyncConfig in this WP but does not register them yet.
   const googleOverride = overrides.google;
   if (googleProviderConfigured(config) || googleOverride?.auth !== undefined) {
     registrations.set("google", {
@@ -85,6 +94,21 @@ export function buildProviderRegistry(
       capabilitiesFromScopes: googleCapabilitiesFromScopes,
     });
   }
+  const microsoftOverride = overrides.microsoft;
+  if (
+    microsoftProviderConfigured(config) ||
+    microsoftOverride?.auth !== undefined
+  ) {
+    registrations.set("microsoft", {
+      adapters: microsoftAdapters(config, microsoftOverride),
+      scopes: { forFeatures: microsoftScopesForFeatures },
+      capabilities: MICROSOFT_PROVIDER_CAPABILITIES,
+      callbackPath: MICROSOFT_CALLBACK_PATH,
+      notificationsCallbackPath: MICROSOFT_NOTIFICATIONS_PATH,
+      capabilitiesFromScopes: microsoftCapabilitiesFromScopes,
+    });
+  }
+  // Apple registration lands in A-08.
   return new ProviderRegistry(registrations);
 }
 
