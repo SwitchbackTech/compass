@@ -35,11 +35,16 @@ jobs:
   # does report, and reports Success. So for pull_request the filter lives
   # here, as a job gate, not in `on:`. The push trigger keeps its
   # paths-ignore: push runs block nothing.
+  # The `e2e` output is false when a PR touches only packages/backend,
+  # packages/sync, or packages/scripts (plus docs): the suite boots the web
+  # dev server against stubbed routes and never loads those packages. 22% of
+  # PR e2e runs in the 2026-09 audit were such PRs. merge_group and push runs
+  # always report true, so main is still tested end to end.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
-      code: ${{ steps.filter.outputs.code }}
+      e2e: ${{ steps.filter.outputs.e2e }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -64,7 +69,7 @@ jobs:
   # would show the unexpanded ${{ matrix.shard }} expression.
   e2e-shard:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
@@ -117,7 +122,7 @@ jobs:
         run: bunx playwright test --shard=${{ matrix.shard }}/4
 
   # The one required status check. Reports success when every shard passed
-  # or when the docs-only gate skipped them all, and fails on a shard
+  # or when the `changes` gate skipped them all, and fails on a shard
   # failure. A cancelled run (a newer push superseded it) is not a failure;
   # `!cancelled()` leaves it cancelled instead of painting the old head red.
   e2e:
