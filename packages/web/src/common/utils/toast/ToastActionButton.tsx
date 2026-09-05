@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
+  type NoticeActionKey,
   TOAST_PRIMARY_ACTION_KEY,
   useNoticeActionShortcut,
 } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
@@ -8,11 +9,13 @@ import {
 export function ToastActionButton({
   children,
   onClick,
+  shortcutKey = TOAST_PRIMARY_ACTION_KEY,
 }: {
   children: ReactNode;
   onClick: () => void;
+  shortcutKey?: NoticeActionKey;
 }) {
-  useNoticeActionShortcut(TOAST_PRIMARY_ACTION_KEY, onClick);
+  useNoticeActionShortcut(shortcutKey, onClick);
 
   return (
     <button
@@ -21,7 +24,7 @@ export function ToastActionButton({
       type="button"
     >
       {children}
-      <ShortcutKeys keys={TOAST_PRIMARY_ACTION_KEY} />
+      <ShortcutKeys keys={shortcutKey} />
     </button>
   );
 }

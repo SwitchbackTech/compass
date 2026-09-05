@@ -18,6 +18,7 @@ import {
   showGoogleDelayedToast,
 } from "@web/common/utils/toast/google-delayed.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { CalendarConnectionBanner } from "@web/components/CalendarConnectionBanner/CalendarConnectionBanner";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockRefresh = mock();
@@ -39,7 +40,7 @@ describe("GoogleDelayedToast", () => {
     registerToastPort(port);
   });
 
-  it("shows an S keycap and refreshes when S is pressed", () => {
+  it("shows a G keycap and refreshes when G is pressed", () => {
     render(
       <HotkeysProvider>
         <GoogleDelayedToast toastId="google-delayed" />
@@ -49,15 +50,56 @@ describe("GoogleDelayedToast", () => {
     expect(
       within(
         screen.getByRole("button", { name: "Refresh calendar" }),
-      ).getByText("S"),
+      ).getByText("G"),
     ).toBeTruthy();
     expect(screen.getByText("Press Esc to dismiss")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Dismiss" })).toBeNull();
 
-    pressKey("S");
+    pressKey("G");
 
     expect(mocks.dismiss).toHaveBeenCalledWith("google-delayed");
     expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not refresh with S, which other toasts use for Sign up / Sign in", () => {
+    render(
+      <HotkeysProvider>
+        <GoogleDelayedToast toastId="google-delayed" />
+      </HotkeysProvider>,
+    );
+
+    pressKey("S");
+
+    expect(mocks.dismiss).not.toHaveBeenCalled();
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it("shares G with the delayed banner so Refresh is one shortcut", () => {
+    const onBannerRefresh = mock();
+    render(
+      <HotkeysProvider>
+        <CalendarConnectionBanner kind="delayed" onAction={onBannerRefresh} />
+        <GoogleDelayedToast toastId="google-delayed" />
+      </HotkeysProvider>,
+    );
+
+    expect(
+      within(screen.getByRole("button", { name: /^Refresh$/ })).getByText("G"),
+    ).toBeTruthy();
+    expect(
+      within(
+        screen.getByRole("button", { name: "Refresh calendar" }),
+      ).getByText("G"),
+    ).toBeTruthy();
+
+    pressKey("S");
+    expect(onBannerRefresh).not.toHaveBeenCalled();
+    expect(mockRefresh).not.toHaveBeenCalled();
+
+    pressKey("G");
+    expect(onBannerRefresh).toHaveBeenCalled();
+    expect(mockRefresh).toHaveBeenCalled();
+    expect(mocks.dismiss).toHaveBeenCalledWith("google-delayed");
   });
 });
 
