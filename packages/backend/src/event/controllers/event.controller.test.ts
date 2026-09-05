@@ -341,7 +341,7 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalled();
   });
 
-  it("rejects attendees on a calendar sync does not list as writable Google, before any submit", async () => {
+  it("rejects attendees on a calendar sync does not list as writable and inviting, before any submit", async () => {
     // A create targeting the Compass local calendar (never in sync's list)
     // or any unknown id: the guest list has nowhere to be delivered, so this
     // must be a typed 4xx with NO command submitted.
@@ -354,7 +354,10 @@ describe("EventController", () => {
             calendars: [
               {
                 id: objectId(), // a different (writable) calendar
-                capabilities: { canWriteEvents: true },
+                capabilities: {
+                  canWriteEvents: true,
+                  canInviteAttendees: true,
+                },
               },
             ],
           },
@@ -384,13 +387,13 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalledWith({
       code: "ATTENDEES_UNSUPPORTED",
       message:
-        "Guests can only be added to events on a writable Google calendar",
+        "Guests can only be added to events on a writable calendar that can invite attendees",
       retryable: false,
     });
     expect(submitCommand).not.toHaveBeenCalled();
   });
 
-  it("rejects a replace carrying attendees when the user has no writable Google calendar", async () => {
+  it("rejects a replace carrying attendees when the user has no writable inviting calendar", async () => {
     const submitCommand = mock();
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
       listCalendars: mock(() =>
@@ -398,8 +401,14 @@ describe("EventController", () => {
           ok: true as const,
           value: {
             calendars: [
-              // Read-only Google calendar: listed, but not writable.
-              { id: objectId(), capabilities: { canWriteEvents: false } },
+              // Read-only calendar: listed, but not writable.
+              {
+                id: objectId(),
+                capabilities: {
+                  canWriteEvents: false,
+                  canInviteAttendees: false,
+                },
+              },
             ],
           },
         }),
@@ -442,7 +451,55 @@ describe("EventController", () => {
     expect(submitCommand).not.toHaveBeenCalled();
   });
 
-  it("submits attendees + invitation for a writable Google calendar and echoes the guests optimistically", async () => {
+  it("rejects attendees on a writable calendar that cannot invite", async () => {
+    const calendarId = objectId();
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            calendars: [
+              {
+                id: calendarId,
+                capabilities: {
+                  canWriteEvents: true,
+                  canInviteAttendees: false,
+                },
+              },
+            ],
+          },
+        }),
+      ),
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    const body = sampleCreateBody();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...body,
+          calendarId,
+          content: {
+            ...body.content,
+            attendees: [{ email: "ada@example.com", displayName: null }],
+          },
+        },
+      }),
+      res,
+    );
+
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.FORBIDDEN,
+    );
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "ATTENDEES_UNSUPPORTED" }),
+    );
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
+  it("submits attendees + invitation for a writable calendar that can invite and echoes the guests optimistically", async () => {
     const calendarId = objectId();
     const submitCommand = mock(() =>
       Promise.resolve({
@@ -464,7 +521,13 @@ describe("EventController", () => {
           ok: true as const,
           value: {
             calendars: [
-              { id: calendarId, capabilities: { canWriteEvents: true } },
+              {
+                id: calendarId,
+                capabilities: {
+                  canWriteEvents: true,
+                  canInviteAttendees: true,
+                },
+              },
             ],
           },
         }),
@@ -544,7 +607,13 @@ describe("EventController", () => {
           ok: true as const,
           value: {
             calendars: [
-              { id: calendarId, capabilities: { canWriteEvents: true } },
+              {
+                id: calendarId,
+                capabilities: {
+                  canWriteEvents: true,
+                  canInviteAttendees: true,
+                },
+              },
             ],
           },
         }),
@@ -651,7 +720,7 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalledWith({
       code: "GOOGLE_REVOKED",
       message:
-        "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
+        "Calendar access expired or was revoked. Reconnect your calendar in Compass to resume syncing.",
       retryable: false,
     });
   });
@@ -683,7 +752,7 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalledWith({
       code: "UNSUPPORTED_OPERATION",
       message:
-        "Google doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in Google Calendar.",
+        "This calendar doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in your calendar.",
       retryable: false,
     });
   });

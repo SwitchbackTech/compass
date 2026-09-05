@@ -30,9 +30,9 @@ function createEventRecord(overrides: {
     | { kind: "timed"; start: string; end: string; timeZone: string }
     | { kind: "allDay"; start: string; end: string };
   // Read-only, provider-sourced fields on a real synced event - only
-  // showcased here so first-time users (who never connect Google before
+  // showcased here so first-time users (who never connect a calendar before
   // seeing the calendar) discover the meeting-link/location/attendees UI at
-  // all, since it otherwise only ever renders for Google-synced events.
+  // all, since it otherwise only ever renders for synced events.
   location?: string;
   organizer?: Organizer;
   attendees?: Attendee[];
@@ -139,8 +139,8 @@ function generateDemoData() {
         timeZone,
       },
       // Showcases the meeting-link and attendee UI (normally only populated
-      // from a synced Google event) for first-time users who haven't
-      // connected Google yet.
+      // from a synced event) for first-time users who haven't connected a
+      // calendar yet.
       conference: {
         url: "https://meet.google.com/abc-defg-hij",
         label: "Google Meet",
@@ -172,7 +172,7 @@ function generateDemoData() {
     createEventRecord({
       title: "Try Compass",
       description:
-        "Welcome! Click any empty time slot to create an event, or press C. When you're ready to sync Google Calendar, use the Connect Google Calendar button in the sidebar.",
+        "Welcome! Click any empty time slot to create an event, or press C. When you're ready to sync your calendar, use the connect button in the sidebar.",
       schedule: {
         kind: "timed",
         start: todayAt(10, 0),
