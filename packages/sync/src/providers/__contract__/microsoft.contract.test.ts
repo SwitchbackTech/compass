@@ -1,6 +1,7 @@
 import { generateKeyPair, type KeyLike, SignJWT } from "jose";
 import { type AuthContractCase } from "@sync/providers/__contract__/auth.contract";
 import exchangeFixture from "@sync/providers/__contract__/fixtures/microsoft/exchange-success.json";
+import normalizerFixture from "@sync/providers/__contract__/fixtures/microsoft/normalizer.json";
 import refreshRevokedFixture from "@sync/providers/__contract__/fixtures/microsoft/refresh-invalid-grant.json";
 import refreshSuccessFixture from "@sync/providers/__contract__/fixtures/microsoft/refresh-success.json";
 import {
@@ -9,7 +10,12 @@ import {
   type MicrosoftTokenEndpoint,
   type MicrosoftTokenResponse,
 } from "@sync/providers/microsoft/microsoft-auth.adapter";
+import {
+  type GraphEvent,
+  normalizeMicrosoftEvent,
+} from "@sync/providers/microsoft/microsoft-event.normalizer";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
+import { ProviderEventError } from "@sync/providers/provider-event.port";
 
 const CLIENT_ID = "microsoft-client-id";
 const CLIENT_SECRET = "microsoft-client-secret";
@@ -172,3 +178,89 @@ describeAuthCases(
     },
   ],
 );
+
+interface NormalizerCorpus {
+  readonly timed: GraphEvent;
+  readonly allDay: GraphEvent;
+  readonly seriesMaster: GraphEvent;
+  readonly exception: GraphEvent;
+  readonly cancelledException: GraphEvent;
+  readonly occurrence: GraphEvent;
+  readonly attendeesAndConference: GraphEvent;
+  readonly masterCategories: Record<string, string>;
+}
+
+const normalizerCorpus = normalizerFixture as NormalizerCorpus;
+const masterCategories = new Map(
+  Object.entries(normalizerCorpus.masterCategories),
+);
+
+describe("microsoft normalizer contract", () => {
+  it("normalizes a timed event from the Graph fixture corpus", () => {
+    const read = normalizeMicrosoftEvent(normalizerCorpus.timed);
+    expect(read.kind).toBe("event");
+    if (read.kind !== "event") return;
+    expect(read.providerEventId).toBe("AAMkAGI2TG93AAA=");
+    expect(read.schedule.kind).toBe("timed");
+    expect(read.recurrence).toEqual({ kind: "single" });
+  });
+
+  it("normalizes an all-day free event from the Graph fixture corpus", () => {
+    const read = normalizeMicrosoftEvent(normalizerCorpus.allDay);
+    expect(read.kind).toBe("event");
+    if (read.kind !== "event") return;
+    expect(read.busy).toBe(false);
+    expect(read.schedule).toEqual({
+      kind: "allDay",
+      start: "2022-02-22",
+      end: "2022-02-23",
+    });
+  });
+
+  it("normalizes a series master and exception from the Graph fixture corpus", () => {
+    const master = normalizeMicrosoftEvent(normalizerCorpus.seriesMaster);
+    expect(master.kind).toBe("event");
+    if (master.kind !== "event") return;
+    expect(master.recurrence.kind).toBe("seriesMaster");
+
+    const exception = normalizeMicrosoftEvent(normalizerCorpus.exception);
+    expect(exception.kind).toBe("event");
+    if (exception.kind !== "event") return;
+    expect(exception.recurrence).toEqual({
+      kind: "instance",
+      seriesProviderId: "AAMkAGI2TG95AAA=",
+      recurrenceId: "2025-09-08T01:30:00.000Z",
+    });
+  });
+
+  it("normalizes a cancelled exception from the Graph fixture corpus", () => {
+    const read = normalizeMicrosoftEvent(normalizerCorpus.cancelledException);
+    expect(read.kind).toBe("cancellation");
+    if (read.kind !== "cancellation") return;
+    expect(read.series).toEqual({
+      seriesProviderId: "AAMkAGI2TG95AAA=",
+      recurrenceId: "2013-05-08T22:00:00.000Z",
+    });
+  });
+
+  it("skips occurrence rows from the Graph fixture corpus", () => {
+    expect(() => normalizeMicrosoftEvent(normalizerCorpus.occurrence)).toThrow(
+      ProviderEventError,
+    );
+  });
+
+  it("normalizes attendees, conference, and category color from the Graph fixture corpus", () => {
+    const read = normalizeMicrosoftEvent(
+      normalizerCorpus.attendeesAndConference,
+      masterCategories,
+    );
+    expect(read.kind).toBe("event");
+    if (read.kind !== "event") return;
+    expect(read.content.attendees.length).toBe(2);
+    expect(read.content.conference).toEqual({
+      url: "https://teams.microsoft.com/l/meetup-join/abc",
+      label: "Microsoft Teams",
+    });
+    expect(read.content.colorHex).toBe("#0078D4");
+  });
+});
