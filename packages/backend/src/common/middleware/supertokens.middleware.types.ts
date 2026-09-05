@@ -40,6 +40,20 @@ type MicrosoftThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
   session?: SessionContainerInterface;
 };
 
+type AppleThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
+  rawUserInfoFromProvider: {
+    fromIdTokenPayload?: Record<string, unknown>;
+    fromUserInfoAPI?: Record<string, unknown>;
+  };
+  oAuthTokens: {
+    refresh_token?: string;
+    access_token?: string;
+    scope?: string;
+  };
+  user: { id: string; loginMethods: unknown[] };
+  session?: SessionContainerInterface;
+};
+
 export type ThirdPartySignInUpInput = Parameters<ThirdPartySignInUpPostFn>[0];
 export type CreateGoogleSignInResponse =
   | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
@@ -47,6 +61,9 @@ export type CreateGoogleSignInResponse =
 export type CreateMicrosoftSignInResponse =
   | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
   | MicrosoftThirdPartySignInUpSuccess;
+export type CreateAppleSignInResponse =
+  | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
+  | AppleThirdPartySignInUpSuccess;
 export type CreateThirdPartyUserFn =
   ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"];
 export type AuthFormField = { id: string; value: unknown };

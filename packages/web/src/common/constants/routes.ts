@@ -6,6 +6,7 @@ export const ROOT_ROUTES = {
   BOOK_CONFIRMED: "/book/confirmed/$reservationId",
   CLEANUP: "/cleanup",
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
+  APPLE_AUTH_CALLBACK: "/auth/apple/callback",
   LIFE: "/life",
   ROOT: "/",
   WEEK: "/week",

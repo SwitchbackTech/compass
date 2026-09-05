@@ -6,6 +6,7 @@ import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
+import { appleAuthService } from "@backend/auth/services/apple/apple.auth.service";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { microsoftAuthService } from "@backend/auth/services/microsoft/microsoft.auth.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -16,6 +17,7 @@ import {
 import * as supertokensMiddlewareUtil from "@backend/common/middleware/supertokens.middleware.util";
 import {
   buildResetPasswordLink,
+  createAppleSignInSuccess,
   createGoogleSignInSuccess,
   createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
@@ -61,6 +63,7 @@ describe("supertokens.middleware", () => {
     spyOn(microsoftAuthService, "handleMicrosoftAuth").mockResolvedValue(
       undefined,
     );
+    spyOn(appleAuthService, "handleAppleAuth").mockResolvedValue(undefined);
     spyOn(userService, "getCanonicalCompassUserId").mockResolvedValue(null);
     spyOn(userService, "upsertUserFromAuth").mockResolvedValue({
       user: { userId: "compass-user-id" },
@@ -77,6 +80,10 @@ describe("supertokens.middleware", () => {
     spyOn(
       supertokensMiddlewareUtil,
       "createMicrosoftSignInSuccess",
+    ).mockImplementation((payload) => payload as never);
+    spyOn(
+      supertokensMiddlewareUtil,
+      "createAppleSignInSuccess",
     ).mockImplementation((payload) => payload as never);
     spyOn(
       supertokensMiddlewareUtil,
@@ -98,6 +105,7 @@ describe("supertokens.middleware", () => {
     (UserMetadata.init as Mock).mockClear();
     (googleAuthService.handleGoogleAuth as Mock).mockClear();
     (microsoftAuthService.handleMicrosoftAuth as Mock).mockClear();
+    (appleAuthService.handleAppleAuth as Mock).mockClear();
     (userService.getCanonicalCompassUserId as Mock).mockClear();
     (userService.upsertUserFromAuth as Mock).mockClear();
     (supertokensMiddlewareUtil.buildResetPasswordLink as Mock).mockClear();
@@ -105,6 +113,7 @@ describe("supertokens.middleware", () => {
     (
       supertokensMiddlewareUtil.createMicrosoftSignInSuccess as Mock
     ).mockClear();
+    (supertokensMiddlewareUtil.createAppleSignInSuccess as Mock).mockClear();
     (supertokensMiddlewareUtil.ensureExternalUserIdMapping as Mock).mockClear();
     (supertokensMiddlewareUtil.getFormFieldValue as Mock).mockClear();
 
@@ -184,15 +193,23 @@ describe("supertokens.middleware", () => {
       }
     });
 
-    it("omits ThirdParty when Google and Microsoft are not configured", () => {
+    it("omits ThirdParty when Google, Microsoft, and Apple are not configured", () => {
       const originalGoogleId = CONFIG.GOOGLE_CLIENT_ID;
       const originalGoogleSecret = CONFIG.GOOGLE_CLIENT_SECRET;
       const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
       const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+      const originalAppleId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+      const originalAppleTeam = CONFIG.APPLE_SIGNIN_TEAM_ID;
+      const originalAppleKey = CONFIG.APPLE_SIGNIN_KEY_ID;
+      const originalApplePrivate = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
       CONFIG.MICROSOFT_CLIENT_ID = undefined;
       CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
+      CONFIG.APPLE_SIGNIN_SERVICES_ID = undefined;
+      CONFIG.APPLE_SIGNIN_TEAM_ID = undefined;
+      CONFIG.APPLE_SIGNIN_KEY_ID = undefined;
+      CONFIG.APPLE_SIGNIN_PRIVATE_KEY = undefined;
 
       try {
         initSupertokens();
@@ -201,6 +218,10 @@ describe("supertokens.middleware", () => {
         CONFIG.GOOGLE_CLIENT_SECRET = originalGoogleSecret;
         CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
         CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
+        CONFIG.APPLE_SIGNIN_SERVICES_ID = originalAppleId;
+        CONFIG.APPLE_SIGNIN_TEAM_ID = originalAppleTeam;
+        CONFIG.APPLE_SIGNIN_KEY_ID = originalAppleKey;
+        CONFIG.APPLE_SIGNIN_PRIVATE_KEY = originalApplePrivate;
       }
 
       expect(ThirdParty.init).not.toHaveBeenCalled();
@@ -221,10 +242,18 @@ describe("supertokens.middleware", () => {
       const originalGoogleSecret = CONFIG.GOOGLE_CLIENT_SECRET;
       const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
       const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+      const originalAppleId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+      const originalAppleTeam = CONFIG.APPLE_SIGNIN_TEAM_ID;
+      const originalAppleKey = CONFIG.APPLE_SIGNIN_KEY_ID;
+      const originalApplePrivate = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
       CONFIG.MICROSOFT_CLIENT_ID = undefined;
       CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
+      CONFIG.APPLE_SIGNIN_SERVICES_ID = undefined;
+      CONFIG.APPLE_SIGNIN_TEAM_ID = undefined;
+      CONFIG.APPLE_SIGNIN_KEY_ID = undefined;
+      CONFIG.APPLE_SIGNIN_PRIVATE_KEY = undefined;
 
       try {
         initSupertokens();
@@ -233,6 +262,10 @@ describe("supertokens.middleware", () => {
         CONFIG.GOOGLE_CLIENT_SECRET = originalGoogleSecret;
         CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
         CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
+        CONFIG.APPLE_SIGNIN_SERVICES_ID = originalAppleId;
+        CONFIG.APPLE_SIGNIN_TEAM_ID = originalAppleTeam;
+        CONFIG.APPLE_SIGNIN_KEY_ID = originalAppleKey;
+        CONFIG.APPLE_SIGNIN_PRIVATE_KEY = originalApplePrivate;
       }
 
       expect(ThirdParty.init).not.toHaveBeenCalled();
@@ -271,6 +304,44 @@ describe("supertokens.middleware", () => {
         (provider) => provider.config.thirdPartyId,
       );
       expect(ids).toContain("active-directory");
+    });
+
+    it("includes the Apple provider when Sign in with Apple is configured", () => {
+      const originalAppleId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+      const originalAppleTeam = CONFIG.APPLE_SIGNIN_TEAM_ID;
+      const originalAppleKey = CONFIG.APPLE_SIGNIN_KEY_ID;
+      const originalApplePrivate = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
+      CONFIG.APPLE_SIGNIN_SERVICES_ID = "com.example.siwa";
+      CONFIG.APPLE_SIGNIN_TEAM_ID = "TEAMID12";
+      CONFIG.APPLE_SIGNIN_KEY_ID = "KEYID123";
+      CONFIG.APPLE_SIGNIN_PRIVATE_KEY = "dummy-private-key";
+
+      try {
+        initSupertokens();
+      } finally {
+        CONFIG.APPLE_SIGNIN_SERVICES_ID = originalAppleId;
+        CONFIG.APPLE_SIGNIN_TEAM_ID = originalAppleTeam;
+        CONFIG.APPLE_SIGNIN_KEY_ID = originalAppleKey;
+        CONFIG.APPLE_SIGNIN_PRIVATE_KEY = originalApplePrivate;
+      }
+
+      expect(ThirdParty.init).toHaveBeenCalledTimes(1);
+      const thirdPartyConfig = getFirstCallArg<{
+        signInAndUpFeature: {
+          providers: Array<{
+            config: {
+              thirdPartyId: string;
+              clients: Array<{ additionalConfig?: { keyId?: string } }>;
+            };
+          }>;
+        };
+      }>(ThirdParty.init);
+      const apple = thirdPartyConfig.signInAndUpFeature.providers.find(
+        (provider) => provider.config.thirdPartyId === "apple",
+      );
+      expect(apple?.config.clients[0]?.additionalConfig?.keyId).toBe(
+        "KEYID123",
+      );
     });
 
     it("wires EmailPassword name validation", async () => {
@@ -585,6 +656,42 @@ describe("supertokens.middleware", () => {
         { hasExistingSession: false },
       );
       expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
+    });
+
+    it("calls appleAuthService.handleAppleAuth for apple", async () => {
+      const responsePayload = { status: "OK" };
+      const successPayload = { providerUser: { sub: "apple-sub" } };
+
+      (createAppleSignInSuccess as Mock).mockReturnValue(successPayload);
+
+      initSupertokens();
+
+      const thirdPartyConfig = getFirstCallArg<{
+        override: {
+          apis: (originalImplementation: {
+            signInUpPOST?: (input: unknown) => Promise<unknown>;
+          }) => {
+            signInUpPOST: (input: unknown) => Promise<unknown>;
+          };
+        };
+      }>(ThirdParty.init);
+
+      const originalImplementation = {
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
+      };
+
+      const overridden = thirdPartyConfig.override.apis(originalImplementation);
+
+      await overridden.signInUpPOST({
+        provider: { id: "apple" },
+      });
+
+      expect(appleAuthService.handleAppleAuth).toHaveBeenCalledWith(
+        successPayload,
+        { hasExistingSession: false },
+      );
+      expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
+      expect(microsoftAuthService.handleMicrosoftAuth).not.toHaveBeenCalled();
     });
 
     it("replaces the EmailPassword sign-up session with the canonical Compass user", async () => {
