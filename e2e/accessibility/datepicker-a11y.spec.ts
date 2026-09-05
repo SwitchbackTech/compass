@@ -140,23 +140,22 @@ const getRenderedContrast = (locator: Locator) =>
         current = current.parentElement;
       }
 
-      const inheritedBackground = ancestors
-        .reverse()
-        .map((ancestor) => parseRgb(getComputedStyle(ancestor).backgroundColor))
-        .reduce<Rgba>(
-          (background, foreground) => blend(foreground, background),
-          { a: 1, b: 255, g: 255, r: 255 },
-        );
-      const beforeStyle = getComputedStyle(element, "::before");
-
-      if (beforeStyle.content !== "none") {
-        return blend(
-          parseRgb(beforeStyle.backgroundColor),
-          inheritedBackground,
-        );
-      }
-
-      return inheritedBackground;
+      // Paint order from the outermost ancestor down. A `::before` pseudo
+      // element counts too: the picker draws its week capsules on the week
+      // row's `::before`, and the selected day's white text sits on that
+      // accent fill, not on the sidebar panel behind it.
+      return ancestors.reverse().reduce<Rgba>(
+        (background, ancestor) => {
+          const withOwn = blend(
+            parseRgb(getComputedStyle(ancestor).backgroundColor),
+            background,
+          );
+          const beforeStyle = getComputedStyle(ancestor, "::before");
+          if (beforeStyle.content === "none") return withOwn;
+          return blend(parseRgb(beforeStyle.backgroundColor), withOwn);
+        },
+        { a: 1, b: 255, g: 255, r: 255 },
+      );
     };
 
     const style = getComputedStyle(element);

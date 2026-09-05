@@ -49,4 +49,19 @@ describe("getMonthPickerDayClassName", () => {
     expect(shifted).toContain(MONTH_PICKER_IN_VIEW_CLASS);
     expect(shifted).toContain("!font-semibold");
   });
+
+  it("bolds the whole cursor week when a week end is given", () => {
+    const weekClass = (date: string) =>
+      getMonthPickerDayClassName({
+        date: dayjs(date),
+        selectedDate: dayjs("2026-05-10"),
+        selectedEnd: dayjs("2026-05-16"),
+        viewEnd: dayjs("2026-05-16"),
+        viewStart: dayjs("2026-05-10"),
+      });
+
+    expect(weekClass("2026-05-10")).toContain("!font-semibold");
+    expect(weekClass("2026-05-16")).toContain("!font-semibold");
+    expect(weekClass("2026-05-17")).toContain("!font-light");
+  });
 });

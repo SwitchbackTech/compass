@@ -27,6 +27,7 @@ export const POINTER_GRID_CREATE_REQUEST = "compass:pointer-grid-create";
 
 export const POINTER_ACTIONS = {
   eventOpen: "event.open",
+  datePick: "calendar.date-pick",
   goToToday: "calendar.today",
   switchView: "calendar.view",
   sidebarClose: "sidebar.close",

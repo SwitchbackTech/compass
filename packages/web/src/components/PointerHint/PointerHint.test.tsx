@@ -111,6 +111,20 @@ describe("PointerHint", () => {
     );
   });
 
+  it("teaches the focus key, arrows, and Enter for the month picker", () => {
+    render(<PointerHint />);
+
+    act(() => {
+      pointerConfusionActions.triggerHintForTests({
+        actionId: POINTER_ACTIONS.datePick,
+      });
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Press I to focus the calendar, then use the arrow keys and Enter to go to a date.",
+    );
+  });
+
   it("teaches Esc for the up-next dismiss target", () => {
     render(<PointerHint />);
 

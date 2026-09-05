@@ -885,6 +885,14 @@
     outline-offset: 1px;
   }
 
+  /* Sidebar days are keyboard targets, not click targets: no hover affordance. */
+  &[data-view="sidebar"] .react-datepicker__day,
+  &[data-view="sidebar"] .react-datepicker__day:hover {
+    background-color: transparent;
+    color: inherit;
+    cursor: default;
+  }
+
   & .react-datepicker__day-names {
     display: flex;
     width: 100%;
@@ -1239,5 +1247,43 @@
     .react-datepicker__day {
     position: relative;
     z-index: 10;
+  }
+}
+
+/*
+ * Week mode: the cursor is a whole week row. react-datepicker's showWeekPicker
+ * marks every day in the week as selected, so the per-day circle above is
+ * replaced by one accent capsule on the row, and the focus ring wraps the
+ * row instead of its first day (the only tab stop).
+ */
+.c-month-picker[data-picker-unit="week"] .c-date-picker {
+  & .react-datepicker__day--selected::before {
+    content: none;
+  }
+  & .react-datepicker__day--selected,
+  & .react-datepicker__day--selected:hover {
+    color: var(--date-picker-selected-text);
+  }
+  & .react-datepicker__week--selected {
+    position: relative;
+  }
+  & .react-datepicker__week--selected::before {
+    position: absolute;
+    inset: 0 -3px;
+    border-radius: var(--radius-default);
+    background: var(--date-picker-selected-bg);
+    content: "";
+  }
+  & .react-datepicker__week--selected .react-datepicker__day {
+    position: relative;
+    z-index: 10;
+  }
+  & .react-datepicker__day:focus-visible {
+    outline: none;
+  }
+  & .react-datepicker__week:has(.react-datepicker__day:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-radius: var(--radius-default);
   }
 }

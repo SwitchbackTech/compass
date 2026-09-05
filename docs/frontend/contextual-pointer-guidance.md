@@ -14,7 +14,8 @@ of a generic legend. Acceptance coverage lives in
    Event open teaches the current jump token plus Enter, or `S` if no token is
    available. An empty timed-grid click teaches the matching HHMM digits
    (`1200`, `1830`) so the same create can be typed. An empty all-day-row
-   click teaches `Shift+C`.
+   click teaches `Shift+C`. The sidebar month picker (`calendar.date-pick`)
+   teaches `I`, then the arrow keys and Enter.
 4. A primary event click also dispatches `compass:pointer-event-jump` so the
    mounted grid's event-jump owner can assign tokens and activate leaderless
    sequences. Right-clicks stay on the generic fallback so `M` still opens
