@@ -24,6 +24,10 @@ google:
   clientId: test-client-id
   clientSecret: unused-e2e-build
 
+microsoft:
+  clientId: test-microsoft-client-id
+  clientSecret: unused-e2e-build
+
 posthog:
   key: test-posthog-key
   host: https://app.posthog.com

@@ -13,8 +13,12 @@ import {
   resetUseStartGoogleAuthorizationForTests,
 } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
-  resetGoogleAvailabilityForTests,
-  setGoogleAvailabilityForTests,
+  registerUseStartProviderAuthorizationForTests,
+  resetUseStartProviderAuthorizationForTests,
+} from "@web/auth/providers/authorization/useStartProviderAuthorization";
+import {
+  resetProviderAvailabilityForTests,
+  setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import {
   afterAll,
@@ -79,6 +83,20 @@ const goToChooseScreen = async (user: ReturnType<typeof userEvent.setup>) => {
     screen.getByRole("button", { name: "Explore without an account" }),
   ).toBeTruthy();
 };
+
+function setSignInAvailability(options: {
+  google?: "available" | "unavailable";
+  microsoft?: "available" | "unavailable";
+  apple?: "available" | "unavailable";
+}) {
+  resetProviderAvailabilityForTests();
+  setProviderAvailabilityForTests("google", options.google ?? "unavailable");
+  setProviderAvailabilityForTests(
+    "microsoft",
+    options.microsoft ?? "unavailable",
+  );
+  setProviderAvailabilityForTests("apple", options.apple ?? "unavailable");
+}
 
 describe("WelcomeModal", () => {
   beforeEach(() => {
@@ -501,27 +519,40 @@ describe("WelcomeModal", () => {
     ).not.toHaveFocus();
   });
 
-  describe("with Google available", () => {
+  describe("with sign-in providers configured", () => {
     const startGoogleAuthorization = mock();
+    const startMicrosoftAuthorization = mock();
+    const startAppleAuthorization = mock();
 
     beforeEach(() => {
       startGoogleAuthorization.mockClear();
+      startMicrosoftAuthorization.mockClear();
+      startAppleAuthorization.mockClear();
       registerUseStartGoogleAuthorizationForTests(() => ({
         loading: false,
         startGoogleAuthorization,
       }));
-      resetGoogleAvailabilityForTests();
-      setGoogleAvailabilityForTests("available");
+      registerUseStartProviderAuthorizationForTests((provider) => ({
+        loading: false,
+        startAuthorization:
+          provider === "microsoft"
+            ? startMicrosoftAuthorization
+            : provider === "apple"
+              ? startAppleAuthorization
+              : mock(),
+      }));
+      setSignInAvailability({ google: "available" });
     });
 
     afterEach(() => {
-      // Unmount before restoring the seams. resetGoogleAvailabilityForTests
+      // Unmount before restoring the seams. resetProviderAvailabilityForTests
       // emits synchronously, so a still-mounted modal would re-render against
       // the real hook after the mock had already rendered without one, and
       // React would throw "Should have a queue" on the hook-count change.
       cleanup();
       resetUseStartGoogleAuthorizationForTests();
-      resetGoogleAvailabilityForTests();
+      resetUseStartProviderAuthorizationForTests();
+      resetProviderAvailabilityForTests();
     });
 
     it("leads with the Google round trip that also connects the calendar", async () => {
@@ -570,6 +601,79 @@ describe("WelcomeModal", () => {
       await user.keyboard("g");
 
       expect(startGoogleAuthorization).toHaveBeenCalled();
+    });
+
+    it("renders all three configured provider buttons with whole-string labels", async () => {
+      setSignInAvailability({
+        google: "available",
+        microsoft: "available",
+        apple: "available",
+      });
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toHaveTextContent("Continue with Google");
+      expect(
+        screen.getByRole("button", { name: "Continue with Microsoft" }),
+      ).toHaveTextContent("Continue with Microsoft");
+      expect(
+        screen.getByRole("button", { name: "Continue with Apple" }),
+      ).toHaveTextContent("Continue with Apple");
+      expect(
+        screen.getByText("Signs you up and connects your Google Calendar."),
+      ).toBeTruthy();
+      expect(
+        screen.getByText("Signs you up and connects your Outlook calendar."),
+      ).toBeTruthy();
+      expect(screen.getByText("You'll pick your calendar next.")).toBeTruthy();
+    });
+
+    it("renders only Google when it is the sole configured provider", async () => {
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toBeTruthy();
+      expect(
+        screen.queryByRole("button", { name: "Continue with Microsoft" }),
+      ).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Continue with Apple" }),
+      ).toBeNull();
+    });
+
+    it("shows Sign up without email when no providers are configured", async () => {
+      setSignInAvailability({});
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      expect(
+        screen.queryByRole("button", { name: "Continue with Google" }),
+      ).toBeNull();
+      expect(screen.getByRole("button", { name: "Sign up" })).toBeTruthy();
+      expect(
+        screen.queryByRole("button", { name: "Sign up with email" }),
+      ).toBeNull();
+    });
+
+    it("starts Microsoft auth with the M shortcut", async () => {
+      setSignInAvailability({
+        google: "available",
+        microsoft: "available",
+      });
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      await user.keyboard("m");
+
+      expect(startMicrosoftAuthorization).toHaveBeenCalled();
     });
   });
 });

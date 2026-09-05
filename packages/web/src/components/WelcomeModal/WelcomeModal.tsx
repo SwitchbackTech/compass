@@ -1,12 +1,13 @@
 import classNames from "classnames";
 import { useContext, useEffect, useId, useRef, useState } from "react";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
-import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { track } from "@web/auth/posthog/track";
-import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
+import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
+import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
-import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
+import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { hasPlayDeepLink } from "@web/components/ShortcutShowcase/play-link";
@@ -54,9 +55,9 @@ function WelcomeSteps({ step }: { step: WelcomeStep }) {
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal, isOpen: isAuthModalOpen } = useAuthModal();
-  const isGoogleAvailable = useIsProviderAvailable("google", "signIn");
-  const { loading: isGoogleAuthLoading, startGoogleAuthorization } =
-    useStartGoogleAuthorization({ intent: "signIn" });
+  const { available, isLoading, loadingKind, startSignIn } =
+    useSignInProviders();
+  const hasSignInProviders = available.length > 0;
   // A ?play= deep link goes straight to the practice game. This initializer
   // runs before ShowcasePlayLink's consume effect can mark welcome seen, so
   // the param itself has to keep this modal closed.
@@ -77,7 +78,7 @@ export function WelcomeModal() {
   // cannot start the practice on top of a login that has not committed yet.
   const [hidingForAuth, setHidingForAuth] = useState(false);
   const hidingForAuthRef = useRef(false);
-  const googleHandoffRef = useRef(false);
+  const providerHandoffRef = useRef(false);
   // Each screen has one primary button, and Enter is its native activation.
   // On the last screen that is email signup rather than Google: Enter on an
   // OAuth redirect would fling a first-time visitor off-site.
@@ -101,9 +102,9 @@ export function WelcomeModal() {
   }, [isAuthModalOpen]);
 
   useEffect(() => {
-    if (isGoogleAuthLoading) return;
-    googleHandoffRef.current = false;
-  }, [isGoogleAuthLoading]);
+    if (isLoading) return;
+    providerHandoffRef.current = false;
+  }, [isLoading]);
 
   const shownRef = useRef(false);
   useEffect(() => {
@@ -139,7 +140,7 @@ export function WelcomeModal() {
   // not one of them: a login during that fade must still cancel the pending
   // practice start, so only the step and explore actions check it.
   const isHandingOff = () =>
-    hidingForAuthRef.current || googleHandoffRef.current || isGoogleAuthLoading;
+    hidingForAuthRef.current || providerHandoffRef.current || isLoading;
 
   const advance = () => {
     if (closing || isHandingOff()) return;
@@ -191,21 +192,18 @@ export function WelcomeModal() {
     openModal(cta === "log_in" ? "login" : "signUp");
   };
 
-  // The shortest path to the thing that makes Compass worth keeping: one
-  // round trip that signs the user up and grants calendar access together,
-  // because the Google scopes Compass asks for include the calendar.
-  const handOffToGoogle = () => {
-    // Stay mounted: Google is a redirect, and a GIS error must not hide
-    // welcome for the rest of the session. Ignore Explore while it loads.
+  const handOffToProvider = (kind: ProviderKind) => {
+    // Stay mounted: OAuth is a redirect, and a provider-side error must not
+    // hide welcome for the rest of the session. Ignore Explore while it loads.
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
-    googleHandoffRef.current = true;
+    providerHandoffRef.current = true;
     cancelDismiss();
     markWelcomeSeen();
     shortcutShowcaseActions.deferUntilSignup();
-    track("welcome_modal_dismissed", { cta: "sign_up_google" });
-    track("signup_started", { source: "welcome_modal_google" });
-    void startGoogleAuthorization();
+    track("welcome_modal_dismissed", { cta: `sign_up_${kind}` });
+    track("signup_started", { source: `welcome_modal_${kind}` });
+    startSignIn(kind);
   };
 
   const handleShortcutKey = (e: React.KeyboardEvent) => {
@@ -224,9 +222,10 @@ export function WelcomeModal() {
       return;
     }
     if (step !== 3) return;
-    if (key === "g" && isGoogleAvailable) {
+    const providerKind = signInProviderForShortcutLetter(key, available);
+    if (providerKind) {
       e.preventDefault();
-      handOffToGoogle();
+      handOffToProvider(providerKind);
     } else if (key === "u") {
       e.preventDefault();
       handOffToAuth("sign_up");
@@ -368,27 +367,21 @@ export function WelcomeModal() {
                 calendar access at once, leads; everything else is a fallback
                 from it. */}
             <div className="flex w-full flex-col items-center gap-3">
-              {isGoogleAvailable && (
-                <>
-                  <GoogleButton
-                    onClick={handOffToGoogle}
-                    disabled={isGoogleAuthLoading}
-                    label="Continue with Google"
-                    shortcutKey="G"
-                    style={{ width: "100%" }}
-                  />
-                  <p className="text-center text-text-muted text-xs">
-                    Signs you up and connects your Google Calendar.
-                  </p>
-                </>
-              )}
+              {hasSignInProviders ? (
+                <SignInProviderButtons
+                  available={available}
+                  loadingKind={isLoading ? loadingKind : null}
+                  onSignIn={handOffToProvider}
+                  variant="welcome"
+                />
+              ) : null}
               <button
                 type="button"
                 ref={primaryRef}
                 onClick={() => handOffToAuth("sign_up")}
                 className={PRIMARY_CTA_CLASS}
               >
-                {isGoogleAvailable ? "Sign up with email" : "Sign up"}
+                {hasSignInProviders ? "Sign up with email" : "Sign up"}
                 <ShortcutHint className="ml-2">U</ShortcutHint>
               </button>
               <button

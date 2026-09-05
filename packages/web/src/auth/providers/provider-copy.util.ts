@@ -122,6 +122,12 @@ export function reconnectPointerHint(kind: ProviderKind): string {
   return `Press G to reconnect ${calendarProductName(kind)}.`;
 }
 
+export const SIGN_IN_WELCOME_SUBLINE: Record<ProviderKind, string> = {
+  google: "Signs you up and connects your Google Calendar.",
+  microsoft: "Signs you up and connects your Outlook calendar.",
+  apple: "You'll pick your calendar next.",
+};
+
 export function relabelConnectCommand(
   commandAction: GoogleUiConfig["commandAction"],
   kind: ProviderKind,
