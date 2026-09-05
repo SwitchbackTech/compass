@@ -1,3 +1,4 @@
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type Config } from "./config.constants";
 
 export const isGoogleClientIdValid = (clientId?: string): boolean =>
@@ -38,6 +39,26 @@ export const isAppleSignInConfigured = (
 export const isAppleConnectConfigured = (
   env: Pick<Config, "SYNC_CREDENTIAL_ENCRYPTION_KEY">,
 ): boolean => isConfiguredValue(env.SYNC_CREDENTIAL_ENCRYPTION_KEY);
+
+export const isOAuthConnectConfigured = (
+  env: Pick<
+    Config,
+    | "GOOGLE_CLIENT_ID"
+    | "GOOGLE_CLIENT_SECRET"
+    | "MICROSOFT_CLIENT_ID"
+    | "MICROSOFT_CLIENT_SECRET"
+  >,
+  provider: ProviderKind,
+): boolean => {
+  switch (provider) {
+    case "google":
+      return isGoogleConfigured(env);
+    case "microsoft":
+      return isMicrosoftConfigured(env);
+    case "apple":
+      return false;
+  }
+};
 
 const isStripeValueValid = (value?: string): boolean =>
   Boolean(value && value !== "undefined");

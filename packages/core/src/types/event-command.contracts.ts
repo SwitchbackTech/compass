@@ -200,6 +200,9 @@ export const EventMutationErrorCodeSchema = z.enum([
   // always safe to retry with the same idempotency key.
   "SYNC_UNAVAILABLE",
   "GOOGLE_REVOKED",
+  // Provider-neutral alias of GOOGLE_REVOKED. Both codes stay on the wire
+  // until milestone C drops the Google-named one.
+  "CONNECTION_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).
   "MAINTENANCE",
   // A replace tried to move a provider-linked event to a different calendar.
@@ -231,5 +234,6 @@ export const EventMutationErrorSchema = z.strictObject({
   code: EventMutationErrorCodeSchema,
   message: z.string().min(1),
   retryable: z.boolean(),
+  connectionId: z.string().optional(),
 });
 export type EventMutationError = z.infer<typeof EventMutationErrorSchema>;

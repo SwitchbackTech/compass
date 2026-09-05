@@ -7,6 +7,7 @@ import {
   isBillingBypassed,
   isGoogleConfigured,
   isMicrosoftConfigured,
+  isOAuthConnectConfigured,
   isStripeConfigured,
 } from "@backend/common/constants/config.util";
 import { describe, expect, it } from "bun:test";
@@ -174,6 +175,17 @@ describe("config.constants", () => {
         microsoft: { clientId: "ms-client-id" },
       }),
     ).toThrow("Microsoft configuration requires both client ID and secret");
+  });
+
+  it("reports OAuth connect configured per provider", () => {
+    const googleOnly = parseConfigFromEnv({
+      ...validEnv,
+      GOOGLE_CLIENT_ID: "client-id",
+      GOOGLE_CLIENT_SECRET: "client-secret",
+    });
+    expect(isOAuthConnectConfigured(googleOnly, "google")).toBe(true);
+    expect(isOAuthConnectConfigured(googleOnly, "microsoft")).toBe(false);
+    expect(isOAuthConnectConfigured(googleOnly, "apple")).toBe(false);
   });
 
   it("reports Microsoft as configured only when both credentials are present", () => {

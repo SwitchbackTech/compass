@@ -1,7 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import {
   type GoogleConnectionState,
-  type GoogleSyncConnectionSummary,
+  type SyncConnectionSummary,
 } from "@core/types/user.types";
 import {
   toGoogleConnectionState,
@@ -21,7 +21,7 @@ export interface GoogleConnectionFromSync {
   // none / outage. The browser derives the precedence-winning one from this
   // plus connectionState (selectPrimaryGoogleSyncConnection) rather than
   // receiving a second, redundant copy of it over the wire.
-  connections: GoogleSyncConnectionSummary[];
+  connections: SyncConnectionSummary[];
 }
 
 /**

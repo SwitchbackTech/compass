@@ -5,19 +5,17 @@ import {
 } from "@core/types/sync/connection.contracts";
 import {
   type GoogleConnectionState,
-  type GoogleSyncConnectionSummary,
+  type SyncConnectionSummary,
 } from "@core/types/user.types";
 
 /**
  * Translate the sync service's multi-connection health model into the single
- * `GoogleConnectionState` enum the browser already reads from `/user/metadata`.
+ * `GoogleConnectionState` enum the browser already reads from
+ * `metadata.google.connectionState`.
  *
- * The two implementations model connections differently — sync tracks many
- * connections each with a rich `state`/`stateReason`, while the legacy product
- * exposes one derived Google enum — so delegating status to sync means
- * translating here rather than passing a shape through. Keeping this a pure
- * function makes the mapping exhaustively testable in isolation, independent of
- * any route wiring.
+ * The enum stays Google-specific during the overlap: only Google connections
+ * collapse into it. Per-connection state lives on each summary. Keeping this
+ * a pure function makes the mapping exhaustively testable in isolation.
  */
 
 // actionRequired reasons that mean the user must re-authorize (re-run the
@@ -63,8 +61,7 @@ function translateConnection(
 
 // When a principal has more than one Google connection, surface the most
 // actionable state so a single broken account is never hidden behind a healthy
-// one. A user has one Google account today; this keeps the contract honest if
-// that changes.
+// one. Microsoft and Apple connections do not participate in this enum.
 const PRECEDENCE: readonly GoogleConnectionState[] = [
   "RECONNECT_REQUIRED",
   "ATTENTION",
@@ -75,11 +72,12 @@ const PRECEDENCE: readonly GoogleConnectionState[] = [
 export function toGoogleConnectionState(
   connections: readonly ProviderConnection[],
 ): GoogleConnectionState {
-  // Google is the only provider today and this enum is Google-specific, so
-  // every connection maps directly.
-  if (connections.length === 0) return "NOT_CONNECTED";
+  const googleConnections = connections.filter(
+    (connection) => connection.provider === "google",
+  );
+  if (googleConnections.length === 0) return "NOT_CONNECTED";
 
-  const states = connections.map((connection) =>
+  const states = googleConnections.map((connection) =>
     translateConnection(connection.state, connection.stateReason),
   );
   for (const candidate of PRECEDENCE) {
@@ -92,9 +90,10 @@ export function toGoogleConnectionState(
 
 export function toGoogleSyncConnectionSummary(
   connection: ProviderConnection,
-): GoogleSyncConnectionSummary {
+): SyncConnectionSummary {
   return {
     id: connection.id,
+    provider: connection.provider,
     state: connection.state,
     stateReason: connection.stateReason,
     lastSyncedAt: connection.lastSyncedAt,

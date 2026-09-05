@@ -29,14 +29,34 @@ export class AuthRoutes extends CommonRoutesConfig {
 
     // Returns the provider consent URL for the browser to navigate to.
     this.app
+      .route(`/api/auth/connections/begin`)
+      .all(requireSession)
+      .post((req, res) => {
+        authController.beginConnection(req, res);
+      });
+
+    this.app
+      .route(`/api/auth/connections/refresh`)
+      .all(requireSession)
+      .post((req, res) => {
+        authController.refreshConnection(req, res);
+      });
+
+    this.app
+      .route(`/api/auth/connections/:connectionId`)
+      .all(requireSession)
+      .delete((req, res) => {
+        authController.disconnectConnection(req, res);
+      });
+
+    // Google aliases kept for one release. They force provider: google.
+    this.app
       .route(`/api/auth/google/connect/begin`)
       .all(requireSession)
       .post((req, res) => {
         authController.beginGoogleConnection(req, res);
       });
 
-    // Disconnect one connected Google account (the user's others are
-    // unaffected, as is their Compass sign-in).
     this.app
       .route(`/api/auth/google/connect/:connectionId`)
       .all(requireSession)
@@ -44,7 +64,6 @@ export class AuthRoutes extends CommonRoutesConfig {
         authController.disconnectGoogleConnection(req, res);
       });
 
-    // Enqueue Sync catch-up pulls for the signed-in user's calendars.
     this.app
       .route(`/api/auth/google/sync/refresh`)
       .all(requireSession)

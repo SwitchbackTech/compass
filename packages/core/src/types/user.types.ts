@@ -69,8 +69,9 @@ export interface Schema_UserBilling {
 }
 
 /**
- * Unified Google connection state computed by the server.
+ * Unified connection state computed by the server.
  * Clients read this value directly instead of deriving state from multiple sources.
+ * The Google-named alias stays until WP-08b reads `connections[]` per provider.
  */
 export type GoogleConnectionState =
   | "NOT_CONNECTED"
@@ -86,8 +87,9 @@ export type GoogleConnectionState =
 // A type alias, not an interface: only aliases get the implicit index
 // signature that lets these values sit inside SuperTokens' JSONObject
 // metadata payload without a cast at every call site.
-export type GoogleSyncConnectionSummary = {
+export type SyncConnectionSummary = {
   id: string;
+  provider?: "google" | "microsoft" | "apple";
   state: string;
   stateReason: string | null;
   lastSyncedAt: string | null;
@@ -97,21 +99,25 @@ export type GoogleSyncConnectionSummary = {
   // sync state/reason. The browser renders per-account status and reconnect
   // from it directly, so sync's state vocabulary stays on the server.
   connectionState: GoogleConnectionState;
-  // True when this connection granted a Google contacts scope (sync's
+  // True when this connection granted a contacts scope (sync's
   // `suggestContacts` capability), so the attendee field can offer live
   // contact suggestions. False is an ordinary state — contacts are an
   // OPTIONAL grant — and gates the "enable contact suggestions" nudge,
   // never an error surface.
   canSuggestContacts: boolean;
 };
+export type GoogleSyncConnectionSummary = SyncConnectionSummary;
 
 // Intersection (not extends): SuperTokens JSONObject's string index signature
 // rejects a nested `google.connection` object on an interface extends clause,
 // even though every field is JSON-safe.
 export type UserMetadata = SupertokensUserMetadata.JSONObject & {
+  // Every connected provider account. WP-08b reads this; until then the
+  // overlap `google.connections` copy stays so the existing web keeps working.
+  connections?: SyncConnectionSummary[];
   google?: {
     connectionState?: GoogleConnectionState;
-    // Every connected provider account, in connection order. The
+    // Every connected Google account, in connection order. The
     // precedence-winning one (for the top-level banner / unscoped hooks) is
     // derived client-side from this plus connectionState - see
     // selectPrimaryGoogleSyncConnection.

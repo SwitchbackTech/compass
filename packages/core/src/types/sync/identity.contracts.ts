@@ -98,3 +98,13 @@ export const ProviderCapabilitySetSchema = z
   )
   .readonly();
 export type ProviderCapabilitySet = z.infer<typeof ProviderCapabilitySetSchema>;
+
+export const PROVIDER_DISPLAY_NAMES = {
+  google: "Google",
+  microsoft: "Microsoft",
+  apple: "Apple",
+} as const satisfies Record<ProviderKind, string>;
+
+export function providerDisplayName(kind: ProviderKind): string {
+  return PROVIDER_DISPLAY_NAMES[kind];
+}

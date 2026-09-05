@@ -78,10 +78,12 @@ export type EncryptedCredentialEnvelope = z.infer<
   typeof EncryptedCredentialEnvelopeSchema
 >;
 
-// Trusted Compass API → Sync handoff after the normal Google sign-in flow has
-// exchanged an authorization code. This is intentionally an internal contract:
-// the browser never receives or submits the credential.
-export const GoogleConnectionAdoptionRequestSchema = z.strictObject({
+// Trusted Compass API → Sync handoff after a sign-in flow has exchanged an
+// authorization code. This is intentionally an internal contract: the
+// browser never receives or submits the credential. Optional `provider`
+// defaults to google so the existing Google adoption path stays byte-identical.
+export const ProviderConnectionAdoptionRequestSchema = z.strictObject({
+  provider: ProviderKindSchema.optional(),
   account: ProviderAccountFactsSchema,
   credential: EncryptedCredentialEnvelopeSchema,
   grantedScopes: z
@@ -90,14 +92,21 @@ export const GoogleConnectionAdoptionRequestSchema = z.strictObject({
     .max(64)
     .readonly(),
 });
-export type GoogleConnectionAdoptionRequest = z.infer<
-  typeof GoogleConnectionAdoptionRequestSchema
+export type ProviderConnectionAdoptionRequest = z.infer<
+  typeof ProviderConnectionAdoptionRequestSchema
 >;
+export const GoogleConnectionAdoptionRequestSchema =
+  ProviderConnectionAdoptionRequestSchema;
+export type GoogleConnectionAdoptionRequest = ProviderConnectionAdoptionRequest;
 
-export const GoogleConnectionAdoptionResponseSchema = z.strictObject({});
-export type GoogleConnectionAdoptionResponse = z.infer<
-  typeof GoogleConnectionAdoptionResponseSchema
+export const ProviderConnectionAdoptionResponseSchema = z.strictObject({});
+export type ProviderConnectionAdoptionResponse = z.infer<
+  typeof ProviderConnectionAdoptionResponseSchema
 >;
+export const GoogleConnectionAdoptionResponseSchema =
+  ProviderConnectionAdoptionResponseSchema;
+export type GoogleConnectionAdoptionResponse =
+  ProviderConnectionAdoptionResponse;
 
 const STATES_WITH_REASON: ReadonlySet<ConnectionState> = new Set([
   "delayed",
@@ -206,14 +215,51 @@ export type ConnectionBeginRequest = z.infer<
   typeof ConnectionBeginRequestSchema
 >;
 
-// The provider consent URL the browser is sent to. `begin` only mints the URL;
-// the connection is created/updated when the provider calls back.
-export const ConnectionBeginResponseSchema = z.strictObject({
+// Browser begin response: a redirect (OAuth) or an already-connected result
+// (password credential flows, defined here; the route that produces
+// `connected` lands in Apple WP-03). The legacy `{ authorizationUrl }` body
+// is still accepted so a backend/web build that lands before the wrap still
+// parses, and so the sync-internal begin reply stays byte-identical.
+export const ConnectionBeginRedirectResponseSchema = z.strictObject({
+  kind: z.literal("redirect"),
   authorizationUrl: z.string().url(),
 });
+export type ConnectionBeginRedirectResponse = z.infer<
+  typeof ConnectionBeginRedirectResponseSchema
+>;
+
+export const ConnectionBeginConnectedResponseSchema = z.strictObject({
+  kind: z.literal("connected"),
+  connectionId: ConnectionIdSchema,
+});
+export type ConnectionBeginConnectedResponse = z.infer<
+  typeof ConnectionBeginConnectedResponseSchema
+>;
+
+export const ConnectionBeginLegacyRedirectResponseSchema = z.strictObject({
+  authorizationUrl: z.string().url(),
+});
+
+export const ConnectionBeginResponseSchema = z.union([
+  ConnectionBeginRedirectResponseSchema,
+  ConnectionBeginConnectedResponseSchema,
+  ConnectionBeginLegacyRedirectResponseSchema,
+]);
 export type ConnectionBeginResponse = z.infer<
   typeof ConnectionBeginResponseSchema
 >;
+
+export function toConnectionBeginRedirect(
+  response: ConnectionBeginResponse,
+): ConnectionBeginRedirectResponse {
+  if ("authorizationUrl" in response) {
+    return {
+      kind: "redirect",
+      authorizationUrl: response.authorizationUrl,
+    };
+  }
+  throw new Error("Connection begin did not return a redirect");
+}
 
 // User-triggered catch-up: enqueue (or boost) an incremental pull for each
 // events resource owned by the signed principal.

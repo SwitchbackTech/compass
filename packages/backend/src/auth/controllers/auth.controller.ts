@@ -4,10 +4,22 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   type ConnectionBeginRequest,
   ConnectionBeginRequestSchema,
+  toConnectionBeginRedirect,
 } from "@core/types/sync/connection.contracts";
-import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
+import {
+  ConnectionIdSchema,
+  type ProviderKind,
+  ProviderKindSchema,
+} from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import { isOAuthConnectConfigured } from "@backend/common/constants/config.util";
+import {
+  AuthError,
+  authErrorCopy,
+} from "@backend/common/errors/auth/auth.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -31,6 +43,20 @@ const rejectIfMaintenance = (res: Res_Promise): boolean => {
     res.status(status).json(body);
     return true;
   }
+};
+
+const assertProviderCanBegin = (provider: ProviderKind): void => {
+  // Google begin stays on the existing sync path so an unconfigured Google
+  // deploy keeps the pre-WP-07 error, not a new 409.
+  if (provider === "google") return;
+  if (isOAuthConnectConfigured(CONFIG, provider)) return;
+  throw error(
+    {
+      ...AuthError.ProviderNotConfigured,
+      description: authErrorCopy.notConfigured(provider),
+    },
+    "Connect Failed",
+  );
 };
 
 class AuthController {
@@ -65,28 +91,42 @@ class AuthController {
     res.promise({ userId });
   };
 
-  // Start a Google connection: return the provider consent URL the browser
-  // should navigate to.
-  beginGoogleConnection = (
+  beginConnection = (
     req: SReqBody<ConnectionBeginRequest>,
     res: Res_Promise,
+    forcedProvider?: ProviderKind,
   ): void => {
     if (rejectIfMaintenance(res)) return;
 
     const client = getSyncServiceClient();
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
     const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
+    const provider = forcedProvider ?? request.provider ?? "google";
+    ProviderKindSchema.parse(provider);
 
-    res.promise(beginSyncConnection(client, toSyncPrincipal(userId), request));
+    try {
+      assertProviderCanBegin(provider);
+    } catch (err) {
+      res.promise(Promise.reject(err));
+      return;
+    }
+
+    res.promise(
+      beginSyncConnection(client, toSyncPrincipal(userId), {
+        ...request,
+        provider,
+      }).then(toConnectionBeginRedirect),
+    );
   };
 
-  // Disconnect one connected Google account, leaving the user's others (and
-  // their Compass sign-in) alone. Sync scopes the disconnect to the signed
-  // principal, so a connection id the caller does not own is rejected there.
-  disconnectGoogleConnection = (
-    req: SessionRequest,
+  beginGoogleConnection = (
+    req: SReqBody<ConnectionBeginRequest>,
     res: Res_Promise,
   ): void => {
+    this.beginConnection(req, res, "google");
+  };
+
+  disconnectConnection = (req: SessionRequest, res: Res_Promise): void => {
     if (rejectIfMaintenance(res)) return;
 
     const client = getSyncServiceClient();
@@ -100,15 +140,21 @@ class AuthController {
           unwrapSyncResult(result, {
             logger,
             logMessage: "Sync disconnect failed",
-            userMessage: "Failed to disconnect Google account",
+            userMessage: "Failed to disconnect calendar account",
           }),
         )
         .then(() => ({ statusCode: 204 })),
     );
   };
 
-  // User-triggered Google calendar catch-up (Refresh calendar CTA).
-  refreshGoogleSync = (req: SessionRequest, res: Res_Promise): void => {
+  disconnectGoogleConnection = (
+    req: SessionRequest,
+    res: Res_Promise,
+  ): void => {
+    this.disconnectConnection(req, res);
+  };
+
+  refreshConnection = (req: SessionRequest, res: Res_Promise): void => {
     if (rejectIfMaintenance(res)) return;
 
     const client = getSyncServiceClient();
@@ -119,10 +165,14 @@ class AuthController {
         unwrapSyncResult(result, {
           logger,
           logMessage: "Sync refresh failed",
-          userMessage: "Failed to refresh Google Calendar",
+          userMessage: "Failed to refresh calendar",
         }),
       ),
     );
+  };
+
+  refreshGoogleSync = (req: SessionRequest, res: Res_Promise): void => {
+    this.refreshConnection(req, res);
   };
 }
 

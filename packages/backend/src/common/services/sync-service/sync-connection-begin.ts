@@ -30,6 +30,6 @@ export async function beginSyncConnection(
   return unwrapSyncResult(await client.beginConnection(principal, request), {
     logger,
     logMessage: "Sync begin-connection failed",
-    userMessage: "Failed to start Google connection",
+    userMessage: "Failed to start calendar connection",
   });
 }

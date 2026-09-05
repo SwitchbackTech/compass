@@ -3,6 +3,7 @@ import {
   CalendarChangeMessageSchema,
   EventChangeMessageSchema,
   ImportResultMessageSchema,
+  revokedConnectionServerMessages,
   ServerMessageSchema,
   SyncStatusMessageSchema,
   UserMetadataMessageSchema,
@@ -78,6 +79,20 @@ describe("Server Message Contracts", () => {
       const message = {
         type: "syncStatusChanged",
         sync: { status: "attention", code: "GOOGLE_REVOKED", retryable: false },
+      };
+
+      expect(SyncStatusMessageSchema.safeParse(message).success).toBe(true);
+    });
+
+    it("parses CONNECTION_REVOKED with a connectionId", () => {
+      const message = {
+        type: "syncStatusChanged",
+        sync: {
+          status: "attention",
+          code: "CONNECTION_REVOKED",
+          connectionId: calendarId(),
+          retryable: false,
+        },
       };
 
       expect(SyncStatusMessageSchema.safeParse(message).success).toBe(true);
@@ -164,6 +179,35 @@ describe("Server Message Contracts", () => {
         },
         { type: "userMetadataChanged", metadata: {} },
       ];
+
+      for (const message of messages) {
+        expect(ServerMessageSchema.safeParse(message).success).toBe(true);
+      }
+    });
+
+    it("emits CONNECTION_REVOKED and GOOGLE_REVOKED for a revoked connection", () => {
+      const connectionId = calendarId();
+      const messages = revokedConnectionServerMessages(connectionId);
+
+      expect(messages).toEqual([
+        {
+          type: "syncStatusChanged",
+          sync: {
+            status: "attention",
+            code: "CONNECTION_REVOKED",
+            connectionId,
+            retryable: false,
+          },
+        },
+        {
+          type: "syncStatusChanged",
+          sync: {
+            status: "attention",
+            code: "GOOGLE_REVOKED",
+            retryable: false,
+          },
+        },
+      ]);
 
       for (const message of messages) {
         expect(ServerMessageSchema.safeParse(message).success).toBe(true);

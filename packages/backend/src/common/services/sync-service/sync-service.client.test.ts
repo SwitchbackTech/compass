@@ -703,6 +703,9 @@ describe("SyncServiceClient", () => {
     const result = await client(fn).beginConnection(who);
 
     if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    if (!("authorizationUrl" in result.value)) {
+      throw new Error("expected a redirect begin response");
+    }
     expect(result.value.authorizationUrl).toContain("accounts.google.com");
 
     const sent = calls[0];
