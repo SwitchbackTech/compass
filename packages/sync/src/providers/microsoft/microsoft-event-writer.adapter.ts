@@ -3,7 +3,6 @@ import { type Attendee } from "@core/types/event-attendance.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
-  isMicrosoftTransient,
   microsoftFailureCause,
   microsoftStatus,
 } from "@sync/providers/microsoft/microsoft-error";
@@ -44,6 +43,11 @@ import {
   type ProviderWriteRecurrence,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import {
+  classifyProviderWriteError,
+  isNotFoundStatus,
+  type ProviderWriteErrorPolicy,
+} from "@sync/providers/provider-write-error";
 import { redactedCause } from "@sync/safety/redact-error";
 
 const GRAPH_DATETIME = "YYYY-MM-DD[T]HH:mm:ss.SSS";
@@ -405,6 +409,13 @@ function toCanonicalRecurrenceId(originalStart: string): string {
   return new Date(originalStart).toISOString();
 }
 
+const MICROSOFT_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
+  status: microsoftStatus,
+  cause: microsoftFailureCause,
+  credentialRejectedMessage: "Microsoft rejected the credential",
+  writeRejectedMessage: "Microsoft rejected the write",
+};
+
 function classifyWriteError(error: unknown): ProviderWriteError {
   if (error instanceof ProviderWriteError) return error;
   if (error instanceof ProviderEventError) {
@@ -412,50 +423,11 @@ function classifyWriteError(error: unknown): ProviderWriteError {
       cause: redactedCause(error),
     });
   }
-
-  const status = microsoftStatus(error);
-  const cause = microsoftFailureCause(error);
-
-  if (status === 412) {
-    return new ProviderWriteError(
-      "versionConflict",
-      "The event was modified since the expected version",
-      { cause },
-    );
-  }
-  if (status === 401) {
-    return new ProviderWriteError(
-      "authorizationRevoked",
-      "Microsoft rejected the credential",
-      { cause },
-    );
-  }
-  if (status === 403) {
-    return new ProviderWriteError(
-      "readOnlyCalendar",
-      "The calendar cannot be written",
-      { cause },
-    );
-  }
-  if (
-    status === undefined ||
-    status === 429 ||
-    isMicrosoftTransient(error, status)
-  ) {
-    return new ProviderWriteError("transient", "The write failed transiently", {
-      cause,
-    });
-  }
-  return new ProviderWriteError(
-    "permanentProviderError",
-    "Microsoft rejected the write",
-    { cause },
-  );
+  return classifyProviderWriteError(error, MICROSOFT_WRITE_ERROR_POLICY);
 }
 
 function isNotFound(error: unknown): boolean {
-  const status = microsoftStatus(error);
-  return status === 404 || status === 410;
+  return isNotFoundStatus(microsoftStatus(error));
 }
 
 class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
