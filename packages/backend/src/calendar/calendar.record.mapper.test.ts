@@ -60,10 +60,12 @@ describe("mapCalendarRecord", () => {
       buildRecord({ source: { provider: "local" } }),
     );
     expect(calendar.createsGoogleMeet).toBe(false);
+    expect(calendar.conference).toBe("none");
   });
 
   it("marks a google-sourced calendar as Meet-capable by default", () => {
     const calendar = mapCalendarRecord(buildRecord());
     expect(calendar.createsGoogleMeet).toBe(true);
+    expect(calendar.conference).toBe("meet");
   });
 });

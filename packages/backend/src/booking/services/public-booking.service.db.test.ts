@@ -153,23 +153,29 @@ describe("PublicBookingService", () => {
 
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
+    connection: ReturnType<typeof healthyConnection> = healthyConnection(),
   ) => {
+    const wired = calendars.map((calendar) => ({
+      ...calendar,
+      connectionId: connection.id,
+    }));
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
         listConnections: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { connections: [healthyConnection()] },
+            value: { connections: [connection] },
           }),
         ),
         listCalendars: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { calendars },
+            value: { calendars: wired },
           }),
         ),
       } as never),
     );
+    return { connection, calendars: wired };
   };
 
   const enableBookingPage = async (
@@ -602,6 +608,7 @@ describe("PublicBookingService", () => {
     const { slug } = await enableBookingPage();
     const page = await service.getPublicPage(slug);
     expect(page.createsGoogleMeet).toBe(true);
+    expect(page.conference).toBe("meet");
   });
 
   it("carries createsGoogleMeet false when the destination cannot mint Meet", async () => {
@@ -622,6 +629,7 @@ describe("PublicBookingService", () => {
 
     const publicPage = await service.getPublicPage(slug);
     expect(publicPage.createsGoogleMeet).toBe(false);
+    expect(publicPage.conference).toBe("none");
 
     const created = await service.createReservation(slug, {
       slotStart: "2026-09-07T10:00:00.000Z",
@@ -634,6 +642,7 @@ describe("PublicBookingService", () => {
       new ObjectId(created.reservationId),
     );
     expect(publicReservation.createsGoogleMeet).toBe(false);
+    expect(publicReservation.conference).toBe("none");
   });
 
   it("clamps a requested window that extends past the host horizon", async () => {
@@ -821,6 +830,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
@@ -1660,19 +1670,24 @@ describe("Public booking routes", () => {
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
     availability = busyResponse(true),
+    connection: ReturnType<typeof healthyConnection> = healthyConnection(),
   ) => {
+    const wired = calendars.map((calendar) => ({
+      ...calendar,
+      connectionId: connection.id,
+    }));
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
         listConnections: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { connections: [healthyConnection()] },
+            value: { connections: [connection] },
           }),
         ),
         listCalendars: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { calendars },
+            value: { calendars: wired },
           }),
         ),
         queryBusyAvailability: mock(async () => ({
@@ -1685,6 +1700,7 @@ describe("Public booking routes", () => {
         })),
       } as never),
     );
+    return { connection, calendars: wired };
   };
 
   it("GET public page returns host info for enabled slug", async () => {
@@ -1780,6 +1796,7 @@ describe("Public booking routes", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");

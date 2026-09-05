@@ -1,5 +1,6 @@
 import {
   type Calendar,
+  conferenceForProvider,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
@@ -28,13 +29,17 @@ export function createMockCalendar(
     isVisible: true,
     isActive: true,
     createsGoogleMeet: true,
+    conference: "meet",
     ...overrides,
   };
-  if (
-    calendar.provider === "local" &&
-    overrides.createsGoogleMeet === undefined
-  ) {
-    calendar.createsGoogleMeet = false;
+  if (overrides.conference === undefined) {
+    calendar.conference = conferenceForProvider(
+      calendar.provider,
+      calendar.createsGoogleMeet !== false,
+    );
+  }
+  if (overrides.createsGoogleMeet === undefined) {
+    calendar.createsGoogleMeet = calendar.conference === "meet";
   }
   return calendar;
 }
@@ -53,6 +58,7 @@ export function createMockConnection(
     accountEmail,
     connectionState: "HEALTHY",
     canSuggestContacts: false,
+    provider: "google",
     ...overrides,
   };
 }

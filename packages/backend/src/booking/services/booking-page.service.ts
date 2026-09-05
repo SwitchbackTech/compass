@@ -18,9 +18,12 @@ import {
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
 import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { resolveGoogleConnectionFromSync } from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { throwSyncProxyFailure } from "@backend/common/services/sync-service/sync-proxy-error";
+import {
+  type SyncPrincipal,
+  type SyncServiceClient,
+} from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 
 const SLUG_ALLOCATION_MAX_ATTEMPTS = 8;
@@ -58,51 +61,56 @@ const assertTimeZoneForEnable = (rawInput: unknown): void => {
   }
 };
 
-const assertHealthyGoogleForEnable = async (userId: string): Promise<void> => {
-  const client = getSyncServiceClient();
-  const connection = await resolveGoogleConnectionFromSync(
-    client,
-    toSyncPrincipal(userId),
-  );
-  if (connection.connectionState !== "HEALTHY") {
-    throw bookingError(
-      "GOOGLE_NOT_CONNECTED",
-      "Connect a healthy Google account before enabling booking",
-    );
-  }
-};
-
-const listSyncCalendars = async (
+const listSyncContext = async (
   userId: string,
-): Promise<readonly ProviderCalendar[]> => {
-  const client = getSyncServiceClient();
-  const result = await client.listCalendars(toSyncPrincipal(userId));
-  if (!result.ok) {
+): Promise<{
+  calendars: readonly ProviderCalendar[];
+  healthyConnectionIds: ReadonlySet<string>;
+}> => {
+  const client: Pick<SyncServiceClient, "listCalendars" | "listConnections"> =
+    getSyncServiceClient();
+  const principal: SyncPrincipal = toSyncPrincipal(userId);
+  const [calendarsResult, connectionsResult] = await Promise.all([
+    client.listCalendars(principal),
+    client.listConnections(principal),
+  ]);
+  if (!calendarsResult.ok) {
     throwSyncProxyFailure(
-      result.error.kind,
-      `Failed to list calendars from sync (${result.error.kind})`,
-      result.error.detail,
+      calendarsResult.error.kind,
+      `Failed to list calendars from sync (${calendarsResult.error.kind})`,
+      calendarsResult.error.detail,
     );
   }
-  return result.value.calendars;
+  const healthyConnectionIds = new Set(
+    (connectionsResult.ok ? connectionsResult.value.connections : [])
+      .filter((connection) => connection.state === "healthy")
+      .map((connection) => connection.id as string),
+  );
+  return { calendars: calendarsResult.value.calendars, healthyConnectionIds };
 };
 
-const assertCalendarsForEnable = async (
+const assertHealthyWritableDestinationForEnable = async (
   userId: string,
   input: AdminPutBookingPageInput,
 ): Promise<void> => {
-  const calendars = await listSyncCalendars(userId);
-  const writable = calendars.filter(
-    (calendar) => calendar.capabilities.canWriteEvents,
-  );
-  const destination = writable.find(
+  const { calendars, healthyConnectionIds } = await listSyncContext(userId);
+  if (healthyConnectionIds.size === 0) {
+    throw bookingError(
+      "CALENDAR_NOT_CONNECTED",
+      "Connect a healthy calendar account before enabling booking",
+    );
+  }
+
+  const destination = calendars.find(
     (calendar) =>
-      (calendar.id as string) === (input.destinationCalendarId as string),
+      (calendar.id as string) === (input.destinationCalendarId as string) &&
+      calendar.capabilities.canWriteEvents &&
+      healthyConnectionIds.has(calendar.connectionId as string),
   );
   if (!destination) {
     throw bookingError(
       "DESTINATION_NOT_WRITABLE",
-      "Destination calendar must be a writable Google calendar",
+      "Destination calendar must be writable",
     );
   }
 
@@ -174,8 +182,7 @@ class BookingPageService {
 
     if (input.enabled) {
       await assertBillingAllowsWrites(userId.toString());
-      await assertHealthyGoogleForEnable(userId.toString());
-      await assertCalendarsForEnable(userId.toString(), input);
+      await assertHealthyWritableDestinationForEnable(userId.toString(), input);
     }
 
     const existing = await bookingPageRepository.findByUserId(userId);

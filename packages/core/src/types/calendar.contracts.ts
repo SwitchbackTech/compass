@@ -13,6 +13,26 @@ export const CalendarProviderSchema = z.enum([
 ]);
 export type CalendarProvider = z.infer<typeof CalendarProviderSchema>;
 
+export const CalendarConferenceSchema = z.enum(["meet", "teams", "none"]);
+export type CalendarConference = z.infer<typeof CalendarConferenceSchema>;
+
+export const CONFERENCE_BY_PROVIDER = {
+  local: "none",
+  google: "meet",
+  microsoft: "teams",
+  apple: "none",
+} as const satisfies Record<CalendarProvider, CalendarConference>;
+
+export function conferenceForProvider(
+  provider: CalendarProvider,
+  canCreateConference = true,
+): CalendarConference {
+  if (!canCreateConference) {
+    return "none";
+  }
+  return CONFERENCE_BY_PROVIDER[provider];
+}
+
 export const CalendarAccessSchema = z.enum([
   "owner",
   "writer",
@@ -45,8 +65,12 @@ export const CalendarSchema = z.strictObject({
   isVisible: z.boolean(),
   isActive: z.boolean(),
   // Whether this calendar can mint a Google Meet URL. Local calendars are
-  // false. Omitted or true keeps the current Meet promise.
+  // false. Omitted or true keeps the current Meet promise. Prefer `conference`.
   createsGoogleMeet: z.boolean().optional(),
+  // Conference kind the destination can mint on create. Derived from the
+  // calendar's provider (`CONFERENCE_BY_PROVIDER`) and whether that calendar
+  // can actually create a conference link.
+  conference: CalendarConferenceSchema.optional(),
   // Email of the connected provider account this calendar belongs to. This is
   // the calendar's only account identity on the wire: emails are unique per
   // user (one Google account = one connection), so grouping and labelling key

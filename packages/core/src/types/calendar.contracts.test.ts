@@ -3,6 +3,8 @@ import {
   type CalendarAccess,
   CalendarListResponseSchema,
   CalendarSchema,
+  CONFERENCE_BY_PROVIDER,
+  conferenceForProvider,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 
@@ -53,6 +55,29 @@ describe("Calendar Contracts", () => {
         CalendarSchema.parse({ ...validCalendar, createsGoogleMeet: false })
           .createsGoogleMeet,
       ).toBe(false);
+    });
+
+    it("accepts conference and omits it when absent", () => {
+      expect(CalendarSchema.parse(validCalendar).conference).toBe(undefined);
+      expect(
+        CalendarSchema.parse({ ...validCalendar, conference: "teams" })
+          .conference,
+      ).toBe("teams");
+    });
+  });
+
+  describe("conferenceForProvider", () => {
+    it("maps every provider through CONFERENCE_BY_PROVIDER", () => {
+      expect(conferenceForProvider("google")).toBe("meet");
+      expect(conferenceForProvider("microsoft")).toBe("teams");
+      expect(conferenceForProvider("apple")).toBe("none");
+      expect(conferenceForProvider("local")).toBe("none");
+      expect(CONFERENCE_BY_PROVIDER.google).toBe("meet");
+    });
+
+    it("returns none when the calendar cannot create a conference", () => {
+      expect(conferenceForProvider("google", false)).toBe("none");
+      expect(conferenceForProvider("microsoft", false)).toBe("none");
     });
   });
 

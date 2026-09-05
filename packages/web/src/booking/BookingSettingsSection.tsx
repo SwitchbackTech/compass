@@ -17,7 +17,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
 import {
   selectGoogleConnectionState,
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
@@ -43,6 +43,10 @@ import {
   resolveWritableCalendars,
   toBookingPageInput,
 } from "@web/booking/booking.util";
+import {
+  BOOKING_NO_CONFERENCE_WARNING,
+  resolveBookingConference,
+} from "@web/booking/booking-conference.copy";
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
@@ -207,8 +211,11 @@ export function BookingSettingsSection({
   const googleConnectionState = useUserMetadataStore(
     selectGoogleConnectionState,
   );
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const isGoogleHealthy = googleConnectionState === "HEALTHY";
+  const connections = useUserMetadataStore(selectSyncConnections);
+  const hasHealthyConnection =
+    connections.some(
+      (connection) => connection.connectionState === "HEALTHY",
+    ) || googleConnectionState === "HEALTHY";
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
@@ -228,7 +235,8 @@ export function BookingSettingsSection({
       ),
     [accountEmailOrder, calendars],
   );
-  const { data: serverPage, isPending } = useBookingPageQuery(isGoogleHealthy);
+  const { data: serverPage, isPending } =
+    useBookingPageQuery(hasHealthyConnection);
   const saveMutation = useSaveBookingPageMutation();
   const [form, setForm] = useState<AdminPutBookingPageInput>(() =>
     buildInitialForm(
@@ -323,7 +331,7 @@ export function BookingSettingsSection({
     };
   }, [dismissGuardRef]);
 
-  if (!isGoogleHealthy) {
+  if (!hasHealthyConnection) {
     return <BookingConnectGooglePrompt />;
   }
 
@@ -343,8 +351,13 @@ export function BookingSettingsSection({
   const destinationCalendar = writableCalendars.find(
     (calendar) => calendar.id === form.destinationCalendarId,
   );
-  const destinationCannotMintMeet =
-    destinationCalendar?.createsGoogleMeet === false;
+  const destinationConference = destinationCalendar
+    ? resolveBookingConference(
+        destinationCalendar.conference,
+        destinationCalendar.createsGoogleMeet,
+      )
+    : "meet";
+  const destinationCannotMintMeet = destinationConference === "none";
   const destinationMeetWarningId = "booking-destination-meet-warning";
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -555,14 +568,13 @@ export function BookingSettingsSection({
               </>
             )}
           </select>
-          {destinationCannotMintMeet ? (
+          {destinationCannotMintMeet && destinationCalendar ? (
             <p
               className="mt-1 text-sm text-warning"
               id={destinationMeetWarningId}
               role="status"
             >
-              This calendar cannot create a Google Meet link. Guests will get a
-              calendar invite without a Meet URL.
+              {BOOKING_NO_CONFERENCE_WARNING[destinationCalendar.provider]}
             </p>
           ) : null}
         </div>

@@ -194,4 +194,20 @@ describe("syncCalendarToBrowser", () => {
       true,
     );
   });
+
+  it("derives conference from the owning connection's provider", () => {
+    expect(syncCalendarToBrowser(providerCalendar()).conference).toBe("meet");
+    expect(
+      syncCalendarToBrowser(providerCalendar({ createsGoogleMeet: false }))
+        .conference,
+    ).toBe("none");
+    expect(
+      syncCalendarToBrowser(providerCalendar(), { provider: "microsoft" })
+        .conference,
+    ).toBe("teams");
+    expect(
+      syncCalendarToBrowser(providerCalendar(), { provider: "apple" })
+        .conference,
+    ).toBe("none");
+  });
 });

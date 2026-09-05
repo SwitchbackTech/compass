@@ -354,6 +354,51 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("names Teams on the duration line when the destination conference is teams", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json(publicPagePayload({ conference: "teams" })),
+          ),
+      ),
+      slotsInWindow([currentSlot]),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("30 minutes Microsoft Teams")).toBeInTheDocument();
+    expect(screen.queryByText(/Google Meet/)).not.toBeInTheDocument();
+  });
+
+  it("omits a conference name when the destination conference is none", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json(publicPagePayload({ conference: "none" })),
+          ),
+      ),
+      slotsInWindow([currentSlot]),
+    );
+
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("30 minutes")).toBeInTheDocument();
+    expect(screen.queryByText(/Google Meet/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Microsoft Teams/)).not.toBeInTheDocument();
+  });
+
   it("labels times in the guest timezone and confirms a booking", async () => {
     const user = userEvent.setup({ delay: null });
     let postedBody: unknown;
@@ -1495,7 +1540,7 @@ describe("PublicBookingConfirmedPage", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("A calendar invite is on its way to your email."),
+      screen.getByText("The calendar invite is on its way to your email."),
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/To cancel, use the link in that invite/),

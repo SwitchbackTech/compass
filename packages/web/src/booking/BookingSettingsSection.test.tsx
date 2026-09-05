@@ -162,6 +162,54 @@ describe("BookingSettingsSection", () => {
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
   });
 
+  it("shows booking settings when a healthy non-google connection exists", async () => {
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+      connections: [
+        createMockConnection("user@outlook.com", { provider: "microsoft" }),
+      ],
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      createMockCalendar({
+        id: writableCalendar.id,
+        name: writableCalendar.name,
+        provider: "microsoft",
+        accountEmail: "user@outlook.com",
+      }),
+    ]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(await screen.findByLabelText("Duration")).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Connect a Google account to enable your booking page/,
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it("saves 30-minute duration and shows the copyable booking link", async () => {
     const user = userEvent.setup({ delay: null });
     const slug = "hostuser";
@@ -1188,8 +1236,9 @@ describe("BookingSettingsSection", () => {
         res(
           ctx.status(403),
           ctx.json({
-            code: "GOOGLE_NOT_CONNECTED",
-            message: "Connect a healthy Google account before enabling booking",
+            code: "CALENDAR_NOT_CONNECTED",
+            message:
+              "Connect a healthy calendar account before enabling booking",
           }),
         ),
       ),
