@@ -3,9 +3,9 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -30,11 +30,11 @@ import { CalendarListHeader } from "./CalendarListHeader";
 export const CalendarList: FC = () => {
   const { authenticated } = useSession();
   const { email } = useUser();
-  const { isAvailable, state } = useConnectGoogle();
+  const availableProviders = useAvailableConnectProviders();
+  const connections = useUserMetadataStore(selectSyncConnections);
   const { data, error, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
   const collapsedKeys = useCollapsedAccountKeys();
 
@@ -103,8 +103,10 @@ export const CalendarList: FC = () => {
         </div>
       ) : calendars.length === 0 && groups.length === 0 ? (
         <p className="text-text-muted text-xs">
-          {authenticated && state === "NOT_CONNECTED" && isAvailable
-            ? "Connect Google to see your calendars."
+          {authenticated &&
+          connections.length === 0 &&
+          availableProviders.length > 0
+            ? "Connect a calendar provider to see your calendars."
             : "No calendars yet."}
         </p>
       ) : (
