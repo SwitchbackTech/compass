@@ -7,6 +7,7 @@ export const ROOT_ROUTES = {
   CLEANUP: "/cleanup",
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
   PROVIDER_AUTH_CALLBACK: "/auth/$provider/callback",
+  APPLE_AUTH_CALLBACK: "/auth/apple/callback",
   LIFE: "/life",
   ROOT: "/",
   WEEK: "/week",

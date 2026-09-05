@@ -1,5 +1,6 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type Schema_User } from "@core/types/user.types";
+import { hasVerifiedLoginMethod } from "@backend/auth/services/account-linking.util";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
@@ -75,6 +76,12 @@ export const findCanonicalCompassUser = async (input: {
 
   const byEmail = await findCompassUserBy("email", normalizeEmail(input.email));
   if (!byEmail) {
+    return null;
+  }
+
+  // Unverified email/password accounts link only after verification. A
+  // Google or Microsoft id_token email may attach to another verified login.
+  if (!hasVerifiedLoginMethod(byEmail)) {
     return null;
   }
 

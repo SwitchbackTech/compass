@@ -6,6 +6,7 @@ import { runBackfillIdentities } from "@scripts/commands/backfill-identities";
 import { runEncryptCredentials } from "@scripts/commands/encrypt-credentials";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeUser } from "@scripts/commands/purge-user";
+import { runRecordAppleContractCommand } from "@scripts/commands/record-apple-contract";
 import { Command } from "commander";
 
 export default class CompassCLI {
@@ -42,6 +43,9 @@ export default class CompassCLI {
         break;
       case cmd === "apple-poll-throttle":
         await runApplePollThrottleCommand();
+        break;
+      case cmd === "record-apple-contract":
+        await runRecordAppleContractCommand();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -99,6 +103,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Poll one iCloud calendar with sync-collection and record HTTP status codes (founder soak)",
+      );
+
+    program
+      .command("record-apple-contract")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Record redacted Apple CalDAV fixtures for the adapter contract suite (founder account)",
       );
 
     program

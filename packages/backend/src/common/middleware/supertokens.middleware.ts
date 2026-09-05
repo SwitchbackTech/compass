@@ -1,5 +1,6 @@
 import cors from "cors";
 import SuperTokens from "supertokens-node";
+import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -13,9 +14,11 @@ import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
+import { shouldAutomaticallyLinkAccounts } from "@backend/auth/services/account-linking.util";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
+  isAppleSignInConfigured,
   isGoogleConfigured,
   isMicrosoftConfigured,
 } from "@backend/common/constants/config.util";
@@ -61,6 +64,29 @@ const createMicrosoftProvider = (
         scope: [...MICROSOFT_SCOPES],
         additionalConfig: {
           directoryId: "common",
+        },
+      },
+    ],
+  },
+});
+
+const createAppleProvider = (
+  clientId: string,
+  keyId: string,
+  teamId: string,
+  privateKey: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "apple",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        scope: ["openid", "email", "name"],
+        additionalConfig: {
+          keyId,
+          teamId,
+          privateKey,
         },
       },
     ],
@@ -128,6 +154,27 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
     );
   }
 
+  const appleClientId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+  const appleKeyId = CONFIG.APPLE_SIGNIN_KEY_ID;
+  const appleTeamId = CONFIG.APPLE_SIGNIN_TEAM_ID;
+  const applePrivateKey = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
+  if (
+    appleClientId &&
+    appleKeyId &&
+    appleTeamId &&
+    applePrivateKey &&
+    isAppleSignInConfigured(CONFIG)
+  ) {
+    providers.push(
+      createAppleProvider(
+        appleClientId,
+        appleKeyId,
+        appleTeamId,
+        applePrivateKey,
+      ),
+    );
+  }
+
   if (providers.length === 0) {
     return [];
   }
@@ -170,6 +217,10 @@ export const initSupertokens = () => {
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction
+      AccountLinking.init({
+        shouldDoAutomaticAccountLinking: async (newAccountInfo) =>
+          shouldAutomaticallyLinkAccounts({ email: newAccountInfo.email }),
+      }),
       ...getThirdPartyRecipes(),
       EmailPassword.init({
         signUpFeature: {

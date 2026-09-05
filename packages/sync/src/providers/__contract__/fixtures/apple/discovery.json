@@ -1,0 +1,23 @@
+{
+  "username": "[email]",
+  "exchanges": [
+    {
+      "method": "PROPFIND",
+      "depth": 0,
+      "status": 207,
+      "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<D:multistatus xmlns:D=\"DAV:\">\n  <D:response>\n    <D:href>/</D:href>\n    <D:propstat>\n      <D:prop>\n        <D:current-user-principal>\n          <D:href>/123456789/principal/</D:href>\n        </D:current-user-principal>\n      </D:prop>\n      <D:status>HTTP/1.1 200 OK</D:status>\n    </D:propstat>\n  </D:response>\n</D:multistatus>"
+    },
+    {
+      "method": "PROPFIND",
+      "depth": 0,
+      "status": 207,
+      "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<D:multistatus xmlns:D=\"DAV:\">\n  <D:response>\n    <D:href>/123456789/principal/</D:href>\n    <D:propstat>\n      <D:prop>\n        <D:calendar-home-set>\n          <D:href>/123456789/calendars/</D:href>\n        </D:calendar-home-set>\n      </D:prop>\n      <D:status>HTTP/1.1 200 OK</D:status>\n    </D:propstat>\n  </D:response>\n</D:multistatus>"
+    },
+    {
+      "method": "PROPFIND",
+      "depth": 1,
+      "status": 207,
+      "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<D:multistatus xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\" xmlns:ICAL=\"http://apple.com/ns/ical/\">\n  <D:response>\n    <D:href>/123456789/calendars/home/</D:href>\n    <D:propstat>\n      <D:prop>\n        <D:displayname>user</D:displayname>\n        <D:resourcetype><D:collection/><C:calendar/></D:resourcetype>\n        <ICAL:calendar-color>#AABBCCFF</ICAL:calendar-color>\n        <D:current-user-privilege-set>\n          <D:privilege><D:write/></D:privilege>\n        </D:current-user-privilege-set>\n        <C:supported-calendar-component-set>\n          <C:comp name=\"VEVENT\"/>\n        </C:supported-calendar-component-set>\n        <cs:sync-token xmlns:cs=\"http://calendarserver.org/ns/\">sync-token-1</cs:sync-token>\n      </D:prop>\n      <D:status>HTTP/1.1 200 OK</D:status>\n    </D:propstat>\n  </D:response>\n  <D:response>\n    <D:href>/123456789/calendars/work/</D:href>\n    <D:propstat>\n      <D:prop>\n        <D:displayname>Work</D:displayname>\n        <D:resourcetype><D:collection/><C:calendar/></D:resourcetype>\n        <D:current-user-privilege-set>\n          <D:privilege><D:read/></D:privilege>\n        </D:current-user-privilege-set>\n        <C:supported-calendar-component-set>\n          <C:comp name=\"VEVENT\"/>\n        </C:supported-calendar-component-set>\n      </D:prop>\n      <D:status>HTTP/1.1 200 OK</D:status>\n    </D:propstat>\n  </D:response>\n</D:multistatus>"
+    }
+  ]
+}

@@ -14,10 +14,9 @@ created where the host supports them, and per-connection health is honest.
 
 ## Status
 
-P0 foundation is in the tree. Google is the registered adapter. Microsoft and
-Apple adapters live under `packages/sync/src/providers/<kind>/` and register in
-M-09 / A-08. Work is tracked across six GitHub milestones, each with a tracking
-issue:
+Google, Microsoft, and Apple adapters register in `buildProviderRegistry`
+when their config is present. Work is tracked across six GitHub milestones,
+each with a tracking issue:
 
 | Milestone | Purpose |
 |---|---|
@@ -234,9 +233,19 @@ video link and says so.
 ## Identity
 
 `user.identities[]` records `{provider, subjectId, email}` per login method
-(milestone I). The same verified email across methods resolves to one Compass
-user through SuperTokens account linking. Sign in with Apple identifies by
-`sub`, because private-relay addresses are not the calendar account address.
+(milestone I). Identity is the provider subject, never email alone.
+
+The same verified email across login methods resolves to one Compass user
+through SuperTokens AccountLinking (`shouldAutomaticallyLink: true`,
+`shouldRequireVerification: true`). Google and Microsoft emails from the
+id_token count as verified when the token says so. Email/password accounts
+link only after email verification. Apple private-relay addresses
+(`@privaterelay.appleid.com`) never link automatically; Sign in with Apple
+identifies by `sub`.
+
+Linking merges `identities[]` and keeps every calendar connection of both
+users.
+
 After signup with a method that grants no calendar, onboarding asks which
 service hosts the calendar: "If you view your calendar in Apple Calendar, it
 may still be hosted by Google or Microsoft."
@@ -255,9 +264,6 @@ Each alias names the release that removes it.
   wires. `revokedConnectionServerMessages` emits both. Event mutations still
   return HTTP 410 `GOOGLE_REVOKED`. Milestone C removes `GOOGLE_REVOKED` after
   every client reads `CONNECTION_REVOKED`.
-- **Health snapshot fleet label.** `health-snapshot.service.ts` hard-codes
-  `provider: "google"` for the whole fleet. Milestone C splits the snapshot per
-  provider.
 - **`metadata.google` overlap.** `UserMetadata.connections[]` is the
   provider-neutral list; `metadata.google` (and `metadata.google.connections`)
   stays until WP-08c clients read `connections[]`. Drop the overlap in

@@ -1,0 +1,327 @@
+{
+  "initialHrefs": [
+    "/123/calendars/home/event-0.ics",
+    "/123/calendars/home/event-1.ics",
+    "/123/calendars/home/event-2.ics",
+    "/123/calendars/home/event-3.ics",
+    "/123/calendars/home/event-4.ics",
+    "/123/calendars/home/event-5.ics",
+    "/123/calendars/home/event-6.ics",
+    "/123/calendars/home/event-7.ics",
+    "/123/calendars/home/event-8.ics",
+    "/123/calendars/home/event-9.ics",
+    "/123/calendars/home/event-10.ics",
+    "/123/calendars/home/event-11.ics",
+    "/123/calendars/home/event-12.ics",
+    "/123/calendars/home/event-13.ics",
+    "/123/calendars/home/event-14.ics",
+    "/123/calendars/home/event-15.ics",
+    "/123/calendars/home/event-16.ics",
+    "/123/calendars/home/event-17.ics",
+    "/123/calendars/home/event-18.ics",
+    "/123/calendars/home/event-19.ics",
+    "/123/calendars/home/event-20.ics",
+    "/123/calendars/home/event-21.ics",
+    "/123/calendars/home/event-22.ics",
+    "/123/calendars/home/event-23.ics",
+    "/123/calendars/home/event-24.ics",
+    "/123/calendars/home/event-25.ics",
+    "/123/calendars/home/event-26.ics",
+    "/123/calendars/home/event-27.ics",
+    "/123/calendars/home/event-28.ics",
+    "/123/calendars/home/event-29.ics",
+    "/123/calendars/home/event-30.ics",
+    "/123/calendars/home/event-31.ics",
+    "/123/calendars/home/event-32.ics",
+    "/123/calendars/home/event-33.ics",
+    "/123/calendars/home/event-34.ics",
+    "/123/calendars/home/event-35.ics",
+    "/123/calendars/home/event-36.ics",
+    "/123/calendars/home/event-37.ics",
+    "/123/calendars/home/event-38.ics",
+    "/123/calendars/home/event-39.ics",
+    "/123/calendars/home/event-40.ics",
+    "/123/calendars/home/event-41.ics",
+    "/123/calendars/home/event-42.ics",
+    "/123/calendars/home/event-43.ics",
+    "/123/calendars/home/event-44.ics",
+    "/123/calendars/home/event-45.ics",
+    "/123/calendars/home/event-46.ics",
+    "/123/calendars/home/event-47.ics",
+    "/123/calendars/home/event-48.ics",
+    "/123/calendars/home/event-49.ics",
+    "/123/calendars/home/event-50.ics"
+  ],
+  "initialResources": {
+    "/123/calendars/home/event-0.ics": {
+      "href": "/123/calendars/home/event-0.ics",
+      "etag": "\"etag-timed\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:timed@icloud.com\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Timed master\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-1.ics": {
+      "href": "/123/calendars/home/event-1.ics",
+      "etag": "\"etag-allday\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:allday@icloud.com\nDTSTAMP:20250101T120000Z\nDTSTART;VALUE=DATE:20250222\nDTEND;VALUE=DATE:20250223\nSUMMARY:All day\nTRANSP:TRANSPARENT\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-2.ics": {
+      "href": "/123/calendars/home/event-2.ics",
+      "etag": "\"series-etag\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:series-1@icloud.com\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nRRULE:FREQ=DAILY;COUNT=3\nSUMMARY:Contract series\nEND:VEVENT\nBEGIN:VEVENT\nUID:series-1@icloud.com\nDTSTAMP:20250101T120001Z\nDTSTART:20250116T100000Z\nDTEND:20250116T110000Z\nRECURRENCE-ID:20250116T090000Z\nSUMMARY:Contract exception\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-3.ics": {
+      "href": "/123/calendars/home/event-3.ics",
+      "etag": "\"etag-attendee\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:attendee@icloud.com\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T140000Z\nDTEND:20250115T143000Z\nSUMMARY:Standup\nURL:https://meet.example.com/abc\nATTENDEE;CN=A;PARTSTAT=ACCEPTED:mailto:a@example.com\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-4.ics": {
+      "href": "/123/calendars/home/event-4.ics",
+      "etag": "\"etag-cancelled\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:cancelled@icloud.com\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSTATUS:CANCELLED\nSUMMARY:Cancelled\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-5.ics": {
+      "href": "/123/calendars/home/event-5.ics",
+      "etag": "\"etag-unusable\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:No uid\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-6.ics": {
+      "href": "/123/calendars/home/event-6.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-6.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-7.ics": {
+      "href": "/123/calendars/home/event-7.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-7.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-8.ics": {
+      "href": "/123/calendars/home/event-8.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-8.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-9.ics": {
+      "href": "/123/calendars/home/event-9.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-9.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-10.ics": {
+      "href": "/123/calendars/home/event-10.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-10.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-11.ics": {
+      "href": "/123/calendars/home/event-11.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-11.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-12.ics": {
+      "href": "/123/calendars/home/event-12.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-12.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-13.ics": {
+      "href": "/123/calendars/home/event-13.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-13.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-14.ics": {
+      "href": "/123/calendars/home/event-14.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-14.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-15.ics": {
+      "href": "/123/calendars/home/event-15.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-15.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-16.ics": {
+      "href": "/123/calendars/home/event-16.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-16.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-17.ics": {
+      "href": "/123/calendars/home/event-17.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-17.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-18.ics": {
+      "href": "/123/calendars/home/event-18.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-18.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-19.ics": {
+      "href": "/123/calendars/home/event-19.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-19.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-20.ics": {
+      "href": "/123/calendars/home/event-20.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-20.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-21.ics": {
+      "href": "/123/calendars/home/event-21.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-21.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-22.ics": {
+      "href": "/123/calendars/home/event-22.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-22.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-23.ics": {
+      "href": "/123/calendars/home/event-23.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-23.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-24.ics": {
+      "href": "/123/calendars/home/event-24.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-24.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-25.ics": {
+      "href": "/123/calendars/home/event-25.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-25.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-26.ics": {
+      "href": "/123/calendars/home/event-26.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-26.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-27.ics": {
+      "href": "/123/calendars/home/event-27.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-27.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-28.ics": {
+      "href": "/123/calendars/home/event-28.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-28.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-29.ics": {
+      "href": "/123/calendars/home/event-29.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-29.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-30.ics": {
+      "href": "/123/calendars/home/event-30.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-30.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-31.ics": {
+      "href": "/123/calendars/home/event-31.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-31.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-32.ics": {
+      "href": "/123/calendars/home/event-32.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-32.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-33.ics": {
+      "href": "/123/calendars/home/event-33.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-33.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-34.ics": {
+      "href": "/123/calendars/home/event-34.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-34.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-35.ics": {
+      "href": "/123/calendars/home/event-35.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-35.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-36.ics": {
+      "href": "/123/calendars/home/event-36.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-36.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-37.ics": {
+      "href": "/123/calendars/home/event-37.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-37.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-38.ics": {
+      "href": "/123/calendars/home/event-38.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-38.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-39.ics": {
+      "href": "/123/calendars/home/event-39.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-39.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-40.ics": {
+      "href": "/123/calendars/home/event-40.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-40.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-41.ics": {
+      "href": "/123/calendars/home/event-41.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-41.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-42.ics": {
+      "href": "/123/calendars/home/event-42.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-42.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-43.ics": {
+      "href": "/123/calendars/home/event-43.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-43.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-44.ics": {
+      "href": "/123/calendars/home/event-44.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-44.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-45.ics": {
+      "href": "/123/calendars/home/event-45.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-45.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-46.ics": {
+      "href": "/123/calendars/home/event-46.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-46.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-47.ics": {
+      "href": "/123/calendars/home/event-47.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-47.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-48.ics": {
+      "href": "/123/calendars/home/event-48.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-48.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    },
+    "/123/calendars/home/event-49.ics": {
+      "href": "/123/calendars/home/event-49.ics",
+      "etag": "\"etag-bulk\"",
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:bulk-/123/calendars/home/event-49.ics\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nSUMMARY:Bulk event\nEND:VEVENT\nEND:VCALENDAR"
+    }
+  },
+  "expiredCursor": "expired-sync-token",
+  "syncToken": "sync-token-1",
+  "nextSyncToken": "sync-token-2",
+  "reportExchanges": [
+    {
+      "method": "REPORT",
+      "name": "calendar-query",
+      "depth": 1
+    },
+    {
+      "method": "REPORT",
+      "name": "calendar-multiget",
+      "depth": 1
+    },
+    {
+      "method": "REPORT",
+      "name": "sync-collection",
+      "depth": 1
+    }
+  ]
+}

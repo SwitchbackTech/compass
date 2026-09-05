@@ -3,16 +3,23 @@ import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
   type PrincipalId,
+  type ProviderCapability,
+  type ProviderKind,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import {
+  type ProviderRegistration,
+  ProviderRegistry,
+} from "@sync/providers/provider-registry";
 import { assertNoSafetyCanary } from "@sync/safety/safety-canary";
 import { buildServiceIdentity } from "@sync/service-identity";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import {
-  computeHealthSnapshot,
+  computeHealthSnapshotForProvider,
+  computeHealthSnapshots,
   emitHealthSnapshot,
   HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS,
 } from "@sync/telemetry/health-snapshot.service";
@@ -22,11 +29,53 @@ import { beforeEach, describe, expect, it } from "bun:test";
 const objectId = () => faker.database.mongodbObjectId();
 const NOW = new Date("2026-07-25T02:00:00.000Z");
 
+function fakeRegistration(
+  capabilities: readonly ProviderCapability[],
+): ProviderRegistration {
+  return {
+    adapters: {} as ProviderRegistration["adapters"],
+    scopes: { forFeatures: () => [] },
+    capabilities,
+    callbackPath: "/sync/test",
+    notificationsCallbackPath: "/sync/notifications/test",
+    capabilitiesFromScopes: () => [...capabilities],
+  };
+}
+
+function fakeRegistry(
+  entries: Partial<Record<ProviderKind, readonly ProviderCapability[]>>,
+): ProviderRegistry {
+  const registrations = new Map<ProviderKind, ProviderRegistration>();
+  for (const kind of Object.keys(entries) as ProviderKind[]) {
+    const capabilities = entries[kind];
+    if (capabilities) {
+      registrations.set(kind, fakeRegistration(capabilities));
+    }
+  }
+  return new ProviderRegistry(registrations);
+}
+
 describe("computeHealthSnapshot", () => {
   const storage = setupSyncStorage(import.meta.url);
   let connections: ProviderConnectionRepository;
   let resources: SyncResourceRepository;
   let jobs: JobRepository;
+
+  const registry = fakeRegistry({
+    google: [
+      "readEvents",
+      "writeEvents",
+      "changeNotifications",
+      "incrementalChanges",
+    ],
+    microsoft: [
+      "readEvents",
+      "writeEvents",
+      "changeNotifications",
+      "incrementalChanges",
+    ],
+    apple: ["readEvents", "writeEvents", "incrementalChanges"],
+  });
 
   beforeEach(() => {
     connections = new ProviderConnectionRepository(storage.db());
@@ -42,16 +91,18 @@ describe("computeHealthSnapshot", () => {
   const deps = () => ({
     mongo: storage.mongo(),
     identity,
+    registry,
     now: () => NOW,
   });
 
   const seedConnection = (
+    provider: ProviderKind,
     state: "healthy" | "delayed" | "actionRequired" | "disconnected",
   ) =>
     connections.upsertByProviderAccount({
       tenantId: objectId() as TenantId,
       principalId: objectId() as PrincipalId,
-      provider: "google",
+      provider,
       account: {
         providerAccountId: objectId(),
         email: "h@example.com",
@@ -62,15 +113,19 @@ describe("computeHealthSnapshot", () => {
       stateReason: state === "actionRequired" ? "authorizationRevoked" : null,
     });
 
-  it("aggregates connection states, jobs, subscriptions, and freshness", async () => {
-    await seedConnection("healthy");
-    await seedConnection("healthy");
-    await seedConnection("delayed");
-    await seedConnection("disconnected");
+  it("aggregates connection states, jobs, subscriptions, and freshness per provider", async () => {
+    await seedConnection("google", "healthy");
+    await seedConnection("google", "healthy");
+    await seedConnection("google", "delayed");
+    await seedConnection("google", "disconnected");
+    await seedConnection("microsoft", "healthy");
+    await seedConnection("apple", "healthy");
+    await seedConnection("apple", "healthy");
 
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
+    const googleConnection = await seedConnection("google", "healthy");
+    const connectionId = googleConnection._id as ConnectionId;
     const healthySub = await resources.ensure({
       tenantId,
       principalId,
@@ -109,6 +164,22 @@ describe("computeHealthSnapshot", () => {
       new Date(NOW.getTime() - 60_000),
     );
 
+    const appleConnection = await seedConnection("apple", "healthy");
+    const appleResource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId: appleConnection._id as ConnectionId,
+      resourceKind: "events",
+      calendarId: objectId() as never,
+    });
+    await resources.advanceCursor(
+      tenantId,
+      principalId,
+      appleResource._id,
+      "cursor",
+      new Date(NOW.getTime() - 45_000),
+    );
+
     await jobs.enqueue({
       tenantId,
       principalId,
@@ -121,27 +192,52 @@ describe("computeHealthSnapshot", () => {
       coalescingKey: `pull:${objectId()}`,
     });
 
-    const snapshot = await computeHealthSnapshot(deps());
+    const snapshots = await computeHealthSnapshots(deps());
+    expect(snapshots).toHaveLength(3);
 
-    expect(snapshot.service).toBe("compass-sync");
-    expect(snapshot.provider).toBe("google");
-    expect(snapshot.connections.healthy).toBe(2);
-    expect(snapshot.connections.delayed).toBe(1);
-    expect(snapshot.connections.disconnected).toBe(1);
-    expect(snapshot.jobs.pending).toBe(1);
-    expect(snapshot.jobs.oldestDueAgeMs).toBe(15_000);
-    expect(snapshot.subscriptions.healthy).toBe(1);
-    expect(snapshot.subscriptions.missing).toBe(1);
+    const google = snapshots.find((row) => row.provider === "google");
+    const microsoft = snapshots.find((row) => row.provider === "microsoft");
+    const apple = snapshots.find((row) => row.provider === "apple");
+
+    expect(google?.service).toBe("compass-sync");
+    expect(google?.connections.healthy).toBe(3);
+    expect(google?.connections.delayed).toBe(1);
+    expect(google?.connections.disconnected).toBe(1);
+    expect(google?.jobs.pending).toBe(1);
+    expect(google?.jobs.oldestDueAgeMs).toBe(15_000);
+    expect(google?.subscriptions.healthy).toBe(1);
+    expect(google?.subscriptions.missing).toBe(1);
     // The subscribed resource in this fixture has never received a push, so it
     // counts as never notified — the signal that push delivery is broken.
-    expect(snapshot.subscriptions.neverNotified).toBe(1);
-    expect(snapshot.freshness.sampleSize).toBe(2);
-    expect(snapshot.freshness.p50Ms).toBeGreaterThan(0);
-    expect(snapshot.freshness.percentOver30s).toBeGreaterThan(0);
-    expect(snapshot.computedAt).toBe(NOW.toISOString());
+    expect(google?.subscriptions.neverNotified).toBe(1);
+    expect(google?.freshness.sampleSize).toBe(2);
+    expect(google?.freshness.p50Ms).toBeGreaterThan(0);
+    expect(google?.freshness.percentOver30s).toBeGreaterThan(0);
+    expect(google?.computedAt).toBe(NOW.toISOString());
 
-    // R-SEC-04 / S44: aggregates must never carry content or credential shapes.
-    assertNoSafetyCanary(snapshot);
+    expect(microsoft?.connections.healthy).toBe(1);
+    expect(microsoft?.jobs.pending).toBe(0);
+    expect(microsoft?.subscriptions).toEqual({
+      healthy: 0,
+      renewSoon: 0,
+      expired: 0,
+      missing: 0,
+      neverNotified: 0,
+    });
+
+    expect(apple?.connections.healthy).toBe(3);
+    expect(apple?.subscriptions).toEqual({
+      healthy: 0,
+      renewSoon: 0,
+      expired: 0,
+      missing: 0,
+      neverNotified: 0,
+    });
+    expect(apple?.freshness.sampleSize).toBe(1);
+
+    for (const snapshot of snapshots) {
+      assertNoSafetyCanary(snapshot);
+    }
   });
 
   // The gauge used to read changeNotifiedAt, which the serving pull CLEARS
@@ -151,7 +247,8 @@ describe("computeHealthSnapshot", () => {
   it("does not count a resource whose push was received and then served", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
+    const googleConnection = await seedConnection("google", "healthy");
+    const connectionId = googleConnection._id as ConnectionId;
     const resource = await resources.ensure({
       tenantId,
       principalId,
@@ -191,11 +288,11 @@ describe("computeHealthSnapshot", () => {
     expect(stored?.changeNotifiedAt).toBeNull();
     expect(stored?.pushLastReceivedAt).toEqual(notifiedAt);
 
-    const snapshot = await computeHealthSnapshot(deps());
+    const snapshot = await computeHealthSnapshotForProvider(deps(), "google");
     expect(snapshot.subscriptions.neverNotified).toBe(0);
   });
 
-  it("emits through PostHog when a client is configured", async () => {
+  it("emits one PostHog event per registered provider", async () => {
     const captured: Array<{
       event: string;
       properties: Record<string, unknown>;
@@ -207,17 +304,23 @@ describe("computeHealthSnapshot", () => {
       shutdown: async () => {},
     };
 
-    const snapshot = await emitHealthSnapshot({ deps: deps(), client });
+    const snapshots = await emitHealthSnapshot({ deps: deps(), client });
 
-    expect(captured).toHaveLength(1);
+    expect(snapshots).toHaveLength(3);
+    expect(captured).toHaveLength(3);
+    expect(captured.map((row) => row.properties["provider"]).sort()).toEqual([
+      "apple",
+      "google",
+      "microsoft",
+    ]);
     expect(captured[0]?.event).toBe("sync_health_snapshot");
     expect(captured[0]?.properties["service"]).toBe("compass-sync");
-    expect(snapshot.connections.healthy).toBe(0);
     assertNoSafetyCanary(captured[0]?.properties);
   });
 
   it("still computes when PostHog is not configured", async () => {
-    const snapshot = await emitHealthSnapshot({ deps: deps(), client: null });
-    expect(snapshot.service).toBe("compass-sync");
+    const snapshots = await emitHealthSnapshot({ deps: deps(), client: null });
+    expect(snapshots).toHaveLength(3);
+    expect(snapshots.every((row) => row.service === "compass-sync")).toBe(true);
   });
 });

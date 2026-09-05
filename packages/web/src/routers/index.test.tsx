@@ -1,6 +1,7 @@
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
+  appleAuthCallbackRoute,
   authenticatedLayoutRoute,
   calendarShellRoute,
   lifeRoute,
@@ -84,6 +85,29 @@ describe("routeTree", () => {
     );
     expect(callbackMatch?.params).toEqual(
       expect.objectContaining({ provider: "microsoft" }),
+    );
+  });
+
+  it("keeps /auth/apple/callback on the dedicated Apple form_post route", async () => {
+    expect(appleAuthCallbackRoute.fullPath).toBe(
+      ROOT_ROUTES.APPLE_AUTH_CALLBACK,
+    );
+
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory({
+        initialEntries: ["/auth/apple/callback?state=test"],
+      }),
+    });
+
+    await router.load();
+    expect(router.state.location.pathname).toBe("/auth/apple/callback");
+    const callbackMatch = router.state.matches.find((match) =>
+      match.routeId.includes("callback"),
+    );
+    expect(callbackMatch?.routeId).toBe(appleAuthCallbackRoute.id);
+    expect(callbackMatch?.params).not.toEqual(
+      expect.objectContaining({ provider: "apple" }),
     );
   });
 });

@@ -20,6 +20,32 @@ apple:
 All four values are required together. The web bundle bakes the Services ID
 at build time.
 
+In Apple Developer, the Services ID Return URL must be a POST to the
+backend, not the SPA:
+
+```
+POST {BACKEND_URL}/api/auth/apple/callback
+```
+
+Apple posts the authorization result (`response_mode=form_post`). Compass
+reads `code` and `state` from that form body, then 302-redirects the browser
+to:
+
+```
+{FRONTEND_URL}/auth/apple/callback?code=...&state=...
+```
+
+A missing or mismatched `state` is rejected (HTTP 400). Do not register the
+SPA path as the Return URL. Apple will not GET that URL.
+
+Apple may send a private relay address (`@privaterelay.appleid.com`) instead
+of the user's real email. Compass keys the Apple identity by the id_token
+`sub`, not by that email, so a later sign-in with a different relay still
+resolves to the same user.
+
+Apple includes the user's name only on the first authorization. Compass
+stores that name when it is present. Later sign-ins omit it.
+
 iCloud calendar connect uses an app-specific password. Compass stores it
 encrypted at rest with a 32-byte base64 key:
 

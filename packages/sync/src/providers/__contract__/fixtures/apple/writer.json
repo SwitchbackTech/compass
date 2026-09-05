@@ -1,0 +1,9 @@
+{
+  "calendarPath": "/123456789/calendars/home/",
+  "seriesSeed": {
+    "uid": "series-1",
+    "etag": "\"series-v1\"",
+    "ics": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:series-1\nDTSTAMP:20250101T120000Z\nDTSTART:20250115T090000Z\nDTEND:20250115T100000Z\nRRULE:FREQ=DAILY;COUNT=3\nSUMMARY:Contract series\nEND:VEVENT\nEND:VCALENDAR"
+  },
+  "mutationMethods": ["PUT", "GET", "DELETE", "PROPFIND"]
+}

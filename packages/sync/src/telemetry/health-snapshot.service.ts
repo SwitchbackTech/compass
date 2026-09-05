@@ -5,6 +5,11 @@ import {
   type SyncHealthSnapshot,
   SyncHealthSnapshotSchema,
 } from "@core/types/sync/health.contracts";
+import {
+  type ConnectionId,
+  type ProviderKind,
+} from "@core/types/sync/identity.contracts";
+import { type ProviderRegistry } from "@sync/providers/provider-registry";
 import { type StructuredServiceIdentity } from "@sync/service-identity";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -20,32 +25,47 @@ const FRESHNESS_SLO_MS = 30_000;
 // Cap the in-process freshness sample so a huge deployment stays bounded.
 const FRESHNESS_SAMPLE_LIMIT = 5_000;
 
+const ZERO_SUBSCRIPTION_COUNTS: SyncHealthSnapshot["subscriptions"] = {
+  healthy: 0,
+  renewSoon: 0,
+  expired: 0,
+  missing: 0,
+  neverNotified: 0,
+};
+
 export interface HealthSnapshotDeps {
   mongo: SyncMongoService;
   identity: StructuredServiceIdentity;
+  registry: ProviderRegistry;
   now?: () => Date;
 }
 
 // Build one sanitized aggregate snapshot from Sync storage. Pure relative to
 // PostHog — callers decide whether to emit.
-export async function computeHealthSnapshot(
+export async function computeHealthSnapshotForProvider(
   deps: HealthSnapshotDeps,
+  provider: ProviderKind,
 ): Promise<SyncHealthSnapshot> {
   const started = Date.now();
   const now = deps.now?.() ?? new Date();
   const db = deps.mongo.db;
+  const hasChangeNotifications = deps.registry
+    .get(provider)
+    .capabilities.includes("changeNotifications");
 
   const [connections, jobs, subscriptions, freshness] = await Promise.all([
-    countConnectionsByState(db),
-    summarizeJobs(db, now),
-    summarizeSubscriptions(db, now),
-    summarizeFreshness(db, now),
+    countConnectionsByState(db, provider),
+    summarizeJobs(db, now, provider),
+    hasChangeNotifications
+      ? summarizeSubscriptions(db, now, provider)
+      : Promise.resolve({ ...ZERO_SUBSCRIPTION_COUNTS }),
+    summarizeFreshness(db, now, provider),
   ]);
 
   return SyncHealthSnapshotSchema.parse({
     environment: deps.identity.environment,
     execution: deps.identity.execution,
-    provider: "google",
+    provider,
     service: "compass-sync",
     connections,
     jobs,
@@ -56,18 +76,41 @@ export async function computeHealthSnapshot(
   });
 }
 
+export async function computeHealthSnapshots(
+  deps: HealthSnapshotDeps,
+): Promise<SyncHealthSnapshot[]> {
+  return Promise.all(
+    deps.registry
+      .kinds()
+      .map((provider) => computeHealthSnapshotForProvider(deps, provider)),
+  );
+}
+
 export async function emitHealthSnapshot(input: {
   deps: HealthSnapshotDeps;
   client: PostHogCaptureClient | null;
-}): Promise<SyncHealthSnapshot> {
-  const snapshot = await computeHealthSnapshot(input.deps);
-  await captureSafely(input.client, {
-    event: SYNC_HEALTH_SNAPSHOT_EVENT,
-    // One service-level distinct id — never a user id (R-SEC-04).
-    distinctId: "compass-sync",
-    properties: snapshot as unknown as Record<string, unknown>,
-  });
-  return snapshot;
+}): Promise<SyncHealthSnapshot[]> {
+  const snapshots = await computeHealthSnapshots(input.deps);
+  for (const snapshot of snapshots) {
+    await captureSafely(input.client, {
+      event: SYNC_HEALTH_SNAPSHOT_EVENT,
+      // One service-level distinct id — never a user id (R-SEC-04).
+      distinctId: "compass-sync",
+      properties: snapshot as unknown as Record<string, unknown>,
+    });
+  }
+  return snapshots;
+}
+
+async function connectionIdsForProvider(
+  db: Db,
+  provider: ProviderKind,
+): Promise<ConnectionId[]> {
+  const rows = await db
+    .collection(SYNC_COLLECTIONS.providerConnections)
+    .find({ provider }, { projection: { _id: 1 } })
+    .toArray();
+  return rows.map((row) => String(row._id) as ConnectionId);
 }
 
 // The counters below read collections directly instead of going through the
@@ -77,10 +120,12 @@ export async function emitHealthSnapshot(input: {
 // hydrated records.
 async function countConnectionsByState(
   db: Db,
+  provider: ProviderKind,
 ): Promise<SyncHealthSnapshot["connections"]> {
   const rows = await db
     .collection(SYNC_COLLECTIONS.providerConnections)
     .aggregate<{ _id: string; count: number }>([
+      { $match: { provider } },
       { $group: { _id: "$state", count: { $sum: 1 } } },
     ])
     .toArray();
@@ -105,14 +150,22 @@ async function countConnectionsByState(
 async function summarizeJobs(
   db: Db,
   now: Date,
+  provider: ProviderKind,
 ): Promise<SyncHealthSnapshot["jobs"]> {
+  const connectionIds = await connectionIdsForProvider(db, provider);
+  if (connectionIds.length === 0) {
+    return { pending: 0, claimed: 0, failed: 0, oldestDueAgeMs: null };
+  }
+
+  const connectionFilter = { connectionId: { $in: connectionIds } };
   const collection = db.collection(SYNC_COLLECTIONS.jobs);
   const [pending, claimed, failed, oldestDue] = await Promise.all([
-    collection.countDocuments({ state: "pending" }),
-    collection.countDocuments({ state: "claimed" }),
-    collection.countDocuments({ state: "failed" }),
+    collection.countDocuments({ ...connectionFilter, state: "pending" }),
+    collection.countDocuments({ ...connectionFilter, state: "claimed" }),
+    collection.countDocuments({ ...connectionFilter, state: "failed" }),
     collection.findOne(
       {
+        ...connectionFilter,
         $or: [
           { state: "pending", runAfter: { $lte: now } },
           { state: "claimed", leaseExpiresAt: { $lt: now } },
@@ -133,12 +186,21 @@ async function summarizeJobs(
 async function summarizeSubscriptions(
   db: Db,
   now: Date,
+  provider: ProviderKind,
 ): Promise<SyncHealthSnapshot["subscriptions"]> {
+  const connectionIds = await connectionIdsForProvider(db, provider);
+  if (connectionIds.length === 0) {
+    return { ...ZERO_SUBSCRIPTION_COUNTS };
+  }
+
   const renewBefore = new Date(
     now.getTime() + HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS,
   );
   const collection = db.collection(SYNC_COLLECTIONS.syncResources);
-  const eventsFilter = { resourceKind: "events" as const };
+  const eventsFilter = {
+    resourceKind: "events" as const,
+    connectionId: { $in: connectionIds },
+  };
 
   const [healthy, renewSoon, expired, missing, neverNotified] =
     await Promise.all([
@@ -180,11 +242,29 @@ async function summarizeSubscriptions(
 async function summarizeFreshness(
   db: Db,
   now: Date,
+  provider: ProviderKind,
 ): Promise<SyncHealthSnapshot["freshness"]> {
+  const connectionIds = await connectionIdsForProvider(db, provider);
+  if (connectionIds.length === 0) {
+    return {
+      sampleSize: 0,
+      p50Ms: null,
+      p95Ms: null,
+      p99Ms: null,
+      percentOver30s: null,
+    };
+  }
+
   const rows = await db
     .collection(SYNC_COLLECTIONS.syncResources)
     .aggregate<{ lastSuccessAt: Date | null }>([
-      { $match: { resourceKind: "events", lastSuccessAt: { $ne: null } } },
+      {
+        $match: {
+          resourceKind: "events",
+          lastSuccessAt: { $ne: null },
+          connectionId: { $in: connectionIds },
+        },
+      },
       { $project: { lastSuccessAt: 1 } },
       { $sample: { size: FRESHNESS_SAMPLE_LIMIT } },
     ])

@@ -1,5 +1,6 @@
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
+import { appleLiveFactory } from "@sync/providers/__contract__/apple-contract.factory";
 import { googleLiveFactory } from "@sync/providers/__contract__/google-contract.factory";
 import { microsoftLiveFactory } from "@sync/providers/__contract__/microsoft-contract.factory";
 import { type ProviderAdapters } from "@sync/providers/provider-adapters";
@@ -158,6 +159,148 @@ export async function runMicrosoftLiveSmoke(input: {
     if (gone !== null) {
       throw new LiveSmokeError(
         "microsoft",
+        "delete",
+        "event still present after delete",
+      );
+    }
+  } finally {
+    await adapters.writer
+      .deleteEvent({
+        accessToken,
+        calendarId,
+        providerEventId: created.providerEventId,
+        expectedVersion: null,
+        invitation: "none",
+      })
+      .catch(() => undefined);
+  }
+}
+
+export async function runAppleLiveSmoke(input: {
+  readonly runId: string;
+  readonly email: string;
+  readonly appPassword: string;
+}): Promise<void> {
+  const adapters = appleLiveFactory("");
+  const refreshed = await adapters.auth.refreshAccessToken({
+    refreshToken: input.appPassword,
+  });
+  const accessToken = refreshed.accessToken;
+  const calendarId = await findSmokeCalendar(adapters, accessToken, "apple");
+  process.env["LIVE_ACCESS_TOKEN"] = accessToken;
+  process.env["LIVE_CALENDAR_ID"] = calendarId;
+
+  await teardownStaleSmokeEvents(
+    adapters,
+    accessToken,
+    calendarId,
+    input.runId,
+  );
+
+  const eventId = randomBytes(12).toString("hex");
+  const createdAt = new Date().toISOString();
+  const description = `${SMOKE_DESCRIPTION_PREFIX} run=${input.runId} created=${createdAt}`;
+  const start = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const end = new Date(start.getTime() + 30 * 60 * 1000);
+  const schedule = EventScheduleSchema.parse({
+    kind: "timed",
+    start: start.toISOString(),
+    end: end.toISOString(),
+    timeZone: "UTC",
+  });
+  const content = SyncEventContentSchema.parse({
+    title: `compass-smoke ${input.runId}`,
+    description,
+    location: null,
+    organizer: null,
+    attendees: [],
+    conference: null,
+  });
+
+  let created: ProviderWriteResult;
+  try {
+    created = await adapters.writer.createEvent({
+      accessToken,
+      calendarId,
+      providerEventId: eventId,
+      content,
+      schedule,
+      recurrence: { kind: "single" },
+      invitation: "none",
+    });
+  } catch (error) {
+    throw new LiveSmokeError(
+      "apple",
+      "create",
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  try {
+    const readBack = await adapters.writer.fetchEvent({
+      accessToken,
+      calendarId,
+      providerEventId: created.providerEventId,
+    });
+    if (readBack?.kind !== "event") {
+      throw new LiveSmokeError(
+        "apple",
+        "read-back",
+        "created event was not readable",
+      );
+    }
+    if (!readBack.content.description.includes(input.runId)) {
+      throw new LiveSmokeError(
+        "apple",
+        "read-back",
+        "created event did not carry the run id",
+      );
+    }
+
+    const patched = await adapters.writer.patchEvent({
+      accessToken,
+      calendarId,
+      providerEventId: created.providerEventId,
+      expectedVersion: created.providerVersion,
+      content: { ...content, title: `compass-smoke ${input.runId} updated` },
+      schedule,
+      recurrence: { kind: "single" },
+      invitation: "none",
+    });
+    if (
+      !patched.providerVersion ||
+      patched.providerVersion === created.providerVersion
+    ) {
+      throw new LiveSmokeError(
+        "apple",
+        "update",
+        "patch did not change version",
+      );
+    }
+
+    await runExceptionCase(
+      adapters.writer,
+      accessToken,
+      calendarId,
+      input.runId,
+      "apple",
+    );
+
+    await adapters.writer.deleteEvent({
+      accessToken,
+      calendarId,
+      providerEventId: created.providerEventId,
+      expectedVersion: null,
+      invitation: "none",
+    });
+    const gone = await adapters.writer.fetchEvent({
+      accessToken,
+      calendarId,
+      providerEventId: created.providerEventId,
+    });
+    if (gone !== null) {
+      throw new LiveSmokeError(
+        "apple",
         "delete",
         "event still present after delete",
       );
