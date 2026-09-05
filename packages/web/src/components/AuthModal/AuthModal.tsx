@@ -10,7 +10,7 @@ import {
 } from "react";
 import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
-import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
   dismissErrorToast,
@@ -68,7 +68,7 @@ export const AuthModal: FC = () => {
     loading: isGoogleAuthLoading,
     startGoogleAuthorization: startGoogleSignIn,
   } = googleAuth;
-  const isGoogleAvailable = useIsGoogleAvailable();
+  const isGoogleAvailable = useIsProviderAvailable("google", "signIn");
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
   const search = useSearch({ from: "__root__" });

@@ -1,6 +1,16 @@
+import { LEGACY_GOOGLE_MODULE_ALIASES } from "../../../legacy-google-aliases";
+
 Bun.plugin({
   name: "web-test-asset-stubs",
   setup(build) {
+    build.onResolve(
+      { filter: /^@web\/auth\/google\/(hooks|state|util)\// },
+      (args) => {
+        const mapped = LEGACY_GOOGLE_MODULE_ALIASES[args.path];
+        if (!mapped) return;
+        return { path: mapped };
+      },
+    );
     build.onResolve({ filter: /\.(css|less)$/ }, () => ({
       path: "virtual:web-test-empty-style",
       namespace: "web-test-stub",

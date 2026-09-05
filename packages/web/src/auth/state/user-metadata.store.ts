@@ -182,9 +182,35 @@ export const selectPrimaryGoogleSyncConnection = (
   findPrimaryGoogleSyncConnection(state.current?.google);
 
 /**
+ * Every connection on a raw metadata payload (SSE `userMetadataChanged`),
+ * preferring the WP-07 `connections[]` field.
+ */
+export const findSyncConnectionsFromMetadata = (
+  metadata: UserMetadata,
+): SyncConnectionSummary[] =>
+  metadata.connections ?? metadata.google?.connections ?? NO_CONNECTIONS;
+
+/**
+ * Look up one connection by id on a raw payload. Without an id, falls back
+ * to the aggregate primary — the same precedence as the store selector.
+ */
+export const findSyncConnectionFromMetadata = (
+  metadata: UserMetadata,
+  connectionId?: string | null,
+): SyncConnectionSummary | null => {
+  const connections = findSyncConnectionsFromMetadata(metadata);
+  if (connectionId) {
+    return (
+      connections.find((connection) => connection.id === connectionId) ?? null
+    );
+  }
+  return findPrimaryGoogleSyncConnection(metadata.google);
+};
+
+/**
  * Same selection, for a raw `UserMetadata` payload that hasn't gone through
  * the store yet (an SSE `userMetadataChanged` message) - see
- * useGcalSSE.factory.ts.
+ * useSyncSSE.factory.ts.
  */
 export const findPrimaryGoogleSyncConnectionFromMetadata = (
   metadata: UserMetadata,

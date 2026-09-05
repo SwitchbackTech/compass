@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { type UseConnectGoogleResult } from "@web/auth/providers/connect.types";
+import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import { useVisibleAfterHidden } from "@web/common/hooks/useVisibleAfterHidden";
 
 // A tab hidden for less than this is treated as a quick alt-tab, not a
@@ -10,13 +10,13 @@ const MIN_HIDDEN_DURATION_MS = 30_000;
 
 /**
  * Triggers the same Google Calendar sync refresh as the sidebar's "Refresh
- * calendar" CTA (`useConnectGoogle().refresh`), automatically: on mount and
+ * calendar" CTA (`useConnectProvider().refresh`), automatically: on mount and
  * whenever the tab regains focus after being hidden for 30+ seconds. Without
  * this, a user only sees a caught-up calendar if they remember to click
  * Refresh themselves. Passes `silent: true` — the user didn't ask for this
  * one, so a transient failure shouldn't surface an error toast the way a
  * manual click's would. The sync service still coalesces redundant enqueues
- * regardless. Every `useConnectGoogle()` instance delegates to the same
+ * regardless. Every `useConnectProvider()` instance delegates to the same
  * browser-wide refresh coordinator, so a focus refresh and a manual click
  * share work and status instead of racing each other.
  *
@@ -25,12 +25,14 @@ const MIN_HIDDEN_DURATION_MS = 30_000;
  * import). Metadata always reconciles on mount and on visible-after-hidden —
  * including during IMPORTING, which is exactly when the UI used to get stuck.
  *
- * `useConnectGoogleImpl` is a test seam (default: the real hook) so tests can
+ * `useConnectGoogleImpl` is a test seam (default: Google connect) so tests can
  * pass a fake implementation instead of mock.module-ing a hook other files
  * also mock.
  */
+const useDefaultConnectProvider = () => useConnectProvider("google");
+
 export const useSyncFocusRefresh = (
-  useConnectGoogleImpl: () => UseConnectGoogleResult = useConnectGoogle,
+  useConnectGoogleImpl: () => UseConnectGoogleResult = useDefaultConnectProvider,
 ) => {
   const { isAvailable, refresh, state } = useConnectGoogleImpl();
   const didReconcileMetadataOnMount = useRef(false);

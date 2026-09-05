@@ -4,9 +4,9 @@ import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.u
 import {
   type GoogleReconnectTarget,
   markAccountReconnectRequired,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
@@ -17,7 +17,7 @@ import { closeStream, openStream } from "@web/sse/client/sse.client";
 import {
   createGoogleAuthUtil,
   type GoogleRevokedContext,
-} from "./google.auth.util.factory";
+} from "./connection-revoked.util.factory";
 
 /**
  * Resolve which account a revoke signal belongs to. Returns null when the
@@ -27,16 +27,27 @@ import {
 const resolveRevokedAccount = (
   context?: GoogleRevokedContext,
 ): GoogleReconnectTarget | null => {
-  if (context?.connectionId || context?.accountEmail) {
+  const connections = selectSyncConnections(useUserMetadataStore.getState());
+
+  if (context?.connectionId) {
+    const connection = connections.find(
+      (entry) => entry.id === context.connectionId,
+    );
     return {
       connectionId: context.connectionId,
-      accountEmail: context.accountEmail,
+      accountEmail: context.accountEmail ?? connection?.accountEmail ?? null,
     };
   }
 
-  const connections = selectGoogleSyncConnections(
-    useUserMetadataStore.getState(),
-  );
+  if (context?.accountEmail) {
+    const connection = connections.find(
+      (entry) => entry.accountEmail === context.accountEmail,
+    );
+    return {
+      connectionId: connection?.id ?? null,
+      accountEmail: context.accountEmail,
+    };
+  }
 
   if (context?.calendarId) {
     const calendars =
@@ -96,8 +107,12 @@ const {
   syncPendingLocalEvents,
 } = googleAuthUtil;
 
-export type { GoogleRevokedContext };
+export type {
+  ConnectionRevokedContext,
+  GoogleRevokedContext,
+} from "./connection-revoked.util.factory";
 export {
+  handleGoogleRevoked as handleConnectionRevoked,
   handleGoogleRevoked,
   showLocalEventsSyncFailure,
   syncLocalEvents,

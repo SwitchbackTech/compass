@@ -8,7 +8,7 @@ import {
   getSidebarSyncStatus,
   isFirstImportFailed,
   isFirstImportInProgress,
-} from "./useConnectGoogle.util";
+} from "./connect.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("formatLastSyncedLabel", () => {

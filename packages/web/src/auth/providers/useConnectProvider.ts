@@ -9,20 +9,24 @@ import { AuthApi } from "@web/api/auth.api";
 import {
   type UseConnectGoogleOptions,
   type UseConnectGoogleResult,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+} from "@web/auth/providers/connect.types";
 import {
   connectionHasReconnectRequired,
   getGoogleConnectionConfig,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
+} from "@web/auth/providers/connect.util";
+import {
+  connectionProvider,
+  relabelConnectCommand,
+} from "@web/auth/providers/provider-copy.util";
 import {
   noteGoogleSyncRefreshImproved,
   refreshGoogleSync,
   useGoogleSyncRefreshSnapshot,
-} from "@web/auth/google/state/google.sync.refresh";
+} from "@web/auth/providers/sync.refresh";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
+import { useGoogleUiState } from "@web/auth/providers/useProviderUiState";
 import {
-  selectPrimaryGoogleSyncConnection,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
@@ -36,6 +40,11 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { settingsActions } from "@web/settings/settings.store";
 
 export type UseConnectProviderOptions = UseConnectGoogleOptions;
+export type { UseConnectGoogleOptions, UseConnectGoogleResult };
+
+export const useConnectGoogle = (
+  options?: UseConnectGoogleOptions,
+): UseConnectGoogleResult => useConnectProvider("google", options);
 
 export const useConnectProvider = (
   kind: ProviderKind,
@@ -43,11 +52,17 @@ export const useConnectProvider = (
 ): UseConnectGoogleResult => {
   const isAvailable = useIsProviderAvailable(kind, "connect");
   const aggregateState = useGoogleUiState();
-  const primaryConnection = useUserMetadataStore(
-    selectPrimaryGoogleSyncConnection,
-  );
+  const connections = useUserMetadataStore(selectSyncConnections);
+  const kindPrimary =
+    connections.find(
+      (connection) =>
+        connectionProvider(connection) === kind &&
+        connection.connectionState === aggregateState,
+    ) ??
+    connections.find((connection) => connectionProvider(connection) === kind) ??
+    null;
   const scopedConnection = options?.connection;
-  const syncConnection = scopedConnection ?? primaryConnection;
+  const syncConnection = scopedConnection ?? kindPrimary;
   const state =
     scopedConnection != null && connectionHasReconnectRequired(scopedConnection)
       ? "RECONNECT_REQUIRED"
@@ -173,18 +188,20 @@ export const useConnectProvider = (
     [queryClient, refreshSnapshot.isRefreshing],
   );
 
+  const googleConfig = getGoogleConnectionConfig(
+    state,
+    {
+      onConnectGoogle: onOpenAuth,
+      onRefreshGoogle: onRefresh,
+    },
+    {
+      refreshGaveUp: refreshSnapshot.gaveUp,
+    },
+  );
+
   return {
-    ...getGoogleConnectionConfig(
-      state,
-      {
-        onConnectGoogle: onOpenAuth,
-        onRefreshGoogle: onRefresh,
-      },
-      {
-        refreshGaveUp: refreshSnapshot.gaveUp,
-        provider: kind,
-      },
-    ),
+    ...googleConfig,
+    commandAction: relabelConnectCommand(googleConfig.commandAction, kind),
     connect: onOpenAuth,
     connection: syncConnection,
     refresh: onRefresh,
