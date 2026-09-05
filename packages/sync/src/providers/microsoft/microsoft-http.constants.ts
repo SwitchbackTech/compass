@@ -3,6 +3,9 @@
 // normal Graph latency.
 export const MICROSOFT_GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0";
 export const MICROSOFT_REQUEST_TIMEOUT_MS = 30_000;
+
+export const MICROSOFT_CALENDAR_LIST_SELECT =
+  "id,name,color,hexColor,canEdit,canShare,isDefaultCalendar,owner,isRemovable";
 export const MICROSOFT_EVENT_PAGE_SIZE = 200;
 
 // Fields the M-04 normalizer reads from a Graph event resource.

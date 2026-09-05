@@ -7,6 +7,7 @@ import {
   defaultCorpusDir,
 } from "@sync/providers/__contract__/adapter-contract";
 import { type AuthContractCase } from "@sync/providers/__contract__/auth.contract";
+import { type DiscoveryContractCase } from "@sync/providers/__contract__/discovery.contract";
 import exchangeFixture from "@sync/providers/__contract__/fixtures/microsoft/exchange-success.json";
 import normalizerFixture from "@sync/providers/__contract__/fixtures/microsoft/normalizer.json";
 import refreshRevokedFixture from "@sync/providers/__contract__/fixtures/microsoft/refresh-invalid-grant.json";
@@ -23,6 +24,11 @@ import {
   type MicrosoftTokenEndpoint,
   type MicrosoftTokenResponse,
 } from "@sync/providers/microsoft/microsoft-auth.adapter";
+import {
+  MicrosoftCalendarAdapter,
+  type MicrosoftCalendarListApi,
+  type MicrosoftCalendarListPage,
+} from "@sync/providers/microsoft/microsoft-calendar.adapter";
 import {
   type GraphEvent,
   normalizeMicrosoftEvent,
@@ -195,6 +201,64 @@ describeAuthCases(
     },
   ],
 );
+
+class ContractCalendarListApi implements MicrosoftCalendarListApi {
+  async listPage(): Promise<MicrosoftCalendarListPage> {
+    return {
+      items: [
+        {
+          id: "primary-cal",
+          name: "Calendar",
+          color: "lightBlue",
+          hexColor: "#0078D4",
+          canEdit: true,
+          isDefaultCalendar: true,
+        },
+        {
+          id: "shared-cal",
+          name: "Shared",
+          color: "lightGreen",
+          hexColor: "#107C10",
+          canEdit: false,
+          isDefaultCalendar: false,
+        },
+      ],
+      nextLink: null,
+    };
+  }
+}
+
+const MICROSOFT_DISCOVERY_CASES: DiscoveryContractCase[] = [
+  {
+    name: "detects a primary calendar, colors, access roles, and a cursor",
+    username: "user@contoso.com",
+    password: "secret",
+    run: async (adapter) => {
+      const result = await adapter.discoverCalendars({
+        accessToken: "contract-access-token",
+      });
+      const primary = result.calendars.filter((calendar) => calendar.primary);
+      expect(primary).toHaveLength(1);
+      expect(result.calendars.some((calendar) => calendar.color !== null)).toBe(
+        true,
+      );
+      expect(result.calendars[0]?.accessRole).toBe("owner");
+      expect(result.calendars[1]?.accessRole).toBe("viewer");
+      expect(result.cursor).toBeNull();
+    },
+  },
+];
+
+describe("microsoft discovery contract", () => {
+  for (const testCase of MICROSOFT_DISCOVERY_CASES) {
+    it(testCase.name, async () => {
+      const adapter = new MicrosoftCalendarAdapter(
+        () => new ContractCalendarListApi(),
+      );
+      await testCase.run(adapter);
+    });
+  }
+});
 
 interface NormalizerCorpus {
   readonly timed: GraphEvent;
