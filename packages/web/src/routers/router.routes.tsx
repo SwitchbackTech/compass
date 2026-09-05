@@ -172,9 +172,6 @@ export const providerAuthCallbackRoute = createRoute({
   ),
 });
 
-/** @deprecated One-release alias; `/auth/google/callback` is handled by `providerAuthCallbackRoute`. */
-export const googleAuthCallbackRoute = providerAuthCallbackRoute;
-
 export const appleAuthCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: APPLE_AUTH_CALLBACK_PATH,
