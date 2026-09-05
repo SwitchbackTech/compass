@@ -1,9 +1,14 @@
+import { type GraphEvent } from "@sync/providers/microsoft/microsoft-event.normalizer";
 import {
   type GraphEventDeltaItem,
   type MicrosoftEventListApi,
   type MicrosoftEventListPage,
   MicrosoftEventReaderAdapter,
 } from "@sync/providers/microsoft/microsoft-event-reader.adapter";
+import {
+  type MicrosoftEventWriteApi,
+  MicrosoftEventWriter,
+} from "@sync/providers/microsoft/microsoft-event-writer.adapter";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +26,11 @@ export interface MicrosoftReaderCorpus {
   readonly page2: ReaderCorpusPage;
   readonly expiredDeltaLink: string;
   readonly masterCategories: Record<string, string>;
+}
+
+interface WriterCorpus {
+  readonly create: GraphEvent;
+  readonly fetch: GraphEvent;
 }
 
 class CorpusEventListApi implements MicrosoftEventListApi {
@@ -57,6 +67,63 @@ function loadJson<T>(corpusDir: string, name: string): T {
   return JSON.parse(readFileSync(join(corpusDir, `${name}.json`), "utf8")) as T;
 }
 
+class CorpusEventWriteApi implements MicrosoftEventWriteApi {
+  #etag: string;
+  #deleted = new Set<string>();
+  #transactionEvents = new Map<string, GraphEvent>();
+
+  constructor(private readonly corpus: WriterCorpus) {
+    this.#etag = corpus.create["@odata.etag"] ?? 'W/"graph-v1"';
+  }
+
+  async create(
+    params: Parameters<MicrosoftEventWriteApi["create"]>[0],
+  ): Promise<GraphEvent> {
+    const transactionId = params.body.transactionId;
+    if (transactionId && this.#transactionEvents.has(transactionId)) {
+      return this.#transactionEvents.get(transactionId)!;
+    }
+    const created = {
+      ...this.corpus.create,
+      id: transactionId ?? this.corpus.create.id,
+      "@odata.etag": this.#etag,
+    };
+    if (transactionId) this.#transactionEvents.set(transactionId, created);
+    return created;
+  }
+
+  async patch(
+    params: Parameters<MicrosoftEventWriteApi["patch"]>[0],
+  ): Promise<GraphEvent> {
+    if (params.ifMatch && params.ifMatch !== this.#etag) {
+      throw httpError(412);
+    }
+    this.#etag = 'W/"graph-v2"';
+    return {
+      ...this.corpus.create,
+      id: params.eventId,
+      "@odata.etag": this.#etag,
+    };
+  }
+
+  async delete(
+    params: Parameters<MicrosoftEventWriteApi["delete"]>[0],
+  ): Promise<void> {
+    if (this.#deleted.has(params.eventId)) throw httpError(404);
+    this.#deleted.add(params.eventId);
+  }
+
+  async get(
+    params: Parameters<MicrosoftEventWriteApi["get"]>[0],
+  ): Promise<GraphEvent> {
+    return {
+      ...this.corpus.fetch,
+      id: params.eventId,
+      "@odata.etag": this.#etag,
+    };
+  }
+}
+
 /** Replay `fixtures/microsoft/reader.json` through the event reader adapter. */
 export function microsoftRecordedReader(
   corpusDir: string,
@@ -78,4 +145,12 @@ export function microsoftReaderMasterCategories(): Map<string, string> {
   return new Map(
     Object.entries(defaultMicrosoftReaderCorpus().masterCategories),
   );
+}
+
+/** Replay `fixtures/microsoft/writer.json` through the event writer adapter. */
+export function microsoftRecordedWriter(
+  corpusDir: string,
+): MicrosoftEventWriter {
+  const writer = loadJson<WriterCorpus>(corpusDir, "writer");
+  return new MicrosoftEventWriter(() => new CorpusEventWriteApi(writer));
 }

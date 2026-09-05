@@ -1,5 +1,11 @@
 import { generateKeyPair, type KeyLike, SignJWT } from "jose";
-import { defaultCorpusDir } from "@sync/providers/__contract__/adapter-contract";
+import {
+  assertWriterRejectsStaleVersion,
+  CONTRACT_CONTENT,
+  CONTRACT_EVENT_ID,
+  CONTRACT_SCHEDULE,
+  defaultCorpusDir,
+} from "@sync/providers/__contract__/adapter-contract";
 import { type AuthContractCase } from "@sync/providers/__contract__/auth.contract";
 import exchangeFixture from "@sync/providers/__contract__/fixtures/microsoft/exchange-success.json";
 import normalizerFixture from "@sync/providers/__contract__/fixtures/microsoft/normalizer.json";
@@ -9,6 +15,7 @@ import {
   defaultMicrosoftReaderCorpus,
   microsoftReaderMasterCategories,
   microsoftRecordedReader,
+  microsoftRecordedWriter,
 } from "@sync/providers/__contract__/microsoft-contract.factory";
 import {
   MicrosoftAuthAdapter,
@@ -26,6 +33,7 @@ import {
   type ProviderEventReadError,
   type ProviderEventReader,
 } from "@sync/providers/provider-event-reader.port";
+import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
 const CLIENT_ID = "microsoft-client-id";
 const CLIENT_SECRET = "microsoft-client-secret";
@@ -278,6 +286,7 @@ describe("microsoft normalizer contract", () => {
 const readerCorpusDir = defaultCorpusDir("microsoft");
 const readerAdapter = microsoftRecordedReader(readerCorpusDir);
 const readerCorpus = defaultMicrosoftReaderCorpus();
+const writerAdapter = microsoftRecordedWriter(readerCorpusDir);
 
 describe("microsoft reader contract", () => {
   it("pages, yields nextSyncToken only at the end, and counts skipped events", async () => {
@@ -330,6 +339,58 @@ describe("microsoft reader contract", () => {
     expect(masters.length).toBeGreaterThanOrEqual(1);
     expect(instances.length).toBeGreaterThanOrEqual(1);
     expect(instances.length).toBeLessThan(5);
+  });
+});
+
+describe("microsoft writer contract", () => {
+  it("create returns id and version, stale patch conflicts, delete is idempotent", async () => {
+    const created = await writerAdapter.createEvent({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      providerEventId: CONTRACT_EVENT_ID,
+      content: CONTRACT_CONTENT,
+      schedule: CONTRACT_SCHEDULE,
+      recurrence: { kind: "single" },
+      invitation: "none",
+    });
+    expect(created.providerEventId.length).toBeGreaterThan(0);
+    expect(created.providerVersion.length).toBeGreaterThan(0);
+
+    await assertWriterRejectsStaleVersion(writerAdapter, {
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      skipCreate: true,
+      providerEventId: created.providerEventId,
+    });
+
+    await writerAdapter.deleteEvent({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      providerEventId: created.providerEventId,
+      expectedVersion: null,
+      invitation: "none",
+    });
+    await writerAdapter.deleteEvent({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      providerEventId: created.providerEventId,
+      expectedVersion: null,
+      invitation: "none",
+    });
+  });
+
+  it("fetchInstanceAt remains unsupported until M-06b", async () => {
+    const error = await writerAdapter
+      .fetchInstanceAt({
+        accessToken: "contract-access-token",
+        calendarId: "primary",
+        seriesProviderEventId: "series-1",
+        originalStartAt: "2025-01-15T14:00:00.000Z",
+        scheduleKind: "timed",
+      })
+      .catch((caught) => caught);
+    expect(error).toBeInstanceOf(ProviderWriteError);
+    expect((error as ProviderWriteError).reason).toBe("unsupportedCapability");
   });
 });
 
