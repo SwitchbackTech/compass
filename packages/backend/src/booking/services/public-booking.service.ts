@@ -583,6 +583,10 @@ export class PublicBookingService {
     await this.assertSlotAvailable(page, slotStart, slotEnd);
 
     const hostDisplayName = await getHostDisplayName(page.userId);
+    const conference = await destinationConference(
+      page.userId,
+      page.destinationCalendarId,
+    );
     const cancelToken = generateCancelToken();
     const reservationId = mongoService.objectId();
     const cancelUrl = buildGuestActionUrl(
@@ -620,6 +624,7 @@ export class PublicBookingService {
             displayName: input.guestName,
           },
           guestsCanInviteOthers: page.guestsCanInviteOthers,
+          createConference: conference !== "none",
         },
       );
 

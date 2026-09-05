@@ -44,7 +44,8 @@ import {
   toBookingPageInput,
 } from "@web/booking/booking.util";
 import {
-  BOOKING_NO_CONFERENCE_WARNING,
+  bookingDestinationConferenceHint,
+  formatBookingDestinationOptionLabel,
   resolveBookingConference,
 } from "@web/booking/booking-conference.copy";
 import {
@@ -358,6 +359,9 @@ export function BookingSettingsSection({
       )
     : "meet";
   const destinationCannotMintMeet = destinationConference === "none";
+  const destinationConferenceHint = destinationCalendar
+    ? bookingDestinationConferenceHint(destinationCalendar)
+    : null;
   const destinationMeetWarningId = "booking-destination-meet-warning";
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -555,26 +559,26 @@ export function BookingSettingsSection({
                     >
                       {group.calendars.map((calendar) => (
                         <option key={calendar.id} value={calendar.id}>
-                          {calendar.name}
+                          {formatBookingDestinationOptionLabel(calendar)}
                         </option>
                       ))}
                     </optgroup>
                   ))}
                 {writableUngrouped.map((calendar) => (
                   <option key={calendar.id} value={calendar.id}>
-                    {calendar.name}
+                    {formatBookingDestinationOptionLabel(calendar)}
                   </option>
                 ))}
               </>
             )}
           </select>
-          {destinationCannotMintMeet && destinationCalendar ? (
+          {destinationConferenceHint ? (
             <p
               className="mt-1 text-sm text-warning"
               id={destinationMeetWarningId}
               role="status"
             >
-              {BOOKING_NO_CONFERENCE_WARNING[destinationCalendar.provider]}
+              {destinationConferenceHint}
             </p>
           ) : null}
         </div>

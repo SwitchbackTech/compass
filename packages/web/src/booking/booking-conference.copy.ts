@@ -1,4 +1,5 @@
 import {
+  type Calendar,
   type CalendarConference,
   type CalendarProvider,
 } from "@core/types/calendar.contracts";
@@ -17,6 +18,11 @@ export const BOOKING_CONFERENCE_INVITE_COPY: Record<
   teams: "A Microsoft Teams invite is on its way to your email.",
   none: "The calendar invite is on its way to your email.",
 };
+
+export const BOOKING_DESTINATION_NO_VIDEO_SUFFIX = "No video link";
+
+export const BOOKING_APPLE_DESTINATION_HINT =
+  "Bookings on an iCloud calendar are created without a video link. Add one in the booking notes if you need it.";
 
 export const BOOKING_NO_CONFERENCE_WARNING: Record<CalendarProvider, string> = {
   local:
@@ -44,4 +50,32 @@ export function resolveBookingConference(
     return conference;
   }
   return createsGoogleMeet === false ? "none" : "meet";
+}
+
+export function formatBookingDestinationOptionLabel(
+  calendar: Calendar,
+): string {
+  const conference = resolveBookingConference(
+    calendar.conference,
+    calendar.createsGoogleMeet,
+  );
+  if (calendar.provider === "apple" && conference === "none") {
+    return `${calendar.name} (${BOOKING_DESTINATION_NO_VIDEO_SUFFIX})`;
+  }
+  return calendar.name;
+}
+
+export function bookingDestinationConferenceHint(
+  calendar: Calendar,
+): string | null {
+  const conference = resolveBookingConference(
+    calendar.conference,
+    calendar.createsGoogleMeet,
+  );
+  if (conference === "none") {
+    return calendar.provider === "apple"
+      ? BOOKING_APPLE_DESTINATION_HINT
+      : BOOKING_NO_CONFERENCE_WARNING[calendar.provider];
+  }
+  return null;
 }

@@ -6,7 +6,37 @@ export const BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
 /** ObjectId-shaped id for the stubbed Compass-local calendar. */
 export const COMPASS_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e0";
 
+/** ObjectId-shaped id for a stubbed Apple iCloud calendar. */
+export const APPLE_BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e1";
+
 export const HOST_ACCOUNT_EMAIL = "host@example.com";
+export const APPLE_ACCOUNT_EMAIL = "host@icloud.com";
+
+/** Stub calendar list entry for an Apple booking destination. */
+export const appleBookingCalendar = {
+  id: APPLE_BOOKING_CALENDAR_ID,
+  name: "Personal",
+  description: "",
+  timeZone: "America/Chicago",
+  foregroundColor: "#ffffff",
+  backgroundColor: "#8E8E93",
+  provider: "apple" as const,
+  access: "owner" as const,
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+    canInviteAttendees: true,
+  },
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+  createsGoogleMeet: false,
+  conference: "none" as const,
+  accountEmail: APPLE_ACCOUNT_EMAIL,
+};
 
 function jsonResponse(body: unknown, status = 200) {
   return {
@@ -222,6 +252,8 @@ export interface PublicBookingStubOptions {
   token?: string;
   guestName?: string;
   notes?: string | null;
+  conference?: "meet" | "teams" | "none";
+  createsGoogleMeet?: boolean;
 }
 
 export interface CapturedBookingRequests {
@@ -242,7 +274,10 @@ function reservationPayload(input: {
   bookingSlug: string;
   guestName: string;
   notes: string | null;
+  conference?: "meet" | "teams" | "none";
+  createsGoogleMeet?: boolean;
 }) {
+  const conference = input.conference ?? "meet";
   return {
     slotStart: input.slotStart,
     guestTimeZone: input.guestTimeZone,
@@ -252,6 +287,8 @@ function reservationPayload(input: {
     bookingSlug: input.bookingSlug,
     guestName: input.guestName,
     notes: input.notes,
+    conference,
+    createsGoogleMeet: input.createsGoogleMeet ?? conference === "meet",
   };
 }
 
@@ -292,6 +329,8 @@ export async function preparePublicBookingPage(
   const slots = options.slots ?? [slot];
   const hostDisplayName = options.hostDisplayName ?? "Tyler Dane";
   const durationMinutes = options.durationMinutes ?? 30;
+  const conference = options.conference ?? "meet";
+  const createsGoogleMeet = options.createsGoogleMeet ?? conference === "meet";
   let guestName = options.guestName ?? "Guest User";
   let notes = options.notes ?? null;
   let postedSlotStart = slot.slotStart;
@@ -312,6 +351,8 @@ export async function preparePublicBookingPage(
           enabled: true,
           maxHorizonDays: 60,
           welcomeText: options.welcomeText ?? null,
+          conference,
+          createsGoogleMeet,
         }),
       );
     }
@@ -460,6 +501,8 @@ export async function preparePublicBookingPage(
             bookingSlug: slug,
             guestName,
             notes,
+            conference,
+            createsGoogleMeet,
           }),
         ),
       );
@@ -483,6 +526,8 @@ export async function preparePublicBookingPage(
             bookingSlug: slug,
             guestName,
             notes,
+            conference,
+            createsGoogleMeet,
           }),
         ),
       );
@@ -509,6 +554,8 @@ export async function preparePublicBookingConfirmedPage(
   const hostDisplayName = options.hostDisplayName ?? "Tyler Dane";
   const durationMinutes = options.durationMinutes ?? 30;
   const slug = options.slug ?? "tylerdane";
+  const conference = options.conference ?? "meet";
+  const createsGoogleMeet = options.createsGoogleMeet ?? conference === "meet";
   let guestName = options.guestName ?? "Guest User";
   let notes = options.notes ?? null;
   const captured: CapturedBookingRequests = {
@@ -545,6 +592,8 @@ export async function preparePublicBookingConfirmedPage(
             bookingSlug: slug,
             guestName,
             notes,
+            conference,
+            createsGoogleMeet,
           }),
         ),
       );
@@ -571,6 +620,8 @@ export async function preparePublicBookingConfirmedPage(
             bookingSlug: slug,
             guestName,
             notes,
+            conference,
+            createsGoogleMeet,
           }),
         ),
       );
