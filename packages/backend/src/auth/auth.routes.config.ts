@@ -1,5 +1,7 @@
 import type express from "express";
+import { urlencoded } from "express";
 import rateLimit from "express-rate-limit";
+import { APPLE_SIGNIN_FORM_POST_PATH } from "@backend/auth/services/apple/apple.auth.callback";
 import { verifySession } from "@backend/auth/session/session.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authController from "./controllers/auth.controller";
@@ -16,6 +18,14 @@ export const credentialConnectLimiter = rateLimit({
     ).session;
     return session?.getUserId() ?? req.ip ?? "anonymous";
   },
+});
+
+export const appleSignInCallbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? "anonymous",
 });
 
 /**
@@ -91,6 +101,16 @@ export class AuthRoutes extends CommonRoutesConfig {
       .post((req, res) => {
         authController.refreshGoogleSync(req, res);
       });
+
+    this.app
+      .route(APPLE_SIGNIN_FORM_POST_PATH)
+      .post(
+        appleSignInCallbackLimiter,
+        urlencoded({ extended: false }),
+        (req, res) => {
+          authController.appleSignInCallback(req, res);
+        },
+      );
 
     return this.app;
   }

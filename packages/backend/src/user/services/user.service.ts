@@ -1,9 +1,19 @@
 import { type TokenPayload } from "google-auth-library";
 import { type ClientSession, ObjectId, type WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { mapUserToCompass } from "@core/mappers/map.user";
+import {
+  mapUserToCompass,
+  mergeGoogleLoginIdentity,
+  mergeLoginIdentities,
+} from "@core/mappers/map.user";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
-import { type Schema_User, type UserProfile } from "@core/types/user.types";
+import {
+  type Schema_User,
+  type Schema_UserIdentity,
+  type UserProfile,
+} from "@core/types/user.types";
+import { canReuseCompassUserByEmail } from "@backend/auth/services/account-linking.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import stripeService from "@backend/billing/services/stripe.service";
@@ -101,8 +111,9 @@ class UserService {
   };
 
   getCanonicalCompassUserId = async (input: {
+    provider: ProviderKind;
+    subjectId?: string | null;
     email?: string | null;
-    googleUserId?: string | null;
   }): Promise<string | null> => {
     const user = await findCanonicalCompassUser(input);
     return user?._id.toString() ?? null;
@@ -115,6 +126,7 @@ class UserService {
       name?: string;
       locale?: string;
       google?: Schema_User["google"];
+      identities?: Schema_UserIdentity[];
     },
     session?: ClientSession,
   ): Promise<{
@@ -125,10 +137,20 @@ class UserService {
       error: () => "Invalid user ID",
     });
     const email = normalizeEmail(input.email);
-    const existingUserByEmail = await mongoService.user.findOne(
+    const incomingHasVerifiedLogin =
+      Boolean(input.google?.googleId) || (input.identities?.length ?? 0) > 0;
+    const existingUserByEmailMatch = await mongoService.user.findOne(
       { email },
       { session },
     );
+    const existingUserByEmail =
+      existingUserByEmailMatch &&
+      canReuseCompassUserByEmail({
+        existing: existingUserByEmailMatch,
+        incomingHasVerifiedLogin,
+      })
+        ? existingUserByEmailMatch
+        : null;
     const existingUser =
       existingUserByEmail ??
       (await mongoService.user.findOne({ _id: requestedUserId }, { session }));
@@ -142,6 +164,10 @@ class UserService {
 
     // Preserve existing Google data, but allow override from input
     const google = input.google ?? existingUser?.google;
+    const identities = mergeLoginIdentities(
+      mergeGoogleLoginIdentity(existingUser?.identities, google, email, name),
+      input.identities,
+    );
 
     const nextUser: Schema_User = {
       email,
@@ -152,6 +178,7 @@ class UserService {
       signedUpAt,
       lastLoggedInAt: new Date(),
       ...(google ? { google } : {}),
+      ...(identities ? { identities } : {}),
     };
 
     const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;

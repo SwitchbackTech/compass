@@ -7,6 +7,7 @@ import {
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  decryptAdoptAuthorizationCredential,
   decryptCredentialConnectPayload,
   decryptInternalCredential,
 } from "@core/security/internal-credential-envelope";
@@ -26,6 +27,7 @@ import {
   type ProviderCalendar,
   ProviderCalendarSchema,
   type ProviderConnection,
+  type ProviderConnectionAdoptionRequest,
   ProviderConnectionSchema,
   type SyncCalendarListResponse,
 } from "@core/types/sync/connection.contracts";
@@ -107,6 +109,8 @@ export const FOREGROUND_REFRESH_PATH =
   "/internal/connections/foreground-refresh";
 export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
+export const ADOPT_AUTHORIZATION_PATH =
+  "/internal/connections/adopt-authorization";
 export const CREDENTIAL_PATH = "/internal/connections/credential";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
@@ -635,51 +639,48 @@ export function registerConnectionRoutes(
     ADOPT_GOOGLE_AUTHORIZATION_PATH,
     internalRateLimit,
     deps.authMiddleware,
-    async (req, res) => {
-      const auth = requireAuth(req, res);
-      if (!auth) return;
-      if (!ensureConnected(deps.mongo, res)) return;
-      if (deps.execution === "passive" || !deps.registry.has("google")) {
-        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
-        return;
-      }
+    (req, res) =>
+      handleAdoptAuthorization(req, res, deps, {
+        gateKind: "google",
+        resolveKind: () => "google",
+        decrypt: (parsed, auth) =>
+          decryptInternalCredential(
+            deps.credentialEncryptionSecret,
+            parsed.credential,
+            {
+              tenantId: auth.tenantId,
+              principalId: auth.principalId,
+              account: parsed.account,
+              grantedScopes: parsed.grantedScopes,
+            },
+          ),
+        logMessage: "Failed to adopt Google authorization",
+      }),
+  );
 
-      const parsed = GoogleConnectionAdoptionRequestSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(Status.BAD_REQUEST).json({ error: "invalid_authorization" });
-        return;
-      }
-
-      try {
-        const refreshToken = decryptInternalCredential(
-          deps.credentialEncryptionSecret,
-          parsed.data.credential,
-          {
-            tenantId: auth.tenantId,
-            principalId: auth.principalId,
-            account: parsed.data.account,
-            grantedScopes: parsed.data.grantedScopes,
-          },
-        );
-        await linkConnection(
-          deps,
-          {
-            tenantId: auth.tenantId,
-            principalId: auth.principalId,
-            connectionId: null,
-            provider: "google",
-          },
-          { ...parsed.data, refreshToken },
-        );
-        res.status(Status.OK).json({});
-      } catch (error) {
-        logger.error(
-          "Failed to adopt Google authorization",
-          redactedCause(error),
-        );
-        respondInternalError(res);
-      }
-    },
+  app.post(
+    ADOPT_AUTHORIZATION_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    (req, res) =>
+      handleAdoptAuthorization(req, res, deps, {
+        resolveKind: (parsed) => parsed.provider ?? "google",
+        decrypt: (parsed, auth) => {
+          const provider = parsed.provider ?? "google";
+          return decryptAdoptAuthorizationCredential(
+            deps.credentialEncryptionSecret,
+            parsed.credential,
+            {
+              tenantId: auth.tenantId,
+              principalId: auth.principalId,
+              provider,
+              account: parsed.account,
+              grantedScopes: parsed.grantedScopes,
+            },
+          );
+        },
+        logMessage: "Failed to adopt provider authorization",
+      }),
   );
 
   app.post(
@@ -1073,6 +1074,62 @@ async function linkCredentialConnection(
   );
 
   return connection._id;
+}
+
+async function handleAdoptAuthorization(
+  req: Request,
+  res: Response,
+  deps: ConnectionApiDeps,
+  options: {
+    gateKind?: ProviderKind;
+    resolveKind: (parsed: ProviderConnectionAdoptionRequest) => ProviderKind;
+    decrypt: (
+      parsed: ProviderConnectionAdoptionRequest,
+      auth: { tenantId: string; principalId: string },
+    ) => string;
+    logMessage: string;
+  },
+): Promise<void> {
+  const auth = requireAuth(req, res);
+  if (!auth) return;
+  if (!ensureConnected(deps.mongo, res)) return;
+  if (
+    deps.execution === "passive" ||
+    (options.gateKind !== undefined && !deps.registry.has(options.gateKind))
+  ) {
+    res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+    return;
+  }
+
+  const parsed = GoogleConnectionAdoptionRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(Status.BAD_REQUEST).json({ error: "invalid_authorization" });
+    return;
+  }
+
+  const provider = options.resolveKind(parsed.data);
+  if (!deps.registry.has(provider)) {
+    res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+    return;
+  }
+
+  try {
+    const refreshToken = options.decrypt(parsed.data, auth);
+    await linkConnection(
+      deps,
+      {
+        tenantId: auth.tenantId,
+        principalId: auth.principalId,
+        connectionId: null,
+        provider,
+      },
+      { ...parsed.data, refreshToken },
+    );
+    res.status(Status.OK).json({});
+  } catch (error) {
+    logger.error(options.logMessage, redactedCause(error));
+    respondInternalError(res);
+  }
 }
 
 // Link an authorized account: upsert its connection (create or reconnect by the

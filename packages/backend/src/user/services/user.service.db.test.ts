@@ -85,6 +85,13 @@ describe("UserService", () => {
       expect(storedUser?.google?.googleId).toBe(gUser.sub);
       // The credential lives only in Sync now.
       expect(storedUser?.google?.gRefreshToken).toBeUndefined();
+      expect(storedUser?.identities).toEqual([
+        expect.objectContaining({
+          provider: "google",
+          subjectId: gUser.sub,
+          email: gUser.email,
+        }),
+      ]);
     });
   });
 
@@ -124,32 +131,52 @@ describe("UserService", () => {
 
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: user.google?.googleId,
+          provider: "google",
+          subjectId: user.google?.googleId,
           email: faker.internet.email(),
         }),
       ).resolves.toBe(user._id.toString());
     });
 
-    it("falls back to a normalized email lookup when Google is not linked", async () => {
+    it("falls back to a normalized email lookup when the provider subject is new", async () => {
       const user = await UserDriver.createUser();
       const normalizedEmail = user.email.toLowerCase();
       await mongoService.user.updateOne(
         { _id: user._id },
-        { $set: { email: normalizedEmail }, $unset: { google: "" } },
+        { $set: { email: normalizedEmail } },
       );
 
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: faker.string.uuid(),
+          provider: "microsoft",
+          subjectId: faker.string.uuid(),
           email: ` ${normalizedEmail.toUpperCase()} `,
         }),
       ).resolves.toBe(user._id.toString());
     });
 
+    it("does not fall back onto an unverified password-only user", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+      const normalizedEmail = user.email.toLowerCase();
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { email: normalizedEmail } },
+      );
+
+      await expect(
+        userService.getCanonicalCompassUserId({
+          provider: "google",
+          subjectId: faker.string.uuid(),
+          email: ` ${normalizedEmail.toUpperCase()} `,
+        }),
+      ).resolves.toBeNull();
+    });
+
     it("returns null when neither lookup finds a Compass user", async () => {
       await expect(
         userService.getCanonicalCompassUserId({
-          googleUserId: faker.string.uuid(),
+          provider: "google",
+          subjectId: faker.string.uuid(),
           email: faker.internet.email(),
         }),
       ).resolves.toBeNull();
@@ -311,6 +338,14 @@ describe("UserService", () => {
         userId: otherUserId,
         email: ` ${normalizedEmail.toUpperCase()} `,
         name: "Replacement Name",
+        identities: [
+          {
+            provider: "microsoft",
+            subjectId: "ms-oid-reuse",
+            email: normalizedEmail,
+            linkedAt: new Date("2026-09-05T00:00:00.000Z"),
+          },
+        ],
       });
 
       expect(result.isNewUser).toBe(false);
@@ -343,11 +378,101 @@ describe("UserService", () => {
         userId: otherUserId,
         email: ` ${normalizedEmail.toUpperCase()} `,
         name: "Replacement Name",
+        identities: [
+          {
+            provider: "microsoft",
+            subjectId: "ms-oid-lookup",
+            email: normalizedEmail,
+            linkedAt: new Date("2026-09-05T00:00:00.000Z"),
+          },
+        ],
       });
 
       expect(findOneSpy.mock.calls).toEqual([
         [{ email: normalizedEmail }, { session: undefined }],
       ]);
+    });
+
+    it("reuses a password-only Compass user on a later password sign-in", async () => {
+      const userId = mongoService.objectId().toString();
+      await userService.upsertUserFromAuth({
+        userId,
+        email: "solo-password@example.com",
+        name: "Password Person",
+      });
+      const otherUserId = mongoService.objectId().toString();
+
+      const result = await userService.upsertUserFromAuth({
+        userId: otherUserId,
+        email: "Solo-Password@Example.com",
+        name: "Password Person",
+      });
+
+      expect(result.isNewUser).toBe(false);
+      expect(result.user.userId).toBe(userId);
+      const storedUsers = await mongoService.user
+        .find({ email: "solo-password@example.com" })
+        .toArray();
+      expect(storedUsers).toHaveLength(1);
+    });
+
+    it("does not attach a verified login to an unverified password-only user", async () => {
+      const passwordUserId = mongoService.objectId().toString();
+      await userService.upsertUserFromAuth({
+        userId: passwordUserId,
+        email: "unverified@example.com",
+        name: "Password Person",
+      });
+      const googleUserId = mongoService.objectId().toString();
+
+      const result = await userService.upsertUserFromAuth({
+        userId: googleUserId,
+        email: "unverified@example.com",
+        name: "Google Person",
+        google: { googleId: "g-sub-1", picture: "not provided" },
+      });
+
+      expect(result.isNewUser).toBe(true);
+      expect(result.user.userId).toBe(googleUserId);
+      const storedUsers = await mongoService.user
+        .find({ email: "unverified@example.com" })
+        .toArray();
+      expect(storedUsers).toHaveLength(2);
+      expect(
+        storedUsers.find((user) => user._id.toString() === passwordUserId)
+          ?.google,
+      ).toBeUndefined();
+    });
+
+    it("merges a microsoft identity onto the user without dropping google", async () => {
+      const user = await UserDriver.createUser();
+      const microsoft = {
+        provider: "microsoft" as const,
+        subjectId: "ms-oid-1",
+        email: user.email,
+        linkedAt: new Date("2026-09-05T00:00:00.000Z"),
+      };
+
+      await userService.upsertUserFromAuth({
+        userId: user._id.toString(),
+        email: user.email,
+        identities: [microsoft],
+      });
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUser?.identities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: "google",
+            subjectId: user.google?.googleId,
+          }),
+          expect.objectContaining({
+            provider: "microsoft",
+            subjectId: "ms-oid-1",
+          }),
+        ]),
+      );
     });
   });
 

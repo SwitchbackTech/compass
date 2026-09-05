@@ -3,6 +3,7 @@ import {
   createRoute,
   lazyRouteComponent,
 } from "@tanstack/react-router";
+import { APPLE_AUTH_CALLBACK_PATH } from "@web/auth/apple/authorization/apple-authorization.constants";
 import {
   validateBookingCancelSearch,
   validateBookingRescheduleSearch,
@@ -171,6 +172,15 @@ export const googleAuthCallbackRoute = createRoute({
   ),
 });
 
+export const appleAuthCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: APPLE_AUTH_CALLBACK_PATH,
+  component: lazyRouteComponent(
+    () => import("@web/views/AppleAuthCallback/AppleAuthCallback"),
+    "AppleAuthCallbackView",
+  ),
+});
+
 const authenticatedRoute = authenticatedLayoutRoute.addChildren([
   dayRoute.addChildren([dayDateRoute, dayIndexRoute]),
   weekRoute.addChildren([weekDateRoute, weekIndexRoute]),
@@ -194,4 +204,5 @@ export const routeTree = rootRoute.addChildren([
       ]
     : []),
   googleAuthCallbackRoute,
+  appleAuthCallbackRoute,
 ]);

@@ -1,5 +1,8 @@
 import { faker } from "@faker-js/faker";
-import { decryptInternalCredential } from "@core/security/internal-credential-envelope";
+import {
+  decryptAdoptAuthorizationCredential,
+  decryptInternalCredential,
+} from "@core/security/internal-credential-envelope";
 import { type BusyAvailabilityRequest } from "@core/types/sync/availability.contracts";
 import { type CommandSubmitRequest } from "@core/types/sync/command.contracts";
 import { type EventInstanceListQuery } from "@core/types/sync/event.contracts";
@@ -14,6 +17,7 @@ import {
 } from "@sync/server/change-feed.routes";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
+  ADOPT_AUTHORIZATION_PATH,
   ADOPT_GOOGLE_AUTHORIZATION_PATH,
   AVAILABILITY_BUSY_PATH,
   BEGIN_PATH,
@@ -793,6 +797,51 @@ describe("SyncServiceClient", () => {
     });
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("adopts a server-exchanged Microsoft authorization on the provider-neutral path", async () => {
+    const who = principal();
+    const request = {
+      provider: "microsoft" as const,
+      account: {
+        providerAccountId: "ms-oid-1",
+        email: "connected@example.com",
+        displayName: "Connected User",
+      },
+      refreshToken: "microsoft-refresh-token",
+      grantedScopes: ["Calendars.ReadWrite"],
+    };
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({}),
+    }));
+
+    const result = await client(fn).adoptProviderAuthorization(who, request);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value).toEqual({});
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${ADOPT_AUTHORIZATION_PATH}`);
+    expect(sent?.method).toBe("POST");
+    const body = JSON.parse(sent?.body ?? "") as {
+      provider: unknown;
+      account: unknown;
+      credential: unknown;
+      grantedScopes: unknown;
+    };
+    expect(body.provider).toBe("microsoft");
+    expect(body.account).toEqual(request.account);
+    expect(body.grantedScopes).toEqual(request.grantedScopes);
+    expect(JSON.stringify(body)).not.toContain(request.refreshToken);
+    expect(
+      decryptAdoptAuthorizationCredential(SECRET, body.credential as never, {
+        tenantId: who.tenantId,
+        principalId: who.principalId,
+        provider: "microsoft",
+        account: request.account,
+        grantedScopes: request.grantedScopes,
+      }),
+    ).toBe(request.refreshToken);
   });
 
   it("forwards a connectionId for reconnect", async () => {

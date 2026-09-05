@@ -1,7 +1,6 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
 import { injectModulePreloads } from "./inject-module-preloads";
-import { LEGACY_GOOGLE_MODULE_ALIASES } from "./legacy-google-aliases";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { execSync } from "node:child_process";
 import path from "node:path";
@@ -72,7 +71,6 @@ const result = await Bun.build({
   define,
   plugins: [postcssPlugin],
   publicPath: "/",
-  alias: LEGACY_GOOGLE_MODULE_ALIASES,
 });
 
 if (!result.success) {

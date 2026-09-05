@@ -7,32 +7,51 @@ import {
 
 const MIN_NORMAL_TEXT_CONTRAST = 4.5;
 
-test("sidebar datepicker meets baseline accessibility and contrast checks", async ({
-  page,
-}) => {
-  await prepareCalendarPage(page);
-  await ensureSidebarOpen(page);
+const THEMES = [
+  { name: "light", theme: "light-beach", stored: null },
+  { name: "dark", theme: "dark-abyss", stored: "dark-abyss" },
+] as const;
 
-  const sidebar = page.locator("#sidebar");
-  const monthPicker = sidebar.getByRole("group", { name: "Date navigation" });
-  await expect(monthPicker).toBeVisible();
+test.describe("sidebar datepicker", () => {
+  for (const { name, theme, stored } of THEMES) {
+    test(`${name} theme meets baseline accessibility and contrast checks`, async ({
+      page,
+    }) => {
+      if (stored) {
+        await page.addInitScript((value) => {
+          localStorage.setItem("compass.theme", value);
+        }, stored);
+      }
 
-  // Scoped to #sidebar (not a whole-page scan): this test owns the
-  // datepicker's targeted contrast regression below, and scoping keeps that
-  // pairing - the axe pass and the per-date contrast check - about the same
-  // element on every run.
-  await expectNoAxeViolations(page, {
-    include: "#sidebar",
-    checkpoint: "sidebar datepicker",
-  });
+      await prepareCalendarPage(page);
+      await ensureSidebarOpen(page);
 
-  const days = monthPicker.locator(
-    ".react-datepicker__day:not(.react-datepicker__day--disabled)",
-  );
-  await expect(days.first()).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
 
-  await expectDateContrast(days, "default");
-  await expectDateContrast(days, "hover");
+      const sidebar = page.locator("#sidebar");
+      const monthPicker = sidebar.getByRole("group", {
+        name: "Date navigation",
+      });
+      await expect(monthPicker).toBeVisible();
+
+      // Scoped to #sidebar (not a whole-page scan): this test owns the
+      // datepicker's targeted contrast regression below, and scoping keeps that
+      // pairing - the axe pass and the per-date contrast check - about the same
+      // element on every run.
+      await expectNoAxeViolations(page, {
+        include: "#sidebar",
+        checkpoint: `sidebar datepicker ${name}`,
+      });
+
+      const days = monthPicker.locator(
+        ".react-datepicker__day:not(.react-datepicker__day--disabled)",
+      );
+      await expect(days.first()).toBeVisible();
+
+      await expectDateContrast(days, "default");
+      await expectDateContrast(days, "hover");
+    });
+  }
 });
 
 const expectDateContrast = async (

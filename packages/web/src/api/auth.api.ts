@@ -3,11 +3,14 @@ import {
   type Result_Auth_Compass,
 } from "@core/types/auth.types";
 import {
+  type ConnectionBeginConnectedResponse,
+  ConnectionBeginConnectedResponseSchema,
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
   type ConnectionRefreshResponse,
   ConnectionRefreshResponseSchema,
+  type CredentialConnectPayload,
 } from "@core/types/sync/connection.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 
@@ -75,6 +78,17 @@ const AuthApi = {
     );
 
     return ConnectionRefreshResponseSchema.parse(response.data);
+  },
+
+  async connectAppleCredential(
+    payload: CredentialConnectPayload,
+  ): Promise<ConnectionBeginConnectedResponse> {
+    const response = await BaseApi.post(`/auth/connections/credential`, {
+      provider: "apple",
+      username: payload.username,
+      secret: payload.secret,
+    });
+    return ConnectionBeginConnectedResponseSchema.parse(response.data);
   },
 };
 

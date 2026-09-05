@@ -5,11 +5,11 @@ import {
 } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   isFirstImportFailed,
   isFirstImportInProgress,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+} from "@web/auth/providers/connect.util";
+import { useConnectGoogle } from "@web/auth/providers/useConnectProvider";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getWritableCalendars } from "@web/calendars/calendar.util";
 import {

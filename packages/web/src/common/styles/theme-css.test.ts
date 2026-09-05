@@ -218,4 +218,16 @@ describe("Tailwind theme CSS", () => {
       expect(match?.[1]?.toLowerCase()).toBe(hex.toLowerCase());
     }
   });
+
+  it("paints sidebar month-picker days with theme text, not inherited black", () => {
+    // react-datepicker sets color: #000 on .react-datepicker. A sidebar
+    // `color: inherit` picked that up and failed WCAG on Dark Abyss.
+    expect(indexCss).toContain(".c-month-picker .c-date-picker");
+    expect(indexCss).toMatch(
+      /\.c-month-picker \.c-date-picker[\s\S]*& \.react-datepicker__day \{\s*color: var\(--text\);/,
+    );
+    expect(indexCss).not.toMatch(
+      /data-view="sidebar"\] \.react-datepicker__day[\s\S]{0,120}color:\s*inherit/,
+    );
+  });
 });

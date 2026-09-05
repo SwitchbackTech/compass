@@ -1,5 +1,8 @@
 import { type z } from "zod/v4";
-import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
+import {
+  encryptAdoptAuthorizationCredential,
+  encryptInternalCredential,
+} from "@core/security/internal-credential-envelope";
 import {
   type ContactSuggestionsResponse,
   ContactSuggestionsResponseSchema,
@@ -36,6 +39,8 @@ import {
   type GoogleConnectionAdoptionRequest,
   type GoogleConnectionAdoptionResponse,
   GoogleConnectionAdoptionResponseSchema,
+  type ProviderConnectionAdoptionRequest,
+  type ProviderConnectionAdoptionResponse,
   type SyncCalendarListResponse,
   SyncCalendarListResponseSchema,
 } from "@core/types/sync/connection.contracts";
@@ -44,6 +49,7 @@ import {
   type EventInstanceListResponse,
   EventInstanceListResponseSchema,
 } from "@core/types/sync/event.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import {
   type PrincipalPurgeResponse,
   PrincipalPurgeResponseSchema,
@@ -64,6 +70,7 @@ const CONNECTIONS_FOREGROUND_REFRESH_PATH =
   "/internal/connections/foreground-refresh";
 const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
+const ADOPT_AUTHORIZATION_PATH = "/internal/connections/adopt-authorization";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
@@ -305,6 +312,42 @@ export class SyncServiceClient {
           {
             tenantId: principal.tenantId,
             principalId: principal.principalId,
+            account: request.account,
+            grantedScopes: request.grantedScopes,
+          },
+        ),
+        grantedScopes: request.grantedScopes,
+      },
+      schema: GoogleConnectionAdoptionResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Adopt a provider authorization that Compass API exchanged during sign-in.
+  // Microsoft (and later Apple) use this path. Google sign-in still uses
+  // adoptGoogleAuthorization so its envelope AAD stays byte-identical.
+  adoptProviderAuthorization(
+    principal: SyncPrincipal,
+    request: Omit<ProviderConnectionAdoptionRequest, "credential"> & {
+      refreshToken: string;
+      provider: ProviderKind;
+    },
+    correlationId?: string,
+  ): Promise<SyncClientResult<ProviderConnectionAdoptionResponse>> {
+    return this.#request({
+      method: "POST",
+      path: ADOPT_AUTHORIZATION_PATH,
+      principal,
+      body: {
+        provider: request.provider,
+        account: request.account,
+        credential: encryptAdoptAuthorizationCredential(
+          this.#secret,
+          request.refreshToken,
+          {
+            tenantId: principal.tenantId,
+            principalId: principal.principalId,
+            provider: request.provider,
             account: request.account,
             grantedScopes: request.grantedScopes,
           },

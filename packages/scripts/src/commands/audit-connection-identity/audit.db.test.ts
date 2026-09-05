@@ -52,6 +52,7 @@ describe("auditConnectionIdentity provider filter (db)", () => {
                 provider: "microsoft",
                 subjectId: identities.microsoft.subjectId,
                 email: identities.microsoft.email ?? email,
+                linkedAt: new Date("2026-01-01T00:00:00.000Z"),
               },
             ],
           }
@@ -155,5 +156,57 @@ describe("auditConnectionIdentity provider filter (db)", () => {
         loginOwnerEmail: "microsoft@example.com",
       },
     ]);
+  });
+
+  it("reports no collisions for a linked user with two login identities and both connections", async () => {
+    const userId = new ObjectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "linked@example.com",
+      name: "Linked User",
+      firstName: "Linked",
+      lastName: "User",
+      locale: "not provided",
+      google: {
+        googleId: "google-sub-linked",
+        picture: "",
+        gRefreshToken: "refresh-token",
+      },
+      identities: [
+        {
+          provider: "google",
+          subjectId: "google-sub-linked",
+          email: "linked@example.com",
+          linkedAt: new Date("2026-01-01T00:00:00.000Z"),
+        },
+        {
+          provider: "microsoft",
+          subjectId: "ms-sub-linked",
+          email: "linked@example.com",
+          linkedAt: new Date("2026-01-01T00:00:00.000Z"),
+        },
+      ],
+    });
+    const principalId = userId.toHexString();
+    await seedConnection(
+      principalId,
+      "google",
+      "google-sub-linked",
+      "linked@example.com",
+    );
+    await seedConnection(
+      principalId,
+      "microsoft",
+      "ms-sub-linked",
+      "linked@example.com",
+    );
+
+    const report = await auditConnectionIdentity(
+      mongoService.db,
+      syncStorage.db(),
+    );
+
+    expect(report.connectionsChecked).toBe(2);
+    expect(report.collisions).toEqual([]);
   });
 });

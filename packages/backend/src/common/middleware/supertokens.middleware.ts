@@ -1,5 +1,6 @@
 import cors from "cors";
 import SuperTokens from "supertokens-node";
+import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -12,15 +13,21 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
+import { shouldAutomaticallyLinkAccounts } from "@backend/auth/services/account-linking.util";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import { isGoogleConfigured } from "@backend/common/constants/config.util";
+import {
+  isAppleSignInConfigured,
+  isGoogleConfigured,
+  isMicrosoftConfigured,
+} from "@backend/common/constants/config.util";
 import {
   createEmailPasswordUser,
-  createGoogleUser,
+  createThirdPartyUser,
   handleEmailPasswordSignIn,
   handleEmailPasswordSignUp,
-  handleGoogleSignInUp,
+  handleThirdPartySignInUp,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
@@ -43,12 +50,55 @@ const createGoogleProvider = (
   },
 });
 
-const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
+const createMicrosoftProvider = (
+  clientId: string,
+  clientSecret: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "active-directory",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        clientSecret,
+        scope: [...MICROSOFT_SCOPES],
+        additionalConfig: {
+          directoryId: "common",
+        },
+      },
+    ],
+  },
+});
+
+const createAppleProvider = (
+  clientId: string,
+  keyId: string,
+  teamId: string,
+  privateKey: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "apple",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        scope: ["openid", "email", "name"],
+        additionalConfig: {
+          keyId,
+          teamId,
+          privateKey,
+        },
+      },
+    ],
+  },
+});
+
+const thirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
   functions(originalImplementation) {
     return {
       ...originalImplementation,
       async manuallyCreateOrUpdateUser(input) {
-        return createGoogleUser(
+        return createThirdPartyUser(
           input,
           originalImplementation.manuallyCreateOrUpdateUser.bind(
             originalImplementation,
@@ -74,7 +124,7 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
           );
         }
 
-        return handleGoogleSignInUp(
+        return handleThirdPartySignInUp(
           input,
           signInUpPOST.bind(originalImplementation),
         );
@@ -84,19 +134,55 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
 };
 
 const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
-  const clientId = CONFIG.GOOGLE_CLIENT_ID;
-  const clientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+  const providers: ProviderInput[] = [];
 
-  if (!clientId || !clientSecret || !isGoogleConfigured(CONFIG)) {
+  const googleClientId = CONFIG.GOOGLE_CLIENT_ID;
+  const googleClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+  if (googleClientId && googleClientSecret && isGoogleConfigured(CONFIG)) {
+    providers.push(createGoogleProvider(googleClientId, googleClientSecret));
+  }
+
+  const microsoftClientId = CONFIG.MICROSOFT_CLIENT_ID;
+  const microsoftClientSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+  if (
+    microsoftClientId &&
+    microsoftClientSecret &&
+    isMicrosoftConfigured(CONFIG)
+  ) {
+    providers.push(
+      createMicrosoftProvider(microsoftClientId, microsoftClientSecret),
+    );
+  }
+
+  const appleClientId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+  const appleKeyId = CONFIG.APPLE_SIGNIN_KEY_ID;
+  const appleTeamId = CONFIG.APPLE_SIGNIN_TEAM_ID;
+  const applePrivateKey = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
+  if (
+    appleClientId &&
+    appleKeyId &&
+    appleTeamId &&
+    applePrivateKey &&
+    isAppleSignInConfigured(CONFIG)
+  ) {
+    providers.push(
+      createAppleProvider(
+        appleClientId,
+        appleKeyId,
+        appleTeamId,
+        applePrivateKey,
+      ),
+    );
+  }
+
+  if (providers.length === 0) {
     return [];
   }
 
   return [
     ThirdParty.init({
-      signInAndUpFeature: {
-        providers: [createGoogleProvider(clientId, clientSecret)],
-      },
-      override: googleThirdPartyOverride,
+      signInAndUpFeature: { providers },
+      override: thirdPartyOverride,
     }),
   ];
 };
@@ -131,6 +217,10 @@ export const initSupertokens = () => {
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction
+      AccountLinking.init({
+        shouldDoAutomaticAccountLinking: async (newAccountInfo) =>
+          shouldAutomaticallyLinkAccounts({ email: newAccountInfo.email }),
+      }),
       ...getThirdPartyRecipes(),
       EmailPassword.init({
         signUpFeature: {

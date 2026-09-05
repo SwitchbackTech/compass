@@ -1,7 +1,77 @@
 import { type TokenPayload } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { type Schema_User } from "@core/types/user.types";
+import {
+  type Schema_User,
+  type Schema_UserIdentity,
+} from "@core/types/user.types";
+
+/**
+ * Append login identities without duplicating an existing
+ * `(provider, subjectId)` pair.
+ */
+export const mergeLoginIdentities = (
+  current: Schema_UserIdentity[] | undefined,
+  incoming: Schema_UserIdentity[] | undefined,
+): Schema_UserIdentity[] | undefined => {
+  if (!incoming?.length) {
+    return current;
+  }
+  let next = current ?? [];
+  for (const identity of incoming) {
+    if (
+      !next.some(
+        (existing) =>
+          existing.provider === identity.provider &&
+          existing.subjectId === identity.subjectId,
+      )
+    ) {
+      next = [...next, identity];
+    }
+  }
+  return next;
+};
+
+/**
+ * Dual-write the Google login slot into `identities[]` without duplicating
+ * an existing google identity. `google.googleId` remains the one-release
+ * legacy field; this is the identities copy.
+ */
+export const mergeGoogleLoginIdentity = (
+  identities: Schema_UserIdentity[] | undefined,
+  google: Schema_User["google"] | undefined,
+  email: string,
+  displayName?: string,
+  linkedAt?: Date,
+): Schema_UserIdentity[] | undefined => {
+  if (!google?.googleId) {
+    return identities;
+  }
+
+  const existing = identities ?? [];
+  if (
+    existing.some(
+      (identity) =>
+        identity.provider === "google" &&
+        identity.subjectId === google.googleId,
+    )
+  ) {
+    return existing;
+  }
+
+  const next: Schema_UserIdentity = {
+    provider: "google",
+    subjectId: google.googleId,
+    email,
+    picture: google.picture,
+    linkedAt: linkedAt ?? new Date(),
+  };
+  if (displayName) {
+    next.displayName = displayName;
+  }
+
+  return [...existing, next];
+};
 
 // Map  user object given by google signin to our schema //
 export const mapUserToCompass = (gUser: TokenPayload): Schema_User => {
@@ -14,15 +84,23 @@ export const mapUserToCompass = (gUser: TokenPayload): Schema_User => {
     );
   }
 
+  const google = {
+    googleId: gUser.sub,
+    picture: gUser.picture || "not provided",
+  };
+
   return {
     email: gUser.email,
     name: gUser.name || "Mystery Person",
     firstName: gUser.given_name || "Mystery",
     lastName: gUser.family_name || "Person",
     locale: gUser.locale || "not provided",
-    google: {
-      googleId: gUser.sub,
-      picture: gUser.picture || "not provided",
-    },
+    google,
+    identities: mergeGoogleLoginIdentity(
+      undefined,
+      google,
+      gUser.email,
+      gUser.name,
+    ),
   };
 };

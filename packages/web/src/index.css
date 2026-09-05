@@ -767,9 +767,15 @@
 /*
  * Keep this unlayered so it can override react-datepicker's unlayered CSS.
  * Rules inside a Tailwind @utility lose to unlayered library defaults.
+ * @apply lives in its own rule: Tailwind can layer apply-expanded
+ * declarations, and nesting day colors in that same rule would lose to
+ * react-datepicker's unlayered `color: #000`.
  */
 .c-date-picker {
   @apply select-none rounded-xs border-0 shadow-[0_4px_4px_var(--color-shadow-default)];
+}
+
+.c-date-picker {
   background-color: var(--date-picker-bg);
   font-size: 11px;
   --date-picker-hover-bg: color-mix(
@@ -842,13 +848,13 @@
 
   & .react-datepicker__day-name {
     margin: 0;
-    color: var(--on-accent);
+    color: var(--text-muted);
     font-size: 11px;
-    opacity: 0.8;
   }
 
-  &[data-dark="true"] .react-datepicker__day-name {
-    color: var(--text);
+  &[data-dark="false"] .react-datepicker__day-name {
+    color: var(--on-accent);
+    opacity: 0.8;
   }
 
   &[data-view="sidebar"] .react-datepicker__day-name {
@@ -861,12 +867,12 @@
     margin: 0;
     border: 0;
     border-radius: 50%;
-    color: var(--on-accent);
+    color: var(--text);
     line-height: 1.5rem;
   }
 
-  &[data-dark="true"] .react-datepicker__day {
-    color: var(--text);
+  &[data-dark="false"] .react-datepicker__day {
+    color: var(--on-accent);
   }
 
   &[data-view="sidebar"] .react-datepicker__day {
@@ -885,11 +891,13 @@
     outline-offset: 1px;
   }
 
-  /* Sidebar days are keyboard targets, not click targets: no hover affordance. */
+  /* Sidebar days are keyboard targets, not click targets: no hover
+     affordance. Use --text (not inherit): react-datepicker sets `color: #000`
+     on .react-datepicker, so inherit painted black numbers on Dark Abyss. */
   &[data-view="sidebar"] .react-datepicker__day,
   &[data-view="sidebar"] .react-datepicker__day:hover {
     background-color: transparent;
-    color: inherit;
+    color: var(--text);
     cursor: default;
   }
 
@@ -1212,6 +1220,18 @@
   & .react-datepicker__month-container,
   & .react-datepicker__month {
     overflow: visible;
+  }
+  & .react-datepicker__day-name {
+    color: var(--text-muted);
+  }
+  & .react-datepicker__day {
+    color: var(--text);
+  }
+  & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+    color: var(--accent);
+  }
+  & .react-datepicker__day--outside-month {
+    color: var(--text-muted);
   }
   & .react-datepicker__day--selected {
     position: relative;

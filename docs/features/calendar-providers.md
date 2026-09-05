@@ -234,9 +234,19 @@ video link and says so.
 ## Identity
 
 `user.identities[]` records `{provider, subjectId, email}` per login method
-(milestone I). The same verified email across methods resolves to one Compass
-user through SuperTokens account linking. Sign in with Apple identifies by
-`sub`, because private-relay addresses are not the calendar account address.
+(milestone I). Identity is the provider subject, never email alone.
+
+The same verified email across login methods resolves to one Compass user
+through SuperTokens AccountLinking (`shouldAutomaticallyLink: true`,
+`shouldRequireVerification: true`). Google and Microsoft emails from the
+id_token count as verified when the token says so. Email/password accounts
+link only after email verification. Apple private-relay addresses
+(`@privaterelay.appleid.com`) never link automatically; Sign in with Apple
+identifies by `sub`.
+
+Linking merges `identities[]` and keeps every calendar connection of both
+users.
+
 After signup with a method that grants no calendar, onboarding asks which
 service hosts the calendar: "If you view your calendar in Apple Calendar, it
 may still be hosted by Google or Microsoft."
