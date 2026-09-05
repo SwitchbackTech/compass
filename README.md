@@ -32,6 +32,10 @@ Things you can't do in Compass (yet):
 - Multiple booking event types or a standalone booking product
 - See your Outlook events
 
+Calendar hosts (Google, Microsoft, Apple) are specified in
+[docs/features/calendar-providers.md](./docs/features/calendar-providers.md).
+Outlook and iCloud stay non-goals until those milestones land.
+
 ## Tech stack
 
 - **Frontend**: React, Zustand, TanStack, Tailwind

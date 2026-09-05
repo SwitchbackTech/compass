@@ -7,32 +7,32 @@ The event domain is the most cross-cutting part of Compass. Read this before cha
 The runtime uses the strict calendar-owned contracts everywhere: Mongo
 storage, the HTTP API, SSE, IndexedDB, and the web data/state layers. The
 pre-cutover legacy event model (and its `event.legacy-bridge.ts` conversion
-shim) has been fully removed — the sections below describe the current model
+shim) has been fully removed: the sections below describe the current model
 only.
 
-- `packages/core/src/types/domain-primitives.ts` — branded ids, `DateOnly`,
+- `packages/core/src/types/domain-primitives.ts`: branded ids, `DateOnly`,
   `DateTime` (RFC 3339 with offset), `TimeZone`, `SortOrder`, `RRule`.
-- `packages/core/src/types/event.contracts.ts` — canonical `Event`: required
+- `packages/core/src/types/event.contracts.ts`: canonical `Event`: required
   `calendarId`, discriminated `content` (`details` | `busy`), `schedule`
   (`timed` | `allDay`, exclusive all-day ends), `recurrence`
   (`single` | `series` | `occurrence`), plus `BusyPeriod` for free/busy-only
   calendars.
-- `packages/core/src/types/event-command.contracts.ts` — create (optional
+- `packages/core/src/types/event-command.contracts.ts`: create (optional
   client id), full-replace, delete, list and availability queries.
-- `packages/core/src/types/calendar.contracts.ts` — `Calendar` read model with
+- `packages/core/src/types/calendar.contracts.ts`: `Calendar` read model with
   provider/access and derived capabilities (`getCalendarCapabilities`).
-- `packages/core/src/types/server-message.contracts.ts` — the discriminated
+- `packages/core/src/types/server-message.contracts.ts`: the discriminated
   SSE union every backend publish site must emit.
 - `packages/backend/src/calendar/calendar.record.ts`,
-  `packages/backend/src/event/event.record.ts` — the backend's own record
+  `packages/backend/src/event/event.record.ts`: the backend's own record
   shapes, now vestigial for events (the backend delegates event storage to
   Sync; its own `event.record.ts` survives only for the calendar-cascade
   delete path).
-- `packages/sync/src/storage/contracts/event.contracts.ts` — the actual
+- `packages/sync/src/storage/contracts/event.contracts.ts`: the actual
   canonical event record Sync persists (`SyncEventSchema` in
   `packages/core/src/types/sync/event.contracts.ts` is its wire-facing
   counterpart). Google↔record mapping lives in `packages/sync/src/providers/google/`.
-- `packages/web/src/events/event-draft.types.ts` + `event-draft.parser.ts` —
+- `packages/web/src/events/event-draft.types.ts` + `event-draft.parser.ts`:
   the only intentionally incomplete event shape and the single parser that can
   turn it into a command.
 
@@ -45,20 +45,23 @@ assumption log that anchors the carve-out, so a future v2 effort starts from
 the recorded reasoning instead of rediscovering it:
 
 - **Cross-calendar event moves.** An existing event's `calendarId` is
-  immutable once created (A6) — creating and duplicating pick a calendar,
+  immutable once created (A6): creating and duplicating pick a calendar,
   editing shows it as read-only text, and there is no move control. General
   cross-calendar moves need their own Google and recurrence
   semantics (what happens to a moved recurring series, a moved event's
   provider identity) that v1 never had to answer.
-- **Non-Google providers.** `Calendar` and event provider identity are
-  discriminated unions with exactly one live member: Google (plus the
-  Compass-local calendar) (A1, A23). Outlook and iCalendar adapters would add
-  new discriminant members rather than change the shape — the extension point
-  is deliberately in place, but no second adapter is implemented.
-- **Shared-calendar administration.** Compass reads Google's CalendarList and
-  lets a user change Compass-local visibility, but never creates, deletes, or
+- **Non-Google providers.** `CalendarProviderSchema` is `local | google |
+  microsoft | apple`. Sync resolves adapters through `ProviderRegistry`
+  (`packages/sync/src/providers/provider-registry.ts`). Google is the
+  registered kind. Microsoft and Apple adapter sets live under
+  `packages/sync/src/providers/<kind>/` and register in M-09 / A-08. Domain
+  and web code must not branch on `provider === "x"`; they use
+  `ProviderCapabilitySchema` and calendar capabilities. See
+  [Calendar providers](../features/calendar-providers.md).
+- **Shared-calendar administration.** Compass reads the provider calendar list
+  and lets a user change Compass-local visibility, but never creates, deletes, or
   manages sharing/ACLs on a provider calendar (A1, A15). Calendar lifecycle
-  stays server-owned and Google-authoritative in v1.
+  stays server-owned and provider-authoritative in v1.
 
 ## Core Event Schema
 
@@ -70,14 +73,14 @@ Important event fields:
 
 - `id`: Compass event id
 - `calendarId`: required, immutable once created (see Deferred Beyond V1)
-- `content`: discriminated union — `details` (`title` + `description` +
+- `content`: discriminated union: `details` (`title` + `description` +
   optional `color` as an `EventColorSlot`) or `busy` (free/busy-only
   calendars). `color` maps 1:1 onto Google's 11 event `colorId` values; when
   absent, the card keeps the theme-flat fill and calendar identity stays the
   accent stripe.
-- `schedule`: discriminated union — `timed` (`start`/`end`/`timeZone`) or
+- `schedule`: discriminated union: `timed` (`start`/`end`/`timeZone`) or
   `allDay` (`DateOnly` `start`/`end`, exclusive end)
-- `recurrence`: discriminated union — `single` (standalone event), `series`
+- `recurrence`: discriminated union: `single` (standalone event), `series`
   (recurring base, carries `rules`), or `occurrence` (references its parent
   via `seriesId`)
 - `createdAt`, `updatedAt`
@@ -98,7 +101,7 @@ events to visible buckets:
 These are UI-facing categories, not storage categories.
 
 Recurrence planning, projection, and Google propagation are owned entirely
-by Sync now — see [Common Change Recipes](../development/common-change-recipes.md#change-recurring-event-behavior)
+by Sync now: see [Common Change Recipes](../development/common-change-recipes.md#change-recurring-event-behavior)
 for the current file list.
 
 ## Update Scopes
@@ -122,7 +125,7 @@ The backend's event contract mirrors Sync's recurrence model:
   `"exception"` internally) referencing the series via `seriesId`
 
 Sync projects occurrences into the rolling sync horizon rather than
-persisting every future instance — see
+persisting every future instance: see
 `packages/sync/src/domain/occurrence-projection.ts` and `reproject.ts`.
 
 ## Optimistic IDs
