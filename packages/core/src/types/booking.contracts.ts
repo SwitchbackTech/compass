@@ -220,7 +220,7 @@ export const PublicBookingPageSchema = z.strictObject({
   maxHorizonDays: z.number().int().positive().max(BOOKING_MAX_HORIZON_DAYS),
   welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   createsGoogleMeet: z.boolean().default(true),
-  conference: CalendarConferenceSchema.default("meet"),
+  conference: CalendarConferenceSchema.optional(),
 });
 export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 
@@ -320,7 +320,7 @@ export const PublicGetBookingReservationResponseSchema = z.strictObject({
   guestName: z.string().trim().min(1).max(256),
   notes: z.string().trim().max(4000).nullable(),
   createsGoogleMeet: z.boolean().default(true),
-  conference: CalendarConferenceSchema.default("meet"),
+  conference: CalendarConferenceSchema.optional(),
 });
 export type PublicGetBookingReservationResponse = z.infer<
   typeof PublicGetBookingReservationResponseSchema

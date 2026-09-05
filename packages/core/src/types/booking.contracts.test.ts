@@ -414,7 +414,7 @@ describe("HTTP booking contracts", () => {
     ).toBe(true);
     expect(
       PublicGetBookingReservationResponseSchema.parse(publicGet).conference,
-    ).toBe("meet");
+    ).toBeUndefined();
     expect(
       PublicGetBookingReservationResponseSchema.safeParse({
         slotStart: "2026-09-01T15:00:00.000Z",
