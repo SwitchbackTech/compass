@@ -17,17 +17,28 @@ export interface NotificationChannel {
 // the caller should act on.
 export type NotificationState = "initialSync" | "changed";
 
+export type ProviderNotificationLifecycle =
+  | "reauthorizationRequired"
+  | "subscriptionRemoved"
+  | "missed";
+
 export interface ProviderNotification {
   readonly channelId: string;
   readonly resourceId: string;
   // The secret the provider echoes back; compared to the stored token.
   readonly token: string | null;
   readonly state: NotificationState;
+  // Graph lifecycle callbacks enqueue subscription maintenance instead of a pull.
+  readonly lifecycle?: ProviderNotificationLifecycle;
 }
 
 export type NotificationParseResult =
   | ProviderNotification
   | { readonly kind: "validation"; readonly body: string }
+  | {
+      readonly kind: "batch";
+      readonly notifications: readonly ProviderNotification[];
+    }
   | null;
 
 export interface NotificationRequest {

@@ -74,12 +74,20 @@ export function registerNotificationRoutes(
         res.status(Status.OK).type("text/plain").send(parsed.body);
         return;
       }
-      if (!("channelId" in parsed)) {
+
+      const notifications = expandNotifications(parsed);
+      if (notifications.length === 0) {
         res.status(Status.BAD_REQUEST).end();
         return;
       }
 
-      await processNotification(deps, parsed, res);
+      for (const notification of notifications) {
+        const ok = await processNotification(deps, notification, res);
+        if (!ok) return;
+      }
+      if (!res.headersSent) {
+        res.status(Status.OK).end();
+      }
     };
 
   app.post(
@@ -108,15 +116,25 @@ function isValidationHandshake(
   );
 }
 
+function expandNotifications(
+  parsed: NotificationParseResult,
+): readonly ProviderNotification[] {
+  if (parsed === null) return [];
+  if ("kind" in parsed) {
+    if (parsed.kind === "validation") return [];
+    return parsed.notifications;
+  }
+  return [parsed];
+}
+
 async function processNotification(
   deps: NotificationApiDeps,
   notification: ProviderNotification,
   res: Response,
-): Promise<void> {
+): Promise<boolean> {
   // A passive service has no subscriptions to match; accept and drop.
   if (deps.execution === "passive" || !deps.mongo.isConnected) {
-    res.status(Status.OK).end();
-    return;
+    return true;
   }
 
   try {
@@ -134,31 +152,38 @@ async function processNotification(
     }
 
     if (verdict.status === "process" && resource) {
-      if (resource.resourceKind === "calendarList") {
-        await resources.clearSyncCursor(
+      if (notification.lifecycle) {
+        await new JobRepository(deps.mongo.db).enqueue(
+          resourceJob(resource, "subscriptionMaintain", now),
+        );
+      } else {
+        if (resource.resourceKind === "calendarList") {
+          await resources.clearSyncCursor(
+            resource.tenantId,
+            resource.principalId,
+            resource._id,
+          );
+        }
+        await resources.markChangeNotified(
           resource.tenantId,
           resource.principalId,
           resource._id,
+          now,
         );
+        const job =
+          resource.resourceKind === "calendarList"
+            ? calendarListSyncJob(resource, now)
+            : resourceJob(resource, "incrementalPull", now);
+        await new JobRepository(deps.mongo.db).enqueue(job);
       }
-      await resources.markChangeNotified(
-        resource.tenantId,
-        resource.principalId,
-        resource._id,
-        now,
-      );
-      const job =
-        resource.resourceKind === "calendarList"
-          ? calendarListSyncJob(resource, now)
-          : resourceJob(resource, "incrementalPull", now);
-      await new JobRepository(deps.mongo.db).enqueue(job);
     }
-    res.status(Status.OK).end();
+    return true;
   } catch (error) {
     logger.error(
       `Failed to process notification for channel ${notification.channelId}`,
       redactedCause(error),
     );
     res.status(Status.INTERNAL_SERVER).end();
+    return false;
   }
 }
