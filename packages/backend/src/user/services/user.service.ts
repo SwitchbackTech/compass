@@ -13,6 +13,7 @@ import {
   type Schema_UserIdentity,
   type UserProfile,
 } from "@core/types/user.types";
+import { canReuseCompassUserByEmail } from "@backend/auth/services/account-linking.util";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import stripeService from "@backend/billing/services/stripe.service";
@@ -136,10 +137,20 @@ class UserService {
       error: () => "Invalid user ID",
     });
     const email = normalizeEmail(input.email);
-    const existingUserByEmail = await mongoService.user.findOne(
+    const incomingHasVerifiedLogin =
+      Boolean(input.google?.googleId) || (input.identities?.length ?? 0) > 0;
+    const existingUserByEmailMatch = await mongoService.user.findOne(
       { email },
       { session },
     );
+    const existingUserByEmail =
+      existingUserByEmailMatch &&
+      canReuseCompassUserByEmail({
+        existing: existingUserByEmailMatch,
+        incomingHasVerifiedLogin,
+      })
+        ? existingUserByEmailMatch
+        : null;
     const existingUser =
       existingUserByEmail ??
       (await mongoService.user.findOne({ _id: requestedUserId }, { session }));

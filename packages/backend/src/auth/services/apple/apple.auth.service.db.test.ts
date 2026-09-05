@@ -6,7 +6,6 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { authErrorCopy } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { type AppleSignInSuccess } from "./apple.auth.types";
@@ -162,7 +161,7 @@ describe("appleAuthService", () => {
     expect(adoptCalls).toHaveLength(0);
   });
 
-  it("fails closed when the email already belongs to a Google user", async () => {
+  it("links a non-relay Apple email onto the Google user that already owns it", async () => {
     const existing = await UserDriver.createUser();
     const normalizedEmail = existing.email.toLowerCase();
     await mongoService.user.updateOne(
@@ -177,15 +176,44 @@ describe("appleAuthService", () => {
       },
     });
 
-    await expect(
-      appleAuthService.handleAppleAuth(success),
-    ).rejects.toMatchObject({
-      result: authErrorCopy.signInWhileAuthenticated("apple"),
-      code: "GOOGLE_SIGNIN_WHILE_AUTHENTICATED",
-    });
+    await appleAuthService.handleAppleAuth(success);
 
-    const stored = await mongoService.user.findOne({ _id: existing._id });
-    expect(stored?.identities?.some((i) => i.provider === "apple")).toBe(false);
+    const storedUsers = await mongoService.user
+      .find({ email: normalizedEmail })
+      .toArray();
+    expect(storedUsers).toHaveLength(1);
+    expect(storedUsers[0]?._id).toEqual(existing._id);
+    expect(storedUsers[0]?.identities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          provider: "google",
+          subjectId: existing.google?.googleId,
+        }),
+        expect.objectContaining({
+          provider: "apple",
+          subjectId: success.providerUser.sub,
+          email: normalizedEmail,
+        }),
+      ]),
+    );
+    expect(adoptCalls).toHaveLength(0);
+  });
+
+  it("never links an Apple private-relay email onto another Compass user", async () => {
+    const existing = await UserDriver.createUser();
+    const success = makeSuccess();
+
+    await appleAuthService.handleAppleAuth(success);
+
+    const googleUser = await mongoService.user.findOne({ _id: existing._id });
+    expect(googleUser?.identities?.some((i) => i.provider === "apple")).toBe(
+      false,
+    );
+    const appleUser = await mongoService.user.findOne({
+      "identities.provider": "apple",
+      "identities.subjectId": success.providerUser.sub,
+    });
+    expect(appleUser?._id.equals(existing._id)).toBe(false);
     expect(adoptCalls).toHaveLength(0);
   });
 

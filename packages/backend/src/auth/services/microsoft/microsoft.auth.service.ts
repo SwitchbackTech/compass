@@ -6,6 +6,7 @@ import {
 } from "@core/types/sync/connection.contracts";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type Schema_UserIdentity } from "@core/types/user.types";
+import { emailForVerifiedAccountLinkLookup } from "@backend/auth/services/account-linking.util";
 import { determineThirdPartyAuthMode } from "@backend/auth/services/google/util/google.auth.util";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
@@ -211,12 +212,10 @@ async function handleMicrosoftAuth(
   });
   const scopes = grantedMicrosoftScopes(oAuthTokens.scope);
 
-  // Look up by Microsoft subject only. Email fallback would attach this
-  // login to an existing Google or password user (I-06).
   const decision = await determineThirdPartyAuthMode(
     "microsoft",
     subjectId,
-    null,
+    emailForVerifiedAccountLinkLookup(email),
     createdNewRecipeUser,
   );
 

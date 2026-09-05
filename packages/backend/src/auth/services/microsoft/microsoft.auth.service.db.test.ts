@@ -121,8 +121,47 @@ describe("microsoftAuthService", () => {
     ]);
   });
 
-  it("fails closed when the email already belongs to a Google user", async () => {
+  it("links Microsoft onto the Google user that already owns the verified email", async () => {
     const existing = await UserDriver.createUser();
+    const normalizedEmail = existing.email.toLowerCase();
+    await mongoService.user.updateOne(
+      { _id: existing._id },
+      { $set: { email: normalizedEmail } },
+    );
+    const success = makeSuccess({
+      providerUser: {
+        oid: faker.string.uuid(),
+        email: normalizedEmail,
+        name: "Microsoft Person",
+      },
+    });
+
+    await microsoftAuthService.handleMicrosoftAuth(success);
+
+    const storedUsers = await mongoService.user
+      .find({ email: normalizedEmail })
+      .toArray();
+    expect(storedUsers).toHaveLength(1);
+    expect(storedUsers[0]?._id).toEqual(existing._id);
+    expect(storedUsers[0]?.google?.googleId).toBe(existing.google?.googleId);
+    expect(storedUsers[0]?.identities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          provider: "google",
+          subjectId: existing.google?.googleId,
+        }),
+        expect.objectContaining({
+          provider: "microsoft",
+          subjectId: success.providerUser.oid,
+          email: normalizedEmail,
+        }),
+      ]),
+    );
+    expect(adoptCalls).toHaveLength(1);
+  });
+
+  it("does not link Microsoft onto an unverified password-only user", async () => {
+    const existing = await UserDriver.createUser({ withGoogle: false });
     const normalizedEmail = existing.email.toLowerCase();
     await mongoService.user.updateOne(
       { _id: existing._id },

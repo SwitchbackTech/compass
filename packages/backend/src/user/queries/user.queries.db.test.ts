@@ -94,16 +94,32 @@ describe("findCanonicalCompassUser (db)", () => {
 
   it("falls back to a verified normalized email when no identity matches", async () => {
     const userId = await insertUser({
-      email: "password@example.com",
+      email: "verified@example.com",
+      googleId: "google-sub-verified",
+      identities: [{ provider: "google", subjectId: "google-sub-verified" }],
     });
 
     const found = await findCanonicalCompassUser({
       provider: "microsoft",
       subjectId: "ms-new",
-      email: "  Password@Example.com ",
+      email: "  Verified@Example.com ",
     });
 
     expect(found?._id).toEqual(userId);
+  });
+
+  it("does not fall back onto an unverified password-only user", async () => {
+    await insertUser({
+      email: "password@example.com",
+    });
+
+    const found = await findCanonicalCompassUser({
+      provider: "google",
+      subjectId: "google-new",
+      email: "password@example.com",
+    });
+
+    expect(found).toBeNull();
   });
 
   it("fails closed when the same email already has a different subject on that provider", async () => {

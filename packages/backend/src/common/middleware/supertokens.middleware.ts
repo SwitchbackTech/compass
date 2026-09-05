@@ -1,5 +1,6 @@
 import cors from "cors";
 import SuperTokens from "supertokens-node";
+import AccountLinking from "supertokens-node/recipe/accountlinking";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -13,6 +14,7 @@ import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
+import { shouldAutomaticallyLinkAccounts } from "@backend/auth/services/account-linking.util";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
@@ -215,6 +217,10 @@ export const initSupertokens = () => {
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction
+      AccountLinking.init({
+        shouldDoAutomaticAccountLinking: async (newAccountInfo) =>
+          shouldAutomaticallyLinkAccounts({ email: newAccountInfo.email }),
+      }),
       ...getThirdPartyRecipes(),
       EmailPassword.init({
         signUpFeature: {

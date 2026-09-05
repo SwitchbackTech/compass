@@ -5,8 +5,10 @@ import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-n
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { providerKindFromThirdPartyId } from "@core/types/sync/identity.contracts";
+import { emailForVerifiedAccountLinkLookup } from "@backend/auth/services/account-linking.util";
 import {
   appleAuthService,
+  appleEmail,
   appleSubjectId,
 } from "@backend/auth/services/apple/apple.auth.service";
 import { type AppleSignInSuccess } from "@backend/auth/services/apple/apple.auth.types";
@@ -14,6 +16,7 @@ import { googleAuthService } from "@backend/auth/services/google/google.auth.ser
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import {
   microsoftAuthService,
+  microsoftEmail,
   microsoftSubjectId,
 } from "@backend/auth/services/microsoft/microsoft.auth.service";
 import { type MicrosoftSignInSuccess } from "@backend/auth/services/microsoft/microsoft.auth.types";
@@ -118,7 +121,9 @@ async function maybeRemapMicrosoftSignInToCompassSession(
   const connectedCompassUserId = await userService.getCanonicalCompassUserId({
     provider: "microsoft",
     subjectId: microsoftSubjectId(success.providerUser),
-    email: null,
+    email: emailForVerifiedAccountLinkLookup(
+      microsoftEmail(success.providerUser),
+    ),
   });
 
   if (
@@ -163,7 +168,7 @@ async function maybeRemapAppleSignInToCompassSession(
   const connectedCompassUserId = await userService.getCanonicalCompassUserId({
     provider: "apple",
     subjectId: appleSubjectId(success.providerUser),
-    email: null,
+    email: emailForVerifiedAccountLinkLookup(appleEmail(success.providerUser)),
   });
 
   if (
