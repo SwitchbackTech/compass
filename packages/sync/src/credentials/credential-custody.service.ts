@@ -122,7 +122,7 @@ export class CredentialCustody {
     await this.credentials.deleteByConnection(connectionId);
     if (credential && !isPasswordCredential(credential)) {
       await this.resolveAuth(credential.provider).revoke({
-        token: openOauthRefreshToken(this.#requireAtRestKey(), credential),
+        token: openOauthRefreshToken(this.#credentialEncryptionKey, credential),
       });
     }
   }
@@ -163,7 +163,7 @@ export class CredentialCustody {
     }
 
     const refreshToken = openOauthRefreshToken(
-      this.#requireAtRestKey(),
+      this.#credentialEncryptionKey,
       credential,
     );
 
@@ -214,9 +214,9 @@ export class CredentialCustody {
         "Credential was removed during refresh",
       );
     }
-    if (isPlaintextOauthRefresh(credential)) {
+    if (isPlaintextOauthRefresh(credential) && this.#credentialEncryptionKey) {
       const sealed = sealOauthRefreshToken(
-        this.#requireAtRestKey(),
+        this.#credentialEncryptionKey,
         refreshToken,
       );
       await this.credentials.reencryptOauthRefresh(credential._id, {
