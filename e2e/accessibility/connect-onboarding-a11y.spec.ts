@@ -48,6 +48,6 @@ test("the add-account chooser with Google and Microsoft has no automatically det
 
   await expectNoAxeViolations(page, {
     checkpoint: "settings add-account chooser",
-    include: "[role='dialog']",
+    include: "[role='menu']",
   });
 });
