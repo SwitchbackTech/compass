@@ -113,6 +113,15 @@ describe("EventForm RSVP control gating", () => {
     expect(screen.getByRole("radio", { name: "Going" })).toBeInTheDocument();
   });
 
+  it("shows the control on a microsoft calendar the same way", () => {
+    const calendar = makeCalendar({ provider: "microsoft" });
+    renderEventForm(editDraftOrThrow(makeInvitedEvent(calendar.id)), [
+      calendar,
+    ]);
+
+    expect(queryRsvpGroup()).toBeInTheDocument();
+  });
+
   it("shows the control on a viewer-access (read-only) calendar — RSVP is not a calendar write", () => {
     const calendar = makeCalendar({
       access: "reader",
@@ -165,7 +174,7 @@ describe("EventForm RSVP control gating", () => {
     expect(queryRsvpGroup()).not.toBeInTheDocument();
   });
 
-  it("hides the control on a local (non-Google) event", () => {
+  it("hides the control on a local event", () => {
     const calendar = makeCalendar({
       provider: "local",
       accountEmail: undefined,
