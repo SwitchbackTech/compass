@@ -60,11 +60,12 @@ out=$(run_guard $'packages/sync/src/providers/microsoft/foo.ts\npackages/sync/sr
 assert_contains "$out" "downgrade:" "mixed diff still refuses telemetry"
 assert_not_contains "$out" "proceed" "mixed diff does not proceed"
 
+MS_A="Providers A: Apple (iCloud)"
 MS_I="Providers I: identity decoupling"
 MS_C="Providers C: closeout"
 
-# Identity and closeout re-allow the auth paths (as P0 did); closeout also re-allows sync telemetry.
-for ms in "$MS_I" "$MS_C"; do
+# Apple, identity and closeout re-allow the auth paths (as P0 did); closeout also re-allows sync telemetry.
+for ms in "$MS_A" "$MS_I" "$MS_C"; do
   out=$(run_guard $'packages/backend/src/auth/x.ts\npackages/web/src/auth/y.ts\npackages/web/src/api/auth.api.ts\npackages/web/src/supertokens.ts' "$ms")
   assert_contains "$out" "proceed" "auth paths proceed under ${ms}"
   assert_not_contains "$out" "downgrade:" "auth paths are not refused under ${ms}"
@@ -76,6 +77,9 @@ assert_not_contains "$out" "downgrade:" "telemetry is not refused under closeout
 
 out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_I")
 assert_contains "$out" "downgrade:" "telemetry still refused under identity"
+
+out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_A")
+assert_contains "$out" "downgrade:" "telemetry still refused under apple"
 
 out=$(run_guard "packages/core/src/config/compass.config.ts" "$MS_I")
 assert_contains "$out" "downgrade:" "core config still refused under identity"
