@@ -1,3 +1,4 @@
+import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import {
   GOOGLE_AUTH_SCOPES,
   GOOGLE_AUTH_SCOPES_REQUESTED,
@@ -23,5 +24,9 @@ describe("google auth scopes", () => {
 
   it("requests only the verified calendar scopes during sign-in", () => {
     expect(GOOGLE_AUTH_SCOPES_REQUESTED).toEqual(GOOGLE_AUTH_SCOPES);
+  });
+
+  it("reads the required list from the core Google scope constant", () => {
+    expect(GOOGLE_AUTH_SCOPES).toEqual([...GOOGLE_SCOPES]);
   });
 });

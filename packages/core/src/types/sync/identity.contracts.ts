@@ -112,3 +112,25 @@ export const PROVIDER_DISPLAY_NAMES = {
 export function providerDisplayName(kind: ProviderKind): string {
   return PROVIDER_DISPLAY_NAMES[kind];
 }
+
+// SuperTokens thirdPartyId → Compass ProviderKind. Sign-in handlers look
+// the recipe id up here instead of branching on provider names.
+export const SUPERTOKENS_THIRD_PARTY_TO_KIND = {
+  google: "google",
+  "active-directory": "microsoft",
+  apple: "apple",
+} as const satisfies Record<string, ProviderKind>;
+
+export type SuperTokensThirdPartyId =
+  keyof typeof SUPERTOKENS_THIRD_PARTY_TO_KIND;
+
+export function providerKindFromThirdPartyId(
+  thirdPartyId: string,
+): ProviderKind | undefined {
+  if (Object.hasOwn(SUPERTOKENS_THIRD_PARTY_TO_KIND, thirdPartyId)) {
+    return SUPERTOKENS_THIRD_PARTY_TO_KIND[
+      thirdPartyId as SuperTokensThirdPartyId
+    ];
+  }
+  return undefined;
+}

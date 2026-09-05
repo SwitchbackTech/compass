@@ -1,3 +1,4 @@
+import { GOOGLE_SCOPES as CORE_GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import {
   CONTACTS_FEATURE_SCOPES,
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
@@ -30,5 +31,9 @@ describe("google scopes", () => {
     );
     expect(googleScopesForFeatures([])).toEqual([]);
     expect(googleScopesForFeatures(["other"])).toEqual([]);
+  });
+
+  it("re-exports the core Google scope list", () => {
+    expect(GOOGLE_SCOPES).toBe(CORE_GOOGLE_SCOPES);
   });
 });

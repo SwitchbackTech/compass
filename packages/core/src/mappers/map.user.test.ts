@@ -1,5 +1,9 @@
 import { BaseError } from "../errors/errors.base";
-import { mapUserToCompass, mergeGoogleLoginIdentity } from "./map.user";
+import {
+  mapUserToCompass,
+  mergeGoogleLoginIdentity,
+  mergeLoginIdentities,
+} from "./map.user";
 
 describe("Map to Compass", () => {
   it("adds placeholders for acceptible fields", () => {
@@ -55,5 +59,31 @@ describe("Map to Compass", () => {
         new Date("2026-02-01T00:00:00.000Z"),
       ),
     ).toEqual(existing);
+  });
+
+  it("appends a distinct login identity without duplicating the same subject", () => {
+    const google = { googleId: "sub-1", picture: "pic" };
+    const existing = mergeGoogleLoginIdentity(
+      undefined,
+      google,
+      "a@example.com",
+      "A",
+      new Date("2026-01-01T00:00:00.000Z"),
+    );
+    const microsoft = {
+      provider: "microsoft" as const,
+      subjectId: "oid-1",
+      email: "a@example.com",
+      linkedAt: new Date("2026-03-01T00:00:00.000Z"),
+    };
+
+    expect(mergeLoginIdentities(existing, [microsoft])).toEqual([
+      ...(existing ?? []),
+      microsoft,
+    ]);
+    expect(mergeLoginIdentities(existing, [microsoft, microsoft])).toEqual([
+      ...(existing ?? []),
+      microsoft,
+    ]);
   });
 });

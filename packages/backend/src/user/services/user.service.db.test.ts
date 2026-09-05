@@ -362,6 +362,37 @@ describe("UserService", () => {
         [{ email: normalizedEmail }, { session: undefined }],
       ]);
     });
+
+    it("merges a microsoft identity onto the user without dropping google", async () => {
+      const user = await UserDriver.createUser();
+      const microsoft = {
+        provider: "microsoft" as const,
+        subjectId: "ms-oid-1",
+        email: user.email,
+        linkedAt: new Date("2026-09-05T00:00:00.000Z"),
+      };
+
+      await userService.upsertUserFromAuth({
+        userId: user._id.toString(),
+        email: user.email,
+        identities: [microsoft],
+      });
+
+      const storedUser = await mongoService.user.findOne({ _id: user._id });
+      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
+      expect(storedUser?.identities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            provider: "google",
+            subjectId: user.google?.googleId,
+          }),
+          expect.objectContaining({
+            provider: "microsoft",
+            subjectId: "ms-oid-1",
+          }),
+        ]),
+      );
+    });
   });
 
   describe("deleteAccount", () => {

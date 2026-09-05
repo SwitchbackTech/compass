@@ -4,10 +4,15 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   mapUserToCompass,
   mergeGoogleLoginIdentity,
+  mergeLoginIdentities,
 } from "@core/mappers/map.user";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
-import { type Schema_User, type UserProfile } from "@core/types/user.types";
+import {
+  type Schema_User,
+  type Schema_UserIdentity,
+  type UserProfile,
+} from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import stripeService from "@backend/billing/services/stripe.service";
@@ -120,6 +125,7 @@ class UserService {
       name?: string;
       locale?: string;
       google?: Schema_User["google"];
+      identities?: Schema_UserIdentity[];
     },
     session?: ClientSession,
   ): Promise<{
@@ -147,11 +153,9 @@ class UserService {
 
     // Preserve existing Google data, but allow override from input
     const google = input.google ?? existingUser?.google;
-    const identities = mergeGoogleLoginIdentity(
-      existingUser?.identities,
-      google,
-      email,
-      name,
+    const identities = mergeLoginIdentities(
+      mergeGoogleLoginIdentity(existingUser?.identities, google, email, name),
+      input.identities,
     );
 
     const nextUser: Schema_User = {

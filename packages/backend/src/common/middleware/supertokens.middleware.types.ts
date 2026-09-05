@@ -27,14 +27,29 @@ type GoogleThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
   session?: SessionContainerInterface;
 };
 
+type MicrosoftThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
+  rawUserInfoFromProvider: {
+    fromIdTokenPayload?: Record<string, unknown>;
+  };
+  oAuthTokens: {
+    refresh_token?: string;
+    access_token?: string;
+    scope?: string;
+  };
+  user: { id: string; loginMethods: unknown[] };
+  session?: SessionContainerInterface;
+};
+
 export type ThirdPartySignInUpInput = Parameters<ThirdPartySignInUpPostFn>[0];
 export type CreateGoogleSignInResponse =
   | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
   | GoogleThirdPartySignInUpSuccess;
-export type AuthFormField = { id: string; value: unknown };
-
-export type CreateGoogleUserFn =
+export type CreateMicrosoftSignInResponse =
+  | { status: Exclude<ThirdPartySignInUpResponse["status"], "OK"> }
+  | MicrosoftThirdPartySignInUpSuccess;
+export type CreateThirdPartyUserFn =
   ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"];
+export type AuthFormField = { id: string; value: unknown };
 
 export type CreateNewRecipeUserFn =
   EmailPasswordRecipeInterface["createNewRecipeUser"];
