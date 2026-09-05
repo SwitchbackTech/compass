@@ -72,6 +72,10 @@ describe("supertokens.middleware", () => {
     ).mockImplementation((link) => link);
     spyOn(
       supertokensMiddlewareUtil,
+      "createGoogleSignInSuccess",
+    ).mockImplementation((payload) => payload as never);
+    spyOn(
+      supertokensMiddlewareUtil,
       "createMicrosoftSignInSuccess",
     ).mockImplementation((payload) => payload as never);
     spyOn(

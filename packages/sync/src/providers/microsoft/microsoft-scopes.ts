@@ -9,12 +9,7 @@ import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 export {
   CONTACTS_FEATURE_SCOPES,
   MICROSOFT_SCOPE_CALENDARS_READWRITE,
-  MICROSOFT_SCOPE_EMAIL,
-  MICROSOFT_SCOPE_OFFLINE_ACCESS,
-  MICROSOFT_SCOPE_OPENID,
   MICROSOFT_SCOPE_PEOPLE_READ,
-  MICROSOFT_SCOPE_PROFILE,
-  MICROSOFT_SCOPE_USER_READ,
   MICROSOFT_SCOPES,
   microsoftScopesForFeatures,
 } from "@core/providers/microsoft.scopes";

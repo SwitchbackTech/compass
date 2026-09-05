@@ -160,8 +160,6 @@ export async function createThirdPartyUser(
   return response;
 }
 
-export const createGoogleUser = createThirdPartyUser;
-
 export async function handleThirdPartySignInUp(
   input: ThirdPartySignInUpInput,
   originalSignInUpPOST: ThirdPartySignInUpPostFn,
@@ -208,8 +206,6 @@ export async function handleThirdPartySignInUp(
 
   return remapped.response;
 }
-
-export const handleGoogleSignInUp = handleThirdPartySignInUp;
 
 export async function sendPasswordResetEmail<
   T extends { passwordResetLink: string; user: { email: string } },

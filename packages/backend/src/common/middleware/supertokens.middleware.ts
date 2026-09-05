@@ -59,11 +59,11 @@ const createMicrosoftProvider = (
         clientId,
         clientSecret,
         scope: [...MICROSOFT_SCOPES],
+        additionalConfig: {
+          directoryId: "common",
+        },
       },
     ],
-    additionalConfig: {
-      directoryId: "common",
-    },
   },
 });
 

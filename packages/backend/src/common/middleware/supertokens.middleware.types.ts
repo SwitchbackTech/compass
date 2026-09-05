@@ -51,8 +51,6 @@ export type CreateThirdPartyUserFn =
   ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"];
 export type AuthFormField = { id: string; value: unknown };
 
-export type CreateGoogleUserFn = CreateThirdPartyUserFn;
-
 export type CreateNewRecipeUserFn =
   EmailPasswordRecipeInterface["createNewRecipeUser"];
 

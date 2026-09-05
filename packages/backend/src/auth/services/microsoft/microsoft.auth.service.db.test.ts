@@ -123,10 +123,15 @@ describe("microsoftAuthService", () => {
 
   it("fails closed when the email already belongs to a Google user", async () => {
     const existing = await UserDriver.createUser();
+    const normalizedEmail = existing.email.toLowerCase();
+    await mongoService.user.updateOne(
+      { _id: existing._id },
+      { $set: { email: normalizedEmail } },
+    );
     const success = makeSuccess({
       providerUser: {
         oid: faker.string.uuid(),
-        email: existing.email,
+        email: normalizedEmail,
         name: "Microsoft Person",
       },
     });

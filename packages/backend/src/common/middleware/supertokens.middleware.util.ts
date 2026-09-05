@@ -89,14 +89,15 @@ export function createMicrosoftSignInSuccess(
 
   return {
     providerUser: {
-      oid: typeof payload.oid === "string" ? payload.oid : undefined,
-      sub: typeof payload.sub === "string" ? payload.sub : undefined,
-      email: typeof payload.email === "string" ? payload.email : undefined,
+      oid: typeof payload["oid"] === "string" ? payload["oid"] : undefined,
+      sub: typeof payload["sub"] === "string" ? payload["sub"] : undefined,
+      email:
+        typeof payload["email"] === "string" ? payload["email"] : undefined,
       preferred_username:
-        typeof payload.preferred_username === "string"
-          ? payload.preferred_username
+        typeof payload["preferred_username"] === "string"
+          ? payload["preferred_username"]
           : undefined,
-      name: typeof payload.name === "string" ? payload.name : undefined,
+      name: typeof payload["name"] === "string" ? payload["name"] : undefined,
     },
     oAuthTokens: response.oAuthTokens,
     createdNewRecipeUser: response.createdNewRecipeUser,
