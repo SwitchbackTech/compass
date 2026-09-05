@@ -33,6 +33,10 @@ import {
   type ProviderWriteRecurrence,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import {
+  classifyProviderWriteError,
+  type ProviderWriteErrorPolicy,
+} from "@sync/providers/provider-write-error";
 import { redactedCause } from "@sync/safety/redact-error";
 
 const CALDAV_ORIGIN = "https://caldav.icloud.com";
@@ -590,49 +594,25 @@ function assertWriteStatus(response: CaldavResponse): void {
   }
 }
 
+const APPLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
+  status: responseStatus,
+  cause: redactedCause,
+  credentialRejectedMessage: "Apple rejected the credentials",
+  writeRejectedMessage: "Apple rejected the write",
+};
+
 function classifyWriteError(error: unknown): ProviderWriteError {
   if (error instanceof ProviderWriteError) return error;
-  const cause = redactedCause(error);
-  const status = responseStatus(error);
-
-  if (status === 412) {
-    return new ProviderWriteError(
-      "versionConflict",
-      "The event was modified since the expected version",
-      { cause },
-    );
-  }
-  if (status === 401) {
-    return new ProviderWriteError(
-      "authorizationRevoked",
-      "Apple rejected the credentials",
-      { cause },
-    );
-  }
-  if (status === 403) {
-    return new ProviderWriteError(
-      "readOnlyCalendar",
-      "The calendar cannot be written",
-      { cause },
-    );
-  }
-  if (status === 507) {
+  // Insufficient storage is a 5xx the shared table would read as transient,
+  // but retrying never clears it: the iCloud account is out of room.
+  if (responseStatus(error) === 507) {
     return new ProviderWriteError(
       "permanentProviderError",
       "Apple rejected the write with insufficient storage",
-      { cause },
+      { cause: redactedCause(error) },
     );
   }
-  if (status === undefined || status === 429 || status >= 500) {
-    return new ProviderWriteError("transient", "The write failed transiently", {
-      cause,
-    });
-  }
-  return new ProviderWriteError(
-    "permanentProviderError",
-    "Apple rejected the write",
-    { cause },
-  );
+  return classifyProviderWriteError(error, APPLE_WRITE_ERROR_POLICY);
 }
 
 function responseStatus(error: unknown): number | undefined {
