@@ -163,12 +163,12 @@ export const cleanupRoute = createRoute({
   ),
 });
 
-export const googleAuthCallbackRoute = createRoute({
+export const providerAuthCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: ROOT_ROUTES.GOOGLE_AUTH_CALLBACK,
+  path: ROOT_ROUTES.PROVIDER_AUTH_CALLBACK,
   component: lazyRouteComponent(
-    () => import("@web/views/GoogleAuthCallback/GoogleAuthCallback"),
-    "GoogleAuthCallbackView",
+    () => import("@web/views/ProviderAuthCallback/ProviderAuthCallback"),
+    "ProviderAuthCallbackView",
   ),
 });
 
@@ -203,6 +203,6 @@ export const routeTree = rootRoute.addChildren([
         publicBookRoute,
       ]
     : []),
-  googleAuthCallbackRoute,
   appleAuthCallbackRoute,
+  providerAuthCallbackRoute,
 ]);
