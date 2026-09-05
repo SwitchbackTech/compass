@@ -21,8 +21,13 @@ import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hoo
 import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
-  resetGoogleAvailabilityForTests,
+  registerUseStartProviderAuthorizationForTests,
+  resetUseStartProviderAuthorizationForTests,
+} from "@web/auth/providers/authorization/useStartProviderAuthorization";
+import {
+  resetProviderAvailabilityForTests,
   setGoogleAvailabilityForTests,
+  setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import { AuthModal } from "./AuthModal";
 import { AuthModalProvider } from "./AuthModalProvider";
@@ -143,14 +148,29 @@ function installAuthModalTestSeams() {
   mockEmailPassword = createTestEmailPasswordPort();
 
   registerUseStartGoogleAuthorizationForTests(mockUseStartGoogleAuthorization);
+  resetUseStartProviderAuthorizationForTests();
   registerUseCompleteAuthenticationForTests(() => mockCompleteAuthentication);
   registerEmailPasswordPort(mockEmailPassword);
-  resetGoogleAvailabilityForTests();
+  resetProviderAvailabilityForTests();
   setGoogleAvailabilityForTests("available");
   mockUseSession.mockReset().mockReturnValue({
     authenticated: false,
     userId: undefined,
   });
+}
+
+function setSignInAvailability(options: {
+  google?: "available" | "unavailable";
+  microsoft?: "available" | "unavailable";
+  apple?: "available" | "unavailable";
+}) {
+  resetProviderAvailabilityForTests();
+  setProviderAvailabilityForTests("google", options.google ?? "unavailable");
+  setProviderAvailabilityForTests(
+    "microsoft",
+    options.microsoft ?? "unavailable",
+  );
+  setProviderAvailabilityForTests("apple", options.apple ?? "unavailable");
 }
 
 describe("AuthModal", () => {
@@ -786,9 +806,9 @@ describe("AuthModal", () => {
       expect(mockGoogleLogin).toHaveBeenCalled();
     });
 
-    it("hides Google sign in when backend Google support is unavailable", async () => {
+    it("hides provider sign in when no providers are configured", async () => {
       const user = userEvent.setup();
-      setGoogleAvailabilityForTests("unavailable");
+      setSignInAvailability({});
       await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
@@ -796,6 +816,12 @@ describe("AuthModal", () => {
 
       expect(
         screen.queryByRole("button", { name: /continue with google/i }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /continue with microsoft/i }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /continue with apple/i }),
       ).not.toBeInTheDocument();
     });
 
@@ -819,6 +845,72 @@ describe("AuthModal", () => {
           screen.getByRole("button", { name: /continue with google/i }),
         ).toHaveTextContent(/continue with google/i);
       });
+    });
+  });
+
+  describe("Provider sign-in buttons", () => {
+    it("renders all three configured provider buttons", async () => {
+      const user = userEvent.setup();
+      setSignInAvailability({
+        google: "available",
+        microsoft: "available",
+        apple: "available",
+      });
+      await renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitForAuthModal();
+
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toHaveTextContent("Continue with Google");
+      expect(
+        screen.getByRole("button", { name: "Continue with Microsoft" }),
+      ).toHaveTextContent("Continue with Microsoft");
+      expect(
+        screen.getByRole("button", { name: "Continue with Apple" }),
+      ).toHaveTextContent("Continue with Apple");
+    });
+
+    it("renders only Google when it is the sole configured provider", async () => {
+      const user = userEvent.setup();
+      setSignInAvailability({ google: "available" });
+      await renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitForAuthModal();
+
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Continue with Microsoft" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Continue with Apple" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("starts Microsoft auth with M when focus is not in a field", async () => {
+      const mockMicrosoftStart = mock();
+      registerUseStartProviderAuthorizationForTests((provider) => ({
+        loading: false,
+        startAuthorization:
+          provider === "microsoft" ? mockMicrosoftStart : mock(),
+      }));
+      const user = userEvent.setup();
+      setSignInAvailability({
+        google: "available",
+        microsoft: "available",
+      });
+      await renderWithProviders(<ModalTrigger />);
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitForAuthModal();
+
+      screen.getByRole("dialog").focus();
+      await user.keyboard("m");
+
+      expect(mockMicrosoftStart).toHaveBeenCalled();
     });
   });
 

@@ -8,15 +8,16 @@ import {
   useRef,
   useState,
 } from "react";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
-import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
-import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
+import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
+import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
   dismissErrorToast,
   SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
-import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
+import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
@@ -59,16 +60,14 @@ export const AuthModal: FC = () => {
   // signup that failed after Google-side consent but before Compass finished
   // linking would otherwise fail the exact same way on every retry, forever.
   const [needsConsentRetry] = useState(consumeGoogleAuthNeedsConsentRetry);
-  const googleAuth = useStartGoogleAuthorization({
-    intent: "signIn",
-    onStart: handleGoogleAuthStart,
-    prompt: needsConsentRetry ? "consent" : undefined,
-  });
-  const {
-    loading: isGoogleAuthLoading,
-    startGoogleAuthorization: startGoogleSignIn,
-  } = googleAuth;
-  const isGoogleAvailable = useIsProviderAvailable("google", "signIn");
+  const { available, isLoading, loadingKind, startSignIn } = useSignInProviders(
+    {
+      google: {
+        onStart: handleGoogleAuthStart,
+        prompt: needsConsentRetry ? "consent" : undefined,
+      },
+    },
+  );
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
   const search = useSearch({ from: "__root__" });
@@ -116,10 +115,13 @@ export const AuthModal: FC = () => {
     [currentView, setView],
   );
 
-  const handleGoogleSignIn = useCallback(() => {
-    void startGoogleSignIn();
-    closeModal();
-  }, [closeModal, startGoogleSignIn]);
+  const handleProviderSignIn = useCallback(
+    (kind: ProviderKind) => {
+      startSignIn(kind);
+      closeModal();
+    },
+    [closeModal, startSignIn],
+  );
 
   const navigateToForgotPassword = useCallback(() => {
     setView("forgotPassword");
@@ -142,9 +144,10 @@ export const AuthModal: FC = () => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isEditableKeyboardTarget(event)) return;
       const key = keyboardKey(event).toLowerCase();
-      if (key === "g" && isGoogleAvailable) {
+      const providerKind = signInProviderForShortcutLetter(key, available);
+      if (providerKind) {
         event.preventDefault();
-        handleGoogleSignIn();
+        handleProviderSignIn(providerKind);
         return;
       }
       if (key === "u" && isLoginView) {
@@ -161,9 +164,9 @@ export const AuthModal: FC = () => {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [
+    available,
     currentView,
-    handleGoogleSignIn,
-    isGoogleAvailable,
+    handleProviderSignIn,
     isLoginView,
     isOpen,
     setView,
@@ -174,7 +177,8 @@ export const AuthModal: FC = () => {
     return null;
   }
 
-  const showGoogleAuth = currentView !== "resetPassword" && isGoogleAvailable;
+  const showProviderSignIn =
+    currentView !== "resetPassword" && available.length > 0;
   const showSubmitError =
     submitError !== null && (isLoginView || currentView === "signUp");
   const trimmedName = signUpName.trim();
@@ -255,19 +259,17 @@ export const AuthModal: FC = () => {
           </p>
         ) : null}
         {/* Google Sign In - at bottom */}
-        {showGoogleAuth ? (
+        {showProviderSignIn ? (
           <>
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
               <span className="text-sm text-text-muted">or</span>
               <div className="h-px flex-1 bg-border" />
             </div>
-            <GoogleButton
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleAuthLoading}
-              label="Continue with Google"
-              shortcutKey="G"
-              style={{ width: "100%" }}
+            <SignInProviderButtons
+              available={available}
+              loadingKind={isLoading ? loadingKind : null}
+              onSignIn={handleProviderSignIn}
             />
           </>
         ) : null}
