@@ -1,6 +1,7 @@
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
+import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
@@ -272,6 +273,7 @@ describe("useSyncSSE", () => {
       id: "64b7f9c2e1a2b3c4d5e6f7a9",
       provider: "microsoft",
     });
+    const microsoftId = ConnectionIdSchema.parse(microsoft.id);
     userMetadataActions.set({
       google: { connectionState: "HEALTHY", connections: [google] },
       connections: [google, microsoft],
@@ -286,7 +288,7 @@ describe("useSyncSSE", () => {
         sync: {
           status: "attention",
           code: "CONNECTION_REVOKED",
-          connectionId: microsoft.id,
+          connectionId: microsoftId,
           retryable: false,
         },
       });
@@ -295,7 +297,7 @@ describe("useSyncSSE", () => {
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockHandleConnectionRevoked).toHaveBeenCalledWith({
-        connectionId: microsoft.id,
+        connectionId: microsoftId,
       });
     });
 

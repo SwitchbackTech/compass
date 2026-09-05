@@ -9,14 +9,14 @@ import {
   googleSyncSupportMailto,
   SSE_DEGRADED_STATUS,
 } from "@web/auth/providers/connect.util";
-import { useDisconnectGoogleAccount } from "@web/auth/providers/useDisconnectAccount";
-import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { ProviderConnectChooser } from "@web/auth/providers/ProviderConnectChooser";
 import {
   connectionProvider,
   defaultCalendarGroupLabel,
 } from "@web/auth/providers/provider-copy.util";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
+import { useDisconnectGoogleAccount } from "@web/auth/providers/useDisconnectAccount";
 import {
   selectSyncConnections,
   useUserMetadataStore,

@@ -2,13 +2,13 @@ import { createElement } from "react";
 import { type Id } from "react-toastify";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { type GoogleReconnectTarget } from "@web/auth/providers/reconnect.state";
 import {
   connectionProvider,
   RECONNECT_CALENDAR_LABEL,
   reconnectToastBody,
   reconnectToastTitle,
 } from "@web/auth/providers/provider-copy.util";
+import { type GoogleReconnectTarget } from "@web/auth/providers/reconnect.state";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {
   selectSyncConnections,

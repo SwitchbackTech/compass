@@ -3,8 +3,8 @@ import {
   getSidebarSyncStatus,
   SSE_DEGRADED_STATUS,
 } from "@web/auth/providers/connect.util";
-import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { connectionProvider } from "@web/auth/providers/provider-copy.util";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {
   selectPrimarySyncConnection,

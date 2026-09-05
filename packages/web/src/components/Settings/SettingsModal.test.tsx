@@ -9,12 +9,14 @@ import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { AuthApi } from "@web/api/auth.api";
-import { setGoogleAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
 import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
 } from "@web/auth/providers/reconnect.state";
-import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
+import {
+  setGoogleAvailabilityForTests,
+  setProviderAvailabilityForTests,
+} from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";

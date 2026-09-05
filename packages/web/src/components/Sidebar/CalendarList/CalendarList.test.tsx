@@ -18,9 +18,11 @@ import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 import { createApiError } from "@web/api/util/api.util";
 import { session } from "@web/auth/compass/session/Session";
-import { setGoogleAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
 import { emptyCalendarsCopy } from "@web/auth/providers/provider-copy.util";
-import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
+import {
+  setGoogleAvailabilityForTests,
+  setProviderAvailabilityForTests,
+} from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
