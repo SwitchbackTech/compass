@@ -112,7 +112,8 @@ describe("appleAuthService", () => {
     await appleAuthService.handleAppleAuth(success);
 
     const stored = await mongoService.user.findOne({
-      email: success.providerUser.email,
+      "identities.provider": "apple",
+      "identities.subjectId": success.providerUser.sub,
     });
     expect(stored?.name).toBe("Ada Lovelace");
     expect(stored?.identities).toEqual([

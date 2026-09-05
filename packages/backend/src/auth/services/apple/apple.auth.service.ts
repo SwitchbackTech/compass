@@ -1,4 +1,8 @@
 import { LoggerFactory } from "@core/logger/logger.factory";
+import {
+  type ProviderAccountFacts,
+  ProviderAccountFactsSchema,
+} from "@core/types/sync/connection.contracts";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type Schema_UserIdentity } from "@core/types/user.types";
 import {
@@ -62,6 +66,17 @@ export function appleDisplayName(
   const last = providerUser.user?.name?.lastName?.trim() ?? "";
   const combined = `${first} ${last}`.trim();
   return combined || undefined;
+}
+
+function appleAccount(
+  providerUser: AppleIdTokenPayload,
+  email: string,
+): ProviderAccountFacts {
+  return ProviderAccountFactsSchema.parse({
+    providerAccountId: appleSubjectId(providerUser),
+    email,
+    displayName: appleDisplayName(providerUser) ?? null,
+  });
 }
 
 function appleIdentity(
@@ -130,11 +145,7 @@ async function adoptIfCalendarGranted(
     toSyncPrincipal(compassUserId),
     {
       provider: "apple",
-      account: {
-        providerAccountId: appleSubjectId(providerUser),
-        email,
-        displayName: appleDisplayName(providerUser) ?? null,
-      },
+      account: appleAccount(providerUser, email),
       refreshToken,
       grantedScopes,
     },
