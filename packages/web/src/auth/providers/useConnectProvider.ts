@@ -9,22 +9,22 @@ import { AuthApi } from "@web/api/auth.api";
 import {
   type UseConnectGoogleOptions,
   type UseConnectGoogleResult,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+} from "@web/auth/providers/connect.types";
 import {
   connectionHasReconnectRequired,
   getGoogleConnectionConfig,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
-import {
-  noteGoogleSyncRefreshImproved,
-  refreshGoogleSync,
-  useGoogleSyncRefreshSnapshot,
-} from "@web/auth/google/state/google.sync.refresh";
+} from "@web/auth/providers/connect.util";
 import {
   connectionProvider,
   relabelConnectCommand,
 } from "@web/auth/providers/provider-copy.util";
+import {
+  noteGoogleSyncRefreshImproved,
+  refreshGoogleSync,
+  useGoogleSyncRefreshSnapshot,
+} from "@web/auth/providers/sync.refresh";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
+import { useGoogleUiState } from "@web/auth/providers/useProviderUiState";
 import {
   selectSyncConnections,
   useUserMetadataStore,

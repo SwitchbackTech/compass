@@ -154,12 +154,6 @@ export function createProviderAvailability({
     return connectable;
   };
 
-  const useIsGoogleAvailable = (): boolean =>
-    useIsProviderAvailable("google", "signIn");
-
-  const useIsConnectGoogleAvailable = (): boolean =>
-    useIsProviderAvailable("google", "connect");
-
   const resetGoogleAvailabilityForTests = () => {
     flags = {
       google: unavailableFlags,
@@ -203,8 +197,6 @@ export function createProviderAvailability({
     resetProviderAvailabilityForTests,
     setGoogleAvailabilityForTests,
     setProviderAvailabilityForTests,
-    useIsGoogleAvailable,
-    useIsConnectGoogleAvailable,
     useIsProviderAvailable,
     useConnectableProviders,
   };

@@ -2,8 +2,8 @@ import { type FC } from "react";
 import {
   getSidebarSyncStatus,
   SSE_DEGRADED_STATUS,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
+} from "@web/auth/providers/connect.util";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { connectionProvider } from "@web/auth/providers/provider-copy.util";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {

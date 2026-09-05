@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { type Id } from "react-toastify";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { type GoogleReconnectTarget } from "@web/auth/google/state/google.reconnect.state";
+import { type GoogleReconnectTarget } from "@web/auth/providers/reconnect.state";
 import {
   connectionProvider,
   RECONNECT_CALENDAR_LABEL,

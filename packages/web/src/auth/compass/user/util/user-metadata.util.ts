@@ -5,9 +5,10 @@ import {
   getGoogleReconnectRequiredAccountEmails,
   hasGoogleReconnectRequired,
   syncReconnectRequiredFromConnections,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
   findPrimaryGoogleSyncConnectionFromMetadata,
+  findSyncConnectionsFromMetadata,
   userMetadataActions,
 } from "@web/auth/state/user-metadata.store";
 import {
@@ -30,11 +31,14 @@ let metadataFetchEpoch = 0;
  * metadata payload, whether it arrived from REST refresh or SSE.
  */
 export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
-  const connections = metadata.google?.connections ?? [];
+  const connections = findSyncConnectionsFromMetadata(metadata);
   syncReconnectRequiredFromConnections(connections);
 
   const needsReconnect =
     metadata.google?.connectionState === "RECONNECT_REQUIRED" ||
+    connections.some(
+      (connection) => connection.connectionState === "RECONNECT_REQUIRED",
+    ) ||
     hasGoogleReconnectRequired();
 
   if (needsReconnect) {

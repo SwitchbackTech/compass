@@ -2,6 +2,7 @@ import { type FC } from "react";
 import { providerDisplayName } from "@core/types/sync/identity.contracts";
 import { ConnectProviderAction } from "@web/auth/providers/ConnectProviderAction";
 import {
+  BOOKING_CONNECT_BUTTON_LABEL,
   CONNECT_CALENDAR_LABEL,
   openingProviderCopy,
 } from "@web/auth/providers/provider-copy.util";
@@ -10,7 +11,7 @@ import { OverlayPanelActions } from "@web/components/OverlayPanel/OverlayPanel";
 
 interface ProviderConnectChooserProps {
   showShortcuts?: boolean;
-  variant: "settings" | "sidebar";
+  variant: "settings" | "sidebar" | "prompt";
 }
 
 export const ProviderConnectChooser: FC<ProviderConnectChooserProps> = ({
@@ -20,20 +21,28 @@ export const ProviderConnectChooser: FC<ProviderConnectChooserProps> = ({
   const connectable = useConnectableProviders();
   if (connectable.length === 0) return null;
 
-  if (variant === "settings") {
+  if (variant === "settings" || variant === "prompt") {
     const single = connectable.length === 1;
     return (
       <OverlayPanelActions align="start">
         {connectable.map((kind, index) => (
           <ConnectProviderAction
             connectingLabel={openingProviderCopy(kind)}
-            idleLabel={single ? "Add account" : providerDisplayName(kind)}
+            idleLabel={
+              variant === "prompt"
+                ? BOOKING_CONNECT_BUTTON_LABEL[kind]
+                : single
+                  ? "Add account"
+                  : providerDisplayName(kind)
+            }
             key={kind}
             kind={kind}
             newAccount
-            shortcut={index === 0 ? "A" : undefined}
-            shortcutAttr={index === 0}
-            showShortcut={showShortcuts && index === 0}
+            shortcut={variant === "settings" && index === 0 ? "A" : undefined}
+            shortcutAttr={variant === "settings" && index === 0}
+            showShortcut={
+              variant === "settings" && showShortcuts && index === 0
+            }
             variant="settings"
           />
         ))}

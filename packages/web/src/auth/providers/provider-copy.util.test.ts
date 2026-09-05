@@ -1,5 +1,6 @@
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import {
+  bookingConnectPromptCopy,
   CONNECT_CALENDAR_LABEL,
   calendarProductName,
   connectionProvider,
@@ -77,6 +78,21 @@ describe("provider copy", () => {
   it("uses provider-neutral empty copy when more than one provider can connect", () => {
     expect(emptyCalendarsCopy(["google", "microsoft"])).toBe(
       "Connect a calendar to see your calendars.",
+    );
+  });
+
+  it("keeps Google booking-connect copy byte-identical", () => {
+    expect(bookingConnectPromptCopy(["google"])).toBe(
+      "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    );
+    expect(bookingConnectPromptCopy(["microsoft"])).toBe(
+      "Connect a Microsoft account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    );
+    expect(bookingConnectPromptCopy(["google", "microsoft"])).toBe(
+      "Connect a calendar account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    );
+    expect(bookingConnectPromptCopy([])).toBe(
+      "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
     );
   });
 

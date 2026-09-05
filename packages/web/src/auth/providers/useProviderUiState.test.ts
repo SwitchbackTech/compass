@@ -2,9 +2,9 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import {
   resetGoogleSyncUIStateForTests,
   setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/state/google.sync.state";
+} from "@web/auth/providers/sync.indicator.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { resolveGoogleUiState, useGoogleUiState } from "./useGoogleUiState";
+import { resolveGoogleUiState, useGoogleUiState } from "./useProviderUiState";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 beforeEach(() => {

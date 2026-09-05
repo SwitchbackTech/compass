@@ -4,12 +4,12 @@ import {
   isAccountReconnectRequired,
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
   createGoogleAuthUtil,
   LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
-} from "./google.auth.util.factory";
+} from "./connection-revoked.util.factory";
 import {
   afterEach,
   beforeEach,

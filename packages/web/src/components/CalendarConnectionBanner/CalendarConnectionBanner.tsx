@@ -1,6 +1,6 @@
 import { type FC } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
-import { type CalendarConnectionBannerKind } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { type CalendarConnectionBannerKind } from "@web/auth/providers/connect.util";
 import { RECONNECT_BANNER_MESSAGE } from "@web/auth/providers/provider-copy.util";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {

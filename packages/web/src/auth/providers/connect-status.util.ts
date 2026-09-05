@@ -91,7 +91,7 @@ function fireConnectStatusToast({ provider, status }: ConnectRedirect): void {
   const toast = getToast();
   switch (status) {
     case "connected":
-      track("calendar_connected", { source: "connect_redirect" });
+      track("calendar_connected", { source: "connect_redirect", provider });
       toast.success(connectedCopy(provider), {
         ...getToastDefaultOptions(),
         toastId: SUCCESS_TOAST_ID[provider],

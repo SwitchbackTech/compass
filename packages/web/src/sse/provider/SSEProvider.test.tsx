@@ -6,7 +6,7 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import * as realSessionHook from "@web/auth/compass/session/useSession";
 import * as realUserHook from "@web/auth/compass/user/hooks/useUser";
 import * as realUserMetadata from "@web/auth/compass/user/util/user-metadata.util";
-import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import * as realConnectGoogle from "@web/auth/providers/useConnectProvider";
 import * as realSseClient from "@web/sse/client/sse.client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -15,10 +15,10 @@ const mockUseUser = mock();
 const openStream = mock();
 const closeStream = mock();
 const getStream = mock(() => null);
-// SSEProvider mounts useSyncFocusRefresh, which calls useConnectGoogle().
+// SSEProvider mounts useSyncFocusRefresh, which calls useConnectProvider().
 // This test isn't about Google/sync behavior, so give it a stable, complete
 // fake of its own rather than inheriting whatever another file installed.
-const mockUseConnectGoogle = mock(() => ({
+const mockUseConnectProvider = mock(() => ({
   commandAction: null,
   isAvailable: false,
   isConnecting: false,
@@ -39,11 +39,9 @@ mockModuleForFile(
   realUserMetadata,
   { refreshUserMetadata: mock().mockResolvedValue(undefined) },
 );
-mockModuleForFile(
-  "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle",
-  realConnectGoogle,
-  { useConnectGoogle: mockUseConnectGoogle },
-);
+mockModuleForFile("@web/auth/providers/useConnectProvider", realConnectGoogle, {
+  useConnectProvider: mockUseConnectProvider,
+});
 mockModuleForFile("@web/sse/client/sse.client", realSseClient, {
   openStream,
   closeStream,

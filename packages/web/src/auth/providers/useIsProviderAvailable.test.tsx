@@ -57,4 +57,48 @@ describe("useIsProviderAvailable", () => {
       expect(result.current).toEqual(["google", "microsoft"]);
     });
   });
+
+  it("gates google sign-in on the baked client id even when the backend is configured", async () => {
+    getConfig.mockClear();
+    getConfig.mockResolvedValue({
+      google: { isConfigured: true },
+    });
+    const { resetProviderAvailabilityForTests, useIsProviderAvailable } =
+      createProviderAvailability({
+        getConfig,
+        isGoogleAuthConfigured: false,
+      });
+    resetProviderAvailabilityForTests();
+
+    const { result } = renderHook(() =>
+      useIsProviderAvailable("google", "signIn"),
+    );
+
+    await waitFor(() => {
+      expect(getConfig).toHaveBeenCalledTimes(1);
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it("lets google connect succeed without a baked client id", async () => {
+    getConfig.mockClear();
+    getConfig.mockResolvedValue({
+      google: { isConfigured: true },
+    });
+    const { resetProviderAvailabilityForTests, useIsProviderAvailable } =
+      createProviderAvailability({
+        getConfig,
+        isGoogleAuthConfigured: false,
+      });
+    resetProviderAvailabilityForTests();
+
+    const { result } = renderHook(() =>
+      useIsProviderAvailable("google", "connect"),
+    );
+
+    expect(result.current).toBe(false);
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
+  });
 });

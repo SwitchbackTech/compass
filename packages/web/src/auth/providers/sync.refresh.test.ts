@@ -1,4 +1,4 @@
-import { createGoogleSyncRefreshCoordinator } from "@web/auth/google/state/google.sync.refresh";
+import { createGoogleSyncRefreshCoordinator } from "@web/auth/providers/sync.refresh";
 import { describe, expect, it, mock } from "bun:test";
 
 describe("createGoogleSyncRefreshCoordinator", () => {

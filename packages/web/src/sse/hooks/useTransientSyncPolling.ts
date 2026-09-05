@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 
@@ -19,7 +19,7 @@ const TRANSIENT_POLL_MS = 20_000;
  * state. Stops when nothing is transient.
  */
 export const useTransientSyncPolling = () => {
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const connections = useUserMetadataStore(selectSyncConnections);
   const anyTransient = connections.some((connection) =>
     TRANSIENT_CONNECTION_STATES.has(connection.state),
   );

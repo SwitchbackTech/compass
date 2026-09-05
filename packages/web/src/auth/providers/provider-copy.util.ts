@@ -3,7 +3,7 @@ import {
   providerDisplayName,
 } from "@core/types/sync/identity.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { type GoogleUiConfig } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { type GoogleUiConfig } from "@web/auth/providers/connect.types";
 
 export function connectionProvider(
   connection: Pick<SyncConnectionSummary, "provider"> | null | undefined,
@@ -63,6 +63,30 @@ export function emptyCalendarsCopy(
   }
   return "Connect a calendar to see your calendars.";
 }
+
+const BOOKING_CONNECT_PROMPT: Record<ProviderKind, string> = {
+  google:
+    "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+  microsoft:
+    "Connect a Microsoft account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+  apple:
+    "Connect an Apple account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+};
+
+export function bookingConnectPromptCopy(
+  connectable: readonly ProviderKind[],
+): string {
+  if (connectable.length <= 1) {
+    return BOOKING_CONNECT_PROMPT[connectable[0] ?? "google"];
+  }
+  return "Connect a calendar account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.";
+}
+
+export const BOOKING_CONNECT_BUTTON_LABEL: Record<ProviderKind, string> = {
+  google: "Connect Google",
+  microsoft: CONNECT_CALENDAR_LABEL.microsoft,
+  apple: CONNECT_CALENDAR_LABEL.apple,
+};
 
 export function defaultCalendarGroupLabel(
   accountEmail: string,

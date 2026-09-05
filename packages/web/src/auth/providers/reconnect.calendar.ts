@@ -2,9 +2,9 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import {
   isAccountReconnectRequired,
   isConnectionReconnectRequired,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 
@@ -18,7 +18,7 @@ export function isCalendarReconnectRequired(
   if (!calendar?.accountEmail) return false;
   if (isAccountReconnectRequired(calendar.accountEmail)) return true;
 
-  const connection = selectGoogleSyncConnections(
+  const connection = selectSyncConnections(
     useUserMetadataStore.getState(),
   ).find((entry) => entry.accountEmail === calendar.accountEmail);
   return isConnectionReconnectRequired(connection?.id);

@@ -5,4 +5,6 @@ export const {
   useConnectableProviders,
   setProviderAvailabilityForTests,
   resetProviderAvailabilityForTests,
+  setGoogleAvailabilityForTests,
+  resetGoogleAvailabilityForTests,
 } = providerAvailability;

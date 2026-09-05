@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import "./common/styles/toastify-theme.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
-import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
+import { configureGoogleRevocationApiHandler } from "@web/auth/providers/revocation-api.config";
 import {
   readConnectStatus,
   refreshUserMetadataAfterConnect,

@@ -1,5 +1,5 @@
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { getSidebarSyncStatus } from "@web/auth/providers/connect.util";
 import { connectionProvider } from "@web/auth/providers/provider-copy.util";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 

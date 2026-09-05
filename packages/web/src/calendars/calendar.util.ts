@@ -1,6 +1,6 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
+import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
 
 export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
   return calendars.find((calendar) => calendar.provider === "local");
@@ -217,11 +217,11 @@ export interface DefaultTargetCalendarOptions {
   reconnectRequiredEmails?: ReadonlySet<string> | readonly string[];
 }
 
-const isWritableGoogleCalendar = (
+const isWritableProviderCalendar = (
   calendar: Calendar,
   reconnectRequiredEmails: ReadonlySet<string> | null,
 ): boolean =>
-  calendar.provider === "google" &&
+  calendar.provider !== "local" &&
   calendar.capabilities.canWrite &&
   !calendarNeedsReconnect(calendar, reconnectRequiredEmails);
 
@@ -248,7 +248,7 @@ export function getDefaultTargetCalendar(
     ? calendars.find((calendar) => calendar.id === preferredCalendarId)
     : undefined;
   // The local calendar is a valid explicit choice while disconnected, even
-  // though it is not a writable *Google* calendar.
+  // though it is not a writable *provider* calendar.
   if (
     preferred?.capabilities.canWrite &&
     !calendarNeedsReconnect(preferred, reconnectRequiredEmails) &&
@@ -260,7 +260,7 @@ export function getDefaultTargetCalendar(
   const primaries = calendars.filter(
     (calendar) =>
       calendar.isPrimary &&
-      isWritableGoogleCalendar(calendar, reconnectRequiredEmails),
+      isWritableProviderCalendar(calendar, reconnectRequiredEmails),
   );
   const byConnectionOrder = accountEmailOrder
     .map((email) =>

@@ -1,5 +1,5 @@
 import { CommandIcon, GearIcon, KeyboardIcon } from "@phosphor-icons/react";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
+import { useGoogleUiState } from "@web/auth/providers/useProviderUiState";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsShortcutsOpen,

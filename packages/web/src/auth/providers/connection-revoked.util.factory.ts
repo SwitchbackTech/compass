@@ -1,7 +1,7 @@
 import { type toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { type ApiError } from "@web/api/api.types";
-import { type GoogleReconnectTarget } from "@web/auth/google/state/google.reconnect.state";
+import { type GoogleReconnectTarget } from "@web/auth/providers/reconnect.state";
 import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
 
 export interface SyncLocalEventsResult {
@@ -20,6 +20,7 @@ export type GoogleRevokedContext = {
   connectionId?: string | null;
   accountEmail?: string | null;
 };
+export type ConnectionRevokedContext = GoogleRevokedContext;
 
 type GoogleAuthUtilDependencies = {
   closeStream: () => void;
