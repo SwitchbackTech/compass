@@ -7,7 +7,8 @@ Bun.plugin({
       { filter: /^@web\/auth\/google\/(hooks|state|util)\// },
       (args) => {
         const mapped = LEGACY_GOOGLE_MODULE_ALIASES[args.path];
-        return mapped ? { path: mapped } : null;
+        if (!mapped) return;
+        return { path: mapped };
       },
     );
     build.onResolve({ filter: /\.(css|less)$/ }, () => ({
