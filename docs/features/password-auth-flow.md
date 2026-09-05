@@ -32,17 +32,27 @@ Compass still treats the MongoDB `userId` as the canonical identity.
 
 SuperTokens is configured so that:
 
+- AccountLinking is initialized with automatic linking that requires
+  verification
 - password sign-up ensures there is an external user id mapping, and that external id is a Mongo `ObjectId` string
-- backend user upserts can canonicalize to an existing Compass user id by normalized email, then remap the auth session to that Compass id when needed
-- Google sign-in/up resolves a canonical Compass user by `google.googleId` first, then by normalized email as fallback before creating a new id
+- backend user upserts can canonicalize to an existing Compass user id by
+  normalized email when both sides already have a verified login method, then
+  remap the auth session to that Compass id when needed
+- Google sign-in/up resolves a canonical Compass user by `google.googleId`
+  first, then by normalized email as fallback before creating a new id
 
 Important constraints:
 
-- Compass no longer relies on SuperTokens `AccountLinking` for the
-  password-plus-Google flow.
+- SuperTokens `AccountLinking` joins verified Google and Microsoft logins that
+  share an email into one Compass user.
+- Unverified email/password accounts do not link to a Google or Microsoft
+  login until the email is verified.
+- Apple private-relay addresses never auto-link. Identity is the Apple `sub`.
 - `google.googleId` remains the strongest ownership signal for Google-linked
   accounts.
-- Email fallback only applies when no existing `google.googleId` owner is found.
+- Email fallback only applies when the existing Compass user already has a
+  verified login method, and no existing owner of that provider subject
+  conflicts.
 - In-session Google connect still enforces both ownership and email-match
   checks; mismatch paths fail with `409` instead of reassigning ownership.
 

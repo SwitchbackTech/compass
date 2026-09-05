@@ -334,7 +334,7 @@ describe("googleAuthService", () => {
   });
 
   describe("googleSignup", () => {
-    it("reuses an existing same-email Compass user instead of creating a duplicate", async () => {
+    it("does not attach Google onto an unverified password-only Compass user", async () => {
       const existingUser = await UserDriver.createUser({ withGoogle: false });
       const normalizedEmail = existingUser.email.toLowerCase();
       await mongoService.user.updateOne(
@@ -359,16 +359,19 @@ describe("googleAuthService", () => {
       const storedUsers = await mongoService.user
         .find({ email: normalizedEmail })
         .toArray();
+      const googleUser = storedUsers.find(
+        (user) => !user._id.equals(existingUser._id),
+      );
 
+      expect(storedUsers).toHaveLength(2);
       expect(result).toEqual({
-        cUserId: existingUser._id.toString(),
+        cUserId: recipeUserId,
         refreshToken,
       });
-      expect(storedUsers).toHaveLength(1);
-      expect(storedUsers[0]?._id).toEqual(existingUser._id);
-      expect(storedUsers[0]?.google?.googleId).toBe(providerUser.sub);
-      // The credential lives only in Sync now.
-      expect(storedUsers[0]?.google?.gRefreshToken).toBeUndefined();
+      expect(googleUser?.google?.googleId).toBe(providerUser.sub);
+      expect(
+        storedUsers.find((user) => user._id.equals(existingUser._id))?.google,
+      ).toBeUndefined();
     });
   });
 });

@@ -5,6 +5,7 @@ import {
 } from "@core/types/sync/connection.contracts";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type Schema_UserIdentity } from "@core/types/user.types";
+import { emailForVerifiedAccountLinkLookup } from "@backend/auth/services/account-linking.util";
 import {
   grantedScopesIncludeCalendarAccess,
   parseGrantedScopes,
@@ -203,12 +204,10 @@ async function handleAppleAuth(
   });
   const scopes = parseGrantedScopes(oAuthTokens.scope);
 
-  // Look up by Apple subject only. Relay addresses change and must not
-  // attach this login to an existing Google or password user (I-06).
   const decision = await determineThirdPartyAuthMode(
     "apple",
     subjectId,
-    null,
+    emailForVerifiedAccountLinkLookup(email),
     createdNewRecipeUser,
   );
 
