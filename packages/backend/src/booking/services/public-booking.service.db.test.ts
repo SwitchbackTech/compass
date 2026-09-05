@@ -830,6 +830,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
@@ -1795,6 +1796,7 @@ describe("Public booking routes", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");
