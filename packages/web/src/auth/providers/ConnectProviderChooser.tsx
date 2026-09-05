@@ -96,7 +96,7 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
     );
     if (items.length === 0) return;
     const active = document.activeElement;
-    const index = items.findIndex((item) => item === active);
+    const index = items.indexOf(active as HTMLButtonElement);
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();

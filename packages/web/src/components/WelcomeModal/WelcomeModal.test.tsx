@@ -14,10 +14,8 @@ import {
 } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
-  setGoogleAvailabilityForTests,
-} from "@web/auth/providers/useIsProviderAvailable";
-import {
   resetProviderAvailabilityForTests,
+  setGoogleAvailabilityForTests,
   setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import {
