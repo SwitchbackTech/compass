@@ -99,6 +99,23 @@ describe("shortcut draft creation", () => {
     expectSameTime(gridDraft?.values.schedule.end, "2026-05-21T00:00:00.000Z");
   });
 
+  it("keeps a late-evening timed draft on the selected day when minutes round past the hour", async () => {
+    // 23:50 -> roundToNext(50, 15) is 60, and minute(60) at 23:00 is the next
+    // day. The selected column must still own the draft.
+    setSystemTime(new Date("2026-05-20T23:50:00.000Z"));
+
+    await createTimedDraft(dayjs("2026-06-01T00:00:00.000Z"), "createShortcut");
+
+    const { gridDraft, status } = useDraftStore.getState();
+
+    expect(status?.eventType).toBe(Categories_Event.TIMED);
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-06-01T23:45:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-06-02T00:00:00.000Z");
+  });
+
   it("stores a provided calendarId on timed shortcut drafts", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
     const calendarId = CalendarIdSchema.parse(createObjectIdString());

@@ -107,13 +107,22 @@ export const getDraftTimes = (targetDay: Dayjs) => {
   const currentMinute = now.minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 
-  const _start = targetDay
+  let start = targetDay
     .startOf("day")
     .hour(now.hour())
     .minute(nextMinuteInterval)
     .second(0);
-  const startDate = _start.format();
-  const endDate = timedDraftEnd(_start).format();
+  // minute(60) overflows into the next hour, and at 23:xx that is the next
+  // day. Keep the draft on the selected column, on the last grid slot.
+  if (!start.isSame(targetDay, "day")) {
+    start = targetDay
+      .startOf("day")
+      .hour(23)
+      .minute(60 - GRID_TIME_STEP)
+      .second(0);
+  }
+  const startDate = start.format();
+  const endDate = timedDraftEnd(start).format();
 
   return { startDate, endDate };
 };
