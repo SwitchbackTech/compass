@@ -65,6 +65,15 @@ jobs:
   # PR-to-merge time on 2026-09-03. The required check is the `e2e` gate
   # below, so the shard legs can change count without touching branch
   # protection.
+  # Directories are assigned by hand instead of `--shard=n/4`: Playwright
+  # splits by test count and a file lands where its first test falls, which
+  # left shard 4 (timed, onboarding) at 2m16s of tests while shard 3 ran 26s
+  # in the 2026-09 audit. These lists put each shard near 90s. Every e2e/
+  # directory with specs must appear in exactly one list;
+  # packages/scripts/src/testing/e2e-shards.test.ts fails otherwise, so a new
+  # directory cannot silently skip CI. Resize by moving directories between
+  # lists; measured `Run e2e tests` durations are in
+  # docs/CI-CD/ci-audit-2026-09.md.
   # No display name: a skipped matrix collapses to one check whose name
   # would show the unexpanded ${{ matrix.shard }} expression.
   e2e-shard:
@@ -75,7 +84,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        include:
+          - shard: 1
+            specs: e2e/accessibility e2e/allday
+          - shard: 2
+            specs: e2e/booking
+          - shard: 3
+            specs: e2e/timed e2e/oauth
+          - shard: 4
+            specs: e2e/onboarding e2e/calendars e2e/life e2e/navigation e2e/attendees
     container:
       # Keep this tag aligned with the Playwright version in bun.lock.
       image: mcr.microsoft.com/playwright:v1.60.0-noble
@@ -125,7 +142,10 @@ jobs:
           TZ: Etc/UTC
           GOOGLE_CLIENT_ID: test-client-id
           API_BASEURL: http://localhost:3000/api
-        run: bunx playwright test --shard=${{ matrix.shard }}/4
+          SPECS: ${{ matrix.specs }}
+        # Unquoted on purpose: each directory is a separate file filter.
+        # shellcheck disable=SC2086
+        run: bunx playwright test $SPECS
 
   # The one required status check. Reports success when every shard passed
   # or when the `changes` gate skipped them all, and fails on a shard
