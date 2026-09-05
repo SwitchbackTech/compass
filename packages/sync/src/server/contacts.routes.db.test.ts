@@ -19,6 +19,10 @@ import {
   GOOGLE_SCOPE_CONTACTS_READONLY,
 } from "@sync/providers/google/google.scopes";
 import {
+  MICROSOFT_SCOPE_CALENDARS_READWRITE,
+  MICROSOFT_SCOPE_PEOPLE_READ,
+} from "@sync/providers/microsoft/microsoft-scopes";
+import {
   type ProviderAuthAdapter,
   type ProviderAuthorization,
   type RefreshedCredential,
@@ -28,6 +32,10 @@ import {
   ContactsSearchError,
   type ContactsSearchInput,
 } from "@sync/providers/provider-contacts.port";
+import {
+  buildProviderRegistry,
+  ProviderRegistry,
+} from "@sync/providers/provider-registry";
 import { CONTACTS_SUGGESTIONS_PATH } from "@sync/server/contacts.routes";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -113,8 +121,16 @@ describe("GET /internal/contacts/suggestions", () => {
   let authAdapter: FakeAuthAdapter;
   let contacts: FakeContactsPort;
 
-  const startService = async (config: SyncConfig = testConfig()) => {
-    service = createSyncService(config, { mongo, authAdapter, contacts });
+  const startService = async (
+    config: SyncConfig = testConfig(),
+    registry?: ProviderRegistry,
+  ) => {
+    service = createSyncService(config, {
+      mongo,
+      authAdapter,
+      contacts,
+      registry,
+    });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -145,6 +161,53 @@ describe("GET /internal/contacts/suggestions", () => {
       scopes,
     });
     return connection;
+  };
+
+  const seedMicrosoftContactsConnection = async (
+    tenantId: string,
+    principalId: string,
+    scopes: string[],
+  ) => {
+    const connection = await connections.upsertByProviderAccount({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      provider: "microsoft",
+      account: {
+        providerAccountId: objectId(),
+        email: "me@outlook.com",
+        displayName: null,
+      },
+      capabilities: ["readEvents", "suggestContacts"],
+      state: "healthy",
+      stateReason: null,
+    });
+    await seedOauthCredential(credentials, {
+      connectionId: connection._id,
+      provider: "microsoft",
+      refreshToken: "stored-refresh-token",
+      scopes,
+    });
+    return connection;
+  };
+
+  const registryWithMicrosoft = () => {
+    const google = buildProviderRegistry(testConfig(), {
+      google: { auth: authAdapter, contacts },
+    }).get("google");
+    return new ProviderRegistry(
+      new Map([
+        ["google", google],
+        [
+          "microsoft",
+          {
+            ...google,
+            callbackPath: "/sync/microsoft",
+            notificationsCallbackPath: "/sync/notifications/microsoft",
+            adapters: { ...google.adapters, auth: authAdapter, contacts },
+          },
+        ],
+      ]),
+    );
   };
 
   const suggest = (tenantId: string, principalId: string, q?: string) =>
@@ -278,6 +341,31 @@ describe("GET /internal/contacts/suggestions", () => {
 
     expect(res.status).toBe(403);
     expect(contacts.calls).toHaveLength(0);
+  });
+
+  it("returns suggestions for a Microsoft connection scoped by People.Read", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await seedMicrosoftContactsConnection(tenantId, principalId, [
+      MICROSOFT_SCOPE_CALENDARS_READWRITE,
+      MICROSOFT_SCOPE_PEOPLE_READ,
+    ]);
+    contacts.result = [{ email: "bob@example.com", displayName: "Bob Smith" }];
+    await startService(testConfig(), registryWithMicrosoft());
+
+    const res = await suggest(tenantId, principalId, "bo");
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      suggestions: [{ email: "bob@example.com", displayName: "Bob Smith" }],
+    });
+    expect(contacts.calls).toEqual([
+      {
+        accessToken: "minted-access-token",
+        query: "bo",
+        sources: { contacts: true, otherContacts: false },
+      },
+    ]);
   });
 
   it("maps a provider rate-limit to a typed retryable 429", async () => {
