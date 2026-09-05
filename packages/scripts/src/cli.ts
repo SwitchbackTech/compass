@@ -2,6 +2,7 @@ import { CliValidator } from "@scripts/cli.validator";
 import { runApplePollThrottleCommand } from "@scripts/commands/apple-poll-throttle";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
 import { runBackfillBilling } from "@scripts/commands/backfill-billing";
+import { runBackfillIdentities } from "@scripts/commands/backfill-identities";
 import { runEncryptCredentials } from "@scripts/commands/encrypt-credentials";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeUser } from "@scripts/commands/purge-user";
@@ -29,6 +30,9 @@ export default class CompassCLI {
         break;
       case cmd === "backfill-billing":
         await runBackfillBilling();
+        break;
+      case cmd === "backfill-identities":
+        await runBackfillIdentities();
         break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
@@ -63,6 +67,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "stamp awaiting_checkout on accounts with no billing status (--apply to write)",
+      );
+
+    program
+      .command("backfill-identities")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "copy google.googleId into identities[] for every user (--apply to write)",
       );
 
     program

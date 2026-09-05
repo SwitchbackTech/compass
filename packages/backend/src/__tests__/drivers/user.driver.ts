@@ -57,9 +57,12 @@ export class UserDriver {
 
     // Simulate "user never connected Google" by removing all Google data
     if (!withGoogle) {
-      await mongoService.user.updateOne({ _id }, { $unset: { google: "" } });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally omit google from returned user
-      const { google: _google, ...rest } = user;
+      await mongoService.user.updateOne(
+        { _id },
+        { $unset: { google: "", identities: "" } },
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally omit google/identities from returned user
+      const { google: _google, identities: _identities, ...rest } = user;
       return { ...rest, _id };
     }
 

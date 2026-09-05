@@ -54,8 +54,9 @@ async function maybeRemapGoogleSignInToCompassSession(
   success: GoogleSignInSuccess;
 }> {
   const connectedCompassUserId = await userService.getCanonicalCompassUserId({
+    provider: "google",
+    subjectId: success.providerUser.sub,
     email: success.providerUser.email,
-    googleUserId: success.providerUser.sub,
   });
 
   if (
