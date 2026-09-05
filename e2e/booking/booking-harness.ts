@@ -9,8 +9,12 @@ export const COMPASS_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e0";
 /** ObjectId-shaped id for a stubbed Apple iCloud calendar. */
 export const APPLE_BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e1";
 
+/** ObjectId-shaped id for a stubbed Microsoft Outlook calendar. */
+export const MICROSOFT_BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8e2";
+
 export const HOST_ACCOUNT_EMAIL = "host@example.com";
 export const APPLE_ACCOUNT_EMAIL = "host@icloud.com";
+export const MICROSOFT_ACCOUNT_EMAIL = "host@outlook.com";
 
 /** Stub calendar list entry for an Apple booking destination. */
 export const appleBookingCalendar = {
@@ -29,6 +33,7 @@ export const appleBookingCalendar = {
     canManage: true,
     canWatchEvents: true,
     canInviteAttendees: true,
+    conferenceKinds: [],
   },
   isPrimary: true,
   isVisible: true,
@@ -36,6 +41,33 @@ export const appleBookingCalendar = {
   createsGoogleMeet: false,
   conference: "none" as const,
   accountEmail: APPLE_ACCOUNT_EMAIL,
+};
+
+/** Stub calendar list entry for a Microsoft booking destination with Teams. */
+export const microsoftBookingCalendar = {
+  id: MICROSOFT_BOOKING_CALENDAR_ID,
+  name: "Work",
+  description: "",
+  timeZone: "America/Chicago",
+  foregroundColor: "#ffffff",
+  backgroundColor: "#0078D4",
+  provider: "microsoft" as const,
+  access: "owner" as const,
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+    canInviteAttendees: true,
+    conferenceKinds: ["teams"] as const,
+  },
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+  createsGoogleMeet: false,
+  conference: "teams" as const,
+  accountEmail: MICROSOFT_ACCOUNT_EMAIL,
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -62,6 +94,7 @@ const googleCalendar = {
     canManage: true,
     canWatchEvents: true,
     canInviteAttendees: true,
+    conferenceKinds: ["meet"],
   },
   isPrimary: true,
   isVisible: true,
@@ -85,6 +118,7 @@ const compassCalendar = {
     canManage: true,
     canWatchEvents: true,
     canInviteAttendees: true,
+    conferenceKinds: [],
   },
   isPrimary: false,
   isVisible: true,

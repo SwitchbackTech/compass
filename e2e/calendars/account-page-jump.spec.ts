@@ -23,6 +23,7 @@ const ownerCapabilities = {
   canManage: true,
   canWatchEvents: true,
   canInviteAttendees: true,
+  conferenceKinds: ["meet"],
 };
 
 const connection = (id: string, accountEmail: string) => ({

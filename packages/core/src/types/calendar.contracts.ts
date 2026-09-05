@@ -4,6 +4,7 @@ import {
   HexColorSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
+import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 
 export const CalendarProviderSchema = z.enum([
   "local",
@@ -33,6 +34,46 @@ export function conferenceForProvider(
   return CONFERENCE_BY_PROVIDER[provider];
 }
 
+export const CalendarConferenceKindSchema = z.enum(["meet", "teams"]);
+export type CalendarConferenceKind = z.infer<
+  typeof CalendarConferenceKindSchema
+>;
+
+export function conferenceKindsForConference(
+  conference: CalendarConference,
+): readonly CalendarConferenceKind[] {
+  return conference === "none" ? [] : [conference];
+}
+
+export function canCreateConferenceForDestination(
+  provider: CalendarProvider,
+  calendarCreatesConference: boolean,
+  connectionCapabilities?: readonly ProviderCapability[],
+): boolean {
+  if (!calendarCreatesConference) {
+    return false;
+  }
+  if (provider === "microsoft") {
+    return connectionCapabilities?.includes("createTeamsMeeting") ?? false;
+  }
+  return true;
+}
+
+export function conferenceForDestination(
+  provider: CalendarProvider,
+  calendarCreatesConference: boolean,
+  connectionCapabilities?: readonly ProviderCapability[],
+): CalendarConference {
+  return conferenceForProvider(
+    provider,
+    canCreateConferenceForDestination(
+      provider,
+      calendarCreatesConference,
+      connectionCapabilities,
+    ),
+  );
+}
+
 export const CalendarAccessSchema = z.enum([
   "owner",
   "writer",
@@ -48,6 +89,8 @@ export const CalendarCapabilitiesSchema = z.strictObject({
   canManage: z.boolean(),
   canWatchEvents: z.boolean(),
   canInviteAttendees: z.boolean(),
+  // Conference kinds this calendar can mint on create. Empty when none.
+  conferenceKinds: z.array(CalendarConferenceKindSchema).readonly(),
 });
 export type CalendarCapabilities = z.infer<typeof CalendarCapabilitiesSchema>;
 
@@ -118,8 +161,14 @@ export const CAPABILITIES_BY_ACCESS = {
     canWatchEvents: false,
     canInviteAttendees: false,
   },
-} as const satisfies Record<CalendarAccess, CalendarCapabilities>;
+} as const satisfies Record<
+  CalendarAccess,
+  Omit<CalendarCapabilities, "conferenceKinds">
+>;
 
 export const getCalendarCapabilities = (
   access: CalendarAccess,
-): CalendarCapabilities => CAPABILITIES_BY_ACCESS[access];
+): CalendarCapabilities => ({
+  ...CAPABILITIES_BY_ACCESS[access],
+  conferenceKinds: [],
+});

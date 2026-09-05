@@ -26,6 +26,7 @@ const calendar = (overrides: Partial<Calendar> = {}): Calendar =>
       canManage: true,
       canWatchEvents: true,
       canInviteAttendees: true,
+      conferenceKinds: [],
     },
     isPrimary: false,
     isVisible: true,
@@ -48,8 +49,18 @@ describe("booking conference copy", () => {
     ).toBe("Personal (No video link)");
   });
 
-  it("keeps a Google destination label as the calendar name", () => {
-    expect(formatBookingDestinationOptionLabel(calendar())).toBe("Personal");
+  it("labels a Google destination with Google Meet in the chooser", () => {
+    expect(formatBookingDestinationOptionLabel(calendar())).toBe(
+      "Personal (Google Meet)",
+    );
+  });
+
+  it("labels a Microsoft destination with Microsoft Teams in the chooser", () => {
+    expect(
+      formatBookingDestinationOptionLabel(
+        calendar({ provider: "microsoft", conference: "teams" }),
+      ),
+    ).toBe("Personal (Microsoft Teams)");
   });
 
   it("shows the iCloud hint for an Apple destination without video", () => {

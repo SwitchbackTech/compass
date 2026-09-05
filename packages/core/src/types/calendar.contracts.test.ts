@@ -4,6 +4,7 @@ import {
   CalendarListResponseSchema,
   CalendarSchema,
   CONFERENCE_BY_PROVIDER,
+  conferenceForDestination,
   conferenceForProvider,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
@@ -81,6 +82,24 @@ describe("Calendar Contracts", () => {
     });
   });
 
+  describe("conferenceForDestination", () => {
+    it("requires createTeamsMeeting for a Microsoft destination", () => {
+      expect(
+        conferenceForDestination("microsoft", true, [
+          "readEvents",
+          "writeEvents",
+          "createTeamsMeeting",
+        ]),
+      ).toBe("teams");
+      expect(
+        conferenceForDestination("microsoft", true, [
+          "readEvents",
+          "writeEvents",
+        ]),
+      ).toBe("none");
+    });
+  });
+
   describe("getCalendarCapabilities", () => {
     it("returns full capabilities for an owner", () => {
       expect(getCalendarCapabilities("owner")).toEqual({
@@ -90,6 +109,7 @@ describe("Calendar Contracts", () => {
         canManage: true,
         canWatchEvents: true,
         canInviteAttendees: true,
+        conferenceKinds: [],
       });
     });
 
@@ -101,6 +121,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: true,
         canInviteAttendees: true,
+        conferenceKinds: [],
       });
     });
 
@@ -112,6 +133,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: true,
         canInviteAttendees: false,
+        conferenceKinds: [],
       });
     });
 
@@ -123,6 +145,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: false,
         canInviteAttendees: false,
+        conferenceKinds: [],
       });
     });
 
