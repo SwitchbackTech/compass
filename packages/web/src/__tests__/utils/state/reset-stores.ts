@@ -5,6 +5,7 @@
  * a fresh store per render.
  */
 
+import { resetConnectAppleStoreForTests } from "@web/auth/providers/connect-apple.store";
 import {
   initialUserMetadataState,
   useUserMetadataStore,
@@ -93,6 +94,7 @@ const storeResets: StoreReset[] = [
   resetEventRepositorySourceForTests,
   // Storage itself is cleared by resetBrowserState() (test-lifecycle.ts)
   // before this runs; this just resyncs the module-singleton store to match.
+  resetConnectAppleStoreForTests,
   resetCalendarVisibilityStoreForTests,
   resetDefaultCalendarStoreForTests,
   resetEffectiveTimeZoneStoreForTests,
