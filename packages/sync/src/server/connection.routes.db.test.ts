@@ -1,6 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
-import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
+import { decryptCredentialAtRest } from "@core/security/credential-at-rest";
+import {
+  encryptCredentialConnectPayload,
+  encryptInternalCredential,
+} from "@core/security/internal-credential-envelope";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -29,7 +33,13 @@ import {
   verifyOAuthState,
 } from "@sync/oauth/oauth-state";
 import {
+  type CredentialValidationInput,
+  type PasswordCredentialAuthAdapter,
+} from "@sync/providers/apple/apple-auth.adapter";
+import { APPLE_PROVIDER_CAPABILITIES } from "@sync/providers/apple/apple-capabilities";
+import {
   type ProviderAuthAdapter,
+  ProviderAuthError,
   type ProviderAuthorization,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
@@ -43,6 +53,7 @@ import {
   BEGIN_PATH,
   CALENDARS_PATH,
   CONNECTIONS_PATH,
+  CREDENTIAL_PATH,
   EVENTS_FULL_PATH,
   FOREGROUND_REFRESH_PATH,
   OAUTH_CALLBACK_PATH,
@@ -64,6 +75,7 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { readFileSync, statSync } from "node:fs";
 import { type AddressInfo } from "node:net";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
@@ -135,6 +147,51 @@ class FakeAuthAdapter implements ProviderAuthAdapter {
     this.revoked.push(input.token);
   }
 }
+
+class FakeAppleAuthAdapter implements PasswordCredentialAuthAdapter {
+  validateCalls: CredentialValidationInput[] = [];
+  validateError?: unknown;
+
+  buildAuthorizationUrl(): string {
+    throw new Error("unused");
+  }
+  exchangeAuthorizationCode(): Promise<never> {
+    throw new Error("unused");
+  }
+  refreshAccessToken(): Promise<RefreshedCredential> {
+    throw new Error("unused");
+  }
+  async revoke(): Promise<void> {}
+  async validateCredential(input: CredentialValidationInput): Promise<void> {
+    this.validateCalls.push(input);
+    if (this.validateError) throw this.validateError;
+  }
+}
+
+const registryWithApple = (authAdapter: PasswordCredentialAuthAdapter) => {
+  const config = testConfig({ EXECUTION: "active" });
+  const google = buildProviderRegistry(config, {
+    google: { auth: new FakeAuthAdapter() },
+  }).get("google");
+  return new ProviderRegistry(
+    new Map([
+      [
+        "apple",
+        {
+          ...google,
+          adapters: {
+            ...google.adapters,
+            auth: authAdapter,
+          },
+          capabilities: APPLE_PROVIDER_CAPABILITIES,
+          capabilitiesFromScopes: () => [...APPLE_PROVIDER_CAPABILITIES],
+          callbackPath: "/sync/apple",
+          notificationsCallbackPath: "/sync/notifications/apple",
+        },
+      ],
+    ]),
+  );
+};
 
 const seedConnection = (
   repo: ProviderConnectionRepository,
@@ -1856,5 +1913,195 @@ describe("POST /internal/connections/refresh", () => {
       inFlight: 0,
       resources: 1,
     });
+  });
+});
+
+describe("POST /internal/connections/credential", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let service: SyncService;
+  let base: string;
+  let appleAuth: FakeAppleAuthAdapter;
+
+  const startService = async () => {
+    service = createSyncService(testConfig({ EXECUTION: "active" }), {
+      mongo,
+      registry: registryWithApple(appleAuth),
+    });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const connect = async (
+    tenantId: string,
+    principalId: string,
+    username: string,
+    secret: string,
+  ) =>
+    fetch(`${base}${CREDENTIAL_PATH}`, {
+      method: "POST",
+      headers: {
+        ...signedHeaders(tenantId, principalId),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        provider: "apple",
+        envelope: encryptCredentialConnectPayload(
+          SECRET,
+          { username, secret },
+          { tenantId, principalId, provider: "apple" },
+        ),
+      }),
+    });
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    connections = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+    appleAuth = new FakeAppleAuthAdapter();
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  it("creates a connection, stores an encrypted password, and enqueues calendarListSync", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const secret = "app-specific-password-xyz";
+    await startService();
+
+    const logSizeBefore = statSync("logs/app.log").size;
+    const res = await connect(tenantId, principalId, "User@iCloud.com", secret);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { connectionId: string };
+    expect(body.connectionId).toMatch(/^[a-f0-9]{24}$/);
+    expect(appleAuth.validateCalls).toEqual([
+      { username: "User@iCloud.com", secret },
+    ]);
+
+    const [connection] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(connection?.provider).toBe("apple");
+    expect(connection?.account.providerAccountId).toBe("user@icloud.com");
+    expect(connection?.capabilities).toEqual([...APPLE_PROVIDER_CAPABILITIES]);
+
+    const stored = await credentials.findByConnection(body.connectionId);
+    expect(stored?.credentialKind).toBe("password");
+    const raw = await mongo.db
+      .collection(SYNC_COLLECTIONS.credentials)
+      .findOne({ _id: body.connectionId });
+    expect(JSON.stringify(raw)).not.toContain(secret);
+    if (stored?.credentialKind === "password") {
+      expect(
+        decryptCredentialAtRest(TEST_CREDENTIAL_ENCRYPTION_KEY, {
+          ciphertext: stored.secretCiphertext,
+          iv: stored.secretIv,
+          tag: stored.secretTag,
+          keyVersion: stored.keyVersion,
+        }),
+      ).toBe(secret);
+    }
+
+    const job = await mongo.db.collection(SYNC_COLLECTIONS.jobs).findOne({
+      coalescingKey: `calendarListSync:${body.connectionId}`,
+    });
+    expect(job?.kind).toBe("calendarListSync");
+
+    const logTail = readFileSync("logs/app.log")
+      .subarray(logSizeBefore)
+      .toString("utf8");
+    expect(logTail).not.toContain(secret);
+  });
+
+  it("coalesces calendarListSync when reconnecting the same username", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService();
+
+    const first = await connect(
+      tenantId,
+      principalId,
+      "user@icloud.com",
+      "first-password",
+    );
+    const firstBody = (await first.json()) as { connectionId: string };
+    const second = await connect(
+      tenantId,
+      principalId,
+      "user@icloud.com",
+      "second-password",
+    );
+    const secondBody = (await second.json()) as { connectionId: string };
+
+    expect(secondBody.connectionId).toBe(firstBody.connectionId);
+    const jobs = await mongo.db
+      .collection(SYNC_COLLECTIONS.jobs)
+      .find({ coalescingKey: `calendarListSync:${firstBody.connectionId}` })
+      .toArray();
+    expect(jobs).toHaveLength(1);
+
+    const stored = await credentials.findByConnection(firstBody.connectionId);
+    if (stored?.credentialKind === "password") {
+      expect(
+        decryptCredentialAtRest(TEST_CREDENTIAL_ENCRYPTION_KEY, {
+          ciphertext: stored.secretCiphertext,
+          iv: stored.secretIv,
+          tag: stored.secretTag,
+          keyVersion: stored.keyVersion,
+        }),
+      ).toBe("second-password");
+    }
+  });
+
+  it("returns 401 invalidCredential when validation fails", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    appleAuth.validateError = new ProviderAuthError(
+      "authorizationRevoked",
+      "Apple rejected the app-specific password",
+    );
+    await startService();
+
+    const res = await connect(
+      tenantId,
+      principalId,
+      "user@icloud.com",
+      "wrong-password",
+    );
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "invalidCredential" });
+    expect(
+      await connections.listByPrincipal(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("returns 503 when validation is throttled", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    appleAuth.validateError = new ProviderAuthError(
+      "refreshFailed",
+      "Apple CalDAV throttled credential validation",
+    );
+    await startService();
+
+    const res = await connect(
+      tenantId,
+      principalId,
+      "user@icloud.com",
+      "app-password",
+    );
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "provider_throttled" });
   });
 });

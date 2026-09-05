@@ -236,6 +236,34 @@ export type ConnectionBeginConnectedResponse = z.infer<
   typeof ConnectionBeginConnectedResponseSchema
 >;
 
+// Plaintext payload the browser submits before the Compass API seals it for
+// the Sync hop. Never sent on the wire outside the encrypted envelope.
+export const CredentialConnectPayloadSchema = z.strictObject({
+  username: z.string().trim().email().max(320),
+  secret: z.string().min(1).max(256),
+});
+export type CredentialConnectPayload = z.infer<
+  typeof CredentialConnectPayloadSchema
+>;
+
+// Session-authed Compass API and Sync-internal credential connect body. The
+// principal always comes from the signed session / internal auth, never the
+// body.
+export const ConnectionCredentialRequestSchema = z.strictObject({
+  provider: z.literal("apple"),
+  envelope: EncryptedCredentialEnvelopeSchema,
+});
+export type ConnectionCredentialRequest = z.infer<
+  typeof ConnectionCredentialRequestSchema
+>;
+
+export const ConnectionCredentialResponseSchema = z.strictObject({
+  connectionId: ConnectionIdSchema,
+});
+export type ConnectionCredentialResponse = z.infer<
+  typeof ConnectionCredentialResponseSchema
+>;
+
 export const ConnectionBeginLegacyRedirectResponseSchema = z.strictObject({
   authorizationUrl: z.string().url(),
 });

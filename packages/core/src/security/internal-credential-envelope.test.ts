@@ -1,5 +1,7 @@
 import {
+  decryptCredentialConnectPayload,
   decryptInternalCredential,
+  encryptCredentialConnectPayload,
   encryptInternalCredential,
 } from "./internal-credential-envelope";
 import { describe, expect, it } from "bun:test";
@@ -63,6 +65,52 @@ describe("internal credential envelope", () => {
       decryptInternalCredential("shared-secret", envelope, {
         ...context,
         grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+      }),
+    ).toThrow();
+  });
+
+  it("round-trips a credential connect payload without exposing the secret", () => {
+    const connectContext = {
+      tenantId: context.tenantId,
+      principalId: context.principalId,
+      provider: "apple" as const,
+    };
+    const payload = {
+      username: "user@icloud.com",
+      secret: "app-specific-password",
+    };
+    const envelope = encryptCredentialConnectPayload(
+      "shared-secret",
+      payload,
+      connectContext,
+    );
+
+    expect(JSON.stringify(envelope)).not.toContain(payload.secret);
+    expect(
+      decryptCredentialConnectPayload(
+        "shared-secret",
+        envelope,
+        connectContext,
+      ),
+    ).toEqual(payload);
+  });
+
+  it("rejects a credential connect envelope replayed for another principal", () => {
+    const envelope = encryptCredentialConnectPayload(
+      "shared-secret",
+      { username: "user@icloud.com", secret: "app-specific-password" },
+      {
+        tenantId: context.tenantId,
+        principalId: context.principalId,
+        provider: "apple",
+      },
+    );
+
+    expect(() =>
+      decryptCredentialConnectPayload("shared-secret", envelope, {
+        tenantId: context.tenantId,
+        principalId: "64b7f9c2e1a2b3c4d5e6f7a9",
+        provider: "apple",
       }),
     ).toThrow();
   });

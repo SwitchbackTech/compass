@@ -6,7 +6,10 @@ import {
 } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { decryptInternalCredential } from "@core/security/internal-credential-envelope";
+import {
+  decryptCredentialConnectPayload,
+  decryptInternalCredential,
+} from "@core/security/internal-credential-envelope";
 import {
   BusyAvailabilityRequestSchema,
   type BusyAvailabilityResponse,
@@ -14,6 +17,8 @@ import {
 } from "@core/types/sync/availability.contracts";
 import {
   ConnectionBeginFeaturesSchema,
+  ConnectionCredentialRequestSchema,
+  ConnectionCredentialResponseSchema,
   type ConnectionListResponse,
   ConnectionRefreshResponseSchema,
   ForegroundRefreshRequestSchema,
@@ -32,6 +37,7 @@ import {
   type ConnectionId,
   ConnectionIdSchema,
   type PrincipalId,
+  ProviderAccountIdSchema,
   type ProviderKind,
   ProviderKindSchema,
   type TenantId,
@@ -56,6 +62,8 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
+import { isPasswordCredentialAuthAdapter } from "@sync/providers/apple/apple-auth.adapter";
+import { APPLE_PROVIDER_CAPABILITIES } from "@sync/providers/apple/apple-capabilities";
 import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
 import {
   type ProviderAuthAdapter,
@@ -99,6 +107,7 @@ export const FOREGROUND_REFRESH_PATH =
   "/internal/connections/foreground-refresh";
 export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
   "/internal/connections/adopt-google-authorization";
+export const CREDENTIAL_PATH = "/internal/connections/credential";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
 // Legacy alias: Google OAuth callback path (also registered under
@@ -622,9 +631,6 @@ export function registerConnectionRoutes(
     },
   );
 
-  // The regular Compass Google sign-in flow already exchanged consent with
-  // Google. Adopt that server-side authorization into Sync so sign-up creates
-  // the same connection and initial import as the dedicated Connect flow.
   app.post(
     ADOPT_GOOGLE_AUTHORIZATION_PATH,
     internalRateLimit,
@@ -669,6 +675,99 @@ export function registerConnectionRoutes(
       } catch (error) {
         logger.error(
           "Failed to adopt Google authorization",
+          redactedCause(error),
+        );
+        respondInternalError(res);
+      }
+    },
+  );
+
+  app.post(
+    CREDENTIAL_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive") {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      const parsed = ConnectionCredentialRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_request" });
+        return;
+      }
+      const { provider, envelope } = parsed.data;
+      if (!deps.registry.has(provider) || !deps.credentialAtRestKey) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      const registration = deps.registry.get(provider);
+      const authAdapter = registration.adapters.auth;
+      if (!isPasswordCredentialAuthAdapter(authAdapter)) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      let username: string;
+      let secret: string;
+      try {
+        const payload = decryptCredentialConnectPayload(
+          deps.credentialEncryptionSecret,
+          envelope,
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            provider,
+          },
+        );
+        username = payload.username;
+        secret = payload.secret;
+      } catch {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_request" });
+        return;
+      }
+
+      try {
+        await authAdapter.validateCredential({ username, secret });
+      } catch (error) {
+        if (error instanceof ProviderAuthError) {
+          if (error.reason === "authorizationRevoked") {
+            res
+              .status(Status.UNAUTHORIZED)
+              .json({ error: "invalidCredential" });
+            return;
+          }
+          if (error.reason === "refreshFailed") {
+            res
+              .status(Status.SERVICE_UNAVAILABLE)
+              .json({ error: "provider_throttled" });
+            return;
+          }
+        }
+        logger.error("Credential validation failed", redactedCause(error));
+        respondInternalError(res);
+        return;
+      }
+
+      try {
+        const connectionId = await linkCredentialConnection(deps, {
+          tenantId: auth.tenantId,
+          principalId: auth.principalId,
+          provider,
+          username,
+          secret,
+        });
+        res
+          .status(Status.OK)
+          .json(ConnectionCredentialResponseSchema.parse({ connectionId }));
+      } catch (error) {
+        logger.error(
+          "Failed to link credential connection",
           redactedCause(error),
         );
         respondInternalError(res);
@@ -910,6 +1009,70 @@ function redirectAfterConnect(
   url.searchParams.set("provider", provider);
   url.searchParams.set("status", status);
   res.redirect(url.toString());
+}
+
+async function linkCredentialConnection(
+  deps: ConnectionApiDeps,
+  input: {
+    tenantId: TenantId;
+    principalId: PrincipalId;
+    provider: ProviderKind;
+    username: string;
+    secret: string;
+  },
+): Promise<ConnectionId> {
+  const repos = syncRepositories(deps.mongo);
+  const normalizedUsername = input.username.trim().toLowerCase();
+  const derived: DerivedConnectionState = { state: "importing", reason: null };
+
+  const connection = await repos.connections.upsertByProviderAccount({
+    tenantId: input.tenantId,
+    principalId: input.principalId,
+    provider: input.provider,
+    account: {
+      providerAccountId: ProviderAccountIdSchema.parse(normalizedUsername),
+      email: normalizedUsername,
+      displayName: null,
+    },
+    capabilities: [...APPLE_PROVIDER_CAPABILITIES],
+    state: derived.state,
+    stateReason: derived.reason,
+  });
+
+  try {
+    const custody = new CredentialCustody(
+      repos.credentials,
+      resolveAuthForConnectionApi(deps),
+      undefined,
+      undefined,
+      deps.credentialAtRestKey,
+    );
+    await custody.storePassword(
+      connection._id,
+      input.provider,
+      normalizedUsername,
+      input.secret,
+    );
+  } catch (error) {
+    await repos.connections
+      .markDisconnected(input.tenantId, input.principalId, connection._id)
+      .catch(() => undefined);
+    throw error;
+  }
+
+  await repos.jobs.enqueue(
+    calendarListSyncJob(
+      {
+        tenantId: input.tenantId,
+        principalId: input.principalId,
+        connectionId: connection._id,
+      },
+      new Date(),
+      JOB_PRIORITY.user,
+    ),
+  );
+
+  return connection._id;
 }
 
 // Link an authorized account: upsert its connection (create or reconnect by the

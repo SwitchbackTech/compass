@@ -4,6 +4,7 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   type ConnectionBeginRequest,
   ConnectionBeginRequestSchema,
+  ConnectionCredentialRequestSchema,
   toConnectionBeginRedirect,
 } from "@core/types/sync/connection.contracts";
 import {
@@ -14,7 +15,10 @@ import {
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import { isOAuthConnectConfigured } from "@backend/common/constants/config.util";
+import {
+  isAppleConnectConfigured,
+  isOAuthConnectConfigured,
+} from "@backend/common/constants/config.util";
 import {
   AuthError,
   authErrorCopy,
@@ -22,6 +26,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
+import { connectSyncCredential } from "@backend/common/services/sync-service/sync-credential-connect";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { unwrapSyncResult } from "@backend/common/services/sync-service/unwrap-sync-result";
@@ -54,6 +59,17 @@ const assertProviderCanBegin = (provider: ProviderKind): void => {
     {
       ...AuthError.ProviderNotConfigured,
       description: authErrorCopy.notConfigured(provider),
+    },
+    "Connect Failed",
+  );
+};
+
+const assertAppleCanConnect = (): void => {
+  if (isAppleConnectConfigured(CONFIG)) return;
+  throw error(
+    {
+      ...AuthError.ProviderNotConfigured,
+      description: authErrorCopy.notConfigured("apple"),
     },
     "Connect Failed",
   );
@@ -125,6 +141,26 @@ class AuthController {
     res: Res_Promise,
   ): void => {
     this.beginConnection(req, res, "google");
+  };
+
+  connectCredential = (req: SReqBody<unknown>, res: Res_Promise): void => {
+    if (rejectIfMaintenance(res)) return;
+
+    const request = ConnectionCredentialRequestSchema.parse(req.body ?? {});
+
+    try {
+      assertAppleCanConnect();
+    } catch (err) {
+      res.promise(Promise.reject(err));
+      return;
+    }
+
+    const client = getSyncServiceClient();
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
+
+    res.promise(
+      connectSyncCredential(client, toSyncPrincipal(userId), request),
+    );
   };
 
   disconnectConnection = (req: SessionRequest, res: Res_Promise): void => {

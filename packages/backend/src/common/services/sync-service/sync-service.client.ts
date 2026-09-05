@@ -25,6 +25,9 @@ import {
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
+  type ConnectionCredentialRequest,
+  type ConnectionCredentialResponse,
+  ConnectionCredentialResponseSchema,
   type ConnectionListResponse,
   ConnectionListResponseSchema,
   type ConnectionRefreshResponse,
@@ -55,6 +58,7 @@ const CHANGES_PATH = "/internal/changes";
 const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
+const CONNECTIONS_CREDENTIAL_PATH = "/internal/connections/credential";
 const CONNECTIONS_REFRESH_PATH = "/internal/connections/refresh";
 const CONNECTIONS_FOREGROUND_REFRESH_PATH =
   "/internal/connections/foreground-refresh";
@@ -261,6 +265,21 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: ConnectionBeginResponseSchema,
+      correlationId,
+    });
+  }
+
+  createCredentialConnection(
+    principal: SyncPrincipal,
+    request: ConnectionCredentialRequest,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionCredentialResponse>> {
+    return this.#request({
+      method: "POST",
+      path: CONNECTIONS_CREDENTIAL_PATH,
+      principal,
+      body: request,
+      schema: ConnectionCredentialResponseSchema,
       correlationId,
     });
   }
