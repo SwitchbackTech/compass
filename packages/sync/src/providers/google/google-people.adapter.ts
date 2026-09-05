@@ -11,6 +11,10 @@ import {
 } from "@sync/providers/google/google-error";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
+  rankContactSuggestions,
+  toContactSuggestion,
+} from "@sync/providers/provider-contact-suggestions";
+import {
   type ContactsPort,
   ContactsSearchError,
   type ContactsSearchInput,
@@ -133,7 +137,7 @@ export class GooglePeopleAdapter implements ContactsPort {
     const candidates = pages.flatMap((page) =>
       page.results.flatMap((match) => toSuggestions(match)),
     );
-    return rankSuggestions(candidates, input.query).slice(
+    return rankContactSuggestions(candidates, input.query).slice(
       0,
       CONTACT_SUGGESTION_MAX_RESULTS,
     );
@@ -142,66 +146,24 @@ export class GooglePeopleAdapter implements ContactsPort {
 
 // Map one matched person to suggestion candidates — one per usable email
 // address, primary first, each carrying the person's primary display name.
-// Anything unusable (no email, over the contract's bounds) is dropped, not
-// erred: a malformed contact must not break the whole suggestion list.
 function toSuggestions(match: GooglePeoplePersonMatch): ContactSuggestion[] {
   const person = match.person;
   if (!person) return [];
 
   const names = person.names ?? [];
-  const rawName = (
+  const displayName =
     names.find((name) => name.metadata?.primary)?.displayName ??
     names[0]?.displayName ??
-    ""
-  ).trim();
-  const displayName =
-    rawName.length > 0 && rawName.length <= 256 ? rawName : null;
+    null;
 
   const addresses = [...(person.emailAddresses ?? [])].sort(
     (a, b) =>
       Number(b.metadata?.primary ?? false) -
       Number(a.metadata?.primary ?? false),
   );
-  const suggestions: ContactSuggestion[] = [];
-  for (const address of addresses) {
-    const email = (address.value ?? "").trim();
-    if (email.length === 0 || email.length > 320) continue;
-    suggestions.push({ email, displayName });
-  }
-  return suggestions;
-}
-
-// Rank by how directly the suggestion matches the typed prefix: email or name
-// prefix match first, then substring match, then the provider's own relevance
-// order. The sort is stable, so equal ranks keep source order (saved contacts
-// ahead of other contacts). De-duplicates by case-insensitive email, keeping
-// the best-ranked (first) occurrence.
-function rankSuggestions(
-  candidates: readonly ContactSuggestion[],
-  query: string,
-): ContactSuggestion[] {
-  const needle = query.trim().toLowerCase();
-  const rank = (suggestion: ContactSuggestion): number => {
-    const email = suggestion.email.toLowerCase();
-    const name = suggestion.displayName?.toLowerCase() ?? "";
-    if (email.startsWith(needle) || name.startsWith(needle)) return 0;
-    if (email.includes(needle) || name.includes(needle)) return 1;
-    return 2;
-  };
-
-  const ranked = candidates
-    .map((suggestion, index) => ({ suggestion, index, rank: rank(suggestion) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index);
-
-  const seen = new Set<string>();
-  const unique: ContactSuggestion[] = [];
-  for (const { suggestion } of ranked) {
-    const key = suggestion.email.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(suggestion);
-  }
-  return unique;
+  return addresses
+    .map((address) => toContactSuggestion(address.value, displayName))
+    .filter((suggestion) => suggestion !== null);
 }
 
 // Google's quota refusals worth backing off on, as opposed to backendError /
