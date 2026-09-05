@@ -16,6 +16,7 @@ import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
+  isAppleSignInConfigured,
   isGoogleConfigured,
   isMicrosoftConfigured,
 } from "@backend/common/constants/config.util";
@@ -61,6 +62,29 @@ const createMicrosoftProvider = (
         scope: [...MICROSOFT_SCOPES],
         additionalConfig: {
           directoryId: "common",
+        },
+      },
+    ],
+  },
+});
+
+const createAppleProvider = (
+  clientId: string,
+  keyId: string,
+  teamId: string,
+  privateKey: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "apple",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        scope: ["openid", "email", "name"],
+        additionalConfig: {
+          keyId,
+          teamId,
+          privateKey,
         },
       },
     ],
@@ -125,6 +149,27 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   ) {
     providers.push(
       createMicrosoftProvider(microsoftClientId, microsoftClientSecret),
+    );
+  }
+
+  const appleClientId = CONFIG.APPLE_SIGNIN_SERVICES_ID;
+  const appleKeyId = CONFIG.APPLE_SIGNIN_KEY_ID;
+  const appleTeamId = CONFIG.APPLE_SIGNIN_TEAM_ID;
+  const applePrivateKey = CONFIG.APPLE_SIGNIN_PRIVATE_KEY;
+  if (
+    appleClientId &&
+    appleKeyId &&
+    appleTeamId &&
+    applePrivateKey &&
+    isAppleSignInConfigured(CONFIG)
+  ) {
+    providers.push(
+      createAppleProvider(
+        appleClientId,
+        appleKeyId,
+        appleTeamId,
+        applePrivateKey,
+      ),
     );
   }
 

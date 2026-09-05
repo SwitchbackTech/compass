@@ -5,6 +5,11 @@ import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-n
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { providerKindFromThirdPartyId } from "@core/types/sync/identity.contracts";
+import {
+  appleAuthService,
+  appleSubjectId,
+} from "@backend/auth/services/apple/apple.auth.service";
+import { type AppleSignInSuccess } from "@backend/auth/services/apple/apple.auth.types";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import {
@@ -14,15 +19,19 @@ import {
 import { type MicrosoftSignInSuccess } from "@backend/auth/services/microsoft/microsoft.auth.types";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
+  appleFormUserJsonFromInput,
   buildResetPasswordLink,
+  createAppleSignInSuccess,
   createGoogleSignInSuccess,
   createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
+  withAppleFirstAuthorizationName,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
 import {
+  type CreateAppleSignInResponse,
   type CreateGoogleSignInResponse,
   type CreateMicrosoftSignInResponse,
   type CreateNewRecipeUserFn,
@@ -143,6 +152,51 @@ async function maybeRemapMicrosoftSignInToCompassSession(
   };
 }
 
+async function maybeRemapAppleSignInToCompassSession(
+  input: ThirdPartySignInUpInput,
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>,
+  success: AppleSignInSuccess,
+): Promise<{
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>;
+  success: AppleSignInSuccess;
+}> {
+  const connectedCompassUserId = await userService.getCanonicalCompassUserId({
+    provider: "apple",
+    subjectId: appleSubjectId(success.providerUser),
+    email: null,
+  });
+
+  if (
+    input.session ||
+    !connectedCompassUserId ||
+    response.status !== "OK" ||
+    response.session.getUserId() === connectedCompassUserId
+  ) {
+    return { response, success };
+  }
+
+  const session = await replaceSessionWithCompassUser(
+    input,
+    response.session,
+    connectedCompassUserId,
+  );
+
+  const responseWithCompassSession = { ...response, session };
+  const successAfterSessionRemap = createAppleSignInSuccess(
+    responseWithCompassSession as CreateAppleSignInResponse,
+  );
+  if (!successAfterSessionRemap) {
+    throw new Error(
+      "Missing Apple sign-in success after Compass session replacement",
+    );
+  }
+
+  return {
+    response: responseWithCompassSession,
+    success: successAfterSessionRemap,
+  };
+}
+
 export async function createThirdPartyUser(
   input: Parameters<CreateThirdPartyUserFn>[0],
   originalCreateThirdPartyUser: CreateThirdPartyUserFn,
@@ -183,6 +237,30 @@ export async function handleThirdPartySignInUp(
     await microsoftAuthService.handleMicrosoftAuth(remapped.success, {
       hasExistingSession: Boolean(input.session),
     });
+    return remapped.response;
+  }
+
+  if (kind === "apple") {
+    const success = createAppleSignInSuccess(
+      response as CreateAppleSignInResponse,
+    );
+    if (!success) {
+      return response;
+    }
+    const remapped = await maybeRemapAppleSignInToCompassSession(
+      input,
+      response,
+      success,
+    );
+    await appleAuthService.handleAppleAuth(
+      withAppleFirstAuthorizationName(
+        remapped.success,
+        appleFormUserJsonFromInput(input),
+      ),
+      {
+        hasExistingSession: Boolean(input.session),
+      },
+    );
     return remapped.response;
   }
 

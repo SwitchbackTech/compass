@@ -12,6 +12,7 @@ import {
   ProviderKindSchema,
 } from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
+import { resolveAppleFormPostRedirect } from "@backend/auth/services/apple/apple.auth.callback";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
@@ -213,6 +214,18 @@ class AuthController {
 
   refreshGoogleSync = (req: SessionRequest, res: Res_Promise): void => {
     this.refreshConnection(req, res);
+  };
+
+  appleSignInCallback = (
+    req: ReqBody<Record<string, unknown>>,
+    res: Res_Promise,
+  ): void => {
+    const result = resolveAppleFormPostRedirect(req.body ?? {});
+    if ("status" in result) {
+      res.status(result.status).json({ error: result.message });
+      return;
+    }
+    res.redirect(302, result.location);
   };
 }
 

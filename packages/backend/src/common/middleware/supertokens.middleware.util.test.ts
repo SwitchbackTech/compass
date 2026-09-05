@@ -3,11 +3,13 @@ import { registerUserIdMappingStore } from "@backend/auth/ports/supertokens.regi
 import { createInMemoryUserIdMappingStore } from "@backend/auth/ports/supertokens.stores";
 import {
   buildResetPasswordLink,
+  createAppleSignInSuccess,
   createGoogleSignInSuccess,
   createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
+  withAppleFirstAuthorizationName,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -168,6 +170,94 @@ describe("supertokens.middleware.util", () => {
         recipeUserId,
         loginMethodsLength: 1,
         providerUser: { oid, email, name: "Microsoft Person" },
+      });
+    });
+  });
+
+  describe("createAppleSignInSuccess", () => {
+    it("reads sub, email, and first-authorization name from the id token payload", () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const sub = faker.string.uuid();
+      const email = `${faker.string.alphanumeric(8)}@privaterelay.appleid.com`;
+
+      const success = createAppleSignInSuccess({
+        status: "OK",
+        createdNewRecipeUser: true,
+        rawUserInfoFromProvider: {
+          fromIdTokenPayload: {
+            sub,
+            email,
+            user: { name: { firstName: "Ada", lastName: "Lovelace" } },
+          },
+        },
+        oAuthTokens: {
+          access_token: faker.internet.jwt(),
+          scope: "openid email name",
+        },
+        user: {
+          id: recipeUserId,
+          loginMethods: [{}],
+        },
+      } as Parameters<typeof createAppleSignInSuccess>[0]);
+
+      expect(success).toMatchObject({
+        createdNewRecipeUser: true,
+        recipeUserId,
+        loginMethodsLength: 1,
+        providerUser: {
+          sub,
+          email,
+          user: { name: { firstName: "Ada", lastName: "Lovelace" } },
+        },
+      });
+    });
+
+    it("reads the first-authorization name from fromUserInfoAPI when the id token omits it", () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const sub = faker.string.uuid();
+
+      const success = createAppleSignInSuccess({
+        status: "OK",
+        createdNewRecipeUser: true,
+        rawUserInfoFromProvider: {
+          fromIdTokenPayload: { sub, email: "a@privaterelay.appleid.com" },
+          fromUserInfoAPI: {
+            name: { firstName: "Ada", lastName: "Lovelace" },
+          },
+        },
+        oAuthTokens: { access_token: faker.internet.jwt() },
+        user: { id: recipeUserId, loginMethods: [{}] },
+      } as Parameters<typeof createAppleSignInSuccess>[0]);
+
+      expect(success?.providerUser.user).toEqual({
+        name: { firstName: "Ada", lastName: "Lovelace" },
+      });
+    });
+  });
+
+  describe("withAppleFirstAuthorizationName", () => {
+    it("attaches Apple's form_post user JSON when the id token has no name", () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const success = createAppleSignInSuccess({
+        status: "OK",
+        createdNewRecipeUser: true,
+        rawUserInfoFromProvider: {
+          fromIdTokenPayload: {
+            sub: faker.string.uuid(),
+            email: "a@privaterelay.appleid.com",
+          },
+        },
+        oAuthTokens: { access_token: faker.internet.jwt() },
+        user: { id: recipeUserId, loginMethods: [{}] },
+      } as Parameters<typeof createAppleSignInSuccess>[0]);
+
+      expect(success).not.toBeNull();
+      const merged = withAppleFirstAuthorizationName(
+        success!,
+        JSON.stringify({ name: { firstName: "Ada", lastName: "Lovelace" } }),
+      );
+      expect(merged.providerUser.user).toEqual({
+        name: { firstName: "Ada", lastName: "Lovelace" },
       });
     });
   });

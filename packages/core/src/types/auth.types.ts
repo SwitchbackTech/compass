@@ -14,7 +14,7 @@ export interface UserInfo_Google {
 }
 
 export const GoogleAuthCodeRequestSchema = z.object({
-  thirdPartyId: z.literal("google"),
+  thirdPartyId: z.enum(["google", "apple"]),
   clientType: z.literal("web"),
   redirectURIInfo: z.object({
     redirectURIOnProviderDashboard: z.string().nonempty(),
@@ -22,6 +22,7 @@ export const GoogleAuthCodeRequestSchema = z.object({
       code: z.string().nonempty(),
       scope: z.string().optional(),
       state: z.string().optional(),
+      user: z.string().optional(),
     }),
     pkceCodeVerifier: z.string().optional(),
   }),
