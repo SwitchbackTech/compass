@@ -108,6 +108,12 @@ and returns `{kind: "connected", connectionId}`. The password is never logged.
 The UI states plainly that an app-specific password grants access to the
 whole iCloud account and that Compass stores it encrypted.
 
+**Apple invitations.** iCloud performs server-side scheduling by default when
+`ATTENDEE` lines are present (`SCHEDULE-AGENT=SERVER`), so adding guests makes
+iCloud send mail. Compass maps `invitation: "none"` to
+`SCHEDULE-AGENT=CLIENT` on attendee parameters so edits do not trigger mail.
+`invitation: "all"` and `"externalOnly"` leave server scheduling enabled.
+
 ## Booking
 
 Booking enables when any healthy connection offers a writable destination
