@@ -333,6 +333,30 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ---
 
+## Scenario 12c: Navigate The Month Picker By Week
+
+### UX
+
+The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Shift+,` / `Mod+Shift+.` and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. Clicking a day does nothing; hovering or focusing the picker shows a caption with the keys, and repeated clicks surface the keyboard hint.
+
+### Steps
+
+1. Navigate to `/week` with the sidebar open and press `I`.
+2. Press ArrowDown twice, then ArrowRight once.
+3. Press `Mod+Shift+.`.
+4. Press Enter.
+5. Click any day in the picker three or four times.
+
+### Expected Results
+
+- After `I`, the first day of the highlighted week row has focus and the whole row shows the focus ring.
+- Each arrow moves the ring one row; the calendar grid does not move yet.
+- After `Mod+Shift+.`, the next month is shown and focus is still on a day in that month.
+- Enter anchors the week view on the focused row and the accent capsule matches the visible window.
+- Clicks do not navigate. The caption under the grid reads `I focuses the picker · Arrows move by week · Enter opens it`; the keyboard hint says to press `I`, then use the arrow keys and Enter.
+
+---
+
 ## Scenario 13: The Mouse Is Permanently Inert
 
 ### UX

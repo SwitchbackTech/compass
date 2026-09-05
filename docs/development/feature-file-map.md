@@ -130,6 +130,7 @@ The flow, its entry points, and the storage contract are documented in
 
 - Shared sidebar shell: `packages/web/src/components/Sidebar/Sidebar.tsx`
 - Month picker: `packages/web/src/components/Sidebar/MonthPicker/MonthPicker.tsx`
+  (week/day cursor math in `monthPickerCursor.ts` beside it)
 - Shared account sync-status + CTA labels: `packages/web/src/components/Sidebar/CalendarList/useAccountHeaderStatus.ts`
 - Account identity/sync indicator: `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`, `AccountSectionHeader.tsx`
 - Sidebar actions and shortcuts overlay: `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`, `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`

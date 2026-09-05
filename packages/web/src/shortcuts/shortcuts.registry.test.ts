@@ -162,6 +162,26 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("nav-month-next");
     });
 
+    it("lists the month picker step row with a per-view unit, not in life", () => {
+      const label = (view: "day" | "week") =>
+        filterShortcutsByContext({ view, isViewingCurrentPeriod: true }).find(
+          (shortcut) => shortcut.id === "nav-picker-step",
+        )?.label;
+
+      expect(label("week")).toBe(
+        "Move the month picker by a week (Enter opens it)",
+      );
+      expect(label("day")).toBe(
+        "Move the month picker by a day (Enter opens it)",
+      );
+
+      const life = filterShortcutsByContext({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      }).map((shortcut) => shortcut.id);
+      expect(life).not.toContain("nav-picker-step");
+    });
+
     it("lists the page jump shortcut in day, week, and life", () => {
       for (const view of ["day", "week", "life"] as const) {
         const ids = filterShortcutsByContext({

@@ -97,6 +97,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "navigate",
   },
   {
+    id: "nav-picker-step",
+    keys: [...KEYMAP.moveFocus.keycaps],
+    label: "Move the month picker by a week (Enter opens it)",
+    section: "navigate",
+  },
+  {
     id: "nav-today",
     keys: ["t"],
     label: "Go to today",
@@ -187,7 +193,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   {
     id: "focus-sidebar",
     keys: ["i"],
-    label: "Focus sidebar",
+    label: "Focus month picker",
     section: "focus",
   },
   {
@@ -482,6 +488,10 @@ interface FilterOptions {
 const LABEL_OVERRIDES: Record<string, (options: FilterOptions) => string> = {
   "nav-previous": ({ view }) => `Previous ${view}`,
   "nav-next": ({ view }) => `Next ${view}`,
+  "nav-picker-step": ({ view }) =>
+    view === "day"
+      ? "Move the month picker by a day (Enter opens it)"
+      : "Move the month picker by a week (Enter opens it)",
   "nav-today": ({ view, isViewingCurrentPeriod }) => {
     if (isViewingCurrentPeriod) return "Scroll to now";
     return view === "week" ? "Go to current week" : "Go to today";

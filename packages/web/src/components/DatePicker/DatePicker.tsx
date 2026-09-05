@@ -28,10 +28,18 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   inputColor?: string;
   isOpen?: boolean;
   monthTextClassName?: string;
-  /** Sidebar-only: hover keycaps on the month chevrons. */
+  /**
+   * Sidebar-only: hover keycaps on the month chevrons, plus optional
+   * overrides so the owner can move its own cursor instead of letting
+   * react-datepicker step its internal month (MonthPicker remounts the grid
+   * on those jumps to keep a focusable day in the new month).
+   */
   monthNav?: {
     prevShortcut: readonly string[];
     nextShortcut: readonly string[];
+    onPrev?: () => void;
+    onNext?: () => void;
+    onToday?: () => void;
   };
   withUnderline?: boolean;
   view: "sidebar" | "grid";
@@ -205,9 +213,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                     ariaLabel="Previous month"
                     color={headerColor}
                     isSidebarStyle={view === "sidebar"}
-                    onClick={() => {
-                      headerProps.decreaseMonth();
-                    }}
+                    onClick={
+                      monthNav?.onPrev ?? (() => headerProps.decreaseMonth())
+                    }
                     shortcut={monthNav ? [...monthNav.prevShortcut] : undefined}
                   >
                     <ChevronLeftIcon />
@@ -216,9 +224,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                     ariaLabel="Next month"
                     color={headerColor}
                     isSidebarStyle={view === "sidebar"}
-                    onClick={() => {
-                      headerProps.increaseMonth();
-                    }}
+                    onClick={
+                      monthNav?.onNext ?? (() => headerProps.increaseMonth())
+                    }
                     shortcut={monthNav ? [...monthNav.nextShortcut] : undefined}
                   >
                     <ChevronRightIcon />
@@ -242,10 +250,13 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                           : undefined
                       }
                       style={{ color: headerColor }}
-                      onClick={() => {
-                        headerProps.changeMonth(dayjs().month());
-                        headerProps.changeYear(dayjs().year());
-                      }}
+                      onClick={
+                        monthNav?.onToday ??
+                        (() => {
+                          headerProps.changeMonth(dayjs().month());
+                          headerProps.changeYear(dayjs().year());
+                        })
+                      }
                     >
                       <CircleIcon />
                     </button>

@@ -18,8 +18,8 @@ import {
 import { MONTH_PICKER_IN_VIEW_CLASS } from "./monthPickerDayClassName";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const getSelectedDay = () =>
-  document.querySelector(".react-datepicker__day--selected");
+const getTabStopDay = () =>
+  document.querySelector<HTMLElement>('.react-datepicker__day[tabindex="0"]');
 
 const dayNamed = (label: string) => screen.getByLabelText(label);
 
@@ -60,25 +60,209 @@ afterEach(() => {
 });
 
 describe("MonthPicker", () => {
-  it("keeps the clicked date selected while navigation catches up", async () => {
+  it("ignores day clicks and marks the picker as a pointer-teaching target", async () => {
     const user = userEvent.setup({ skipHover: true });
     const onSelectDate = mock();
 
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+
+    await user.click(dayNamed("Choose Monday, May 25th, 2026"));
+
+    expect(onSelectDate).not.toHaveBeenCalled();
+    expect(dayNamed("Choose Monday, May 25th, 2026")).not.toHaveFocus();
+    expect(
+      screen.getByRole("group", { name: "Date navigation" }),
+    ).toHaveAttribute("data-pointer-action", POINTER_ACTIONS.datePick);
+  });
+
+  it("moves a week at a time with every arrow key and opens the week with Enter", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    const onSelectDate = mock();
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+
+    const picker = screen.getByRole("group", { name: "Date navigation" });
+    expect(picker).toHaveAttribute("data-picker-unit", "week");
+
+    // The only tab stop is the start of the cursor week (Sunday-first view).
+    const tabStop = getTabStopDay();
+    expect(tabStop?.getAttribute("aria-label")).toBe(
+      "Choose Sunday, May 17th, 2026",
+    );
+    act(() => tabStop?.focus());
+
+    await user.keyboard("{ArrowDown}");
+    await waitFor(() => {
+      expect(dayNamed("Choose Sunday, May 24th, 2026")).toHaveFocus();
+    });
+    expect(
+      dayNamed("Choose Sunday, May 24th, 2026").closest(
+        ".react-datepicker__week",
+      ),
+    ).toHaveClass("react-datepicker__week--keyboard-selected");
+
+    await user.keyboard("{ArrowRight}");
+    await waitFor(() => {
+      expect(dayNamed("Choose Sunday, May 31st, 2026")).toHaveFocus();
+    });
+
+    await user.keyboard("{ArrowLeft}{ArrowUp}");
+    await waitFor(() => {
+      expect(dayNamed("Choose Sunday, May 17th, 2026")).toHaveFocus();
+    });
+
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(onSelectDate).toHaveBeenCalledTimes(1);
+    expect(onSelectDate.mock.calls[0]?.[0].format("YYYY-MM-DD")).toBe(
+      "2026-05-24",
+    );
+    expect(
+      dayNamed("Choose Sunday, May 24th, 2026").closest(
+        ".react-datepicker__week",
+      ),
+    ).toHaveClass("react-datepicker__week--selected");
+  });
+
+  it("anchors the cursor week on Monday when the view starts Monday", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    const onSelectDate = mock();
     renderPicker(
       <MonthPicker
         onSelectDate={onSelectDate}
-        selectedDate={dayjs("2026-05-18")}
-        viewEnd={dayjs("2026-05-23")}
-        viewStart={dayjs("2026-05-17")}
+        selectedDate={dayjs("2026-05-13")}
+        viewEnd={dayjs("2026-05-17")}
+        viewStart={dayjs("2026-05-11")}
       />,
     );
 
-    await user.click(screen.getByLabelText("Choose Monday, May 25th, 2026"));
-
-    expect(onSelectDate).toHaveBeenCalledTimes(1);
-    expect(getSelectedDay()?.getAttribute("aria-label")).toBe(
-      "Choose Monday, May 25th, 2026",
+    const tabStop = getTabStopDay();
+    expect(tabStop?.getAttribute("aria-label")).toBe(
+      "Choose Monday, May 11th, 2026",
     );
+    act(() => tabStop?.focus());
+
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(onSelectDate.mock.calls[0]?.[0].format("YYYY-MM-DD")).toBe(
+      "2026-05-18",
+    );
+  });
+
+  it("steps by day for a single-day window", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    const onSelectDate = mock();
+    renderPicker(
+      <MonthPicker
+        onSelectDate={onSelectDate}
+        selectedDate={dayjs("2026-05-13")}
+        viewEnd={dayjs("2026-05-13")}
+        viewStart={dayjs("2026-05-13")}
+      />,
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Date navigation" }),
+    ).toHaveAttribute("data-picker-unit", "day");
+    const tabStop = getTabStopDay();
+    expect(tabStop?.getAttribute("aria-label")).toBe(
+      "Choose Wednesday, May 13th, 2026",
+    );
+    act(() => tabStop?.focus());
+
+    await user.keyboard("{ArrowRight}");
+    await waitFor(() => {
+      expect(dayNamed("Choose Thursday, May 14th, 2026")).toHaveFocus();
+    });
+
+    await user.keyboard("{Enter}");
+    expect(onSelectDate.mock.calls[0]?.[0].format("YYYY-MM-DD")).toBe(
+      "2026-05-14",
+    );
+  });
+
+  it("keeps focus on a day in the new month after a month chord", async () => {
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+
+    act(() => getTabStopDay()?.focus());
+    act(() => {
+      pressMonthChord(".");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+    const tabStop = getTabStopDay();
+    expect(tabStop?.getAttribute("aria-label")).toContain("June");
+    expect(tabStop).toHaveFocus();
+  });
+
+  it("leaves outside focus alone on a month chord but still provides a tab stop", async () => {
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+    expect(document.activeElement).toBe(document.body);
+
+    act(() => {
+      pressMonthChord(".");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+    expect(document.activeElement).toBe(document.body);
+    expect(getTabStopDay()?.getAttribute("aria-label")).toContain("June");
+  });
+
+  it("keeps focus on the chevron after a keyboard month change", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+
+    const next = screen.getByRole("button", { name: "Next month" });
+    act(() => next.focus());
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Next month" })).toHaveFocus();
+    expect(getTabStopDay()?.getAttribute("aria-label")).toContain("June");
+  });
+
+  it("re-anchors the tab stop when chording back to the cursor's month after arrowing away", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+
+    act(() => getTabStopDay()?.focus());
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}");
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+
+    act(() => {
+      pressMonthChord(",");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("May 2026")).toBeInTheDocument();
+    });
+    const tabStop = getTabStopDay();
+    expect(tabStop?.getAttribute("aria-label")).toContain("May");
+    expect(tabStop).toHaveFocus();
+  });
+
+  it("teaches the focus key and the unit in its caption", () => {
+    const { rerender } = renderPicker(
+      <MonthPicker onSelectDate={mock()} {...pickerProps} />,
+    );
+    const picker = screen.getByRole("group", { name: "Date navigation" });
+    expect(picker.textContent).toContain("I");
+    expect(picker.textContent).toContain("Arrows move by week");
+
+    rerender(
+      <MonthPicker
+        onSelectDate={mock()}
+        selectedDate={dayjs("2026-05-13")}
+        viewEnd={dayjs("2026-05-13")}
+        viewStart={dayjs("2026-05-13")}
+      />,
+    );
+    expect(picker.textContent).toContain("Arrows move by day");
   });
 
   it("highlights the visible Sun-Sat window, not adjacent days", () => {
@@ -255,6 +439,20 @@ describe("MonthPicker", () => {
     expect(picker.textContent).not.toContain("Shift");
     expect(picker.textContent).not.toContain(",");
     expect(picker.textContent).not.toContain(".");
+  });
+
+  it("keeps the selected day bold across the whole cursor week", () => {
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+
+    expect(dayNamed("Choose Sunday, May 17th, 2026")).toHaveClass(
+      "!font-semibold",
+    );
+    expect(dayNamed("Choose Saturday, May 23rd, 2026")).toHaveClass(
+      "!font-semibold",
+    );
+    expect(dayNamed("Choose Sunday, May 24th, 2026")).toHaveClass(
+      "!font-light",
+    );
   });
 
   it("labels the today control with the t shortcut and pointer-teaching action", async () => {

@@ -76,6 +76,15 @@ const pointerHintMessage = ({
     );
   }
 
+  if (attempt?.actionId === POINTER_ACTIONS.datePick) {
+    return (
+      <>
+        Press <Key>I</Key> to focus the calendar, then use the arrow keys and{" "}
+        <Key>Enter</Key> to go to a date.
+      </>
+    );
+  }
+
   if (attempt?.actionId === POINTER_ACTIONS.switchView) {
     return (
       <>
