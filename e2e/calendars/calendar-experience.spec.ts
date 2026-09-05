@@ -47,6 +47,7 @@ const CAPABILITIES = {
     canManage: true,
     canWatchEvents: true,
     canInviteAttendees: true,
+    conferenceKinds: ["meet"],
   },
   reader: {
     canReadAvailability: true,
@@ -55,6 +56,7 @@ const CAPABILITIES = {
     canManage: false,
     canWatchEvents: true,
     canInviteAttendees: false,
+    conferenceKinds: [],
   },
 };
 
@@ -68,11 +70,18 @@ function calendar(overrides: {
   isPrimary: boolean;
   isVisible: boolean;
 }) {
+  const base = CAPABILITIES[overrides.access];
   return {
     ...overrides,
     description: "",
     foregroundColor: "#ffffff",
-    capabilities: CAPABILITIES[overrides.access],
+    capabilities: {
+      ...base,
+      conferenceKinds:
+        overrides.provider === "google" && overrides.access === "owner"
+          ? ["meet"]
+          : [],
+    },
     isActive: true,
   };
 }

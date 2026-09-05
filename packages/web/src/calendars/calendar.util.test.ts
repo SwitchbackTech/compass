@@ -4,6 +4,7 @@ import {
 } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
+  canInviteOnCalendar,
   compareCalendars,
   getDefaultTargetCalendar,
   getLocalCalendar,
@@ -78,6 +79,17 @@ describe("getWritableCalendars", () => {
     ).toEqual([google]);
   });
 
+  it("includes a writable microsoft calendar once an account is connected", () => {
+    const local = makeCalendar({ provider: "local" });
+    const microsoft = makeCalendar({
+      provider: "microsoft",
+      id: "507f1f77bcf86cd799439015" as Calendar["id"],
+    });
+    expect(
+      getWritableCalendars([local, microsoft], { hasConnectedAccount: true }),
+    ).toEqual([microsoft]);
+  });
+
   it("excludes calendars whose Google account needs reconnect", () => {
     const broken = makeCalendar({
       provider: "google",
@@ -98,6 +110,37 @@ describe("getWritableCalendars", () => {
   });
 });
 
+describe("canInviteOnCalendar", () => {
+  it("is true when the calendar can write and invite attendees", () => {
+    expect(
+      canInviteOnCalendar(
+        makeCalendar({
+          provider: "microsoft",
+          capabilities: getCalendarCapabilities("owner"),
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("is false when the calendar cannot invite, even if writable", () => {
+    expect(
+      canInviteOnCalendar(
+        makeCalendar({
+          provider: "google",
+          capabilities: {
+            ...getCalendarCapabilities("owner"),
+            canInviteAttendees: false,
+          },
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false for an undefined calendar", () => {
+    expect(canInviteOnCalendar(undefined)).toBe(false);
+  });
+});
+
 describe("getDefaultTargetCalendar", () => {
   it("prefers the primary writable google calendar", () => {
     const local = makeCalendar({ provider: "local" });
@@ -108,6 +151,18 @@ describe("getDefaultTargetCalendar", () => {
     });
     expect(getDefaultTargetCalendar([local, primaryGoogle])).toBe(
       primaryGoogle,
+    );
+  });
+
+  it("prefers a writable microsoft primary the same way", () => {
+    const local = makeCalendar({ provider: "local" });
+    const primaryMicrosoft = makeCalendar({
+      provider: "microsoft",
+      isPrimary: true,
+      id: "507f1f77bcf86cd799439014" as Calendar["id"],
+    });
+    expect(getDefaultTargetCalendar([local, primaryMicrosoft])).toBe(
+      primaryMicrosoft,
     );
   });
 

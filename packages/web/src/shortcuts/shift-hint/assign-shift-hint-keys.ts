@@ -139,7 +139,8 @@ export type DayJumpMatchResult =
       kind: "selectDay";
       dayPrefix: string;
       dayKey: string;
-      firstEventId: string;
+      /** Null when the column has no events: the day is selected, nothing focuses. */
+      firstEventId: string | null;
       buffer: string;
     }
   | {
@@ -154,12 +155,16 @@ export type DayJumpMatchResult =
 
 const UNIQUE_DAY_LETTERS = new Set(["m", "t", "w", "r", "f"]);
 
+/** Visible column per day prefix (`"r"` -> `"2026-10-15"`), whether or not
+ * that day has events. Week passes all of its columns; Day passes its one. */
+export type DayKeyByPrefix = Readonly<Record<string, string>>;
+
 /**
  * Resolve a keystroke against assignments + buffer.
  *
  * Buffer holds the typed prefix so far (`""`, `"s"`, `"su"`, `"w"`, `"w1"`…).
- * Unique day letters select the day and focus the first event without requiring
- * a digit. Digits append and focus when the buffer uniquely identifies a hint
+ * Unique day letters select any visible day, focusing its first event when it
+ * has one. Digits append and focus when the buffer uniquely identifies a hint
  * (exact match with no longer sibling prefixes).
  *
  * A digit on an empty buffer is deliberately unmatched: no day is selected yet,
@@ -167,10 +172,12 @@ const UNIQUE_DAY_LETTERS = new Set(["m", "t", "w", "r", "f"]);
  */
 export function matchDayJumpKeystroke({
   assignments,
+  dayKeyByPrefix,
   key,
   buffer,
 }: {
   assignments: DayJumpAssignment[];
+  dayKeyByPrefix: DayKeyByPrefix;
   key: string;
   buffer: string;
 }): DayJumpMatchResult {
@@ -187,36 +194,28 @@ export function matchDayJumpKeystroke({
 
   if (!/^[a-z]$/.test(lower)) return null;
 
-  // Starting a new day selection (or continuing weekend).
-  if (!buffer || buffer === "s") {
-    if (buffer === "" && lower === "s") {
-      const weekend = filterHintsByPrefix(assignments, "s");
-      if (weekend.length === 0) return null;
-      const dayKeys = uniqueDayKeys(weekend);
-      return { kind: "prefix", buffer: "s", dayKeys };
-    }
-
-    if (buffer === "s" && (lower === "u" || lower === "a")) {
-      const dayPrefix = lower === "u" ? "su" : "sa";
-      return selectDayPrefix(assignments, dayPrefix);
-    }
-
-    // Abandon an unresolved weekend "s" when another day letter is typed.
-    if (UNIQUE_DAY_LETTERS.has(lower)) {
-      return selectDayPrefix(assignments, lower);
-    }
-
-    return null;
+  if (buffer === "s" && (lower === "u" || lower === "a")) {
+    return selectDayPrefix(
+      assignments,
+      dayKeyByPrefix,
+      lower === "u" ? "su" : "sa",
+    );
   }
 
-  // Day already selected (or digits in progress): letter starts a new day pick.
+  // Any other letter starts a new day pick, abandoning an unresolved weekend
+  // "s" or a day already selected.
   if (lower === "s") {
-    const weekend = filterHintsByPrefix(assignments, "s");
-    if (weekend.length === 0) return null;
-    return { kind: "prefix", buffer: "s", dayKeys: uniqueDayKeys(weekend) };
+    const dayKeys = [
+      ...new Set([
+        ...uniqueDayKeys(filterHintsByPrefix(assignments, "s")),
+        ...["su", "sa"].flatMap((prefix) => dayKeyByPrefix[prefix] ?? []),
+      ]),
+    ];
+    if (dayKeys.length === 0) return null;
+    return { kind: "prefix", buffer: "s", dayKeys };
   }
   if (UNIQUE_DAY_LETTERS.has(lower)) {
-    return selectDayPrefix(assignments, lower);
+    return selectDayPrefix(assignments, dayKeyByPrefix, lower);
   }
 
   return null;
@@ -224,20 +223,22 @@ export function matchDayJumpKeystroke({
 
 function selectDayPrefix(
   assignments: DayJumpAssignment[],
+  dayKeyByPrefix: DayKeyByPrefix,
   dayPrefix: string,
 ): DayJumpMatchResult {
   const forDay = assignments.filter(
     (assignment) => assignment.dayPrefix === dayPrefix,
   );
-  if (forDay.length === 0) return null;
-  const first = forDay.reduce((best, item) =>
-    item.index < best.index ? item : best,
-  );
+  const first = forDay.length
+    ? forDay.reduce((best, item) => (item.index < best.index ? item : best))
+    : null;
+  const dayKey = first?.dayKey ?? dayKeyByPrefix[dayPrefix];
+  if (!dayKey) return null;
   return {
     kind: "selectDay",
     dayPrefix,
-    dayKey: first.dayKey,
-    firstEventId: first.eventId,
+    dayKey,
+    firstEventId: first?.eventId ?? null,
     buffer: dayPrefix,
   };
 }

@@ -17,7 +17,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
 import {
   selectGoogleConnectionState,
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
@@ -43,6 +43,11 @@ import {
   resolveWritableCalendars,
   toBookingPageInput,
 } from "@web/booking/booking.util";
+import {
+  bookingDestinationConferenceHint,
+  formatBookingDestinationOptionLabel,
+  resolveBookingConference,
+} from "@web/booking/booking-conference.copy";
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
@@ -207,8 +212,11 @@ export function BookingSettingsSection({
   const googleConnectionState = useUserMetadataStore(
     selectGoogleConnectionState,
   );
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const isGoogleHealthy = googleConnectionState === "HEALTHY";
+  const connections = useUserMetadataStore(selectSyncConnections);
+  const hasHealthyConnection =
+    connections.some(
+      (connection) => connection.connectionState === "HEALTHY",
+    ) || googleConnectionState === "HEALTHY";
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
@@ -228,7 +236,8 @@ export function BookingSettingsSection({
       ),
     [accountEmailOrder, calendars],
   );
-  const { data: serverPage, isPending } = useBookingPageQuery(isGoogleHealthy);
+  const { data: serverPage, isPending } =
+    useBookingPageQuery(hasHealthyConnection);
   const saveMutation = useSaveBookingPageMutation();
   const [form, setForm] = useState<AdminPutBookingPageInput>(() =>
     buildInitialForm(
@@ -323,7 +332,7 @@ export function BookingSettingsSection({
     };
   }, [dismissGuardRef]);
 
-  if (!isGoogleHealthy) {
+  if (!hasHealthyConnection) {
     return <BookingConnectGooglePrompt />;
   }
 
@@ -343,8 +352,16 @@ export function BookingSettingsSection({
   const destinationCalendar = writableCalendars.find(
     (calendar) => calendar.id === form.destinationCalendarId,
   );
-  const destinationCannotMintMeet =
-    destinationCalendar?.createsGoogleMeet === false;
+  const destinationConference = destinationCalendar
+    ? resolveBookingConference(
+        destinationCalendar.conference,
+        destinationCalendar.createsGoogleMeet,
+      )
+    : "meet";
+  const destinationCannotMintMeet = destinationConference === "none";
+  const destinationConferenceHint = destinationCalendar
+    ? bookingDestinationConferenceHint(destinationCalendar)
+    : null;
   const destinationMeetWarningId = "booking-destination-meet-warning";
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -542,27 +559,26 @@ export function BookingSettingsSection({
                     >
                       {group.calendars.map((calendar) => (
                         <option key={calendar.id} value={calendar.id}>
-                          {calendar.name}
+                          {formatBookingDestinationOptionLabel(calendar)}
                         </option>
                       ))}
                     </optgroup>
                   ))}
                 {writableUngrouped.map((calendar) => (
                   <option key={calendar.id} value={calendar.id}>
-                    {calendar.name}
+                    {formatBookingDestinationOptionLabel(calendar)}
                   </option>
                 ))}
               </>
             )}
           </select>
-          {destinationCannotMintMeet ? (
+          {destinationConferenceHint ? (
             <p
               className="mt-1 text-sm text-warning"
               id={destinationMeetWarningId}
               role="status"
             >
-              This calendar cannot create a Google Meet link. Guests will get a
-              calendar invite without a Meet URL.
+              {destinationConferenceHint}
             </p>
           ) : null}
         </div>

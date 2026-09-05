@@ -29,12 +29,33 @@ const AuthApi = {
   // reconnect an existing connection; omit it for a fresh one.
   async beginGoogleConnection(
     request: ConnectionBeginRequest = {},
-  ): Promise<ConnectionBeginResponse> {
+  ): Promise<{ authorizationUrl: string }> {
     const response = await BaseApi.post<ConnectionBeginResponse>(
       `/auth/google/connect/begin`,
       request,
     );
 
+    const parsed = ConnectionBeginResponseSchema.parse(response.data);
+    if (!("authorizationUrl" in parsed)) {
+      throw new Error("Google connect did not return a redirect");
+    }
+    return { authorizationUrl: parsed.authorizationUrl };
+  },
+
+  async beginConnection(
+    request: ConnectionBeginRequest = {},
+  ): Promise<ConnectionBeginResponse> {
+    const provider = request.provider ?? "google";
+    if (provider === "google") {
+      const { provider: _provider, ...rest } = request;
+      const google = await AuthApi.beginGoogleConnection(rest);
+      return { kind: "redirect", authorizationUrl: google.authorizationUrl };
+    }
+
+    const response = await BaseApi.post<ConnectionBeginResponse>(
+      `/auth/connections/begin`,
+      { ...request, provider },
+    );
     return ConnectionBeginResponseSchema.parse(response.data);
   },
 

@@ -15,7 +15,7 @@ export function sealOauthRefreshToken(
 }
 
 export function openOauthRefreshToken(
-  keyBase64: string,
+  keyBase64: string | null,
   record: OauthRefreshCredentialRecord,
 ): string {
   if (record.refreshToken) {
@@ -27,6 +27,11 @@ export function openOauthRefreshToken(
     record.refreshTokenTag &&
     record.keyVersion
   ) {
+    if (!keyBase64) {
+      throw new Error(
+        "stored credentials require sync.credentialEncryptionKey",
+      );
+    }
     return decryptCredentialAtRest(keyBase64, {
       ciphertext: record.refreshTokenCiphertext,
       iv: record.refreshTokenIv,

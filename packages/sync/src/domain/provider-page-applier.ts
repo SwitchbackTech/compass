@@ -32,6 +32,7 @@ function providerMetadataFor(
   const metadata = {
     ...(read.busy ? {} : { transparency: "transparent" }),
     ...(read.icalUid ? { iCalUID: read.icalUid } : {}),
+    ...(read.resourceHref ? { href: read.resourceHref } : {}),
   };
   return Object.keys(metadata).length > 0 ? metadata : null;
 }

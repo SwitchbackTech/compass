@@ -37,7 +37,10 @@ import {
   initialEdgeFocusState,
   useEdgeFocusStore,
 } from "@web/grid/shortcuts/edge-focus.store";
-import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   getWeekInteractionTargetAttributes,
   weekEventRegistry,
@@ -322,7 +325,6 @@ const renderShortcuts = (options?: {
     () =>
       useWeekShortcutOwner({
         endOfView: dayjs("2026-05-24T00:00:00.000"),
-        isCurrentWeek: true,
         queryEndOfView: dayjs("2026-05-24T23:59:59.999"),
         queryStartOfView: dayjs("2026-05-18T00:00:00.000"),
         scrollUtil: { scrollToNow: mock() } as never,
@@ -1526,6 +1528,83 @@ describe("useWeekShortcutOwner create shortcuts", () => {
       expect(status?.activity).toBe("createShortcut");
       expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
     });
+  });
+});
+
+// Thursday 2026-05-21 has no fixture event, so these also prove an empty
+// column can be selected. Today (Wednesday) is in view, so a create that
+// ignored the selection would land on 2026-05-20 instead.
+describe("useWeekShortcutOwner create shortcuts honor the selected column", () => {
+  const draftDay = () =>
+    dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(
+      "YYYY-MM-DD",
+    );
+
+  beforeEach(() => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+  });
+
+  it("creates a timed draft on the selected day with C and spends the selection", async () => {
+    renderShortcuts();
+
+    act(() => {
+      pressKey("R", shiftKey);
+    });
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-05-21"]);
+
+    pressKey("C");
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("createShortcut");
+      expect(draftDay()).toBe("2026-05-21");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual([]);
+  });
+
+  it("creates an all-day draft on the selected day with Shift+C", async () => {
+    renderShortcuts();
+
+    act(() => {
+      pressKey("R", shiftKey);
+    });
+    pressKey("C", shiftKey);
+
+    await waitFor(() => {
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("createShortcut");
+      expect(gridDraft?.values.schedule.kind).toBe("allDay");
+      expect(draftDay()).toBe("2026-05-21");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+  });
+
+  it("places a Shift+Arrow draft on the selected day", async () => {
+    renderShortcuts();
+
+    act(() => {
+      pressKey("R", shiftKey);
+    });
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      const { status } = useDraftStore.getState();
+      expect(status?.activity).toBe("keyboardPlace");
+      expect(status?.isFormOpen).toBe(false);
+      expect(draftDay()).toBe("2026-05-21");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+  });
+
+  it("creates on today from idle without announcing a jump exit", async () => {
+    renderShortcuts();
+
+    pressKey("C");
+
+    await waitFor(() => {
+      expect(draftDay()).toBe("2026-05-20");
+    });
+    expect(useEventJumpStore.getState().announcement).toBe("");
   });
 });
 

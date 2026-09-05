@@ -10,6 +10,7 @@ import {
   ProviderCapabilitySetSchema,
   ProviderEventIdSchema,
   ProviderKindSchema,
+  providerDisplayName,
   SyncCommandIdSchema,
   SyncJobIdSchema,
   TenantIdSchema,
@@ -133,6 +134,14 @@ describe("Sync identity contracts", () => {
     });
   });
 
+  describe("providerDisplayName", () => {
+    it("names each provider for user-facing copy", () => {
+      expect(providerDisplayName("google")).toBe("Google");
+      expect(providerDisplayName("microsoft")).toBe("Microsoft");
+      expect(providerDisplayName("apple")).toBe("Apple");
+    });
+  });
+
   describe("ProviderCapabilitySchema", () => {
     it.each([
       "readEvents",
@@ -142,6 +151,7 @@ describe("Sync identity contracts", () => {
       "changeNotifications",
       "incrementalChanges",
       "suggestContacts",
+      "createTeamsMeeting",
     ] as const)("accepts %s", (capability) => {
       expect(ProviderCapabilitySchema.safeParse(capability).success).toBe(true);
     });

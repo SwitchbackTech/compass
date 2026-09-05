@@ -14,6 +14,7 @@ import {
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY,
 } from "@sync/providers/google/google.scopes";
+import { MICROSOFT_SCOPE_PEOPLE_READ } from "@sync/providers/microsoft/microsoft-scopes";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ContactsPort,
@@ -197,14 +198,27 @@ async function searchConnection(
   const credential = await credentials.findByConnection(connection._id);
   if (!credential || !isOauthRefreshCredential(credential)) return [];
   const granted = new Set(credential.scopes);
-  const sources = {
-    contacts: granted.has(GOOGLE_SCOPE_CONTACTS_READONLY),
-    otherContacts: granted.has(GOOGLE_SCOPE_CONTACTS_OTHER_READONLY),
-  };
+  const sources = contactsSourcesFor(connection.provider, granted);
   if (!sources.contacts && !sources.otherContacts) return [];
 
   const accessToken = await custody.getValidAccessToken(connection._id);
   return contacts.searchContacts({ accessToken, query, sources });
+}
+
+function contactsSourcesFor(
+  provider: ProviderConnectionRecord["provider"],
+  granted: Set<string>,
+): { contacts: boolean; otherContacts: boolean } {
+  if (provider === "microsoft") {
+    return {
+      contacts: granted.has(MICROSOFT_SCOPE_PEOPLE_READ),
+      otherContacts: false,
+    };
+  }
+  return {
+    contacts: granted.has(GOOGLE_SCOPE_CONTACTS_READONLY),
+    otherContacts: granted.has(GOOGLE_SCOPE_CONTACTS_OTHER_READONLY),
+  };
 }
 
 // Across connections the same address can appear twice; keep the first

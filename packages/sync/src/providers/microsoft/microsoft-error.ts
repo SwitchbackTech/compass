@@ -6,6 +6,13 @@ export function microsoftStatus(error: unknown): number | undefined {
   return typeof status === "number" ? status : undefined;
 }
 
+export function microsoftErrorCode(error: unknown): string | undefined {
+  const code = (
+    error as { response?: { data?: { error?: { code?: unknown } } } }
+  )?.response?.data?.error?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
 export function isMicrosoftTransient(
   error: unknown,
   status: number | undefined = microsoftStatus(error),
@@ -16,7 +23,11 @@ export function isMicrosoftTransient(
 
 export function microsoftFailureCause(error: unknown): Error | undefined {
   const status = microsoftStatus(error);
-  const facts = status === undefined ? [] : [`HTTP ${status}`];
+  const code = microsoftErrorCode(error);
+  const facts = [
+    ...(status === undefined ? [] : [`HTTP ${status}`]),
+    ...(code ? [code] : []),
+  ];
   if (facts.length === 0) return redactedCause(error);
   const message = error instanceof Error ? error.message : null;
   return new Error(

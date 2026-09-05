@@ -16,7 +16,11 @@ const SYNC_PORT_DEFAULT = 3010;
 const SYNC_MAX_CONCURRENCY_DEFAULT = 4;
 const SYNC_RESERVED_PULL_LANES_DEFAULT = 1;
 export const RECONCILE_STALE_AFTER_MS_DEFAULT = 15 * 60_000;
+export const RECONCILE_STALE_AFTER_MS_APPLE_DEFAULT = 60_000;
 const RECONCILE_SWEEP_INTERVAL_MS_DEFAULT = 10 * 60_000;
+export const RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT = 30_000;
+export const RECONCILE_SWEEP_LIMIT_DEFAULT = 100;
+export const RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT = 500;
 
 const PROVIDER_KINDS = [
   "google",
@@ -109,6 +113,9 @@ export const SyncConfigSchema = z
     reconcileSweepIntervalMsByKind: z
       .partialRecord(z.enum(PROVIDER_KINDS), PositiveIntFromInput)
       .default({}),
+    reconcileSweepLimitByKind: z
+      .partialRecord(z.enum(PROVIDER_KINDS), PositiveIntFromInput)
+      .default({}),
   })
   .refine((cfg) => cfg.RESERVED_PULL_LANES < cfg.MAX_CONCURRENCY, {
     message: "sync.reservedPullLanes must be less than sync.maxConcurrency",
@@ -147,10 +154,16 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     POSTHOG_KEY: config.posthog?.key || undefined,
     POSTHOG_HOST: config.posthog?.host || undefined,
     reconcileStaleAfterMsByKind: {
+      apple: RECONCILE_STALE_AFTER_MS_APPLE_DEFAULT,
       ...perProviderIntFromEnv("RECONCILE_STALE_AFTER_MS"),
     },
     reconcileSweepIntervalMsByKind: {
+      apple: RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT,
       ...perProviderIntFromEnv("RECONCILE_SWEEP_INTERVAL_MS"),
+    },
+    reconcileSweepLimitByKind: {
+      apple: RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT,
+      ...perProviderIntFromEnv("RECONCILE_SWEEP_LIMIT"),
     },
   });
 }
@@ -160,7 +173,9 @@ export function reconcileStaleAfterMsFor(
   kind: ProviderKind,
 ): number {
   return (
-    config.reconcileStaleAfterMsByKind[kind] ?? config.RECONCILE_STALE_AFTER_MS
+    config.reconcileStaleAfterMsByKind[kind] ??
+    (kind === "apple" ? RECONCILE_STALE_AFTER_MS_APPLE_DEFAULT : undefined) ??
+    config.RECONCILE_STALE_AFTER_MS
   );
 }
 
@@ -170,7 +185,21 @@ export function reconcileSweepIntervalMsFor(
 ): number {
   return (
     config.reconcileSweepIntervalMsByKind[kind] ??
+    (kind === "apple"
+      ? RECONCILE_SWEEP_INTERVAL_MS_APPLE_DEFAULT
+      : undefined) ??
     RECONCILE_SWEEP_INTERVAL_MS_DEFAULT
+  );
+}
+
+export function reconcileSweepLimitFor(
+  config: SyncConfig,
+  kind: ProviderKind,
+): number {
+  return (
+    config.reconcileSweepLimitByKind[kind] ??
+    (kind === "apple" ? RECONCILE_SWEEP_LIMIT_APPLE_DEFAULT : undefined) ??
+    RECONCILE_SWEEP_LIMIT_DEFAULT
   );
 }
 

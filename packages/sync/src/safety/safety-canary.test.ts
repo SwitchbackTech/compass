@@ -12,6 +12,7 @@ const PROVIDER_MARKER_SAMPLES: Record<
   microsoft: [
     { "@odata.etag": 'W/"abc"' },
     { onlineMeeting: { joinUrl: "https://teams.example.com/join" } },
+    { seriesMasterId: "series-master-id" },
   ],
   apple: [
     "BEGIN:VEVENT\nUID:1\nEND:VEVENT",

@@ -33,6 +33,7 @@ const googleCalendar = {
     canManage: true,
     canWatchEvents: true,
     canInviteAttendees: true,
+    conferenceKinds: ["meet"],
   },
   isPrimary: true,
   isVisible: true,

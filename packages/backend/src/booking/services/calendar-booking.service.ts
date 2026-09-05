@@ -55,7 +55,7 @@ const toBookingCreateSubmitRequest = (
       clientEventId: ClientEventIdSchema.parse(eventId),
       invitation: "all",
       attendeesEdit: "replace",
-      createConference: true,
+      createConference: input.createConference,
       guestsCanInviteOthers: input.guestsCanInviteOthers,
       content: {
         title: input.title,

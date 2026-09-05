@@ -25,6 +25,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   // expiry and retries the request after refresh. Google revocation must not
   // share that status or event creates loop until maxRetryAttemptsForSessionRefresh.
   GOOGLE_REVOKED: Status.GONE,
+  CONNECTION_REVOKED: Status.GONE,
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
   MOVE_UNSUPPORTED: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
@@ -34,7 +35,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   // provider outage, so never the retryable 502 it used to surface as.
   UNSUPPORTED_OPERATION: Status.FORBIDDEN,
   // 403 like the capability refusals above: guests can only be written to a
-  // writable Google calendar, and retrying cannot change that.
+  // writable calendar that can invite attendees, and retrying cannot change that.
   ATTENDEES_UNSUPPORTED: Status.FORBIDDEN,
 };
 
@@ -49,6 +50,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   PROVIDER_FAILURE: true,
   SYNC_UNAVAILABLE: true,
   GOOGLE_REVOKED: false,
+  CONNECTION_REVOKED: false,
   MAINTENANCE: true,
   MOVE_UNSUPPORTED: false,
   INVALID_INPUT: false,

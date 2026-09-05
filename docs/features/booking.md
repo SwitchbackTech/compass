@@ -83,10 +83,10 @@ appointment types are a later collection, not a v1 field.
 
 ### Host
 
-The host must be an authenticated, Google-connected, writable Compass
-user. Anonymous IndexedDB users do not get a booking link.
-Password-only users see a connect-Google prompt in Settings, not a
-broken public page.
+The host must be an authenticated Compass user with a healthy,
+writable calendar connection. Anonymous IndexedDB users do not get a
+booking link. Password-only users see a connect-Google prompt in
+Settings, not a broken public page.
 
 Host administration lives in Settings as a Booking page
 (`SettingsPage` includes `"booking"` in
@@ -177,12 +177,13 @@ holds the app lock first.
 
 ### Outcome
 
-On confirm, Compass creates a timed Google Calendar event on the
-host's destination calendar, invites the guest, auto-adds a Google
-Meet link, and Google emails the invite. Compass shows a confirmation
-screen with the booked time (guest timezone). Cancel and edit-details
-are present when the permalink carries `?token=`. Reschedule links stay
-history state only (v1.3).
+On confirm, Compass creates a timed event on the host's destination
+calendar, invites the guest, and adds a conference link when the
+destination supports one (Google Meet, Microsoft Teams, or none). The
+provider emails the invite. Compass shows a confirmation screen with the
+booked time (guest timezone) and names that conference kind. Cancel and
+edit-details are present when the permalink carries `?token=`.
+Reschedule links stay history state only (v1.3).
 
 **Event title:** `{Guest name} and {Host name}`.
 
@@ -199,7 +200,7 @@ One booking-page record per user.
 | Input | v1 rule |
 | --- | --- |
 | Duration | `15` / `30` / `45` / `60` minutes. Default `30`. Custom minutes later. |
-| Destination calendar | Writable Google calendar (`canWrite`). Receives the created event. |
+| Destination calendar | Writable calendar (`canWriteEvents`) on a healthy connection. Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
 | General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
 | Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
@@ -341,7 +342,8 @@ flowchart LR
 - Confirm path: compute slots from availability + busy; on submit,
   re-query Sync with `purpose: "booking_confirmation"`, then
   `Calendar.createEvent` with the guest as attendee, `invitation: "all"`,
-  Meet create-request, and `guestsCanInviteOthers` from the page setting.
+  `createConference: true` when the destination conference is not
+  `none`, and `guestsCanInviteOthers` from the page setting.
   A race on the same slot: the second confirm fails; no double event.
   Reschedule re-queries the same way, PATCHes the existing event
   (`invitation: "all"`, `attendeesEdit: "preserve"`), and keeps
@@ -393,7 +395,8 @@ Authenticated (host session + writable billing, same as event writes):
 - `GET /api/booking/page` — host page, including slug and copyable URL.
 - `PUT /api/booking/page` — replace settings. Allocates slug on first
   enable.
-- Enabling without a healthy Google connection is a typed `403`.
+- Enabling without a healthy calendar connection is a typed `403`
+  (`CALENDAR_NOT_CONNECTED`; `GOOGLE_NOT_CONNECTED` remains an alias).
 
 ## Out of v1 / v1.1
 
@@ -409,7 +412,6 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 - Standalone booking brand, domain, or deployable
 - Production billing packaging specific to booking (uses the existing
   calendar write gate)
-- Non-Google destination calendars
 - Flipping the production gate
 - Host reservation inbox
 - Meet URL on the confirmation screen (Google creates conference

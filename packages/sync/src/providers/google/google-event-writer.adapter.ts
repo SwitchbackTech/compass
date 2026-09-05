@@ -10,6 +10,7 @@ import {
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
+import { googleStatus } from "@sync/providers/google/google-error";
 import {
   mapConference,
   normalizeGoogleEvent,
@@ -33,6 +34,11 @@ import {
   type ProviderWriteRecurrence,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import {
+  classifyProviderWriteError,
+  isNotFoundStatus,
+  type ProviderWriteErrorPolicy,
+} from "@sync/providers/provider-write-error";
 import { redactedCause } from "@sync/safety/redact-error";
 
 // The Google event calls the writer makes. Depending on this narrow interface
@@ -558,6 +564,13 @@ const RETRYABLE_403_REASONS = new Set([
   "dailyLimitExceeded",
 ]);
 
+const GOOGLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
+  status: googleStatus,
+  cause: redactedCause,
+  credentialRejectedMessage: "Google rejected the credential",
+  writeRejectedMessage: "Google rejected the write",
+};
+
 function classifyWriteError(error: unknown): ProviderWriteError {
   // An already-classified error (e.g. a missing-identity result) must not be
   // re-wrapped as transient just because it carries no HTTP status.
@@ -571,63 +584,20 @@ function classifyWriteError(error: unknown): ProviderWriteError {
       cause: redactedCause(error),
     });
   }
-
-  const status = googleStatus(error);
-  const cause = redactedCause(error);
-
-  if (status === 412) {
+  // A quota 403 is retryable. Every other 403 falls through to the shared
+  // table, which reads it as a calendar this authorization cannot write.
+  if (googleStatus(error) === 403 && hasRetryable403Reason(error)) {
     return new ProviderWriteError(
-      "versionConflict",
-      "The event was modified since the expected version",
-      { cause },
+      "transient",
+      "Google rate limited the write",
+      { cause: redactedCause(error) },
     );
   }
-  if (status === 401) {
-    return new ProviderWriteError(
-      "authorizationRevoked",
-      "Google rejected the credential",
-      { cause },
-    );
-  }
-  if (status === 403) {
-    // A quota 403 is retryable; any other 403 means the calendar is not
-    // writable with this authorization.
-    if (hasRetryable403Reason(error)) {
-      return new ProviderWriteError(
-        "transient",
-        "Google rate limited the write",
-        { cause },
-      );
-    }
-    return new ProviderWriteError(
-      "readOnlyCalendar",
-      "The calendar cannot be written",
-      { cause },
-    );
-  }
-  // No status (network failure) or 429/5xx are transient and safe to retry.
-  if (status === undefined || status === 429 || status >= 500) {
-    return new ProviderWriteError("transient", "The write failed transiently", {
-      cause,
-    });
-  }
-  return new ProviderWriteError(
-    "permanentProviderError",
-    "Google rejected the write",
-    { cause },
-  );
+  return classifyProviderWriteError(error, GOOGLE_WRITE_ERROR_POLICY);
 }
 
 function isNotFound(error: unknown): boolean {
-  const status = googleStatus(error);
-  return status === 404 || status === 410;
-}
-
-function googleStatus(error: unknown): number | undefined {
-  return (
-    (error as { response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code
-  );
+  return isNotFoundStatus(googleStatus(error));
 }
 
 function hasRetryable403Reason(error: unknown): boolean {

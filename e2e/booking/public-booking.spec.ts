@@ -1,14 +1,74 @@
 import { expect, test } from "@playwright/test";
 import {
+  appleBookingCalendar,
   buildBookableSlot,
   buildSameDaySiblingSlot,
   buildUpcomingSaturdaySlot,
   formatSlotButtonLabel,
+  microsoftBookingCalendar,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
 } from "./booking-harness";
 
 test.describe("public booking page", () => {
+  test("renders Teams copy for a Microsoft destination on the public page and confirmation", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page, {
+      conference: microsoftBookingCalendar.conference,
+      createsGoogleMeet: microsoftBookingCalendar.createsGoogleMeet,
+    });
+
+    await expect(page.getByText("30 minutes Microsoft Teams")).toBeVisible();
+    await expect(page.getByText("30 minutes Google Meet")).toHaveCount(0);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+
+    await expect(
+      page.getByText("A Microsoft Teams invite is on its way to your email."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("A Google Meet invite is on its way to your email."),
+    ).toHaveCount(0);
+  });
+
+  test("renders no-video copy for an Apple destination on the public page and confirmation", async ({
+    page,
+  }) => {
+    const { slotStart } = buildBookableSlot();
+    await preparePublicBookingPage(page, {
+      conference: appleBookingCalendar.conference,
+      createsGoogleMeet: appleBookingCalendar.createsGoogleMeet,
+    });
+
+    await expect(page.getByText("30 minutes")).toBeVisible();
+    await expect(page.getByText("30 minutes Google Meet")).toHaveCount(0);
+    await expect(page.getByText("30 minutes Microsoft Teams")).toHaveCount(0);
+
+    await page
+      .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
+      .click();
+    await page.getByLabel("Name").fill("Guest User");
+    await page.getByLabel("Email").fill("guest@example.com");
+    await page.getByRole("button", { name: "Confirm booking" }).click();
+
+    await expect(
+      page.getByText("The calendar invite is on its way to your email."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("A Google Meet invite is on its way to your email."),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("A Microsoft Teams invite is on its way to your email."),
+    ).toHaveCount(0);
+  });
+
   test("loads without login and shows the host heading", async ({ page }) => {
     await preparePublicBookingPage(page, {
       welcomeText: "30 minutes to talk through Compass Calendar.",

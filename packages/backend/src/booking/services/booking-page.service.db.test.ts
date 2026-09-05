@@ -118,23 +118,29 @@ describe("BookingPageService", () => {
 
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
+    connection: ReturnType<typeof healthyConnection> = healthyConnection(),
   ) => {
+    const wired = calendars.map((calendar) => ({
+      ...calendar,
+      connectionId: connection.id,
+    }));
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
         listConnections: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { connections: [healthyConnection()] },
+            value: { connections: [connection] },
           }),
         ),
         listCalendars: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { calendars },
+            value: { calendars: wired },
           }),
         ),
       } as never),
     );
+    return { connection, calendars: wired };
   };
 
   it("returns defaults on GET before any PUT without inserting a row", async () => {
@@ -316,7 +322,7 @@ describe("BookingPageService", () => {
     expect("slug" in secondPage && secondPage.slug).toBe("week3");
   });
 
-  it("rejects enable without a healthy Google connection", async () => {
+  it("rejects enable without a healthy calendar connection", async () => {
     const { user } = await UtilDriver.setupTestUser();
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
@@ -335,8 +341,31 @@ describe("BookingPageService", () => {
     await expect(
       bookingPageService.putAdminPage(user._id, samplePutInput()),
     ).rejects.toMatchObject({
-      bookingCode: "GOOGLE_NOT_CONNECTED",
+      bookingCode: "CALENDAR_NOT_CONNECTED",
     });
+  });
+
+  it("enables with a healthy Microsoft connection and a writable destination", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const connection = {
+      ...healthyConnection(),
+      provider: "microsoft" as const,
+    };
+    const calendar = writableCalendar();
+    mockHealthySync([calendar], connection);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+
+    const saved = await bookingPageService.putAdminPage(user._id, input);
+
+    expect(saved).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        destinationCalendarId: calendar.id,
+      }),
+    );
   });
 
   it("rejects enable when billing forbids writes", async () => {

@@ -111,6 +111,7 @@ describe("RecurrenceScopeOpportunityHost", () => {
         getQuickTimeDay: () => dayjs().startOf("day"),
         listVisible: () => [],
         timedEvents: [],
+        visibleDays: [dayjs().startOf("day")],
       }),
     );
 

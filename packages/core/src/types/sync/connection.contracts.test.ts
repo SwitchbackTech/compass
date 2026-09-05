@@ -4,13 +4,16 @@ import {
   CalendarListQuerySchema,
   ConnectionBeginFeaturesSchema,
   ConnectionBeginRequestSchema,
+  ConnectionBeginResponseSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
   GoogleConnectionAdoptionRequestSchema,
   ProviderAccountFactsSchema,
   ProviderCalendarSchema,
+  ProviderConnectionAdoptionRequestSchema,
   ProviderConnectionSchema,
   SyncCalendarListResponseSchema,
+  toConnectionBeginRedirect,
 } from "@core/types/sync/connection.contracts";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -233,6 +236,51 @@ describe("Sync connection contracts", () => {
     });
   });
 
+  describe("ConnectionBeginResponseSchema", () => {
+    it("accepts the legacy sync-internal redirect body", () => {
+      expect(
+        ConnectionBeginResponseSchema.parse({
+          authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+        }),
+      ).toEqual({
+        authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      });
+    });
+
+    it("accepts a redirect result with kind", () => {
+      expect(
+        ConnectionBeginResponseSchema.parse({
+          kind: "redirect",
+          authorizationUrl: "https://login.microsoftonline.com/common/oauth2",
+        }),
+      ).toEqual({
+        kind: "redirect",
+        authorizationUrl: "https://login.microsoftonline.com/common/oauth2",
+      });
+    });
+
+    it("accepts a connected result", () => {
+      const connectionId = objectId();
+      expect(
+        ConnectionBeginResponseSchema.parse({
+          kind: "connected",
+          connectionId,
+        }),
+      ).toEqual({ kind: "connected", connectionId });
+    });
+
+    it("wraps a legacy body as a redirect", () => {
+      expect(
+        toConnectionBeginRedirect({
+          authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+        }),
+      ).toEqual({
+        kind: "redirect",
+        authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      });
+    });
+  });
+
   describe("ProviderAccountFactsSchema", () => {
     it("accepts null display fields", () => {
       const facts = {
@@ -269,6 +317,25 @@ describe("Sync connection contracts", () => {
             authTag: "dGFn",
           },
           grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+        }).success,
+      ).toBe(true);
+    });
+
+    it("accepts an optional provider", () => {
+      expect(
+        ProviderConnectionAdoptionRequestSchema.safeParse({
+          provider: "microsoft",
+          account: {
+            providerAccountId: "1122334455",
+            email: "connected@example.com",
+            displayName: "Connected User",
+          },
+          credential: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+          grantedScopes: ["Calendars.Read"],
         }).success,
       ).toBe(true);
     });

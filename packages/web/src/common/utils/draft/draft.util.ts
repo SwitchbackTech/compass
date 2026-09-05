@@ -23,13 +23,14 @@ import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 // viewport rather than glued flush against it.
 const VISIBLE_START_MARGIN_MIN = 30;
 
+/** Timed draft at the current hour on `targetDay`, the day the user is
+ * looking at (selected column, focused event, today, or the view anchor). */
 export const createTimedDraft = (
-  isCurrentWeek: boolean,
-  startOfView: Dayjs,
+  targetDay: Dayjs,
   activity: "createShortcut" | "keyboardPlace",
   calendarId: CalendarId | null = null,
 ) => {
-  const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
+  const { startDate, endDate } = getDraftTimes(targetDay);
 
   startTimedDraftAt(startDate, endDate, activity, calendarId);
 };
@@ -78,21 +79,13 @@ export const timedDraftEnd = (start: Dayjs): Dayjs => {
     : oneHourEnd;
 };
 
+/** One-day all-day draft on `targetDay`; the caller picks the day. */
 export const createAlldayDraft = (
-  startOfView: Dayjs,
-  endOfView: Dayjs,
+  targetDay: Dayjs,
   activity: "createShortcut",
   calendarId: CalendarId | null = null,
-  /** Day a blocked pointer click picked, which wins over the today-first
-   * default so the draft lands on the day the user actually aimed at. */
-  startAt?: Dayjs,
 ) => {
-  const today = dayjs().tz(getEffectiveTimeZone());
-  const start =
-    startAt?.startOf("day") ??
-    (today.isBetween(startOfView, endOfView, "day", "[]")
-      ? today.startOf("day")
-      : startOfView.startOf("day"));
+  const start = targetDay.startOf("day");
   // Same stable identity as timed shortcut drafts so save can reuse it as
   // CreateEventInput.id and restore focus to the new card.
   const clientId = EventIdSchema.parse(createObjectIdString());
@@ -109,13 +102,16 @@ export const createAlldayDraft = (
   draftActions.startGridDraft({ activity, draft });
 };
 
-export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
+export const getDraftTimes = (targetDay: Dayjs) => {
   const now = dayjs().tz(getEffectiveTimeZone());
   const currentMinute = now.minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 
-  const fullStart = isCurrentWeek ? now : startOfWeek.hour(now.hour());
-  const _start = fullStart.minute(nextMinuteInterval).second(0);
+  const _start = targetDay
+    .startOf("day")
+    .hour(now.hour())
+    .minute(nextMinuteInterval)
+    .second(0);
   const startDate = _start.format();
   const endDate = timedDraftEnd(_start).format();
 

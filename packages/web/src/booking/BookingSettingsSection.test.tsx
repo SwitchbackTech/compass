@@ -17,6 +17,7 @@ import {
   BOOKING_SETTINGS_HINT_PARTS,
   BookingSettingsSection,
 } from "@web/booking/BookingSettingsSection";
+import { BOOKING_APPLE_DESTINATION_HINT } from "@web/booking/booking-conference.copy";
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
@@ -160,6 +161,54 @@ describe("BookingSettingsSection", () => {
       screen.getByText(/Connect a Google account to enable your booking page/),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
+  });
+
+  it("shows booking settings when a healthy non-google connection exists", async () => {
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+      connections: [
+        createMockConnection("user@outlook.com", { provider: "microsoft" }),
+      ],
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      createMockCalendar({
+        id: writableCalendar.id,
+        name: writableCalendar.name,
+        provider: "microsoft",
+        accountEmail: "user@outlook.com",
+      }),
+    ]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(await screen.findByLabelText("Duration")).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Connect a Google account to enable your booking page/,
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("saves 30-minute duration and shows the copyable booking link", async () => {
@@ -965,7 +1014,7 @@ describe("BookingSettingsSection", () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it("labels a Google primary destination calendar with the calendar name only", async () => {
+  it("labels a Google primary destination calendar with Google Meet in the chooser", async () => {
     const primary = createMockCalendar({
       name: "host@example.com",
       accountEmail: "host@example.com",
@@ -1000,7 +1049,7 @@ describe("BookingSettingsSection", () => {
       name: "Destination calendar",
     });
     const option = within(combobox).getByRole("option");
-    expect(option.textContent).toBe("host@example.com");
+    expect(option.textContent).toBe("host@example.com (Google Meet)");
     expect(
       within(combobox).getByRole("group", { name: "host@example.com" }),
     ).toBeInTheDocument();
@@ -1044,6 +1093,109 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByRole("combobox", { name: "Destination calendar" }),
     ).toHaveAccessibleDescription(warning);
+  });
+
+  it("labels an Apple destination with No video link and shows the iCloud hint", async () => {
+    const appleCalendar = createMockCalendar({
+      name: "Personal",
+      accountEmail: "host@icloud.com",
+      provider: "apple",
+      conference: "none",
+      createsGoogleMeet: false,
+    });
+
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY" as const,
+        connections: [
+          createMockConnection("host@icloud.com", { provider: "apple" }),
+        ],
+      },
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: appleCalendar.id,
+            blockingCalendarIds: [appleCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [appleCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const combobox = await screen.findByRole("combobox", {
+      name: "Destination calendar",
+    });
+    expect(within(combobox).getByRole("option").textContent).toBe(
+      "Personal (No video link)",
+    );
+    expect(
+      screen.getByText(BOOKING_APPLE_DESTINATION_HINT),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Destination calendar" }),
+    ).toHaveAccessibleDescription(BOOKING_APPLE_DESTINATION_HINT);
+  });
+
+  it("labels a Microsoft destination with Microsoft Teams in the chooser", async () => {
+    const microsoftCalendar = createMockCalendar({
+      name: "Work",
+      accountEmail: "host@outlook.com",
+      provider: "microsoft",
+      conference: "teams",
+      createsGoogleMeet: false,
+    });
+
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+      connections: [
+        createMockConnection("host@outlook.com", { provider: "microsoft" }),
+      ],
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: microsoftCalendar.id,
+            blockingCalendarIds: [microsoftCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [microsoftCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const combobox = await screen.findByRole("combobox", {
+      name: "Destination calendar",
+    });
+    expect(within(combobox).getByRole("option").textContent).toBe(
+      "Work (Microsoft Teams)",
+    );
   });
 
   it("does not warn when the destination can mint Meet", async () => {
@@ -1188,8 +1340,9 @@ describe("BookingSettingsSection", () => {
         res(
           ctx.status(403),
           ctx.json({
-            code: "GOOGLE_NOT_CONNECTED",
-            message: "Connect a healthy Google account before enabling booking",
+            code: "CALENDAR_NOT_CONNECTED",
+            message:
+              "Connect a healthy calendar account before enabling booking",
           }),
         ),
       ),

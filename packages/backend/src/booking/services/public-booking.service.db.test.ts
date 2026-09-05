@@ -83,6 +83,29 @@ const healthyConnection = () => ({
   updatedAt: "2026-07-20T12:00:00.000Z",
 });
 
+const appleConnection = () => ({
+  ...healthyConnection(),
+  provider: "apple" as const,
+  account: {
+    providerAccountId: "apple-principal",
+    email: "host@icloud.com",
+    displayName: "Apple Host",
+  },
+});
+
+const microsoftConnection = (withTeams = true) => ({
+  ...healthyConnection(),
+  provider: "microsoft" as const,
+  account: {
+    providerAccountId: "microsoft-principal",
+    email: "host@outlook.com",
+    displayName: "Microsoft Host",
+  },
+  capabilities: withTeams
+    ? (["readEvents", "writeEvents", "createTeamsMeeting"] as const)
+    : (["readEvents", "writeEvents"] as const),
+});
+
 const samplePutInput = (overrides: Record<string, unknown> = {}) => {
   const destination = calendarId();
   return AdminPutBookingPageInputSchema.parse({
@@ -153,23 +176,29 @@ describe("PublicBookingService", () => {
 
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
+    connection: ReturnType<typeof healthyConnection> = healthyConnection(),
   ) => {
+    const wired = calendars.map((calendar) => ({
+      ...calendar,
+      connectionId: connection.id,
+    }));
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
         listConnections: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { connections: [healthyConnection()] },
+            value: { connections: [connection] },
           }),
         ),
         listCalendars: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { calendars },
+            value: { calendars: wired },
           }),
         ),
       } as never),
     );
+    return { connection, calendars: wired };
   };
 
   const enableBookingPage = async (
@@ -602,6 +631,7 @@ describe("PublicBookingService", () => {
     const { slug } = await enableBookingPage();
     const page = await service.getPublicPage(slug);
     expect(page.createsGoogleMeet).toBe(true);
+    expect(page.conference).toBe("meet");
   });
 
   it("carries createsGoogleMeet false when the destination cannot mint Meet", async () => {
@@ -622,6 +652,7 @@ describe("PublicBookingService", () => {
 
     const publicPage = await service.getPublicPage(slug);
     expect(publicPage.createsGoogleMeet).toBe(false);
+    expect(publicPage.conference).toBe("none");
 
     const created = await service.createReservation(slug, {
       slotStart: "2026-09-07T10:00:00.000Z",
@@ -634,6 +665,171 @@ describe("PublicBookingService", () => {
       new ObjectId(created.reservationId),
     );
     expect(publicReservation.createsGoogleMeet).toBe(false);
+    expect(publicReservation.conference).toBe("none");
+  });
+
+  it("books through an Apple destination without a conference link", async () => {
+    const userId = await createNamedUser("Apple Host");
+    const calendar = writableCalendar();
+    const connection = appleConnection();
+    mockHealthySync([calendar], connection);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.createsGoogleMeet).toBe(false);
+    expect(publicPage.conference).toBe("none");
+
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    const created = await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: "Zoom: https://example.com/meet",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(false);
+    expect(request.input.content.conference).toBeNull();
+    expect(request.input.content.description).toContain(
+      "Zoom: https://example.com/meet",
+    );
+
+    const publicReservation = await bookingService.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.createsGoogleMeet).toBe(false);
+    expect(publicReservation.conference).toBe("none");
+  });
+
+  it("books through a Microsoft destination with Teams conferencing", async () => {
+    const userId = await createNamedUser("Teams Host");
+    const calendar = writableCalendar();
+    const connection = microsoftConnection(true);
+    mockHealthySync([calendar], connection);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.createsGoogleMeet).toBe(false);
+    expect(publicPage.conference).toBe("teams");
+
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    const created = await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(true);
+    expect(request.input.content.conference).toBeNull();
+
+    const publicReservation = await bookingService.getPublicReservation(
+      new ObjectId(created.reservationId),
+    );
+    expect(publicReservation.conference).toBe("teams");
+  });
+
+  it("books through a Microsoft destination without Teams conferencing", async () => {
+    const userId = await createNamedUser("No Teams Host");
+    const calendar = writableCalendar();
+    const connection = microsoftConnection(false);
+    mockHealthySync([calendar], connection);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const page = await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({
+        destinationCalendarId: calendar.id,
+        blockingCalendarIds: [calendar.id],
+      }),
+    );
+    const slug = "slug" in page ? page.slug : "";
+
+    const publicPage = await service.getPublicPage(slug);
+    expect(publicPage.conference).toBe("none");
+
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: new ObjectId().toString() },
+    }));
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const bookingService = new PublicBookingService(
+      new CalendarBookingService({
+        queryBusyAvailability: mock(async () => ({
+          ok: true as const,
+          value: busyResponse(true),
+        })),
+        submitCommand,
+      } as unknown as SyncServiceClient),
+    );
+
+    await bookingService.createReservation(slug, {
+      slotStart: "2026-09-07T10:00:00.000Z",
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(false);
+    expect(request.input.content.conference).toBeNull();
   });
 
   it("clamps a requested window that extends past the host horizon", async () => {
@@ -821,6 +1017,7 @@ describe("PublicBookingService", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(publicReservation).not.toHaveProperty("guestEmail");
     expect(publicReservation).not.toHaveProperty("cancelUrl");
@@ -1660,19 +1857,24 @@ describe("Public booking routes", () => {
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
     availability = busyResponse(true),
+    connection: ReturnType<typeof healthyConnection> = healthyConnection(),
   ) => {
+    const wired = calendars.map((calendar) => ({
+      ...calendar,
+      connectionId: connection.id,
+    }));
     syncSpies.push(
       spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
         listConnections: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { connections: [healthyConnection()] },
+            value: { connections: [connection] },
           }),
         ),
         listCalendars: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { calendars },
+            value: { calendars: wired },
           }),
         ),
         queryBusyAvailability: mock(async () => ({
@@ -1685,6 +1887,7 @@ describe("Public booking routes", () => {
         })),
       } as never),
     );
+    return { connection, calendars: wired };
   };
 
   it("GET public page returns host info for enabled slug", async () => {
@@ -1780,6 +1983,7 @@ describe("Public booking routes", () => {
       guestName: "Ada Lovelace",
       notes: "secret notes",
       createsGoogleMeet: true,
+      conference: "meet",
     });
     expect(response.body).not.toHaveProperty("guestEmail");
     expect(response.body).not.toHaveProperty("cancelUrl");

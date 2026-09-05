@@ -511,7 +511,32 @@ describe("SettingsModal", () => {
 
     const combobox = screen.getByRole("combobox", { name: "Default Calendar" });
     expect(
-      within(combobox).getByRole("group", { name: "ahab@pequod.com" }),
+      within(combobox).getByRole("group", { name: "ahab@pequod.com (Google)" }),
+    ).toBeInTheDocument();
+  });
+
+  it("labels a Microsoft account optgroup with Microsoft provider copy", () => {
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "user@outlook.com",
+    });
+
+    renderSettings({
+      connections: [
+        connection({
+          id: "ms-conn",
+          accountEmail: "user@outlook.com",
+          provider: "microsoft",
+        }),
+      ],
+      calendars: [work],
+    });
+
+    const combobox = screen.getByRole("combobox", { name: "Default Calendar" });
+    expect(
+      within(combobox).getByRole("group", {
+        name: "user@outlook.com (Microsoft)",
+      }),
     ).toBeInTheDocument();
   });
 

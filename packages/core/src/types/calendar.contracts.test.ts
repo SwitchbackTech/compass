@@ -3,6 +3,9 @@ import {
   type CalendarAccess,
   CalendarListResponseSchema,
   CalendarSchema,
+  CONFERENCE_BY_PROVIDER,
+  conferenceForDestination,
+  conferenceForProvider,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 
@@ -54,6 +57,47 @@ describe("Calendar Contracts", () => {
           .createsGoogleMeet,
       ).toBe(false);
     });
+
+    it("accepts conference and omits it when absent", () => {
+      expect(CalendarSchema.parse(validCalendar).conference).toBe(undefined);
+      expect(
+        CalendarSchema.parse({ ...validCalendar, conference: "teams" })
+          .conference,
+      ).toBe("teams");
+    });
+  });
+
+  describe("conferenceForProvider", () => {
+    it("maps every provider through CONFERENCE_BY_PROVIDER", () => {
+      expect(conferenceForProvider("google")).toBe("meet");
+      expect(conferenceForProvider("microsoft")).toBe("teams");
+      expect(conferenceForProvider("apple")).toBe("none");
+      expect(conferenceForProvider("local")).toBe("none");
+      expect(CONFERENCE_BY_PROVIDER.google).toBe("meet");
+    });
+
+    it("returns none when the calendar cannot create a conference", () => {
+      expect(conferenceForProvider("google", false)).toBe("none");
+      expect(conferenceForProvider("microsoft", false)).toBe("none");
+    });
+  });
+
+  describe("conferenceForDestination", () => {
+    it("requires createTeamsMeeting for a Microsoft destination", () => {
+      expect(
+        conferenceForDestination("microsoft", true, [
+          "readEvents",
+          "writeEvents",
+          "createTeamsMeeting",
+        ]),
+      ).toBe("teams");
+      expect(
+        conferenceForDestination("microsoft", true, [
+          "readEvents",
+          "writeEvents",
+        ]),
+      ).toBe("none");
+    });
   });
 
   describe("getCalendarCapabilities", () => {
@@ -65,6 +109,7 @@ describe("Calendar Contracts", () => {
         canManage: true,
         canWatchEvents: true,
         canInviteAttendees: true,
+        conferenceKinds: [],
       });
     });
 
@@ -76,6 +121,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: true,
         canInviteAttendees: true,
+        conferenceKinds: [],
       });
     });
 
@@ -87,6 +133,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: true,
         canInviteAttendees: false,
+        conferenceKinds: [],
       });
     });
 
@@ -98,6 +145,7 @@ describe("Calendar Contracts", () => {
         canManage: false,
         canWatchEvents: false,
         canInviteAttendees: false,
+        conferenceKinds: [],
       });
     });
 

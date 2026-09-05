@@ -1,7 +1,8 @@
 import { Status } from "@core/errors/status.codes";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import authController from "./auth.controller";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("auth.controller", () => {
   describe("beginGoogleConnection", () => {
@@ -31,6 +32,40 @@ describe("auth.controller", () => {
         code: "MAINTENANCE",
         message: "Cloud edits are paused for maintenance",
         retryable: true,
+      });
+    });
+  });
+
+  describe("beginConnection", () => {
+    const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
+    const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+
+    afterEach(() => {
+      CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
+      CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
+      mock.restore();
+    });
+
+    it("rejects an unconfigured microsoft provider with 409 PROVIDER_NOT_CONFIGURED", async () => {
+      CONFIG.MICROSOFT_CLIENT_ID = undefined;
+      CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
+      const syncSpy = spyOn(syncServiceFactory, "getSyncServiceClient");
+      const promise = mock();
+
+      authController.beginConnection(
+        {
+          body: { provider: "microsoft" },
+          session: { getUserId: () => "507f1f77bcf86cd799439011" },
+        } as never,
+        { promise } as never,
+      );
+
+      expect(syncSpy).not.toHaveBeenCalled();
+      expect(promise).toHaveBeenCalledTimes(1);
+      const rejection = promise.mock.calls[0]?.[0] as Promise<unknown>;
+      await expect(rejection).rejects.toMatchObject({
+        statusCode: Status.CONFLICT,
+        code: "PROVIDER_NOT_CONFIGURED",
       });
     });
   });

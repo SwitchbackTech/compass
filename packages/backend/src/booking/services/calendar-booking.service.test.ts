@@ -158,6 +158,7 @@ describe("CalendarBookingService", () => {
       timeZone: "America/Denver",
       guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
       guestsCanInviteOthers: true,
+      createConference: true,
     });
 
     expect(submitCommand).toHaveBeenCalledTimes(1);
@@ -176,6 +177,37 @@ describe("CalendarBookingService", () => {
         responseStatus: "needsAction",
       },
     ]);
+    expect(request.input.content.conference).toBeNull();
+  });
+
+  it("omits createConference when the destination cannot mint a link", async () => {
+    const submitCommand = mock(async () => ({
+      ok: true as const,
+      value: { commandId: faker.database.mongodbObjectId() },
+    }));
+    const service = new CalendarBookingService({
+      queryBusyAvailability: mock(async () => ({
+        ok: true as const,
+        value: busyResponse,
+      })),
+      submitCommand,
+    } as unknown as SyncServiceClient);
+
+    await service.createBookingEvent(userId(), {
+      calendarId: calendarId(),
+      title: "Ada and Tyler",
+      description: "Zoom: https://example.com/meet",
+      start: "2026-09-01T15:00:00.000Z",
+      end: "2026-09-01T15:30:00.000Z",
+      timeZone: "America/Denver",
+      guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
+      guestsCanInviteOthers: true,
+      createConference: false,
+    });
+
+    expect(submitCommand).toHaveBeenCalledTimes(1);
+    const [, request] = submitCommand.mock.calls[0] ?? [];
+    expect(request.input.createConference).toBe(false);
     expect(request.input.content.conference).toBeNull();
   });
 
@@ -202,6 +234,7 @@ describe("CalendarBookingService", () => {
         timeZone: "America/Denver",
         guest: { email: "   ", displayName: null },
         guestsCanInviteOthers: false,
+        createConference: true,
       }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });
     expect(submitCommand).not.toHaveBeenCalled();

@@ -1,6 +1,10 @@
 import { useParams } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
+import {
+  formatBookingDurationWithConference,
+  resolveBookingConference,
+} from "@web/booking/booking-conference.copy";
 import { PublicBookingDetailsStep } from "@web/booking/PublicBookingDetailsStep";
 import { PublicBookingGuestForm } from "@web/booking/PublicBookingGuestForm";
 import { PublicBookingLayout } from "@web/booking/PublicBookingLayout";
@@ -111,7 +115,10 @@ export function PublicBookingPage() {
           Book with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">
-          {formatDurationMinutes(page.durationMinutes)} Google Meet
+          {formatBookingDurationWithConference(
+            formatDurationMinutes(page.durationMinutes),
+            resolveBookingConference(page.conference, page.createsGoogleMeet),
+          )}
         </p>
         {page.welcomeText ? (
           <p className="text-sm text-text">{page.welcomeText}</p>

@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
+import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 
 export const EventChangeMessageSchema = z.strictObject({
   type: z.literal("eventsChanged"),
@@ -20,7 +21,13 @@ const SyncStateSchema = z.discriminatedUnion("status", [
   z.strictObject({ status: z.literal("healthy") }),
   z.strictObject({
     status: z.literal("attention"),
-    code: z.enum(["GOOGLE_REVOKED", "IMPORT_FAILED", "WATCH_REPAIR_FAILED"]),
+    code: z.enum([
+      "GOOGLE_REVOKED",
+      "CONNECTION_REVOKED",
+      "IMPORT_FAILED",
+      "WATCH_REPAIR_FAILED",
+    ]),
+    connectionId: ConnectionIdSchema.optional(),
     retryable: z.boolean(),
   }),
 ]);
@@ -61,3 +68,28 @@ export const ServerMessageSchema = z.discriminatedUnion("type", [
   UserMetadataMessageSchema,
 ]);
 export type ServerMessage = z.infer<typeof ServerMessageSchema>;
+
+export function revokedConnectionServerMessages(
+  connectionId: string,
+): ServerMessage[] {
+  const parsedId = ConnectionIdSchema.parse(connectionId);
+  return [
+    {
+      type: "syncStatusChanged",
+      sync: {
+        status: "attention",
+        code: "CONNECTION_REVOKED",
+        connectionId: parsedId,
+        retryable: false,
+      },
+    },
+    {
+      type: "syncStatusChanged",
+      sync: {
+        status: "attention",
+        code: "GOOGLE_REVOKED",
+        retryable: false,
+      },
+    },
+  ];
+}
