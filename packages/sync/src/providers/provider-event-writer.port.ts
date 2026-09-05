@@ -106,10 +106,10 @@ export interface ProviderWriteResult {
   // Google's cross-copy correlation key when the write response includes it.
   // Optional so non-Google writers and older fixtures stay valid.
   readonly icalUid?: string;
-  // Meet URL Google minted on create (or echoed on a later write). Omitted
-  // when the response has none. Create records overlay this onto command
-  // content, which sends `conference: null`.
-  readonly conference?: Conference;
+  // Meet/Teams URL the provider minted on create (or echoed on a later write).
+  // Omitted when the write did not ask for a conference. Null when the write
+  // asked for one but the provider could not mint a link (no Teams allowed).
+  readonly conference?: Conference | null;
 }
 
 // A provider-neutral event mutation port. Neutral inputs in, provider identity

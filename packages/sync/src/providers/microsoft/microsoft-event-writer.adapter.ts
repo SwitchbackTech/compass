@@ -9,6 +9,7 @@ import {
 } from "@sync/providers/microsoft/microsoft-error";
 import {
   type GraphEvent,
+  mapConference,
   normalizeMicrosoftEvent,
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
 import {
@@ -73,7 +74,24 @@ export interface GraphEventWriteBody {
   readonly attendees?: readonly GraphAttendeeWrite[];
   readonly responseRequested?: boolean;
   readonly transactionId?: string;
+  readonly isOnlineMeeting?: boolean;
+  readonly onlineMeetingProvider?: string;
 }
+
+export interface GraphCalendarMeetingInfo {
+  readonly allowedOnlineMeetingProviders?: readonly string[];
+  readonly defaultOnlineMeetingProvider?: string;
+}
+
+const TEAMS_ONLINE_MEETING_PROVIDERS = new Set([
+  "teamsForBusiness",
+  "teamsForConsumer",
+]);
+
+const MEETING_PROVIDER_CACHE_TTL_MS = 5 * 60 * 1000;
+
+const CALENDAR_MEETING_SELECT =
+  "allowedOnlineMeetingProviders,defaultOnlineMeetingProvider";
 
 export interface MicrosoftEventWriteApi {
   create(params: {
@@ -87,6 +105,12 @@ export interface MicrosoftEventWriteApi {
   }): Promise<GraphEvent>;
   delete(params: { eventId: string; ifMatch: string | null }): Promise<void>;
   get(params: { eventId: string }): Promise<GraphEvent>;
+  getCalendar(): Promise<GraphCalendarMeetingInfo>;
+  listInstances(params: {
+    seriesEventId: string;
+    startDateTime: string;
+    endDateTime: string;
+  }): Promise<readonly GraphEvent[]>;
 }
 
 export type MicrosoftEventWriteApiFactory = (
@@ -99,31 +123,48 @@ const defaultApiFactory: MicrosoftEventWriteApiFactory = (accessToken) =>
 // Microsoft Graph implementation of the event mutation port. Create is
 // idempotent via transactionId, patch and delete can be conditioned on etag,
 // and provider errors are classified into neutral, caller-actionable reasons.
+// createConference reads the mailbox's allowed online-meeting providers and
+// asks Graph for Teams when one is available; fetchInstanceAt lists one day
+// of /instances and picks the occurrence whose originalStart matches.
 //
 // Named wart: Graph sends attendee mail on create and on attendee changes even
 // when responseRequested is false (invitation "none"). Compass honors "none" by
 // setting responseRequested false, but Outlook may still notify attendees.
 export class MicrosoftEventWriter implements ProviderEventWriter {
   #makeApi: MicrosoftEventWriteApiFactory;
+  #meetingProviders = new Map<
+    string,
+    { readonly expiresAt: number; readonly teamsProvider: string | null }
+  >();
 
   constructor(makeApi: MicrosoftEventWriteApiFactory = defaultApiFactory) {
     this.#makeApi = makeApi;
   }
 
   async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
-    if (input.createConference) {
-      // Teams conference creation lands in M-06b; booking copy handles null URL.
-    }
-
     const api = this.#makeApi(input.accessToken);
-    const body = toGraphCreateBody(input);
-
     try {
+      const teamsProvider = input.createConference
+        ? await this.#resolveTeamsProvider(api, input.accessToken)
+        : null;
+      const body = {
+        ...toGraphCreateBody(input),
+        ...(teamsProvider
+          ? {
+              isOnlineMeeting: true,
+              onlineMeetingProvider: teamsProvider,
+            }
+          : {}),
+      };
       const created = await api.create({
         calendarId: input.calendarId,
         body,
       });
-      return toResult(created);
+      const result = toResult(created);
+      if (input.createConference) {
+        return { ...result, conference: result.conference ?? null };
+      }
+      return result;
     } catch (error) {
       throw classifyWriteError(error);
     }
@@ -170,12 +211,46 @@ export class MicrosoftEventWriter implements ProviderEventWriter {
   }
 
   async fetchInstanceAt(
-    _input: ProviderInstanceFetchInput,
+    input: ProviderInstanceFetchInput,
   ): Promise<ProviderEventRead | null> {
-    throw new ProviderWriteError(
-      "unsupportedCapability",
-      "Microsoft instance resolution lands in M-06b",
+    const api = this.#makeApi(input.accessToken);
+    const { startDateTime, endDateTime } = instanceWindow(
+      input.originalStartAt,
     );
+    try {
+      const instances = await api.listInstances({
+        seriesEventId: input.seriesProviderEventId,
+        startDateTime,
+        endDateTime,
+      });
+      const match = instances.find(
+        (item) =>
+          item.originalStart !== undefined &&
+          sameInstant(item.originalStart, input.originalStartAt),
+      );
+      if (!match) return null;
+      return normalizeFetchedInstance(match, input);
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw classifyWriteError(error);
+    }
+  }
+
+  async #resolveTeamsProvider(
+    api: MicrosoftEventWriteApi,
+    accessToken: string,
+  ): Promise<string | null> {
+    const now = Date.now();
+    const cached = this.#meetingProviders.get(accessToken);
+    if (cached && cached.expiresAt > now) return cached.teamsProvider;
+
+    const calendar = await api.getCalendar();
+    const teamsProvider = pickTeamsProvider(calendar);
+    this.#meetingProviders.set(accessToken, {
+      expiresAt: now + MEETING_PROVIDER_CACHE_TTL_MS,
+      teamsProvider,
+    });
+    return teamsProvider;
   }
 }
 
@@ -323,11 +398,57 @@ function toResult(event: GraphEvent): ProviderWriteResult {
       "Microsoft returned an event without an id or etag",
     );
   }
+  const conference = mapConference(event);
   return {
     providerEventId: event.id,
     providerVersion: event["@odata.etag"],
     ...(event.iCalUId ? { icalUid: event.iCalUId } : {}),
+    ...(conference ? { conference } : {}),
   };
+}
+
+function pickTeamsProvider(calendar: GraphCalendarMeetingInfo): string | null {
+  const defaultProvider = calendar.defaultOnlineMeetingProvider;
+  if (defaultProvider && TEAMS_ONLINE_MEETING_PROVIDERS.has(defaultProvider)) {
+    return defaultProvider;
+  }
+  return (
+    calendar.allowedOnlineMeetingProviders?.find((provider) =>
+      TEAMS_ONLINE_MEETING_PROVIDERS.has(provider),
+    ) ?? null
+  );
+}
+
+function instanceWindow(originalStartAt: string): {
+  startDateTime: string;
+  endDateTime: string;
+} {
+  const dayStart = dayjs.utc(originalStartAt).startOf("day");
+  return {
+    startDateTime: dayStart.format(GRAPH_DATETIME),
+    endDateTime: dayStart.add(1, "day").format(GRAPH_DATETIME),
+  };
+}
+
+function sameInstant(left: string, right: string): boolean {
+  const a = Date.parse(left);
+  const b = Date.parse(right);
+  return Number.isFinite(a) && a === b;
+}
+
+// Graph /instances returns type "occurrence". The M-04 normalizer refuses
+// those rows on the delta reader (they are expansions, not stored events).
+// Rewrite to exception so the same mapper yields an addressable instance.
+function normalizeFetchedInstance(
+  item: GraphEvent,
+  input: ProviderInstanceFetchInput,
+): ProviderEventRead {
+  return normalizeMicrosoftEvent({
+    ...item,
+    type: item.type === "occurrence" ? "exception" : item.type,
+    seriesMasterId: item.seriesMasterId ?? input.seriesProviderEventId,
+    originalStart: item.originalStart ?? input.originalStartAt,
+  });
 }
 
 function classifyWriteError(error: unknown): ProviderWriteError {
@@ -438,12 +559,38 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
     );
   }
 
-  async #request(
+  getCalendar(): Promise<GraphCalendarMeetingInfo> {
+    const query = new URLSearchParams({ $select: CALENDAR_MEETING_SELECT });
+    return this.#request<GraphCalendarMeetingInfo>(
+      "GET",
+      `${MICROSOFT_GRAPH_BASE_URL}/me/calendar?${query}`,
+    );
+  }
+
+  async listInstances(params: {
+    seriesEventId: string;
+    startDateTime: string;
+    endDateTime: string;
+  }): Promise<readonly GraphEvent[]> {
+    const eventId = encodeURIComponent(params.seriesEventId);
+    const query = new URLSearchParams({
+      startDateTime: params.startDateTime,
+      endDateTime: params.endDateTime,
+      $select: MICROSOFT_EVENT_SELECT,
+    });
+    const data = await this.#request<{ value?: readonly GraphEvent[] }>(
+      "GET",
+      `${MICROSOFT_GRAPH_BASE_URL}/me/events/${eventId}/instances?${query}`,
+    );
+    return data.value ?? [];
+  }
+
+  async #request<T = GraphEvent>(
     method: "GET" | "POST" | "PATCH" | "DELETE",
     url: string,
     body?: GraphEventWriteBody,
     ifMatch: string | null = null,
-  ): Promise<GraphEvent> {
+  ): Promise<T> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.#accessToken}`,
       Prefer: 'outlook.timezone="UTC"',
@@ -459,7 +606,7 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
     });
 
     if (method === "DELETE") {
-      if (response.ok) return {} as GraphEvent;
+      if (response.ok) return {} as T;
       const deleteError = await parseErrorBody(response);
       throw Object.assign(
         new Error(deleteError.message ?? "microsoft_event_write_failed"),
@@ -467,7 +614,7 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
       );
     }
 
-    const data = (await response.json()) as GraphEvent & {
+    const data = (await response.json()) as T & {
       error?: { code?: string; message?: string };
     };
 

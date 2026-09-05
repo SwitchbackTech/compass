@@ -31,6 +31,7 @@ export interface MicrosoftReaderCorpus {
 interface WriterCorpus {
   readonly create: GraphEvent;
   readonly fetch: GraphEvent;
+  readonly instance: GraphEvent;
 }
 
 class CorpusEventListApi implements MicrosoftEventListApi {
@@ -121,6 +122,25 @@ class CorpusEventWriteApi implements MicrosoftEventWriteApi {
       id: params.eventId,
       "@odata.etag": this.#etag,
     };
+  }
+
+  async getCalendar() {
+    return {
+      allowedOnlineMeetingProviders: [] as const,
+      defaultOnlineMeetingProvider: "unknown",
+    };
+  }
+
+  async listInstances(
+    params: Parameters<MicrosoftEventWriteApi["listInstances"]>[0],
+  ): Promise<readonly GraphEvent[]> {
+    if (
+      params.seriesEventId !==
+      (this.corpus.instance.seriesMasterId ?? "series-1")
+    ) {
+      return [];
+    }
+    return [this.corpus.instance];
   }
 }
 

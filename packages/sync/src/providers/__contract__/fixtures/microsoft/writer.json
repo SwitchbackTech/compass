@@ -33,5 +33,22 @@
       "timeZone": "UTC"
     },
     "showAs": "busy"
+  },
+  "instance": {
+    "id": "series-1_instance",
+    "@odata.etag": "W/\"graph-instance-etag\"",
+    "type": "occurrence",
+    "subject": "Contract instance",
+    "seriesMasterId": "series-1",
+    "originalStart": "2025-01-15T14:00:00.0000000Z",
+    "start": {
+      "dateTime": "2025-01-15T14:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-01-15T15:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "showAs": "busy"
   }
 }

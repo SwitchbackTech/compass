@@ -25,6 +25,7 @@ const NO_CATEGORY_COLORS: ReadonlyMap<string, string> = new Map();
 
 const MEETING_PROVIDER_LABELS: Readonly<Record<string, string>> = {
   teamsForBusiness: "Microsoft Teams",
+  teamsForConsumer: "Microsoft Teams",
   skypeForBusiness: "Skype for Business",
   skypeForConsumer: "Skype",
 };
@@ -235,7 +236,8 @@ function mapAttendees(attendees: GraphEvent["attendees"]): Attendee[] {
     }));
 }
 
-function mapConference(item: GraphEvent): Conference | null {
+/** Read-reflected Teams URL. Writers reuse this on create responses. */
+export function mapConference(item: GraphEvent): Conference | null {
   const url = item.onlineMeeting?.joinUrl;
   if (!url) return null;
 
