@@ -4,7 +4,7 @@ import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import {
   resetGoogleSyncUIStateForTests,
   setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/state/google.sync.state";
+} from "@web/auth/providers/sync.indicator.state";
 import * as realUseversioncheck from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { viewActions } from "@web/events/stores/view.store";
 import { afterAll, afterEach, describe, expect, it } from "bun:test";

@@ -1,6 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { useConnectGoogle } from "@web/auth/providers/useConnectProvider";
 import {
   dismissContactsNudge,
   markContactsNudgeShown,

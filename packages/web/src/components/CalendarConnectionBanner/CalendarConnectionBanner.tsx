@@ -3,7 +3,7 @@ import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import {
   type CalendarConnectionBannerKind,
   calendarReconnectBannerMessage,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+} from "@web/auth/providers/connect.util";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   POINTER_ACTION_ATTRIBUTE,
