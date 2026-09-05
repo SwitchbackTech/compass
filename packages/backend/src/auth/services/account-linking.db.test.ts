@@ -172,11 +172,12 @@ describe("account linking across login methods (db)", () => {
 
   it("never links an Apple private-relay email onto a Google user", async () => {
     const existing = await UserDriver.createUser();
+    const appleSub = faker.string.uuid();
     const relayEmail = `${faker.string.alphanumeric(8)}@privaterelay.appleid.com`;
 
     await appleAuthService.handleAppleAuth({
       providerUser: {
-        sub: faker.string.uuid(),
+        sub: appleSub,
         email: relayEmail,
         name: "Relay Person",
       },
@@ -190,13 +191,15 @@ describe("account linking across login methods (db)", () => {
     });
 
     const googleUser = await mongoService.user.findOne({ _id: existing._id });
-    expect(googleUser?.identities?.some((i) => i.provider === "apple")).toBe(
-      false,
-    );
+    expect(
+      googleUser?.identities?.some((identity) => identity.provider === "apple"),
+    ).toBeFalsy();
     const appleUser = await mongoService.user.findOne({
-      email: relayEmail,
+      "identities.provider": "apple",
+      "identities.subjectId": appleSub,
     });
-    expect(appleUser?._id.equals(existing._id)).toBe(false);
+    expect(appleUser).not.toBeNull();
+    expect(appleUser?._id.toString()).not.toBe(existing._id.toString());
     expect(adoptProviders).toEqual([]);
   });
 });

@@ -183,9 +183,9 @@ describe("microsoftAuthService", () => {
     });
 
     const stored = await mongoService.user.findOne({ _id: existing._id });
-    expect(stored?.identities?.some((i) => i.provider === "microsoft")).toBe(
-      false,
-    );
+    expect(
+      stored?.identities?.some((identity) => identity.provider === "microsoft"),
+    ).toBeFalsy();
     expect(adoptCalls).toHaveLength(0);
   });
 });
