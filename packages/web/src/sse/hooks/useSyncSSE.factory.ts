@@ -6,18 +6,25 @@ import {
   type UserMetadataMessage,
 } from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
+import { type ConnectionRevokedContext } from "@web/auth/providers/connection-revoked.util.factory";
 import {
   clearGoogleSyncIndicatorOverride,
   clearSyncingSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/state/google.sync.state";
-import { findPrimaryGoogleSyncConnectionFromMetadata } from "@web/auth/state/user-metadata.store";
+} from "@web/auth/providers/sync.indicator.state";
+import { findSyncConnectionsFromMetadata } from "@web/auth/state/user-metadata.store";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { type OnServerMessage } from "@web/sse/client/sse.client";
 
-export type GcalSSEDependencies = {
-  handleGoogleRevoked: () => void;
+const IN_PROGRESS_SYNC_STATES = new Set([
+  "connecting",
+  "importing",
+  "catchingUp",
+]);
+
+export type SyncSSEDependencies = {
+  handleConnectionRevoked: (context?: ConnectionRevokedContext) => void;
   invalidateEventQueries: () => void;
   onServerMessage: OnServerMessage;
   refreshUserMetadata: (options?: {
@@ -30,8 +37,11 @@ export type GcalSSEDependencies = {
   ) => void;
 };
 
-export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
-  return function useGcalSSEWithDependencies() {
+const revokedConnectionId = (message: SyncStatusMessage): string | undefined =>
+  message.sync.status === "attention" ? message.sync.connectionId : undefined;
+
+export const createUseSyncSSE = (dependencies: SyncSSEDependencies) => {
+  return function useSyncSSEWithDependencies() {
     // B10 folds import start/progress/end into syncStatusChanged
     // (syncing/healthy/attention) plus a separate importCompleted summary.
     // Do not clear the syncing override from a healthy/importCompleted SSE
@@ -52,8 +62,13 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       // attention
       clearGoogleSyncIndicatorOverride();
 
-      if (message.sync.code === "GOOGLE_REVOKED") {
-        dependencies.handleGoogleRevoked();
+      if (
+        message.sync.code === "CONNECTION_REVOKED" ||
+        message.sync.code === "GOOGLE_REVOKED"
+      ) {
+        dependencies.handleConnectionRevoked({
+          connectionId: revokedConnectionId(message),
+        });
         return;
       }
 
@@ -61,7 +76,7 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
 
       if (message.sync.code === "WATCH_REPAIR_FAILED") {
         dependencies.showErrorToast(
-          "We couldn't keep your Google Calendar connection healthy. Try Refresh, or reconnect if this lasts.",
+          "We couldn't keep your calendar connection healthy. Try Refresh, or reconnect if this lasts.",
           {
             toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
           },
@@ -90,12 +105,10 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
 
         // Prefer Sync's in-progress states when present; otherwise the collapsed
         // product enum. Never clear syncing from local optimism alone (S41).
-        const syncState =
-          findPrimaryGoogleSyncConnectionFromMetadata(metadata)?.state;
-        const syncInProgress =
-          syncState === "connecting" ||
-          syncState === "importing" ||
-          syncState === "catchingUp";
+        const connections = findSyncConnectionsFromMetadata(metadata);
+        const syncInProgress = connections.some((connection) =>
+          IN_PROGRESS_SYNC_STATES.has(connection.state),
+        );
         const enumImporting = metadata.google?.connectionState === "IMPORTING";
         if (!syncInProgress && !enumImporting) {
           clearSyncingSyncIndicatorOverride();

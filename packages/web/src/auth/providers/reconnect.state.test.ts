@@ -8,7 +8,7 @@ import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
   syncReconnectRequiredFromConnections,
-} from "./google.reconnect.state";
+} from "./reconnect.state";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {

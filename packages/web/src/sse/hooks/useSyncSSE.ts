@@ -3,16 +3,16 @@ import {
   applyUserMetadataSideEffects,
   refreshUserMetadata,
 } from "@web/auth/compass/user/util/user-metadata.util";
-import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
+import { handleConnectionRevoked } from "@web/auth/providers/connection-revoked.util";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { invalidateEventQueriesUnlessMutating } from "@web/events/queries/event.query.invalidation";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { onServerMessage } from "../client/sse.client";
-import { createUseGcalSSE } from "./useGcalSSE.factory";
+import { createUseSyncSSE } from "./useSyncSSE.factory";
 
-export const useGcalSSE = createUseGcalSSE({
-  handleGoogleRevoked,
+export const useSyncSSE = createUseSyncSSE({
+  handleConnectionRevoked,
   invalidateEventQueries: () =>
     invalidateEventQueriesUnlessMutating(queryClient, eventQueryKeys.all),
   onServerMessage,

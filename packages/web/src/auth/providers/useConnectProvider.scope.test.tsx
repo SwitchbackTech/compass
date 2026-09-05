@@ -3,7 +3,7 @@ import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { useConnectGoogle } from "./useConnectGoogle";
+import { useConnectProvider } from "./useConnectProvider";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 // Reconnecting one of several accounts must rebind consent to THAT account's
@@ -27,12 +27,13 @@ const connection = (
 const renderScoped = (scoped?: GoogleSyncConnectionSummary) => {
   const { wrapper } = createStoreWrapper();
   return renderHook(
-    () => useConnectGoogle(scoped ? { connection: scoped } : undefined),
+    () =>
+      useConnectProvider("google", scoped ? { connection: scoped } : undefined),
     { wrapper },
   );
 };
 
-describe("useConnectGoogle account scoping", () => {
+describe("useConnectProvider account scoping", () => {
   beforeEach(() => {
     userMetadataActions.set({
       google: {
@@ -125,7 +126,7 @@ describe("useConnectGoogle account scoping", () => {
 
     const { wrapper } = createStoreWrapper();
     const { result } = renderHook(
-      () => useConnectGoogle({ newAccount: true }),
+      () => useConnectProvider("google", { newAccount: true }),
       { wrapper },
     );
     act(() => result.current.connect());
@@ -144,7 +145,7 @@ describe("useConnectGoogle account scoping", () => {
 
     const { wrapper } = createStoreWrapper();
     const { result } = renderHook(
-      () => useConnectGoogle({ features: ["contacts"] }),
+      () => useConnectProvider("google", { features: ["contacts"] }),
       { wrapper },
     );
     act(() => result.current.connect());
@@ -168,7 +169,7 @@ describe("useConnectGoogle account scoping", () => {
 
     const { wrapper } = createStoreWrapper();
     const { result } = renderHook(
-      () => useConnectGoogle({ newAccount: true }),
+      () => useConnectProvider("google", { newAccount: true }),
       {
         wrapper,
       },

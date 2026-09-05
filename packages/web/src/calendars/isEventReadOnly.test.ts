@@ -6,7 +6,7 @@ import { CalendarIdSchema } from "@core/types/domain-primitives";
 import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
   buildCalendarLookup,
   isEventReadOnly,

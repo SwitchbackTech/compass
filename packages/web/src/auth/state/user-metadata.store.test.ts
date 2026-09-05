@@ -1,6 +1,7 @@
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   findPrimaryGoogleSyncConnectionFromMetadata,
+  findSyncConnectionFromMetadata,
   selectPrimaryGoogleSyncConnection,
   userMetadataActions,
   useUserMetadataStore,
@@ -91,7 +92,7 @@ describe("userMetadataActions.removeConnection", () => {
 
 describe("findPrimaryGoogleSyncConnectionFromMetadata", () => {
   it("applies the same precedence to a raw payload, not just the store", () => {
-    // useGcalSSE.factory.ts calls this directly on an SSE message's metadata,
+    // useSyncSSE.factory.ts calls this directly on an SSE message's metadata,
     // before it reaches the store.
     const healthy = connection({ id: "healthy", connectionState: "HEALTHY" });
     const broken = connection({
@@ -112,5 +113,32 @@ describe("findPrimaryGoogleSyncConnectionFromMetadata", () => {
 
   it("returns null when the payload has no google field at all", () => {
     expect(findPrimaryGoogleSyncConnectionFromMetadata({})).toBeNull();
+  });
+});
+
+describe("findSyncConnectionFromMetadata", () => {
+  it("finds a non-primary connection by id on connections[]", () => {
+    const google = connection({
+      id: "google-primary",
+      connectionState: "HEALTHY",
+    });
+    const microsoft = connection({
+      id: "ms-secondary",
+      accountEmail: "ada@outlook.com",
+      connectionState: "HEALTHY",
+    });
+
+    expect(
+      findSyncConnectionFromMetadata(
+        {
+          google: { connectionState: "HEALTHY", connections: [google] },
+          connections: [
+            { ...google, provider: "google" },
+            { ...microsoft, provider: "microsoft" },
+          ],
+        },
+        "ms-secondary",
+      )?.accountEmail,
+    ).toBe("ada@outlook.com");
   });
 });

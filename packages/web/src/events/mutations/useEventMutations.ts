@@ -29,7 +29,7 @@ import {
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
-import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
+import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
 import { track } from "@web/auth/posthog/track";
 import {
   selectGoogleSyncConnections,

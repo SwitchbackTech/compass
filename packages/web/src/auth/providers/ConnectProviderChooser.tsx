@@ -6,10 +6,14 @@ import {
   providerDisplayName,
 } from "@core/types/sync/identity.contracts";
 import { openingProviderLabel } from "@web/auth/providers/connection-provider.util";
+import { BOOKING_CONNECT_BUTTON_LABEL } from "@web/auth/providers/provider-copy.util";
 import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
-import { OverlayPanelActionButton } from "@web/components/OverlayPanel/OverlayPanel";
+import {
+  OverlayPanelActionButton,
+  OverlayPanelActions,
+} from "@web/components/OverlayPanel/OverlayPanel";
 
 const SIDEBAR_PRIMARY_CLASSNAME =
   "c-button-compact c-button-primary mb-2 w-full rounded-xs px-2 py-1.5 text-left text-xs";
@@ -17,7 +21,7 @@ const SIDEBAR_PRIMARY_CLASSNAME =
 type ConnectProviderChooserProps = {
   idleLabel: string;
   newAccount?: boolean;
-  variant?: "overlay-primary" | "sidebar-primary";
+  variant?: "overlay-primary" | "sidebar-primary" | "prompt";
   showShortcut?: boolean;
   shortcut?: string;
   shortcutAttrs?: Record<string, string>;
@@ -64,14 +68,34 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
 
   if (available.length === 0) return null;
 
-  const buttonLabel = isConnecting
-    ? openingProviderLabel(connectingKind ?? "google")
-    : idleLabel;
-
   const runConnect = (kind: ProviderKind) => {
     setMenuOpen(false);
     byKind[kind].connect();
   };
+
+  if (variant === "prompt") {
+    return (
+      <OverlayPanelActions align="start">
+        {available.map((kind) => (
+          <OverlayPanelActionButton
+            aria-busy={byKind[kind].isConnecting || undefined}
+            disabled={isConnecting}
+            key={kind}
+            onClick={() => runConnect(kind)}
+            variant="primary"
+          >
+            {byKind[kind].isConnecting
+              ? openingProviderLabel(kind)
+              : BOOKING_CONNECT_BUTTON_LABEL[kind]}
+          </OverlayPanelActionButton>
+        ))}
+      </OverlayPanelActions>
+    );
+  }
+
+  const buttonLabel = isConnecting
+    ? openingProviderLabel(connectingKind ?? "google")
+    : idleLabel;
 
   if (available.length === 1) {
     const kind = available[0];

@@ -4,18 +4,18 @@ import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.uti
 import {
   hasGoogleReconnectRequired,
   useGoogleReconnectRequiredVersion,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import {
   getGoogleSyncIndicatorOverride,
   subscribeToGoogleSyncUIState,
-} from "@web/auth/google/state/google.sync.state";
+} from "@web/auth/providers/sync.indicator.state";
 import {
   selectGoogleConnectionState,
   selectUserMetadataStatus,
   type UserMetadataStatus,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { type GoogleUiState } from "./useConnectGoogle.types";
+import { type GoogleUiState } from "./connect.types";
 
 type SyncIndicator = ReturnType<typeof getGoogleSyncIndicatorOverride>;
 

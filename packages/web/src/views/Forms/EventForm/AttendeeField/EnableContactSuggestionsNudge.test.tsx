@@ -20,20 +20,20 @@ import {
 // shows it, the next stays empty, and dismissal survives a new session.
 //
 // The web suite runs in ONE process and earlier files (Sidebar/CalendarList)
-// register process-wide mock.module stubs for useConnectGoogle — some without
+// register process-wide mock.module stubs for useConnectProvider — some without
 // a `connect` at all — so this file cannot reach the real hook -> AuthApi
 // path reliably. It follows the repo's delegating-mock pattern instead and
 // asserts the nudge's contract AT THE HOOK BOUNDARY: it asks for the
 // contacts feature and starts the flow on click. The features -> begin-body
-// wire threading is covered by useConnectGoogle.scope.test.tsx, which runs
+// wire threading is covered by useConnectProvider.scope.test.tsx, which runs
 // before any module mock exists.
-const actualUseConnectGoogle = (
-  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
-).useConnectGoogle;
-let isConnectGoogleMocked = true;
+const actualUseConnectProvider = (
+  await import("@web/auth/providers/useConnectProvider")
+).useConnectProvider;
+const isConnectProviderMocked = true;
 const connectMock = mock();
-const mockUseConnectGoogle = mock(
-  (_options?: Parameters<typeof actualUseConnectGoogle>[0]) => ({
+const mockUseConnectProvider = mock(
+  (..._args: Parameters<typeof actualUseConnectProvider>) => ({
     commandAction: null,
     connect: connectMock,
     connection: null,
@@ -44,20 +44,20 @@ const mockUseConnectGoogle = mock(
     state: "HEALTHY" as const,
   }),
 );
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
-  useConnectGoogle: (
-    ...args: Parameters<typeof actualUseConnectGoogle>
-  ): ReturnType<typeof actualUseConnectGoogle> =>
-    isConnectGoogleMocked
-      ? (mockUseConnectGoogle(...args) as unknown as ReturnType<
-          typeof actualUseConnectGoogle
+mock.module("@web/auth/providers/useConnectProvider", () => ({
+  useConnectProvider: (
+    ...args: Parameters<typeof actualUseConnectProvider>
+  ): ReturnType<typeof actualUseConnectProvider> =>
+    isConnectProviderMocked
+      ? (mockUseConnectProvider(...args) as unknown as ReturnType<
+          typeof actualUseConnectProvider
         >)
-      : actualUseConnectGoogle(...args),
+      : actualUseConnectProvider(...args),
 }));
 
 afterAll(() => {
   // Hand later files the real hook — mock.module itself is process-wide.
-  isConnectGoogleMocked = false;
+  isConnectProviderMocked = false;
 });
 
 const seedHealthyConnection = () => {
@@ -76,7 +76,7 @@ describe("EnableContactSuggestionsNudge", () => {
     localStorage.clear();
     resetContactsNudgeSessionForTests();
     seedHealthyConnection();
-    mockUseConnectGoogle.mockClear();
+    mockUseConnectProvider.mockClear();
     connectMock.mockClear();
   });
 
@@ -130,8 +130,9 @@ describe("EnableContactSuggestionsNudge", () => {
     renderWithStore(<EnableContactSuggestionsNudge />);
 
     // The nudge's whole purpose: incremental re-consent WITH contacts.
-    expect(mockUseConnectGoogle).toHaveBeenCalled();
-    expect(mockUseConnectGoogle.mock.calls[0]?.[0]).toEqual({
+    expect(mockUseConnectProvider).toHaveBeenCalled();
+    expect(mockUseConnectProvider.mock.calls[0]?.[0]).toBe("google");
+    expect(mockUseConnectProvider.mock.calls[0]?.[1]).toEqual({
       features: ["contacts"],
     });
 

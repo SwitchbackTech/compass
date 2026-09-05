@@ -17,7 +17,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
 import {
   selectGoogleConnectionState,
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
@@ -207,8 +207,11 @@ export function BookingSettingsSection({
   const googleConnectionState = useUserMetadataStore(
     selectGoogleConnectionState,
   );
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const isGoogleHealthy = googleConnectionState === "HEALTHY";
+  const connections = useUserMetadataStore(selectSyncConnections);
+  const hasHealthyConnection =
+    connections.some(
+      (connection) => connection.connectionState === "HEALTHY",
+    ) || googleConnectionState === "HEALTHY";
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
@@ -228,7 +231,8 @@ export function BookingSettingsSection({
       ),
     [accountEmailOrder, calendars],
   );
-  const { data: serverPage, isPending } = useBookingPageQuery(isGoogleHealthy);
+  const { data: serverPage, isPending } =
+    useBookingPageQuery(hasHealthyConnection);
   const saveMutation = useSaveBookingPageMutation();
   const [form, setForm] = useState<AdminPutBookingPageInput>(() =>
     buildInitialForm(
@@ -323,7 +327,7 @@ export function BookingSettingsSection({
     };
   }, [dismissGuardRef]);
 
-  if (!isGoogleHealthy) {
+  if (!hasHealthyConnection) {
     return <BookingConnectGooglePrompt />;
   }
 

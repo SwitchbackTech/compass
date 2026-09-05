@@ -7,13 +7,13 @@ import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   isAccountReconnectRequired,
   isConnectionReconnectRequired,
-} from "@web/auth/google/state/google.reconnect.state";
+} from "@web/auth/providers/reconnect.state";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import {
   type CommandActionIcon,
   type GoogleUiConfig,
   type GoogleUiState,
-} from "./useConnectGoogle.types";
+} from "./connect.types";
 
 const RECONNECT_STATUS: SyncStatus = {
   variant: "error",

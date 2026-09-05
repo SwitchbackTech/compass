@@ -162,6 +162,32 @@ describe("BookingSettingsSection", () => {
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
   });
 
+  it("treats a healthy non-google connection as connected for booking", () => {
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+      connections: [
+        createMockConnection("ada@outlook.com", { provider: "microsoft" }),
+      ],
+    });
+
+    const { wrapper } = createStoreWrapper();
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(
+      screen.queryByText(
+        /Connect a Google account to enable your booking page/,
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it("saves 30-minute duration and shows the copyable booking link", async () => {
     const user = userEvent.setup({ delay: null });
     const slug = "hostuser";

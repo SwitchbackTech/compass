@@ -70,7 +70,7 @@ export const useStartGoogleAuthorizationImpl = ({
       // PostHog loses the session at the redirect; this marks "left for
       // Google" so abandoned round trips are distinguishable from silent
       // failures on return.
-      track("google_oauth_redirect_started", { intent });
+      track("oauth_redirect_started", { provider: "google", intent });
       return startGoogleAuthorization();
     }, [intent, onStart, startGoogleAuthorization, state]),
   };

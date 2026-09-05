@@ -1,7 +1,7 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
-import { useGoogleReconnectRequiredVersion } from "@web/auth/google/state/google.reconnect.state";
+import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
+import { useGoogleReconnectRequiredVersion } from "@web/auth/providers/reconnect.state";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 
