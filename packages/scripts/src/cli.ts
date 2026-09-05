@@ -1,4 +1,5 @@
 import { CliValidator } from "@scripts/cli.validator";
+import { runApplePollThrottleCommand } from "@scripts/commands/apple-poll-throttle";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
 import { runBackfillBilling } from "@scripts/commands/backfill-billing";
 import { runEncryptCredentials } from "@scripts/commands/encrypt-credentials";
@@ -34,6 +35,9 @@ export default class CompassCLI {
         break;
       case cmd === "encrypt-credentials":
         await runEncryptCredentials();
+        break;
+      case cmd === "apple-poll-throttle":
+        await runApplePollThrottleCommand();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -75,6 +79,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Encrypt legacy plaintext OAuth refresh tokens in Sync credentials (--apply to write)",
+      );
+
+    program
+      .command("apple-poll-throttle")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Poll one iCloud calendar with sync-collection and record HTTP status codes (founder soak)",
       );
 
     program
