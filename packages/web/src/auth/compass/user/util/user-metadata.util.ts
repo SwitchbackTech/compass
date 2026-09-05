@@ -5,7 +5,7 @@ import {
   getGoogleReconnectRequiredAccountEmails,
   hasGoogleReconnectRequired,
   syncReconnectRequiredFromConnections,
-} from "@web/auth/providers/reconnect.state";
+} from "@web/auth/google/state/google.reconnect.state";
 import {
   findPrimaryGoogleSyncConnectionFromMetadata,
   userMetadataActions,

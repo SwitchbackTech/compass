@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import * as realUserHook from "@web/auth/compass/user/hooks/useUser";
-import { type GoogleUiState } from "@web/auth/providers/connect.types";
+import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import * as realAvailableProviders from "@web/auth/providers/useAvailableConnectProviders";
 import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";

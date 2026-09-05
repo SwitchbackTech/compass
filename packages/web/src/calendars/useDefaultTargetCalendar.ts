@@ -3,7 +3,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import {
   getGoogleReconnectRequiredAccountEmails,
   useGoogleReconnectRequiredVersion,
-} from "@web/auth/providers/reconnect.state";
+} from "@web/auth/google/state/google.reconnect.state";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,

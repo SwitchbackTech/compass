@@ -51,17 +51,16 @@ mock.module("@web/auth/compass/session/useSession", () => ({
     isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
 }));
 
-const actualUseConnectProvider = (
-  await import("@web/auth/providers/useConnectProvider")
-).useConnectProvider;
+const actualUseConnectGoogle = (
+  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+).useConnectGoogle;
 let isConnectGoogleMocked = true;
 // Mirrors the real hook's one behavior these tests depend on: scoping to a
 // connection reports that account's own state. (The real scoping is covered
-// directly in useConnectProvider.scope.test.tsx.) Restored in beforeEach, since
+// directly in useConnectGoogle.scope.test.tsx.) Restored in beforeEach, since
 // a test that swaps in mockReturnValue would otherwise poison later ones.
 const defaultUseConnectGoogle = (
-  _kind?: unknown,
-  options?: Parameters<typeof actualUseConnectProvider>[1],
+  options?: Parameters<typeof actualUseConnectGoogle>[0],
 ) => ({
   commandAction: null,
   connect: mock(),
@@ -70,11 +69,11 @@ const defaultUseConnectGoogle = (
   state: options?.connection?.connectionState ?? ("NOT_CONNECTED" as const),
 });
 const mockUseConnectGoogle = mock(defaultUseConnectGoogle);
-mock.module("@web/auth/providers/useConnectProvider", () => ({
-  useConnectProvider: (...args: Parameters<typeof actualUseConnectProvider>) =>
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+  useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
       ? mockUseConnectGoogle(...args)
-      : actualUseConnectProvider(...args),
+      : actualUseConnectGoogle(...args),
 }));
 
 // The no-accounts-yet header (covered in CalendarListHeader.test.tsx) reads

@@ -23,7 +23,7 @@ import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/au
 import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
-} from "@web/auth/providers/useIsProviderAvailable";
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import { AuthModal } from "./AuthModal";
 import { AuthModalProvider } from "./AuthModalProvider";
 import { useAuthModal, validateAuthSearch } from "./hooks/useAuthModal";

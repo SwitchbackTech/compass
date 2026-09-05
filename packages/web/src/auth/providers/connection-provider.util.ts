@@ -16,6 +16,4 @@ export const connectionProviderKind = (
 ): ProviderKind => connection?.provider ?? "google";
 
 export const openingProviderLabel = (kind: ProviderKind): string =>
-  kind === "google"
-    ? "Opening Google…"
-    : `Opening ${providerDisplayName(kind)}…`;
+  `Opening ${providerDisplayName(kind)}…`;

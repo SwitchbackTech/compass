@@ -5,7 +5,7 @@ import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
-import { type GoogleUiState } from "@web/auth/providers/connect.types";
+import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
   initialFirstEventPromptState,
   useFirstEventPromptStore,
@@ -56,15 +56,15 @@ import {
 // mock.module is process-wide and not reliably restorable, so - as in
 // AccountSectionHeader.test.tsx - the real hook is captured up front and a
 // flag (flipped in afterAll) decides which one runs.
-const actualUseConnectProvider = (
-  await import("@web/auth/providers/useConnectProvider")
-).useConnectProvider;
+const actualUseConnectGoogle = (
+  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+).useConnectGoogle;
 let isConnectGoogleMocked = true;
 let googleState: GoogleUiState = "HEALTHY";
 let isConnecting = false;
 let connection: GoogleSyncConnectionSummary | null = null;
-mock.module("@web/auth/providers/useConnectProvider", () => ({
-  useConnectProvider: (...args: Parameters<typeof actualUseConnectProvider>) =>
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+  useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
       ? {
           commandAction: null,
@@ -76,7 +76,7 @@ mock.module("@web/auth/providers/useConnectProvider", () => ({
           isRefreshing: false,
           state: googleState,
         }
-      : actualUseConnectProvider(...args),
+      : actualUseConnectGoogle(...args),
 }));
 
 // Do not mock.module google.sync.refresh here: process-wide mocks poison

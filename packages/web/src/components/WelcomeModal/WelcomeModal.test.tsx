@@ -15,7 +15,7 @@ import {
 import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
-} from "@web/auth/providers/useIsProviderAvailable";
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   afterAll,
   afterEach,

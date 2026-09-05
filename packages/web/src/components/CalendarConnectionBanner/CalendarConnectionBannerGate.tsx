@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { getCalendarConnectionBannerKind } from "@web/auth/providers/connect.util";
+import { getCalendarConnectionBannerKind } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {

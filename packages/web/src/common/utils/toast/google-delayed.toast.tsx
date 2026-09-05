@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
-import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   rememberPendingDelayed,
   shouldDeferAttentionToasts,
@@ -22,9 +22,9 @@ interface GoogleDelayedToastProps {
 
 // Shown when Sync reports delayed / soft ATTENTION so returning users get an
 // actionable Refresh rather than a dead-end warning. Mirrors the reconnect
-// toast layout and delegates to useConnectProvider().refresh().
+// toast layout and delegates to useConnectGoogle().refresh().
 export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
-  const { refresh } = useConnectProvider("google");
+  const { refresh } = useConnectGoogle();
 
   const handleRefresh = () => {
     getToast().dismiss(toastId);

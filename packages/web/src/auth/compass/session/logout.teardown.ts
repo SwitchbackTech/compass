@@ -8,7 +8,7 @@
  */
 
 import { queryClient } from "@web/api/query-client";
-import { clearGoogleSyncIndicatorOverride } from "@web/auth/providers/sync.indicator.state";
+import { clearGoogleSyncIndicatorOverride } from "@web/auth/google/state/google.sync.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";

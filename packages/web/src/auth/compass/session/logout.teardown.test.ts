@@ -22,7 +22,7 @@ const mockDraftActionsDiscard = mock();
 // and only intercept what this file asserts on while it runs - the flag flips
 // back to the real implementations in afterAll, because many later suites
 // exercise these functions for real (draftActions.discard closes event forms,
-// clearGoogleSyncIndicatorOverride drives useSyncSSE, and the source store's
+// clearGoogleSyncIndicatorOverride drives useGcalSSE, and the source store's
 // own tests call refreshEventRepositorySource).
 const actualRepositorySource = {
   ...(await import("@web/events/repositories/event.repository.source.store")),
@@ -32,7 +32,7 @@ const actualUserMetadata = {
 };
 const actualSseClient = { ...(await import("@web/sse/client/sse.client")) };
 const actualSyncState = {
-  ...(await import("@web/auth/providers/sync.indicator.state")),
+  ...(await import("@web/auth/google/state/google.sync.state")),
 };
 const actualDraftStore = {
   ...(await import("@web/events/stores/draft.store")),
@@ -62,7 +62,7 @@ mock.module("@web/auth/state/user-metadata.store", () => ({
   },
 }));
 
-mock.module("@web/auth/providers/sync.indicator.state", () => ({
+mock.module("@web/auth/google/state/google.sync.state", () => ({
   ...actualSyncState,
   clearGoogleSyncIndicatorOverride: (...args: unknown[]) =>
     isTeardownMocked

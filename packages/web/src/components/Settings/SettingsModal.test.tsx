@@ -12,7 +12,7 @@ import { AuthApi } from "@web/api/auth.api";
 import {
   markAccountReconnectRequired,
   resetGoogleReconnectRequiredForTests,
-} from "@web/auth/providers/reconnect.state";
+} from "@web/auth/google/state/google.reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
@@ -226,7 +226,7 @@ describe("SettingsModal", () => {
 
     // A live 410 marks the session-local override ahead of the next metadata
     // refetch; the connection's own connectionState is still "HEALTHY" here.
-    // AccountsSection's own useConnectProvider() call subscribes to the
+    // AccountsSection's own useConnectGoogle() call subscribes to the
     // reconnect-required version and re-renders the tree beneath it, so
     // AccountRow picks up the override on its next render even without
     // subscribing itself - this guards that behavior against a refactor that

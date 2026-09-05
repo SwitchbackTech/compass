@@ -30,6 +30,45 @@
     "jsx": "react-jsx",
     "types": ["bun-types"],
     "paths": {
+      "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle": [
+        "./src/auth/providers/useConnectProvider"
+      ],
+      "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types": [
+        "./src/auth/providers/connect.types"
+      ],
+      "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util": [
+        "./src/auth/providers/connect.util"
+      ],
+      "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState": [
+        "./src/auth/providers/useProviderUiState"
+      ],
+      "@web/auth/google/hooks/useDisconnectGoogleAccount": [
+        "./src/auth/providers/useDisconnectAccount"
+      ],
+      "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable": [
+        "./src/auth/providers/useIsProviderAvailable"
+      ],
+      "@web/auth/google/state/google.reconnect.calendar": [
+        "./src/auth/providers/reconnect.calendar"
+      ],
+      "@web/auth/google/state/google.reconnect.state": [
+        "./src/auth/providers/reconnect.state"
+      ],
+      "@web/auth/google/state/google.sync.refresh": [
+        "./src/auth/providers/sync.refresh"
+      ],
+      "@web/auth/google/state/google.sync.state": [
+        "./src/auth/providers/sync.indicator.state"
+      ],
+      "@web/auth/google/util/google-revocation-api.config": [
+        "./src/auth/providers/revocation-api.config"
+      ],
+      "@web/auth/google/util/google.auth.util": [
+        "./src/auth/providers/connection-revoked.util"
+      ],
+      "@web/auth/google/util/google.auth.util.factory": [
+        "./src/auth/providers/connection-revoked.util.factory"
+      ],
       "@web/*": ["./src/*"],
       "@core/*": ["../core/src/*"]
     },

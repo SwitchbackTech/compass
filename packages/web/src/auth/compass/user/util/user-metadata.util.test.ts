@@ -1,7 +1,7 @@
 import { type UserMetadata } from "@core/types/user.types";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { BaseApi } from "@web/api/base/base.api";
-import { resetGoogleReconnectRequiredForTests } from "@web/auth/providers/reconnect.state";
+import { resetGoogleReconnectRequiredForTests } from "@web/auth/google/state/google.reconnect.state";
 import { GOOGLE_DELAYED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import {

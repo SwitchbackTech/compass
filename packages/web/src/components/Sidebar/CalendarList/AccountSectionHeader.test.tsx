@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { type SyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
-import { type GoogleUiState } from "@web/auth/providers/connect.types";
+import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { toggleAccountCollapsed } from "@web/calendars/collapsed-accounts.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -19,12 +19,7 @@ const onSelect = mock();
 const commandActionFor = (state: GoogleUiState, provider = "google") =>
   state === "RECONNECT_REQUIRED"
     ? {
-        label:
-          provider === "google"
-            ? "Reconnect Google Calendar"
-            : provider === "microsoft"
-              ? "Reconnect Outlook"
-              : "Reconnect Apple Calendar",
+        label: `Reconnect ${provider === "google" ? "Google" : "Microsoft"} Calendar`,
         onSelect,
       }
     : null;
@@ -149,7 +144,7 @@ describe("AccountSectionHeader", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: `Reconnect Outlook for ${EMAIL}`,
+        name: `Reconnect Microsoft Calendar for ${EMAIL}`,
       }),
     );
     expect(onSelect).toHaveBeenCalledTimes(1);

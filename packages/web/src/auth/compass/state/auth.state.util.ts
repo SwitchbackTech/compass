@@ -1,8 +1,8 @@
 import { z } from "zod/v4";
-import { clearAllGoogleReconnectRequired } from "@web/auth/providers/reconnect.state";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { subscribeToStorageKey } from "@web/common/utils/external-store.util";
+import { clearAllGoogleReconnectRequired } from "../../google/state/google.reconnect.state";
 
 export const AuthStateSchema = z.object({
   hasAuthenticated: z.boolean().default(false),

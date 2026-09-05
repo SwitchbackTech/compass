@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realUserMetadata from "@web/auth/compass/user/util/user-metadata.util";
-import { type UseConnectGoogleResult } from "@web/auth/providers/connect.types";
+import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
   afterEach,
   beforeEach,

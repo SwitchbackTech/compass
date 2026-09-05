@@ -2,11 +2,11 @@ import { type FC, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   isFirstImportFailed,
   isFirstImportInProgress,
-} from "@web/auth/providers/connect.util";
-import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
@@ -50,11 +50,7 @@ export const Grid: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const {
-    connection,
-    refresh,
-    state: googleState,
-  } = useConnectProvider("google");
+  const { connection, refresh, state: googleState } = useConnectGoogle();
   // Session expiry already surfaces SessionExpiredToast — don't also show
   // "Couldn't load events" / Retry for the same failure.
   const showEventsLoadError = shouldShowContextualLoadError(

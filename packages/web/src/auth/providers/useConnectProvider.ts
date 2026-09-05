@@ -40,6 +40,11 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { settingsActions } from "@web/settings/settings.store";
 
 export type UseConnectProviderOptions = UseConnectGoogleOptions;
+export type { UseConnectGoogleOptions, UseConnectGoogleResult };
+
+export const useConnectGoogle = (
+  options?: UseConnectGoogleOptions,
+): UseConnectGoogleResult => useConnectProvider("google", options);
 
 export const useConnectProvider = (
   kind: ProviderKind,

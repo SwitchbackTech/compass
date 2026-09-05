@@ -5,11 +5,11 @@ import {
 } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { shouldShowContextualLoadError } from "@web/api/util/api.util";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   isFirstImportFailed,
   isFirstImportInProgress,
-} from "@web/auth/providers/connect.util";
-import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getWritableCalendars } from "@web/calendars/calendar.util";
 import {
@@ -103,11 +103,7 @@ export function DayCalendarGrid() {
     showEventsLoadError,
     isFetching,
   );
-  const {
-    connection,
-    refresh,
-    state: googleState,
-  } = useConnectProvider("google");
+  const { connection, refresh, state: googleState } = useConnectGoogle();
   // See Grid.tsx's Week-view equivalent: googleState alone can't tell a
   // first-ever import apart from routine catch-up on an established account.
   const isImportingEmpty =
