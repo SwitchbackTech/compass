@@ -284,6 +284,71 @@ change from `e2e-shard (1)` to `e2e-shard (1, e2e/accessibility e2e/allday)`;
 the required `e2e` gate is unchanged. Measured after: see PR and the next
 main runs.
 
+## After (2026-09-05, 14:51 to 16:07 UTC)
+
+All four fixes merged between 14:51 and 15:25 UTC (#3407, #3408, #3409,
+#3410). Traffic in the window was light (10 E2E runs, 10 Unit runs), so
+these are early readings, not statistics. The fix-1 mechanism is gone
+regardless of sample size; the rest should be re-read after a few hundred
+runs.
+
+### Required checks, before and after
+
+| Check | Before p50 | Before p95 | After p50 | After p95 | n after |
+|---|---|---|---|---|---|
+| `static` (job) | 47s | 1m11s | 46s | 51s | 8 |
+| `unit` (run wall clock, PR) | 1m35s | 2m24s | 1m32s | 1m32s | 2 |
+| `e2e` (run wall clock, PR) | 3m32s | 9m05s | 3m00s | 3m21s | 4 |
+| `e2e` on the new shard split (fix 4, any event) | 3m32s | | 2m46s | 2m49s | 2 |
+
+E2E rerun rate: 1 in 100 before, 0 in 10 after. E2E gate failures: 10 in
+100 before (all apt), 0 in 10 after. `static` failed twice in the window,
+both on PR #3410 itself (actionlint on the new run step, fixed before merge).
+
+### E2E shard steps after fix 1 (40 shard jobs)
+
+| Step | Before p50 | Before p95 | After p50 | After p95 | After max |
+|---|---|---|---|---|---|
+| Install Bun setup prerequisites (apt) | 6s | 47s | removed | | |
+| Install Bun (setup-bun before, npm after) | 2s | 3s | 5s | 7s | 7s |
+| Initialize containers | 26s | 37s | 26s | 37s | 40s |
+| Cache Bun dependencies | 7s | 9s | 7s | 10s | 10s |
+| Install dependencies | 5s | 8s | 4s | 6s | 6s |
+
+Setup per shard is about 45s to 60s either way at p50; the difference is
+that nothing in it can hang any more.
+
+### E2E shard balance after fix 4 (2 runs)
+
+| Shard | Directories | `Run e2e tests` |
+|---|---|---|
+| 1 | accessibility, allday | 99s, 103s |
+| 2 | booking, oauth | 80s, 85s |
+| 3 | timed | 88s, 103s |
+| 4 | onboarding, calendars, life, navigation, attendees | 84s, 97s |
+
+Before: 104s / 100s / 26s / 136s. The slowest shard went from 136s to
+103s, and the run wall clock from 3m32s (PR p50) to 2m44s and 2m49s.
+
+### Retry-only passes after fixes 1 and 3 (40 shard jobs)
+
+One: `e2e/attendees/attendee-editor.spec.ts` › adding a guest on one
+occurrence of a series saves the whole series (1 of 40). The skip-link
+walk that was 5 of 8 before did not need a retry in any of the 10 runs.
+The attendee test is a new entry; one occurrence is not yet a pattern.
+
+### Tests deleted
+
+None. The measured test steps are small (unit legs 2s to 57s of tests,
+e2e shards about 90s each after rebalancing), and every failure in the
+window was infrastructure or a real regression on the PR that failed. No
+test met the bar of "assert only a mock was called, duplicate another
+layer, or exercise nothing a user can hit" strongly enough to be worth
+removing coverage for a saving measured in seconds. The candidates worth a
+look if someone wants to go further are the 24 axe scans in
+`e2e/accessibility/booking-a11y.spec.ts` (about 85s of shard time); they
+were kept because each covers a distinct page state.
+
 ## Looked at, not changed
 
 - Playwright `retries: 2` in CI. It hides intermittent tests from the job
