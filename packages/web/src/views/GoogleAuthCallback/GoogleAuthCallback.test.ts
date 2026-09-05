@@ -11,7 +11,7 @@ import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 // Patch the one method on the real AuthApi object rather than replacing the
 // module: mock.module is process-wide and permanent, and an AuthApi carrying
 // only loginOrSignup breaks every later file that reaches for another method
-// (useConnectProvider.scope.test.tsx spies on beginGoogleConnection).
+// (useConnectGoogle.scope.test.tsx spies on beginGoogleConnection).
 const mockLoginOrSignup = mock();
 const realLoginOrSignup = AuthApi.loginOrSignup;
 AuthApi.loginOrSignup = mockLoginOrSignup as typeof AuthApi.loginOrSignup;

@@ -11,8 +11,10 @@ import {
 } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
-  resetProviderAvailabilityForTests,
   setGoogleAvailabilityForTests,
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  resetProviderAvailabilityForTests,
   setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.seam";

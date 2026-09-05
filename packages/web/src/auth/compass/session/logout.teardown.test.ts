@@ -32,7 +32,7 @@ const actualUserMetadata = {
 };
 const actualSseClient = { ...(await import("@web/sse/client/sse.client")) };
 const actualSyncState = {
-  ...(await import("@web/auth/google/state/google.sync.state")),
+  ...(await import("@web/auth/providers/sync.indicator.state")),
 };
 const actualDraftStore = {
   ...(await import("@web/events/stores/draft.store")),
@@ -62,7 +62,7 @@ mock.module("@web/auth/state/user-metadata.store", () => ({
   },
 }));
 
-mock.module("@web/auth/google/state/google.sync.state", () => ({
+mock.module("@web/auth/providers/sync.indicator.state", () => ({
   ...actualSyncState,
   clearGoogleSyncIndicatorOverride: (...args: unknown[]) =>
     isTeardownMocked
