@@ -17,7 +17,11 @@ const SECRET_PATTERNS: readonly RegExp[] = [
 /** Provider-native payload shapes that must not leak into logs or SSE. */
 export const PROVIDER_LEAK_MARKERS: Record<ProviderKind, readonly RegExp[]> = {
   google: [/"conferenceData"\s*:/i, /"hangoutLink"\s*:/i],
-  microsoft: [/"@odata\.etag"\s*:/i, /"onlineMeeting"\s*:/i],
+  microsoft: [
+    /"@odata\.etag"\s*:/i,
+    /"onlineMeeting"\s*:/i,
+    /"seriesMasterId"\s*:/i,
+  ],
   apple: [/BEGIN:VEVENT/i, /BEGIN:VCALENDAR/i],
 };
 
