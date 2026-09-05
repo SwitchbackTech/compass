@@ -45,12 +45,11 @@ describe("shortcut draft creation", () => {
     draftActions.discard();
   });
 
-  it("creates a one-day all-day draft on today when today is inside the visible week", async () => {
+  it("creates a one-day all-day draft on the given day", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
 
     await createAlldayDraft(
-      dayjs("2026-05-18T00:00:00.000Z"),
-      dayjs("2026-05-24T23:59:59.999Z"),
+      dayjs("2026-05-20T15:00:00.000Z"),
       "createShortcut",
     );
 
@@ -68,33 +67,10 @@ describe("shortcut draft creation", () => {
     }
   });
 
-  it("creates a one-day all-day draft on the visible week anchor when today is outside the visible week", async () => {
+  it("creates timed drafts at the current hour on the given day", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
 
-    await createAlldayDraft(
-      dayjs("2026-06-01T00:00:00.000Z"),
-      dayjs("2026-06-07T23:59:59.999Z"),
-      "createShortcut",
-    );
-
-    const { gridDraft, status } = useDraftStore.getState();
-
-    expect(status?.eventType).toBe(Categories_Event.ALLDAY);
-    expectSameTime(
-      gridDraft?.values.schedule.start,
-      "2026-06-01T00:00:00.000Z",
-    );
-    expectSameTime(gridDraft?.values.schedule.end, "2026-06-02T00:00:00.000Z");
-  });
-
-  it("creates timed drafts on the visible week anchor when today is outside the visible week", async () => {
-    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
-
-    await createTimedDraft(
-      false,
-      dayjs("2026-06-01T00:00:00.000Z"),
-      "createShortcut",
-    );
+    await createTimedDraft(dayjs("2026-06-01T00:00:00.000Z"), "createShortcut");
 
     const { gridDraft, status } = useDraftStore.getState();
 
@@ -111,11 +87,7 @@ describe("shortcut draft creation", () => {
     // send the draft to the all-day row (multi-day timed display).
     setSystemTime(new Date("2026-05-20T23:22:00.000Z"));
 
-    await createTimedDraft(
-      true,
-      dayjs("2026-05-18T00:00:00.000Z"),
-      "createShortcut",
-    );
+    await createTimedDraft(dayjs("2026-05-20T00:00:00.000Z"), "createShortcut");
 
     const { gridDraft, status } = useDraftStore.getState();
 
@@ -132,7 +104,6 @@ describe("shortcut draft creation", () => {
     const calendarId = CalendarIdSchema.parse(createObjectIdString());
 
     await createTimedDraft(
-      true,
       dayjs("2026-05-20T00:00:00.000Z"),
       "createShortcut",
       calendarId,
@@ -146,11 +117,7 @@ describe("shortcut draft creation", () => {
   it("creates a keyboardPlace timed draft with the form closed", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
 
-    await createTimedDraft(
-      true,
-      dayjs("2026-05-20T00:00:00.000Z"),
-      "keyboardPlace",
-    );
+    await createTimedDraft(dayjs("2026-05-20T00:00:00.000Z"), "keyboardPlace");
 
     const { gridDraft, status } = useDraftStore.getState();
 
@@ -170,7 +137,6 @@ describe("shortcut draft creation", () => {
 
     await createAlldayDraft(
       dayjs("2026-05-18T00:00:00.000Z"),
-      dayjs("2026-05-24T23:59:59.999Z"),
       "createShortcut",
       calendarId,
     );

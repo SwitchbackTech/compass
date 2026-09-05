@@ -26,6 +26,7 @@ export function useDayEventNudgeShortcuts({
   navigateToDate,
   placeTimedDraft,
   timedEvents,
+  visibleDays,
 }: {
   allDayEvents?: GridEvent[];
   /** Quick-time create: place a draft at a typed start time. */
@@ -38,6 +39,8 @@ export function useDayEventNudgeShortcuts({
   /** Shift+Arrow place-create when nothing is focused and no draft can move. */
   placeTimedDraft?: () => void;
   timedEvents: GridEvent[];
+  /** The one column on screen, so its day letter selects it even when empty. */
+  visibleDays: Dayjs[];
 }): {
   getEditSequenceAnchor: () => HTMLElement | null;
   shiftHints: ActiveShiftHint[];
@@ -99,6 +102,7 @@ export function useDayEventNudgeShortcuts({
     getQuickTimeDay,
     listVisible: targeting.listNavigable,
     timedEvents,
+    visibleDays,
   });
 
   return { getEditSequenceAnchor, shiftHints };

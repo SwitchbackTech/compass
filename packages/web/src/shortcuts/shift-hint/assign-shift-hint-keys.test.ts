@@ -223,10 +223,22 @@ describe("matchDayJumpKeystroke", () => {
     })),
   ]);
 
+  // The visible columns of the week above, Sunday 2026-08-02 through Saturday.
+  const weekDayKeys = {
+    su: "2026-08-02",
+    m: "2026-08-03",
+    t: "2026-08-04",
+    w: "2026-08-05",
+    r: "2026-08-06",
+    f: "2026-08-07",
+    sa: "2026-08-08",
+  };
+
   it("selects a unique day and focuses its first event", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "w",
         buffer: "",
       }),
@@ -243,6 +255,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "s",
         buffer: "",
       }),
@@ -255,6 +268,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "u",
         buffer: "s",
       }),
@@ -269,6 +283,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "a",
         buffer: "s",
       }),
@@ -285,6 +300,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "4",
         buffer: "w",
       }),
@@ -300,6 +316,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "1",
         buffer: "f",
       }),
@@ -313,6 +330,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "0",
         buffer: "f1",
       }),
@@ -328,6 +346,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "w",
         buffer: "s",
       }),
@@ -340,6 +359,71 @@ describe("matchDayJumpKeystroke", () => {
     });
   });
 
+  it("selects an empty visible day with nothing to focus", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
+        key: "r",
+        buffer: "",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "r",
+      dayKey: "2026-08-06",
+      firstEventId: null,
+      buffer: "r",
+    });
+  });
+
+  it("narrows weekend to the visible weekend columns when they have no events", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: [],
+        dayKeyByPrefix: weekDayKeys,
+        key: "s",
+        buffer: "",
+      }),
+    ).toEqual({
+      kind: "prefix",
+      buffer: "s",
+      dayKeys: ["2026-08-02", "2026-08-08"],
+    });
+    expect(
+      matchDayJumpKeystroke({
+        assignments: [],
+        dayKeyByPrefix: weekDayKeys,
+        key: "a",
+        buffer: "s",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "sa",
+      dayKey: "2026-08-08",
+      firstEventId: null,
+      buffer: "sa",
+    });
+  });
+
+  it("does not select a day with no visible column", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: [],
+        dayKeyByPrefix: { w: "2026-08-05" },
+        key: "t",
+        buffer: "",
+      }),
+    ).toBeNull();
+    expect(
+      matchDayJumpKeystroke({
+        assignments: [],
+        dayKeyByPrefix: { w: "2026-08-05" },
+        key: "s",
+        buffer: "",
+      }),
+    ).toBeNull();
+  });
+
   it("filters chips by prefix", () => {
     expect(
       filterHintsByPrefix(weekAssignments, "w").map((a) => a.hint),
@@ -350,6 +434,7 @@ describe("matchDayJumpKeystroke", () => {
     expect(
       matchDayJumpKeystroke({
         assignments: weekAssignments,
+        dayKeyByPrefix: weekDayKeys,
         key: "2",
         buffer: "",
       }),

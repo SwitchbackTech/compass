@@ -37,8 +37,8 @@ const FOCUSED_POOL = [
 
 /**
  * The day column to teach next: the first jumpable one at or after tomorrow,
- * wrapping through the week. Days with no events have no jump key, so teaching
- * them would advertise a dead keystroke.
+ * wrapping through the week. The grid publishes its visible columns, so a
+ * day off screen is never taught as a keystroke.
  */
 function pickWeekDayPrefix(ctx: ShortcutHintContext): DayJumpPrefix | null {
   const jumpable = new Set(ctx.jumpableDayPrefixes ?? []);

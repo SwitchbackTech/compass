@@ -511,7 +511,7 @@ describe("DayCalendarGrid", () => {
   });
 
   it("opens the form when Enter is pressed on a form-closed keyboardPlace draft", async () => {
-    createTimedDraft(false, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    createTimedDraft(dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
     const draft = getGridDraft();
     expect(draft).not.toBeNull();
     if (!draft) return;

@@ -4,6 +4,7 @@ import {
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
   getSavedEventsByTitle,
+  getVisibleDayDates,
   openTimedEventFormWithKeyboard,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -149,6 +150,37 @@ test("Shift and the day letter focuses an event without first pressing h", async
     page.locator("#mainGrid").getByRole("button", { name: title }),
   ).toBeFocused();
   await expect(shiftHintOverlay(page)).toHaveCount(1);
+});
+
+test("Shift and a day letter then c creates on that column of another week", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await blurActive(page);
+
+  // Next window, so today is out of view and a create that ignored the
+  // selection would fall back to the first visible day. Target the last
+  // column: it is never that fallback, and it needs no events of its own to
+  // be selectable.
+  const thisWindow = await getVisibleDayDates(page);
+  await page.keyboard.press("k");
+  await expect.poll(() => getVisibleDayDates(page)).not.toEqual(thisWindow);
+  const nextWindow = await getVisibleDayDates(page);
+  const targetDate = nextWindow[nextWindow.length - 1]!;
+  const weekday = new Date(`${targetDate}T12:00:00`).getDay();
+  const keys = DAY_PREFIX_KEYS[WEEKDAY_PREFIXES[weekday]!]!;
+
+  await page.keyboard.press(`Shift+${keys[0]}`);
+  if (keys[1]) await page.keyboard.press(keys[1]);
+  await page.keyboard.press("c");
+
+  const title = createEventTitle("Column Create");
+  await fillTitleAndSaveEventForm(page, title);
+
+  const [saved] = await getSavedEventsByTitle(page, title);
+  expect(new Date(saved.startDate).getDay()).toBe(weekday);
+  // Creating spends the selection, so no chips linger over the new event.
+  await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
 test("Shift+Tab does not toggle event jump keys", async ({ page }) => {

@@ -23,6 +23,10 @@ const EVENT_A = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
 const EVENT_B = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
 const EVENT_C = EventIdSchema.parse("cccccccccccccccccccccccc");
 const EVENT_D = EventIdSchema.parse("dddddddddddddddddddddddd");
+/** Sunday 2026-08-02 through Saturday 2026-08-08, the week the fixtures use. */
+const WEEK_DAYS = Array.from({ length: 7 }, (_, index) =>
+  dayjs("2026-08-02").add(index, "day"),
+);
 
 const dispatch = (
   type: "keydown" | "keyup",
@@ -114,6 +118,7 @@ describe("useShiftHoldEventHints", () => {
             element: elements[index]!,
           })),
         timedEvents: events,
+        visibleDays: WEEK_DAYS,
       }),
     );
 
@@ -197,10 +202,46 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
-  it("does not claim a day letter with no events that day", () => {
+  it("selects an empty day from idle without focusing anything", () => {
+    const { focus } = mountHints([
+      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
+    ]);
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "W",
+      shiftKey: true,
+    });
+    act(() => {
+      document.dispatchEvent(event);
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
+    expect(useEventJumpStore.getState().announcement).toBe(
+      "Wednesday selected",
+    );
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it("does not claim a day letter for a column that is not visible", () => {
     const { focus, result } = mountHints([
       timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
     ]);
+    cleanup();
+    renderHook(() =>
+      useShiftHoldEventHints({
+        createAtTime: () => {},
+        focus: (target) => focus(target),
+        getQuickTimeDay: () => dayjs("2026-08-06"),
+        listVisible: () => [],
+        timedEvents: [],
+        visibleDays: [dayjs("2026-08-06")],
+      }),
+    );
 
     const event = new KeyboardEvent("keydown", {
       bubbles: true,
@@ -217,6 +258,39 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(focus).not.toHaveBeenCalled();
     expect(result.current.hints).toEqual([]);
+  });
+
+  it("leaves c and Shift+C unclaimed while a day is selected", () => {
+    mountHints();
+
+    act(() => {
+      pressDayJump("w");
+    });
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
+
+    for (const shiftKey of [false, true]) {
+      const down = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: shiftKey ? "C" : "c",
+        shiftKey,
+      });
+      const up = new KeyboardEvent("keyup", {
+        bubbles: true,
+        cancelable: true,
+        key: shiftKey ? "C" : "c",
+        shiftKey,
+      });
+      act(() => {
+        document.dispatchEvent(down);
+        document.dispatchEvent(up);
+      });
+      expect(down.defaultPrevented).toBe(false);
+      expect(up.defaultPrevented).toBe(false);
+    }
+    // The create owner, not this hook, spends the selection.
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
   });
 
   it("routes a bare digit to typed-time creation while jump is off", () => {
@@ -490,6 +564,7 @@ describe("useShiftHoldEventHints", () => {
             element: elements[index]!,
           })),
         timedEvents,
+        visibleDays: WEEK_DAYS,
       }),
     );
 
@@ -600,6 +675,7 @@ describe("useShiftHoldEventHints", () => {
               ];
             }),
           timedEvents,
+          visibleDays: WEEK_DAYS,
         }),
       { initialProps: { timedEvents: events } },
     );
@@ -621,15 +697,23 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().pointerHintKey).toBe("W3");
   });
 
-  it("publishes the columns a day key can currently land on", () => {
-    mountHints([
-      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
-      timedFixture(EVENT_B, "2026-08-08T11:00:00.000Z"),
-    ]);
+  it("publishes every visible column as a day key can select empty ones", () => {
+    cleanup();
+    renderHook(() =>
+      useShiftHoldEventHints({
+        createAtTime: () => {},
+        focus: () => {},
+        getQuickTimeDay: () => dayjs("2026-08-05"),
+        listVisible: () => [],
+        timedEvents: [],
+        visibleDays: WEEK_DAYS.slice(3, 6),
+      }),
+    );
 
     expect(useEventJumpStore.getState().jumpableDayPrefixes).toEqual([
       "w",
-      "sa",
+      "r",
+      "f",
     ]);
   });
 

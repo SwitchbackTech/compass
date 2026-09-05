@@ -144,18 +144,22 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 
 ### UX
 
-Pressing `C` in Week view opens a new event creation form, equivalent to clicking an empty grid slot.
+Pressing `C` in Week view opens a new event creation form on the day the user is looking at: a selected day column (Shift + its day letter, see Scenario 12), else the day of the focused event, else today, else the first visible day. The draft starts at the current hour on that day. The timed form has no date field, so this is how a draft lands on the right day. Creating spends the column selection, so the highlight clears.
 
 ### Steps
 
 1. Navigate to `/week`.
 2. Ensure no input is focused.
-3. Press `C`.
+3. Press `C`. Discard the draft.
+4. Press `K` to go to next week, then hold Shift and press the letter for an empty day (for example `Shift+R` for Thursday), then press `C`.
+5. Discard, focus an event on another day with `U` and the arrows, then press `C`.
 
 ### Expected Results
 
-- The event creation form opens.
-- The form is equivalent to what would appear after clicking an empty grid slot.
+- From idle on the current week, the form opens with the draft on today.
+- After selecting a column, the form opens with the draft in that column, and the column highlight clears.
+- With an event focused, the draft lands on that event's day.
+- `Shift+C` and Shift+Arrow place-create follow the same day.
 
 ---
 
@@ -283,7 +287,7 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. From idle, a column is entered with Shift and its day letter (`Shift+W`, `Shift+S` then `U`/`A` for the weekend), which always works: bare `T` stays “go to today”, bare `M` stays “open event menu”, and bare `F` stays “focus latest notice”. Day view keeps bare digits, since `Shift+1` is `!`. `Esc` exits (a second `H` also toggles off). Holding Mod reveals the same day prefixes on week column headers, shown as `⇧W` while jump mode is off. Bare Shift and Shift+Tab do not show jump chips.
+Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event, if it has one; an empty column is still selected, so `C`, `Shift+C`, Shift+Arrow, and typed digits (`1400`) create on it. A following digit focuses that index. From idle, a column is entered with Shift and its day letter (`Shift+W`, `Shift+S` then `U`/`A` for the weekend), which always works: bare `T` stays “go to today”, bare `M` stays “open event menu”, and bare `F` stays “focus latest notice”. Day view keeps bare digits, since `Shift+1` is `!`. `Esc` exits (a second `H` also toggles off). Holding Mod reveals the same day prefixes on week column headers, shown as `⇧W` while jump mode is off. Bare Shift and Shift+Tab do not show jump chips.
 
 ### Steps
 
@@ -297,7 +301,7 @@ Pressing `H` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/
 ### Expected Results
 
 - Chips appear on events currently visible in the grid when `H` is pressed and stay until Esc. Scrolled-off events keep their jump keys but hide their chips.
-- A day letter highlights that column and focuses the first event; digits refine to `Wn`.
+- A day letter highlights that column and focuses the first event; digits refine to `Wn`. On a column with no events the highlight still appears, nothing focuses, and `C` or a typed `HHMM` creates there.
 - Shift + the day letter enters a column from idle, including while an event is focused; `H` remains available to reveal every chip. Weekend columns use `Shift+S` then `A` / `U`.
 - Bare `T` still goes to today while jump is off. With an event focused, bare `M` still opens the event menu. With a visible notice, bare `F` still focuses that notice.
 - Arrow keys keep jump mode on so letter-then-arrows works.
@@ -461,7 +465,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 2. `J` and `K` navigate days in Day view and weeks in Week view.
 3. `T` returns to today from any offset in both Day and Week view.
 4. Cmd+K opens the command palette; Escape closes it without action; Undo/Redo rows are present.
-5. `C` opens a timed event form and `Shift+C` an all-day event form, in both Day and Week view.
+5. `C` opens a timed event form and `Shift+C` an all-day event form, in both Day and Week view. In Week view both land on the selected column, else the focused event's day, else today, else the first visible day.
 6. `]` toggles the sidebar in both Week and Day view.
 7. Delete removes a focused event in Day and Week view and shows an undo toast.
 8. Cmd+Z / Ctrl+Z undoes the last event action; Cmd+Shift+Z / Ctrl+Shift+Z redoes it.
@@ -471,7 +475,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 12. With no event focused and no particular control focused (document body), any Arrow key focuses the timed event nearest now in the current Day/Week view (in-progress, else next upcoming, else most recently ended; today preferred in Week; all-day only if no timed events). Further arrows then follow the existing rules. `U` still focuses the first DOM-order event. With a focused event and no draft open: in Week view ArrowUp/ArrowDown stay on the same day and ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day; in Day view all four arrows move chronological focus.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to guests / color; bare `E` alone does nothing.
-15. Pressing `H` shows event jump chips; a day letter + digit focuses that event; `Shift` + the day letter enters a column without a prior `H`; Shift+Tab does not show chips.
+15. Pressing `H` shows event jump chips; a day letter + digit focuses that event; `Shift` + the day letter enters a column without a prior `H`, including an empty column, and `C` then creates there; Shift+Tab does not show chips.
 16. Mouse clicks, right-clicks, and double-clicks are inert on calendar views; a blocked click shows the keyboard-only hint. `/life` allows normal clicks. `M` opens the focused event's menu; `F` focuses the newest notice.
 17. PageUp / PageDown scroll the timed grid by one viewport in Day and Week view even when an event is focused; they do not fire in a text input.
 18. Alt+ArrowUp / Alt+ArrowDown pan the timed grid by one hour in Day and Week view even when an event is focused; they do not fire in a text input.

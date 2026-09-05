@@ -32,8 +32,10 @@ import {
 } from "@web/shortcuts/quick-time/quick-time.util";
 import {
   assignDayJumpKeys,
+  DAY_JUMP_PREFIX_BY_WEEKDAY,
   type DayJumpAssignment,
   type DayJumpMatchResult,
+  type DayJumpWeekday,
   DIGIT_AMBIGUOUS_COMMIT_MS,
   dayJumpPrefixesForWeekdays,
   dayNameForPrefix,
@@ -165,12 +167,15 @@ const buildDayJumpAssignments = (
 /**
  * Press `h` to show day-prefix jump labels, or Shift+<day letter> to enter
  * jump mode straight onto that column (`Shift+W`, `Shift+S` then `u`/`a`).
- * Shift is what makes the day columns always available: bare `t`, `f`, and
- * `m` keep their own commands. Once jump mode is on, the labels are typed
- * bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a second `h`
- * toggles off. `s` is only the Sunday/Saturday prefix. `e` is not a day
- * prefix: jump yields to an armed (or about-to-arm) edit sequence so `e`
- * then `t` edits the title instead of selecting Tuesday.
+ * Any visible column can be selected, empty ones included, so `c`, `Shift+C`,
+ * and typed digits have a day to land on; a column with events also focuses
+ * its first one. Shift is what makes the day columns always available: bare
+ * `t`, `f`, and `m` keep their own commands. Once jump mode is on, the labels
+ * are typed bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a
+ * second `h` toggles off. `s` is only the Sunday/Saturday prefix. `e` is not
+ * a day prefix: jump yields to an armed (or about-to-arm) edit sequence so
+ * `e` then `t` edits the title instead of selecting Tuesday. `c` is left
+ * unclaimed too, so the create shortcuts can consume the selected column.
  *
  * Day view uses the same scheme on the one date it shows, so a bare digit is
  * never an event label on an empty buffer in either view. This listener owns
@@ -184,6 +189,7 @@ export function useShiftHoldEventHints({
   getQuickTimeDay,
   listVisible,
   timedEvents,
+  visibleDays,
 }: {
   allDayEvents?: GridEvent[];
   createAtTime: (start: Dayjs) => void;
@@ -191,6 +197,8 @@ export function useShiftHoldEventHints({
   getQuickTimeDay: () => Dayjs;
   listVisible: () => ShiftHintFocusTarget[];
   timedEvents: GridEvent[];
+  /** Columns on screen, so a day letter can select one with no events. */
+  visibleDays: Dayjs[];
 }): EventJumpHintsResult {
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
   const isActive = useEventJumpStore((state) => state.isActive);
@@ -214,6 +222,7 @@ export function useShiftHoldEventHints({
   const listVisibleRef = useRef(listVisible);
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
+  const visibleDaysRef = useRef(visibleDays);
   const publishedPrefixesRef = useRef<string[]>([]);
 
   createAtTimeRef.current = createAtTime;
@@ -222,6 +231,7 @@ export function useShiftHoldEventHints({
   listVisibleRef.current = listVisible;
   allDayEventsRef.current = allDayEvents;
   timedEventsRef.current = timedEvents;
+  visibleDaysRef.current = visibleDays;
   isActiveRef.current = isActive;
 
   useEffect(() => {
@@ -338,6 +348,14 @@ export function useShiftHoldEventHints({
 
       return true;
     };
+
+    const dayKeyByPrefix = () =>
+      Object.fromEntries(
+        visibleDaysRef.current.map((day) => [
+          DAY_JUMP_PREFIX_BY_WEEKDAY[day.day() as DayJumpWeekday],
+          day.format(YEAR_MONTH_DAY_FORMAT),
+        ]),
+      );
 
     const clearHints = () => {
       clearAmbiguousCommitTimer();
@@ -490,7 +508,7 @@ export function useShiftHoldEventHints({
               item.eventId === pointerHintEventId &&
               item.dayKey === match.dayKey,
           );
-        if (!keepClickedEvent) {
+        if (!keepClickedEvent && match.firstEventId) {
           focusEvent(match.firstEventId);
         }
         return;
@@ -552,11 +570,9 @@ export function useShiftHoldEventHints({
         const key = normalizedKeyboardKey(event);
         if (!isShiftedSingleChar(event)) return;
 
-        const assignments = rebuildAssignments();
-        if (assignments.length === 0) return;
-
         const match = matchDayJumpKeystroke({
-          assignments,
+          assignments: rebuildAssignments(),
+          dayKeyByPrefix: dayKeyByPrefix(),
           key,
           buffer: "",
         });
@@ -652,6 +668,7 @@ export function useShiftHoldEventHints({
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
+        dayKeyByPrefix: dayKeyByPrefix(),
         key,
         buffer: bufferRef.current,
       });
@@ -668,8 +685,13 @@ export function useShiftHoldEventHints({
         stripDigitBuffer();
         // `e` is not a day prefix. Leave it unclaimed so a later-registered
         // edit-sequence listener can still arm (`e` then `t` on a focused
-        // event). Other unmatched letters stay swallowed so j/k/c cannot fire.
-        if (key === KEYMAP.editTitle.sequence.leader) {
+        // event). `c` / Shift+C pass too: the create owners read the selected
+        // column on keyup and then turn jump off. Other unmatched letters
+        // stay swallowed so j/k cannot fire.
+        if (
+          key === KEYMAP.editTitle.sequence.leader ||
+          key === KEYMAP.createEvent.hotkey.toLowerCase()
+        ) {
           return;
         }
         event.preventDefault();
@@ -805,20 +827,21 @@ export function useShiftHoldEventHints({
     setHints(toActiveHints(source, visibleById));
   }, [eventIdsKey, isActive]);
 
-  // Publish the day columns that have a live jump key, so the sidebar tip only
-  // teaches a keystroke that would actually land somewhere. Derived from the
-  // event props rather than the DOM registry so it is current before any
-  // keypress. Events without a start date would otherwise advertise the
-  // FALLBACK_SCHEDULE's phantom Sunday.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: eventIdsKey re-runs this when the event set changes; the contents come from refs
+  // Publish the day columns a letter can select, so the sidebar tip only
+  // teaches a keystroke that lands somewhere. Every visible column qualifies:
+  // an empty one still takes `c` and typed times.
+  const visibleDaysKey = visibleDays
+    .map((day) => day.format(YEAR_MONTH_DAY_FORMAT))
+    .join(",");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: visibleDaysKey re-runs this when the columns change; the contents come from refs
   useEffect(() => {
-    const weekdays = [...allDayEventsRef.current, ...timedEventsRef.current]
-      .filter((event) => Boolean(event.startDate))
-      .map((event) => scheduleMeta(event).weekday);
-    const next = dayJumpPrefixesForWeekdays(weekdays);
+    const next = dayJumpPrefixesForWeekdays(
+      visibleDaysRef.current.map((day) => day.day()),
+    );
     publishedPrefixesRef.current = next;
     eventJumpActions.setJumpableDayPrefixes(next);
-  }, [eventIdsKey]);
+  }, [visibleDaysKey]);
 
   // Only clear what this grid published: switching Day -> Week can mount the
   // new grid before the old one unmounts, and a blind clear there would blank
