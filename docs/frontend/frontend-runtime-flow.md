@@ -199,7 +199,8 @@ whatever the DOM did.
 `calendar_connected` has two sources, distinguished by a `source` property:
 `signup_google` from `GoogleAuthCallback` (a new user whose Google grant
 included the calendar scopes) and `connect_redirect` from
-`google-connect-status.util.ts` (the sync service's add-account round trip).
+`packages/web/src/auth/providers/connect-status.util.ts` (the sync service's
+add-account round trip).
 Only the second used to fire, so the activation metric missed the path most new
 users actually take.
 

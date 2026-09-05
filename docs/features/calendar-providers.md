@@ -14,10 +14,9 @@ created where the host supports them, and per-connection health is honest.
 
 ## Status
 
-P0 foundation is in the tree. Google is the registered adapter. Microsoft and
-Apple adapters live under `packages/sync/src/providers/<kind>/` and register in
-M-09 / A-08. Work is tracked across six GitHub milestones, each with a tracking
-issue:
+Google, Microsoft, and Apple adapters register in `buildProviderRegistry`
+when their config is present. Work is tracked across six GitHub milestones,
+each with a tracking issue:
 
 | Milestone | Purpose |
 |---|---|
@@ -265,9 +264,6 @@ Each alias names the release that removes it.
   wires. `revokedConnectionServerMessages` emits both. Event mutations still
   return HTTP 410 `GOOGLE_REVOKED`. Milestone C removes `GOOGLE_REVOKED` after
   every client reads `CONNECTION_REVOKED`.
-- **Health snapshot fleet label.** `health-snapshot.service.ts` hard-codes
-  `provider: "google"` for the whole fleet. Milestone C splits the snapshot per
-  provider.
 - **`metadata.google` overlap.** `UserMetadata.connections[]` is the
   provider-neutral list; `metadata.google` (and `metadata.google.connections`)
   stays until WP-08c clients read `connections[]`. Drop the overlap in
