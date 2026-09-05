@@ -5,6 +5,7 @@ import {
   type MicrosoftEventWriteApi,
   MicrosoftEventWriter,
 } from "@sync/providers/microsoft/microsoft-event-writer.adapter";
+import { clearMeetingSettingsCacheForTests } from "@sync/providers/microsoft/microsoft-meeting-providers";
 import { type ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
 const msError = (status: number, code?: string) =>
@@ -33,7 +34,17 @@ class FakeWriteApi implements MicrosoftEventWriteApi {
     patch: [] as Parameters<MicrosoftEventWriteApi["patch"]>[0][],
     delete: [] as Parameters<MicrosoftEventWriteApi["delete"]>[0][],
     get: [] as Parameters<MicrosoftEventWriteApi["get"]>[0][],
+    listInstances: [] as Parameters<
+      MicrosoftEventWriteApi["listInstances"]
+    >[0][],
+    getCalendarMeetingSettings: [] as unknown[],
   };
+
+  #meetingSettings = {
+    defaultOnlineMeetingProvider: "teamsForBusiness",
+    allowedOnlineMeetingProviders: ["teamsForBusiness"],
+  };
+  #instances: readonly GraphEvent[] = [];
 
   #etag: string;
   #deleted = new Set<string>();
@@ -45,10 +56,28 @@ class FakeWriteApi implements MicrosoftEventWriteApi {
       patch?: Behavior;
       delete?: Behavior;
       get?: Behavior;
+      listInstances?: Behavior | readonly GraphEvent[];
+      meetingSettings?: {
+        defaultOnlineMeetingProvider?: string;
+        allowedOnlineMeetingProviders?: string[];
+      };
     } = {},
     initialEtag = 'W/"graph-v1"',
   ) {
     this.#etag = initialEtag;
+    if (behavior.meetingSettings) {
+      this.#meetingSettings = {
+        defaultOnlineMeetingProvider:
+          behavior.meetingSettings.defaultOnlineMeetingProvider ??
+          this.#meetingSettings.defaultOnlineMeetingProvider,
+        allowedOnlineMeetingProviders:
+          behavior.meetingSettings.allowedOnlineMeetingProviders ??
+          this.#meetingSettings.allowedOnlineMeetingProviders,
+      };
+    }
+    if (Array.isArray(behavior.listInstances)) {
+      this.#instances = behavior.listInstances;
+    }
   }
 
   async create(
@@ -95,6 +124,24 @@ class FakeWriteApi implements MicrosoftEventWriteApi {
     return this.#settle("get", () =>
       scriptedEvent(params.eventId, 'W/"graph-get"'),
     );
+  }
+
+  async listInstances(
+    params: Parameters<MicrosoftEventWriteApi["listInstances"]>[0],
+  ): Promise<readonly GraphEvent[]> {
+    this.calls.listInstances.push(params);
+    const scripted = this.behavior.listInstances;
+    if (scripted instanceof Error) throw scripted;
+    if (Array.isArray(scripted)) return scripted;
+    return this.#instances;
+  }
+
+  async getCalendarMeetingSettings(): Promise<{
+    defaultOnlineMeetingProvider?: string;
+    allowedOnlineMeetingProviders?: string[];
+  }> {
+    this.calls.getCalendarMeetingSettings.push({});
+    return this.#meetingSettings;
   }
 
   #settle(method: "create" | "patch" | "get", fallback: () => GraphEvent) {
@@ -159,6 +206,10 @@ const basePatch = {
 };
 
 describe("MicrosoftEventWriter", () => {
+  afterEach(() => {
+    clearMeetingSettingsCacheForTests();
+  });
+
   it("creates with transactionId and returns provider identity", async () => {
     const api = new FakeWriteApi();
     const { writer, tokens } = writerWith(api);
@@ -432,20 +483,149 @@ describe("MicrosoftEventWriter", () => {
     expect(missing).toBeNull();
   });
 
-  it("fetchInstanceAt is unsupported until M-06b", async () => {
-    const { writer } = writerWith(new FakeWriteApi());
+  it("adds Teams online meeting fields when createConference and default Teams provider", async () => {
+    const api = new FakeWriteApi({
+      create: {
+        ...scriptedEvent("abc12deadbeef00000000000"),
+        onlineMeeting: {
+          joinUrl: "https://teams.microsoft.com/l/meetup-join/abc",
+        },
+        onlineMeetingProvider: "teamsForBusiness",
+      },
+      meetingSettings: {
+        defaultOnlineMeetingProvider: "teamsForBusiness",
+        allowedOnlineMeetingProviders: ["teamsForBusiness"],
+      },
+    });
+    const { writer } = writerWith(api);
 
-    const error = (await writer
-      .fetchInstanceAt({
-        accessToken: "at",
-        calendarId: "cal",
-        seriesProviderEventId: "series-1",
-        originalStartAt: "2025-01-15T14:00:00.000Z",
-        scheduleKind: "timed",
-      })
-      .catch((e) => e)) as ProviderWriteError;
+    const result = await writer.createEvent({
+      ...baseCreate,
+      createConference: true,
+    });
 
-    expect(error.reason).toBe("unsupportedCapability");
+    expect(api.calls.getCalendarMeetingSettings).toHaveLength(1);
+    expect(api.calls.create[0]?.body).toMatchObject({
+      isOnlineMeeting: true,
+      onlineMeetingProvider: "teamsForBusiness",
+    });
+    expect(result.conference).toEqual({
+      url: "https://teams.microsoft.com/l/meetup-join/abc",
+      label: "Microsoft Teams",
+    });
+  });
+
+  it("uses the first allowed Teams provider when default is not Teams", async () => {
+    const api = new FakeWriteApi({
+      meetingSettings: {
+        defaultOnlineMeetingProvider: "skypeForConsumer",
+        allowedOnlineMeetingProviders: ["skypeForConsumer", "teamsForConsumer"],
+      },
+    });
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({ ...baseCreate, createConference: true });
+
+    expect(api.calls.create[0]?.body).toMatchObject({
+      isOnlineMeeting: true,
+      onlineMeetingProvider: "teamsForConsumer",
+    });
+  });
+
+  it("creates without a conference when no Teams provider is allowed", async () => {
+    const api = new FakeWriteApi({
+      meetingSettings: {
+        defaultOnlineMeetingProvider: "skypeForConsumer",
+        allowedOnlineMeetingProviders: ["skypeForConsumer"],
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const result = await writer.createEvent({
+      ...baseCreate,
+      createConference: true,
+    });
+
+    expect(api.calls.create[0]?.body).not.toHaveProperty("isOnlineMeeting");
+    expect(result.conference).toBeUndefined();
+  });
+
+  it("caches calendar meeting settings for the same access token", async () => {
+    const api = new FakeWriteApi();
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({ ...baseCreate, createConference: true });
+    await writer.createEvent({ ...baseCreate, createConference: true });
+
+    expect(api.calls.getCalendarMeetingSettings).toHaveLength(1);
+  });
+
+  it("resolves one series instance by originalStart within a one-day window", async () => {
+    const api = new FakeWriteApi({
+      listInstances: [
+        {
+          ...scriptedEvent("instance-1"),
+          type: "occurrence",
+          seriesMasterId: "series-1",
+          originalStart: "2025-01-15T14:00:00.0000000Z",
+          subject: "Occurrence",
+        },
+      ],
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T14:00:00.000Z",
+      scheduleKind: "timed",
+    });
+
+    expect(api.calls.listInstances[0]).toMatchObject({
+      seriesMasterId: "series-1",
+      startDateTime: "2025-01-15T02:00:00.000",
+      endDateTime: "2025-01-16T02:00:00.000",
+    });
+    expect(read?.kind).toBe("event");
+    expect(read?.providerEventId).toBe("instance-1");
+    if (read?.kind === "event") {
+      expect(read.recurrence).toEqual({
+        kind: "instance",
+        seriesProviderId: "series-1",
+        recurrenceId: "2025-01-15T14:00:00.000Z",
+      });
+    }
+  });
+
+  it("returns null when no instance matches the original start", async () => {
+    const api = new FakeWriteApi({ listInstances: [] });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T14:00:00.000Z",
+      scheduleKind: "timed",
+    });
+
+    expect(read).toBeNull();
+  });
+
+  it("returns null when the series itself is gone", async () => {
+    const api = new FakeWriteApi({ listInstances: msError(404) });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "gone",
+      originalStartAt: "2025-01-15T14:00:00.000Z",
+      scheduleKind: "timed",
+    });
+
+    expect(read).toBeNull();
   });
 
   it("never leaks the bearer token onto a thrown error cause", async () => {

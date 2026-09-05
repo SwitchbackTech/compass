@@ -25,9 +25,14 @@ const NO_CATEGORY_COLORS: ReadonlyMap<string, string> = new Map();
 
 const MEETING_PROVIDER_LABELS: Readonly<Record<string, string>> = {
   teamsForBusiness: "Microsoft Teams",
+  teamsForConsumer: "Microsoft Teams",
   skypeForBusiness: "Skype for Business",
   skypeForConsumer: "Skype",
 };
+
+export interface NormalizeMicrosoftEventOptions {
+  readonly allowOccurrence?: boolean;
+}
 
 export interface GraphDateTimeTimeZone {
   readonly dateTime?: string;
@@ -91,8 +96,9 @@ export interface GraphEvent {
 export function normalizeMicrosoftEvent(
   item: GraphEvent,
   masterCategories: ReadonlyMap<string, string> = NO_CATEGORY_COLORS,
+  options: NormalizeMicrosoftEventOptions = {},
 ): ProviderEventRead {
-  if (item.type === "occurrence") {
+  if (item.type === "occurrence" && !options.allowOccurrence) {
     throw new ProviderEventError(
       "unmappableContent",
       "Occurrence rows must not be normalized; the reader must not request them",
@@ -235,7 +241,7 @@ function mapAttendees(attendees: GraphEvent["attendees"]): Attendee[] {
     }));
 }
 
-function mapConference(item: GraphEvent): Conference | null {
+export function mapConference(item: GraphEvent): Conference | null {
   const url = item.onlineMeeting?.joinUrl;
   if (!url) return null;
 

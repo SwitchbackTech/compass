@@ -33,7 +33,6 @@ import {
   type ProviderEventReadError,
   type ProviderEventReader,
 } from "@sync/providers/provider-event-reader.port";
-import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
 const CLIENT_ID = "microsoft-client-id";
 const CLIENT_SECRET = "microsoft-client-secret";
@@ -343,7 +342,7 @@ describe("microsoft reader contract", () => {
 });
 
 describe("microsoft writer contract", () => {
-  it("create returns id and version, stale patch conflicts, delete is idempotent", async () => {
+  it("create returns id and version, stale patch conflicts, delete is idempotent, fetchInstanceAt resolves", async () => {
     const created = await writerAdapter.createEvent({
       accessToken: "contract-access-token",
       calendarId: "primary",
@@ -377,20 +376,16 @@ describe("microsoft writer contract", () => {
       expectedVersion: null,
       invitation: "none",
     });
-  });
 
-  it("fetchInstanceAt remains unsupported until M-06b", async () => {
-    const error = await writerAdapter
-      .fetchInstanceAt({
-        accessToken: "contract-access-token",
-        calendarId: "primary",
-        seriesProviderEventId: "series-1",
-        originalStartAt: "2025-01-15T14:00:00.000Z",
-        scheduleKind: "timed",
-      })
-      .catch((caught) => caught);
-    expect(error).toBeInstanceOf(ProviderWriteError);
-    expect((error as ProviderWriteError).reason).toBe("unsupportedCapability");
+    const instance = await writerAdapter.fetchInstanceAt({
+      accessToken: "contract-access-token",
+      calendarId: "primary",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T14:00:00.000Z",
+      scheduleKind: "timed",
+    });
+    expect(instance).not.toBeNull();
+    expect(instance?.providerEventId.length).toBeGreaterThan(0);
   });
 });
 

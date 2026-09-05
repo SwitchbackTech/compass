@@ -9,6 +9,7 @@ import {
 } from "@sync/providers/microsoft/microsoft-error";
 import {
   type GraphEvent,
+  mapConference,
   normalizeMicrosoftEvent,
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
 import {
@@ -16,6 +17,11 @@ import {
   MICROSOFT_GRAPH_BASE_URL,
   MICROSOFT_REQUEST_TIMEOUT_MS,
 } from "@sync/providers/microsoft/microsoft-http.constants";
+import {
+  type GraphCalendarMeetingSettings,
+  pickTeamsOnlineMeetingProvider,
+  readCachedCalendarMeetingSettings,
+} from "@sync/providers/microsoft/microsoft-meeting-providers";
 import { fromRRule } from "@sync/providers/microsoft/microsoft-recurrence";
 import { UnsupportedRecurrenceError } from "@sync/providers/microsoft/microsoft-recurrence.error";
 import {
@@ -73,6 +79,8 @@ export interface GraphEventWriteBody {
   readonly attendees?: readonly GraphAttendeeWrite[];
   readonly responseRequested?: boolean;
   readonly transactionId?: string;
+  readonly isOnlineMeeting?: boolean;
+  readonly onlineMeetingProvider?: string;
 }
 
 export interface MicrosoftEventWriteApi {
@@ -87,6 +95,12 @@ export interface MicrosoftEventWriteApi {
   }): Promise<GraphEvent>;
   delete(params: { eventId: string; ifMatch: string | null }): Promise<void>;
   get(params: { eventId: string }): Promise<GraphEvent>;
+  listInstances(params: {
+    seriesMasterId: string;
+    startDateTime: string;
+    endDateTime: string;
+  }): Promise<readonly GraphEvent[]>;
+  getCalendarMeetingSettings(): Promise<GraphCalendarMeetingSettings>;
 }
 
 export type MicrosoftEventWriteApiFactory = (
@@ -111,12 +125,30 @@ export class MicrosoftEventWriter implements ProviderEventWriter {
   }
 
   async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
+    const api = this.#makeApi(input.accessToken);
+    let conferenceFields: Pick<
+      GraphEventWriteBody,
+      "isOnlineMeeting" | "onlineMeetingProvider"
+    > = {};
+
     if (input.createConference) {
-      // Teams conference creation lands in M-06b; booking copy handles null URL.
+      const settings = await readCachedCalendarMeetingSettings(
+        input.accessToken,
+        api,
+      );
+      const provider = pickTeamsOnlineMeetingProvider(settings);
+      if (provider) {
+        conferenceFields = {
+          isOnlineMeeting: true,
+          onlineMeetingProvider: provider,
+        };
+      }
     }
 
-    const api = this.#makeApi(input.accessToken);
-    const body = toGraphCreateBody(input);
+    const body = {
+      ...toGraphCreateBody(input),
+      ...conferenceFields,
+    };
 
     try {
       const created = await api.create({
@@ -170,12 +202,27 @@ export class MicrosoftEventWriter implements ProviderEventWriter {
   }
 
   async fetchInstanceAt(
-    _input: ProviderInstanceFetchInput,
+    input: ProviderInstanceFetchInput,
   ): Promise<ProviderEventRead | null> {
-    throw new ProviderWriteError(
-      "unsupportedCapability",
-      "Microsoft instance resolution lands in M-06b",
-    );
+    const api = this.#makeApi(input.accessToken);
+    try {
+      const window = instanceLookupWindow(input.originalStartAt);
+      const instances = await api.listInstances({
+        seriesMasterId: input.seriesProviderEventId,
+        startDateTime: window.startDateTime,
+        endDateTime: window.endDateTime,
+      });
+      const match = instances.find((item) =>
+        originalStartMatches(item, input.originalStartAt),
+      );
+      if (!match) return null;
+      return normalizeMicrosoftEvent(match, undefined, {
+        allowOccurrence: true,
+      });
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw classifyWriteError(error);
+    }
   }
 }
 
@@ -323,11 +370,39 @@ function toResult(event: GraphEvent): ProviderWriteResult {
       "Microsoft returned an event without an id or etag",
     );
   }
+  const conference = mapConference(event);
   return {
     providerEventId: event.id,
     providerVersion: event["@odata.etag"],
     ...(event.iCalUId ? { icalUid: event.iCalUId } : {}),
+    ...(conference ? { conference } : {}),
   };
+}
+
+function instanceLookupWindow(originalStartAt: string): {
+  startDateTime: string;
+  endDateTime: string;
+} {
+  const center = dayjs.utc(originalStartAt);
+  return {
+    startDateTime: center.subtract(12, "hour").format(GRAPH_DATETIME),
+    endDateTime: center.add(12, "hour").format(GRAPH_DATETIME),
+  };
+}
+
+function originalStartMatches(
+  item: GraphEvent,
+  originalStartAt: string,
+): boolean {
+  if (!item.originalStart) return false;
+  return (
+    toCanonicalRecurrenceId(item.originalStart) ===
+    toCanonicalRecurrenceId(originalStartAt)
+  );
+}
+
+function toCanonicalRecurrenceId(originalStart: string): string {
+  return new Date(originalStart).toISOString();
 }
 
 function classifyWriteError(error: unknown): ProviderWriteError {
@@ -438,6 +513,33 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
     );
   }
 
+  listInstances(params: {
+    seriesMasterId: string;
+    startDateTime: string;
+    endDateTime: string;
+  }): Promise<readonly GraphEvent[]> {
+    const eventId = encodeURIComponent(params.seriesMasterId);
+    const query = new URLSearchParams({
+      startDateTime: params.startDateTime,
+      endDateTime: params.endDateTime,
+      $select: MICROSOFT_EVENT_SELECT,
+    });
+    return this.#requestCollection(
+      "GET",
+      `${MICROSOFT_GRAPH_BASE_URL}/me/events/${eventId}/instances?${query}`,
+    );
+  }
+
+  getCalendarMeetingSettings(): Promise<GraphCalendarMeetingSettings> {
+    const query = new URLSearchParams({
+      $select: "allowedOnlineMeetingProviders,defaultOnlineMeetingProvider",
+    });
+    return this.#requestJson(
+      "GET",
+      `${MICROSOFT_GRAPH_BASE_URL}/me/calendar?${query}`,
+    );
+  }
+
   async #request(
     method: "GET" | "POST" | "PATCH" | "DELETE",
     url: string,
@@ -468,6 +570,62 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
     }
 
     const data = (await response.json()) as GraphEvent & {
+      error?: { code?: string; message?: string };
+    };
+
+    if (!response.ok) {
+      throw Object.assign(
+        new Error(data.error?.message ?? "microsoft_event_write_failed"),
+        { response: { status: response.status, data } },
+      );
+    }
+
+    return data;
+  }
+
+  async #requestCollection(
+    method: "GET",
+    url: string,
+  ): Promise<readonly GraphEvent[]> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.#accessToken}`,
+      Prefer: 'outlook.timezone="UTC"',
+    };
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+    });
+
+    const data = (await response.json()) as {
+      value?: GraphEvent[];
+      error?: { code?: string; message?: string };
+    };
+
+    if (!response.ok) {
+      throw Object.assign(
+        new Error(data.error?.message ?? "microsoft_event_write_failed"),
+        { response: { status: response.status, data } },
+      );
+    }
+
+    return data.value ?? [];
+  }
+
+  async #requestJson<T>(method: "GET", url: string): Promise<T> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.#accessToken}`,
+      Prefer: 'outlook.timezone="UTC"',
+    };
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+    });
+
+    const data = (await response.json()) as T & {
       error?: { code?: string; message?: string };
     };
 
