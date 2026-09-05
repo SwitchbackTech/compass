@@ -4,7 +4,6 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   type ConnectionBeginRequest,
   ConnectionBeginRequestSchema,
-  ConnectionCredentialRequestSchema,
   toConnectionBeginRedirect,
 } from "@core/types/sync/connection.contracts";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
+import { sealCredentialConnectRequest } from "@backend/common/services/sync-service/seal-credential-connect-request";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
 import { connectSyncCredential } from "@backend/common/services/sync-service/sync-credential-connect";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -146,8 +146,6 @@ class AuthController {
   connectCredential = (req: SReqBody<unknown>, res: Res_Promise): void => {
     if (rejectIfMaintenance(res)) return;
 
-    const request = ConnectionCredentialRequestSchema.parse(req.body ?? {});
-
     try {
       assertAppleCanConnect();
     } catch (err) {
@@ -157,6 +155,11 @@ class AuthController {
 
     const client = getSyncServiceClient();
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
+    const request = sealCredentialConnectRequest(
+      userId,
+      userId,
+      req.body ?? {},
+    );
 
     res.promise(
       connectSyncCredential(client, toSyncPrincipal(userId), request),

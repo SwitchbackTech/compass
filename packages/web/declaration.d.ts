@@ -41,6 +41,11 @@ interface Window {
    * user-metadata.store.ts); keys are optional because they populate
    * independently as their modules evaluate. */
   __COMPASS_E2E_STORE__?: {
+    connectApple?: {
+      close: () => void;
+      getState: () => import("@web/auth/providers/connect-apple.store").ConnectAppleState;
+      open: (initialEmail?: string) => void;
+    };
     userMetadata?: {
       getState: () => import("@web/auth/state/user-metadata.store").UserMetadataState;
       set: (metadata: import("@core/types/user.types").UserMetadata) => void;

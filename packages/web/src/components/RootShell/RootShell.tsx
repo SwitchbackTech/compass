@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { ConnectAppleForm } from "@web/auth/providers/ConnectAppleForm";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { BillingReadOnlyBanner } from "@web/billing/BillingReadOnlyBanner";
@@ -98,6 +99,7 @@ export function RootShell() {
       <Outlet />
       <UpcomingEventNotifier />
       <AuthModal />
+      <ConnectAppleForm />
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
       <CheckoutCelebrationModal />
       {showCalendarOnboarding && <WelcomeModal />}
