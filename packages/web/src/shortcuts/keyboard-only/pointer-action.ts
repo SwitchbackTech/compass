@@ -1,4 +1,8 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import {
+  type ProviderKind,
+  ProviderKindSchema,
+} from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   DATA_TIMED_GRID_ROW,
@@ -15,6 +19,7 @@ import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 export const POINTER_ACTION_ATTRIBUTE = "data-pointer-action";
 export const POINTER_EVENT_ID_ATTRIBUTE = "data-pointer-event-id";
 export const POINTER_SHORTCUT_ATTRIBUTE = "data-pointer-shortcut";
+export const POINTER_PROVIDER_ATTRIBUTE = "data-pointer-provider";
 /** Opt a subtree out of capture-phase pointer suppression (MobileGate). */
 export const POINTER_PASS_ATTRIBUTE = "data-pointer-pass";
 export const POINTER_EVENT_JUMP_REQUEST = "compass:pointer-event-jump";
@@ -43,6 +48,7 @@ export type BlockedPointerAttempt = {
   gridDate?: string;
   gridTimeKey?: string;
   gridTimeLabel?: string;
+  provider?: ProviderKind;
 };
 
 const POINTER_ACTION_IDS = new Set<string>(Object.values(POINTER_ACTIONS));
@@ -56,6 +62,7 @@ export const resolveBlockedPointerAttempt = (
   let actionId: PointerActionId | "unknown" = "unknown";
   let eventId: string | undefined;
   let shortcutKey: PointerShortcutKey | undefined;
+  let provider: ProviderKind | undefined;
 
   for (const target of path) {
     if (!(target instanceof HTMLElement)) continue;
@@ -64,6 +71,11 @@ export const resolveBlockedPointerAttempt = (
       if (action && isPointerActionId(action)) {
         actionId = action;
         eventId = target.getAttribute(POINTER_EVENT_ID_ATTRIBUTE) ?? undefined;
+        const providerRaw = target.getAttribute(POINTER_PROVIDER_ATTRIBUTE);
+        const providerResult = ProviderKindSchema.safeParse(providerRaw);
+        if (providerResult.success) {
+          provider = providerResult.data;
+        }
       }
     }
     if (shortcutKey === undefined) {
@@ -77,6 +89,7 @@ export const resolveBlockedPointerAttempt = (
     actionId,
     ...(eventId ? { eventId } : {}),
     ...(shortcutKey ? { shortcutKey } : {}),
+    ...(provider ? { provider } : {}),
   };
 };
 

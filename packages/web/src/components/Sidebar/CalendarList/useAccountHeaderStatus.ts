@@ -1,16 +1,18 @@
-import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { type SyncConnectionSummary } from "@core/types/user.types";
 import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
+import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 
 /**
  * Shared by AccountSectionHeader and CalendarListHeader: this account's sync
  * status plus the label for its connect/reconnect/refresh action, if any.
  */
 export function useAccountHeaderStatus(
-  connection: GoogleSyncConnectionSummary | null | undefined,
+  connection: SyncConnectionSummary | null | undefined,
 ) {
+  const provider = connectionProviderKind(connection);
   const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
-    useConnectGoogle({ connection });
+    useConnectProvider(provider, { connection });
   const syncStatus = getSidebarSyncStatus({ connection, isConnecting, state });
   const actionLabel =
     commandAction == null
@@ -30,5 +32,6 @@ export function useAccountHeaderStatus(
     isConnecting,
     isRefreshing,
     syncStatus,
+    state,
   };
 }

@@ -1,4 +1,8 @@
 import { ArrowsClockwiseIcon, CloudArrowUpIcon } from "@phosphor-icons/react";
+import {
+  type ProviderKind,
+  providerDisplayName,
+} from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   isAccountReconnectRequired,
@@ -158,13 +162,21 @@ export type GoogleConnectionConfigOptions = {
   // Refresh was requested and the degraded state did not improve — stop
   // offering the same Refresh button; offer reconnect + support instead.
   refreshGaveUp?: boolean;
+  provider?: ProviderKind;
 };
+
+const connectCalendarLabel = (provider: ProviderKind): string =>
+  `Connect ${providerDisplayName(provider)} Calendar`;
+
+const reconnectCalendarLabel = (provider: ProviderKind): string =>
+  `Reconnect ${providerDisplayName(provider)} Calendar`;
 
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   handlers: GoogleConnectionHandlers,
   options: GoogleConnectionConfigOptions = {},
 ): GoogleUiConfig => {
+  const provider = options.provider ?? "google";
   switch (state) {
     case "checking":
     case "IMPORTING":
@@ -174,7 +186,7 @@ export const getGoogleConnectionConfig = (
       if (options.refreshGaveUp) {
         return {
           commandAction: {
-            label: "Reconnect Google Calendar",
+            label: reconnectCalendarLabel(provider),
             icon: CONNECT_ICON,
             onSelect: handlers.onConnectGoogle,
           },
@@ -190,7 +202,7 @@ export const getGoogleConnectionConfig = (
     case "NOT_CONNECTED":
       return {
         commandAction: {
-          label: "Connect Google Calendar",
+          label: connectCalendarLabel(provider),
           icon: CONNECT_ICON,
           onSelect: handlers.onConnectGoogle,
         },
@@ -198,13 +210,17 @@ export const getGoogleConnectionConfig = (
     case "RECONNECT_REQUIRED":
       return {
         commandAction: {
-          label: "Reconnect Google Calendar",
+          label: reconnectCalendarLabel(provider),
           icon: CONNECT_ICON,
           onSelect: handlers.onConnectGoogle,
         },
       };
   }
 };
+
+export const calendarReconnectBannerMessage = (
+  provider: ProviderKind,
+): string => `${providerDisplayName(provider)} Calendar needs reconnecting.`;
 
 const delayedSettingsStatus = (
   connection: GoogleSyncConnectionSummary,

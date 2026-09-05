@@ -3,6 +3,7 @@ import { devtools } from "zustand/middleware";
 import {
   type GoogleConnectionState,
   type GoogleSyncConnectionSummary,
+  type SyncConnectionSummary,
   type UserMetadata,
 } from "@core/types/user.types";
 import { IS_DEV } from "@web/common/constants/env.constants";
@@ -55,16 +56,35 @@ export const userMetadataActions = {
   removeConnection: (connectionId: string) =>
     useUserMetadataStore.setState(
       (state) => {
-        if (!state.current?.google) return state;
+        if (!state.current) return state;
+        const filter = (connections: SyncConnectionSummary[] | undefined) =>
+          (connections ?? []).filter(
+            (connection) => connection.id !== connectionId,
+          );
+        const nextConnections = filter(state.current.connections);
+        const nextGoogleConnections = state.current.google
+          ? filter(state.current.google.connections)
+          : undefined;
+        if (
+          nextConnections === state.current.connections &&
+          nextGoogleConnections === state.current.google?.connections
+        ) {
+          return state;
+        }
         return {
           current: {
             ...state.current,
-            google: {
-              ...state.current.google,
-              connections: (state.current.google.connections ?? []).filter(
-                (connection) => connection.id !== connectionId,
-              ),
-            },
+            ...(state.current.connections
+              ? { connections: nextConnections }
+              : {}),
+            ...(state.current.google
+              ? {
+                  google: {
+                    ...state.current.google,
+                    connections: nextGoogleConnections,
+                  },
+                }
+              : {}),
           },
         };
       },
@@ -101,17 +121,24 @@ export const selectGoogleConnectionState = (
 
 // Stable identity so the selector below never hands the store a fresh array
 // (which would re-render on every state change; see the note above the hook).
-const NO_CONNECTIONS: GoogleSyncConnectionSummary[] = [];
+const NO_CONNECTIONS: SyncConnectionSummary[] = [];
 
 /**
  * Every connected provider account, in connection order. Empty when metadata
- * hasn't loaded, no account is connected, or the payload predates the plural
- * field.
+ * hasn't loaded or no account is connected. Falls back to the legacy
+ * `google.connections` copy until every client reads `connections[]`.
  */
+export const selectSyncConnections = (
+  state: UserMetadataState,
+): SyncConnectionSummary[] =>
+  state.current?.connections ??
+  state.current?.google?.connections ??
+  NO_CONNECTIONS;
+
+/** @deprecated Prefer {@link selectSyncConnections}. */
 export const selectGoogleSyncConnections = (
   state: UserMetadataState,
-): GoogleSyncConnectionSummary[] =>
-  state.current?.google?.connections ?? NO_CONNECTIONS;
+): GoogleSyncConnectionSummary[] => selectSyncConnections(state);
 
 /**
  * True when ANY connected account granted the optional contacts scopes, so
@@ -120,7 +147,7 @@ export const selectGoogleSyncConnections = (
  * backend (field absent) reading as "not granted" rather than crashing.
  */
 export const selectCanSuggestContacts = (state: UserMetadataState): boolean =>
-  (state.current?.google?.connections ?? NO_CONNECTIONS).some(
+  selectSyncConnections(state).some(
     (connection) => connection.canSuggestContacts === true,
   );
 

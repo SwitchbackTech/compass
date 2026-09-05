@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { type SyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
@@ -10,26 +10,32 @@ import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const EMAIL = "ahab@pequod.com";
 
-// mock.module is process-wide and not reliably restorable, so - as in
-// CalendarList.test.tsx - the real hook is captured up front and a flag
-// (flipped in afterAll) decides which one runs, leaving later files with the
-// real hook. Without a mock here this file would instead inherit whichever
-// other file's useConnectGoogle mock loaded last.
-const actualUseConnectGoogle = (
-  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
-).useConnectGoogle;
-let isConnectGoogleMocked = true;
+const actualUseConnectProvider = (
+  await import("@web/auth/providers/useConnectProvider")
+).useConnectProvider;
+let isConnectProviderMocked = true;
 let googleState: GoogleUiState = "HEALTHY";
 const onSelect = mock();
-const commandActionFor = (state: GoogleUiState) =>
+const commandActionFor = (state: GoogleUiState, provider = "google") =>
   state === "RECONNECT_REQUIRED"
-    ? { label: "Reconnect Google Calendar", onSelect }
+    ? {
+        label: `Reconnect ${provider === "google" ? "Google" : "Microsoft"} Calendar`,
+        onSelect,
+      }
     : null;
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
-  useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
-    isConnectGoogleMocked
+mock.module("@web/auth/providers/useConnectProvider", () => ({
+  useConnectProvider: (
+    kind: "google" | "microsoft" | "apple",
+    ...args: Parameters<typeof actualUseConnectProvider> extends [
+      infer _K,
+      ...infer Rest,
+    ]
+      ? Rest
+      : never
+  ) =>
+    isConnectProviderMocked
       ? {
-          commandAction: commandActionFor(googleState),
+          commandAction: commandActionFor(googleState, kind),
           connect: mock(),
           refresh: mock(),
           isAvailable: true,
@@ -37,11 +43,11 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
           isRefreshing: false,
           state: googleState,
         }
-      : actualUseConnectGoogle(...args),
+      : actualUseConnectProvider(kind, ...args),
 }));
 
 afterAll(() => {
-  isConnectGoogleMocked = false;
+  isConnectProviderMocked = false;
 });
 
 const headerModuleUrl = new URL(
@@ -52,9 +58,7 @@ const { AccountSectionHeader } = (await import(
   headerModuleUrl.href
 )) as typeof import("./AccountSectionHeader");
 
-const renderHeader = (
-  overrides: Partial<GoogleSyncConnectionSummary> = {},
-): void => {
+const renderHeader = (overrides: Partial<SyncConnectionSummary> = {}): void => {
   const { wrapper } = createStoreWrapper();
   render(
     <AccountSectionHeader
@@ -117,15 +121,30 @@ describe("AccountSectionHeader", () => {
       connectionState: "RECONNECT_REQUIRED",
     });
 
-    // The status text itself now lives in the pinned SidebarStatusBar, not
-    // inline here - see SidebarStatusBar.test.tsx.
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
-    // Named per account, so two broken accounts give a screen reader two
-    // distinguishable buttons.
     await user.click(
       screen.getByRole("button", {
         name: `Reconnect Google Calendar for ${EMAIL}`,
+      }),
+    );
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows Microsoft reconnect copy for a Microsoft connection", async () => {
+    const user = userEvent.setup({ delay: null });
+    googleState = "RECONNECT_REQUIRED";
+
+    renderHeader({
+      provider: "microsoft",
+      state: "actionRequired",
+      stateReason: "authorizationRevoked",
+      connectionState: "RECONNECT_REQUIRED",
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: `Reconnect Microsoft Calendar for ${EMAIL}`,
       }),
     );
     expect(onSelect).toHaveBeenCalledTimes(1);
