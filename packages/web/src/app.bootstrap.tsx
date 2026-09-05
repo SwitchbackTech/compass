@@ -3,12 +3,12 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import "./common/styles/toastify-theme.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
-import {
-  readGoogleConnectStatus,
-  refreshUserMetadataAfterGoogleConnect,
-  showGoogleConnectStatusToast,
-} from "@web/auth/google/authorization/google-connect-status.util";
 import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
+import {
+  readConnectStatus,
+  refreshUserMetadataAfterConnect,
+  showConnectStatusToast,
+} from "@web/auth/providers/connect-status.util";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
@@ -22,7 +22,7 @@ export async function bootstrapApp(): Promise<void> {
 
   // Read before the router mounts: validateAuthSearch strips unrecognized
   // query params (like these) on the first navigation.
-  const connectStatus = readGoogleConnectStatus();
+  const connectStatus = readConnectStatus();
 
   const container = document.getElementById("root");
   if (!container) {
@@ -46,7 +46,7 @@ export async function bootstrapApp(): Promise<void> {
     showDbInitErrorToast(dbInitError);
   }
   if (connectStatus) {
-    showGoogleConnectStatusToast(connectStatus);
-    refreshUserMetadataAfterGoogleConnect(connectStatus);
+    showConnectStatusToast(connectStatus);
+    refreshUserMetadataAfterConnect(connectStatus.status);
   }
 }

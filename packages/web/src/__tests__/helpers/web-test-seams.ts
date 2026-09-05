@@ -13,6 +13,10 @@ import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
 } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  resetProviderAvailabilityForTests,
+  setProviderAvailabilityForTests,
+} from "@web/auth/providers/useIsProviderAvailable";
 import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import {
   registerToastPort,
@@ -172,6 +176,8 @@ export function installDefaultWebTestSeams(): void {
   // Skip /config fetch (no MSW handler); "unavailable" matches prior failed-fetch default.
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("unavailable");
+  setProviderAvailabilityForTests("microsoft", "unavailable");
+  setProviderAvailabilityForTests("apple", "unavailable");
 }
 
 export function resetWebTestSeams(): void {
@@ -182,5 +188,6 @@ export function resetWebTestSeams(): void {
   // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
   resetUseCompleteAuthenticationForTests();
   resetGoogleAvailabilityForTests();
+  resetProviderAvailabilityForTests();
   resetEmbeddedCheckoutForTests();
 }
