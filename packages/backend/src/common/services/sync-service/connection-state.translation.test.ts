@@ -86,6 +86,17 @@ describe("toGoogleConnectionState", () => {
         toGoogleConnectionState([connection("healthy"), connection("healthy")]),
       ).toBe("HEALTHY");
     });
+
+    it("ignores non-Google connections when collapsing the Google enum", () => {
+      expect(
+        toGoogleConnectionState([
+          connection("healthy"),
+          connection("actionRequired", "authorizationRevoked", {
+            provider: "microsoft",
+          }),
+        ]),
+      ).toBe("HEALTHY");
+    });
   });
 });
 
@@ -104,6 +115,7 @@ describe("toGoogleSyncConnectionSummary", () => {
     };
     expect(toGoogleSyncConnectionSummary(record)).toEqual({
       id: "c-summary",
+      provider: "google",
       state: "delayed",
       stateReason: "workOverdue",
       lastSyncedAt: "2026-07-24T10:00:00.000Z",

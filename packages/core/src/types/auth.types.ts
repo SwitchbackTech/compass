@@ -38,6 +38,7 @@ const GoogleConnectErrorCodeSchema = z.enum([
   "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
   "GOOGLE_CONNECT_EMAIL_MISMATCH",
   "GOOGLE_NOT_CONFIGURED",
+  "PROVIDER_NOT_CONFIGURED",
   // Google withheld a refresh token because this browser already consented
   // to the app before (e.g. a prior signup attempt failed after Google-side
   // consent but before Compass finished linking). Retrying with `prompt:

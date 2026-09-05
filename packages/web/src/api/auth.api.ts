@@ -29,13 +29,17 @@ const AuthApi = {
   // reconnect an existing connection; omit it for a fresh one.
   async beginGoogleConnection(
     request: ConnectionBeginRequest = {},
-  ): Promise<ConnectionBeginResponse> {
+  ): Promise<{ authorizationUrl: string }> {
     const response = await BaseApi.post<ConnectionBeginResponse>(
       `/auth/google/connect/begin`,
       request,
     );
 
-    return ConnectionBeginResponseSchema.parse(response.data);
+    const parsed = ConnectionBeginResponseSchema.parse(response.data);
+    if (!("authorizationUrl" in parsed)) {
+      throw new Error("Google connect did not return a redirect");
+    }
+    return { authorizationUrl: parsed.authorizationUrl };
   },
 
   // Disconnect one connected Google account. The user's other accounts, and

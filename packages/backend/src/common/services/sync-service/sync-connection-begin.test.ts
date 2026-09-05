@@ -31,6 +31,9 @@ describe("beginSyncConnection", () => {
 
     const result = await beginSyncConnection(client, principal, {});
 
+    if (!("authorizationUrl" in result)) {
+      throw new Error("expected a redirect begin response");
+    }
     expect(result.authorizationUrl).toContain("accounts.google.com");
   });
 

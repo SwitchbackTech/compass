@@ -1,20 +1,25 @@
 import { type UserMetadata } from "@core/types/user.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
+import { providerConnection } from "@backend/__tests__/factories/provider-connection.factory";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
   it,
+  spyOn,
 } from "bun:test";
 
 describe("UserMetadataService", () => {
@@ -24,6 +29,9 @@ describe("UserMetadataService", () => {
   beforeAll(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
+  afterEach(() => {
+    restoreFileMocks();
+  });
 
   describe("updateUserMetadata", () => {
     it("merges metadata and returns the latest snapshot", async () => {
@@ -120,6 +128,39 @@ describe("UserMetadataService", () => {
 
       expect(metadata).not.toHaveProperty("subscribeToUpdates");
       expect(metadata.sync?.importGCal).toBe("RESTART");
+    });
+
+    it("returns connections[] with provider and keeps metadata.google", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const google = providerConnection("healthy");
+      spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+        listConnections: async () => ({
+          ok: true,
+          value: { connections: [google] },
+          correlationId: "corr-1",
+        }),
+      } as never);
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata.connections).toEqual([
+        expect.objectContaining({
+          id: google.id,
+          provider: "google",
+          connectionState: "HEALTHY",
+        }),
+      ]);
+      expect(metadata.google).toEqual({
+        connectionState: "HEALTHY",
+        connections: [
+          expect.objectContaining({
+            id: google.id,
+            provider: "google",
+            connectionState: "HEALTHY",
+          }),
+        ],
+      });
     });
 
     // assessGoogleMetadata's local fallback (no Sync client configured) is

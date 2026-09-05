@@ -10,6 +10,7 @@ import {
   ProviderCapabilitySetSchema,
   ProviderEventIdSchema,
   ProviderKindSchema,
+  providerDisplayName,
   SyncCommandIdSchema,
   SyncJobIdSchema,
   TenantIdSchema,
@@ -130,6 +131,14 @@ describe("Sync identity contracts", () => {
 
     it("rejects provider-cased variants", () => {
       expect(ProviderKindSchema.safeParse("Google").success).toBe(false);
+    });
+  });
+
+  describe("providerDisplayName", () => {
+    it("names each provider for user-facing copy", () => {
+      expect(providerDisplayName("google")).toBe("Google");
+      expect(providerDisplayName("microsoft")).toBe("Microsoft");
+      expect(providerDisplayName("apple")).toBe("Apple");
     });
   });
 

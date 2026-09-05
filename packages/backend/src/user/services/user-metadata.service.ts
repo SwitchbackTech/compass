@@ -113,12 +113,16 @@ class UserMetadataService {
 
     const { connectionState, connections } =
       await this.assessGoogleMetadata(userId);
+    const googleConnections = connections.filter(
+      (connection) => connection.provider === "google",
+    );
 
     return {
       ...metadata,
+      connections,
       google: {
         connectionState,
-        ...(connections !== undefined ? { connections } : {}),
+        connections: googleConnections,
       },
     };
   };
