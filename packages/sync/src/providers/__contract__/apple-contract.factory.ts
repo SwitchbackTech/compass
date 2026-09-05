@@ -1,3 +1,5 @@
+import { AppleAuthAdapter } from "@sync/providers/apple/apple-auth.adapter";
+import { AppleCalendarAdapter } from "@sync/providers/apple/apple-calendar.adapter";
 import {
   AppleEventReaderAdapter,
   type AppleEventReaderApi,
@@ -5,9 +7,24 @@ import {
   MULTIGET_BATCH_SIZE,
 } from "@sync/providers/apple/apple-event-reader.adapter";
 import {
+  AppleEventWriter,
+  type AppleEventWriterApi,
+  eventResourceHref,
+} from "@sync/providers/apple/apple-event-writer.adapter";
+import {
+  type CaldavFetch,
+  type CaldavResponse,
+  createCaldavClient,
+} from "@sync/providers/apple/caldav-client";
+import { type ProviderAdapters } from "@sync/providers/provider-adapters";
+import {
   ProviderEventReadError,
   type ProviderEventReader,
 } from "@sync/providers/provider-event-reader.port";
+import {
+  type ProviderNotificationAdapter,
+  ProviderNotificationError,
+} from "@sync/providers/provider-notifications.port";
 
 interface ReaderCorpus {
   readonly initialHrefs: readonly string[];
@@ -180,4 +197,256 @@ export function appleRecordedReader(_corpusDir: string): ProviderEventReader {
     makeApi: () => new CorpusAppleEventReaderApi(readerCorpus),
     log: { warn: () => {} },
   });
+}
+
+const CONTRACT_CALENDAR = "/123456789/calendars/home/";
+const CONTRACT_CALENDAR_URL = `https://caldav.icloud.com${CONTRACT_CALENDAR}`;
+
+const WRITER_SERIES_ICS = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:series-1
+DTSTAMP:20250101T120000Z
+DTSTART:20250115T090000Z
+DTEND:20250115T100000Z
+RRULE:FREQ=DAILY;COUNT=3
+SUMMARY:Contract series
+END:VEVENT
+END:VCALENDAR`;
+
+class CorpusAppleEventWriterApi implements AppleEventWriterApi {
+  #store = new Map<string, { etag: string; ics: string }>();
+  #etagCounter = 1;
+
+  constructor() {
+    const href = eventResourceHref(CONTRACT_CALENDAR_URL, "series-1");
+    this.#store.set(href, { etag: '"series-v1"', ics: WRITER_SERIES_ICS });
+  }
+
+  put(
+    url: string,
+    ics: string,
+    options: { ifMatch?: string; ifNoneMatch?: string } = {},
+  ): Promise<CaldavResponse> {
+    const existing = this.#store.get(url);
+    if (options.ifNoneMatch === "*" && existing) {
+      return Promise.resolve({
+        status: 412,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    if (options.ifMatch && existing && options.ifMatch !== existing.etag) {
+      return Promise.resolve({
+        status: 412,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    const etag = `"writer-v${this.#etagCounter++}"`;
+    this.#store.set(url, { etag, ics });
+    return Promise.resolve({
+      status: 201,
+      headers: { etag },
+      body: "",
+      multistatus: null,
+    });
+  }
+
+  get(url: string): Promise<CaldavResponse> {
+    const existing = this.#store.get(url);
+    if (!existing) {
+      return Promise.resolve({
+        status: 404,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    return Promise.resolve({
+      status: 200,
+      headers: { etag: existing.etag },
+      body: existing.ics,
+      multistatus: null,
+    });
+  }
+
+  delete(url: string, ifMatch?: string): Promise<CaldavResponse> {
+    const existing = this.#store.get(url);
+    if (!existing) {
+      return Promise.resolve({
+        status: 404,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    if (ifMatch && ifMatch !== existing.etag) {
+      return Promise.resolve({
+        status: 412,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    this.#store.delete(url);
+    return Promise.resolve({
+      status: 204,
+      headers: {},
+      body: "",
+      multistatus: null,
+    });
+  }
+
+  propfind(url: string): Promise<CaldavResponse> {
+    const existing = this.#store.get(url);
+    if (!existing) {
+      return Promise.resolve({
+        status: 404,
+        headers: {},
+        body: "",
+        multistatus: null,
+      });
+    }
+    return Promise.resolve({
+      status: 207,
+      headers: {},
+      body: "",
+      multistatus: {
+        responses: [
+          {
+            href: url,
+            propstats: [{ status: 200, props: { getetag: existing.etag } }],
+          },
+        ],
+      },
+    });
+  }
+}
+
+class AppleNotificationStub implements ProviderNotificationAdapter {
+  async watch(): Promise<never> {
+    throw new ProviderNotificationError(
+      "watchUnsupported",
+      "Apple uses polling instead of push channels",
+    );
+  }
+
+  async stopChannel(): Promise<void> {}
+
+  parseNotification() {
+    return null;
+  }
+}
+
+function discoveryFetch(): CaldavFetch {
+  const handlers = [
+    () => xmlResponse(PRINCIPAL_XML),
+    () => xmlResponse(HOME_SET_XML),
+    () => xmlResponse(CALENDARS_XML),
+  ];
+  let call = 0;
+  return (async (...args: Parameters<CaldavFetch>) => {
+    void args;
+    const handler = handlers[call];
+    call += 1;
+    if (!handler) throw new Error("unexpected discovery request");
+    return handler();
+  }) as unknown as CaldavFetch;
+}
+
+const PRINCIPAL_XML = `<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:current-user-principal>
+          <D:href>/123456789/principal/</D:href>
+        </D:current-user-principal>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>`;
+
+const HOME_SET_XML = `<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>/123456789/principal/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:calendar-home-set>
+          <D:href>/123456789/calendars/</D:href>
+        </D:calendar-home-set>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>`;
+
+const CALENDARS_XML = `<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:ICAL="http://apple.com/ns/ical/">
+  <D:response>
+    <D:href>/123456789/calendars/home/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:displayname>user</D:displayname>
+        <D:resourcetype><D:collection/><C:calendar/></D:resourcetype>
+        <ICAL:calendar-color>#AABBCCFF</ICAL:calendar-color>
+        <D:current-user-privilege-set>
+          <D:privilege><D:write/></D:privilege>
+        </D:current-user-privilege-set>
+        <C:supported-calendar-component-set>
+          <C:comp name="VEVENT"/>
+        </C:supported-calendar-component-set>
+        <cs:sync-token xmlns:cs="http://calendarserver.org/ns/">sync-token-1</cs:sync-token>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+  <D:response>
+    <D:href>/123456789/calendars/work/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:displayname>Work</D:displayname>
+        <D:resourcetype><D:collection/><C:calendar/></D:resourcetype>
+        <D:current-user-privilege-set>
+          <D:privilege><D:read/></D:privilege>
+        </D:current-user-privilege-set>
+        <C:supported-calendar-component-set>
+          <C:comp name="VEVENT"/>
+        </C:supported-calendar-component-set>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>`;
+
+function xmlResponse(body: string): Response {
+  return new Response(body, {
+    status: 207,
+    headers: { "Content-Type": "application/xml; charset=utf-8" },
+  });
+}
+
+export function appleRecordedFactory(_corpusDir: string): ProviderAdapters {
+  const writerApi = new CorpusAppleEventWriterApi();
+  return {
+    auth: new AppleAuthAdapter((credential, fetchImpl) =>
+      createCaldavClient(credential, fetchImpl ?? discoveryFetch()),
+    ),
+    calendars: new AppleCalendarAdapter(
+      "user@icloud.com",
+      (username, password) =>
+        createCaldavClient({ username, password }, discoveryFetch()),
+    ),
+    reader: appleRecordedReader(_corpusDir),
+    writer: new AppleEventWriter({
+      makeApi: () => writerApi,
+    }),
+    notifications: new AppleNotificationStub(),
+  };
 }
