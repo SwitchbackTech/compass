@@ -6,6 +6,10 @@ const repoRoot = join(import.meta.dir, "../../../..");
 const APP_ENTRY = "packages/web/src/index.tsx";
 const CI_WORKFLOW = ".github/workflows/test-unit.yml";
 const CI_BUN_VERSION = /bun-version:\s*([\d.]+)/g;
+// The e2e shards run inside the Playwright image and install Bun from npm
+// (no unzip for setup-bun there), so their pin is `bun@<version>`.
+const E2E_WORKFLOW = ".github/workflows/test-e2e.yml";
+const E2E_BUN_VERSION = /npm install[^\n]*\bbun@([\d.]+)/g;
 const OVEN_BUN_TAG = /oven\/bun:([^\s]+)/g;
 const DOCKERFILE_DIRS = ["self-host", ".github/docker"];
 
@@ -27,7 +31,7 @@ export const RULE_HELP: Record<string, string> = {
   "duplicate-event-schema":
     "shared event contracts live in packages/core; import them instead of redefining EventSchema.",
   "bun-pin":
-    "every oven/bun: Dockerfile tag in self-host/ and .github/docker/ must equal the single bun-version in .github/workflows/test-unit.yml.",
+    "every oven/bun: Dockerfile tag in self-host/ and .github/docker/, and the npm bun@ install in .github/workflows/test-e2e.yml, must equal the single bun-version in .github/workflows/test-unit.yml.",
   "zod-import":
     'import Zod from "zod/v4" (or "zod/v4-mini" for the mini API); the bare "zod" path is the v3 API. Legacy config schemas: ZOD_V3_ALLOWLIST.',
   "em-dash":
@@ -289,6 +293,29 @@ export function scanBunDockerfilePins(root = repoRoot): ConstraintHit[] {
     return hits;
   }
   const expected = ciVersions[0];
+
+  const e2ePath = join(root, E2E_WORKFLOW);
+  if (existsSync(e2ePath)) {
+    const e2e = readFileSync(e2ePath, "utf8");
+    const e2eVersions = [...e2e.matchAll(E2E_BUN_VERSION)].map((m) => m[1]);
+    if (e2eVersions.length === 0) {
+      hits.push({
+        path: E2E_WORKFLOW,
+        rule: "bun-pin",
+        line: 1,
+        detail: "expected an `npm install ... bun@<version>` step",
+      });
+    }
+    for (const match of e2e.matchAll(E2E_BUN_VERSION)) {
+      if (match[1] === expected) continue;
+      hits.push({
+        path: E2E_WORKFLOW,
+        rule: "bun-pin",
+        line: e2e.slice(0, match.index ?? 0).split("\n").length,
+        detail: `bun@${match[1]} but CI pins ${expected}`,
+      });
+    }
+  }
 
   for (const relDir of DOCKERFILE_DIRS) {
     const absDir = join(root, relDir);

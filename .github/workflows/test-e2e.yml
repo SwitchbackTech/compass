@@ -80,18 +80,24 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Install Bun setup prerequisites
-        run: apt-get update && apt-get install -y --no-install-recommends unzip
-
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 24
 
+      # Not oven-sh/setup-bun: on a cache miss it unzips the Bun release, and
+      # the Playwright image has no unzip. The apt-get step that used to add it
+      # pulled ~30 MB of package indexes from archive.ubuntu.com on every shard
+      # and was the top e2e failure in the 2026-09 audit (p50 6s, p95 47s,
+      # hangs to the 12-minute job timeout that surfaced as "cancelled"). The
+      # npm package ships the binary as a platform package, so this needs only
+      # the registry `bun install` already depends on. Keep the version equal
+      # to the bun-version pin in test-unit.yml; `bun lint` checks it.
       - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
+        timeout-minutes: 2
+        run: |
+          npm install --global --no-audit --no-fund bun@1.3.14
+          bun --version
 
       - name: Cache Bun dependencies
         uses: actions/cache@v6
