@@ -1,6 +1,9 @@
 import { type BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { adoptGoogleAuthorization } from "./sync-connection-adoption";
+import {
+  adoptGoogleAuthorization,
+  adoptProviderAuthorization,
+} from "./sync-connection-adoption";
 import { describe, expect, it } from "bun:test";
 
 const principal = {
@@ -75,6 +78,64 @@ describe("adoptGoogleAuthorization", () => {
 
     await expect(
       adoptGoogleAuthorization(client as never, principal, request),
+    ).resolves.toEqual({});
+    expect(adopted).toBe(false);
+  });
+});
+
+describe("adoptProviderAuthorization", () => {
+  const microsoftRequest = {
+    provider: "microsoft" as const,
+    ...request,
+    account: {
+      ...request.account,
+      providerAccountId: "ms-oid-1",
+    },
+  };
+
+  it("posts the microsoft authorization when no live connection exists", async () => {
+    const client = {
+      listConnections: async () => ({
+        ok: true as const,
+        value: { connections: [] },
+        correlationId: "corr-1",
+      }),
+      adoptProviderAuthorization: async () => ({
+        ok: true as const,
+        value: {},
+        correlationId: "corr-1",
+      }),
+    };
+
+    await expect(
+      adoptProviderAuthorization(client, principal, microsoftRequest),
+    ).resolves.toEqual({});
+  });
+
+  it("does not restart an already-live microsoft connection for the same account", async () => {
+    let adopted = false;
+    const client = {
+      listConnections: async () => ({
+        ok: true as const,
+        value: {
+          connections: [
+            {
+              provider: "microsoft",
+              account: microsoftRequest.account,
+              state: "healthy",
+            },
+          ],
+        },
+        correlationId: "corr-1",
+      }),
+      adoptProviderAuthorization: async () => {
+        adopted = true;
+        return { ok: true as const, value: {}, correlationId: "corr-1" };
+      },
+    };
+
+    await expect(
+      adoptProviderAuthorization(client as never, principal, microsoftRequest),
     ).resolves.toEqual({});
     expect(adopted).toBe(false);
   });

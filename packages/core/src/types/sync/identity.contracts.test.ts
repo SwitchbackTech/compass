@@ -11,6 +11,7 @@ import {
   ProviderEventIdSchema,
   ProviderKindSchema,
   providerDisplayName,
+  providerKindFromThirdPartyId,
   SyncCommandIdSchema,
   SyncJobIdSchema,
   TenantIdSchema,
@@ -139,6 +140,17 @@ describe("Sync identity contracts", () => {
       expect(providerDisplayName("google")).toBe("Google");
       expect(providerDisplayName("microsoft")).toBe("Microsoft");
       expect(providerDisplayName("apple")).toBe("Apple");
+    });
+  });
+
+  describe("providerKindFromThirdPartyId", () => {
+    it("maps SuperTokens recipe ids onto Compass provider kinds", () => {
+      expect(providerKindFromThirdPartyId("google")).toBe("google");
+      expect(providerKindFromThirdPartyId("active-directory")).toBe(
+        "microsoft",
+      );
+      expect(providerKindFromThirdPartyId("apple")).toBe("apple");
+      expect(providerKindFromThirdPartyId("unknown")).toBeUndefined();
     });
   });
 

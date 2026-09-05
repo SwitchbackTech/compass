@@ -1,6 +1,8 @@
 import {
+  decryptAdoptAuthorizationCredential,
   decryptCredentialConnectPayload,
   decryptInternalCredential,
+  encryptAdoptAuthorizationCredential,
   encryptCredentialConnectPayload,
   encryptInternalCredential,
 } from "./internal-credential-envelope";
@@ -66,6 +68,37 @@ describe("internal credential envelope", () => {
         ...context,
         grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
       }),
+    ).toThrow();
+  });
+
+  it("round-trips an adopt-authorization credential bound to the provider", () => {
+    const credential = "microsoft-refresh-token";
+    const adoptContext = {
+      ...context,
+      provider: "microsoft" as const,
+    };
+    const envelope = encryptAdoptAuthorizationCredential(
+      "shared-secret",
+      credential,
+      adoptContext,
+    );
+
+    expect(JSON.stringify(envelope)).not.toContain(credential);
+    expect(
+      decryptAdoptAuthorizationCredential(
+        "shared-secret",
+        envelope,
+        adoptContext,
+      ),
+    ).toBe(credential);
+    expect(() =>
+      decryptAdoptAuthorizationCredential("shared-secret", envelope, {
+        ...adoptContext,
+        provider: "google",
+      }),
+    ).toThrow();
+    expect(() =>
+      decryptInternalCredential("shared-secret", envelope, context),
     ).toThrow();
   });
 

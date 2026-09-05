@@ -4,6 +4,7 @@ import { createInMemoryUserIdMappingStore } from "@backend/auth/ports/supertoken
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
+  createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
@@ -131,6 +132,42 @@ describe("supertokens.middleware.util", () => {
         createdNewRecipeUser: false,
         recipeUserId,
         loginMethodsLength: 1,
+      });
+    });
+  });
+
+  describe("createMicrosoftSignInSuccess", () => {
+    it("reads oid and email from the Active Directory id token payload", () => {
+      const recipeUserId = faker.database.mongodbObjectId();
+      const oid = faker.string.uuid();
+      const email = faker.internet.email();
+
+      const success = createMicrosoftSignInSuccess({
+        status: "OK",
+        createdNewRecipeUser: true,
+        rawUserInfoFromProvider: {
+          fromIdTokenPayload: {
+            oid,
+            email,
+            name: "Microsoft Person",
+          },
+        },
+        oAuthTokens: {
+          refresh_token: faker.string.uuid(),
+          access_token: faker.internet.jwt(),
+          scope: "openid profile email",
+        },
+        user: {
+          id: recipeUserId,
+          loginMethods: [{}],
+        },
+      } as Parameters<typeof createMicrosoftSignInSuccess>[0]);
+
+      expect(success).toMatchObject({
+        createdNewRecipeUser: true,
+        recipeUserId,
+        loginMethodsLength: 1,
+        providerUser: { oid, email, name: "Microsoft Person" },
       });
     });
   });

@@ -12,15 +12,19 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { GOOGLE_AUTH_SCOPES_REQUESTED } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import { isGoogleConfigured } from "@backend/common/constants/config.util";
+import {
+  isGoogleConfigured,
+  isMicrosoftConfigured,
+} from "@backend/common/constants/config.util";
 import {
   createEmailPasswordUser,
-  createGoogleUser,
+  createThirdPartyUser,
   handleEmailPasswordSignIn,
   handleEmailPasswordSignUp,
-  handleGoogleSignInUp,
+  handleThirdPartySignInUp,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
@@ -43,12 +47,32 @@ const createGoogleProvider = (
   },
 });
 
-const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
+const createMicrosoftProvider = (
+  clientId: string,
+  clientSecret: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "active-directory",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        clientSecret,
+        scope: [...MICROSOFT_SCOPES],
+      },
+    ],
+    additionalConfig: {
+      directoryId: "common",
+    },
+  },
+});
+
+const thirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
   functions(originalImplementation) {
     return {
       ...originalImplementation,
       async manuallyCreateOrUpdateUser(input) {
-        return createGoogleUser(
+        return createThirdPartyUser(
           input,
           originalImplementation.manuallyCreateOrUpdateUser.bind(
             originalImplementation,
@@ -74,7 +98,7 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
           );
         }
 
-        return handleGoogleSignInUp(
+        return handleThirdPartySignInUp(
           input,
           signInUpPOST.bind(originalImplementation),
         );
@@ -84,19 +108,34 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
 };
 
 const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
-  const clientId = CONFIG.GOOGLE_CLIENT_ID;
-  const clientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+  const providers: ProviderInput[] = [];
 
-  if (!clientId || !clientSecret || !isGoogleConfigured(CONFIG)) {
+  const googleClientId = CONFIG.GOOGLE_CLIENT_ID;
+  const googleClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+  if (googleClientId && googleClientSecret && isGoogleConfigured(CONFIG)) {
+    providers.push(createGoogleProvider(googleClientId, googleClientSecret));
+  }
+
+  const microsoftClientId = CONFIG.MICROSOFT_CLIENT_ID;
+  const microsoftClientSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+  if (
+    microsoftClientId &&
+    microsoftClientSecret &&
+    isMicrosoftConfigured(CONFIG)
+  ) {
+    providers.push(
+      createMicrosoftProvider(microsoftClientId, microsoftClientSecret),
+    );
+  }
+
+  if (providers.length === 0) {
     return [];
   }
 
   return [
     ThirdParty.init({
-      signInAndUpFeature: {
-        providers: [createGoogleProvider(clientId, clientSecret)],
-      },
-      override: googleThirdPartyOverride,
+      signInAndUpFeature: { providers },
+      override: thirdPartyOverride,
     }),
   ];
 };

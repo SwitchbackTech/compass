@@ -2,9 +2,11 @@ import { ObjectId } from "mongodb";
 import { type SessionContainerInterface } from "supertokens-node/recipe/session/types";
 import { getUserIdMappingStore } from "@backend/auth/ports/supertokens.registry";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
+import { type MicrosoftSignInSuccess } from "@backend/auth/services/microsoft/microsoft.auth.types";
 import {
   type AuthFormField,
   type CreateGoogleSignInResponse,
+  type CreateMicrosoftSignInResponse,
   type EmailPasswordAuthInput,
   type EmailPasswordAuthResponse,
 } from "./supertokens.middleware.types";
@@ -71,6 +73,31 @@ export function createGoogleSignInSuccess(
 
   return {
     providerUser: response.rawUserInfoFromProvider.fromIdTokenPayload,
+    oAuthTokens: response.oAuthTokens,
+    createdNewRecipeUser: response.createdNewRecipeUser,
+    recipeUserId: response.session?.getUserId() ?? response.user.id,
+    loginMethodsLength: response.user.loginMethods.length,
+  };
+}
+
+export function createMicrosoftSignInSuccess(
+  response: CreateMicrosoftSignInResponse,
+): MicrosoftSignInSuccess | null {
+  if (response.status !== "OK") return null;
+
+  const payload = response.rawUserInfoFromProvider.fromIdTokenPayload ?? {};
+
+  return {
+    providerUser: {
+      oid: typeof payload.oid === "string" ? payload.oid : undefined,
+      sub: typeof payload.sub === "string" ? payload.sub : undefined,
+      email: typeof payload.email === "string" ? payload.email : undefined,
+      preferred_username:
+        typeof payload.preferred_username === "string"
+          ? payload.preferred_username
+          : undefined,
+      name: typeof payload.name === "string" ? payload.name : undefined,
+    },
     oAuthTokens: response.oAuthTokens,
     createdNewRecipeUser: response.createdNewRecipeUser,
     recipeUserId: response.session?.getUserId() ?? response.user.id,

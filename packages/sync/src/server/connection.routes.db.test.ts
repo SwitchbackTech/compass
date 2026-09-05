@@ -1,7 +1,9 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
+import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { decryptCredentialAtRest } from "@core/security/credential-at-rest";
 import {
+  encryptAdoptAuthorizationCredential,
   encryptCredentialConnectPayload,
   encryptInternalCredential,
 } from "@core/security/internal-credential-envelope";
@@ -49,6 +51,7 @@ import {
 } from "@sync/providers/provider-registry";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
+  ADOPT_AUTHORIZATION_PATH,
   ADOPT_GOOGLE_AUTHORIZATION_PATH,
   BEGIN_PATH,
   CALENDARS_PATH,
@@ -1130,11 +1133,14 @@ describe("POST /internal/connections/adopt-google-authorization", () => {
   let service: SyncService;
   let base: string;
 
-  const startService = async () => {
-    service = createSyncService(testConfig({ EXECUTION: "active" }), {
-      mongo,
-      authAdapter: new FakeAuthAdapter(),
-    });
+  const startService = async (overrides: Partial<SyncConfig> = {}) => {
+    service = createSyncService(
+      testConfig({ EXECUTION: "active", ...overrides }),
+      {
+        mongo,
+        authAdapter: new FakeAuthAdapter(),
+      },
+    );
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -1256,6 +1262,93 @@ describe("POST /internal/connections/adopt-google-authorization", () => {
     });
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe("POST /internal/connections/adopt-authorization", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async () => {
+    service = createSyncService(
+      testConfig({
+        EXECUTION: "active",
+        MICROSOFT_CLIENT_ID: "ms-id",
+        MICROSOFT_CLIENT_SECRET: "ms-secret",
+      }),
+      {
+        mongo,
+        authAdapter: new FakeAuthAdapter(),
+      },
+    );
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    connections = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  it("adopts a signed Microsoft authorization and bootstraps its import", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const account = {
+      providerAccountId: "ms-oid-from-signin",
+      email: "connected@example.com",
+      displayName: "Connected User",
+    };
+    const grantedScopes = [...MICROSOFT_SCOPES];
+    await startService();
+
+    const res = await fetch(`${base}${ADOPT_AUTHORIZATION_PATH}`, {
+      method: "POST",
+      headers: {
+        ...signedHeaders(tenantId, principalId),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        provider: "microsoft",
+        account,
+        credential: encryptAdoptAuthorizationCredential(
+          SECRET,
+          "microsoft-refresh-token",
+          {
+            tenantId,
+            principalId,
+            provider: "microsoft",
+            account,
+            grantedScopes,
+          },
+        ),
+        grantedScopes,
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({});
+    const [connection] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(connection?.provider).toBe("microsoft");
+    expect(connection?.state).toBe("importing");
+    expect(connection?.account.providerAccountId).toBe("ms-oid-from-signin");
+    const stored = await credentials.findByConnection(connection!._id);
+    expect(
+      stored?.credentialKind === "oauthRefresh"
+        ? openOauthRefreshToken(TEST_CREDENTIAL_ENCRYPTION_KEY, stored)
+        : null,
+    ).toBe("microsoft-refresh-token");
   });
 });
 

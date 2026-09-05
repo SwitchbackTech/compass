@@ -4,12 +4,19 @@ import { type SessionContainerInterface } from "supertokens-node/recipe/session/
 import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-node/recipe/thirdparty/types";
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
+import { providerKindFromThirdPartyId } from "@core/types/sync/identity.contracts";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
+import {
+  microsoftAuthService,
+  microsoftSubjectId,
+} from "@backend/auth/services/microsoft/microsoft.auth.service";
+import { type MicrosoftSignInSuccess } from "@backend/auth/services/microsoft/microsoft.auth.types";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
+  createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
@@ -17,8 +24,9 @@ import {
 import userService from "@backend/user/services/user.service";
 import {
   type CreateGoogleSignInResponse,
-  type CreateGoogleUserFn,
+  type CreateMicrosoftSignInResponse,
   type CreateNewRecipeUserFn,
+  type CreateThirdPartyUserFn,
   type SignInPOSTFn,
   type SignUpPOSTFn,
   type ThirdPartySignInUpInput,
@@ -90,13 +98,58 @@ async function maybeRemapGoogleSignInToCompassSession(
   };
 }
 
-export async function createGoogleUser(
-  input: Parameters<CreateGoogleUserFn>[0],
-  originalCreateGoogleUser: CreateGoogleUserFn,
+async function maybeRemapMicrosoftSignInToCompassSession(
+  input: ThirdPartySignInUpInput,
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>,
+  success: MicrosoftSignInSuccess,
+): Promise<{
+  response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>;
+  success: MicrosoftSignInSuccess;
+}> {
+  const connectedCompassUserId = await userService.getCanonicalCompassUserId({
+    provider: "microsoft",
+    subjectId: microsoftSubjectId(success.providerUser),
+    email: null,
+  });
+
+  if (
+    input.session ||
+    !connectedCompassUserId ||
+    response.status !== "OK" ||
+    response.session.getUserId() === connectedCompassUserId
+  ) {
+    return { response, success };
+  }
+
+  const session = await replaceSessionWithCompassUser(
+    input,
+    response.session,
+    connectedCompassUserId,
+  );
+
+  const responseWithCompassSession = { ...response, session };
+  const successAfterSessionRemap = createMicrosoftSignInSuccess(
+    responseWithCompassSession as CreateMicrosoftSignInResponse,
+  );
+  if (!successAfterSessionRemap) {
+    throw new Error(
+      "Missing Microsoft sign-in success after Compass session replacement",
+    );
+  }
+
+  return {
+    response: responseWithCompassSession,
+    success: successAfterSessionRemap,
+  };
+}
+
+export async function createThirdPartyUser(
+  input: Parameters<CreateThirdPartyUserFn>[0],
+  originalCreateThirdPartyUser: CreateThirdPartyUserFn,
 ): Promise<
   Awaited<ReturnType<ThirdPartyRecipeInterface["manuallyCreateOrUpdateUser"]>>
 > {
-  const response = await originalCreateGoogleUser(input);
+  const response = await originalCreateThirdPartyUser(input);
 
   if (response.status !== "OK") {
     return response;
@@ -107,11 +160,34 @@ export async function createGoogleUser(
   return response;
 }
 
-export async function handleGoogleSignInUp(
+export const createGoogleUser = createThirdPartyUser;
+
+export async function handleThirdPartySignInUp(
   input: ThirdPartySignInUpInput,
   originalSignInUpPOST: ThirdPartySignInUpPostFn,
 ): Promise<Awaited<ReturnType<ThirdPartySignInUpPostFn>>> {
   const response = await originalSignInUpPOST(input);
+  const thirdPartyId = input.provider?.id ?? "google";
+  const kind = providerKindFromThirdPartyId(thirdPartyId);
+
+  if (kind === "microsoft") {
+    const success = createMicrosoftSignInSuccess(
+      response as CreateMicrosoftSignInResponse,
+    );
+    if (!success) {
+      return response;
+    }
+    const remapped = await maybeRemapMicrosoftSignInToCompassSession(
+      input,
+      response,
+      success,
+    );
+    await microsoftAuthService.handleMicrosoftAuth(remapped.success, {
+      hasExistingSession: Boolean(input.session),
+    });
+    return remapped.response;
+  }
+
   const success = createGoogleSignInSuccess(
     response as CreateGoogleSignInResponse,
   );
@@ -132,6 +208,8 @@ export async function handleGoogleSignInUp(
 
   return remapped.response;
 }
+
+export const handleGoogleSignInUp = handleThirdPartySignInUp;
 
 export async function sendPasswordResetEmail<
   T extends { passwordResetLink: string; user: { email: string } },

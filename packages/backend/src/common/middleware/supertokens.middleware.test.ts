@@ -7,6 +7,7 @@ import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
+import { microsoftAuthService } from "@backend/auth/services/microsoft/microsoft.auth.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   initSupertokens,
@@ -16,6 +17,7 @@ import * as supertokensMiddlewareUtil from "@backend/common/middleware/supertoke
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
+  createMicrosoftSignInSuccess,
   ensureExternalUserIdMapping,
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
@@ -56,6 +58,9 @@ describe("supertokens.middleware", () => {
     spyOn(ThirdParty, "init");
     spyOn(UserMetadata, "init");
     spyOn(googleAuthService, "handleGoogleAuth").mockResolvedValue(undefined);
+    spyOn(microsoftAuthService, "handleMicrosoftAuth").mockResolvedValue(
+      undefined,
+    );
     spyOn(userService, "getCanonicalCompassUserId").mockResolvedValue(null);
     spyOn(userService, "upsertUserFromAuth").mockResolvedValue({
       user: { userId: "compass-user-id" },
@@ -67,7 +72,7 @@ describe("supertokens.middleware", () => {
     ).mockImplementation((link) => link);
     spyOn(
       supertokensMiddlewareUtil,
-      "createGoogleSignInSuccess",
+      "createMicrosoftSignInSuccess",
     ).mockImplementation((payload) => payload as never);
     spyOn(
       supertokensMiddlewareUtil,
@@ -88,10 +93,14 @@ describe("supertokens.middleware", () => {
     (ThirdParty.init as Mock).mockClear();
     (UserMetadata.init as Mock).mockClear();
     (googleAuthService.handleGoogleAuth as Mock).mockClear();
+    (microsoftAuthService.handleMicrosoftAuth as Mock).mockClear();
     (userService.getCanonicalCompassUserId as Mock).mockClear();
     (userService.upsertUserFromAuth as Mock).mockClear();
     (supertokensMiddlewareUtil.buildResetPasswordLink as Mock).mockClear();
     (supertokensMiddlewareUtil.createGoogleSignInSuccess as Mock).mockClear();
+    (
+      supertokensMiddlewareUtil.createMicrosoftSignInSuccess as Mock
+    ).mockClear();
     (supertokensMiddlewareUtil.ensureExternalUserIdMapping as Mock).mockClear();
     (supertokensMiddlewareUtil.getFormFieldValue as Mock).mockClear();
 
@@ -171,17 +180,23 @@ describe("supertokens.middleware", () => {
       }
     });
 
-    it("omits the Google third-party provider when Google is not configured", () => {
-      const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
-      const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+    it("omits ThirdParty when Google and Microsoft are not configured", () => {
+      const originalGoogleId = CONFIG.GOOGLE_CLIENT_ID;
+      const originalGoogleSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+      const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
+      const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
+      CONFIG.MICROSOFT_CLIENT_ID = undefined;
+      CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
 
       try {
         initSupertokens();
       } finally {
-        CONFIG.GOOGLE_CLIENT_ID = originalClientId;
-        CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
+        CONFIG.GOOGLE_CLIENT_ID = originalGoogleId;
+        CONFIG.GOOGLE_CLIENT_SECRET = originalGoogleSecret;
+        CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
+        CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
       }
 
       expect(ThirdParty.init).not.toHaveBeenCalled();
@@ -198,16 +213,22 @@ describe("supertokens.middleware", () => {
     });
 
     it("omits the Google third-party provider when credentials are absent", () => {
-      const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
-      const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+      const originalGoogleId = CONFIG.GOOGLE_CLIENT_ID;
+      const originalGoogleSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+      const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
+      const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
+      CONFIG.MICROSOFT_CLIENT_ID = undefined;
+      CONFIG.MICROSOFT_CLIENT_SECRET = undefined;
 
       try {
         initSupertokens();
       } finally {
-        CONFIG.GOOGLE_CLIENT_ID = originalClientId;
-        CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
+        CONFIG.GOOGLE_CLIENT_ID = originalGoogleId;
+        CONFIG.GOOGLE_CLIENT_SECRET = originalGoogleSecret;
+        CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
+        CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
       }
 
       expect(ThirdParty.init).not.toHaveBeenCalled();
@@ -221,6 +242,31 @@ describe("supertokens.middleware", () => {
         { recipe: "session" },
         { recipe: "usermetadata" },
       ]);
+    });
+
+    it("includes the Active Directory provider when Microsoft is configured", () => {
+      const originalMicrosoftId = CONFIG.MICROSOFT_CLIENT_ID;
+      const originalMicrosoftSecret = CONFIG.MICROSOFT_CLIENT_SECRET;
+      CONFIG.MICROSOFT_CLIENT_ID = "ms-client-id";
+      CONFIG.MICROSOFT_CLIENT_SECRET = "ms-client-secret";
+
+      try {
+        initSupertokens();
+      } finally {
+        CONFIG.MICROSOFT_CLIENT_ID = originalMicrosoftId;
+        CONFIG.MICROSOFT_CLIENT_SECRET = originalMicrosoftSecret;
+      }
+
+      expect(ThirdParty.init).toHaveBeenCalledTimes(1);
+      const thirdPartyConfig = getFirstCallArg<{
+        signInAndUpFeature: {
+          providers: Array<{ config: { thirdPartyId: string } }>;
+        };
+      }>(ThirdParty.init);
+      const ids = thirdPartyConfig.signInAndUpFeature.providers.map(
+        (provider) => provider.config.thirdPartyId,
+      );
+      expect(ids).toContain("active-directory");
     });
 
     it("wires EmailPassword name validation", async () => {
@@ -500,6 +546,41 @@ describe("supertokens.middleware", () => {
         successPayload,
         { hasExistingSession: true },
       );
+    });
+
+    it("calls microsoftAuthService.handleMicrosoftAuth for active-directory", async () => {
+      const responsePayload = { status: "OK" };
+      const successPayload = { providerUser: { oid: "ms-oid" } };
+
+      (createMicrosoftSignInSuccess as Mock).mockReturnValue(successPayload);
+
+      initSupertokens();
+
+      const thirdPartyConfig = getFirstCallArg<{
+        override: {
+          apis: (originalImplementation: {
+            signInUpPOST?: (input: unknown) => Promise<unknown>;
+          }) => {
+            signInUpPOST: (input: unknown) => Promise<unknown>;
+          };
+        };
+      }>(ThirdParty.init);
+
+      const originalImplementation = {
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
+      };
+
+      const overridden = thirdPartyConfig.override.apis(originalImplementation);
+
+      await overridden.signInUpPOST({
+        provider: { id: "active-directory" },
+      });
+
+      expect(microsoftAuthService.handleMicrosoftAuth).toHaveBeenCalledWith(
+        successPayload,
+        { hasExistingSession: false },
+      );
+      expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
     });
 
     it("replaces the EmailPassword sign-up session with the canonical Compass user", async () => {

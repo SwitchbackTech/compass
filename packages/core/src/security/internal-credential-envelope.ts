@@ -16,6 +16,8 @@ import {
 const ALGORITHM = "aes-256-gcm";
 const ADOPT_GOOGLE_ROUTE =
   "POST /internal/connections/adopt-google-authorization";
+const ADOPT_AUTHORIZATION_ROUTE =
+  "POST /internal/connections/adopt-authorization";
 const CREDENTIAL_CONNECT_ROUTE = "POST /internal/connections/credential";
 
 function encryptionKey(secret: string): Buffer {
@@ -32,6 +34,11 @@ export type GoogleConnectionCredentialContext = {
   grantedScopes: readonly string[];
 };
 
+export type ProviderConnectionCredentialContext =
+  GoogleConnectionCredentialContext & {
+    provider: ProviderKind;
+  };
+
 export type CredentialConnectEnvelopeContext = {
   tenantId: string;
   principalId: string;
@@ -40,7 +47,10 @@ export type CredentialConnectEnvelopeContext = {
 
 function additionalAuthenticatedData(
   route: string,
-  context: GoogleConnectionCredentialContext | CredentialConnectEnvelopeContext,
+  context:
+    | GoogleConnectionCredentialContext
+    | ProviderConnectionCredentialContext
+    | CredentialConnectEnvelopeContext,
 ): Buffer {
   if ("account" in context) {
     return Buffer.from(
@@ -51,6 +61,7 @@ function additionalAuthenticatedData(
         principalId: context.principalId,
         account: context.account,
         grantedScopes: [...context.grantedScopes].sort(),
+        ...("provider" in context ? { provider: context.provider } : {}),
       }),
     );
   }
@@ -69,7 +80,10 @@ function encryptInternalPayload(
   secret: string,
   credential: string,
   route: string,
-  context: GoogleConnectionCredentialContext | CredentialConnectEnvelopeContext,
+  context:
+    | GoogleConnectionCredentialContext
+    | ProviderConnectionCredentialContext
+    | CredentialConnectEnvelopeContext,
 ): EncryptedCredentialEnvelope {
   const iv = randomBytes(12);
   const cipher = createCipheriv(ALGORITHM, encryptionKey(secret), iv);
@@ -89,7 +103,10 @@ function decryptInternalPayload(
   secret: string,
   envelope: EncryptedCredentialEnvelope,
   route: string,
-  context: GoogleConnectionCredentialContext | CredentialConnectEnvelopeContext,
+  context:
+    | GoogleConnectionCredentialContext
+    | ProviderConnectionCredentialContext
+    | CredentialConnectEnvelopeContext,
 ): string {
   const parsed = EncryptedCredentialEnvelopeSchema.parse(envelope);
   const decipher = createDecipheriv(
@@ -127,6 +144,32 @@ export function decryptInternalCredential(
   context: GoogleConnectionCredentialContext,
 ): string {
   return decryptInternalPayload(secret, envelope, ADOPT_GOOGLE_ROUTE, context);
+}
+
+export function encryptAdoptAuthorizationCredential(
+  secret: string,
+  credential: string,
+  context: ProviderConnectionCredentialContext,
+): EncryptedCredentialEnvelope {
+  return encryptInternalPayload(
+    secret,
+    credential,
+    ADOPT_AUTHORIZATION_ROUTE,
+    context,
+  );
+}
+
+export function decryptAdoptAuthorizationCredential(
+  secret: string,
+  envelope: EncryptedCredentialEnvelope,
+  context: ProviderConnectionCredentialContext,
+): string {
+  return decryptInternalPayload(
+    secret,
+    envelope,
+    ADOPT_AUTHORIZATION_ROUTE,
+    context,
+  );
 }
 
 export function encryptCredentialConnectPayload(
