@@ -52,7 +52,7 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 }));
 
 const actualUseConnectGoogle = (
-  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+  await import("@web/auth/providers/useConnectProvider")
 ).useConnectGoogle;
 let isConnectGoogleMocked = true;
 // Mirrors the real hook's one behavior these tests depend on: scoping to a
@@ -69,7 +69,7 @@ const defaultUseConnectGoogle = (
   state: options?.connection?.connectionState ?? ("NOT_CONNECTED" as const),
 });
 const mockUseConnectGoogle = mock(defaultUseConnectGoogle);
-mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+mock.module("@web/auth/providers/useConnectProvider", () => ({
   useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
       ? mockUseConnectGoogle(...args)

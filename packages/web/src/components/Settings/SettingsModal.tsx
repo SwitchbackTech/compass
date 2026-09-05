@@ -4,16 +4,16 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import { providerDisplayName } from "@core/types/sync/identity.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
 import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
   googleSyncSupportMailto,
   SSE_DEGRADED_STATUS,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
-import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
-import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
+} from "@web/auth/providers/connect.util";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
+import { useDisconnectGoogleAccount } from "@web/auth/providers/useDisconnectAccount";
 import {
   selectSyncConnections,
   useUserMetadataStore,
