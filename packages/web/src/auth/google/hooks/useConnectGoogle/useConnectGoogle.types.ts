@@ -1,4 +1,5 @@
 import { type Icon } from "@phosphor-icons/react";
+import { type ConnectionBeginFeatures } from "@core/types/sync/connection.contracts";
 import {
   type GoogleConnectionState,
   type GoogleSyncConnectionSummary,
@@ -14,6 +15,28 @@ export type GoogleUiConfig = {
     icon: CommandActionIcon;
     onSelect: () => void;
   } | null;
+};
+
+export type UseConnectGoogleOptions = {
+  /**
+   * Scope the hook to one connected account: its own state drives the action
+   * and status, and reconnect rebinds consent to that connection rather than
+   * the precedence-winning one. Omit for the aggregate (whole-user) view.
+   */
+  connection?: GoogleSyncConnectionSummary | null;
+  /**
+   * Always start a new-account OAuth round-trip (`{}`), even when some other
+   * account is `RECONNECT_REQUIRED`. Settings "Add account" must never bind
+   * to a reconnect.
+   */
+  newAccount?: boolean;
+  /**
+   * Optional feature groups to add to the consent request (e.g.
+   * `["contacts"]` for attendee suggestions). Each maps to OPTIONAL scopes
+   * the user may decline while the connect flow still completes; omitted,
+   * the begin request stays byte-identical to before features existed.
+   */
+  features?: ConnectionBeginFeatures;
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {

@@ -42,6 +42,23 @@ const AuthApi = {
     return { authorizationUrl: parsed.authorizationUrl };
   },
 
+  async beginConnection(
+    request: ConnectionBeginRequest = {},
+  ): Promise<ConnectionBeginResponse> {
+    const provider = request.provider ?? "google";
+    if (provider === "google") {
+      const { provider: _provider, ...rest } = request;
+      const google = await AuthApi.beginGoogleConnection(rest);
+      return { kind: "redirect", authorizationUrl: google.authorizationUrl };
+    }
+
+    const response = await BaseApi.post<ConnectionBeginResponse>(
+      `/auth/connections/begin`,
+      { ...request, provider },
+    );
+    return ConnectionBeginResponseSchema.parse(response.data);
+  },
+
   // Disconnect one connected Google account. The user's other accounts, and
   // their Compass sign-in, are unaffected.
   async disconnectGoogleConnection(connectionId: string): Promise<void> {
