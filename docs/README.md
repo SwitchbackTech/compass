@@ -23,13 +23,15 @@ Internal documentation for engineers and agents working in the Compass repo.
 - Backend routes and API behavior: [Backend Route Map](./backend/README.md), [Backend Request Flow](./backend/backend-request-flow.md), [Backend Error Handling](./backend/backend-error-handling.md)
 - Trial, pricing, or Stripe: [Billing And Trial](./features/billing.md)
 - Public booking pages or availability rules: [Compass Calendar Booking (v1)](./features/booking.md)
-- A new calendar integration or Google-sync behavior: [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md), the `packages/sync` domain code directly
+- A new calendar integration or Google-sync behavior: [Calendar providers](./features/calendar-providers.md), [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md), the `packages/sync` domain code directly
 
 ## Architecture And Domain
 
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Product Suite Boundaries](./architecture/product-suite-boundaries.md)
 - [Event Domain Model](./architecture/event-domain-model.md)
+- [Calendar providers](./features/calendar-providers.md)
+- [Multi-account Sync](./architecture/multi-account-sync.md)
 - [Multi-account Sync](./architecture/multi-account-sync.md)
 - [Glossary](./architecture/glossary.md)
 

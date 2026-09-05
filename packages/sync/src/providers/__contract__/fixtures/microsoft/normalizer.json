@@ -1,0 +1,98 @@
+{
+  "timed": {
+    "id": "AAMkAGI2TG93AAA=",
+    "@odata.etag": "W/\"graph-timed-etag\"",
+    "type": "singleInstance",
+    "subject": "Graph timed contract",
+    "bodyPreview": "Preview text",
+    "lastModifiedDateTime": "2025-01-10T12:00:00.0000000Z",
+    "iCalUId": "040000008200E00074C5B7101A82E00800000000000000000000000000000000000000000000000000",
+    "location": { "displayName": "Conference Room" },
+    "organizer": {
+      "emailAddress": { "name": "Organizer", "address": "org@example.com" }
+    },
+    "showAs": "busy",
+    "start": { "dateTime": "2025-01-15T14:00:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2025-01-15T15:00:00.0000000", "timeZone": "UTC" }
+  },
+  "allDay": {
+    "id": "AAMkAGI2TG94AAA=",
+    "@odata.etag": "W/\"graph-allday-etag\"",
+    "type": "singleInstance",
+    "subject": "Graph all-day contract",
+    "isAllDay": true,
+    "showAs": "free",
+    "start": { "dateTime": "2022-02-22T00:00:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2022-02-23T00:00:00.0000000", "timeZone": "UTC" }
+  },
+  "seriesMaster": {
+    "id": "AAMkAGI2TG95AAA=",
+    "@odata.etag": "W/\"graph-series-etag\"",
+    "type": "seriesMaster",
+    "subject": "Graph series contract",
+    "start": { "dateTime": "2025-09-07T01:30:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2025-09-07T02:30:00.0000000", "timeZone": "UTC" },
+    "recurrence": {
+      "pattern": { "type": "daily", "interval": 1 },
+      "range": {
+        "type": "endDate",
+        "startDate": "2025-09-07",
+        "endDate": "2025-09-16"
+      }
+    }
+  },
+  "exception": {
+    "id": "AAMkAGI2TG96AAA=",
+    "@odata.etag": "W/\"graph-exception-etag\"",
+    "type": "exception",
+    "subject": "Graph exception contract",
+    "seriesMasterId": "AAMkAGI2TG95AAA=",
+    "originalStart": "2025-09-08T01:30:00.0000000Z",
+    "start": { "dateTime": "2025-09-08T02:00:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2025-09-08T03:00:00.0000000", "timeZone": "UTC" }
+  },
+  "cancelledException": {
+    "id": "AAMkAGI2TG97AAA=",
+    "@odata.etag": "W/\"graph-cancelled-etag\"",
+    "type": "exception",
+    "isCancelled": true,
+    "seriesMasterId": "AAMkAGI2TG95AAA=",
+    "originalStart": "2013-05-08T22:00:00.0000000Z"
+  },
+  "occurrence": {
+    "id": "AAMkAGI2TG98AAA=",
+    "@odata.etag": "W/\"graph-occurrence-etag\"",
+    "type": "occurrence",
+    "seriesMasterId": "AAMkAGI2TG95AAA=",
+    "start": { "dateTime": "2025-09-09T01:30:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2025-09-09T02:30:00.0000000", "timeZone": "UTC" }
+  },
+  "attendeesAndConference": {
+    "id": "AAMkAGI2TG99AAA=",
+    "@odata.etag": "W/\"graph-attendees-etag\"",
+    "type": "singleInstance",
+    "subject": "Graph attendees contract",
+    "categories": ["Blue category"],
+    "onlineMeeting": {
+      "joinUrl": "https://teams.microsoft.com/l/meetup-join/abc"
+    },
+    "onlineMeetingProvider": "teamsForBusiness",
+    "attendees": [
+      {
+        "type": "required",
+        "emailAddress": { "address": "a@x.com", "name": "A" },
+        "status": { "response": "accepted" }
+      },
+      {
+        "type": "required",
+        "emailAddress": { "address": "b@x.com" },
+        "status": { "response": "declined" }
+      }
+    ],
+    "start": { "dateTime": "2025-01-15T14:00:00.0000000", "timeZone": "UTC" },
+    "end": { "dateTime": "2025-01-15T15:00:00.0000000", "timeZone": "UTC" }
+  },
+  "masterCategories": {
+    "Blue category": "#0078D4"
+  }
+}
