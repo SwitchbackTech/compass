@@ -265,16 +265,19 @@ Explicit spec-directory lists per shard replace `--shard=n/4`. Sized from
 the shard timings above, scaled by the local per-file ratios inside each
 shard:
 
-| Shard | Directories | Tests | Estimated `Run e2e tests` |
-|---|---|---|---|
-| 1 | accessibility, allday | 32 | ~92s |
-| 2 | booking | 48 | ~90s |
-| 3 | timed, oauth | 18 | ~93s |
-| 4 | onboarding, calendars, life, navigation, attendees | 33 | ~91s |
+| Shard | Directories | Tests | Estimated `Run e2e tests` | Measured on PR #3410 |
+|---|---|---|---|---|
+| 1 | accessibility, allday | 32 | ~92s | 90s |
+| 2 | booking, oauth | 51 | ~100s | 78s (booking alone) |
+| 3 | timed | 15 | ~85s | 110s (with oauth) |
+| 4 | onboarding, calendars, life, navigation, attendees | 33 | ~91s | 94s |
 
 Before: shard 4 at 2m16s, shard 3 at 0m26s; the run's critical path was
-shard 4. Expected after: the slowest shard near 1m35s, about 40s off every
-e2e run. A contract test (`packages/scripts/src/testing/e2e-shards.test.ts`)
+shard 4. First measurement (PR #3410 with oauth on shard 3): slowest shard
+110s, run wall clock 3m00s versus 3m32s for the merge-queue run of #3407
+on the old split. `timed/` costs more per test in CI than its local ratio
+suggested, so oauth moved to the booking shard before merge; expected
+slowest shard about 100s. A contract test (`packages/scripts/src/testing/e2e-shards.test.ts`)
 fails when an `e2e/` directory with specs is missing from every list or
 appears in two, so a new directory cannot silently skip CI. Shard job names
 change from `e2e-shard (1)` to `e2e-shard (1, e2e/accessibility e2e/allday)`;
