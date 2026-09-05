@@ -14,6 +14,7 @@ import {
 import { ToastActionButton } from "@web/common/utils/toast/ToastActionButton";
 import { ToastNotice } from "@web/common/utils/toast/ToastNotice";
 import { getToast } from "@web/common/utils/toast/toast.port";
+import { CONNECTION_BANNER_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
 interface GoogleDelayedToastProps {
   toastId: Id;
@@ -39,7 +40,10 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
         Updates are taking longer than expected. Try Refresh, or reconnect if
         this continues.
       </p>
-      <ToastActionButton onClick={handleRefresh}>
+      <ToastActionButton
+        onClick={handleRefresh}
+        shortcutKey={CONNECTION_BANNER_SHORTCUT_KEY}
+      >
         Refresh calendar
       </ToastActionButton>
     </ToastNotice>

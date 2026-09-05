@@ -24,6 +24,8 @@ export interface ProviderContractOptions {
   readonly skipAuthExchange?: boolean;
   readonly skipAuthRevoked?: boolean;
   readonly skipWatch?: boolean;
+  readonly skipNotifications?: boolean;
+  readonly skipNormalizerRoundTrip?: boolean;
 }
 
 const CONTRACT_ROOT = dirname(fileURLToPath(import.meta.url));
@@ -244,6 +246,7 @@ export function describeProviderContract(
 
     describe("notifications", () => {
       const watch = options.skipWatch ? it.skip : it;
+      const notify = options.skipNotifications ? it.skip : it;
       watch("watch returns a channel", async () => {
         const channel = await adapters.notifications.watch({
           accessToken,
@@ -257,87 +260,94 @@ export function describeProviderContract(
         expect(channel.expiresAt).toBeInstanceOf(Date);
       });
 
-      it("parseNotification accepts a valid callback, rejects tampered, and handles validation", () => {
-        const valid = adapters.notifications.parseNotification({
-          headers: {
-            "x-goog-channel-id": "chan-1",
-            "x-goog-channel-token": "chan-token",
-            "x-goog-resource-id": "res-1",
-            "x-goog-resource-state": "exists",
-          },
-          body: {},
-          query: {},
-        });
-        expect(valid).not.toBeNull();
-        if (valid && "kind" in valid && valid.kind === "validation") {
-          throw new Error(
-            "valid Google callback must not be a validation handshake",
+      notify(
+        "parseNotification accepts a valid callback, rejects tampered, and handles validation",
+        () => {
+          const valid = adapters.notifications.parseNotification({
+            headers: {
+              "x-goog-channel-id": "chan-1",
+              "x-goog-channel-token": "chan-token",
+              "x-goog-resource-id": "res-1",
+              "x-goog-resource-state": "exists",
+            },
+            body: {},
+            query: {},
+          });
+          expect(valid).not.toBeNull();
+          if (valid && "kind" in valid && valid.kind === "validation") {
+            throw new Error(
+              "valid Google callback must not be a validation handshake",
+            );
+          }
+          expect(valid && "channelId" in valid ? valid.channelId : null).toBe(
+            "chan-1",
           );
-        }
-        expect(valid && "channelId" in valid ? valid.channelId : null).toBe(
-          "chan-1",
-        );
 
-        const tampered = adapters.notifications.parseNotification({
-          headers: { "x-goog-resource-id": "res-1" },
-          body: {},
-          query: {},
-        });
-        expect(tampered).toBeNull();
+          const tampered = adapters.notifications.parseNotification({
+            headers: { "x-goog-resource-id": "res-1" },
+            body: {},
+            query: {},
+          });
+          expect(tampered).toBeNull();
 
-        const validation = adapters.notifications.parseNotification({
-          headers: {},
-          body: {},
-          query: { validationToken: "echo-me" },
-        });
-        if (
-          validation &&
-          "kind" in validation &&
-          validation.kind === "validation"
-        ) {
-          expect(validation.body.length).toBeGreaterThan(0);
-        } else {
-          // Google has no Graph validation handshake; null is the correct miss.
-          expect(validation).toBeNull();
-        }
-      });
+          const validation = adapters.notifications.parseNotification({
+            headers: {},
+            body: {},
+            query: { validationToken: "echo-me" },
+          });
+          if (
+            validation &&
+            "kind" in validation &&
+            validation.kind === "validation"
+          ) {
+            expect(validation.body.length).toBeGreaterThan(0);
+          } else {
+            // Google has no Graph validation handshake; null is the correct miss.
+            expect(validation).toBeNull();
+          }
+        },
+      );
     });
 
     describe("normalizer round-trips", () => {
-      it("covers timed, all-day, recurring, exception, cancelled, attendees, conference, and color", async () => {
-        const events = await collectEvents(adapters, accessToken, calendarId);
-        const active = events.filter((event) => event.kind === "event");
-        const cancelled = events.filter(
-          (event) => event.kind === "cancellation",
-        );
+      const roundTrip = options.skipNormalizerRoundTrip ? it.skip : it;
+      roundTrip(
+        "covers timed, all-day, recurring, exception, cancelled, attendees, conference, and color",
+        async () => {
+          const events = await collectEvents(adapters, accessToken, calendarId);
+          const active = events.filter((event) => event.kind === "event");
+          const cancelled = events.filter(
+            (event) => event.kind === "cancellation",
+          );
 
-        expect(active.some((event) => event.schedule.kind === "timed")).toBe(
-          true,
-        );
-        expect(active.some((event) => event.schedule.kind === "allDay")).toBe(
-          true,
-        );
-        expect(
-          active.some((event) => event.recurrence.kind === "seriesMaster"),
-        ).toBe(true);
-        expect(
-          active.some((event) => event.recurrence.kind === "instance"),
-        ).toBe(true);
-        expect(cancelled.length).toBeGreaterThanOrEqual(1);
-        expect(active.some((event) => event.content.attendees.length > 0)).toBe(
-          true,
-        );
-        expect(active.some((event) => event.content.conference !== null)).toBe(
-          true,
-        );
-        expect(
-          active.some(
-            (event) =>
-              event.content.color !== undefined ||
-              event.content.colorHex !== undefined,
-          ),
-        ).toBe(true);
-      });
+          expect(active.some((event) => event.schedule.kind === "timed")).toBe(
+            true,
+          );
+          expect(active.some((event) => event.schedule.kind === "allDay")).toBe(
+            true,
+          );
+          expect(
+            active.some((event) => event.recurrence.kind === "seriesMaster"),
+          ).toBe(true);
+          expect(
+            active.some((event) => event.recurrence.kind === "instance"),
+          ).toBe(true);
+          expect(cancelled.length).toBeGreaterThanOrEqual(1);
+          expect(
+            active.some((event) => event.content.attendees.length > 0),
+          ).toBe(true);
+          expect(
+            active.some((event) => event.content.conference !== null),
+          ).toBe(true);
+          expect(
+            active.some(
+              (event) =>
+                event.content.color !== undefined ||
+                event.content.colorHex !== undefined,
+            ),
+          ).toBe(true);
+        },
+      );
     });
   });
 }

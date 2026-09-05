@@ -1,7 +1,9 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import {
+  RECONCILE_SWEEP_LIMIT_DEFAULT,
   reconcileStaleAfterMsFor,
   reconcileSweepIntervalMsFor,
+  reconcileSweepLimitFor,
   type SyncConfig,
 } from "@sync/config/sync.config";
 import { type ProviderRegistry } from "@sync/providers/provider-registry";
@@ -14,6 +16,7 @@ export interface ReconcileSweepRowSpec {
   readonly name: string;
   readonly windowMs: number;
   readonly intervalMs?: number;
+  readonly limit: number;
   readonly listOptions: ListStaleEventsOptions;
 }
 
@@ -37,6 +40,7 @@ export function buildReconcileSweepRows(
     {
       name: "reconcile",
       windowMs: -config.RECONCILE_STALE_AFTER_MS,
+      limit: RECONCILE_SWEEP_LIMIT_DEFAULT,
       listOptions: pollOnly.length > 0 ? { excludeProviders: pollOnly } : {},
     },
   ];
@@ -45,6 +49,7 @@ export function buildReconcileSweepRows(
       name: `reconcile-${kind}`,
       windowMs: -reconcileStaleAfterMsFor(config, kind),
       intervalMs: reconcileSweepIntervalMsFor(config, kind),
+      limit: reconcileSweepLimitFor(config, kind),
       listOptions: { provider: kind },
     });
   }

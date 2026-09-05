@@ -127,6 +127,13 @@ describe("Sync service configuration", () => {
       );
       expect(config.CREDENTIAL_ENCRYPTION_KEY).toBe(key);
     });
+
+    it("defaults Apple reconcile cadence and sweep sizing", () => {
+      const config = parseSyncConfig(compassConfigWithSync());
+      expect(config.reconcileStaleAfterMsByKind.apple).toBe(60_000);
+      expect(config.reconcileSweepIntervalMsByKind.apple).toBe(30_000);
+      expect(config.reconcileSweepLimitByKind.apple).toBe(500);
+    });
   });
 
   describe("required fields", () => {

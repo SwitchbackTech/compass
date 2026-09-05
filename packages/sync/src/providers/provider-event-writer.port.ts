@@ -101,6 +101,8 @@ export interface ProviderInstanceFetchInput {
 export interface ProviderWriteResult {
   readonly providerEventId: string;
   readonly providerVersion: string;
+  // CalDAV resource href for sync-collection deletion mapping and later writes.
+  readonly resourceHref?: string;
   // Google's cross-copy correlation key when the write response includes it.
   // Optional so non-Google writers and older fixtures stay valid.
   readonly icalUid?: string;
