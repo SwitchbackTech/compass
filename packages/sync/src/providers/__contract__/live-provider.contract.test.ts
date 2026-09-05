@@ -1,5 +1,10 @@
 import { describeProviderContract } from "@sync/providers/__contract__/adapter-contract";
 import {
+  appleLiveFactory,
+  hasAppleLiveCredentials,
+  smokeAppleAppPassword,
+} from "@sync/providers/__contract__/apple-contract.factory";
+import {
   googleLiveFactory,
   hasGoogleLiveCredentials,
 } from "@sync/providers/__contract__/google-contract.factory";
@@ -36,6 +41,16 @@ if (!liveKind) {
     skipAuthRevoked: true,
     skipWatch: true,
     skipNotifications: true,
+  });
+} else if (liveKind === "apple" && hasAppleLiveCredentials() && calendarId) {
+  describeProviderContract("apple", appleLiveFactory, {
+    calendarId,
+    accessToken: smokeAppleAppPassword(),
+    skipAuthExchange: true,
+    skipAuthRevoked: true,
+    skipWatch: true,
+    skipNotifications: true,
+    skipNormalizerRoundTrip: true,
   });
 } else {
   describe.skip(`live provider contract (${liveKind})`, () => {
