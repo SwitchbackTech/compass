@@ -228,25 +228,61 @@ that the version in `test-e2e.yml` equals the `bun-version` pin in
 
 Before: apt step p50 6s, p95 47s, unbounded tail; all 10 `e2e` gate
 failures in the 100-run window came from this step (the other 7 gate
-non-successes were superseded-push cancellations). After: see PR.
+non-successes were superseded-push cancellations).
+
+After (PR #3407, merged 2026-09-05 14:51 UTC): the replacement `Install
+Bun` step took 3s to 7s on every shard of the PR run and the merge-queue
+run, versus 8s for apt plus setup-bun at p50 before. Setup per shard is
+unchanged at p50 and no longer has a tail. Whether the gate failure rate
+drops to zero is a question for the next few hundred runs; the mechanism
+that produced every one of the 10 is gone.
 
 ### 2. Skip e2e shards for backend-, sync-, and scripts-only pull requests
 
-Planned. `detect-code-changes.sh` gains an `e2e` output; the `e2e-shard`
-job gates on it. Docs-only handling, the `e2e` gate reporting Success on a
-skip, `merge_group`, and `push` behavior are unchanged.
+PR #3408, merged 2026-09-05 14:53 UTC. `detect-code-changes.sh` gains an
+`e2e` output; the `e2e-shard` job gates on it. Docs-only handling, the
+`e2e` gate reporting Success on a skip, `merge_group`, and `push` behavior
+are unchanged.
+
+Before: 50 of 232 PR e2e runs (22%) in the window were on PRs that could
+not affect the suite. After: those PRs report `e2e` as Success in about 10
+seconds (the `changes` job plus the gate) instead of about 3m30s, and use
+zero shard runners.
 
 ### 3. Make the skip-link keyboard e2e test deterministic
 
-Planned. `preparePublicBookingPage` waits for the slot pane to finish
-loading before returning, so tests that start typing immediately are not
-racing the slots request.
+PR #3409. `preparePublicBookingPage` waits for the "Pick a time" heading,
+which renders only once slots have loaded, before returning, unless the
+caller is deliberately observing the pending, failed, or unavailable state.
+The flaky test's assertions are untouched.
+
+Before: 5 retry-only passes in 705 shard jobs, 5 branches. After: to be
+read from the next flaky-log scan.
 
 ### 4. Rebalance the e2e shards by measured duration
 
-Planned. Explicit spec-directory lists per shard, sized from the shard
-timings above, with a contract test that fails when an `e2e/` directory is
-not assigned to any shard.
+Explicit spec-directory lists per shard replace `--shard=n/4`. Sized from
+the shard timings above, scaled by the local per-file ratios inside each
+shard:
+
+| Shard | Directories | Tests | Estimated `Run e2e tests` | Measured on PR #3410 |
+|---|---|---|---|---|
+| 1 | accessibility, allday | 32 | ~92s | 90s |
+| 2 | booking, oauth | 51 | ~100s | 78s (booking alone) |
+| 3 | timed | 15 | ~85s | 110s (with oauth) |
+| 4 | onboarding, calendars, life, navigation, attendees | 33 | ~91s | 94s |
+
+Before: shard 4 at 2m16s, shard 3 at 0m26s; the run's critical path was
+shard 4. First measurement (PR #3410 with oauth on shard 3): slowest shard
+110s, run wall clock 3m00s versus 3m32s for the merge-queue run of #3407
+on the old split. `timed/` costs more per test in CI than its local ratio
+suggested, so oauth moved to the booking shard before merge; expected
+slowest shard about 100s. A contract test (`packages/scripts/src/testing/e2e-shards.test.ts`)
+fails when an `e2e/` directory with specs is missing from every list or
+appears in two, so a new directory cannot silently skip CI. Shard job names
+change from `e2e-shard (1)` to `e2e-shard (1, e2e/accessibility e2e/allday)`;
+the required `e2e` gate is unchanged. Measured after: see PR and the next
+main runs.
 
 ## Looked at, not changed
 
