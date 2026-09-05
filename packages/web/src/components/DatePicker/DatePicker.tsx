@@ -120,7 +120,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
   // When the picker bg has the same polarity as the theme's surfaces, the
   // theme's standard --text already contrasts with it; a mismatched bg (e.g.
   // the light event-fill picker on the dark theme) needs --on-accent, the
-  // token that flips polarity. The CSS keys off this via [data-dark].
+  // token that flips polarity. The CSS keys off this via data-dark="true"|"false".
   const usesThemeText = isDarkBackground === isDarkTheme;
   const headerColor =
     view === "sidebar"
@@ -143,7 +143,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         <div
           ref={calendarRef}
           className={classNames("c-date-picker", className)}
-          data-dark={usesThemeText}
+          data-dark={usesThemeText ? "true" : "false"}
           data-view={view}
           style={datePickerStyle}
         >

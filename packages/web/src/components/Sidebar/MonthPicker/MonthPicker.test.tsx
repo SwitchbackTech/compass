@@ -75,6 +75,15 @@ describe("MonthPicker", () => {
     ).toHaveAttribute("data-pointer-action", POINTER_ACTIONS.datePick);
   });
 
+  it("marks the calendar as using theme text so day numbers follow --text", () => {
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
+
+    expect(document.querySelector(".c-date-picker")).toHaveAttribute(
+      "data-dark",
+      "true",
+    );
+  });
+
   it("moves a week at a time with every arrow key and opens the week with Enter", async () => {
     const user = userEvent.setup({ skipHover: true });
     const onSelectDate = mock();
