@@ -208,6 +208,7 @@ const renderEditShortcuts = ({
         navigateToDate,
         placeTimedDraft,
         timedEvents,
+        visibleDays: [dayjs("2026-08-05")],
       }),
     {
       events: contracts,
@@ -385,7 +386,7 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", () => {
     const placeTimedDraft = mock(() => {
-      createTimedDraft(true, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+      createTimedDraft(dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
     });
     renderEditShortcuts({ placeTimedDraft });
 
@@ -399,11 +400,7 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("repositions a keyboardPlace draft with a later Shift+Arrow", () => {
     const placeTimedDraft = mock(() => {
-      createTimedDraft(
-        false,
-        dayjs("2026-05-20T00:00:00.000"),
-        "keyboardPlace",
-      );
+      createTimedDraft(dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
     });
     renderEditShortcuts({ placeTimedDraft });
 
@@ -444,11 +441,7 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("discards a repositioned keyboardPlace draft on Escape", () => {
     const placeTimedDraft = mock(() => {
-      createTimedDraft(
-        false,
-        dayjs("2026-05-20T00:00:00.000"),
-        "keyboardPlace",
-      );
+      createTimedDraft(dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
     });
     renderEditShortcuts({ placeTimedDraft });
 

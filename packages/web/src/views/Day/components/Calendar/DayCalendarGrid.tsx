@@ -278,13 +278,7 @@ export function DayCalendarGrid() {
       : dateInView;
 
     openShortcutDraft(() =>
-      createAlldayDraft(
-        start,
-        start,
-        "createShortcut",
-        resolveShortcutCalendarId(),
-        start,
-      ),
+      createAlldayDraft(start, "createShortcut", resolveShortcutCalendarId()),
     );
     eventJumpActions.setPointerDraftIntent(null);
   }, [dateInView, openShortcutDraft, resolveShortcutCalendarId]);
@@ -293,13 +287,12 @@ export function DayCalendarGrid() {
     () =>
       openShortcutDraft(() =>
         createTimedDraft(
-          dateInView.isSame(today, "day"),
           dateInView,
           "createShortcut",
           resolveShortcutCalendarId(),
         ),
       ),
-    [dateInView, openShortcutDraft, resolveShortcutCalendarId, today],
+    [dateInView, openShortcutDraft, resolveShortcutCalendarId],
   );
 
   // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
@@ -309,14 +302,13 @@ export function DayCalendarGrid() {
       openShortcutDraft(
         () =>
           createTimedDraft(
-            dateInView.isSame(today, "day"),
             dateInView,
             "keyboardPlace",
             resolveShortcutCalendarId(),
           ),
         false,
       ),
-    [dateInView, openShortcutDraft, resolveShortcutCalendarId, today],
+    [dateInView, openShortcutDraft, resolveShortcutCalendarId],
   );
   // Typed-time create lands on the day being viewed, form closed and card
   // focused, matching placeTimedDraftFromShortcut above.
@@ -336,6 +328,7 @@ export function DayCalendarGrid() {
   );
 
   const getQuickTimeDay = useCallback(() => dateInView, [dateInView]);
+  const visibleDays = useMemo(() => [dateInView], [dateInView]);
 
   const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
@@ -344,6 +337,7 @@ export function DayCalendarGrid() {
     navigateToDate,
     placeTimedDraft: placeTimedDraftFromShortcut,
     timedEvents: displayedTimedEvents,
+    visibleDays,
   });
 
   // The placeholder sits in the column the draft would land in - the calendar

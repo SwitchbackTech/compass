@@ -22,6 +22,10 @@ import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEv
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const TARGET_DAY = dayjs().startOf("day");
+/** The Sunday-to-Saturday week around TARGET_DAY; every fixture below sits in it. */
+const VISIBLE_DAYS = Array.from({ length: 7 }, (_, index) =>
+  TARGET_DAY.day(0).add(index, "day"),
+);
 
 const beginSeriesAsk = () =>
   recurrenceScopeOpportunityActions.begin({
@@ -62,6 +66,7 @@ const mountOwner = () => {
       getQuickTimeDay: () => TARGET_DAY,
       listVisible: () => [],
       timedEvents: [],
+      visibleDays: VISIBLE_DAYS,
     }),
   );
 
@@ -335,6 +340,7 @@ describe("typed-time deferred commit", () => {
             { eventId: COLUMN_EVENT_ID, eventType: "timed", element: el },
           ],
           timedEvents: [event],
+          visibleDays: VISIBLE_DAYS,
         }),
       );
 
@@ -433,6 +439,7 @@ describe("typed-time deferred commit", () => {
               element: fridayElements[index]!,
             })),
           timedEvents: events,
+          visibleDays: VISIBLE_DAYS,
         }),
       );
 
