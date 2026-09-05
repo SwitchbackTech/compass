@@ -4,17 +4,18 @@ import { describe, expect, it, mock } from "bun:test";
 
 const getConfig = mock();
 
+const providerConfig = {
+  providers: {
+    google: { signIn: true, connect: true },
+    microsoft: { signIn: false, connect: true },
+    apple: { signIn: false, connect: false },
+  },
+};
+
 describe("useIsProviderAvailable", () => {
   it("reads connect flags from providers on the same config fetch", async () => {
     getConfig.mockClear();
-    getConfig.mockResolvedValue({
-      google: { isConfigured: true },
-      providers: {
-        google: { signIn: true, connect: true },
-        microsoft: { signIn: false, connect: true },
-        apple: { signIn: false, connect: false },
-      },
-    });
+    getConfig.mockResolvedValue(providerConfig);
     const { resetProviderAvailabilityForTests, useIsProviderAvailable } =
       createProviderAvailability({
         getConfig,
@@ -36,7 +37,11 @@ describe("useIsProviderAvailable", () => {
   it("gates google sign-in on the baked client id even when the backend is configured", async () => {
     getConfig.mockClear();
     getConfig.mockResolvedValue({
-      google: { isConfigured: true },
+      providers: {
+        google: { signIn: true, connect: true },
+        microsoft: { signIn: false, connect: false },
+        apple: { signIn: false, connect: false },
+      },
     });
     const { resetProviderAvailabilityForTests, useIsProviderAvailable } =
       createProviderAvailability({
@@ -58,7 +63,11 @@ describe("useIsProviderAvailable", () => {
   it("lets google connect succeed without a baked client id", async () => {
     getConfig.mockClear();
     getConfig.mockResolvedValue({
-      google: { isConfigured: true },
+      providers: {
+        google: { signIn: true, connect: true },
+        microsoft: { signIn: false, connect: false },
+        apple: { signIn: false, connect: false },
+      },
     });
     const { resetProviderAvailabilityForTests, useIsProviderAvailable } =
       createProviderAvailability({
