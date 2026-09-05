@@ -15,6 +15,7 @@ import refreshSuccessFixture from "@sync/providers/__contract__/fixtures/microso
 import {
   defaultMicrosoftReaderCorpus,
   microsoftReaderMasterCategories,
+  microsoftRecordedNotifications,
   microsoftRecordedReader,
   microsoftRecordedWriter,
 } from "@sync/providers/__contract__/microsoft-contract.factory";
@@ -33,6 +34,7 @@ import {
   type GraphEvent,
   normalizeMicrosoftEvent,
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
+import { parseMicrosoftNotification } from "@sync/providers/microsoft/microsoft-notifications.adapter";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { ProviderEventError } from "@sync/providers/provider-event.port";
 import {
@@ -450,6 +452,89 @@ describe("microsoft writer contract", () => {
     });
     expect(instance).not.toBeNull();
     expect(instance?.providerEventId.length).toBeGreaterThan(0);
+  });
+});
+
+describe("microsoft notifications contract", () => {
+  const notifications = microsoftRecordedNotifications(
+    defaultCorpusDir("microsoft"),
+  );
+
+  it("watch returns a channel", async () => {
+    const channel = await notifications.watch({
+      accessToken: "contract-access-token",
+      calendarId: "AAMkAGI2TG93AAA=",
+      channelId: "chan-1",
+      token: "chan-token",
+      callbackUrl: "https://sync.example.com/sync/notifications/microsoft",
+    });
+    expect(channel.channelId).toBe("sub-1");
+    expect(channel.resourceId.length).toBeGreaterThan(0);
+    expect(channel.expiresAt).toBeInstanceOf(Date);
+  });
+
+  it("parseNotification accepts a valid callback, rejects tampered, and handles validation", () => {
+    const valid = notifications.parseNotification({
+      headers: {},
+      body: {
+        value: [
+          {
+            subscriptionId: "chan-1",
+            clientState: "chan-token",
+            resource: "/me/calendars/AAMkAGI2TG93AAA=/events",
+            changeType: "updated",
+          },
+        ],
+      },
+      query: {},
+    });
+    expect(valid).not.toBeNull();
+    if (valid && "kind" in valid && valid.kind === "validation") {
+      throw new Error(
+        "valid Microsoft callback must not be a validation handshake",
+      );
+    }
+    expect(valid && "channelId" in valid ? valid.channelId : null).toBe(
+      "chan-1",
+    );
+
+    const tampered = notifications.parseNotification({
+      headers: {},
+      body: { value: [{ resource: "/me/calendars/AAMkAGI2TG93AAA=/events" }] },
+      query: {},
+    });
+    expect(tampered).toBeNull();
+
+    const validation = notifications.parseNotification({
+      headers: {},
+      body: {},
+      query: { validationToken: "echo-me" },
+    });
+    expect(validation).toEqual({ kind: "validation", body: "echo-me" });
+  });
+
+  it("parses lifecycle notifications with a maintenance hint", () => {
+    const parsed = parseMicrosoftNotification({
+      headers: {},
+      body: {
+        value: [
+          {
+            subscriptionId: "chan-1",
+            clientState: "chan-token",
+            resource: "/me/calendars/AAMkAGI2TG93AAA=/events",
+            lifecycleEvent: "subscriptionRemoved",
+          },
+        ],
+      },
+      query: {},
+    });
+    expect(parsed).toEqual({
+      channelId: "chan-1",
+      resourceId: "/me/calendars/AAMkAGI2TG93AAA=/events",
+      token: "chan-token",
+      state: "changed",
+      lifecycle: "subscriptionRemoved",
+    });
   });
 });
 

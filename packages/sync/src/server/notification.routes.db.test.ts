@@ -9,6 +9,7 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { parseGoogleNotification } from "@sync/providers/google/google-notifications.adapter";
+import { parseMicrosoftNotification } from "@sync/providers/microsoft/microsoft-notifications.adapter";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
   buildProviderRegistry,
@@ -440,5 +441,36 @@ describe("POST /sync/notifications/google", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/plain");
     expect(await res.text()).toBe("validation-token");
+  });
+
+  it("enqueues subscriptionMaintain for a lifecycle notification", async () => {
+    const { _id: resourceId } = await seedSubscription();
+    const lifecycleAdapter: ProviderNotificationAdapter = {
+      watch: async () => {
+        throw new Error("unused in route test");
+      },
+      stopChannel: async () => {},
+      parseNotification: (request) => parseMicrosoftNotification(request),
+    };
+    await startService(testConfig(), registryWithMicrosoft(lifecycleAdapter));
+
+    const res = await fetch(`${base}/sync/notifications/microsoft`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        value: [
+          {
+            subscriptionId: CHANNEL,
+            clientState: TOKEN,
+            resource: RESOURCE,
+            lifecycleEvent: "reauthorizationRequired",
+          },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await jobCount(`subscriptionMaintain:${resourceId}`)).toBe(1);
+    expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
   });
 });

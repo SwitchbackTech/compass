@@ -1,0 +1,74 @@
+{
+  "watch": {
+    "id": "sub-1",
+    "resource": "/me/calendars/AAMkAGI2TG93AAA=/events",
+    "expirationDateTime": "2026-01-02T00:00:00.000Z"
+  },
+  "valid": {
+    "headers": {},
+    "body": {
+      "value": [
+        {
+          "subscriptionId": "chan-1",
+          "clientState": "chan-token",
+          "resource": "/me/calendars/AAMkAGI2TG93AAA=/events",
+          "changeType": "updated"
+        }
+      ]
+    },
+    "query": {}
+  },
+  "tampered": {
+    "headers": {},
+    "body": {
+      "value": [
+        {
+          "subscriptionId": "chan-1",
+          "clientState": "wrong-token",
+          "resource": "/me/calendars/AAMkAGI2TG93AAA=/events",
+          "changeType": "updated"
+        }
+      ]
+    },
+    "query": {}
+  },
+  "validation": {
+    "headers": {},
+    "body": {},
+    "query": { "validationToken": "echo-me" }
+  },
+  "batch": {
+    "headers": {},
+    "body": {
+      "value": [
+        {
+          "subscriptionId": "chan-1",
+          "clientState": "chan-token",
+          "resource": "/me/calendars/cal-a/events",
+          "changeType": "created"
+        },
+        {
+          "subscriptionId": "chan-2",
+          "clientState": "chan-token-2",
+          "resource": "/me/calendars/cal-b/events",
+          "changeType": "deleted"
+        }
+      ]
+    },
+    "query": {}
+  },
+  "lifecycle": {
+    "headers": {},
+    "body": {
+      "value": [
+        {
+          "subscriptionId": "chan-1",
+          "clientState": "chan-token",
+          "resource": "/me/calendars/AAMkAGI2TG93AAA=/events",
+          "lifecycleEvent": "reauthorizationRequired"
+        }
+      ]
+    },
+    "query": {}
+  }
+}

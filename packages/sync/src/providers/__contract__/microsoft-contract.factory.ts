@@ -9,6 +9,12 @@ import {
   type MicrosoftEventWriteApi,
   MicrosoftEventWriter,
 } from "@sync/providers/microsoft/microsoft-event-writer.adapter";
+import {
+  type GraphSubscription,
+  MicrosoftNotificationAdapter,
+  type MicrosoftSubscriptionCreateBody,
+  type MicrosoftSubscriptionsApi,
+} from "@sync/providers/microsoft/microsoft-notifications.adapter";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,6 +42,22 @@ interface WriterCorpus {
     readonly defaultOnlineMeetingProvider?: string;
     readonly allowedOnlineMeetingProviders?: readonly string[];
   };
+}
+
+interface NotificationsCorpus {
+  readonly watch: GraphSubscription;
+}
+
+class CorpusSubscriptionsApi implements MicrosoftSubscriptionsApi {
+  constructor(private readonly corpus: NotificationsCorpus) {}
+
+  async createSubscription(
+    _body: MicrosoftSubscriptionCreateBody,
+  ): Promise<GraphSubscription> {
+    return this.corpus.watch;
+  }
+
+  async deleteSubscription(_subscriptionId: string): Promise<void> {}
 }
 
 class CorpusEventListApi implements MicrosoftEventListApi {
@@ -177,4 +199,18 @@ export function microsoftRecordedWriter(
 ): MicrosoftEventWriter {
   const writer = loadJson<WriterCorpus>(corpusDir, "writer");
   return new MicrosoftEventWriter(() => new CorpusEventWriteApi(writer));
+}
+
+/** Replay `fixtures/microsoft/notifications.json` through the notification adapter. */
+export function microsoftRecordedNotifications(
+  corpusDir: string,
+): MicrosoftNotificationAdapter {
+  const notifications = loadJson<NotificationsCorpus>(
+    corpusDir,
+    "notifications",
+  );
+  return new MicrosoftNotificationAdapter(
+    () => new CorpusSubscriptionsApi(notifications),
+    () => new Date("2026-01-01T00:00:00Z"),
+  );
 }
