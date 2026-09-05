@@ -17,6 +17,7 @@ import {
   BOOKING_SETTINGS_HINT_PARTS,
   BookingSettingsSection,
 } from "@web/booking/BookingSettingsSection";
+import { BOOKING_APPLE_DESTINATION_HINT } from "@web/booking/booking-conference.copy";
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
@@ -1092,6 +1093,60 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByRole("combobox", { name: "Destination calendar" }),
     ).toHaveAccessibleDescription(warning);
+  });
+
+  it("labels an Apple destination with No video link and shows the iCloud hint", async () => {
+    const appleCalendar = createMockCalendar({
+      name: "Personal",
+      accountEmail: "host@icloud.com",
+      provider: "apple",
+      conference: "none",
+      createsGoogleMeet: false,
+    });
+
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY" as const,
+        connections: [
+          createMockConnection("host@icloud.com", { provider: "apple" }),
+        ],
+      },
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            destinationCalendarId: appleCalendar.id,
+            blockingCalendarIds: [appleCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [appleCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const combobox = await screen.findByRole("combobox", {
+      name: "Destination calendar",
+    });
+    expect(within(combobox).getByRole("option").textContent).toBe(
+      "Personal (No video link)",
+    );
+    expect(
+      screen.getByText(BOOKING_APPLE_DESTINATION_HINT),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Destination calendar" }),
+    ).toHaveAccessibleDescription(BOOKING_APPLE_DESTINATION_HINT);
   });
 
   it("does not warn when the destination can mint Meet", async () => {
