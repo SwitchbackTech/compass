@@ -5,8 +5,9 @@ import userEvent from "@testing-library/user-event";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as realAuthStateUtil from "@web/auth/compass/state/auth.state.util";
 import * as realUserHook from "@web/auth/compass/user/hooks/useUser";
-import * as realConnectGoogle from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import * as realAvailableProviders from "@web/auth/providers/useAvailableConnectProviders";
+import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import * as realAuthModal from "@web/components/AuthModal/hooks/useAuthModal";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -15,30 +16,31 @@ const mockOpenModal = mock();
 let mockEmail: string | undefined;
 let mockGoogleState: GoogleUiState = "NOT_CONNECTED";
 let mockIsAnonymousDirty = false;
-const mockConnectGoogle = mock();
+let mockIsConnecting = false;
+let mockIsRefreshing = false;
+const mockConnect = mock();
 const googleCommandActionFor = (state: GoogleUiState) => {
   switch (state) {
     case "NOT_CONNECTED":
-      return { label: "Connect Google Calendar", onSelect: mockConnectGoogle };
+      return { label: "Connect Google Calendar", onSelect: mockConnect };
     case "RECONNECT_REQUIRED":
       return {
         label: "Reconnect Google Calendar",
-        onSelect: mockConnectGoogle,
+        onSelect: mockConnect,
       };
     case "ATTENTION":
-      return { label: "Refresh calendar", onSelect: mockConnectGoogle };
+      return { label: "Refresh calendar", onSelect: mockConnect };
     default:
       return null;
   }
 };
-let mockIsConnecting = false;
-let mockIsRefreshing = false;
-const mockUseConnectGoogle = mock(() => ({
+const mockUseConnectProvider = mock(() => ({
   state: mockGoogleState,
   isAvailable: true,
   isConnecting: mockIsConnecting,
   isRefreshing: mockIsRefreshing,
   commandAction: googleCommandActionFor(mockGoogleState),
+  connect: mockConnect,
 }));
 
 mockModuleForFile(
@@ -55,9 +57,15 @@ mockModuleForFile("@web/auth/compass/user/hooks/useUser", realUserHook, {
 });
 
 mockModuleForFile(
-  "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle",
-  realConnectGoogle,
-  { useConnectGoogle: mockUseConnectGoogle },
+  "@web/auth/providers/useConnectProvider",
+  realConnectProvider,
+  { useConnectProvider: mockUseConnectProvider },
+);
+
+mockModuleForFile(
+  "@web/auth/providers/useAvailableConnectProviders",
+  realAvailableProviders,
+  { useAvailableConnectProviders: () => ["google"] as const },
 );
 
 mockModuleForFile(
@@ -96,8 +104,8 @@ describe("CalendarListHeader", () => {
     mockIsRefreshing = false;
     mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
-    mockUseConnectGoogle.mockClear();
-    mockConnectGoogle.mockClear();
+    mockUseConnectProvider.mockClear();
+    mockConnect.mockClear();
     userMetadataActions.clear();
   });
 
@@ -115,7 +123,7 @@ describe("CalendarListHeader", () => {
       name: "Connect Google Calendar",
     });
     await user.click(connectButton);
-    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
+    expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
   it("stays quiet (no status line) when Google is healthy, to cut sidebar noise", async () => {
@@ -169,7 +177,7 @@ describe("CalendarListHeader", () => {
       name: "Refresh calendar",
     });
     await user.click(syncButton);
-    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
+    expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
   it("shows a reconnect Google button when reconnect is required", async () => {
@@ -189,7 +197,7 @@ describe("CalendarListHeader", () => {
     expect(reconnectButton).toBeEnabled();
     expect(reconnectButton).not.toHaveAttribute("aria-busy");
     await user.click(reconnectButton);
-    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
+    expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 
   it("shows an immediate reconnecting state while Google OAuth is starting", () => {
@@ -217,7 +225,7 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     const connectButton = screen.getByRole("button", {
-      name: "Connecting…",
+      name: "Opening Google…",
     });
     expect(connectButton).toBeDisabled();
     expect(connectButton).toHaveAttribute("aria-busy", "true");
@@ -302,7 +310,7 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
-    expect(mockUseConnectGoogle).toHaveBeenCalledWith({
+    expect(mockUseConnectProvider).toHaveBeenCalledWith("google", {
       connection: ownConnection,
     });
   });

@@ -1,9 +1,9 @@
 import { type FC, Suspense, useEffect, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { providerDisplayName } from "@core/types/sync/identity.contracts";
+import { type SyncConnectionSummary } from "@core/types/user.types";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
@@ -12,8 +12,10 @@ import {
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
+import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
+import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { PlanSection } from "@web/billing/PlanSection";
@@ -131,7 +133,7 @@ export const SettingsModal: FC = () => {
   }, [page]);
 
   const { data } = useCalendarsQuery();
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const connections = useUserMetadataStore(selectSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
   // useDefaultTargetCalendar subscribes to session reconnect overrides, so
   // writableCalendars recomputes when a 410 lands before Sync metadata catches up.
@@ -312,7 +314,7 @@ export const SettingsModal: FC = () => {
 
 interface DefaultCalendarPickerProps {
   calendars: Calendar[];
-  connections: GoogleSyncConnectionSummary[];
+  connections: SyncConnectionSummary[];
   resolvedDefault: Calendar | undefined;
 }
 
@@ -345,7 +347,10 @@ const DefaultCalendarPicker: FC<DefaultCalendarPickerProps> = ({
         {groups
           .filter((group) => group.calendars.length > 0)
           .map((group) => (
-            <optgroup key={group.accountEmail} label={group.accountEmail}>
+            <optgroup
+              key={group.accountEmail}
+              label={`${group.accountEmail} (${providerDisplayName(connectionProviderKind(group.connection))})`}
+            >
               {group.calendars.map((calendar) => (
                 <option key={calendar.id} value={calendar.id}>
                   {calendar.name}
@@ -365,7 +370,7 @@ const DefaultCalendarPicker: FC<DefaultCalendarPickerProps> = ({
 
 interface AccountsSectionProps {
   confirmingId: string | null;
-  connections: GoogleSyncConnectionSummary[];
+  connections: SyncConnectionSummary[];
   resolvedDefault: Calendar | undefined;
   setConfirmingId: (id: string | null) => void;
   showShortcuts: boolean;
@@ -378,9 +383,6 @@ const AccountsSection: FC<AccountsSectionProps> = ({
   setConfirmingId,
   showShortcuts,
 }) => {
-  const { connect, isAvailable, isConnecting } = useConnectGoogle({
-    newAccount: true,
-  });
   const { disconnect, disconnectingId } = useDisconnectGoogleAccount();
 
   return (
@@ -407,27 +409,22 @@ const AccountsSection: FC<AccountsSectionProps> = ({
         )}
       </div>
 
-      {isAvailable ? (
-        <OverlayPanelActions align="start">
-          <OverlayPanelActionButton
-            aria-busy={isConnecting || undefined}
-            disabled={isConnecting}
-            onClick={connect}
-            shortcut="A"
-            showShortcut={showShortcuts}
-            variant="primary"
-            {...settingsShortcutAttrs("add-account")}
-          >
-            {isConnecting ? "Opening Google…" : "Add account"}
-          </OverlayPanelActionButton>
-        </OverlayPanelActions>
-      ) : null}
+      <OverlayPanelActions align="start">
+        <ConnectProviderChooser
+          idleLabel="Add account"
+          newAccount
+          showShortcut={showShortcuts}
+          shortcut="A"
+          shortcutAttrs={settingsShortcutAttrs("add-account")}
+          variant="overlay-primary"
+        />
+      </OverlayPanelActions>
     </div>
   );
 };
 
 interface AccountRowProps {
-  connection: GoogleSyncConnectionSummary;
+  connection: SyncConnectionSummary;
   disconnect: (connectionId: string, accountEmail: string) => Promise<void>;
   isConfirming: boolean;
   isDefault: boolean;

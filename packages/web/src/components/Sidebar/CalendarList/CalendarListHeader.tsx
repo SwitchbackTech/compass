@@ -1,8 +1,10 @@
 import classNames from "classnames";
 import { type FC, useMemo } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
+import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
+import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 import {
-  selectGoogleSyncConnections,
+  selectSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAccountHeaderStatus } from "./useAccountHeaderStatus";
@@ -10,7 +12,7 @@ import { useAccountHeaderStatus } from "./useAccountHeaderStatus";
 const HEADING_CLASSNAME =
   "flex min-w-0 flex-1 font-semibold text-sm leading-none";
 
-const CONNECT_GOOGLE_BUTTON_CLASSNAME =
+const CONNECT_ACTION_BUTTON_CLASSNAME =
   "c-button-compact c-button-primary mb-2 w-full rounded-xs px-2 py-1.5 text-left text-xs";
 
 /**
@@ -36,7 +38,8 @@ const CalendarListHeaderContent: FC<{ email: string }> = ({ email }) => {
   // second account's problem flashes under the first account's name for as
   // long as that gap lasts (2026-08-04, caught disconnecting one of two live
   // accounts).
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const connections = useUserMetadataStore(selectSyncConnections);
+  const availableProviders = useAvailableConnectProviders();
   const ownConnection = useMemo(
     () => connections.find((c) => c.accountEmail === email) ?? null,
     [connections, email],
@@ -47,8 +50,12 @@ const CalendarListHeaderContent: FC<{ email: string }> = ({ email }) => {
     isAvailable,
     isConnecting,
     isRefreshing,
+    state,
     syncStatus,
   } = useAccountHeaderStatus(ownConnection);
+
+  const showChooser =
+    state === "NOT_CONNECTED" && availableProviders.length > 0;
 
   return (
     <>
@@ -65,10 +72,15 @@ const CalendarListHeaderContent: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
-      {isAvailable && commandAction != null && actionLabel != null ? (
+      {showChooser ? (
+        <ConnectProviderChooser
+          idleLabel={commandAction?.label ?? "Connect calendar"}
+          variant="sidebar-primary"
+        />
+      ) : isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}
-          className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
+          className={CONNECT_ACTION_BUTTON_CLASSNAME}
           disabled={isConnecting || isRefreshing}
           onClick={commandAction.onSelect}
           type="button"

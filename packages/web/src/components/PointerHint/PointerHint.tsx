@@ -1,5 +1,9 @@
 import { X } from "@phosphor-icons/react";
 import { type FC, type ReactNode, useEffect, useState } from "react";
+import {
+  type ProviderKind,
+  providerDisplayName,
+} from "@core/types/sync/identity.contracts";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import IconButton from "@web/components/IconButton/IconButton";
 import {
@@ -123,10 +127,11 @@ const pointerHintMessage = ({
   }
 
   if (attempt?.actionId === POINTER_ACTIONS.reconnectGoogle) {
+    const provider: ProviderKind = attempt.provider ?? "google";
     return (
       <>
-        Press <Key>{CONNECTION_BANNER_SHORTCUT_KEY}</Key> to reconnect Google
-        Calendar.
+        Press <Key>{CONNECTION_BANNER_SHORTCUT_KEY}</Key> to reconnect{" "}
+        {providerDisplayName(provider)} Calendar.
       </>
     );
   }
