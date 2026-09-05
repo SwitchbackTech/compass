@@ -9,9 +9,9 @@ import {
   getGoogleSyncStatus,
   googleSyncSupportMailto,
   SSE_DEGRADED_STATUS,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
-import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
+} from "@web/auth/providers/connect.util";
+import { useDisconnectGoogleAccount } from "@web/auth/providers/useDisconnectAccount";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import {

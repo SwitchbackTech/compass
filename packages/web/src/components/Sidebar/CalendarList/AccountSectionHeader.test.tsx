@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { type SyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
-import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { type GoogleUiState } from "@web/auth/providers/connect.types";
 import { toggleAccountCollapsed } from "@web/calendars/collapsed-accounts.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 

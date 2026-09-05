@@ -1,20 +1,25 @@
-import { render, waitFor } from "@testing-library/react";
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
+import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 import { type UserMetadata } from "@core/types/user.types";
+import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createFakeServerMessageBus } from "@web/__tests__/utils/sse-message-bus.test.util";
 import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
   setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/state/google.sync.state";
+} from "@web/auth/providers/sync.indicator.state";
 import {
   userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
+import { GoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
+import { createUseSyncSSE } from "../hooks/useSyncSSE.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const mockHandleGoogleRevoked = mock();
+const mockHandleConnectionRevoked = mock();
 const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
@@ -25,8 +30,8 @@ const {
   clear,
 } = createFakeServerMessageBus();
 
-const useGcalSSE = createUseGcalSSE({
-  handleGoogleRevoked: mockHandleGoogleRevoked,
+const useSyncSSE = createUseSyncSSE({
+  handleConnectionRevoked: mockHandleConnectionRevoked,
   invalidateEventQueries: mockInvalidateEventQueries,
   onServerMessage,
   refreshUserMetadata,
@@ -35,7 +40,7 @@ const useGcalSSE = createUseGcalSSE({
 });
 
 const HookHost = () => {
-  useGcalSSE();
+  useSyncSSE();
   return null;
 };
 
@@ -46,10 +51,10 @@ const fireUserMetadata = (metadata: UserMetadata) => {
   });
 };
 
-describe("useGcalSSE", () => {
+describe("useSyncSSE", () => {
   beforeEach(() => {
     clear();
-    mockHandleGoogleRevoked.mockClear();
+    mockHandleConnectionRevoked.mockClear();
     mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();
     refreshUserMetadata.mockClear();
@@ -207,7 +212,7 @@ describe("useGcalSSE", () => {
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockShowErrorToast).toHaveBeenCalledWith(
-        "We couldn't keep your Google Calendar connection healthy. Try Refresh, or reconnect if this lasts.",
+        "We couldn't keep your calendar connection healthy. Try Refresh, or reconnect if this lasts.",
         expect.anything(),
       );
     });
@@ -227,7 +232,64 @@ describe("useGcalSSE", () => {
 
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
-      expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
+      expect(mockHandleConnectionRevoked).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("passes CONNECTION_REVOKED connectionId for a non-primary account", async () => {
+    const google = createMockConnection("ahab@pequod.com", {
+      id: "64b7f9c2e1a2b3c4d5e6f7a8",
+      provider: "google",
+    });
+    const microsoft = createMockConnection("ada@outlook.com", {
+      id: "64b7f9c2e1a2b3c4d5e6f7a9",
+      provider: "microsoft",
+    });
+    const microsoftId = ConnectionIdSchema.parse(microsoft.id);
+    userMetadataActions.set({
+      google: { connectionState: "HEALTHY", connections: [google] },
+      connections: [google, microsoft],
+    });
+    setSyncingSyncIndicatorOverride();
+
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({
+        type: "syncStatusChanged",
+        sync: {
+          status: "attention",
+          code: "CONNECTION_REVOKED",
+          connectionId: microsoftId,
+          retryable: false,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
+      expect(mockHandleConnectionRevoked).toHaveBeenCalledWith({
+        connectionId: microsoftId,
+      });
+    });
+
+    const { wrapper } = createStoreWrapper();
+    render(
+      <HotkeysProvider>
+        <GoogleReconnectToast
+          accountEmail={microsoft.accountEmail}
+          connectionId={microsoft.id}
+          toastId="google-revoked-api"
+        />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(
+      screen.getByText("Outlook disconnected (ada@outlook.com)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Reconnect Outlook" }),
+    ).toBeInTheDocument();
   });
 });

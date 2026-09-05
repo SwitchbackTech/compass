@@ -5,7 +5,7 @@ import {
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
+import { syncPendingLocalEvents } from "@web/auth/providers/connection-revoked.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { createUseCompleteAuthentication } from "./useCompleteAuthentication.factory";

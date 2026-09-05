@@ -36,7 +36,10 @@ export async function completeGoogleAuthCallback({
     // the connect. Only the sync service's redirect-after-connect used to fire
     // this, which is why activation looked like it barely happened: the path
     // most new users actually take never reported it.
-    track("calendar_connected", { source: "signup_google" });
+    track("calendar_connected", {
+      source: "signup_google",
+      provider: "google",
+    });
     shortcutShowcaseActions.offerAfterSignupIfPending();
   } else {
     track("login_completed", { method: "google" });

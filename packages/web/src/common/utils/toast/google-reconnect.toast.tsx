@@ -1,12 +1,14 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
-import {
-  type ProviderKind,
-  providerDisplayName,
-} from "@core/types/sync/identity.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { type GoogleReconnectTarget } from "@web/auth/google/state/google.reconnect.state";
-import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
+import {
+  connectionProvider,
+  RECONNECT_CALENDAR_LABEL,
+  reconnectToastBody,
+  reconnectToastTitle,
+} from "@web/auth/providers/provider-copy.util";
+import { type GoogleReconnectTarget } from "@web/auth/providers/reconnect.state";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {
   selectSyncConnections,
@@ -47,12 +49,13 @@ interface GoogleReconnectToastProps {
   toastId: Id;
   accountEmail?: string | null;
   connectionId?: string | null;
+  provider?: ProviderKind;
 }
 
 const toastScopedConnection = (
   connectionId: string | null | undefined,
   accountEmail: string | null | undefined,
-  provider: ProviderKind = "google",
+  provider: ProviderKind,
 ): SyncConnectionSummary => ({
   id: connectionId?.trim() || "reconnect-target",
   provider,
@@ -65,46 +68,27 @@ const toastScopedConnection = (
   canSuggestContacts: false,
 });
 
-const reconnectToastTitle = (
-  provider: ProviderKind,
-  namedAccount?: string,
-): string => {
-  const calendarName = `${providerDisplayName(provider)} Calendar`;
-  return namedAccount
-    ? `${calendarName} disconnected (${namedAccount})`
-    : `${calendarName} disconnected`;
-};
-
-const reconnectToastBody = (
-  provider: ProviderKind,
-  namedAccount?: string,
-): string => {
-  const host = providerDisplayName(provider);
-  if (namedAccount) {
-    return `Access for ${namedAccount} expired or was revoked. Your events are still safe in ${host}. Reconnect and Compass will re-import them.`;
-  }
-  return `This happens when access expires or is revoked. Your events are still safe in ${host}. Reconnect and Compass will re-import them.`;
-};
-
-const reconnectActionLabel = (provider: ProviderKind): string =>
-  `Reconnect ${providerDisplayName(provider)} Calendar`;
-
 export const GoogleReconnectToast = ({
   toastId,
   accountEmail,
   connectionId,
+  provider: providerProp,
 }: GoogleReconnectToastProps) => {
   const connections = useUserMetadataStore(selectSyncConnections);
   const connectionFromStore =
     connections.find((entry) => entry.id === connectionId) ??
     connections.find((entry) => entry.accountEmail === accountEmail) ??
     null;
+  const kind = connectionProvider(
+    connectionFromStore ?? (providerProp ? { provider: providerProp } : null),
+  );
   const connection =
     connectionFromStore ??
-    (connectionId ? toastScopedConnection(connectionId, accountEmail) : null);
-  const provider = connectionProviderKind(connection);
+    (connectionId
+      ? toastScopedConnection(connectionId, accountEmail, kind)
+      : null);
   const { connect } = useConnectProvider(
-    provider,
+    kind,
     connection ? { connection } : undefined,
   );
 
@@ -118,16 +102,16 @@ export const GoogleReconnectToast = ({
   return (
     <ToastNotice>
       <p className="font-medium text-sm text-text">
-        {reconnectToastTitle(provider, namedAccount || undefined)}
+        {reconnectToastTitle(kind, namedAccount)}
       </p>
       <p className="text-sm text-text">
-        {reconnectToastBody(provider, namedAccount || undefined)}
+        {reconnectToastBody(kind, namedAccount)}
       </p>
       <ToastActionButton
         onClick={handleReconnect}
         shortcutKey={CONNECTION_BANNER_SHORTCUT_KEY}
       >
-        {reconnectActionLabel(provider)}
+        {RECONNECT_CALENDAR_LABEL[kind]}
       </ToastActionButton>
     </ToastNotice>
   );

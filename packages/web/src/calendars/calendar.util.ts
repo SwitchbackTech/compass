@@ -1,6 +1,6 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
-import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
+import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
 
 export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
   return calendars.find((calendar) => calendar.provider === "local");

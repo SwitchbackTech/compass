@@ -15,7 +15,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { createExternalStore } from "@web/common/utils/external-store.util";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import * as sse from "@web/sse/provider/SSEProvider";
-import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
+import { clearGoogleSyncIndicatorOverride } from "@web/auth/providers/sync.indicator.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { SessionContext } from "./session.context";
 

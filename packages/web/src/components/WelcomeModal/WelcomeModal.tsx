@@ -2,8 +2,8 @@ import classNames from "classnames";
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
-import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import { track } from "@web/auth/posthog/track";
+import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
@@ -54,7 +54,7 @@ function WelcomeSteps({ step }: { step: WelcomeStep }) {
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal, isOpen: isAuthModalOpen } = useAuthModal();
-  const isGoogleAvailable = useIsGoogleAvailable();
+  const isGoogleAvailable = useIsProviderAvailable("google", "signIn");
   const { loading: isGoogleAuthLoading, startGoogleAuthorization } =
     useStartGoogleAuthorization({ intent: "signIn" });
   // A ?play= deep link goes straight to the practice game. This initializer

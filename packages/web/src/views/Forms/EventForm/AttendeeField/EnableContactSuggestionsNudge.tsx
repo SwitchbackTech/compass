@@ -1,6 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import {
   dismissContactsNudge,
   markContactsNudgeShown,
@@ -20,7 +20,7 @@ export const EnableContactSuggestionsNudge = () => {
   // Decided once per mount (one menu-open episode): the nudge either owns
   // this opening or stays away entirely — it never pops in mid-typing.
   const [isVisible, setIsVisible] = useState(() => shouldShowContactsNudge());
-  const { connect, isConnecting } = useConnectGoogle({
+  const { connect, isConnecting } = useConnectProvider("google", {
     features: ["contacts"],
   });
 

@@ -6,7 +6,7 @@ export type ProductEvent =
   | "welcome_step_viewed"
   | "signup_started"
   | "signup_completed"
-  | "google_oauth_redirect_started"
+  | "oauth_redirect_started"
   | "login_completed"
   | "event_created"
   | "calendar_connected"
