@@ -18,15 +18,10 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
-import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
-import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
-import {
-  registerUseStartProviderAuthorizationForTests,
-  resetUseStartProviderAuthorizationForTests,
-} from "@web/auth/providers/authorization/useStartProviderAuthorization";
+import { markGoogleAuthNeedsConsentRetry } from "@web/auth/providers/authorization/provider-authorization.storage";
+import { registerUseStartProviderAuthorizationForTests } from "@web/auth/providers/authorization/useStartProviderAuthorization";
 import {
   resetProviderAvailabilityForTests,
-  setGoogleAvailabilityForTests,
   setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import { AuthModal } from "./AuthModal";
@@ -35,9 +30,9 @@ import { useAuthModal, validateAuthSearch } from "./hooks/useAuthModal";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockGoogleLogin = mock();
-const mockUseStartGoogleAuthorization = mock(() => ({
+const mockUseStartProviderAuthorization = mock(() => ({
   loading: false,
-  startGoogleAuthorization: mockGoogleLogin,
+  startAuthorization: mockGoogleLogin,
 }));
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
 let mockEmailPassword = createTestEmailPasswordPort();
@@ -142,17 +137,18 @@ const renderWithDayRedirectRoute = async (initialRoute: string) => {
 
 function installAuthModalTestSeams() {
   mockGoogleLogin.mockClear();
-  mockUseStartGoogleAuthorization.mockClear();
+  mockUseStartProviderAuthorization.mockClear();
   mockCompleteAuthentication.mockClear();
   mockCompleteAuthentication.mockResolvedValue(undefined);
   mockEmailPassword = createTestEmailPasswordPort();
 
-  registerUseStartGoogleAuthorizationForTests(mockUseStartGoogleAuthorization);
-  resetUseStartProviderAuthorizationForTests();
+  registerUseStartProviderAuthorizationForTests(
+    mockUseStartProviderAuthorization,
+  );
   registerUseCompleteAuthenticationForTests(() => mockCompleteAuthentication);
   registerEmailPasswordPort(mockEmailPassword);
   resetProviderAvailabilityForTests();
-  setGoogleAvailabilityForTests("available");
+  setProviderAvailabilityForTests("google", "available");
   mockUseSession.mockReset().mockReturnValue({
     authenticated: false,
     userId: undefined,
@@ -283,7 +279,8 @@ describe("AuthModal", () => {
     it("does not force prompt=consent on a normal mount", async () => {
       await renderWithProviders(<ModalTrigger />);
 
-      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+      expect(mockUseStartProviderAuthorization).toHaveBeenCalledWith(
+        "google",
         expect.objectContaining({ prompt: undefined }),
       );
     });
@@ -293,7 +290,8 @@ describe("AuthModal", () => {
 
       await renderWithProviders(<ModalTrigger />);
 
-      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+      expect(mockUseStartProviderAuthorization).toHaveBeenCalledWith(
+        "google",
         expect.objectContaining({ prompt: "consent" }),
       );
     });

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
-import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
+import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/providers/authorization/provider-authorization.storage";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";

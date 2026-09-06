@@ -2,9 +2,6 @@ import { providerAvailability } from "@web/auth/providers/provider-availability.
 
 export const {
   useIsProviderAvailable,
-  useIsGoogleAvailable,
   setProviderAvailabilityForTests,
   resetProviderAvailabilityForTests,
-  setGoogleAvailabilityForTests,
-  resetGoogleAvailabilityForTests,
 } = providerAvailability;

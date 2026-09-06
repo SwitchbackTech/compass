@@ -28,8 +28,6 @@ export const MISSING_PROVIDER_SCOPES_ERROR_MESSAGE =
 
 export const GOOGLE_AUTHORIZATION_ERROR_MESSAGE =
   "We couldn't connect your Google account. Please try again.";
-export const MISSING_GOOGLE_SCOPES_ERROR_MESSAGE =
-  MISSING_PROVIDER_SCOPES_ERROR_MESSAGE;
 
 export function isSignInProviderKind(value: string): value is ProviderKind {
   return ProviderKindSchema.safeParse(value).success;
