@@ -45,6 +45,7 @@ type LegacyPendingSyncPrincipalDeletionRecord = {
  */
 class UserService {
   #accountDeletionRetryTimer: ReturnType<typeof setInterval> | undefined;
+  #pendingRetryCycle: Promise<void> | undefined;
 
   private splitName(name: string): { firstName: string; lastName: string } {
     const trimmedName = name.trim();
@@ -306,22 +307,35 @@ class UserService {
     return this.#completePendingAccountDeletion(userId);
   };
 
+  // setInterval only prevents future firings; a cycle already in flight when
+  // stopAccountDeletionRetries runs keeps executing against mongoService
+  // after gracefulShutdown tears it down. Tracking the promise here lets stop
+  // wait for it, so shutdown never closes Mongo out from under a live query.
+  #runRetryCycle = (logMessage: string): void => {
+    const cycle = this.retryPendingAccountDeletions().catch((error) => {
+      logger.error(logMessage, error);
+    });
+    this.#pendingRetryCycle = cycle;
+    void cycle.finally(() => {
+      if (this.#pendingRetryCycle === cycle)
+        this.#pendingRetryCycle = undefined;
+    });
+  };
+
   startAccountDeletionRetries = (): void => {
     if (this.#accountDeletionRetryTimer) return;
-    void this.retryPendingAccountDeletions().catch((error) =>
-      logger.error("Could not start pending account deletion retries", error),
-    );
+    this.#runRetryCycle("Could not start pending account deletion retries");
     this.#accountDeletionRetryTimer = setInterval(() => {
-      void this.retryPendingAccountDeletions().catch((error) =>
-        logger.error("Could not retry pending account deletions", error),
-      );
+      this.#runRetryCycle("Could not retry pending account deletions");
     }, ACCOUNT_DELETION_RETRY_INTERVAL_MS);
   };
 
-  stopAccountDeletionRetries = (): void => {
-    if (!this.#accountDeletionRetryTimer) return;
-    clearInterval(this.#accountDeletionRetryTimer);
-    this.#accountDeletionRetryTimer = undefined;
+  stopAccountDeletionRetries = async (): Promise<void> => {
+    if (this.#accountDeletionRetryTimer) {
+      clearInterval(this.#accountDeletionRetryTimer);
+      this.#accountDeletionRetryTimer = undefined;
+    }
+    await this.#pendingRetryCycle;
   };
 
   retryPendingAccountDeletions = async (): Promise<void> => {
