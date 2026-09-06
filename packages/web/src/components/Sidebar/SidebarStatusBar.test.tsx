@@ -6,6 +6,7 @@ import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { type GoogleUiState } from "@web/auth/providers/connect.types";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import {
   initialFirstEventPromptState,
   useFirstEventPromptStore,
@@ -97,6 +98,17 @@ afterAll(() => {
   isSseDegradedMocked = false;
 });
 
+const seedSidebarConnections = (
+  connections: GoogleSyncConnectionSummary[],
+  connectionState: GoogleUiState = "HEALTHY",
+) => {
+  const aggregate =
+    connectionState === "checking" ? ("HEALTHY" as const) : connectionState;
+  userMetadataActions.set({
+    google: { connectionState: aggregate, connections },
+    connections,
+  });
+};
 const statusBarModuleUrl = new URL(
   `./SidebarStatusBar.tsx?test=${Math.random().toString(36).slice(2)}`,
   import.meta.url,
@@ -143,6 +155,7 @@ describe("SidebarStatusBar", () => {
     googleState = "HEALTHY";
     isConnecting = false;
     connection = null;
+    userMetadataActions.clear();
     isSseDegraded = false;
     draftActions.discard();
     useEventJumpStore.setState(initialEventJumpState, true);
@@ -207,6 +220,7 @@ describe("SidebarStatusBar", () => {
       lastHealthyAt: null,
       connectionState: "IMPORTING",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -224,6 +238,7 @@ describe("SidebarStatusBar", () => {
       lastHealthyAt: new Date().toISOString(),
       connectionState: "IMPORTING",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -240,6 +255,7 @@ describe("SidebarStatusBar", () => {
       lastHealthyAt: new Date(Date.now() - 15 * 60_000).toISOString(),
       connectionState: "IMPORTING",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -253,6 +269,28 @@ describe("SidebarStatusBar", () => {
     );
   });
 
+  it("names the worse account when two connections disagree", () => {
+    googleState = "RECONNECT_REQUIRED";
+    const delayed = createMockConnection("work@example.com", {
+      state: "delayed",
+      stateReason: "workOverdue",
+      connectionState: "ATTENTION",
+    });
+    const reconnect = createMockConnection("home@example.com", {
+      state: "actionRequired",
+      stateReason: "authorizationRevoked",
+      connectionState: "RECONNECT_REQUIRED",
+    });
+    seedSidebarConnections([delayed, reconnect], googleState);
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "home@example.com needs reconnecting",
+    );
+  });
+
   it("shows Calendar updates are delayed for delayed workOverdue", () => {
     googleState = "ATTENTION";
     connection = createMockConnection("ahab@pequod.com", {
@@ -262,6 +300,7 @@ describe("SidebarStatusBar", () => {
       lastHealthyAt: null,
       connectionState: "ATTENTION",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -280,6 +319,7 @@ describe("SidebarStatusBar", () => {
       stateReason: "workOverdue",
       connectionState: "ATTENTION",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
@@ -303,6 +343,7 @@ describe("SidebarStatusBar", () => {
       lastHealthyAt: null,
       connectionState: "IMPORTING",
     });
+    seedSidebarConnections([connection], googleState);
     const { queryClient, wrapper } = createStoreWrapper();
     seedPendingEventMutations(queryClient, ["event-1"]);
 
@@ -341,6 +382,7 @@ describe("SidebarStatusBar", () => {
       stateReason: "workOverdue",
       connectionState: "ATTENTION",
     });
+    seedSidebarConnections([connection], googleState);
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
