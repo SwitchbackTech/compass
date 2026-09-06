@@ -1,10 +1,54 @@
 # Connect iCloud Calendar
 
-Stub. A-12 fills in the iCloud CalDAV connect flow.
+## Connect an iCloud calendar
 
-Until then, these are the Compass config keys. Add the matching GitHub
+Calendar sync uses CalDAV and an app-specific password. A self-hoster does
+not need Apple Developer Program membership for calendar sync.
+
+1. Enable two-factor authentication on the Apple Account used for testing.
+2. Sign in at [Apple Account](https://account.apple.com), open **Sign-In and
+   Security > App-Specific Passwords**, and generate a password named
+   `compass-staging`.
+3. In Compass, connect iCloud with the account email and that app-specific
+   password. Use the generated password rather than the main account password.
+4. Verify the connection becomes healthy and the expected calendars appear.
+
+See [Apple's app-specific password instructions](https://support.apple.com/en-us/102654).
+Revoking the password prevents further sync. Changing the main Apple Account
+password also revokes app-specific passwords. Generate a replacement and
+reconnect when Compass reports expired authorization.
+
+For staging, create a disposable `compass-smoke` calendar and recurring
+events with exceptions. If another test account is available, also share a
+second calendar read-only. Verify edits in both directions, a recurring
+exception, a booking without a video link, and the reconnect prompt after
+revoking the test password. Record actual results and dates; configuration
+alone does not establish a successful soak.
+
+The provider smoke workflow uses `SMOKE_APPLE_EMAIL` and
+`SMOKE_APPLE_APP_PASSWORD` secrets in the `provider-smoke` environment.
+
+## Sign in with Apple
+
+Apple sign-in is separate from calendar access. To configure it:
+
+1. Enroll in the Apple Developer Program and create a primary App ID with
+   the Sign in with Apple capability.
+2. In **Certificates, Identifiers & Profiles**, register a Services ID for
+   the website and enable Sign in with Apple on it.
+3. Associate the Services ID with the primary App ID. Configure the website
+   domains and backend return URLs below, then save the configuration.
+4. Create a key with Sign in with Apple enabled for that primary App ID.
+   Download its `.p8` file and retain it privately. Record the Key ID and
+   the developer account's Team ID.
+5. Set all four Compass values below and rebuild/deploy the affected services.
+   Check `/api/config` reports `providers.apple.signIn: true`.
+
+Follow Apple's [web configuration guide](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web).
+
+These are the Compass config keys. Add the matching GitHub
 Environment variables and secrets on `staging-cloud`, `staging-selfhosted`,
-and `production` before I-03 need them.
+and `production` for each deployment that supports Apple sign-in.
 
 Sign in with Apple (identity only; it does not grant calendar access):
 
