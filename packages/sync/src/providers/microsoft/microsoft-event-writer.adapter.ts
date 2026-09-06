@@ -11,10 +11,10 @@ import {
   mapConference,
   normalizeMicrosoftEvent,
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
 import {
   MICROSOFT_EVENT_SELECT,
   MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
 } from "@sync/providers/microsoft/microsoft-http.constants";
 import {
   type GraphCalendarMeetingSettings,
@@ -519,109 +519,43 @@ class FetchMicrosoftEventWriteApi implements MicrosoftEventWriteApi {
     ifMatch: string | null = null,
   ): Promise<GraphEvent> {
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.#accessToken}`,
       Prefer: 'outlook.timezone="UTC"',
     };
     if (ifMatch) headers["If-Match"] = ifMatch;
-    if (body !== undefined) headers["Content-Type"] = "application/json";
 
-    const response = await fetch(url, {
+    const data = await microsoftGraphRequest<GraphEvent>({
+      accessToken: this.#accessToken,
+      url,
       method,
       headers,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+      body,
+      fallbackError: "microsoft_event_write_failed",
+      emptyOk: method === "DELETE",
     });
-
-    if (method === "DELETE") {
-      if (response.ok) return {} as GraphEvent;
-      const deleteError = await parseErrorBody(response);
-      throw Object.assign(
-        new Error(deleteError.message ?? "microsoft_event_write_failed"),
-        { response: { status: response.status, data: deleteError.data } },
-      );
-    }
-
-    const data = (await response.json()) as GraphEvent & {
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_event_write_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
-
-    return data;
+    return data ?? ({} as GraphEvent);
   }
 
   async #requestCollection(
     method: "GET",
     url: string,
   ): Promise<readonly GraphEvent[]> {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.#accessToken}`,
-      Prefer: 'outlook.timezone="UTC"',
-    };
-
-    const response = await fetch(url, {
+    const data = await microsoftGraphRequest<{ value?: GraphEvent[] }>({
+      accessToken: this.#accessToken,
+      url,
       method,
-      headers,
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+      headers: { Prefer: 'outlook.timezone="UTC"' },
+      fallbackError: "microsoft_event_write_failed",
     });
-
-    const data = (await response.json()) as {
-      value?: GraphEvent[];
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_event_write_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
-
     return data.value ?? [];
   }
 
-  async #requestJson<T>(method: "GET", url: string): Promise<T> {
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.#accessToken}`,
-      Prefer: 'outlook.timezone="UTC"',
-    };
-
-    const response = await fetch(url, {
+  #requestJson<T>(method: "GET", url: string): Promise<T> {
+    return microsoftGraphRequest<T>({
+      accessToken: this.#accessToken,
+      url,
       method,
-      headers,
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+      headers: { Prefer: 'outlook.timezone="UTC"' },
+      fallbackError: "microsoft_event_write_failed",
     });
-
-    const data = (await response.json()) as T & {
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_event_write_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
-
-    return data;
-  }
-}
-
-async function parseErrorBody(response: Response): Promise<{
-  message?: string;
-  data?: unknown;
-}> {
-  try {
-    const data = (await response.json()) as {
-      error?: { message?: string };
-    };
-    return { message: data.error?.message, data };
-  } catch {
-    return {};
   }
 }

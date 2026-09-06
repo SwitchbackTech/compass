@@ -4,10 +4,8 @@ import {
   microsoftFailureCause,
   microsoftStatus,
 } from "@sync/providers/microsoft/microsoft-error";
-import {
-  MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
-} from "@sync/providers/microsoft/microsoft-http.constants";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
+import { MICROSOFT_GRAPH_BASE_URL } from "@sync/providers/microsoft/microsoft-http.constants";
 import {
   type NotificationChannel,
   type NotificationParseResult,
@@ -146,51 +144,23 @@ class FetchMicrosoftSubscriptionsApi implements MicrosoftSubscriptionsApi {
   async createSubscription(
     body: MicrosoftSubscriptionCreateBody,
   ): Promise<GraphSubscription> {
-    const response = await fetch(`${MICROSOFT_GRAPH_BASE_URL}/subscriptions`, {
+    return microsoftGraphRequest<GraphSubscription>({
+      accessToken: this.accessToken,
+      url: `${MICROSOFT_GRAPH_BASE_URL}/subscriptions`,
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+      body,
+      fallbackError: "microsoft_subscription_create_failed",
     });
-
-    const data = (await response.json()) as GraphSubscription & {
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(
-          data.error?.message ?? "microsoft_subscription_create_failed",
-        ),
-        { response: { status: response.status, data } },
-      );
-    }
-
-    return data;
   }
 
   async deleteSubscription(subscriptionId: string): Promise<void> {
-    const response = await fetch(
-      `${MICROSOFT_GRAPH_BASE_URL}/subscriptions/${encodeURIComponent(subscriptionId)}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-        signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
-      },
-    );
-
-    if (response.ok) return;
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: { code?: string; message?: string };
-    };
-    throw Object.assign(
-      new Error(data.error?.message ?? "microsoft_subscription_delete_failed"),
-      { response: { status: response.status, data } },
-    );
+    await microsoftGraphRequest<void>({
+      accessToken: this.accessToken,
+      url: `${MICROSOFT_GRAPH_BASE_URL}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      method: "DELETE",
+      fallbackError: "microsoft_subscription_delete_failed",
+      emptyOk: true,
+    });
   }
 }
 
