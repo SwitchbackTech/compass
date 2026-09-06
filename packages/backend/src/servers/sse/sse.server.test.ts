@@ -2,6 +2,7 @@
  * we do not need the database for this test
  */
 
+import { type Response } from "express";
 import { ObjectId } from "mongodb";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
@@ -18,6 +19,7 @@ import {
   describe,
   expect,
   it,
+  mock,
   spyOn,
 } from "bun:test";
 
@@ -34,6 +36,31 @@ describe("SSE Server", () => {
   beforeEach(() => {
     spyOn(userMetadataService, "fetchUserMetadata").mockResolvedValue({
       sync: { importGCal: null },
+    });
+  });
+
+  describe("subscribe() and a stream that ends before headers flush (#3449)", () => {
+    it("does not throw and registers no connection when flushHeaders() throws", async () => {
+      const { sseServer } = await import("./sse.server");
+      const userId = new ObjectId().toString();
+
+      const res = {
+        setHeader: mock(),
+        flushHeaders: mock(() => {
+          // Mirrors the Bun runtime error observed in production when a
+          // client disconnects between the request arriving and subscribe()
+          // flushing headers: unlike Node, Bun throws instead of no-op'ing.
+          throw new Error("Stream is already ended");
+        }),
+      } as unknown as Response;
+
+      let unsubscribe: (() => void) | undefined;
+      expect(() => {
+        unsubscribe = sseServer.subscribe(userId, res);
+      }).not.toThrow();
+
+      expect(sseServer.subscriberCount(userId)).toBe(0);
+      expect(() => unsubscribe?.()).not.toThrow();
     });
   });
 
