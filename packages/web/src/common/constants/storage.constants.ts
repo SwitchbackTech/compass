@@ -16,6 +16,8 @@ type StorageKey =
   // "completed" | "dismissed": the first-event prompt's terminal state.
   // Absent means it is still live (or never shown).
   | "compass.onboarding.first-event-done"
+  // Set when a signed-in user dismisses the connect-calendar onboarding step.
+  | "compass.onboarding.has-dismissed-connect-calendar-prompt"
   | "compass.shortcuts.tips-muted"
   // Demonstrated sidebar shortcut-tip ids (JSON). Device-local; an unknown
   // id is skipped on read, not an error.
@@ -65,6 +67,7 @@ export const STORAGE_KEYS: Record<
   | "SHORTCUT_SHOWCASE_STEP"
   | "HAS_PENDING_SHOWCASE_OFFER"
   | "FIRST_EVENT_DONE"
+  | "HAS_DISMISSED_CONNECT_CALENDAR_PROMPT"
   | "SHORTCUT_TIPS_MUTED"
   | "SHORTCUT_TIPS_DEMONSTRATED"
   | "SHORTCUT_PERSONALIZATION"
@@ -97,6 +100,8 @@ export const STORAGE_KEYS: Record<
   SHORTCUT_SHOWCASE_STEP: "compass.onboarding.shortcut-showcase-step",
   HAS_PENDING_SHOWCASE_OFFER: "compass.onboarding.has-pending-showcase-offer",
   FIRST_EVENT_DONE: "compass.onboarding.first-event-done",
+  HAS_DISMISSED_CONNECT_CALENDAR_PROMPT:
+    "compass.onboarding.has-dismissed-connect-calendar-prompt",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   SHORTCUT_TIPS_DEMONSTRATED: "compass.shortcuts.tips-demonstrated",
   SHORTCUT_PERSONALIZATION: "compass.shortcuts.personalization",

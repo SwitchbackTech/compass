@@ -26,6 +26,7 @@ import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-vi
 import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-accounts.store";
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
 import { resetRecentCommandsStoreForTests } from "@web/components/CommandPalette/recent-commands.store";
+import { resetConnectCalendarPromptStoreForTests } from "@web/components/ConnectCalendarPrompt/connect-calendar.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
 import {
   initialFirstEventPromptState,
@@ -107,6 +108,7 @@ const storeResets: StoreReset[] = [
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
   () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
   () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),
+  resetConnectCalendarPromptStoreForTests,
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),
