@@ -5,14 +5,12 @@ import {
   type SessionApiPort,
 } from "@web/auth/compass/session/session.port";
 import {
-  registerUseStartGoogleAuthorizationForTests,
-  resetUseStartGoogleAuthorizationForTests,
-  type UseStartGoogleAuthorization,
-} from "@web/auth/google/authorization/useStartGoogleAuthorization";
+  registerUseStartProviderAuthorizationForTests,
+  resetUseStartProviderAuthorizationForTests,
+  type UseStartProviderAuthorization,
+} from "@web/auth/providers/authorization/useStartProviderAuthorization";
 import {
-  resetGoogleAvailabilityForTests,
   resetProviderAvailabilityForTests,
-  setGoogleAvailabilityForTests,
   setProviderAvailabilityForTests,
 } from "@web/auth/providers/useIsProviderAvailable";
 import { resetEmbeddedCheckoutForTests } from "@web/billing/embedded-checkout/embedded-checkout.seam";
@@ -137,10 +135,10 @@ export function createTestNotificationPort(options?: {
   return { port, setPermission, mocks: { show, requestPermission } };
 }
 
-export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthorization {
+export function createDefaultTestProviderAuthorizationHook(): UseStartProviderAuthorization {
   return () => ({
     loading: false,
-    startGoogleAuthorization: mock(),
+    startAuthorization: mock(),
   });
 }
 
@@ -168,12 +166,12 @@ export function installDefaultWebTestSeams(): void {
   // the previous test's port is still registered, so a test that granted
   // permission would otherwise leak "granted" into the next one.
   resetNotificationStoreForTests();
-  registerUseStartGoogleAuthorizationForTests(
-    createDefaultTestGoogleAuthorizationHook(),
+  registerUseStartProviderAuthorizationForTests(
+    createDefaultTestProviderAuthorizationHook(),
   );
   // Skip /config fetch (no MSW handler); "unavailable" matches prior failed-fetch default.
-  resetGoogleAvailabilityForTests();
-  setGoogleAvailabilityForTests("unavailable");
+  resetProviderAvailabilityForTests();
+  setProviderAvailabilityForTests("google", "unavailable");
   setProviderAvailabilityForTests("microsoft", "unavailable");
   setProviderAvailabilityForTests("apple", "unavailable");
 }
@@ -182,10 +180,9 @@ export function resetWebTestSeams(): void {
   resetSessionApiPort();
   resetToastPort();
   resetNotificationPort();
-  resetUseStartGoogleAuthorizationForTests();
+  resetUseStartProviderAuthorizationForTests();
   // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
   resetUseCompleteAuthenticationForTests();
-  resetGoogleAvailabilityForTests();
   resetProviderAvailabilityForTests();
   resetEmbeddedCheckoutForTests();
 }

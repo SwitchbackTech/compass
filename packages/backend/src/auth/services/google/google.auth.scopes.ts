@@ -7,7 +7,7 @@ import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 // flow in Sync, so sign-in never includes an unapproved sensitive scope.
 //
 // This is the REQUIRED list: sign-in fails without every scope in it. It must
-// stay in lockstep with the web's GOOGLE_AUTH_SCOPES_REQUIRED and the e2e
+// stay in lockstep with the web's PROVIDER_AUTH_SCOPES_REQUIRED.google and the e2e
 // REQUIRED_SCOPES list, and it must NEVER gain a contacts scope — contacts are
 // optional, and requiring one would brick sign-in for every user who declines it.
 export const GOOGLE_AUTH_SCOPES: string[] = [...GOOGLE_SCOPES];

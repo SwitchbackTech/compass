@@ -120,31 +120,13 @@ export function createProviderAvailability({
     return available;
   };
 
-  const useIsGoogleAvailable = (): boolean =>
-    useIsProviderAvailable("google", "signIn");
-
-  const useIsConnectGoogleAvailable = (): boolean =>
-    useIsProviderAvailable("google", "connect");
-
-  const resetGoogleAvailabilityForTests = () => {
+  const resetProviderAvailabilityForTests = () => {
     flags = {
       google: unavailableFlags,
       microsoft: unavailableFlags,
       apple: unavailableFlags,
     };
     loadPromise = undefined;
-    emit();
-  };
-
-  const setGoogleAvailabilityForTests = (
-    availability: BackendProviderAvailability,
-  ) => {
-    const ready = availability === "available";
-    flags = {
-      ...flags,
-      google: { signIn: ready, connect: ready },
-    };
-    loadPromise = Promise.resolve();
     emit();
   };
 
@@ -165,15 +147,9 @@ export function createProviderAvailability({
     emit();
   };
 
-  const resetProviderAvailabilityForTests = resetGoogleAvailabilityForTests;
-
   return {
-    resetGoogleAvailabilityForTests,
     resetProviderAvailabilityForTests,
-    setGoogleAvailabilityForTests,
     setProviderAvailabilityForTests,
-    useIsGoogleAvailable,
-    useIsConnectGoogleAvailable,
     useIsProviderAvailable,
   };
 }

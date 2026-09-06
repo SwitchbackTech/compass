@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
-import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useStartProviderAuthorization } from "@web/auth/providers/authorization/useStartProviderAuthorization";
 import { useAvailableSignInProviders } from "@web/auth/providers/useAvailableSignInProviders";
 
@@ -15,10 +14,7 @@ type UseSignInProvidersOptions = {
 
 export function useSignInProviders(options: UseSignInProvidersOptions = {}) {
   const available = useAvailableSignInProviders();
-  const {
-    loading: isGoogleLoading,
-    startGoogleAuthorization: startGoogleSignIn,
-  } = useStartGoogleAuthorization({
+  const googleAuth = useStartProviderAuthorization("google", {
     intent: "signIn",
     onStart: options.google?.onStart,
     prompt: options.google?.prompt,
@@ -32,14 +28,11 @@ export function useSignInProviders(options: UseSignInProvidersOptions = {}) {
 
   const byKind = useMemo(
     () => ({
-      google: {
-        loading: isGoogleLoading,
-        startAuthorization: startGoogleSignIn,
-      },
+      google: googleAuth,
       microsoft: microsoftAuth,
       apple: appleAuth,
     }),
-    [appleAuth, isGoogleLoading, microsoftAuth, startGoogleSignIn],
+    [appleAuth, googleAuth, microsoftAuth],
   );
 
   const loadingKind = available.find((kind) => byKind[kind].loading) ?? null;

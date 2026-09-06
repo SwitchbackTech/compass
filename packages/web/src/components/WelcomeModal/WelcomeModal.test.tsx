@@ -9,10 +9,6 @@ import {
 import userEvent from "@testing-library/user-event";
 import { dispatchMissingKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
-  registerUseStartGoogleAuthorizationForTests,
-  resetUseStartGoogleAuthorizationForTests,
-} from "@web/auth/google/authorization/useStartGoogleAuthorization";
-import {
   registerUseStartProviderAuthorizationForTests,
   resetUseStartProviderAuthorizationForTests,
 } from "@web/auth/providers/authorization/useStartProviderAuthorization";
@@ -536,18 +532,13 @@ describe("WelcomeModal", () => {
       startGoogleAuthorization.mockClear();
       startMicrosoftAuthorization.mockClear();
       startAppleAuthorization.mockClear();
-      registerUseStartGoogleAuthorizationForTests(() => ({
-        loading: false,
-        startGoogleAuthorization,
-      }));
       registerUseStartProviderAuthorizationForTests((provider) => ({
         loading: false,
-        startAuthorization:
-          provider === "microsoft"
-            ? startMicrosoftAuthorization
-            : provider === "apple"
-              ? startAppleAuthorization
-              : mock(),
+        startAuthorization: {
+          google: startGoogleAuthorization,
+          microsoft: startMicrosoftAuthorization,
+          apple: startAppleAuthorization,
+        }[provider],
       }));
       setSignInAvailability({ google: "available" });
     });
@@ -558,7 +549,6 @@ describe("WelcomeModal", () => {
       // the real hook after the mock had already rendered without one, and
       // React would throw "Should have a queue" on the hook-count change.
       cleanup();
-      resetUseStartGoogleAuthorizationForTests();
       resetUseStartProviderAuthorizationForTests();
       resetProviderAvailabilityForTests();
     });
