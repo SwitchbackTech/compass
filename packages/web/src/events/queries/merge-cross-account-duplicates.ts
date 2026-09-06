@@ -10,17 +10,26 @@ interface Copy {
   accountEmail: string;
 }
 
+/** Trim and strip a `mailto:` prefix so provider copies correlate reliably. */
+function correlationKey(icalUid: string): string {
+  let key = icalUid.trim();
+  if (key.toLowerCase().startsWith("mailto:")) {
+    key = key.slice("mailto:".length).trim();
+  }
+  return key;
+}
+
 /**
  * Collapse copies of one meeting that live on two connected accounts into a
  * single event, and stamp `crossAccountDuplicates` (surviving event id -> the
  * other account) onto the returned data for the view model to join onto each
  * GridEvent as `otherAccount` - the same way demoEventIds becomes isDemo.
  *
- * Google gives every copy of a meeting the same `icalUid`, so two events that
- * share it, start and end at the same instant, and sit on calendars belonging
- * to DIFFERENT accounts are one meeting seen twice. Copies whose times differ
- * are left alone: one of them has genuinely been moved, so they occupy
- * different slots and both belong on the grid.
+ * Every provider copy of the same invite carries the same `icalUid`, so two
+ * events that share it, start and end at the same instant, and sit on
+ * calendars belonging to DIFFERENT accounts are one meeting seen twice.
+ * Copies whose times differ are left alone: one of them has genuinely been
+ * moved, so they occupy different slots and both belong on the grid.
  *
  * Run this after the visible-calendar filter, so hiding one account's calendar
  * unmerges on its own (the hidden copy is already gone by the time this sees
@@ -55,7 +64,7 @@ export function mergeCrossAccountDuplicates(
     const accountEmail = calendarsById.get(event.calendarId)?.accountEmail;
     if (!accountEmail) continue;
     const { start, end } = event.schedule;
-    const groupKey = `${event.icalUid} ${start} ${end}`;
+    const groupKey = `${correlationKey(event.icalUid)} ${start} ${end}`;
     const copy: Copy = { id, event, accountEmail };
     const group = groups.get(groupKey);
     if (group) group.push(copy);
