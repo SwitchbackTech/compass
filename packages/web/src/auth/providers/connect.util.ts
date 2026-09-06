@@ -4,6 +4,15 @@ import {
   providerDisplayName,
 } from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import {
+  attentionFallbackCopy,
+  connectionHealthCopy,
+  credentialKindForConnection,
+  nameAccountInCopy,
+  OAUTH_RECONNECT_COPY,
+  pickAggregateSidebarStatus,
+  type SidebarStatusEntry,
+} from "@web/auth/providers/connection-health-copy.util";
 import { CONSENT_REQUIRED_COPY } from "@web/auth/providers/provider-copy.util";
 import {
   isAccountReconnectRequired,
@@ -18,7 +27,7 @@ import {
 
 const RECONNECT_STATUS: SyncStatus = {
   variant: "error",
-  text: "Calendar needs reconnecting",
+  text: OAUTH_RECONNECT_COPY,
 };
 
 const CONSENT_REQUIRED_STATUS: SyncStatus = {
@@ -36,10 +45,13 @@ const connectionNeedsAdminConsent = (
 // multiple accounts connected, "Calendar needs reconnecting" doesn't say
 // which one, and the user has to open Settings just to find out. Named only
 // in getSidebarSyncStatus's own reconnect returns, below.
-const reconnectStatusFor = (accountEmail?: string | null): SyncStatus =>
-  accountEmail
-    ? { variant: "error", text: `${accountEmail} needs reconnecting` }
-    : RECONNECT_STATUS;
+const reconnectStatusFor = (
+  accountEmail?: string | null,
+  copy: string = OAUTH_RECONNECT_COPY,
+): SyncStatus => ({
+  variant: "error",
+  text: nameAccountInCopy(copy, accountEmail),
+});
 
 /** Sync disconnected / product reconnect / session override after a live 410. */
 export const connectionHasReconnectRequired = (
@@ -236,17 +248,28 @@ const delayedSettingsStatus = (
   connection: GoogleSyncConnectionSummary,
   nowMs: number,
 ): SyncStatus => {
-  const lastBit = lastUpdatedSuffix(connection.lastSyncedAt, nowMs);
-  if (connection.stateReason === "providerErrors") {
-    return {
-      variant: "warning",
-      text: `Couldn't update your calendar.${lastBit} Try Refresh, or reconnect if this continues.`,
-    };
-  }
-  return {
-    variant: "warning",
-    text: `Calendar updates are taking longer than usual.${lastBit} Try Refresh, or reconnect if this continues.`,
-  };
+  const text =
+    connectionHealthCopy({
+      state: connection.state,
+      stateReason: connection.stateReason,
+      credentialKind: credentialKindForConnection(connection),
+      surface: "settings",
+      lastUpdatedSuffix: lastUpdatedSuffix(connection.lastSyncedAt, nowMs),
+    }) ?? attentionFallbackCopy();
+  return { variant: "warning", text };
+};
+
+const reauthSettingsStatus = (
+  connection: GoogleSyncConnectionSummary,
+): SyncStatus => {
+  const text =
+    connectionHealthCopy({
+      state: connection.state,
+      stateReason: connection.stateReason,
+      credentialKind: credentialKindForConnection(connection),
+      surface: "settings",
+    }) ?? OAUTH_RECONNECT_COPY;
+  return { variant: "error", text };
 };
 
 const catchingUpSettingsStatus = (
@@ -284,6 +307,9 @@ export const getGoogleSyncStatus = (
   }
 
   if (connectionNeedsReconnect(state, connection)) {
+    if (connection?.stateReason && connection.state !== "disconnected") {
+      return reauthSettingsStatus(connection);
+    }
     return RECONNECT_STATUS;
   }
 
@@ -335,7 +361,7 @@ export const getGoogleSyncStatus = (
       }
       return {
         variant: "warning",
-        text: "Calendar updates are taking longer than usual. Try Refresh, or reconnect if this continues.",
+        text: attentionFallbackCopy(),
       };
     case "RECONNECT_REQUIRED":
       return RECONNECT_STATUS;
@@ -438,7 +464,16 @@ export const getSidebarSyncStatus = ({
   }
 
   if (connectionNeedsReconnect(state, connection)) {
-    return reconnectStatusFor(connection?.accountEmail);
+    const copy =
+      connection != null
+        ? (connectionHealthCopy({
+            state: connection.state,
+            stateReason: connection.stateReason,
+            credentialKind: credentialKindForConnection(connection),
+            surface: "settings",
+          }) ?? OAUTH_RECONNECT_COPY)
+        : OAUTH_RECONNECT_COPY;
+    return reconnectStatusFor(connection?.accountEmail, copy);
   }
 
   if (
@@ -469,17 +504,27 @@ export const getSidebarSyncStatus = ({
         }
         return null;
       }
-      case "delayed":
-        return {
-          variant: "warning",
-          text:
-            connection.stateReason === "providerErrors"
-              ? "Couldn't update your calendar"
-              : "Calendar updates are delayed",
-        };
+      case "delayed": {
+        const text =
+          connectionHealthCopy({
+            state: connection.state,
+            stateReason: connection.stateReason,
+            credentialKind: credentialKindForConnection(connection),
+            surface: "sidebarShort",
+          }) ?? "Calendar updates are delayed";
+        return { variant: "warning", text };
+      }
       case "actionRequired":
-      case "disconnected":
-        return reconnectStatusFor(connection.accountEmail);
+      case "disconnected": {
+        const copy =
+          connectionHealthCopy({
+            state: connection.state,
+            stateReason: connection.stateReason,
+            credentialKind: credentialKindForConnection(connection),
+            surface: "settings",
+          }) ?? OAUTH_RECONNECT_COPY;
+        return reconnectStatusFor(connection.accountEmail, copy);
+      }
       case "connecting":
       case "importing":
         return connection.lastHealthyAt
@@ -494,4 +539,40 @@ export const getSidebarSyncStatus = ({
     refreshGaveUp,
   });
   return status?.variant === "healthy" ? null : status;
+};
+
+/** Collapse every account into one sidebar line; name the account when they disagree. */
+export const getAggregateSidebarSyncStatus = ({
+  connections,
+  isConnecting,
+  state,
+  nowMs = Date.now(),
+  refreshGaveUp = false,
+  refreshInFlight = false,
+}: {
+  connections: readonly GoogleSyncConnectionSummary[];
+  isConnecting: boolean;
+  state: GoogleUiState;
+  nowMs?: number;
+  refreshGaveUp?: boolean;
+  refreshInFlight?: boolean;
+}): SyncStatus | null => {
+  const entries: SidebarStatusEntry[] = [];
+  for (const connection of connections) {
+    const status = getSidebarSyncStatus({
+      connection,
+      isConnecting,
+      state: connection.connectionState ?? state,
+      nowMs,
+      refreshGaveUp,
+      refreshInFlight,
+    });
+    if (status) {
+      entries.push({ connection, status });
+    }
+  }
+  if (entries.length === 0) {
+    return null;
+  }
+  return pickAggregateSidebarStatus(entries);
 };

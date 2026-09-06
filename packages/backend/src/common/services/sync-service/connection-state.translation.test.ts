@@ -144,4 +144,14 @@ describe("toGoogleSyncConnectionSummary", () => {
       false,
     );
   });
+
+  it("preserves consentRequired stateReason on the web-facing summary", () => {
+    const summary = toGoogleSyncConnectionSummary(
+      connection("actionRequired", "consentRequired", {
+        provider: "microsoft",
+      }),
+    );
+    expect(summary.stateReason).toBe("consentRequired");
+    expect(summary.connectionState).toBe("ATTENTION");
+  });
 });
