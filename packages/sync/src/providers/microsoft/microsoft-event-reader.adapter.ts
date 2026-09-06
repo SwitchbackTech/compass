@@ -10,11 +10,11 @@ import {
   type GraphEvent,
   normalizeMicrosoftEvent,
 } from "@sync/providers/microsoft/microsoft-event.normalizer";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
 import {
   MICROSOFT_EVENT_PAGE_SIZE,
   MICROSOFT_EVENT_SELECT,
   MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
 } from "@sync/providers/microsoft/microsoft-http.constants";
 import { ProviderEventError } from "@sync/providers/provider-event.port";
 import {
@@ -184,27 +184,18 @@ class FetchMicrosoftEventListApi implements MicrosoftEventListApi {
     params: Parameters<MicrosoftEventListApi["listPage"]>[0],
   ): Promise<MicrosoftEventListPage> {
     const url = resolveRequestUrl(params);
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${this.#accessToken}`,
-        Prefer: `odata.maxpagesize=${MICROSOFT_EVENT_PAGE_SIZE}, outlook.timezone="UTC"`,
-      },
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
-    });
-
-    const data = (await response.json()) as {
+    const data = await microsoftGraphRequest<{
       value?: GraphEventDeltaItem[];
       "@odata.nextLink"?: string;
       "@odata.deltaLink"?: string;
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_event_delta_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
+    }>({
+      accessToken: this.#accessToken,
+      url,
+      headers: {
+        Prefer: `odata.maxpagesize=${MICROSOFT_EVENT_PAGE_SIZE}, outlook.timezone="UTC"`,
+      },
+      fallbackError: "microsoft_event_delta_failed",
+    });
 
     return {
       items: data.value ?? [],
