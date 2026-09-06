@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { prepareSignedInMicrosoftPage } from "../attendees/attendee-harness";
 import { prepareSignedInBookingSettingsPage } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
@@ -49,5 +50,26 @@ test("the add-account chooser with Google and Microsoft has no automatically det
   await expectNoAxeViolations(page, {
     checkpoint: "settings add-account chooser",
     include: "[role='menu']",
+  });
+});
+
+test("the Microsoft admin-consent banner has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await prepareSignedInMicrosoftPage(page, {
+    events: [],
+    stateReason: "consentRequired",
+  });
+
+  const banner = page
+    .getByRole("alert")
+    .getByText(
+      "Your organization's admin has to approve Compass before this account can connect.",
+    );
+  await expect(banner).toBeVisible();
+
+  await expectNoAxeViolations(page, {
+    checkpoint: "microsoft consent required banner",
+    include: "[role='alert']",
   });
 });

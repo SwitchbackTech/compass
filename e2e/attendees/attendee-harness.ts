@@ -1,7 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
 /**
- * Signed-in Google-calendar harness for the attendee e2e specs.
+ * Signed-in calendar harness for the attendee e2e specs (Google by default,
+ * Microsoft via `prepareSignedInMicrosoftPage`).
  *
  * The Playwright web server runs the anonymous local-mode app (no backend on
  * port 3000), so these specs simulate the signed-in state the same way
@@ -14,8 +15,11 @@ import { expect, type Page } from "@playwright/test";
  */
 
 export const ACCOUNT_EMAIL = "user@example.com";
+export const MICROSOFT_ACCOUNT_EMAIL = "user@outlook.com";
 /** ObjectId-shaped (CalendarIdSchema) id for the stubbed Google calendar. */
 export const GOOGLE_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
+/** ObjectId-shaped id for the stubbed Microsoft calendar. */
+export const MICROSOFT_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8da";
 
 const googleCalendar = {
   id: GOOGLE_CALENDAR_ID,
@@ -41,18 +45,49 @@ const googleCalendar = {
   accountEmail: ACCOUNT_EMAIL,
 };
 
+const microsoftCalendar = {
+  id: MICROSOFT_CALENDAR_ID,
+  name: "Calendar",
+  description: "",
+  timeZone: "Etc/UTC",
+  foregroundColor: "#ffffff",
+  backgroundColor: "#0078D4",
+  provider: "microsoft",
+  access: "owner",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+    canInviteAttendees: true,
+    conferenceKinds: ["teams"],
+  },
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+  accountEmail: MICROSOFT_ACCOUNT_EMAIL,
+};
+
 /** A GoogleSyncConnectionSummary shape for the stubbed GET /api/user/metadata. */
 const connectionSummary = (
   accountEmail: string,
   canSuggestContacts: boolean,
+  provider: "google" | "microsoft" = "google",
+  stateReason: string | null = null,
 ) => ({
-  id: "e2e-connection-1",
-  state: "healthy",
-  stateReason: null,
+  id:
+    provider === "microsoft" ? "e2e-microsoft-connection" : "e2e-connection-1",
+  provider,
+  state: stateReason === "consentRequired" ? "actionRequired" : "healthy",
+  stateReason,
   lastSyncedAt: null,
   lastHealthyAt: null,
   accountEmail,
-  connectionState: "HEALTHY",
+  connectionState:
+    stateReason === "consentRequired"
+      ? ("RECONNECT_REQUIRED" as const)
+      : ("HEALTHY" as const),
   canSuggestContacts,
 });
 
@@ -89,6 +124,7 @@ export interface EventFixture {
 export const buildEventFixture = (options: {
   id: string;
   title: string;
+  calendarId?: string;
   attendees?: AttendeeFixture[];
   organizer?: { email: string; displayName: string | null } | null;
   recurrence?: EventFixture["recurrence"];
@@ -96,10 +132,15 @@ export const buildEventFixture = (options: {
   const start = new Date();
   start.setMinutes(0, 0, 0);
   const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const calendarId = options.calendarId ?? GOOGLE_CALENDAR_ID;
+  const defaultOrganizerEmail =
+    calendarId === MICROSOFT_CALENDAR_ID
+      ? MICROSOFT_ACCOUNT_EMAIL
+      : ACCOUNT_EMAIL;
 
   return {
     id: options.id,
-    calendarId: GOOGLE_CALENDAR_ID,
+    calendarId,
     content: {
       kind: "details",
       title: options.title,
@@ -107,7 +148,7 @@ export const buildEventFixture = (options: {
       location: null,
       organizer:
         options.organizer === undefined
-          ? { email: ACCOUNT_EMAIL, displayName: null }
+          ? { email: defaultOrganizerEmail, displayName: null }
           : options.organizer,
       attendees: options.attendees ?? [],
     },
@@ -142,6 +183,9 @@ export interface SignedInPageOptions {
    * field queries the stubbed suggestions endpoint.
    */
   canSuggestContacts?: boolean;
+  provider?: "google" | "microsoft";
+  /** Sync `stateReason` on the stubbed connection (e.g. consentRequired). */
+  stateReason?: string | null;
 }
 
 export const prepareSignedInGooglePage = async (
@@ -154,6 +198,24 @@ export const prepareSignedInGooglePage = async (
     suggestionQueries: [],
   };
   const suggestions = options.suggestions ?? [];
+  const provider = options.provider ?? "google";
+  const accountEmail =
+    provider === "microsoft" ? MICROSOFT_ACCOUNT_EMAIL : ACCOUNT_EMAIL;
+  const calendar =
+    provider === "microsoft" ? microsoftCalendar : googleCalendar;
+  const summary = connectionSummary(
+    accountEmail,
+    Boolean(options.canSuggestContacts),
+    provider,
+    options.stateReason ?? null,
+  );
+  const metadata = {
+    connections: [summary],
+    google: {
+      connectionState: summary.connectionState,
+      connections: [summary],
+    },
+  };
 
   await page.addInitScript((accountEmail) => {
     (
@@ -166,7 +228,8 @@ export const prepareSignedInGooglePage = async (
       "compass.auth",
       JSON.stringify({ hasAuthenticated: true, lastKnownEmail: accountEmail }),
     );
-  }, ACCOUNT_EMAIL);
+    localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
+  }, accountEmail);
 
   const json = (body: unknown) => ({
     status: 200,
@@ -180,7 +243,7 @@ export const prepareSignedInGooglePage = async (
     const path = url.pathname;
 
     if (path.endsWith("/api/calendars")) {
-      return route.fulfill(json({ calendars: [googleCalendar] }));
+      return route.fulfill(json({ calendars: [calendar] }));
     }
 
     if (path.endsWith("/api/event") && request.method() === "GET") {
@@ -238,7 +301,7 @@ export const prepareSignedInGooglePage = async (
       );
       if (stored && typeof body.responseStatus === "string") {
         stored.content.attendees = stored.content.attendees.map((entry) =>
-          entry.email.toLowerCase() === ACCOUNT_EMAIL
+          entry.email.toLowerCase() === accountEmail.toLowerCase()
             ? {
                 ...entry,
                 responseStatus:
@@ -261,20 +324,23 @@ export const prepareSignedInGooglePage = async (
       // sync refresh, periodic invalidation), and each response overwrites
       // the zustand store — a one-time bridge injection before this route
       // even existed would get clobbered back to false by the next fetch.
-      return route.fulfill(
-        json({
-          google: {
-            connectionState: "HEALTHY",
-            connections: options.canSuggestContacts
-              ? [connectionSummary(ACCOUNT_EMAIL, true)]
-              : [],
-          },
-        }),
-      );
+      return route.fulfill(json(metadata));
     }
 
     if (path.endsWith("/api/config")) {
-      return route.fulfill(json({ google: { isConfigured: true } }));
+      return route.fulfill(
+        json({
+          google: { isConfigured: true },
+          providers: {
+            google: { signIn: true, connect: true },
+            microsoft: {
+              signIn: false,
+              connect: provider === "microsoft",
+            },
+            apple: { signIn: false, connect: false },
+          },
+        }),
+      );
     }
 
     return route.fulfill(json({}));
@@ -312,7 +378,11 @@ export const prepareSignedInGooglePage = async (
     ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
   });
 
-  if (options.canSuggestContacts) {
+  if (
+    options.canSuggestContacts ||
+    options.stateReason ||
+    provider === "microsoft"
+  ) {
     // The stubbed GET /api/user/metadata above already answers with the
     // capability set on every fetch (including refetches), so the initial
     // paint only needs a nudge: force one metadata refetch through the
@@ -325,28 +395,26 @@ export const prepareSignedInGooglePage = async (
       ).__COMPASS_E2E_STORE__;
       return Boolean(bridge?.userMetadata);
     });
-    await page.evaluate(
-      (metadata) => {
-        const bridge = (
-          window as Window & {
-            __COMPASS_E2E_STORE__?: {
-              userMetadata?: { set: (metadata: unknown) => void };
-            };
-          }
-        ).__COMPASS_E2E_STORE__;
-        bridge?.userMetadata?.set(metadata);
-      },
-      {
-        google: {
-          connectionState: "HEALTHY",
-          connections: [connectionSummary(ACCOUNT_EMAIL, true)],
-        },
-      },
-    );
+    await page.evaluate((nextMetadata) => {
+      const bridge = (
+        window as Window & {
+          __COMPASS_E2E_STORE__?: {
+            userMetadata?: { set: (metadata: unknown) => void };
+          };
+        }
+      ).__COMPASS_E2E_STORE__;
+      bridge?.userMetadata?.set(nextMetadata);
+    }, metadata);
   }
 
   return captured;
 };
+
+export const prepareSignedInMicrosoftPage = (
+  page: Page,
+  options: SignedInPageOptions,
+): Promise<CapturedApiRequests> =>
+  prepareSignedInGooglePage(page, { ...options, provider: "microsoft" });
 
 /**
  * Dispatches a real DOM click instead of Playwright's `.click()`. Buttons

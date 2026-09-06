@@ -5,8 +5,11 @@ import {
   clickSave,
   dispatchClick,
   getGuestCombobox,
+  MICROSOFT_ACCOUNT_EMAIL,
+  MICROSOFT_CALENDAR_ID,
   openEventForm,
   prepareSignedInGooglePage,
+  prepareSignedInMicrosoftPage,
 } from "./attendee-harness";
 
 // Attendee editor end-to-end (WP-04/WP-09): adding guests on an organized,
@@ -195,4 +198,57 @@ test("an invalid email never becomes a chip", async ({ page }) => {
     page.getByRole("button", { name: "Remove not-an-email" }),
   ).toHaveCount(0);
   expect(captured.replaceRequests).toHaveLength(0);
+});
+
+test("adding a guest on a Microsoft calendar puts the replaced guest set on the wire", async ({
+  page,
+}) => {
+  const captured = await prepareSignedInMicrosoftPage(page, {
+    events: [
+      buildEventFixture({
+        id: "evt-ms-guests-1",
+        title: "Planning Review",
+        calendarId: MICROSOFT_CALENDAR_ID,
+        attendees: [
+          {
+            email: MICROSOFT_ACCOUNT_EMAIL,
+            displayName: null,
+            responseStatus: "accepted",
+          },
+          {
+            email: "bob@example.com",
+            displayName: "Bob B",
+            responseStatus: "accepted",
+          },
+        ],
+      }),
+    ],
+  });
+
+  await openEventForm(page, "Planning Review");
+
+  await expect(page.getByText("2 guests (2 yes, 0 awaiting)")).toBeVisible();
+
+  const combobox = getGuestCombobox(page);
+  await combobox.fill("dana@example.com");
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Remove dana@example.com" }),
+  ).toBeVisible();
+
+  await clickSave(page);
+  await expect(page.getByText("Send invitation emails?")).toBeVisible();
+  await dispatchClick(page.getByRole("button", { name: "Send", exact: true }));
+
+  await expect.poll(() => captured.replaceRequests.length).toBe(1);
+  const { eventId, body } = captured.replaceRequests[0];
+  expect(eventId).toBe("evt-ms-guests-1");
+  const content = body.content as Record<string, unknown>;
+  expect(content.attendees).toEqual([
+    { email: MICROSOFT_ACCOUNT_EMAIL, displayName: null },
+    { email: "bob@example.com", displayName: "Bob B" },
+    { email: "dana@example.com", displayName: null },
+  ]);
+  expect(body.invitation).toBe("all");
+  await expect(page.getByRole("form").getByPlaceholder("Title")).toBeHidden();
 });

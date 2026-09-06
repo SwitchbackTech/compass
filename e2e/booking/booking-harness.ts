@@ -16,6 +16,27 @@ export const HOST_ACCOUNT_EMAIL = "host@example.com";
 export const APPLE_ACCOUNT_EMAIL = "host@icloud.com";
 export const MICROSOFT_ACCOUNT_EMAIL = "host@outlook.com";
 
+/** Stub SyncConnectionSummary for a Microsoft account. */
+export const microsoftConnectionSummary = (overrides?: {
+  stateReason?: string | null;
+  connectionState?:
+    | "NOT_CONNECTED"
+    | "RECONNECT_REQUIRED"
+    | "IMPORTING"
+    | "HEALTHY"
+    | "ATTENTION";
+}) => ({
+  id: "e2e-microsoft-connection",
+  provider: "microsoft" as const,
+  state: "healthy",
+  stateReason: overrides?.stateReason ?? null,
+  lastSyncedAt: null,
+  lastHealthyAt: null,
+  accountEmail: MICROSOFT_ACCOUNT_EMAIL,
+  connectionState: overrides?.connectionState ?? ("HEALTHY" as const),
+  canSuggestContacts: false,
+});
+
 /** Stub calendar list entry for an Apple booking destination. */
 export const appleBookingCalendar = {
   id: APPLE_BOOKING_CALENDAR_ID,

@@ -27,12 +27,15 @@ const objectId = (seed: string) => seed.repeat(24);
 const CALENDAR_A_ID = objectId("a");
 const CALENDAR_B_ID = objectId("b");
 const CALENDAR_LOCAL_ID = objectId("c");
+const CALENDAR_MS_ID = objectId("d");
 const EVENT_A_ID = objectId("1");
 const EVENT_B_ID = objectId("2");
 
 const CALENDAR_A_NAME = "Acme Work";
 const CALENDAR_B_NAME = "Design Team";
 const LOCAL_CALENDAR_NAME = "Local";
+const CALENDAR_MS_NAME = "Focus";
+const MICROSOFT_ACCOUNT_EMAIL = "user@outlook.com";
 
 const EVENT_A_TITLE = "Team sync";
 const EVENT_B_TITLE = "Reader event";
@@ -65,10 +68,11 @@ function calendar(overrides: {
   name: string;
   timeZone: string | null;
   backgroundColor: string;
-  provider: "local" | "google";
+  provider: "local" | "google" | "microsoft";
   access: "owner" | "reader";
   isPrimary: boolean;
   isVisible: boolean;
+  accountEmail?: string;
 }) {
   const base = CAPABILITIES[overrides.access];
   return {
@@ -78,9 +82,13 @@ function calendar(overrides: {
     capabilities: {
       ...base,
       conferenceKinds:
-        overrides.provider === "google" && overrides.access === "owner"
-          ? ["meet"]
-          : [],
+        overrides.access !== "owner"
+          ? []
+          : overrides.provider === "google"
+            ? ["meet"]
+            : overrides.provider === "microsoft"
+              ? ["teams"]
+              : [],
     },
     isActive: true,
   };
@@ -149,7 +157,37 @@ const DEFAULT_EVENTS: FixtureEvent[] = [
   buildEvent(EVENT_B_ID, CALENDAR_B_ID, EVENT_B_TITLE, 13),
 ];
 
-function buildCalendars() {
+type FixtureCalendar = ReturnType<typeof calendar>;
+
+function microsoftCalendar(): FixtureCalendar {
+  return calendar({
+    id: CALENDAR_MS_ID,
+    name: CALENDAR_MS_NAME,
+    timeZone: TIME_ZONE,
+    backgroundColor: "#0078D4",
+    provider: "microsoft",
+    access: "owner",
+    isPrimary: true,
+    isVisible: true,
+    accountEmail: MICROSOFT_ACCOUNT_EMAIL,
+  });
+}
+
+function microsoftConnectionSummary() {
+  return {
+    id: "e2e-microsoft-connection",
+    provider: "microsoft" as const,
+    state: "healthy",
+    stateReason: null,
+    lastSyncedAt: null,
+    lastHealthyAt: null,
+    accountEmail: MICROSOFT_ACCOUNT_EMAIL,
+    connectionState: "HEALTHY" as const,
+    canSuggestContacts: false,
+  };
+}
+
+function buildCalendars(extra: FixtureCalendar[] = []) {
   // Server isVisible is ignored by the web (S39 A2 overlays localStorage).
   return [
     calendar({
@@ -182,6 +220,7 @@ function buildCalendars() {
       isPrimary: false,
       isVisible: true,
     }),
+    ...extra,
   ];
 }
 
@@ -206,10 +245,24 @@ type CompassE2EWindow = Window & {
 async function setupCalendarExperiencePage(
   page: Page,
   events: FixtureEvent[] = DEFAULT_EVENTS,
+  options: {
+    extraCalendars?: FixtureCalendar[];
+    metadata?: Record<string, unknown>;
+    microsoftConnect?: boolean;
+  } = {},
 ): Promise<CalendarExperienceHarness> {
   const harness: CalendarExperienceHarness = {
     mutationRequests: [],
   };
+  const extraCalendars = options.extraCalendars ?? [];
+  const hasMicrosoft = extraCalendars.some(
+    (entry) => entry.provider === "microsoft",
+  );
+  const metadata = options.metadata ?? {
+    connections: [],
+    google: { connectionState: "HEALTHY" },
+  };
+  const microsoftConnect = Boolean(options.microsoftConnect || hasMicrosoft);
 
   await page.addInitScript(() => {
     (window as CompassE2EWindow).__COMPASS_E2E_TEST__ = true;
@@ -252,16 +305,13 @@ async function setupCalendarExperiencePage(
       });
     }
     if (pathname.endsWith("/api/user/metadata")) {
-      return json({
-        connections: [],
-        google: { connectionState: "HEALTHY" },
-      });
+      return json(metadata);
     }
     if (pathname.endsWith("/api/config")) {
       return json({
         providers: {
           google: { signIn: true, connect: true },
-          microsoft: { signIn: false, connect: false },
+          microsoft: { signIn: false, connect: microsoftConnect },
           apple: { signIn: false, connect: false },
         },
       });
@@ -270,7 +320,7 @@ async function setupCalendarExperiencePage(
       return json({ busyPeriods: [] });
     }
     if (pathname.endsWith("/api/calendars") && method === "GET") {
-      return json({ calendars: buildCalendars() });
+      return json({ calendars: buildCalendars(extraCalendars) });
     }
     if (pathname.endsWith("/api/event") && method === "GET") {
       return json({ events });
@@ -554,4 +604,36 @@ test("a read-only event's context menu offers view and duplicate but not delete"
   await expect(menu.getByRole("menuitem", { name: "View" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
+});
+
+test("sidebar lists a Microsoft calendar under its account heading", async ({
+  page,
+}) => {
+  const summary = microsoftConnectionSummary();
+  await setupCalendarExperiencePage(page, DEFAULT_EVENTS, {
+    extraCalendars: [microsoftCalendar()],
+    metadata: {
+      connections: [summary],
+      google: { connectionState: "HEALTHY", connections: [summary] },
+    },
+  });
+  await ensureSidebarOpen(page);
+
+  const microsoftSection = page.getByRole("region", {
+    name: `Calendars for ${MICROSOFT_ACCOUNT_EMAIL}`,
+  });
+  await expect(
+    microsoftSection.getByRole("heading", { name: MICROSOFT_ACCOUNT_EMAIL }),
+  ).toBeVisible();
+  await expect(
+    microsoftSection.getByText("primary", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    microsoftSection.getByText(CALENDAR_MS_NAME, { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    microsoftSection.getByRole("button", {
+      name: /^(Show|Hide) primary calendar$/,
+    }),
+  ).toBeVisible();
 });
