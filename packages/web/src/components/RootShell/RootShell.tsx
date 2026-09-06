@@ -19,6 +19,7 @@ import { usePlanChangeToasts } from "@web/billing/usePlanChangeToasts";
 import { isMobileOS } from "@web/common/utils/device/device.util";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
+import { ConnectCalendarPromptGate } from "@web/components/ConnectCalendarPrompt/ConnectCalendarPromptGate";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import { PointerHint } from "@web/components/PointerHint/PointerHint";
 import { ShowcasePlayLink } from "@web/components/ShortcutShowcase/play-link";
@@ -100,6 +101,7 @@ export function RootShell() {
       <UpcomingEventNotifier />
       <AuthModal />
       <ConnectAppleForm />
+      {gateStatus === null && <ConnectCalendarPromptGate />}
       {gateStatus !== null && <BillingGateModal status={gateStatus} />}
       <CheckoutCelebrationModal />
       {showCalendarOnboarding && <WelcomeModal />}

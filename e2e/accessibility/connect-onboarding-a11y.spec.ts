@@ -5,6 +5,94 @@ import { expectNoAxeViolations } from "../utils/axe-assertion";
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1600, height: 900 } });
 
+function jsonResponse(body: unknown) {
+  return {
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  };
+}
+
+async function prepareSignedInZeroConnectionsPage(
+  page: import("@playwright/test").Page,
+) {
+  await page.addInitScript(() => {
+    (
+      window as Window & { __COMPASS_E2E_TEST__?: boolean }
+    ).__COMPASS_E2E_TEST__ = true;
+    localStorage.setItem(
+      "compass.auth",
+      JSON.stringify({
+        hasAuthenticated: true,
+        lastKnownEmail: "host@example.com",
+      }),
+    );
+    localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
+    localStorage.setItem(
+      "compass.onboarding.has-seen-shortcut-showcase",
+      "true",
+    );
+  });
+
+  await page.route("**/api/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (path.endsWith("/api/calendars")) {
+      return route.fulfill(jsonResponse({ calendars: [] }));
+    }
+
+    if (path.endsWith("/api/event") && request.method() === "GET") {
+      return route.fulfill(jsonResponse({ events: [] }));
+    }
+
+    if (path.endsWith("/api/user/metadata")) {
+      return route.fulfill(
+        jsonResponse({
+          google: { connectionState: "NOT_CONNECTED", connections: [] },
+          connections: [],
+        }),
+      );
+    }
+
+    if (path.endsWith("/api/config")) {
+      return route.fulfill(
+        jsonResponse({
+          google: { isConfigured: true },
+          providers: {
+            google: { signIn: true, connect: true },
+            microsoft: { signIn: true, connect: true },
+            apple: { signIn: false, connect: true },
+          },
+        }),
+      );
+    }
+
+    return route.fulfill(jsonResponse({}));
+  });
+
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    () =>
+      (
+        window as Window & {
+          __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
+        }
+      ).__COMPASS_E2E_HOOKS__ !== undefined,
+  );
+  await page.evaluate(() => {
+    (
+      window as Window & {
+        __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
+      }
+    ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
+  });
+  await expect(
+    page.getByRole("dialog", { name: "Connect the calendar you use" }),
+  ).toBeVisible({ timeout: 15000 });
+}
+
 test("the connect-calendar onboarding step has no automatically detectable accessibility violations", async ({
   page,
 }) => {
@@ -27,6 +115,17 @@ test("the connect-calendar onboarding step has no automatically detectable acces
   await expectNoAxeViolations(page, {
     checkpoint: "connect calendar onboarding",
     include: '[role="dialog"][aria-label="Welcome to Compass Calendar"]',
+  });
+});
+
+test("the signed-in connect-calendar prompt has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await prepareSignedInZeroConnectionsPage(page);
+
+  await expectNoAxeViolations(page, {
+    checkpoint: "signed-in connect calendar prompt",
+    include: '[role="dialog"][aria-label="Connect the calendar you use"]',
   });
 });
 
