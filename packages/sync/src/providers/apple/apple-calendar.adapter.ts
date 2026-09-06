@@ -1,7 +1,4 @@
-import {
-  type CalendarAccessRole,
-  type SyncCalendarCapabilities,
-} from "@core/types/sync/connection.contracts";
+import { type CalendarAccessRole } from "@core/types/sync/connection.contracts";
 import {
   type CaldavClient,
   CaldavClientError,
@@ -10,6 +7,7 @@ import {
   type DiscoveredCaldavCalendar,
   discoverCalendars as discoverCaldavCalendars,
 } from "@sync/providers/apple/caldav-client";
+import { capabilitiesForAccessRole } from "@sync/providers/calendar-role-capabilities";
 import {
   type CalendarDiscovery,
   type DiscoveredCalendar,
@@ -24,36 +22,6 @@ export type AppleCalendarClientFactory = (
 
 const defaultClientFactory: AppleCalendarClientFactory = (username, password) =>
   createCaldavClient({ username, password });
-
-const CAPABILITIES_BY_ROLE: Record<
-  CalendarAccessRole,
-  SyncCalendarCapabilities
-> = {
-  owner: {
-    canReadEvents: true,
-    canWriteEvents: true,
-    canReadBusy: true,
-    canInviteAttendees: true,
-  },
-  editor: {
-    canReadEvents: true,
-    canWriteEvents: true,
-    canReadBusy: true,
-    canInviteAttendees: true,
-  },
-  viewer: {
-    canReadEvents: true,
-    canWriteEvents: false,
-    canReadBusy: true,
-    canInviteAttendees: false,
-  },
-  busyOnly: {
-    canReadEvents: false,
-    canWriteEvents: false,
-    canReadBusy: true,
-    canInviteAttendees: false,
-  },
-};
 
 // Apple iCloud implementation of the calendar-discovery port. The access token
 // custody hands in is the app-specific password; the account email is bound
@@ -134,7 +102,7 @@ function mapCalendar(calendar: DiscoveredCaldavCalendar): DiscoveredCalendar {
     primary: false,
     active: true,
     accessRole,
-    capabilities: CAPABILITIES_BY_ROLE[accessRole],
+    capabilities: capabilitiesForAccessRole(accessRole),
     createsGoogleMeet: false,
   };
 }
