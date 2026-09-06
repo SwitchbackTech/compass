@@ -12,6 +12,7 @@ import {
 } from "@sync/providers/apple/apple-event.serializer";
 import {
   appleInstanceEventId,
+  type ParsedAppleInstanceId,
   parseAppleInstanceId,
 } from "@sync/providers/apple/apple-instance-id";
 import {
