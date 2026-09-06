@@ -12,6 +12,9 @@ const slot = (start: string, end: string): Event["schedule"] =>
 
 const SLOT = slot("2026-08-04T15:00:00+00:00", "2026-08-04T16:00:00+00:00");
 
+const SHARED_ICAL_UID =
+  "040000008200E00074C5B7101A82E00800000000000000000000000000000000000000000000000000";
+
 const copy = (
   cal: Calendar,
   overrides: Partial<Event> & { schedule?: Event["schedule"] } = {},
@@ -19,7 +22,7 @@ const copy = (
   ({
     ...createMockEvent({ calendarId: cal.id }),
     schedule: SLOT,
-    icalUid: "meeting@google.com",
+    icalUid: SHARED_ICAL_UID,
     ...overrides,
   }) as Event;
 
@@ -117,7 +120,90 @@ describe("mergeCrossAccountDuplicates", () => {
 
   it("keeps both copies when they carry different correlation keys", () => {
     const onWork = copy(work);
-    const onPersonal = copy(personal, { icalUid: "different@google.com" });
+    const onPersonal = copy(personal, {
+      icalUid: "different-correlation-key@example.com",
+    });
+
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+      work,
+      personal,
+    ]);
+
+    expect(merged?.ids).toHaveLength(2);
+  });
+
+  it("merges the same meeting across google, microsoft, and apple accounts", () => {
+    const googleCal = calendar({
+      accountEmail: "work@example.com",
+      provider: "google",
+      backgroundColor: "#4285f4",
+    });
+    const microsoftCal = calendar({
+      accountEmail: "user@outlook.com",
+      provider: "microsoft",
+      backgroundColor: "#0078D4",
+      conference: "teams",
+      createsGoogleMeet: false,
+    });
+    const appleCal = calendar({
+      accountEmail: "user@icloud.com",
+      provider: "apple",
+      backgroundColor: "#8E8E93",
+      conference: "none",
+      createsGoogleMeet: false,
+    });
+
+    const onGoogle = copy(googleCal);
+    const onMicrosoft = copy(microsoftCal);
+    const onApple = copy(appleCal);
+
+    const merged = mergeCrossAccountDuplicates(
+      dataOf(onGoogle, onMicrosoft, onApple),
+      [googleCal, microsoftCal, appleCal],
+    );
+
+    expect(merged?.ids).toEqual([onGoogle.id]);
+    expect(merged?.entities[onMicrosoft.id]).toBeUndefined();
+    expect(merged?.entities[onApple.id]).toBeUndefined();
+    expect(merged?.crossAccountDuplicates?.get(onGoogle.id)).toEqual({
+      accountEmail: "user@outlook.com",
+      backgroundColor: "#0078D4",
+    });
+  });
+
+  it("correlates copies when one icalUid has surrounding whitespace", () => {
+    const onWork = copy(work);
+    const onPersonal = copy(personal, {
+      icalUid: `  ${SHARED_ICAL_UID}  `,
+    });
+
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+      work,
+      personal,
+    ]);
+
+    expect(merged?.ids).toEqual([onWork.id]);
+  });
+
+  it("correlates copies when one icalUid carries a mailto prefix", () => {
+    const onWork = copy(work);
+    const onPersonal = copy(personal, {
+      icalUid: `mailto:${SHARED_ICAL_UID}`,
+    });
+
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+      work,
+      personal,
+    ]);
+
+    expect(merged?.ids).toEqual([onWork.id]);
+  });
+
+  it("does not correlate copies when mailto prefixes differ in the base uid", () => {
+    const onWork = copy(work);
+    const onPersonal = copy(personal, {
+      icalUid: "mailto:other-key@example.com",
+    });
 
     const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
       work,
