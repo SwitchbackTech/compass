@@ -69,6 +69,7 @@ import {
   compareCalendars,
   groupCalendarsByAccount,
 } from "@web/calendars/calendar.util";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
@@ -144,9 +145,10 @@ const buildInitialForm = (
 
   const destinationCalendarId =
     !isPlaceholderDestinationCalendar(base.destinationCalendarId) &&
-    writableCalendars.some(
+    (writableCalendars.some(
       (calendar) => calendar.id === base.destinationCalendarId,
-    )
+    ) ||
+      writableCalendars.length === 0)
       ? base.destinationCalendarId
       : (writableCalendars[0]?.id ?? BOOKING_PLACEHOLDER_CALENDAR_ID);
 
@@ -199,8 +201,13 @@ export function BookingSettingsSection({
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
-  const { data: calendars = [], isPending: calendarsPending } =
-    useCalendarsQuery();
+  const {
+    data: calendars = [],
+    isPending: calendarsPending,
+    refetch: refetchCalendars,
+  } = useCalendarsQuery();
+  const [hostCalendarsRefetchDone, setHostCalendarsRefetchDone] =
+    useState(false);
   const accountEmailOrder = useConnectedAccountEmails();
   const writableCalendars = useMemo(
     () =>
@@ -216,6 +223,37 @@ export function BookingSettingsSection({
       ),
     [accountEmailOrder, calendars],
   );
+  const waitingForHostCalendars =
+    hasHealthyConnection &&
+    writableCalendars.length === 0 &&
+    calendars.length === 1 &&
+    calendars[0]?.id === getLocalCalendarSentinelId() &&
+    !hostCalendarsRefetchDone;
+
+  useEffect(() => {
+    if (!hasHealthyConnection || hostCalendarsRefetchDone) return;
+    if (writableCalendars.length > 0) {
+      setHostCalendarsRefetchDone(true);
+      return;
+    }
+    if (
+      calendars.length !== 1 ||
+      calendars[0]?.id !== getLocalCalendarSentinelId()
+    ) {
+      setHostCalendarsRefetchDone(true);
+      return;
+    }
+    void refetchCalendars().finally(() => {
+      setHostCalendarsRefetchDone(true);
+    });
+  }, [
+    calendars,
+    hasHealthyConnection,
+    hostCalendarsRefetchDone,
+    refetchCalendars,
+    writableCalendars.length,
+  ]);
+
   const { data: serverPage, isPending } =
     useBookingPageQuery(hasHealthyConnection);
   const saveMutation = useSaveBookingPageMutation();
@@ -278,10 +316,11 @@ export function BookingSettingsSection({
   );
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
-    // Calendars often resolve after the booking page. Seeding against an
-    // empty list writes a placeholder destination and the identity guard
-    // then refuses to correct it, so Turn on / Save changes fail validation.
-    if (calendarsPending) return;
+    // The week-view cache can still be the anonymous local calendar after
+    // e2e (or a fresh login) flips authenticated. Seeding against that empty
+    // writable list sticks a placeholder destination that the identity guard
+    // will not correct.
+    if (calendarsPending || waitingForHostCalendars) return;
     seededPageRef.current = serverPage;
     const seeded = buildInitialForm(
       serverPage,
@@ -298,6 +337,7 @@ export function BookingSettingsSection({
     calendarsPending,
     effectiveTimeZone,
     serverPage,
+    waitingForHostCalendars,
     writableCalendars,
   ]);
 
@@ -332,6 +372,7 @@ export function BookingSettingsSection({
   if (
     isPending ||
     calendarsPending ||
+    waitingForHostCalendars ||
     (serverPage != null && seededPageRef.current !== serverPage)
   ) {
     return <p className="text-sm text-text-muted">Loading booking settings…</p>;

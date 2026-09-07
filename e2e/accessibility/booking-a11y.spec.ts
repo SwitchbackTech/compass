@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
+  dispatchClick,
   dispatchFill,
   formatSlotButtonLabel,
   preparePublicBookingCancelPage,
@@ -341,9 +342,9 @@ test.describe("settings booking section", () => {
       weeklyAvailability: [],
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-    await settingsDialog
-      .getByRole("button", { name: "Turn on booking page" })
-      .click();
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+    );
     await expect(
       settingsDialog.getByRole("alert").filter({
         hasText: "Add weekly hours before turning on your booking page.",
