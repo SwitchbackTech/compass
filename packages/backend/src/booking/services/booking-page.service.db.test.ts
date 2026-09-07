@@ -5,6 +5,7 @@ import {
   AdminPutBookingPageInputSchema,
   BOOKING_MAX_BUFFER_MINUTES,
   BOOKING_MAX_MIN_NOTICE_HOURS,
+  DEFAULT_WEEKLY_AVAILABILITY,
 } from "@core/types/booking.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -152,10 +153,22 @@ describe("BookingPageService", () => {
       expect.objectContaining({
         enabled: false,
         durationMinutes: 30,
-        weeklyAvailability: [],
+        weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
         isConfigured: false,
       }),
     );
+    expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
+  });
+
+  it("rejects enabling with zero weekly hours and writes no row", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+
+    await expect(
+      bookingPageService.putAdminPage(
+        user._id,
+        samplePutInput({ enabled: true, weeklyAvailability: [] }),
+      ),
+    ).rejects.toMatchObject({ bookingCode: "AVAILABILITY_REQUIRED" });
     expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
   });
 

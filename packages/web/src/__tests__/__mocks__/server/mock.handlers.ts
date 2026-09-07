@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { rest } from "msw";
 import { Origin } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Week/week-view.render.test.utils";
@@ -115,7 +116,7 @@ export const globalHandlers = [
         destinationCalendarId: "000000000000000000000001",
         blockingCalendarIds: ["000000000000000000000001"],
         timeZone: "UTC",
-        weeklyAvailability: [],
+        weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
         welcomeText: null,
         minNoticeHours: 4,
         maxHorizonDays: 60,

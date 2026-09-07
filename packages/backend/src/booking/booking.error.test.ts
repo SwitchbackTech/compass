@@ -18,6 +18,17 @@ describe("toBookingErrorResponse", () => {
     });
   });
 
+  it("maps AVAILABILITY_REQUIRED to bad request", () => {
+    const { status, body } = toBookingErrorResponse(
+      bookingError(
+        "AVAILABILITY_REQUIRED",
+        "Add weekly hours before turning on your booking page",
+      ),
+    );
+    expect(status).toBe(Status.BAD_REQUEST);
+    expect(body.code).toBe("AVAILABILITY_REQUIRED");
+  });
+
   it("maps both calendar-not-connected codes to forbidden", () => {
     const next = toBookingErrorResponse(
       bookingError(
