@@ -61,6 +61,47 @@ printf '%s' "$DETECT_CODE_CHANGES_TEST_FILES"
   return details;
 }
 
+function routingOutput(flags: {
+  code: boolean;
+  e2e: boolean;
+  core: boolean;
+  web: boolean;
+  backend: boolean;
+  sync: boolean;
+  scripts: boolean;
+}) {
+  return [
+    `code=${flags.code}`,
+    `e2e=${flags.e2e}`,
+    `core=${flags.core}`,
+    `web=${flags.web}`,
+    `backend=${flags.backend}`,
+    `sync=${flags.sync}`,
+    `scripts=${flags.scripts}`,
+    "",
+  ].join("\n");
+}
+
+const ALL_ON = routingOutput({
+  code: true,
+  e2e: true,
+  core: true,
+  web: true,
+  backend: true,
+  sync: true,
+  scripts: true,
+});
+
+const ALL_OFF = routingOutput({
+  code: false,
+  e2e: false,
+  core: false,
+  web: false,
+  backend: false,
+  sync: false,
+  scripts: false,
+});
+
 describe("detect-code-changes", () => {
   it("is the single detector used by both required-check workflows", () => {
     for (const workflowPath of [
@@ -74,7 +115,7 @@ describe("detect-code-changes", () => {
     }
   });
 
-  it("gates the e2e shards on the e2e output and the unit legs on code", () => {
+  it("gates the e2e shards on the e2e output and the unit legs on per-package outputs", () => {
     const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
     const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
 
@@ -82,6 +123,10 @@ describe("detect-code-changes", () => {
     expect(e2e).toContain("if: needs.changes.outputs.e2e == 'true'");
     expect(e2e).not.toContain("needs.changes.outputs.code");
     expect(unit).toContain("code: ${{ steps.filter.outputs.code }}");
+    expect(unit).toContain("core: ${{ steps.filter.outputs.core }}");
+    expect(unit).toContain("web: ${{ steps.filter.outputs.web }}");
+    expect(unit).toContain("needs.changes.outputs[matrix.project] == 'true'");
+    expect(unit).toContain("detect-code-changes.test.sh");
     expect(unit).not.toContain("outputs.e2e");
   });
 
@@ -116,7 +161,7 @@ describe("detect-code-changes", () => {
       const result = runDetector(eventName);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\ne2e=true\n");
+      expect(result.output).toBe(ALL_ON);
       expect(result.command).toBe("");
     }
   });
@@ -128,7 +173,7 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=false\ne2e=false\n");
+    expect(result.output).toBe(ALL_OFF);
   });
 
   it("skips only e2e for backend, sync, and scripts pull requests", () => {
@@ -138,7 +183,17 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\ne2e=false\n");
+    expect(result.output).toBe(
+      routingOutput({
+        code: true,
+        e2e: false,
+        core: false,
+        web: false,
+        backend: true,
+        sync: true,
+        scripts: true,
+      }),
+    );
   });
 
   it("runs e2e when a backend pull request also touches anything else", () => {
@@ -156,7 +211,7 @@ describe("detect-code-changes", () => {
       );
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output, other).toBe("code=true\ne2e=true\n");
+      expect(result.output, other).toMatch(/^code=true\ne2e=true\n/);
     }
   });
 
@@ -167,7 +222,17 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\ne2e=true\n");
+    expect(result.output).toBe(
+      routingOutput({
+        code: true,
+        e2e: true,
+        core: false,
+        web: true,
+        backend: false,
+        sync: false,
+        scripts: false,
+      }),
+    );
     expect(result.command).toContain(
       "api --paginate repos/example/compass/pulls/42/files --jq .[].filename",
     );
@@ -181,7 +246,19 @@ describe("detect-code-changes", () => {
       const result = runDetector("pull_request", files, ghStatus);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\ne2e=true\n");
+      expect(result.output).toBe(ALL_ON);
     }
+  });
+
+  it("keeps the bash routing contract green", () => {
+    const result = spawnSync(
+      "bash",
+      [".github/scripts/detect-code-changes.test.sh"],
+      { cwd: process.cwd(), encoding: "utf8" },
+    );
+
+    expect(result.status, result.stderr + result.stdout).toBe(0);
+    expect(result.stdout).toContain("backend-only runs the backend leg");
+    expect(result.stdout).toContain("workflow-only skips unit legs");
   });
 });

@@ -26,12 +26,19 @@ on:
         required: false
         type: string
   schedule:
-    - cron: "*/15 * * * *"
+    # Hourly watchdog. Launch-on-merge and post-deploy-on-release already
+    # fill the fleet; */15 created ~96 skip-flooded runs a day.
+    - cron: "0 * * * *"
   workflow_run:
     workflows: ["Release on main"]
     types: [completed]
   pull_request:
-    types: [labeled, synchronize, opened, reopened, ready_for_review, closed]
+    # Label/unlabel/close only. synchronize/opened/ready_for_review on
+    # unlabeled PRs was ~147 Agent loop runs/day, almost all skipped.
+    # Merge-guard needs the label; auto-merge then waits on checks
+    # without a re-run on every agent push. The hourly job re-runs
+    # merge-guard on labeled PRs.
+    types: [labeled, unlabeled, closed]
 
 permissions:
   contents: read

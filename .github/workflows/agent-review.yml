@@ -5,9 +5,12 @@ name: Agent review
 # the in-session "Reviewer" role, which had the implementer's own context.
 #
 # Kill switch: repo variable AGENT_REVIEW_ENABLED (string "true"; default off).
+# synchronize is omitted on purpose: a skipped run on every PR push drowned
+# the Actions tab while the kill switch is off, and a ready review does not
+# need to re-fire on each subsequent push.
 on:
   pull_request:
-    types: [opened, ready_for_review, synchronize]
+    types: [opened, ready_for_review]
 
 permissions:
   contents: read
