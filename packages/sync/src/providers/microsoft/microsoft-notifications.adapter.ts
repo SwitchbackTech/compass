@@ -6,6 +6,7 @@ import {
 } from "@sync/providers/microsoft/microsoft-error";
 import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
 import { MICROSOFT_GRAPH_BASE_URL } from "@sync/providers/microsoft/microsoft-http.constants";
+import { classifyProviderWatchError } from "@sync/providers/provider-notification-error";
 import {
   type NotificationChannel,
   type NotificationParseResult,
@@ -246,54 +247,22 @@ function parseExpiration(
 }
 
 function classifyWatchError(error: unknown): ProviderNotificationError {
-  if (error instanceof ProviderNotificationError) return error;
-
-  const cause = microsoftFailureCause(error);
-  const status = microsoftStatus(error);
-  const code = microsoftErrorCode(error);
-  const detail = cause?.message;
-
-  if (status === 401) {
-    return new ProviderNotificationError(
-      "authorizationRevoked",
-      detail ?? "Microsoft rejected the credential",
-      { cause },
-    );
-  }
-  if (isWatchUnsupported(error, status, code)) {
-    return new ProviderNotificationError(
-      "watchUnsupported",
-      detail ?? "Microsoft does not support watching this resource",
-      { cause },
-    );
-  }
-  if (isMicrosoftTransient(error, status)) {
-    return new ProviderNotificationError(
-      "transient",
-      detail
-        ? `Microsoft watch temporarily unavailable (${detail})`
-        : "Microsoft watch temporarily unavailable",
-      { cause },
-    );
-  }
-  return new ProviderNotificationError(
-    "watchFailed",
-    detail
-      ? `Microsoft refused to open the channel (${detail})`
-      : "Microsoft refused to open the channel",
-    { cause },
-  );
+  return classifyProviderWatchError(error, {
+    status: microsoftStatus,
+    cause: microsoftFailureCause,
+    isTransient: isMicrosoftTransient,
+    isWatchUnsupported,
+    credentialRejectedMessage: "Microsoft rejected the credential",
+    watchUnsupportedMessage:
+      "Microsoft does not support watching this resource",
+    transientUnavailableMessage: "Microsoft watch temporarily unavailable",
+    watchFailedMessage: "Microsoft refused to open the channel",
+  });
 }
 
-function isWatchUnsupported(
-  error: unknown,
-  status: number | undefined,
-  code: string | undefined,
-): boolean {
-  if (status !== 400) return false;
-  if (code === "ExtensionError") return true;
-  const data = (
-    error as { response?: { data?: { error?: { code?: string } } } }
-  )?.response?.data?.error?.code;
-  return data === "ExtensionError";
+function isWatchUnsupported(error: unknown): boolean {
+  return (
+    microsoftStatus(error) === 400 &&
+    microsoftErrorCode(error) === "ExtensionError"
+  );
 }
