@@ -36,7 +36,7 @@ export function BookingSaveBar({
   return (
     <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
       {error ? (
-        <p className="mb-2 text-error text-sm" role="alert">
+        <p className="mb-2 font-medium text-sm text-text" role="alert">
           {error}
         </p>
       ) : null}

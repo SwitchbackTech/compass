@@ -1370,9 +1370,11 @@ describe("BookingSettingsSection", () => {
       screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    const hoursAlert = screen.getByRole("alert");
+    expect(hoursAlert).toHaveTextContent(
       "Add weekly hours before turning on your booking page.",
     );
+    expect(findStickyAncestor(hoursAlert)).not.toBeNull();
     expect(putCount).toBe(0);
     expect(document.activeElement).toBe(screen.getByLabelText("Monday"));
   });
