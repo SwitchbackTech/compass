@@ -8,7 +8,6 @@ A keyboard calendar that makes scheduling a breeze.
 
 - The **first-class shortcuts** make updating your calendar a joy.
 - The **minimal UI** will help you focus on what matters: your events.
-- The **Google, Outlook, and iCloud Calendar two-way sync** will ensure you don't miss anything.
 
 ### You'll get less done
 
@@ -20,20 +19,15 @@ A keyboard calendar that makes scheduling a breeze.
 Cool things you can do with in Compass
 
 - Move your focus to perfect spot (no more TABing endlessly)
-- Find the perfect slot for an event with your keyboard: `SHIFT` + `↑` `↓` `←` `→`
-- Do everything from the cmd palette
-- Google, Outlook, and iCloud Calendar sync
-- Add/remove event attendees and RSVP to invites, with optional Google-contact suggestions
-- Public booking pages at `/book/:username` (month grid plus day times, one duration per host, guest timezone override, confirmation permalink, guest cancel and reschedule links)
+- Find the perfect slot for an event with your keyboard
+- Do everything from the keyboard
+- Google Calendar sync
+- Create a public booking pages at `/book/:username`
 
-Things you can't do in Compass (yet):
+Things you can't do in Compass Calendar:
 
-- Add meeting links (except Google Meet or Microsoft Teams on confirmed booking events)
-- Multiple booking event types or a standalone booking product
-
-Calendar hosts (Google, Microsoft, Apple) are specified in
-[docs/features/calendar-providers.md](./docs/features/calendar-providers.md).
-Connect Google Calendar, Outlook, or iCloud Calendar to import and sync events.
+- Click
+- Connect Outlook & iCloud Calendars (WIP).
 
 ## Tech stack
 
