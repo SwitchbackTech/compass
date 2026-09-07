@@ -239,17 +239,9 @@ describe("BookingSettingsSection", () => {
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(
           ctx.json({
-            enabled: false,
+            ...unconfiguredPage(),
             durationMinutes: 45,
-            destinationCalendarId: writableCalendar.id,
-            blockingCalendarIds: [writableCalendar.id],
             timeZone: "America/New_York",
-            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
           }),
         ),
       ),
@@ -617,7 +609,6 @@ describe("BookingSettingsSection", () => {
             bufferMinutes: null,
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
-            // Saved, never enabled. UTC here is a deliberate choice.
             isConfigured: true,
             suggestedSlug: "hostuser",
           }),
@@ -1308,17 +1299,10 @@ describe("BookingSettingsSection", () => {
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(
           ctx.json({
-            enabled: false,
-            durationMinutes: 30,
+            ...unconfiguredPage(),
             destinationCalendarId: "000000000000000000000001",
             blockingCalendarIds: ["000000000000000000000001"],
-            timeZone: "UTC",
             weeklyAvailability: [],
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
           }),
         ),
       ),
@@ -1428,17 +1412,7 @@ describe("BookingSettingsSection", () => {
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(
           ctx.json({
-            enabled: false,
-            durationMinutes: 30,
-            destinationCalendarId: writableCalendar.id,
-            blockingCalendarIds: [writableCalendar.id],
-            timeZone: "UTC",
-            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
+            ...unconfiguredPage(),
           }),
         ),
       ),
@@ -1492,21 +1466,7 @@ describe("BookingSettingsSection", () => {
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(
-          ctx.json({
-            enabled: false,
-            durationMinutes: 30,
-            destinationCalendarId: writableCalendar.id,
-            blockingCalendarIds: [writableCalendar.id],
-            timeZone: "UTC",
-            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
-          }),
-        ),
+        res(ctx.json(unconfiguredPage())),
       ),
       rest.put(bookingPageUrl, (_req, res, ctx) =>
         res(
