@@ -1217,6 +1217,12 @@
  * @utility form needed are no longer required.
  */
 .c-month-picker .c-date-picker {
+  /* Ink fill, not accent: the cyan week/day fill steals attention from the
+     grid. --text on --background is high-contrast in both themes and matches
+     the charcoal circle on Light Beach. */
+  --date-picker-selected-bg: var(--text);
+  --date-picker-selected-text: var(--background);
+
   & .react-datepicker__month-container,
   & .react-datepicker__month {
     overflow: visible;
@@ -1228,7 +1234,20 @@
     color: var(--text);
   }
   & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
-    color: var(--accent);
+    position: relative;
+    isolation: isolate;
+    color: var(--text);
+  }
+  &
+    .react-datepicker__day--today:not(
+      .react-datepicker__day--selected
+    )::before {
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: 50%;
+    background: var(--date-picker-hover-bg);
+    content: "";
   }
   & .react-datepicker__day--outside-month {
     color: var(--text-muted);
@@ -1273,8 +1292,9 @@
 /*
  * Week mode: the cursor is a whole week row. react-datepicker's showWeekPicker
  * marks every day in the week as selected, so the per-day circle above is
- * replaced by one accent capsule on the row, and the focus ring wraps the
- * row instead of its first day (the only tab stop).
+ * replaced by one muted capsule on the row, and the focus ring wraps the
+ * row instead of its first day (the only tab stop). Today keeps an ink
+ * circle so the current day still reads apart from the week bar.
  */
 .c-month-picker[data-picker-unit="week"] .c-date-picker {
   & .react-datepicker__day--selected::before {
@@ -1282,7 +1302,7 @@
   }
   & .react-datepicker__day--selected,
   & .react-datepicker__day--selected:hover {
-    color: var(--date-picker-selected-text);
+    color: var(--text);
   }
   & .react-datepicker__week--selected {
     position: relative;
@@ -1291,12 +1311,26 @@
     position: absolute;
     inset: 0 -3px;
     border-radius: var(--radius-default);
-    background: var(--date-picker-selected-bg);
+    background: var(--date-picker-hover-bg);
     content: "";
   }
   & .react-datepicker__week--selected .react-datepicker__day {
     position: relative;
     z-index: 10;
+  }
+  & .react-datepicker__week--selected .react-datepicker__day--today::before {
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: 50%;
+    background: var(--text);
+    content: "";
+  }
+  & .react-datepicker__week--selected .react-datepicker__day--today,
+  & .react-datepicker__week--selected .react-datepicker__day--today:hover {
+    position: relative;
+    isolation: isolate;
+    color: var(--background);
   }
   & .react-datepicker__day:focus-visible {
     outline: none;

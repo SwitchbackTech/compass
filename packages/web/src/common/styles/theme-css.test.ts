@@ -230,4 +230,16 @@ describe("Tailwind theme CSS", () => {
       /data-view="sidebar"\] \.react-datepicker__day[\s\S]{0,120}color:\s*inherit/,
     );
   });
+
+  it("paints month-picker selection with ink, not accent", () => {
+    expect(indexCss).toMatch(
+      /\.c-month-picker \.c-date-picker[\s\S]*--date-picker-selected-bg:\s*var\(--text\)/,
+    );
+    expect(indexCss).toMatch(
+      /\.c-month-picker \.c-date-picker[\s\S]*--date-picker-selected-text:\s*var\(--background\)/,
+    );
+    expect(indexCss).not.toMatch(
+      /\.c-month-picker \.c-date-picker[\s\S]*day--today:not\([^)]+\) \{\s*color:\s*var\(--accent\)/,
+    );
+  });
 });
