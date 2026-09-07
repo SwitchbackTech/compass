@@ -14,9 +14,10 @@ import {
 } from "@sync/providers/provider-contact-suggestions";
 import {
   type ContactsPort,
-  ContactsSearchError,
+  type ContactsSearchError,
   type ContactsSearchInput,
 } from "@sync/providers/provider-contacts.port";
+import { classifyContactsSearchError } from "@sync/providers/provider-contacts-error";
 
 export interface GraphScoredEmailAddress {
   readonly address?: string | null;
@@ -123,22 +124,12 @@ function toSuggestions(person: GraphPersonMatch): ContactSuggestion[] {
 }
 
 function toContactsSearchError(error: unknown): ContactsSearchError {
-  const status = microsoftStatus(error);
-  if (status === 429) {
-    return new ContactsSearchError(
-      "rateLimited",
-      "Microsoft throttled the contact search",
-      { cause: microsoftFailureCause(error) },
-    );
-  }
-  if (status === 401 || status === 403) {
-    return new ContactsSearchError(
-      "unauthorized",
+  return classifyContactsSearchError(error, {
+    status: microsoftStatus,
+    cause: microsoftFailureCause,
+    isRateLimited: (_err, status) => status === 429,
+    rateLimitedMessage: "Microsoft throttled the contact search",
+    unauthorizedMessage:
       "Microsoft refused the contact search credential or scope",
-      { cause: microsoftFailureCause(error) },
-    );
-  }
-  return new ContactsSearchError("searchFailed", "Contact search failed", {
-    cause: microsoftFailureCause(error),
   });
 }

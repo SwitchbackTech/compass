@@ -8,6 +8,7 @@ import {
   isGoogleTransient,
 } from "@sync/providers/google/google-error";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
+import { classifyProviderWatchError } from "@sync/providers/provider-notification-error";
 import {
   type NotificationChannel,
   type NotificationState,
@@ -230,46 +231,16 @@ function parseExpiration(
 }
 
 function classifyWatchError(error: unknown): ProviderNotificationError {
-  if (error instanceof ProviderNotificationError) return error;
-  // Keep HTTP status + Google's machine-readable reason on the cause/message
-  // so PostHog triage is not guesswork — redactedCause alone drops both, and
-  // shallow logger/exception serialization only keeps one Error.cause level.
-  const cause = googleFailureCause(error);
-  const status = googleStatus(error);
-  const detail = cause?.message;
-
-  if (status === 401) {
-    return new ProviderNotificationError(
-      "authorizationRevoked",
-      detail ?? "Google rejected the credential",
-      { cause },
-    );
-  }
-  if (isWatchUnsupported(error)) {
-    return new ProviderNotificationError(
-      "watchUnsupported",
-      detail ?? "Google does not support watching this resource",
-      { cause },
-    );
-  }
-  // Everything not transient is a durable refusal (403/404/other 4xx):
-  // settle and poll.
-  if (isGoogleTransient(error, status)) {
-    return new ProviderNotificationError(
-      "transient",
-      detail
-        ? `Google watch temporarily unavailable (${detail})`
-        : "Google watch temporarily unavailable",
-      { cause },
-    );
-  }
-  return new ProviderNotificationError(
-    "watchFailed",
-    detail
-      ? `Google refused to open the channel (${detail})`
-      : "Google refused to open the channel",
-    { cause },
-  );
+  return classifyProviderWatchError(error, {
+    status: googleStatus,
+    cause: googleFailureCause,
+    isTransient: isGoogleTransient,
+    isWatchUnsupported,
+    credentialRejectedMessage: "Google rejected the credential",
+    watchUnsupportedMessage: "Google does not support watching this resource",
+    transientUnavailableMessage: "Google watch temporarily unavailable",
+    watchFailedMessage: "Google refused to open the channel",
+  });
 }
 
 // A 400 (or, per observed Google behavior, 403) whose reason is

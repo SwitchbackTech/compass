@@ -16,9 +16,10 @@ import {
 } from "@sync/providers/provider-contact-suggestions";
 import {
   type ContactsPort,
-  ContactsSearchError,
+  type ContactsSearchError,
   type ContactsSearchInput,
 } from "@sync/providers/provider-contacts.port";
+import { classifyContactsSearchError } from "@sync/providers/provider-contacts-error";
 
 // One People search match, narrowed to the two fields suggestions are allowed
 // to carry. Everything else a Person holds (photos, phones, metadata) is
@@ -175,30 +176,17 @@ const RATE_LIMIT_REASONS = [
   "dailyLimitExceeded",
 ];
 
-// Classify a failed People call. The cause keeps only response-derived triage
-// facts (HTTP status, Google's machine-readable reason) — never the request,
-// the query, or any contact content.
 function toContactsSearchError(error: unknown): ContactsSearchError {
-  const status = googleStatus(error);
-  const reasons = googleErrorReasons(error);
-  if (
-    status === 429 ||
-    reasons.some((reason) => RATE_LIMIT_REASONS.includes(reason))
-  ) {
-    return new ContactsSearchError(
-      "rateLimited",
-      "Google throttled the contact search",
-      { cause: googleFailureCause(error) },
-    );
-  }
-  if (status === 401 || status === 403) {
-    return new ContactsSearchError(
-      "unauthorized",
+  return classifyContactsSearchError(error, {
+    status: googleStatus,
+    cause: googleFailureCause,
+    isRateLimited: (err, status) =>
+      status === 429 ||
+      googleErrorReasons(err).some((reason) =>
+        RATE_LIMIT_REASONS.includes(reason),
+      ),
+    rateLimitedMessage: "Google throttled the contact search",
+    unauthorizedMessage:
       "Google refused the contact search credential or scope",
-      { cause: googleFailureCause(error) },
-    );
-  }
-  return new ContactsSearchError("searchFailed", "Contact search failed", {
-    cause: googleFailureCause(error),
   });
 }
