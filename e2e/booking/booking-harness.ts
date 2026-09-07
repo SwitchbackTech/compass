@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 
 /** ObjectId-shaped id for stubbed Google calendar in host settings e2e. */
 export const BOOKING_CALENDAR_ID = "64b7f0a1c2d3e4f5a6b7c8d9";
@@ -961,6 +962,12 @@ export interface HostBookingSettingsStubOptions {
   slug?: string;
   bookingUrl?: string;
   microsoftConnect?: boolean;
+  enabled?: boolean;
+  weeklyAvailability?: Array<{
+    weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    start: string;
+    end: string;
+  }>;
 }
 
 export interface CapturedHostBookingRequests {
@@ -974,6 +981,9 @@ export async function prepareSignedInBookingSettingsPage(
   const slug = options.slug ?? "hostuser";
   const bookingUrl =
     options.bookingUrl ?? `https://compasscalendar.com/book/${slug}`;
+  const enabled = options.enabled ?? true;
+  const weeklyAvailability =
+    options.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY;
   const captured: CapturedHostBookingRequests = { putBodies: [] };
 
   await page.addInitScript((accountEmail) => {
@@ -987,12 +997,12 @@ export async function prepareSignedInBookingSettingsPage(
   }, HOST_ACCOUNT_EMAIL);
 
   const bookingPagePayload = {
-    enabled: false,
+    enabled,
     durationMinutes: 45,
     destinationCalendarId: BOOKING_CALENDAR_ID,
     blockingCalendarIds: [BOOKING_CALENDAR_ID],
     timeZone: "America/New_York",
-    weeklyAvailability: [],
+    weeklyAvailability,
     welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
@@ -1158,7 +1168,9 @@ export async function prepareSignedInBookingSettingsPage(
       ?.click();
   });
   await expect(
-    settingsDialog.getByRole("button", { name: "Save booking settings" }),
+    settingsDialog.getByRole("button", {
+      name: enabled ? "Save changes" : "Turn on booking page",
+    }),
   ).toBeVisible({ timeout: 15000 });
 
   return captured;

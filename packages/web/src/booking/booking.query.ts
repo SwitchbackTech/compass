@@ -14,6 +14,7 @@ import { BookingApi } from "@web/api/booking.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { type BookingSequenceField } from "@web/booking/booking-sequence.fields";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
 export const bookingQueryKeys = {
@@ -35,7 +36,7 @@ export function useBookingPageQuery(enabled: boolean) {
   });
 }
 
-const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
+export const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
   BLOCKING_CALENDAR_INVALID:
     "One of your blocking calendars can't be checked for busy times. Uncheck it and save again.",
   DESTINATION_NOT_WRITABLE:
@@ -46,6 +47,25 @@ const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
   INVALID_INPUT:
     "Some settings couldn't be saved. Check the highlighted fields and try again.",
 };
+
+const INLINE_SAVE_ERROR_FIELDS: Record<string, BookingSequenceField> = {
+  TIMEZONE_REQUIRED: "timezone",
+  DESTINATION_NOT_WRITABLE: "destination",
+  BLOCKING_CALENDAR_INVALID: "blocking",
+  AVAILABILITY_REQUIRED: "hours",
+};
+
+export function bookingSaveErrorInline(
+  error: unknown,
+): { message: string; field?: BookingSequenceField } | null {
+  if (!isApiError(error)) return null;
+  const code = getApiErrorCode(error);
+  if (!code) return null;
+  const field = INLINE_SAVE_ERROR_FIELDS[code];
+  const message = BOOKING_SAVE_ERROR_COPY[code];
+  if (!field || !message) return null;
+  return { field, message };
+}
 
 function handleBookingSaveError(
   error: unknown,
@@ -64,6 +84,9 @@ function handleBookingSaveError(
       void queryClient.invalidateQueries({
         queryKey: billingQueryKeys.status,
       });
+      return;
+    }
+    if (bookingSaveErrorInline(error)) {
       return;
     }
     const copy = code ? BOOKING_SAVE_ERROR_COPY[code] : undefined;

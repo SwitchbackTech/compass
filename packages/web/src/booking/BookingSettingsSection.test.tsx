@@ -16,10 +16,18 @@ import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
 import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
+import {
+  BOOKING_SAVE_CHANGES_LABEL,
+  BOOKING_SAVE_DRAFT_LABEL,
+  BOOKING_TURN_OFF_LABEL,
+  BOOKING_TURN_ON_LABEL,
+} from "@web/booking/BookingSaveBar";
 import {
   BOOKING_SETTINGS_HINT_PARTS,
   BookingSettingsSection,
 } from "@web/booking/BookingSettingsSection";
+import { BOOKING_SAVE_ERROR_COPY } from "@web/booking/booking.query";
 import { BOOKING_APPLE_DESTINATION_HINT } from "@web/booking/booking-conference.copy";
 import {
   BOOKING_FIELD_BY_KEY,
@@ -235,7 +243,7 @@ describe("BookingSettingsSection", () => {
             destinationCalendarId: writableCalendar.id,
             blockingCalendarIds: [writableCalendar.id],
             timeZone: "America/New_York",
-            weeklyAvailability: [],
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
             bufferMinutes: null,
@@ -271,7 +279,7 @@ describe("BookingSettingsSection", () => {
     );
 
     const save = await screen.findByRole("button", {
-      name: "Save booking settings",
+      name: BOOKING_TURN_ON_LABEL,
     });
     const stickyBar = findStickyAncestor(save);
     expect(stickyBar).not.toBeNull();
@@ -282,11 +290,14 @@ describe("BookingSettingsSection", () => {
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     await waitFor(() => {
-      expect(savedBody).toMatchObject({ durationMinutes: 30 });
+      expect(savedBody).toMatchObject({
+        durationMinutes: 30,
+        enabled: true,
+      });
     });
 
     expect(await screen.findByLabelText("Public booking link")).toHaveValue(
@@ -341,7 +352,9 @@ describe("BookingSettingsSection", () => {
       getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS),
     );
     const publicLink = screen.getByLabelText("Public booking link");
-    const save = screen.getByRole("button", { name: /Save booking settings/ });
+    const save = screen.getByRole("button", {
+      name: BOOKING_SAVE_CHANGES_LABEL,
+    });
     const lastControl = screen.getByRole("checkbox", {
       name: "Guest can invite others",
     });
@@ -415,7 +428,7 @@ describe("BookingSettingsSection", () => {
       destinationCalendarId: writableCalendar.id,
       blockingCalendarIds: [writableCalendar.id],
       timeZone: "America/New_York",
-      weeklyAvailability: [],
+      weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
       minNoticeHours: 4,
       maxHorizonDays: 60,
       bufferMinutes: null,
@@ -445,11 +458,11 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
     );
     await waitFor(() => {
       expect(savedBodies).toHaveLength(1);
@@ -457,7 +470,7 @@ describe("BookingSettingsSection", () => {
 
     await user.selectOptions(screen.getByLabelText("Duration"), "15");
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
     );
 
     await waitFor(() => {
@@ -530,7 +543,7 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
     await waitFor(() => {
       expect(savedBody).toMatchObject({ guestsCanInviteOthers: true });
@@ -646,7 +659,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     expect(isAppLocked()).toBe(true);
 
     await user.keyboard("e");
@@ -674,7 +687,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.keyboard("e");
     await user.keyboard("w");
@@ -701,7 +714,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.keyboard("e");
     await user.keyboard("z");
@@ -729,7 +742,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.click(
       screen.getByRole("button", { name: /^Booking timezone:/ }),
@@ -770,7 +783,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     // "9-5, then 11-2" is not real input, but any typed letter would be: a
     // bare `e` must reach the field, not swallow the next keystroke.
@@ -806,12 +819,12 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.type(screen.getByLabelText("Monday"), "whenever");
     await user.tab();
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     expect(putCount).toBe(0);
@@ -844,7 +857,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.type(
       screen.getByLabelText("Welcome text"),
@@ -852,7 +865,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     await waitFor(() => {
@@ -922,7 +935,7 @@ describe("BookingSettingsSection", () => {
     );
 
     const save = await screen.findByRole("button", {
-      name: "Save booking settings",
+      name: BOOKING_TURN_ON_LABEL,
     });
     expect(save).toHaveAttribute(
       "aria-keyshortcuts",
@@ -970,10 +983,10 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     await waitFor(() => {
@@ -1009,10 +1022,11 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
     );
 
     await waitFor(() => {
@@ -1310,8 +1324,10 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByLabelText("Enable booking page");
-    await user.click(screen.getByLabelText("Enable booking page"));
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Choose a destination calendar before enabling booking.",
@@ -1349,16 +1365,18 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByLabelText("Enable booking page");
-    await user.click(screen.getByLabelText("Enable booking page"));
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    const hoursAlert = screen.getByRole("alert");
+    expect(hoursAlert).toHaveTextContent(
       "Add weekly hours before turning on your booking page.",
     );
+    expect(findStickyAncestor(hoursAlert)).not.toBeNull();
     expect(putCount).toBe(0);
+    expect(document.activeElement).toBe(screen.getByLabelText("Monday"));
   });
 
   it("renders Monday through Friday as 9-5 on a fresh unconfigured page", async () => {
@@ -1405,7 +1423,7 @@ describe("BookingSettingsSection", () => {
             destinationCalendarId: writableCalendar.id,
             blockingCalendarIds: [writableCalendar.id],
             timeZone: "UTC",
-            weeklyAvailability: [],
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
             bufferMinutes: null,
@@ -1436,13 +1454,13 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     expect(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(mocks.error).toHaveBeenCalledWith(
@@ -1471,7 +1489,7 @@ describe("BookingSettingsSection", () => {
             destinationCalendarId: writableCalendar.id,
             blockingCalendarIds: [writableCalendar.id],
             timeZone: "UTC",
-            weeklyAvailability: [],
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
             bufferMinutes: null,
@@ -1501,19 +1519,19 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
 
     await waitFor(() => {
-      expect(mocks.error).toHaveBeenCalledWith(
+      expect(screen.getByRole("alert")).toHaveTextContent(
         "One of your blocking calendars can't be checked for busy times. Uncheck it and save again.",
-        expect.any(Object),
       );
     });
-    expect(String(mocks.error.mock.calls[0]?.[0])).not.toMatch(
-      /Request failed for/,
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      screen.getByRole("checkbox", { name: "Work" }),
     );
   });
 
@@ -1549,7 +1567,7 @@ describe("BookingSettingsSection", () => {
     expect(horizon).toHaveAttribute("aria-invalid", "true");
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
     expect(
       screen.getByText("Fix the highlighted number fields before saving."),
@@ -1560,7 +1578,7 @@ describe("BookingSettingsSection", () => {
     expect(screen.queryByText("Enter 1 to 60 days.")).not.toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
     await waitFor(() => {
       expect(savedBody).toMatchObject({ maxHorizonDays: 30 });
@@ -1600,7 +1618,7 @@ describe("BookingSettingsSection", () => {
     expect(notice).toHaveAttribute("aria-invalid", "true");
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
     expect(
       screen.getByText("Fix the highlighted number fields before saving."),
@@ -1614,11 +1632,248 @@ describe("BookingSettingsSection", () => {
     ).not.toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Save booking settings" }),
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
     );
     await waitFor(() => {
       expect(savedBody).toMatchObject({ minNoticeHours: 4 });
     });
+  });
+
+  it("turns on a not-live page and toasts the live copy", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+    let savedBody: unknown;
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ enabled: true });
+    });
+    expect(writeText).toHaveBeenCalledWith(bookingUrl);
+    expect(mocks.toast).toHaveBeenCalledWith(
+      "Your booking page is live. Link copied.",
+      expect.any(Object),
+    );
+  });
+
+  it("turns off a live page", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: true,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(ctx.json({ ...(savedBody as object), bookingUrl }));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_OFF_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ enabled: false });
+    });
+  });
+
+  it("shows Save draft only when the form is dirty and not live", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    expect(
+      screen.queryByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+    ).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    expect(
+      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps More options closed by default and opens it on e then w", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const summary = await screen.findByText(BOOKING_MORE_OPTIONS_LABEL);
+    const details = summary.closest("details");
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute("open");
+
+    await user.keyboard("e");
+    await user.keyboard("w");
+
+    expect(details).toHaveAttribute("open");
+    expect(document.activeElement).toBe(screen.getByLabelText("Welcome text"));
+  });
+
+  it("opens More options when a field inside the collapsed group becomes invalid", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const summary = await screen.findByText(BOOKING_MORE_OPTIONS_LABEL);
+    const details = summary.closest("details");
+    expect(details).not.toHaveAttribute("open");
+
+    await user.clear(screen.getByLabelText("Maximum horizon (days)"));
+    expect(details).toHaveAttribute("open");
+  });
+
+  it("renders DESTINATION_NOT_WRITABLE inline, focuses destination, and does not toast", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(400),
+          ctx.json({
+            code: "DESTINATION_NOT_WRITABLE",
+            message: "Calendar is not writable",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        BOOKING_SAVE_ERROR_COPY.DESTINATION_NOT_WRITABLE,
+      );
+    });
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      screen.getByRole("combobox", { name: "Destination calendar" }),
+    );
   });
 });
 
@@ -1685,5 +1940,22 @@ describe("focusBookingField", () => {
 
   it("reports false when the field is not rendered", () => {
     expect(focusBookingField("link")).toBe(false);
+  });
+
+  it("opens an ancestor details element before focusing", () => {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "More options";
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-booking-field", "welcome");
+    const textarea = document.createElement("textarea");
+    wrapper.append(textarea);
+    details.append(summary, wrapper);
+    document.body.append(details);
+
+    expect(details.open).toBe(false);
+    expect(focusBookingField("welcome")).toBe(true);
+    expect(details.open).toBe(true);
+    expect(document.activeElement).toBe(textarea);
   });
 });

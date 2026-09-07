@@ -12,12 +12,13 @@
  * than the event form's Mod+digit jump.
  */
 export const BOOKING_SEQUENCE_FIELDS = [
-  { key: "e", field: "enabled", label: "Enable booking" },
+  { key: "e", field: "enabled", label: "Booking page on or off" },
   { key: "d", field: "duration", label: "Duration" },
   { key: "c", field: "destination", label: "Destination calendar" },
   { key: "b", field: "blocking", label: "Blocking calendars" },
   { key: "z", field: "timezone", label: "Booking timezone" },
   { key: "h", field: "hours", label: "Weekly hours" },
+  { key: "m", field: "more", label: "More options" },
   { key: "w", field: "welcome", label: "Welcome text" },
   { key: "n", field: "notice", label: "Minimum notice" },
   { key: "x", field: "horizon", label: "Maximum horizon" },
@@ -53,7 +54,7 @@ export const bookingJumpKeys = (field: BookingSequenceField): string[] => [
 ];
 
 const FOCUSABLE =
-  'input, select, textarea, button, [role="combobox"], [tabindex]:not([tabindex="-1"])';
+  'input, select, textarea, button, summary, [role="combobox"], [tabindex]:not([tabindex="-1"])';
 
 /**
  * Focus a booking field by data attribute rather than a selector map.
@@ -66,6 +67,12 @@ export function focusBookingField(field: BookingSequenceField): boolean {
     `[${BOOKING_FIELD_ATTR}="${field}"]`,
   );
   if (!anchor) return false;
+
+  let enclosing: HTMLElement | null = anchor.closest("details");
+  while (enclosing instanceof HTMLDetailsElement) {
+    enclosing.open = true;
+    enclosing = enclosing.parentElement?.closest("details") ?? null;
+  }
 
   const target = anchor.matches(FOCUSABLE)
     ? anchor

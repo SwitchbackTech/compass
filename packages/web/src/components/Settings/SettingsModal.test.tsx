@@ -16,6 +16,7 @@ import {
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
+import { BOOKING_TURN_ON_LABEL } from "@web/booking/BookingSaveBar";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
@@ -976,7 +977,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     const monday = screen.getByLabelText("Monday");
     await user.clear(monday);
     await user.type(monday, "9");
@@ -1000,7 +1001,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
 
@@ -1022,7 +1023,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Discard" }));
@@ -1041,7 +1042,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
@@ -1064,7 +1065,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.keyboard("{Escape}");
 
     expect(
@@ -1084,7 +1085,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: "Save booking settings" });
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
     await user.keyboard("e");
     await user.keyboard("{Escape}");
 

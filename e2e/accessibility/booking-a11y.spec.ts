@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
+  dispatchClick,
   dispatchFill,
   formatSlotButtonLabel,
   preparePublicBookingCancelPage,
@@ -324,10 +325,33 @@ test.describe("settings booking section", () => {
   }) => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByText("More options", { exact: true }).click();
     await dispatchFill(settingsDialog.getByLabel("Maximum horizon (days)"), "");
     await expect(settingsDialog.getByText("Enter 1 to 60 days.")).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking error",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("inline save errors have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      enabled: false,
+      weeklyAvailability: [],
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+    );
+    await expect(
+      settingsDialog.getByRole("alert").filter({
+        hasText: "Add weekly hours before turning on your booking page.",
+      }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking inline save error",
       include: "[role='dialog']",
     });
   });

@@ -22,27 +22,34 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
-import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
+import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
-import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
+import { BookingLimitsFieldset } from "@web/booking/BookingLimitsFieldset";
+import { BookingMoreOptions } from "@web/booking/BookingMoreOptions";
 import { BookingNumberField } from "@web/booking/BookingNumberField";
+import { BookingSaveBar } from "@web/booking/BookingSaveBar";
+import { BookingStatusHeader } from "@web/booking/BookingStatusHeader";
 import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
 import {
+  bookingSaveErrorInline,
   useBookingPageQuery,
   useSaveBookingPageMutation,
 } from "@web/booking/booking.query";
 import {
   BOOKING_PLACEHOLDER_CALENDAR_ID,
-  canEnableBookingPage,
   defaultBlockingCalendarIdsForDestination,
   getAvailabilityReadableCalendars,
   isBookingSettingsFormDirty,
   isPlaceholderDestinationCalendar,
   isUnconfiguredBookingPage,
+  isWelcomeTextTooLong,
   resolveWritableCalendars,
   toBookingPageInput,
+  validateBookingForm,
+  WELCOME_TEXT_MAX_LENGTH,
+  WELCOME_TEXT_TOO_LONG_MESSAGE,
 } from "@web/booking/booking.util";
 import {
   bookingDestinationConferenceHint,
@@ -52,6 +59,7 @@ import {
 import {
   BOOKING_FIELD_BY_KEY,
   BOOKING_SEQUENCE_FIELDS,
+  type BookingSequenceField,
   bookingFieldAttrs,
   bookingJumpKeys,
   focusBookingField,
@@ -61,15 +69,10 @@ import {
   compareCalendars,
   groupCalendarsByAccount,
 } from "@web/calendars/calendar.util";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
-import {
-  OverlayPanelActionButton,
-  OverlayPanelActions,
-} from "@web/components/OverlayPanel/OverlayPanel";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
 import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
@@ -79,12 +82,6 @@ import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardU
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
-// OverlayPanel is the scrollport and uses p-8. sticky bottom-0 would pin to
-// that padding box and leave a 32px unpainted strip; -bottom-8 + pb-8 drop
-// the painted bar into the padding without shrinking the scroll range.
-const BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME =
-  "sticky -bottom-8 z-10 border-border border-t bg-surface-panel pt-3 pb-8";
-
 export const BOOKING_SETTINGS_HINT_PARTS: readonly ShortcutTipPart[] = [
   "Press ",
   { keys: ["Mod", "E"] },
@@ -93,22 +90,14 @@ export const BOOKING_SETTINGS_HINT_PARTS: readonly ShortcutTipPart[] = [
   " saves.",
 ];
 
-// Named so the value the checkbox writes and the value its label promises can
-// only ever be the same number.
-const DEFAULT_BUFFER_MINUTES = 30;
-const DEFAULT_MAX_BOOKINGS_PER_DAY = 4;
+const MORE_OPTIONS_FIELDS = new Set<BookingSequenceField>([
+  "blocking",
+  "welcome",
+  "notice",
+  "horizon",
+  "options",
+]);
 
-// Same reasoning: the textarea's hard cap, the two guards, and the message
-// that quotes the number all have to agree, so they read it from one place.
-const WELCOME_TEXT_MAX_LENGTH = 500;
-const WELCOME_TEXT_TOO_LONG_MESSAGE = `Welcome text must be ${WELCOME_TEXT_MAX_LENGTH} characters or fewer.`;
-
-const isWelcomeTextTooLong = (
-  welcomeText: string | null | undefined,
-): boolean => (welcomeText?.length ?? 0) > WELCOME_TEXT_MAX_LENGTH;
-
-// The duration and destination pickers are the same control; keeping one class
-// string stops a style fix landing on only one of them.
 const BOOKING_SELECT_CLASS_NAME =
   "c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel";
 
@@ -116,10 +105,6 @@ const isSavedBookingPage = (
   page: AdminPutBookingPageInput | AdminGetBookingPageResponse,
 ): page is AdminGetBookingPageResponse => "bookingUrl" in page;
 
-// Clearing a number input yields "", and Number("") is 0 - which the strict
-// PUT schema rejects after the save click with no field pointer. Hold the raw
-// text and only write parsed values into the form, so an empty field becomes
-// an inline error instead of a dead Save button mystery.
 const parseBookingCount = (
   raw: string,
   { min, max }: { min: number; max: number },
@@ -134,7 +119,6 @@ const parseBookingCount = (
   return value;
 };
 
-// Bounds mirror AdminPutBookingPageInputSchema.
 const MIN_NOTICE_BOUNDS = { min: 0, max: BOOKING_MAX_MIN_NOTICE_HOURS };
 const HORIZON_BOUNDS = { min: 1, max: BOOKING_MAX_HORIZON_DAYS };
 
@@ -161,9 +145,10 @@ const buildInitialForm = (
 
   const destinationCalendarId =
     !isPlaceholderDestinationCalendar(base.destinationCalendarId) &&
-    writableCalendars.some(
+    (writableCalendars.some(
       (calendar) => calendar.id === base.destinationCalendarId,
-    )
+    ) ||
+      writableCalendars.length === 0)
       ? base.destinationCalendarId
       : (writableCalendars[0]?.id ?? BOOKING_PLACEHOLDER_CALENDAR_ID);
 
@@ -176,16 +161,11 @@ const buildInitialForm = (
           availabilityCalendars,
         );
 
-  // Unconfigured pages seed from the calendar-view zone (the same
-  // default-timezone the rest of the app uses). A configured page's stored
-  // zone stays, including UTC.
   const timeZone =
     page && !isUnconfiguredBookingPage(page)
       ? base.timeZone
       : effectiveTimeZone;
 
-  // toBookingPageInput, not a spread: `base` may be the saved-page response,
-  // whose response-only keys would make the strict PUT schema throw on save.
   return {
     ...toBookingPageInput(base),
     destinationCalendarId,
@@ -221,7 +201,13 @@ export function BookingSettingsSection({
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
-  const { data: calendars = [] } = useCalendarsQuery();
+  const {
+    data: calendars = [],
+    isPending: calendarsPending,
+    refetch: refetchCalendars,
+  } = useCalendarsQuery();
+  const [hostCalendarsRefetchDone, setHostCalendarsRefetchDone] =
+    useState(false);
   const accountEmailOrder = useConnectedAccountEmails();
   const writableCalendars = useMemo(
     () =>
@@ -237,6 +223,37 @@ export function BookingSettingsSection({
       ),
     [accountEmailOrder, calendars],
   );
+  const waitingForHostCalendars =
+    hasHealthyConnection &&
+    writableCalendars.length === 0 &&
+    calendars.length === 1 &&
+    calendars[0]?.id === getLocalCalendarSentinelId() &&
+    !hostCalendarsRefetchDone;
+
+  useEffect(() => {
+    if (!hasHealthyConnection || hostCalendarsRefetchDone) return;
+    if (writableCalendars.length > 0) {
+      setHostCalendarsRefetchDone(true);
+      return;
+    }
+    if (
+      calendars.length !== 1 ||
+      calendars[0]?.id !== getLocalCalendarSentinelId()
+    ) {
+      setHostCalendarsRefetchDone(true);
+      return;
+    }
+    void refetchCalendars().finally(() => {
+      setHostCalendarsRefetchDone(true);
+    });
+  }, [
+    calendars,
+    hasHealthyConnection,
+    hostCalendarsRefetchDone,
+    refetchCalendars,
+    writableCalendars.length,
+  ]);
+
   const { data: serverPage, isPending } =
     useBookingPageQuery(hasHealthyConnection);
   const saveMutation = useSaveBookingPageMutation();
@@ -248,7 +265,10 @@ export function BookingSettingsSection({
       availabilityCalendars,
     ),
   );
-  const [enableError, setEnableError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{
+    message: string;
+    field?: BookingSequenceField;
+  } | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
   const [minNoticeText, setMinNoticeText] = useState(() =>
     String(form.minNoticeHours),
@@ -296,6 +316,11 @@ export function BookingSettingsSection({
   );
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
+    // The week-view cache can still be the anonymous local calendar after
+    // e2e (or a fresh login) flips authenticated. Seeding against that empty
+    // writable list sticks a placeholder destination that the identity guard
+    // will not correct.
+    if (calendarsPending || waitingForHostCalendars) return;
     seededPageRef.current = serverPage;
     const seeded = buildInitialForm(
       serverPage,
@@ -307,7 +332,14 @@ export function BookingSettingsSection({
     setMinNoticeText(String(seeded.minNoticeHours));
     setHorizonText(String(seeded.maxHorizonDays));
     baselineFormRef.current = seeded;
-  }, [availabilityCalendars, effectiveTimeZone, serverPage, writableCalendars]);
+  }, [
+    availabilityCalendars,
+    calendarsPending,
+    effectiveTimeZone,
+    serverPage,
+    waitingForHostCalendars,
+    writableCalendars,
+  ]);
 
   const isDirty =
     (baselineFormRef.current !== null &&
@@ -337,17 +369,18 @@ export function BookingSettingsSection({
     return <BookingConnectGooglePrompt />;
   }
 
-  if (isPending) {
+  if (
+    isPending ||
+    calendarsPending ||
+    waitingForHostCalendars ||
+    (serverPage != null && seededPageRef.current !== serverPage)
+  ) {
     return <p className="text-sm text-text-muted">Loading booking settings…</p>;
   }
 
   const savedPage =
     serverPage && isSavedBookingPage(serverPage) ? serverPage : null;
-  const blockingSet = new Set(form.blockingCalendarIds);
-  const { groups, ungrouped } = groupCalendarsByAccount(
-    availabilityCalendars,
-    connections,
-  );
+  const isLive = savedPage?.enabled === true;
   const { groups: writableGroups, ungrouped: writableUngrouped } =
     groupCalendarsByAccount(writableCalendars, connections);
   const destinationCalendar = writableCalendars.find(
@@ -366,7 +399,7 @@ export function BookingSettingsSection({
   const destinationMeetWarningId = "booking-destination-meet-warning";
   const updateForm = (patch: Partial<AdminPutBookingPageInput>) => {
     setForm((current) => ({ ...current, ...patch }));
-    setEnableError(null);
+    setSaveError(null);
   };
 
   const handleDestinationChange = (destinationCalendarId: CalendarId) => {
@@ -378,7 +411,7 @@ export function BookingSettingsSection({
         availabilityCalendars,
       ),
     }));
-    setEnableError(null);
+    setSaveError(null);
   };
 
   const toggleBlockingCalendar = (calendarId: CalendarId, checked: boolean) => {
@@ -391,76 +424,78 @@ export function BookingSettingsSection({
         blockingCalendarIds: [...next],
       };
     });
+    setSaveError(null);
   };
 
-  const renderBlockingCalendar = (calendar: Calendar) => (
-    <BookingCheckboxRow
-      checked={blockingSet.has(calendar.id)}
-      key={calendar.id}
-      onChange={(checked) => toggleBlockingCalendar(calendar.id, checked)}
-    >
-      {calendar.name}
-    </BookingCheckboxRow>
-  );
-
-  const handleEnableChange = (enabled: boolean) => {
-    if (enabled && !canEnableBookingPage(form, writableCalendars)) {
-      setEnableError("Choose a destination calendar before enabling booking.");
-      return;
-    }
-    updateForm({ enabled });
-  };
-
-  const handleSave = () => {
-    if (!areHoursValid) {
-      setEnableError("Fix the weekly hours that could not be read.");
-      return;
-    }
-    if (isWelcomeTextTooLong(form.welcomeText)) {
-      setEnableError(WELCOME_TEXT_TOO_LONG_MESSAGE);
-      return;
-    }
-    if (minNoticeInvalid || horizonInvalid) {
-      setEnableError("Fix the highlighted number fields before saving.");
-      return;
-    }
-    if (form.enabled && !canEnableBookingPage(form, writableCalendars)) {
-      setEnableError("Choose a destination calendar before enabling booking.");
-      return;
-    }
-    if (form.enabled && form.blockingCalendarIds.length === 0) {
-      setEnableError("Select at least one blocking calendar.");
-      return;
-    }
-    if (form.enabled && form.weeklyAvailability.length === 0) {
-      setEnableError("Add weekly hours before turning on your booking page.");
-      return;
-    }
-    setEnableError(null);
-    // Auto-copy lives here, not in the mutation: the mutation owns the query
-    // cache, and putting clipboard UX there would also bury the no-link case.
-    saveMutation.mutate(form, {
-      onSuccess: (page) => {
-        if (!("bookingUrl" in page)) {
-          // No slug is allocated until the page is enabled, so there is no
-          // link to copy yet - say so rather than claiming one was copied.
-          showStatusToast(
-            "booking-link-copied",
-            "Saved. Enable booking to get your link.",
-          );
-          return;
-        }
-        void copyText(page.bookingUrl).then((didCopy) => {
-          showStatusToast(
-            "booking-link-copied",
-            didCopy
-              ? "Saved. Booking link copied."
-              : "Saved. Press e then l to copy your link.",
-          );
-        });
-      },
+  const submit = (enabled: boolean) => {
+    const error = validateBookingForm({
+      areHoursValid,
+      enabling: enabled,
+      form,
+      horizonInvalid,
+      minNoticeInvalid,
+      writableCalendars,
     });
+    if (error) {
+      setSaveError(error);
+      if (error.field) focusBookingField(error.field);
+      return;
+    }
+    setSaveError(null);
+    const wasLive = isLive;
+    saveMutation.mutate(
+      { ...form, enabled },
+      {
+        onError: (mutationError) => {
+          const inline = bookingSaveErrorInline(mutationError);
+          if (inline) {
+            setSaveError(inline);
+            if (inline.field) focusBookingField(inline.field);
+          }
+        },
+        onSuccess: (page) => {
+          if (enabled && !wasLive) {
+            if (!("bookingUrl" in page)) return;
+            void copyText(page.bookingUrl).then((didCopy) => {
+              showStatusToast(
+                "booking-link-copied",
+                didCopy
+                  ? "Your booking page is live. Link copied."
+                  : "Live. Press e then l to copy your link.",
+              );
+            });
+            return;
+          }
+          if (!enabled && wasLive) {
+            showStatusToast("booking-link-copied", "Booking page turned off.");
+            return;
+          }
+          if (!enabled) {
+            showStatusToast(
+              "booking-link-copied",
+              "Saved. Turn on your booking page to share the link.",
+            );
+            return;
+          }
+          if (!("bookingUrl" in page)) return;
+          void copyText(page.bookingUrl).then((didCopy) => {
+            showStatusToast(
+              "booking-link-copied",
+              didCopy
+                ? "Saved. Booking link copied."
+                : "Saved. Press e then l to copy your link.",
+            );
+          });
+        },
+      },
+    );
   };
+
+  const forceOpenMoreOptions =
+    isWelcomeTextTooLong(form.welcomeText) ||
+    minNoticeInvalid ||
+    horizonInvalid ||
+    (saveError?.field != null && MORE_OPTIONS_FIELDS.has(saveError.field));
 
   return (
     <>
@@ -473,60 +508,63 @@ export function BookingSettingsSection({
           <ShortcutTipParts parts={BOOKING_SETTINGS_HINT_PARTS} />
         </p>
 
-        {savedPage ? (
-          <div {...bookingFieldAttrs("link")}>
-            <BookingCopyLink bookingUrl={savedPage.bookingUrl} />
+        <BookingStatusHeader
+          addressPreview={null}
+          bookingUrl={savedPage?.bookingUrl ?? null}
+          isLive={isLive}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <BookingFieldLabel
+              field="duration"
+              htmlFor="booking-duration"
+              showShortcuts={showShortcuts}
+            >
+              Duration
+            </BookingFieldLabel>
+            <select
+              {...bookingFieldAttrs("duration")}
+              className={BOOKING_SELECT_CLASS_NAME}
+              id="booking-duration"
+              onChange={(event) =>
+                updateForm({
+                  durationMinutes: Number(
+                    event.target.value,
+                  ) as BookingDurationMinutes,
+                })
+              }
+              value={form.durationMinutes}
+            >
+              {DURATION_OPTIONS.map((minutes) => (
+                <option key={minutes} value={minutes}>
+                  {minutes} minutes
+                </option>
+              ))}
+            </select>
           </div>
-        ) : null}
 
-        <label
-          className="flex items-center gap-2 text-sm text-text"
-          {...bookingFieldAttrs("enabled")}
-        >
-          <input
-            checked={form.enabled}
-            className="c-all-day-checkbox"
-            onChange={(event) => handleEnableChange(event.target.checked)}
-            type="checkbox"
-          />
-          Enable booking page
-          {showShortcuts ? (
-            <ShortcutKeys keys={bookingJumpKeys("enabled")} />
-          ) : null}
-        </label>
-        {enableError ? (
-          <p className="text-error text-sm" role="alert">
-            {enableError}
-          </p>
-        ) : null}
+          <div {...bookingFieldAttrs("timezone")}>
+            <BookingTimezoneField
+              onChange={(timeZone) => updateForm({ timeZone })}
+              shortcutKeys={
+                showShortcuts ? bookingJumpKeys("timezone") : undefined
+              }
+              timeZone={form.timeZone}
+            />
+          </div>
+        </div>
 
-        <div>
-          <BookingFieldLabel
-            field="duration"
-            htmlFor="booking-duration"
-            showShortcuts={showShortcuts}
-          >
-            Duration
-          </BookingFieldLabel>
-          <select
-            {...bookingFieldAttrs("duration")}
-            className={BOOKING_SELECT_CLASS_NAME}
-            id="booking-duration"
-            onChange={(event) =>
-              updateForm({
-                durationMinutes: Number(
-                  event.target.value,
-                ) as BookingDurationMinutes,
-              })
+        <div className="flex flex-col gap-1" {...bookingFieldAttrs("hours")}>
+          <BookingWeeklyHoursEditor
+            onChange={(weeklyAvailability) =>
+              updateForm({ weeklyAvailability })
             }
-            value={form.durationMinutes}
-          >
-            {DURATION_OPTIONS.map((minutes) => (
-              <option key={minutes} value={minutes}>
-                {minutes} minutes
-              </option>
-            ))}
-          </select>
+            onDraftDirtyChange={setHoursDraftDirty}
+            onValidityChange={setAreHoursValid}
+            shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
+            value={form.weeklyAvailability}
+          />
         </div>
 
         <div>
@@ -588,198 +626,106 @@ export function BookingSettingsSection({
           ) : null}
         </div>
 
-        <fieldset
-          className="flex flex-col gap-2"
-          {...bookingFieldAttrs("blocking")}
+        <BookingMoreOptions
+          forceOpen={forceOpenMoreOptions}
+          showShortcuts={showShortcuts}
         >
-          <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-            Blocking calendars
-            {showShortcuts ? (
-              <ShortcutKeys keys={bookingJumpKeys("blocking")} />
-            ) : null}
-          </legend>
-          {availabilityCalendars.length === 0 ? (
-            <p className="text-sm text-text-muted">No calendars available.</p>
-          ) : (
-            <>
-              {groups
-                .filter((group) => group.calendars.length > 0)
-                .map((group) => (
-                  <div className="flex flex-col gap-1" key={group.accountEmail}>
-                    <p className="text-text-muted text-xs">
-                      {group.accountEmail}
-                    </p>
-                    {group.calendars.map(renderBlockingCalendar)}
-                  </div>
-                ))}
-              {ungrouped.map(renderBlockingCalendar)}
-            </>
-          )}
-          <p className="text-text-muted text-xs">
-            Pending, maybe, and declined invites do not hold booking times.
-            Accepted invites and events the host organizes do.
-          </p>
-        </fieldset>
-
-        <div {...bookingFieldAttrs("timezone")}>
-          <BookingTimezoneField
-            onChange={(timeZone) => updateForm({ timeZone })}
-            shortcutKeys={
-              showShortcuts ? bookingJumpKeys("timezone") : undefined
-            }
-            timeZone={form.timeZone}
-          />
-        </div>
-
-        <div className="flex flex-col gap-4" {...bookingFieldAttrs("hours")}>
-          <BookingWeeklyHoursEditor
-            onChange={(weeklyAvailability) =>
-              updateForm({ weeklyAvailability })
-            }
-            onDraftDirtyChange={setHoursDraftDirty}
-            onValidityChange={setAreHoursValid}
-            shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
-            value={form.weeklyAvailability}
-          />
-        </div>
-
-        <div>
-          <BookingFieldLabel
-            field="welcome"
-            htmlFor="booking-welcome"
+          <BookingBlockingCalendarsField
+            availabilityCalendars={availabilityCalendars}
+            blockingCalendarIds={form.blockingCalendarIds}
+            connections={connections}
+            onToggle={toggleBlockingCalendar}
             showShortcuts={showShortcuts}
-          >
-            Welcome text
-          </BookingFieldLabel>
-          <textarea
-            {...bookingFieldAttrs("welcome")}
-            aria-invalid={
-              isWelcomeTextTooLong(form.welcomeText) ? true : undefined
-            }
-            className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
-            id="booking-welcome"
-            maxLength={WELCOME_TEXT_MAX_LENGTH}
-            onChange={(event) =>
-              updateForm({
-                welcomeText:
-                  event.target.value.trim() === "" ? null : event.target.value,
-              })
-            }
-            value={form.welcomeText ?? ""}
           />
-          {isWelcomeTextTooLong(form.welcomeText) ? (
-            <p className="text-error text-xs" role="alert">
-              {WELCOME_TEXT_TOO_LONG_MESSAGE}
-            </p>
-          ) : null}
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <BookingNumberField
-            field="notice"
-            id="booking-min-notice"
-            invalid={minNoticeInvalid}
-            invalidMessage={`Enter 0 to ${BOOKING_MAX_MIN_NOTICE_HOURS} hours.`}
-            label="Minimum notice (hours)"
-            max={BOOKING_MAX_MIN_NOTICE_HOURS}
-            min={0}
-            onChange={(raw) => {
-              setMinNoticeText(raw);
-              const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
-              if (parsed !== null) {
-                updateForm({ minNoticeHours: parsed });
-              }
-            }}
-            showShortcuts={showShortcuts}
-            value={minNoticeText}
-          />
-          <BookingNumberField
-            field="horizon"
-            id="booking-max-horizon"
-            invalid={horizonInvalid}
-            invalidMessage={`Enter 1 to ${BOOKING_MAX_HORIZON_DAYS} days.`}
-            label="Maximum horizon (days)"
-            max={BOOKING_MAX_HORIZON_DAYS}
-            min={1}
-            onChange={(raw) => {
-              setHorizonText(raw);
-              const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
-              if (parsed !== null) {
-                updateForm({ maxHorizonDays: parsed });
-              }
-            }}
-            showShortcuts={showShortcuts}
-            value={horizonText}
-          />
-        </div>
-
-        <fieldset
-          className="flex flex-col gap-2"
-          {...bookingFieldAttrs("options")}
-        >
-          <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-            Buffer and limits
-            {showShortcuts ? (
-              <ShortcutKeys keys={bookingJumpKeys("options")} />
-            ) : null}
-          </legend>
-
-          <BookingCheckboxRow
-            checked={form.bufferMinutes !== null}
-            onChange={(checked) =>
-              updateForm({
-                bufferMinutes: checked ? DEFAULT_BUFFER_MINUTES : null,
-              })
-            }
-          >
-            Buffer between appointments ({DEFAULT_BUFFER_MINUTES} minutes)
-          </BookingCheckboxRow>
-
-          <BookingCheckboxRow
-            checked={form.maxBookingsPerDay !== null}
-            onChange={(checked) =>
-              updateForm({
-                maxBookingsPerDay: checked
-                  ? DEFAULT_MAX_BOOKINGS_PER_DAY
-                  : null,
-              })
-            }
-          >
-            Max bookings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
-          </BookingCheckboxRow>
-
-          <BookingCheckboxRow
-            checked={form.guestsCanInviteOthers}
-            onChange={(guestsCanInviteOthers) =>
-              updateForm({ guestsCanInviteOthers })
-            }
-          >
-            Guest can invite others
-          </BookingCheckboxRow>
-          <p className="text-text-muted text-xs">
-            When this is on, Compass cannot put the cancel link in the calendar
-            description. Guests keep it from the confirmation page.
-          </p>
-        </fieldset>
-
-        <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
-          {/* Default align=end keeps the always-on chip Save off the hours column. */}
-          <OverlayPanelActions>
-            <OverlayPanelActionButton
-              aria-busy={saveMutation.isPending || undefined}
-              aria-keyshortcuts="Meta+Enter Control+Enter"
-              className="whitespace-nowrap"
-              disabled={saveMutation.isPending}
-              onClick={handleSave}
-              shortcut={["Mod", "Enter"]}
-              showShortcut
-              variant="primary"
-              {...settingsShortcutAttrs("save-booking")}
+          <div>
+            <BookingFieldLabel
+              field="welcome"
+              htmlFor="booking-welcome"
+              showShortcuts={showShortcuts}
             >
-              {saveMutation.isPending ? "Saving…" : "Save booking settings"}
-            </OverlayPanelActionButton>
-          </OverlayPanelActions>
-        </div>
+              Welcome text
+            </BookingFieldLabel>
+            <textarea
+              {...bookingFieldAttrs("welcome")}
+              aria-invalid={
+                isWelcomeTextTooLong(form.welcomeText) ? true : undefined
+              }
+              className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
+              id="booking-welcome"
+              maxLength={WELCOME_TEXT_MAX_LENGTH}
+              onChange={(event) =>
+                updateForm({
+                  welcomeText:
+                    event.target.value.trim() === ""
+                      ? null
+                      : event.target.value,
+                })
+              }
+              value={form.welcomeText ?? ""}
+            />
+            {isWelcomeTextTooLong(form.welcomeText) ? (
+              <p className="text-error text-xs" role="alert">
+                {WELCOME_TEXT_TOO_LONG_MESSAGE}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <BookingNumberField
+              field="notice"
+              id="booking-min-notice"
+              invalid={minNoticeInvalid}
+              invalidMessage={`Enter 0 to ${BOOKING_MAX_MIN_NOTICE_HOURS} hours.`}
+              label="Minimum notice (hours)"
+              max={BOOKING_MAX_MIN_NOTICE_HOURS}
+              min={0}
+              onChange={(raw) => {
+                setMinNoticeText(raw);
+                const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
+                if (parsed !== null) {
+                  updateForm({ minNoticeHours: parsed });
+                }
+              }}
+              showShortcuts={showShortcuts}
+              value={minNoticeText}
+            />
+            <BookingNumberField
+              field="horizon"
+              id="booking-max-horizon"
+              invalid={horizonInvalid}
+              invalidMessage={`Enter 1 to ${BOOKING_MAX_HORIZON_DAYS} days.`}
+              label="Maximum horizon (days)"
+              max={BOOKING_MAX_HORIZON_DAYS}
+              min={1}
+              onChange={(raw) => {
+                setHorizonText(raw);
+                const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
+                if (parsed !== null) {
+                  updateForm({ maxHorizonDays: parsed });
+                }
+              }}
+              showShortcuts={showShortcuts}
+              value={horizonText}
+            />
+          </div>
+
+          <BookingLimitsFieldset
+            bufferMinutes={form.bufferMinutes}
+            guestsCanInviteOthers={form.guestsCanInviteOthers}
+            maxBookingsPerDay={form.maxBookingsPerDay}
+            onChange={updateForm}
+            showShortcuts={showShortcuts}
+          />
+        </BookingMoreOptions>
+
+        <BookingSaveBar
+          error={saveError?.message ?? null}
+          isDirty={isDirty}
+          isLive={isLive}
+          isPending={saveMutation.isPending}
+          onSubmit={submit}
+        />
 
         <EditSequenceMenu
           getAnchor={() => sectionRef.current}
