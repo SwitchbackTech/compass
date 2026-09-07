@@ -758,7 +758,7 @@ describe("BookingSettingsSection", () => {
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
+        res(ctx.json({ ...unconfiguredPage(), weeklyAvailability: [] })),
       ),
     );
 
@@ -1380,11 +1380,11 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    expect(await screen.findByLabelText("Monday")).toHaveValue("9-5");
-    expect(screen.getByLabelText("Tuesday")).toHaveValue("9-5");
-    expect(screen.getByLabelText("Wednesday")).toHaveValue("9-5");
-    expect(screen.getByLabelText("Thursday")).toHaveValue("9-5");
-    expect(screen.getByLabelText("Friday")).toHaveValue("9-5");
+    expect(await screen.findByLabelText("Monday")).toHaveValue("9am-5pm");
+    expect(screen.getByLabelText("Tuesday")).toHaveValue("9am-5pm");
+    expect(screen.getByLabelText("Wednesday")).toHaveValue("9am-5pm");
+    expect(screen.getByLabelText("Thursday")).toHaveValue("9am-5pm");
+    expect(screen.getByLabelText("Friday")).toHaveValue("9am-5pm");
     expect(screen.getByLabelText("Saturday")).toHaveValue("");
     expect(screen.getByLabelText("Sunday")).toHaveValue("");
   });
