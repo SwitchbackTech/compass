@@ -89,8 +89,7 @@ export function WelcomeModal() {
   const startShowcaseAfterDismissRef = useRef(false);
   // openModal() only schedules a URL update. Keep this overlay up until
   // Auth actually opens so the calendar does not flash through the gap.
-  // hidingForAuth still blocks Explore and shortcuts during that wait.
-  const [hidingForAuth, setHidingForAuth] = useState(false);
+  // hidingForAuthRef still blocks Explore and shortcuts during that wait.
   const hidingForAuthRef = useRef(false);
   const providerHandoffRef = useRef(false);
   // Each screen has one primary button, and Enter is its native activation.
@@ -111,7 +110,6 @@ export function WelcomeModal() {
   useEffect(() => {
     if (isAuthModalOpen) return;
     hidingForAuthRef.current = false;
-    setHidingForAuth(false);
   }, [isAuthModalOpen]);
 
   useEffect(() => {
@@ -190,7 +188,6 @@ export function WelcomeModal() {
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
     hidingForAuthRef.current = true;
-    setHidingForAuth(true);
     cancelDismiss();
   };
 
