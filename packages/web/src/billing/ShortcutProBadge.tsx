@@ -1,4 +1,4 @@
-export const SHORTCUT_PRO_BADGE_LABEL = "Pro";
+export const SHORTCUT_PRO_BADGE_LABEL = "Premium";
 export const SHORTCUT_PRO_TOOLTIP = "Included with Premium";
 
 /**

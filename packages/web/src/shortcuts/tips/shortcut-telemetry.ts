@@ -169,16 +169,23 @@ export type ShortcutUnavailableAttempt = {
   >;
 };
 
-/** A registered shortcut reached the app handler but an app-level lock owned
- * the keyboard. `context` names the lock owner(s) (settingsModal,
- * commandPalette, billingGate...) so we can tell "pressed Tab inside a modal
- * form" apart from "wanted to create an event behind the billing gate".
+/** Why a registered shortcut could not run: the account cannot write
+ * (`billing_locked`, with or without the gate on screen) or some other
+ * overlay owned the keyboard (`overlay_open`). */
+export type ShortcutUnavailableReason = "billing_locked" | "overlay_open";
+
+/** A registered shortcut reached the app handler but could not run.
+ * `reason_code` isolates the billing case; `context` names the lock owner(s)
+ * (settingsModal, commandPalette, billingGate...) so we can tell "pressed Tab
+ * inside a modal form" apart from "wanted to create an event behind the
+ * billing gate". In look-around mode no lock is held, so `context` reads
+ * "unknown" and `reason_code` carries the signal.
  * Only the static registration string, lock names, view name, modifier
  * flags, and the focused element's tag are captured. No typed value, DOM
  * content, or raw key value is captured. */
 export function recordShortcutUnavailableAttempt(
   hintId: ShortcutHintId,
-  reasonCode: "app_locked",
+  reasonCode: ShortcutUnavailableReason,
   attempt: ShortcutUnavailableAttempt,
 ): void {
   const hint = getShortcutHint(hintId);

@@ -307,7 +307,7 @@ export const CommandPalette = ({
   const eventItems = writeLocked
     ? eventCommandPaletteItems.map((item) => ({
         ...item,
-        badge: "Pro",
+        badge: "Premium",
         onClick: () =>
           promptShortcutUpgrade({
             featureArea: "event_creation",

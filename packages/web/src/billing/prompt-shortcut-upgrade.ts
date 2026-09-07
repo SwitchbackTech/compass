@@ -5,9 +5,15 @@ import {
   getBillingWriteLockStatus,
   isBillingWriteLocked,
 } from "@web/billing/billing-write-lock";
+import { type CheckoutPanelSource } from "@web/billing/checkout-panel.store";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { hasAppLockReason } from "@web/shortcuts/app-lock";
-import { type ShortcutFeatureArea } from "@web/shortcuts/tips/shortcut-tips.data";
+import {
+  getShortcutHint,
+  type ShortcutFeatureArea,
+  type ShortcutHintId,
+  type ShortcutTipPart,
+} from "@web/shortcuts/tips/shortcut-tips.data";
 
 export const SHORTCUT_UPGRADE_TOAST_ID: Id = "shortcut-upgrade-toast";
 
@@ -18,18 +24,40 @@ export type ShortcutUpgradePromptSource = "keyboard" | "command_palette";
 export type ShortcutUpgradePromptInput = {
   featureArea: ShortcutFeatureArea;
   actionId?: string;
+  /** Names the exact key in the toast. Omit when only the feature area is
+   * known (command palette, edit sequence). */
+  hintId?: ShortcutHintId;
   source: ShortcutUpgradePromptSource;
+};
+
+type ShortcutUpgradeCopy = {
+  parts?: readonly ShortcutTipPart[];
+  title: string;
+  cta: string;
 };
 
 let lastPresentationKey = "";
 let lastPresentationAt = 0;
 
-const promptCopy = (
-  featureArea: ShortcutFeatureArea,
-): { title: string; cta: string } => {
+/** One sentence per hinted shortcut: what Premium unlocks, in the user's
+ * terms. Shortcuts without a pitch fall back to the feature-area copy. */
+const UPGRADE_PITCH: Partial<Record<ShortcutHintId, string>> = {
+  "create-event":
+    "Premium unlocks it, so you can block time the moment you think of it.",
+  "edge-focus":
+    "Premium unlocks it, so you can resize events to the minute without dragging.",
+  nudge:
+    "Premium unlocks it, so you can reschedule in seconds without touching the mouse.",
+};
+
+const promptCopy = (input: ShortcutUpgradePromptInput): ShortcutUpgradeCopy => {
   const status = getBillingWriteLockStatus();
   const cta = status === "awaiting_checkout" ? "Start trial" : "Subscribe";
-  if (featureArea === "event_creation") {
+  const pitch = input.hintId ? UPGRADE_PITCH[input.hintId] : undefined;
+  if (input.hintId && pitch) {
+    return { parts: getShortcutHint(input.hintId).parts, title: pitch, cta };
+  }
+  if (input.featureArea === "event_creation") {
     return {
       title:
         "Unlock event creation shortcuts with Premium. Upgrade in 30 seconds.",
@@ -58,7 +86,7 @@ export function promptShortcutUpgrade(
     enterBillingLookAround();
   }
 
-  const copy = promptCopy(input.featureArea);
+  const copy = promptCopy(input);
   const presentationKey = `${input.featureArea}:${input.actionId ?? ""}:${input.source}`;
   if (
     presentationKey !== lastPresentationKey ||
@@ -77,7 +105,11 @@ export function promptShortcutUpgrade(
     });
   }
 
-  showUpgradeToast(copy.title, copy.cta);
+  showUpgradeToast(copy, {
+    kind: "shortcut_prompt",
+    featureArea: input.featureArea,
+    ...(input.actionId ? { actionId: input.actionId } : {}),
+  });
 }
 
 /**
@@ -94,15 +126,20 @@ function enterBillingLookAround(): void {
   );
 }
 
-function showUpgradeToast(title: string, ctaLabel: string): void {
+function showUpgradeToast(
+  copy: ShortcutUpgradeCopy,
+  checkoutSource: CheckoutPanelSource,
+): void {
   void import("@web/billing/ShortcutUpgradeToast").then(
     ({ ShortcutUpgradeToast }) => {
       showStatusToast(
         SHORTCUT_UPGRADE_TOAST_ID,
         createElement(ShortcutUpgradeToast, {
           toastId: SHORTCUT_UPGRADE_TOAST_ID,
-          title,
-          ctaLabel,
+          parts: copy.parts,
+          title: copy.title,
+          ctaLabel: copy.cta,
+          checkoutSource,
         }),
       );
     },
