@@ -337,7 +337,7 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ### UX
 
-The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Shift+,` / `Mod+Shift+.` and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. Clicking a day does nothing; hovering or focusing the picker shows a caption with the keys, and repeated clicks surface the keyboard hint.
+The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Shift+,` / `Mod+Shift+.` and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. Clicking a day does nothing; hovering the picker shows `I focuses the picker`, focusing it reveals the arrow keycaps, and using an arrow adds `Enter opens it`. Repeated clicks surface the keyboard hint.
 
 ### Steps
 
@@ -352,8 +352,8 @@ The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold 
 - After `I`, the first day of the highlighted week row has focus and the whole row shows the focus ring.
 - Each arrow moves the ring one row; the calendar grid does not move yet.
 - After `Mod+Shift+.`, the next month is shown and focus is still on a day in that month.
-- Enter anchors the week view on the focused row and the accent capsule matches the visible window.
-- Clicks do not navigate. The caption under the grid reads `I focuses the picker · Arrows move by week · Enter opens it`; the keyboard hint says to press `I`, then use the arrow keys and Enter.
+- Enter anchors the week view on the focused row and the muted week capsule matches the visible window. Today is an ink circle, not an accent fill.
+- Clicks do not navigate. Hovering the picker shows `I focuses the picker`. Focusing it replaces that with up/down arrow keycaps and `move by week`. After an arrow, `Enter opens it` appears with `Enter` as a keycap. The keyboard hint says to press `I`, then use the arrow keys and Enter.
 
 ---
 
