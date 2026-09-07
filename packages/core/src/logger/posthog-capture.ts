@@ -1,6 +1,6 @@
 import { Logger } from "@core/logger/winston.logger";
 
-const logger = Logger("sync:posthog");
+const logger = Logger("posthog:capture");
 
 export interface PostHogCaptureClient {
   capture: (input: {
@@ -14,13 +14,15 @@ export interface PostHogCaptureClient {
 export interface PostHogCaptureOptions {
   apiKey: string;
   host: string;
+  /** Reported as `$lib` so PostHog can split events by emitting service. */
+  lib: string;
   fetch?: typeof fetch;
 }
 
 const DEFAULT_HOST = "https://us.i.posthog.com";
 
-// Thin HTTP capture client for Sync aggregate events. No-ops are handled by
-// the caller when apiKey is absent — this client always attempts delivery.
+// Thin HTTP capture client for server-side product events. No-ops are handled
+// by the caller when apiKey is absent — this client always attempts delivery.
 export function createPostHogCaptureClient(
   options: PostHogCaptureOptions,
 ): PostHogCaptureClient {
@@ -38,7 +40,7 @@ export function createPostHogCaptureClient(
           event,
           properties: {
             ...properties,
-            $lib: "compass-sync",
+            $lib: options.lib,
           },
         }),
       });
@@ -55,7 +57,7 @@ export function createPostHogCaptureClient(
 }
 
 // Best-effort capture: log and continue on failure so telemetry never takes
-// down the Sync process.
+// down the process that emits it.
 export async function captureSafely(
   client: PostHogCaptureClient | null,
   input: {

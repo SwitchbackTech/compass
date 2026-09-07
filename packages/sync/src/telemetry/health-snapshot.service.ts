@@ -16,7 +16,7 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import {
   captureSafely,
   type PostHogCaptureClient,
-} from "@sync/telemetry/posthog-capture";
+} from "@core/logger/posthog-capture";
 
 // Channels expiring within this window count as renewSoon (aligns with the
 // subscription maintenance sweep).

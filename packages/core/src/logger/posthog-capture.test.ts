@@ -1,7 +1,7 @@
 import {
   captureSafely,
   createPostHogCaptureClient,
-} from "@sync/telemetry/posthog-capture";
+} from "@core/logger/posthog-capture";
 import { describe, expect, it } from "bun:test";
 
 describe("createPostHogCaptureClient", () => {
@@ -10,6 +10,7 @@ describe("createPostHogCaptureClient", () => {
     const client = createPostHogCaptureClient({
       apiKey: "phc_test",
       host: "https://us.i.posthog.com",
+      lib: "compass-sync",
       fetch: (async (input, init) => {
         calls.push({
           url: String(input),
@@ -53,6 +54,7 @@ describe("createPostHogCaptureClient", () => {
     const client = createPostHogCaptureClient({
       apiKey: "phc_test",
       host: "https://us.i.posthog.com",
+      lib: "compass-sync",
       fetch: (async () => {
         throw new Error("network down");
       }) as typeof fetch,

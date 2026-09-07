@@ -23,7 +23,7 @@ import {
   emitHealthSnapshot,
   HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS,
 } from "@sync/telemetry/health-snapshot.service";
-import { type PostHogCaptureClient } from "@sync/telemetry/posthog-capture";
+import { type PostHogCaptureClient } from "@core/logger/posthog-capture";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 const objectId = () => faker.database.mongodbObjectId();

@@ -205,12 +205,21 @@ must subscribe to Checkout and Subscriptions snapshot events, not Accounts v2:
 
 - `checkout.session.completed` (subscription Checkout and setup-mode card
   updates both arrive on this event; setup-mode has `mode: "setup"`)
+- `checkout.session.expired` (analytics only: the user reached Stripe and
+  left; nothing is written to `billing.*`)
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
 
 `staging-selfhosted` must not get those secrets — it is the live regression
 that self-host stays writable.
+
+The webhook also emits server-side PostHog events keyed by the Compass user id
+(the same distinct id the web app identifies with): `checkout_completed` after
+a subscription-mode Checkout lands, and `checkout_expired` when one lapses
+unpaid. They are best-effort; a PostHog failure never fails the webhook. The
+browser's `trial_converted` only fires on the success redirect, so these are
+the events the billing funnel should trust.
 
 Sales tax is enabled in code: the Checkout Session passes
 `automatic_tax`, `customer_update.address`, and `billing_address_collection`
