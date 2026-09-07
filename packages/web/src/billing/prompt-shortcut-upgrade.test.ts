@@ -14,6 +14,7 @@ import {
 } from "@web/billing/prompt-shortcut-upgrade";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { setAppLockReason } from "@web/shortcuts/app-lock";
+import { getShortcutHint } from "@web/shortcuts/tips/shortcut-tips.data";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const trackModule = await import("@web/auth/posthog/track");
@@ -88,6 +89,58 @@ describe("promptShortcutUpgrade", () => {
       expect(mocks.toast).toHaveBeenCalledTimes(1);
     });
     setAppLockReason("billingGate", false);
+  });
+
+  it("names the pressed key and its pitch when the caller knows the shortcut", async () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    promptShortcutUpgrade({
+      featureArea: "event_creation",
+      actionId: "calendar.create_timed_event",
+      hintId: "create-event",
+      source: "keyboard",
+    });
+
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledTimes(1);
+    });
+    const [[element]] = mocks.toast.mock.calls as unknown as [
+      [{ props: Record<string, unknown> }],
+    ];
+    expect(element.props).toMatchObject({
+      parts: getShortcutHint("create-event").parts,
+      title:
+        "Premium unlocks it, so you can block time the moment you think of it.",
+      ctaLabel: "Start trial",
+      checkoutSource: {
+        kind: "shortcut_prompt",
+        featureArea: "event_creation",
+        actionId: "calendar.create_timed_event",
+      },
+    });
+  });
+
+  it("falls back to feature-area copy without a key line when no shortcut is known", async () => {
+    setBillingWriteLock({ locked: true, status: "expired" });
+
+    promptShortcutUpgrade({
+      featureArea: "event_creation",
+      actionId: "calendar.create_timed_event",
+      source: "command_palette",
+    });
+
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledTimes(1);
+    });
+    const [[element]] = mocks.toast.mock.calls as unknown as [
+      [{ props: Record<string, unknown> }],
+    ];
+    expect(element.props.parts).toBeUndefined();
+    expect(element.props).toMatchObject({
+      title:
+        "Unlock event creation shortcuts with Premium. Upgrade in 30 seconds.",
+      ctaLabel: "Subscribe",
+    });
   });
 
   it("deduplicates tracking for a rapid repeat of the same shortcut", async () => {

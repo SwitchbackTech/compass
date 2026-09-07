@@ -1,6 +1,7 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import * as Track from "@web/auth/posthog/track";
 import {
   resetBillingWriteLockForTests,
   setBillingWriteLock,
@@ -12,7 +13,7 @@ import {
   useAppShortcutUp,
   WRITE_CREATE_SHORTCUT,
 } from "@web/shortcuts/useAppShortcut";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 function dispatchKeyEvent(
   key: string,
@@ -268,5 +269,109 @@ describe("useAppShortcut", () => {
     });
     expect(mocks.toast).not.toHaveBeenCalled();
     setAppLockReason("settingsModal", false);
+  });
+
+  describe("unavailable-attempt telemetry", () => {
+    const attempts = (track: { mock: { calls: unknown[][] } }) =>
+      track.mock.calls.filter(
+        ([name]) => name === "shortcut_unavailable_attempt",
+      );
+
+    it("records overlay_open when a non-billing overlay owns the keyboard", async () => {
+      const track = spyOn(Track, "track");
+      setAppLockReason("settingsModal", true);
+
+      renderHook(() =>
+        useAppShortcut("C", mockHandler, {
+          ...WRITE_CREATE_SHORTCUT,
+          telemetryHintId: "create-event",
+        }),
+      );
+      dispatchKeyEvent("c", "keydown");
+
+      await waitFor(() => {
+        expect(attempts(track)).toHaveLength(1);
+      });
+      expect(track).toHaveBeenCalledWith(
+        "shortcut_unavailable_attempt",
+        expect.objectContaining({
+          action_id: "calendar.create_timed_event",
+          context: "settingsModal",
+          reason_code: "overlay_open",
+        }),
+      );
+      setAppLockReason("settingsModal", false);
+      track.mockRestore();
+    });
+
+    it("records billing_locked while the billing gate is up", async () => {
+      const track = spyOn(Track, "track");
+      setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+      setAppLockReason("billingGate", true);
+
+      renderHook(() =>
+        useAppShortcut("C", mockHandler, {
+          ...WRITE_CREATE_SHORTCUT,
+          telemetryHintId: "create-event",
+        }),
+      );
+      dispatchKeyEvent("c", "keydown");
+
+      await waitFor(() => {
+        expect(attempts(track)).toHaveLength(1);
+      });
+      expect(track).toHaveBeenCalledWith(
+        "shortcut_unavailable_attempt",
+        expect.objectContaining({ reason_code: "billing_locked" }),
+      );
+      setAppLockReason("billingGate", false);
+      track.mockRestore();
+    });
+
+    it("records billing_locked in look-around, where no lock is held", async () => {
+      const track = spyOn(Track, "track");
+      setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+      renderHook(() =>
+        useAppShortcut("C", mockHandler, {
+          ...WRITE_CREATE_SHORTCUT,
+          telemetryHintId: "create-event",
+        }),
+      );
+      dispatchKeyEvent("c", "keydown");
+
+      await waitFor(() => {
+        expect(attempts(track)).toHaveLength(1);
+        expect(mocks.toast).toHaveBeenCalled();
+      });
+      expect(track).toHaveBeenCalledWith(
+        "shortcut_unavailable_attempt",
+        expect.objectContaining({
+          context: "unknown",
+          reason_code: "billing_locked",
+        }),
+      );
+      track.mockRestore();
+    });
+
+    it("ignores practice presses while the onboarding game owns the keys", async () => {
+      const track = spyOn(Track, "track");
+      setAppLockReason("shortcutShowcase", true);
+
+      renderHook(() =>
+        useAppShortcut("C", mockHandler, {
+          ...WRITE_CREATE_SHORTCUT,
+          telemetryHintId: "create-event",
+        }),
+      );
+      dispatchKeyEvent("c", "keydown");
+
+      await waitFor(() => {
+        expect(mockHandler).not.toHaveBeenCalled();
+      });
+      expect(attempts(track)).toHaveLength(0);
+      setAppLockReason("shortcutShowcase", false);
+      track.mockRestore();
+    });
   });
 });

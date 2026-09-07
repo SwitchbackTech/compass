@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import * as Track from "@web/auth/posthog/track";
@@ -16,6 +16,7 @@ import {
   useCheckoutCelebrationStore,
 } from "@web/billing/checkout-celebration.store";
 import {
+  checkoutPanelActions,
   initialCheckoutPanelState,
   useCheckoutPanelStore,
 } from "@web/billing/checkout-panel.store";
@@ -166,7 +167,11 @@ describe("BillingGateModal", () => {
     await user.click(screen.getByRole("button", { name: "Complete checkout" }));
 
     expect(useCheckoutCelebrationStore.getState().isCelebrating).toBe(true);
-    expect(track).toHaveBeenCalledWith("trial_converted");
+    expect(track).toHaveBeenCalledWith("trial_converted", { source: "gate" });
+    expect(track).not.toHaveBeenCalledWith(
+      "billing_gate_shortcut_converted",
+      expect.anything(),
+    );
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({
         queryKey: ["billing", "status"],
@@ -174,6 +179,36 @@ describe("BillingGateModal", () => {
     });
     track.mockRestore();
     invalidate.mockRestore();
+  });
+
+  it("attributes a conversion to the shortcut toast that opened Checkout", async () => {
+    const track = spyOn(Track, "track");
+    const user = userEvent.setup();
+    renderGate();
+    act(() => {
+      checkoutPanelActions.open({
+        kind: "shortcut_prompt",
+        featureArea: "event_creation",
+        actionId: "calendar.create_timed_event",
+      });
+    });
+
+    await user.click(
+      await screen.findByRole("button", { name: "Complete checkout" }),
+    );
+
+    const attribution = {
+      source: "shortcut_prompt",
+      feature_area: "event_creation",
+      action_id: "calendar.create_timed_event",
+    };
+    expect(track).toHaveBeenCalledWith("trial_converted", attribution);
+    expect(track).toHaveBeenCalledWith(
+      "billing_gate_shortcut_converted",
+      attribution,
+    );
+    expect(useCheckoutPanelStore.getState().source).toBeNull();
+    track.mockRestore();
   });
 
   it("enters the read-only look-around with L", async () => {
