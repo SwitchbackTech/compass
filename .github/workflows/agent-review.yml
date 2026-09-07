@@ -7,7 +7,9 @@ name: Agent review
 # Kill switch: repo variable AGENT_REVIEW_ENABLED (string "true"; default off).
 on:
   pull_request:
-    types: [opened, ready_for_review, synchronize]
+    # opened / ready_for_review only. synchronize on every push created a
+    # skipped run while AGENT_REVIEW_ENABLED is off.
+    types: [opened, ready_for_review]
 
 permissions:
   contents: read

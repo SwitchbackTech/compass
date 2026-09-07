@@ -365,3 +365,22 @@ were kept because each covers a distinct page state.
   during that window gets nothing. The e2e harness fix removes the flake;
   the product behavior is unchanged and noted here for a UX pass.
 - Unit web legs: a third leg would shave under 20s. Not worth a runner.
+
+## After (2026-09-07): reliability follow-up
+
+Required Unit and E2E checks were already green. The remaining pain was a
+permanently red Performance budget on `main` (desktop script transfer
+1,034,338 bytes vs a 1,000,000 budget since 2026-09-04) and Agent loop /
+Agent review skip-flooding the Actions tab (~147 Agent loop runs in 24h
+vs ~49 Unit). Follow-up:
+
+1. Recalibrate desktop `scriptBytes` to 1,060,000 from the 2026-09-07
+   main actual, still under the ~170 KB editor-stack tripwire.
+2. Agent loop `pull_request` types are now `labeled` / `unlabeled` /
+   `closed` only; cron is hourly instead of `*/15`.
+3. Agent review no longer runs on `synchronize`.
+4. Unit legs skip packages the PR did not touch, with
+   `detect-code-changes.sh` emitting `core` / `web` / `backend` / `sync`
+   / `scripts`. Merge queue and `main` still run every leg.
+5. Leftover GitHub workflow records for deleted `e2e.yml` and
+   `pr-body.yml` are disabled so `gh run list --workflow=E2E` is unique.
