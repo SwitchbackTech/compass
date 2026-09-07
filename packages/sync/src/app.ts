@@ -1,4 +1,10 @@
 import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
+import {
+  captureSafely,
+  createPostHogCaptureClient,
+  DEFAULT_POSTHOG_HOST,
+  type PostHogCaptureClient,
+} from "@core/logger/posthog-capture";
 import { Logger } from "@core/logger/winston.logger";
 import { configureHttpServer } from "@core/server/http-server";
 import {
@@ -59,12 +65,6 @@ import {
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
-import {
-  captureSafely,
-  createPostHogCaptureClient,
-  DEFAULT_POSTHOG_HOST,
-  type PostHogCaptureClient,
-} from "@sync/telemetry/posthog-capture";
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 
@@ -351,6 +351,7 @@ function buildPostHogClient(config: SyncConfig): PostHogCaptureClient | null {
   return createPostHogCaptureClient({
     apiKey: config.POSTHOG_KEY,
     host: config.POSTHOG_HOST ?? DEFAULT_POSTHOG_HOST,
+    lib: "compass-sync",
   });
 }
 

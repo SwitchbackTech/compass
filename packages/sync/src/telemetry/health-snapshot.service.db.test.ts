@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
+import { type PostHogCaptureClient } from "@core/logger/posthog-capture";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -23,7 +24,6 @@ import {
   emitHealthSnapshot,
   HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS,
 } from "@sync/telemetry/health-snapshot.service";
-import { type PostHogCaptureClient } from "@sync/telemetry/posthog-capture";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 const objectId = () => faker.database.mongodbObjectId();
