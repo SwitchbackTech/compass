@@ -72,9 +72,11 @@ import { DefaultTimezonePicker } from "@web/timezone/DefaultTimezonePicker";
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
 
+const SETTINGS_NAV_HINT = "Click a page or press its number.";
+
 const navButtonClassName = (current: boolean) =>
   current
-    ? "c-focus-ring flex w-full items-center justify-between rounded bg-surface-overlay px-2 py-1 text-left text-sm text-text"
+    ? "c-focus-ring flex w-full items-center justify-between rounded border-l-2 border-accent bg-surface-overlay px-2 py-1 text-left text-sm font-medium text-text"
     : "c-focus-ring flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm text-text-muted transition-colors hover:bg-surface-overlay hover:text-text";
 
 /**
@@ -247,6 +249,9 @@ export const SettingsModal: FC = () => {
               {areHintsVisible ? <ShortcutKeys keys="3" /> : null}
             </button>
           ) : null}
+          <p className="mt-2 px-2 text-text-muted text-xs">
+            {SETTINGS_NAV_HINT}
+          </p>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (

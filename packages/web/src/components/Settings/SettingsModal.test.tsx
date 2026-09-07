@@ -681,6 +681,26 @@ describe("SettingsModal", () => {
     expect(screen.queryByRole("button", { name: "Booking" })).toBeNull();
   });
 
+  it.each([
+    "accounts",
+    "billing",
+    "booking",
+  ] as const)("tells the host to click a page on the %s screen", (page) => {
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
+    renderSettings({ authenticated: true, page });
+
+    expect(
+      within(screen.getByRole("dialog", { name: "Settings" })).getByText(
+        "Click a page or press its number.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("says nothing about a plan on an install without billing", () => {
     renderSettings({ authenticated: true });
 
