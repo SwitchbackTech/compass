@@ -29,7 +29,7 @@ export function BookingMoreOptions({
   return (
     <details className="flex flex-col gap-4" ref={detailsRef}>
       <summary
-        className="c-focus-ring cursor-pointer list-inside text-sm font-medium text-text"
+        className="c-focus-ring cursor-pointer list-inside font-medium text-sm text-text"
         {...bookingFieldAttrs("more")}
       >
         {BOOKING_MORE_OPTIONS_LABEL}

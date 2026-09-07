@@ -11,7 +11,7 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface BookingBlockingCalendarsFieldProps {
   availabilityCalendars: Calendar[];
-  blockingCalendarIds: CalendarId[];
+  blockingCalendarIds: readonly CalendarId[];
   connections: SyncConnectionSummary[];
   onToggle: (calendarId: CalendarId, checked: boolean) => void;
   showShortcuts: boolean;
