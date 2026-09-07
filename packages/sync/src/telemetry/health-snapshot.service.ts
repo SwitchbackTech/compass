@@ -1,4 +1,8 @@
 import { type Db } from "mongodb";
+import {
+  captureSafely,
+  type PostHogCaptureClient,
+} from "@core/logger/posthog-capture";
 import { ConnectionStateSchema } from "@core/types/sync/connection.contracts";
 import {
   SYNC_HEALTH_SNAPSHOT_EVENT,
@@ -13,10 +17,6 @@ import { type ProviderRegistry } from "@sync/providers/provider-registry";
 import { type StructuredServiceIdentity } from "@sync/service-identity";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
-import {
-  captureSafely,
-  type PostHogCaptureClient,
-} from "@core/logger/posthog-capture";
 
 // Channels expiring within this window count as renewSoon (aligns with the
 // subscription maintenance sweep).
