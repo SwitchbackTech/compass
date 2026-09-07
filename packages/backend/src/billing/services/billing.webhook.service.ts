@@ -4,7 +4,10 @@ import {
   STRIPE_TO_COMPASS_STATUS,
   type StripeSubscriptionStatus,
 } from "@backend/billing/billing.constants";
-import { getStripeClient } from "@backend/billing/services/stripe.client";
+import {
+  type StripeBillingGateway,
+  stripeBillingGateway,
+} from "@backend/billing/services/stripe.client";
 import mongoService from "@backend/common/services/mongo.service";
 
 const logger = Logger("app:billing.webhook");
@@ -136,11 +139,11 @@ async function findUserIdForSubscription(
 }
 
 async function handleSetupCheckoutSession(
-  stripe: Stripe,
+  stripe: StripeBillingGateway,
   session: Stripe.Checkout.Session,
   eventCreatedAt: Date,
 ): Promise<void> {
-  const retrieved = await stripe.checkout.sessions.retrieve(session.id, {
+  const retrieved = await stripe.retrieveCheckoutSession(session.id, {
     expand: ["setup_intent"],
   });
   const setupIntent = retrieved.setup_intent;
@@ -179,23 +182,25 @@ async function handleSetupCheckoutSession(
     return;
   }
 
-  await stripe.customers.update(resolvedCustomerId, {
+  await stripe.updateCustomer(resolvedCustomerId, {
     invoice_settings: { default_payment_method: paymentMethodId },
   });
 
   const subscriptionId = user?.billing?.stripeSubscriptionId;
   if (!subscriptionId) return;
 
-  const subscription = await stripe.subscriptions.update(subscriptionId, {
+  const subscription = await stripe.updateSubscription(subscriptionId, {
     default_payment_method: paymentMethodId,
   });
   await applySubscription(userId, subscription, eventCreatedAt);
 }
 
-async function handleEvent(event: Stripe.Event): Promise<void> {
+async function handleEvent(
+  event: Stripe.Event,
+  stripe: StripeBillingGateway,
+): Promise<void> {
   if (!HANDLED_TYPES.has(event.type)) return;
 
-  const stripe = getStripeClient();
   const eventCreatedAt = toDate(event.created) ?? new Date();
 
   if (event.type === "checkout.session.completed") {
@@ -209,7 +214,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       logger.warn("checkout.session.completed had no subscription id");
       return;
     }
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe.retrieveSubscription(subscriptionId);
     const userId = await findUserIdForSubscription(
       subscription,
       session.client_reference_id,
@@ -229,7 +234,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
     logger.warn(`${event.type} had no subscription id`);
     return;
   }
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await stripe.retrieveSubscription(subscriptionId);
   const userId = await findUserIdForSubscription(subscription);
   if (!userId) {
     logger.warn(
@@ -240,7 +245,10 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
   await applySubscription(userId, subscription, eventCreatedAt);
 }
 
-export async function processStripeEvent(event: Stripe.Event): Promise<void> {
+export async function processStripeEvent(
+  event: Stripe.Event,
+  stripe: StripeBillingGateway = stripeBillingGateway,
+): Promise<void> {
   try {
     await mongoService.billingEvent.insertOne({
       _id: event.id,
@@ -254,7 +262,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
   }
 
   try {
-    await handleEvent(event);
+    await handleEvent(event, stripe);
   } catch (error) {
     await mongoService.billingEvent.deleteOne({ _id: event.id });
     throw error;
