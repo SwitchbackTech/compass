@@ -5,7 +5,12 @@ import {
 } from "@core/types/domain-primitives";
 import { type BusyAvailabilityResponse } from "@core/types/sync/availability.contracts";
 
-export const BOOKING_CONFIRMATION_MAX_AGE_MS = 5 * 60 * 1000;
+// Google reconcile treats a resource as stale after 15 minutes and sweeps
+// every 10 minutes, so lastSuccessAt on a quiet calendar can be ~25 minutes
+// old while the connection is still healthy. Holiday and other unwatchable
+// calendars only advance on that sweep. A 5-minute booking maxAge marked
+// those hosts unbookable for most of the day.
+export const BOOKING_CONFIRMATION_MAX_AGE_MS = 30 * 60 * 1000;
 
 export interface BookingEventGuest {
   email: string;
