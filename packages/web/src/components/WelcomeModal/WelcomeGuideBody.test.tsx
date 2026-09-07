@@ -115,26 +115,37 @@ describe("WelcomeGuideBody", () => {
     expect(screen.getByText(/and \? opens the full legend/)).toBeTruthy();
   });
 
-  it("opens footer links with digits 6 through 0", () => {
+  it("opens footer links with digits 6 through 0, and P for Pricing", () => {
     renderWelcomeGuide();
 
     const x = captureLinkClick("X (Twitter)");
     const linkedin = captureLinkClick("LinkedIn");
     const github = captureLinkClick("GitHub");
+    const pricing = captureLinkClick("Pricing");
     const privacy = captureLinkClick("Privacy");
     const terms = captureLinkClick("Terms");
 
     pressWindowKey({ key: "6", code: "Digit6" });
     pressWindowKey({ key: "7", code: "Digit7" });
     pressWindowKey({ key: "8", code: "Digit8" });
+    pressWindowKey({ key: "p", code: "KeyP" });
     pressWindowKey({ key: "9", code: "Digit9" });
     pressWindowKey({ key: "0", code: "Digit0" });
 
     expect(x).toHaveBeenCalledTimes(1);
     expect(linkedin).toHaveBeenCalledTimes(1);
     expect(github).toHaveBeenCalledTimes(1);
+    expect(pricing).toHaveBeenCalledTimes(1);
     expect(privacy).toHaveBeenCalledTimes(1);
     expect(terms).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/KeepSoftwareSimple/compass-calendar",
+    );
+    expect(screen.getByRole("link", { name: "Pricing" })).toHaveAttribute(
+      "href",
+      "https://compasscalendar.com/pricing",
+    );
   });
 
   it("flashes the matching FAQ key after a blocked click, then clears", async () => {
