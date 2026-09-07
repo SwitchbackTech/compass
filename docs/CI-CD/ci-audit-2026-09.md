@@ -365,3 +365,20 @@ were kept because each covers a distinct page state.
   during that window gets nothing. The e2e harness fix removes the flake;
   the product behavior is unchanged and noted here for a UX pass.
 - Unit web legs: a third leg would shave under 20s. Not worth a runner.
+
+## Follow-up (2026-09-07)
+
+Required Unit and E2E stayed green. Performance budget was red on every
+`main` web push from 2026-09-04 (1,034,338 byte script transfer vs a
+1,000 KB budget). Agent loop was ~147 runs/day vs ~49 Unit, almost all
+skipped `pull_request` events plus a `*/15` cron.
+
+Changes in the follow-up PR:
+
+- Recalibrate desktop script transfer to 1,060 KB from the 2026-09-07
+  main actual, still under the ~170 KB editor-stack tripwire.
+- Agent loop: `pull_request` types `labeled` / `unlabeled` / `closed`
+  only; cron hourly.
+- Agent review: drop `synchronize`.
+- Unit legs skip by package on pull requests (same detector as the e2e
+  skip). `merge_group` and `push` still run every leg.

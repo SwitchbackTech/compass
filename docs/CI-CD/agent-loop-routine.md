@@ -18,16 +18,16 @@ ROUTINE: agent-loop
 PURPOSE: Walk milestone issues from GitHub to merged-on-staging
   without a human in the loop, except the one-time setup listed below.
 OWNER: compass-maintainers
-TRIGGER: workflow_dispatch | */15 cron | Release on main completed | pull_request labeled agent-automerge
+TRIGGER: workflow_dispatch | hourly cron | Release on main completed | pull_request labeled/unlabeled/closed agent-automerge
 INPUT: GitHub issue in the first AGENT_LOOP_MILESTONES entry that has an eligible WP
 SKILL/PROMPT: .github/prompts/<milestone-slug>.md or .github/prompts/agent-loop.md
 OUTPUT: draft PR marked ready after bun run verify, Fixes #<n>, labeled agent-automerge; GitHub auto-merges; next WP launched on merge; staging smoke after release
 IDEMPOTENCY: up to AGENT_LOOP_CONCURRENCY in-flight agents with non-overlapping partitions; agent-loop-running; skip issues with an open Fixes PR
-RETRY: HTTP 429 waits for credits and retries on the 15-minute watchdog; dispatch a
+RETRY: HTTP 429 waits for credits and retries on the hourly watchdog; dispatch a
   fresh run for all other retryable investigation (do not "Re-run jobs" on a failed snapshot)
 APPROVAL: agent-automerge + merge-guard (size, paths, main not red) + GitHub auto-merge on required checks
 STOP: repo var AGENT_LOOP_ENABLED or BOOKING_LOOP_ENABLED (must be string "true"; default off)
-HEARTBEAT: */15 cron watchdog when idle; Discord on merge-guard / smoke failure
+HEARTBEAT: hourly cron watchdog when idle; Discord on merge-guard / smoke failure
 VERIFIER: .github/scripts/agent-loop-merge-guard.sh (not the LLM)
 STAGING: https://staging.compasscalendar.com (unauthenticated smoke only)
 NEVER: enter credentials; merge PRs that touch .github/ or auth/billing paths
@@ -120,7 +120,7 @@ both channels are configured).
    Agents API when `CURSOR_API_KEY` is set; otherwise comment
    `agent-loop: pickup`. Never both. HTTP 429 records the provider's retry
    time, labels the issue `agent-loop-waiting-for-credits`, and exits
-   successfully so the 15-minute watchdog can resume it. Other launch
+   successfully so the hourly watchdog can resume it. Other launch
    failures are `agent-loop-needs-human` stops. The prompt file is
    `.github/prompts/<milestone-slug>.md` when that file exists, else
    `.github/prompts/agent-loop.md`.
@@ -142,7 +142,7 @@ both channels are configured).
    launch them. `Fixes #<n>` closes the merged issue. A failing smoke
    stops launches.
 6. **Release on main** deploys staging (code paths only; docs-only merges
-   skip deploy). The 15-minute cron is the watchdog for docs-only WPs.
+   skip deploy). The hourly cron is the watchdog for docs-only WPs.
 7. **Post-deploy** (`workflow_run`): smokes the new release, annotates
    the issue, and tops the fleet up to N; on failure it labels the issue
    `agent-loop-needs-human` and does not launch.

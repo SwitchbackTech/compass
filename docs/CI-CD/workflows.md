@@ -7,11 +7,11 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Unit (`test-unit.yml`) | Push / PR / merge_group to `main` | Runs `static` (lint, knip, type-check) and unit tests |
 | E2E (`test-e2e.yml`) | Push / PR / merge_group to `main` | Playwright e2e in four shards behind one required `e2e` gate (PRs that touch only docs, or only `packages/backend`, `packages/sync`, `packages/scripts`, skip the shards; merge queue and `main` always run them) |
 | CodeQL | Push / PR to `main` | Static security analysis |
-| Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
+| Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check). Desktop script transfer is 1,060 KB as of 2026-09-07. |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
-| Agent review (`agent-review.yml`) | PR opened / ready / synchronize, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check) |
-| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / `*/15` cron / `Release on main` / `agent-automerge` PRs | Governed Routine: next milestone WP → merge → staging smoke |
+| Agent review (`agent-review.yml`) | PR opened / ready_for_review, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check). Does not re-run on every push. |
+| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / hourly cron / `Release on main` / `agent-automerge` label or close | Governed Routine: next milestone WP → merge → staging smoke |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
@@ -38,7 +38,11 @@ Source: [`.github/workflows/test-unit.yml`](../../.github/workflows/test-unit.ym
 `static` (lint, knip, and type-check as separate steps) and each `unit-leg`
 carry a 10-minute job timeout. A rollup `unit` job requires every leg, so
 the ruleset needs only `static`, `unit`, and `e2e`; legs can change without
-touching branch protection. Unit test-run steps are separately capped
+touching branch protection. On pull requests, `detect-code-changes.sh`
+runs only the packages the diff can affect (`packages/core`, the root
+lockfile, root `package.json`, or a root `tsconfig*` still run every
+leg). `merge_group` and `push` to `main` still run every leg. `static`
+still runs for any non-docs change. Unit test-run steps are separately capped
 at 5 minutes each, leaving headroom for checkout, setup-bun, cache, and
 install. These bound a hung job to a fixed, small window instead of
 GitHub's 360-minute default. GitHub Actions has no native way to give
