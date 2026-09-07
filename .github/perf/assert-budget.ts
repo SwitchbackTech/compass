@@ -29,11 +29,16 @@
  *
  * Recalibrated 2026-09-04: main measured 990,400 bytes, 400 over the old
  * 990 KB budget, after a day of booking and billing merges. The 1,000 KB
- * script budget leaves ~10 KB of headroom - deliberately less than the
- * ~170 KB gz editor stack (TipTap/react-datepicker/react-select), so a
- * static re-import of the event form still fails the gate. Script transfer
- * is near-deterministic (runs vary by tens of bytes), so it can sit this
- * tight; the paint metrics vary by runner and get much wider headroom.
+ * script budget leaves ~10 KB of headroom.
+ *
+ * Recalibrated 2026-09-07: main measured 1,034,338 bytes on every web
+ * push after react-toastify 9 → 11 (boot-path CompassProvider) and the
+ * multi-provider UI. The 1,060 KB budget leaves ~25 KB of headroom,
+ * still far under the ~170 KB gz editor stack (TipTap/react-datepicker/
+ * react-select), so a static re-import of the event form still fails
+ * the gate. Script transfer is near-deterministic (runs vary by tens of
+ * bytes), so it can sit this tight; the paint metrics vary by runner
+ * and get much wider headroom.
  */
 import { mkdirSync } from "node:fs";
 
@@ -61,7 +66,7 @@ const DESKTOP_BUDGETS = [
   {
     metric: "scriptBytes",
     label: "Script transfer size",
-    max: 1_000_000,
+    max: 1_060_000,
     unit: "bytes",
     level: "error",
   },
