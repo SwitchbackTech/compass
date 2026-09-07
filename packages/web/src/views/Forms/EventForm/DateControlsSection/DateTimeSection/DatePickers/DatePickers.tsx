@@ -6,7 +6,8 @@ import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { type SetEventFormSchedule } from "@web/views/Forms/EventForm/types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
@@ -24,30 +25,26 @@ const dateFieldClassName =
 
 interface Props {
   displayEndDate: Date;
+  draft: GridEventDraft;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
-  onSetScheduleField: SetEventFormSchedule;
-  setDisplayEndDate: (value: Date) => void;
-  setSelectedEndDate: (value: Date) => void;
-  setSelectedStartDate: (value: Date) => void;
+  onScheduleChange: OnEventFormScheduleChange;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
 }
 
 export const DatePickers: FC<Props> = ({
   displayEndDate,
+  draft,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
-  onSetScheduleField,
-  setDisplayEndDate,
+  onScheduleChange,
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
-  setSelectedEndDate,
-  setSelectedStartDate,
 }) => {
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
@@ -146,9 +143,18 @@ export const DatePickers: FC<Props> = ({
     return dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
   };
 
+  const toAllDayDate = (date: Date) => dayjs(formatDate(date)).toDate();
+
+  const currentAllDayBounds = () => {
+    const { schedule } = draft.values;
+    if (schedule.kind === "allDay") {
+      return { start: schedule.start, end: schedule.end };
+    }
+    return { start: selectedStartDate, end: selectedEndDate };
+  };
+
   const onSelectStartDate = (start: Date) => {
     setIsStartDatePickerOpen(false);
-    setSelectedStartDate(start);
 
     const { shouldAdjust: shouldAdjustEnd, compliment } =
       shouldAdjustComplimentDate("start", {
@@ -161,18 +167,17 @@ export const DatePickers: FC<Props> = ({
       // the event form should show a start of "2025-12-25" and an end of "2025-12-25",
       // and the backend should store the start as "2025-12-25" and the end as "2025-12-26".
       // Adding one day to the end here helps us achieve that requirement.
-      const endDisplay = dayjs(compliment).add(1, "day").toDate();
-      setDisplayEndDate(endDisplay);
-
-      setSelectedEndDate(compliment);
-
-      onSetScheduleField({
-        startDate: formatDate(start),
-        endDate: formatDate(compliment),
+      onScheduleChange({
+        kind: "allDay",
+        start: toAllDayDate(start),
+        end: toAllDayDate(compliment),
       });
     } else {
-      const newStartDate = formatDate(start);
-      onSetScheduleField({ startDate: newStartDate });
+      onScheduleChange({
+        kind: "allDay",
+        start: toAllDayDate(start),
+        end: currentAllDayBounds().end,
+      });
     }
   };
 
@@ -185,16 +190,16 @@ export const DatePickers: FC<Props> = ({
     });
 
     if (shouldAdjust) {
-      setSelectedStartDate(compliment);
-      setSelectedEndDate(compliment);
-      setDisplayEndDate(compliment);
-      onSetScheduleField({
-        startDate: formatDate(compliment),
-        endDate: formatDate(compliment),
+      onScheduleChange({
+        kind: "allDay",
+        start: toAllDayDate(compliment),
+        end: toAllDayDate(compliment),
       });
     } else {
-      onSetScheduleField({
-        endDate: formatDate(dayjs(end).add(1, "day").toDate()),
+      onScheduleChange({
+        kind: "allDay",
+        start: currentAllDayBounds().start,
+        end: toAllDayDate(dayjs(end).add(1, "day").toDate()),
       });
     }
   };
