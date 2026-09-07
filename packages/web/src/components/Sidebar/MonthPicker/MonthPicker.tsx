@@ -1,5 +1,7 @@
 import {
   type FC,
+  type FocusEvent,
+  type KeyboardEvent,
   type MouseEvent,
   useCallback,
   useEffect,
@@ -10,9 +12,9 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { TrialBadge } from "@web/billing/TrialBadge";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
+import { MonthPickerHint } from "./MonthPickerHint";
 import {
   type MonthPickerUnit,
   normalizePickerCursor,
@@ -85,6 +87,31 @@ export const MonthPicker: FC<Props> = ({
   const [jumpGeneration, setJumpGeneration] = useState(0);
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
   const restoreFocusRef = useRef<{ buttonLabel: string | null } | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasMovedWithArrows, setHasMovedWithArrows] = useState(false);
+
+  const onPickerFocus = (event: FocusEvent<HTMLFieldSetElement>) => {
+    if (!(event.target instanceof Element)) return;
+    if (!event.currentTarget.contains(event.target)) return;
+    setIsFocused(true);
+  };
+
+  const onPickerBlur = (event: FocusEvent<HTMLFieldSetElement>) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && event.currentTarget.contains(next)) return;
+    setIsFocused(false);
+  };
+
+  const onPickerKeyDown = (event: KeyboardEvent<HTMLFieldSetElement>) => {
+    if (
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown" ||
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight"
+    ) {
+      setHasMovedWithArrows(true);
+    }
+  };
 
   const jumpToMonth = useCallback(
     (targetMonth: Dayjs) => {
@@ -162,7 +189,10 @@ export const MonthPicker: FC<Props> = ({
       data-picker-unit={unit}
       data-pointer-action={POINTER_ACTIONS.datePick}
       aria-label="Date navigation"
+      onBlurCapture={onPickerBlur}
       onClickCapture={swallowDayPointer}
+      onFocusCapture={onPickerFocus}
+      onKeyDownCapture={onPickerKeyDown}
       onMouseDownCapture={swallowDayPointer}
       {...pageJumpAttrs("month-picker")}
     >
@@ -211,10 +241,11 @@ export const MonthPicker: FC<Props> = ({
           view="sidebar"
           withTodayButton={true}
         />
-        <span className="c-context-tooltip top-full bottom-auto left-1/2 mt-1.5 mb-0 flex -translate-x-1/2 items-center gap-1.5">
-          <ShortcutKeys keys="I" /> focuses the picker · Arrows move by {unit} ·
-          Enter opens it
-        </span>
+        <MonthPickerHint
+          hasMovedWithArrows={hasMovedWithArrows}
+          isFocused={isFocused}
+          unit={unit}
+        />
       </div>
     </fieldset>
   );

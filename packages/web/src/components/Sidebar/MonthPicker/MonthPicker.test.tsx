@@ -255,15 +255,36 @@ describe("MonthPicker", () => {
     expect(tabStop).toHaveFocus();
   });
 
-  it("teaches the focus key and the unit in its caption", () => {
-    const { rerender } = renderPicker(
-      <MonthPicker onSelectDate={mock()} {...pickerProps} />,
-    );
+  it("teaches the focus key first, then arrow icons, then Enter", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
     const picker = screen.getByRole("group", { name: "Date navigation" });
-    expect(picker.textContent).toContain("I");
-    expect(picker.textContent).toContain("Arrows move by week");
+    expect(picker).toHaveTextContent("I focuses the picker");
+    expect(picker).not.toHaveTextContent("Arrows");
+    expect(picker).not.toHaveTextContent("move by week");
+    expect(picker).not.toHaveTextContent("opens it");
 
-    rerender(
+    act(() => getTabStopDay()?.focus());
+    expect(picker).toHaveTextContent("move by week");
+    expect(picker).not.toHaveTextContent("focuses the picker");
+    expect(picker).not.toHaveTextContent("Arrows");
+    expect(picker.querySelector("[data-testid='arrowup-icon']")).not.toBeNull();
+    expect(
+      picker.querySelector("[data-testid='arrowdown-icon']"),
+    ).not.toBeNull();
+    expect(picker).not.toHaveTextContent("opens it");
+
+    await user.keyboard("{ArrowDown}");
+    expect(picker).toHaveTextContent("Enter");
+    expect(picker).toHaveTextContent("opens it");
+    const enterKeycap = [
+      ...picker.querySelectorAll("[aria-hidden='true']"),
+    ].find((node) => node.textContent === "Enter");
+    expect(enterKeycap?.className).toContain("c-keycap");
+  });
+
+  it("names the day unit once the picker is focused", () => {
+    renderPicker(
       <MonthPicker
         onSelectDate={mock()}
         selectedDate={dayjs("2026-05-13")}
@@ -271,7 +292,12 @@ describe("MonthPicker", () => {
         viewStart={dayjs("2026-05-13")}
       />,
     );
-    expect(picker.textContent).toContain("Arrows move by day");
+    const picker = screen.getByRole("group", { name: "Date navigation" });
+    expect(picker).toHaveTextContent("I focuses the picker");
+
+    act(() => getTabStopDay()?.focus());
+    expect(picker).toHaveTextContent("move by day");
+    expect(picker).not.toHaveTextContent("opens it");
   });
 
   it("highlights the visible Sun-Sat window, not adjacent days", () => {
