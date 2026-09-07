@@ -68,7 +68,7 @@ async function gracefulShutdown(): Promise<void> {
   try {
     syncChangeFeedBridge.stop();
     foregroundSyncRefresh.stop();
-    userService.stopAccountDeletionRetries();
+    await userService.stopAccountDeletionRetries();
     await closeHttpServer();
     await mongoService.stop();
     await stopPostHogLogs();

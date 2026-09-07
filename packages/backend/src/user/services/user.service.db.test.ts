@@ -926,6 +926,43 @@ describe("UserService", () => {
     });
   });
 
+  describe("account deletion retry lifecycle", () => {
+    afterEach(async () => {
+      await userService.stopAccountDeletionRetries();
+    });
+
+    it("waits for an in-flight retry cycle before resolving, so shutdown never tears down mongo mid-cycle", async () => {
+      let releaseRetry: () => void = () => {};
+      const retrySpy = spyOn(
+        userService,
+        "retryPendingAccountDeletions",
+      ).mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            releaseRetry = resolve;
+          }),
+      );
+
+      userService.startAccountDeletionRetries();
+      await Promise.resolve();
+
+      let stopped = false;
+      const stopPromise = userService.stopAccountDeletionRetries().then(() => {
+        stopped = true;
+      });
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(stopped).toBe(false);
+
+      releaseRetry();
+      await stopPromise;
+      expect(stopped).toBe(true);
+
+      retrySpy.mockRestore();
+    });
+  });
+
   describe("deleteCompassDataForUser", () => {
     it("removes all compass data and deletes the user", async () => {
       const user = await UserDriver.createUser();
