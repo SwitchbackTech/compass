@@ -79,9 +79,14 @@ required; the loop pulls its work from the issue queue.
      Alias notes: an Automation still listening for `booking-loop: pickup`
      needs its trigger updated.
 4. A PAT with `contents:write` + `pull_requests:write` stored as
-   `AGENT_LOOP_GITHUB_TOKEN`, or reuse `BOOKING_LOOP_GITHUB_TOKEN` /
-   `AUTOFIX_GITHUB_TOKEN`. Required so squash-merge commits trigger
-   `release-on-main` (the default `GITHUB_TOKEN` does not).
+   `AGENT_LOOP_GITHUB_TOKEN` (`BOOKING_LOOP_GITHUB_TOKEN` is still read as
+   an alias). Both scopes are required: `gh pr merge --auto` calls the
+   `enablePullRequestAutoMerge` mutation, which a PAT without
+   `contents:write` rejects with "Resource not accessible by personal
+   access token". The PAT is also what makes squash-merge commits trigger
+   `release-on-main` (the default `GITHUB_TOKEN` does not). The error
+   autofix gate uses this same token first and falls back to
+   `AUTOFIX_GITHUB_TOKEN` only when it is unset.
 5. Labels `agent-automerge`, `agent-loop-running`,
    `agent-loop-waiting-for-credits`, `agent-loop-needs-human` on this
    repo (`gh label create` if missing). Alias notes: the `booking-*`
