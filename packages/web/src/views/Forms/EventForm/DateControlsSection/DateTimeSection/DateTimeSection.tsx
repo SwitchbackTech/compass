@@ -4,7 +4,7 @@ import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
-import { type SetEventFormSchedule } from "@web/views/Forms/EventForm/types";
+import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
 export interface Props {
   category: Categories_Event;
@@ -13,17 +13,11 @@ export interface Props {
   endTime: SelectOption<string>;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
-  onSetScheduleField: SetEventFormSchedule;
+  onScheduleChange: OnEventFormScheduleChange;
   selectedEndDate: Date;
   selectedStartDate: Date;
-  setDisplayEndDate: (value: Date) => void;
-  setDraft: (draft: GridEventDraft) => void;
-  setEndTime: (value: SelectOption<string>) => void;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
-  setSelectedEndDate: (value: Date) => void;
-  setSelectedStartDate: (value: Date) => void;
-  setStartTime: (value: SelectOption<string>) => void;
   startTime: SelectOption<string>;
 }
 
@@ -35,15 +29,9 @@ export const DateTimeSection: FC<Props> = ({
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
-  onSetScheduleField,
-  setDisplayEndDate,
+  onScheduleChange,
   setIsStartDatePickerOpen,
   setIsEndDatePickerOpen,
-  setStartTime,
-  setEndTime,
-  setSelectedEndDate,
-  setSelectedStartDate,
-  setDraft,
   startTime,
   endTime,
 }) => {
@@ -52,14 +40,12 @@ export const DateTimeSection: FC<Props> = ({
       {category === Categories_Event.ALLDAY && (
         <DatePickers
           displayEndDate={displayEndDate}
+          draft={draft}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
           selectedStartDate={selectedStartDate}
-          onSetScheduleField={onSetScheduleField}
-          setDisplayEndDate={setDisplayEndDate}
-          setSelectedEndDate={setSelectedEndDate}
-          setSelectedStartDate={setSelectedStartDate}
+          onScheduleChange={onScheduleChange}
           setIsEndDatePickerOpen={setIsEndDatePickerOpen}
           setIsStartDatePickerOpen={setIsStartDatePickerOpen}
         />
@@ -67,11 +53,8 @@ export const DateTimeSection: FC<Props> = ({
 
       {category === Categories_Event.TIMED && (
         <TimePickers
-          draft={draft}
           endTime={endTime}
-          setStartTime={setStartTime}
-          setEndTime={setEndTime}
-          setDraft={setDraft}
+          onScheduleChange={onScheduleChange}
           startTime={startTime}
           selectedEndDate={selectedEndDate}
           selectedStartDate={selectedStartDate}
