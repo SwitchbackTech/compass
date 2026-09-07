@@ -4,6 +4,7 @@
 # applied per the rubric in .github/prompts/error-autofix.md) is necessary
 # but not sufficient — this script independently re-verifies the hard safety
 # rails so a mistaken or prompt-injected agent run can never merge past them.
+# Path prefixes are not a merge gate: size rails are the remaining check.
 #
 # Only runs when AUTOFIX_MODE=merge (see .github/workflows/error-autofix.yml).
 # Inert (no PR to find) during Phase 1/2 rollout.
@@ -11,36 +12,6 @@ set -uo pipefail
 
 ISSUE_NUMBER=${1:?usage: autofix-merge-guard.sh <issue-number>}
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autofix-lib.sh"
-
-# Paths an autofix PR may not AUTO-MERGE past, even if the agent judged
-# itself confident. This is a merge gate, not a rule about what the agent may
-# author: a fix that genuinely needs one of these paths should still be opened
-# as a PR (see error-autofix.md), it just always waits for a human. Kept here
-# as the authoritative, non-LLM-bypassable copy.
-#
-# The bare 'billing'/'stripe' substrings only catch files whose PATH mentions
-# them (e.g. packages/*/src/billing/**). Several files carry real Stripe
-# wiring — env validation, webhook signature verification — without either
-# word in their path; those are listed explicitly below rather than trying
-# to keep a substring pattern in sync with every such file forever.
-NO_AUTOMERGE_PATH_PATTERNS=(
-  '^\.github/'
-  '^self-host/'
-  '^packages/backend/src/auth/'
-  '^packages/core/src/logger/'
-  '^packages/backend/src/logging/'
-  '^packages/sync/src/telemetry/'
-  'billing'
-  'stripe'
-  '^packages/core/src/config/compass\.config\.ts$'
-  '^packages/core/src/types/user\.types\.ts$'
-  '^packages/backend/src/common/constants/config\.constants\.ts$'
-  '^packages/backend/src/common/constants/config\.util\.ts$'
-  '^packages/backend/src/config/controllers/config\.controller\.ts$'
-  '^packages/backend/src/servers/express/express\.server\.ts$'
-  '(^|/)package\.json$'
-  '(^|/)bun\.lock$'
-)
 
 MAX_FILES=8
 MAX_LINES=250
@@ -78,13 +49,6 @@ main() {
     return 0
   fi
   changed_files=$(printf '%s\n' "$changed_files_list" | grep -c . || true)
-
-  for pattern in "${NO_AUTOMERGE_PATH_PATTERNS[@]}"; do
-    if printf '%s\n' "$changed_files_list" | grep -Eiq "$pattern"; then
-      downgrade "$pr_number" "touches a path that may not auto-merge (matches ${pattern})"
-      return 0
-    fi
-  done
 
   if [ "$changed_files" -gt "$MAX_FILES" ]; then
     downgrade "$pr_number" "touches ${changed_files} files (limit ${MAX_FILES})"

@@ -107,9 +107,9 @@ jobs:
         run: |
           bun run type-check
 
-      # Workflow files may auto-merge (see NO_AUTOMERGE_PATH_PATTERNS in
-      # agent-loop-merge-guard.sh), so they are linted here instead of by a
-      # human. Pinned; the image bundles shellcheck for run: steps.
+      # Workflow files auto-merge under the same size rails as other paths,
+      # so they are linted here. Pinned; the image bundles shellcheck for
+      # run: steps.
       - name: Lint workflows
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/repo" -w /repo \

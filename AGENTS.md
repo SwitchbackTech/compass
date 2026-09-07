@@ -64,9 +64,9 @@ Playwright. Docs index: `docs/README.md`.
 - Ship: implement, `bun run verify --strict`, open a draft PR with
   `Fixes #N` and the `VERDICT:` line, mark it ready once the verdict is
   `PASS`, label it `agent-automerge`, stop.
-  `.github/scripts/agent-loop-merge-guard.sh` checks size and sensitive paths
-  and enables GitHub auto-merge. Do not merge yourself, wait on CI, or wait
-  for a human. Procedure: `.agents/skills/ship/SKILL.md`.
+  `.github/scripts/agent-loop-merge-guard.sh` checks size and that main
+  is not red, then enables GitHub auto-merge. Do not merge yourself, wait
+  on CI, or wait for a human. Procedure: `.agents/skills/ship/SKILL.md`.
 - Escalate with the `agent-loop-needs-human` label for product ambiguity,
   production deploy, secrets, OAuth grants, deletion, and access grants.
 

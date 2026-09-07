@@ -195,7 +195,10 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
 
   const menu = menuOpen ? (
     <div
-      className="absolute top-full z-10 mt-1 min-w-full rounded border border-border bg-surface-overlay py-1 shadow-lg"
+      // Opaque surface-raised, matching c-context-menu: this floats over
+      // Settings copy, and surface-overlay is a 6-7% tint so the explainer
+      // showed through.
+      className="absolute top-full z-10 mt-1 min-w-full rounded border border-border bg-surface-raised py-1 shadow-[0_4px_6px_var(--color-shadow-default)]"
       id={menuId}
       onKeyDown={onMenuKeyDown}
       role="menu"

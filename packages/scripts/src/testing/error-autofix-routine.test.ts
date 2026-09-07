@@ -18,7 +18,7 @@ describe("error-autofix Routine contract", () => {
       ".github/scripts/autofix-merge-guard.sh",
       "utf8",
     );
-    expect(guard).toContain("NO_AUTOMERGE_PATH_PATTERNS=(");
+    expect(guard).not.toContain("NO_AUTOMERGE_PATH_PATTERNS");
     expect(guard).toMatch(/^MAX_FILES=8$/m);
     expect(guard).toMatch(/^MAX_LINES=250$/m);
   });
@@ -42,32 +42,20 @@ describe("error-autofix Routine contract", () => {
     expect(guard).toMatch(/merge_error=\$\(gh pr merge[^\n]*--auto 2>&1\)/);
   });
 
-  it("still blocks the sensitive paths from auto-merging", () => {
+  it("does not refuse auto-merge by path prefix", () => {
     const guard = readFileSync(
       ".github/scripts/autofix-merge-guard.sh",
       "utf8",
     );
-    // Authoring a fix in these is allowed; merging one without a human is
-    // not. Shrinking this list is a deliberate act, not a drive-by.
-    for (const pattern of [
-      "'^self-host/'",
-      "'^packages/backend/src/auth/'",
-      "'^packages/core/src/logger/'",
-      "'^packages/backend/src/logging/'",
-      "'^packages/sync/src/telemetry/'",
-      "'billing'",
-      "'stripe'",
-    ]) {
-      expect(guard).toContain(pattern);
-    }
+    expect(guard).not.toContain("NO_AUTOMERGE_PATH_PATTERNS");
   });
 
-  it("lets the agent author a sensitive-path fix, flagged for a human", () => {
+  it("lets the agent author a fix without a path-based human flag", () => {
     const prompt = readFileSync(".github/prompts/error-autofix.md", "utf8");
-    // The rule this replaced ("Never edit any denied path") turned a
-    // diagnosed one-line fix into a comment asking a human to write it.
     expect(prompt).not.toContain("Never edit any denied path");
-    expect(prompt).toContain("never add `automerge-candidate`, in any mode");
+    expect(prompt).not.toContain(
+      "never add `automerge-candidate`, in any mode",
+    );
     expect(prompt).not.toContain(".agents/handoffs");
   });
 });

@@ -93,7 +93,10 @@ describe("ConnectProviderChooser", () => {
     await user.click(trigger);
 
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    const menu = screen.getByRole("menu");
+    expect(menu).toBeInTheDocument();
+    expect(menu).toHaveClass("bg-surface-raised");
+    expect(menu).not.toHaveClass("bg-surface-overlay");
     const googleItem = screen.getByRole("menuitem", { name: "Google" });
     const microsoftItem = screen.getByRole("menuitem", { name: "Microsoft" });
     expect(googleItem).toHaveFocus();
