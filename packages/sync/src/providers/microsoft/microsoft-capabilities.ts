@@ -6,14 +6,6 @@ import {
 } from "@core/providers/microsoft.scopes";
 import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 
-export {
-  CONTACTS_FEATURE_SCOPES,
-  MICROSOFT_SCOPE_CALENDARS_READWRITE,
-  MICROSOFT_SCOPE_PEOPLE_READ,
-  MICROSOFT_SCOPES,
-  microsoftScopesForFeatures,
-} from "@core/providers/microsoft.scopes";
-
 // Derive connection capabilities from the scopes Microsoft actually granted
 // (which may be a subset of those requested). Calendars.ReadWrite covers read,
 // write, push subscriptions, and delta sync; People.Read covers suggestions.

@@ -2,6 +2,11 @@ import { type Express, type RequestHandler } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
+  GOOGLE_SCOPE_CONTACTS_READONLY,
+} from "@core/providers/google.scopes";
+import { MICROSOFT_SCOPE_PEOPLE_READ } from "@core/providers/microsoft.scopes";
+import {
   CONTACT_SUGGESTION_MAX_RESULTS,
   CONTACT_SUGGESTION_QUERY_MAX_LENGTH,
   CONTACT_SUGGESTION_QUERY_MIN_LENGTH,
@@ -10,11 +15,6 @@ import {
 } from "@core/types/contact.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import {
-  GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
-  GOOGLE_SCOPE_CONTACTS_READONLY,
-} from "@sync/providers/google/google.scopes";
-import { MICROSOFT_SCOPE_PEOPLE_READ } from "@sync/providers/microsoft/microsoft-scopes";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ContactsPort,

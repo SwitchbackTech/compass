@@ -10,7 +10,7 @@ import {
   ProviderNotConfiguredError,
 } from "@sync/providers/provider-adapters";
 
-function microsoftConfigured(config: SyncConfig): boolean {
+export function microsoftProviderConfigured(config: SyncConfig): boolean {
   return Boolean(config.MICROSOFT_CLIENT_ID && config.MICROSOFT_CLIENT_SECRET);
 }
 
@@ -19,7 +19,7 @@ export function microsoftAdapters(
   override?: Partial<ProviderAdapters>,
 ): ProviderAdapters {
   // Tests inject partial overrides (auth/writer only) without real OAuth config.
-  if (!microsoftConfigured(config) && override?.auth === undefined) {
+  if (!microsoftProviderConfigured(config) && override?.auth === undefined) {
     throw new ProviderNotConfiguredError("microsoft");
   }
   return {
@@ -36,8 +36,4 @@ export function microsoftAdapters(
       override?.notifications ?? new MicrosoftNotificationAdapter(),
     contacts: override?.contacts ?? new MicrosoftPeopleAdapter(),
   };
-}
-
-export function microsoftProviderConfigured(config: SyncConfig): boolean {
-  return microsoftConfigured(config);
 }

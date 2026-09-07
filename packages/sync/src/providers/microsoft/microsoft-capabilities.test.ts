@@ -1,13 +1,13 @@
-import { MICROSOFT_SCOPES as CORE_MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
+import {
+  MICROSOFT_SCOPE_CALENDARS_READWRITE,
+  MICROSOFT_SCOPE_PEOPLE_READ,
+  microsoftScopesForFeatures,
+} from "@core/providers/microsoft.scopes";
 import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 import {
   MICROSOFT_PROVIDER_CAPABILITIES,
-  MICROSOFT_SCOPE_CALENDARS_READWRITE,
-  MICROSOFT_SCOPE_PEOPLE_READ,
-  MICROSOFT_SCOPES,
   microsoftCapabilitiesFromScopes,
-  microsoftScopesForFeatures,
-} from "@sync/providers/microsoft/microsoft-scopes";
+} from "@sync/providers/microsoft/microsoft-capabilities";
 
 describe("microsoftScopesForFeatures", () => {
   it("returns People.Read only when contacts is requested", () => {
@@ -43,11 +43,5 @@ describe("microsoftCapabilitiesFromScopes", () => {
   it("matches MICROSOFT_PROVIDER_CAPABILITIES for the full scope set", () => {
     expect(MICROSOFT_PROVIDER_CAPABILITIES).toContain("readEvents");
     expect(MICROSOFT_PROVIDER_CAPABILITIES).toContain("suggestContacts");
-  });
-});
-
-describe("MICROSOFT_SCOPES", () => {
-  it("re-exports the core Microsoft scope list", () => {
-    expect(MICROSOFT_SCOPES).toBe(CORE_MICROSOFT_SCOPES);
   });
 });
