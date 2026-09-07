@@ -1,7 +1,5 @@
 import {
   type FC,
-  type FocusEvent,
-  type KeyboardEvent,
   type MouseEvent,
   useCallback,
   useEffect,
@@ -87,31 +85,6 @@ export const MonthPicker: FC<Props> = ({
   const [jumpGeneration, setJumpGeneration] = useState(0);
   const fieldsetRef = useRef<HTMLFieldSetElement>(null);
   const restoreFocusRef = useRef<{ buttonLabel: string | null } | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
-  const [hasMovedWithArrows, setHasMovedWithArrows] = useState(false);
-
-  const onPickerFocus = (event: FocusEvent<HTMLFieldSetElement>) => {
-    if (!(event.target instanceof Element)) return;
-    if (!event.currentTarget.contains(event.target)) return;
-    setIsFocused(true);
-  };
-
-  const onPickerBlur = (event: FocusEvent<HTMLFieldSetElement>) => {
-    const next = event.relatedTarget;
-    if (next instanceof Node && event.currentTarget.contains(next)) return;
-    setIsFocused(false);
-  };
-
-  const onPickerKeyDown = (event: KeyboardEvent<HTMLFieldSetElement>) => {
-    if (
-      event.key === "ArrowUp" ||
-      event.key === "ArrowDown" ||
-      event.key === "ArrowLeft" ||
-      event.key === "ArrowRight"
-    ) {
-      setHasMovedWithArrows(true);
-    }
-  };
 
   const jumpToMonth = useCallback(
     (targetMonth: Dayjs) => {
@@ -189,14 +162,11 @@ export const MonthPicker: FC<Props> = ({
       data-picker-unit={unit}
       data-pointer-action={POINTER_ACTIONS.datePick}
       aria-label="Date navigation"
-      onBlurCapture={onPickerBlur}
       onClickCapture={swallowDayPointer}
-      onFocusCapture={onPickerFocus}
-      onKeyDownCapture={onPickerKeyDown}
       onMouseDownCapture={swallowDayPointer}
       {...pageJumpAttrs("month-picker")}
     >
-      <div className="group relative">
+      <MonthPickerHint unit={unit}>
         <DatePicker
           key={jumpGeneration}
           animationOnToggle={false}
@@ -241,12 +211,7 @@ export const MonthPicker: FC<Props> = ({
           view="sidebar"
           withTodayButton={true}
         />
-        <MonthPickerHint
-          hasMovedWithArrows={hasMovedWithArrows}
-          isFocused={isFocused}
-          unit={unit}
-        />
-      </div>
+      </MonthPickerHint>
     </fieldset>
   );
 };
