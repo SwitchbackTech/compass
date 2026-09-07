@@ -13,8 +13,9 @@ import billingWebhookController from "@backend/billing/controllers/billing.webho
 import { processStripeEvent } from "@backend/billing/services/billing.webhook.service";
 import {
   STRIPE_API_VERSION,
-  setStripeClientForTests,
+  stripeBillingGateway,
 } from "@backend/billing/services/stripe.client";
+import { stubBillingGateway } from "@backend/billing/services/stripe-billing-gateway.test-helpers";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   afterAll,
@@ -25,6 +26,7 @@ import {
   expect,
   it,
   mock,
+  spyOn,
 } from "bun:test";
 
 const stripeConfigured = {
@@ -69,7 +71,7 @@ describe("Stripe webhook", () => {
   });
   beforeEach(cleanupCollections);
   afterEach(() => {
-    setStripeClientForTests(undefined);
+    mock.restore();
   });
   afterAll(cleanupTestDb);
 
@@ -89,15 +91,11 @@ describe("Stripe webhook", () => {
 
   it("returns 400 for a bad signature", async () => {
     using _env = mockEnv(stripeConfigured);
-    setStripeClientForTests({
-      webhooks: {
-        constructEventAsync: () => {
-          throw new Error(
-            "No signatures found matching the expected signature",
-          );
-        },
+    spyOn(stripeBillingGateway, "constructWebhookEvent").mockImplementation(
+      () => {
+        throw new Error("No signatures found matching the expected signature");
       },
-    } as unknown as Stripe);
+    );
 
     const { res, json } = jsonRes();
     await billingWebhookController.handleStripe(
@@ -117,13 +115,13 @@ describe("Stripe webhook", () => {
   });
 
   /**
-   * The other webhook tests stub the Stripe client wholesale, so the SDK's
-   * own signature verification never runs. These two use the real
-   * `webhooks` object and stub only the API call, which is the difference
-   * between testing our dispatch and testing that Stripe events can get in
-   * at all. Under Bun the SDK picks an async-only crypto provider, so a
-   * synchronous constructEvent() fails here no matter how valid the
-   * signature is.
+   * The other webhook tests stub the Compass billing gateway, so the SDK's
+   * own signature verification never runs. These two use the production
+   * `constructWebhookEvent` adapter and stub only the API call, which is the
+   * difference between testing our dispatch and testing that Stripe events
+   * can get in at all. Under Bun the SDK picks an async-only crypto
+   * provider, so a synchronous constructEvent() fails here no matter how
+   * valid the signature is.
    */
   const realStripe = () =>
     new Stripe(stripeConfigured.STRIPE_SECRET_KEY, {
@@ -163,16 +161,13 @@ describe("Stripe webhook", () => {
     using _env = mockEnv(stripeConfigured);
     const userId = await seedAwaitingUser("signed@example.com");
     const stripe = realStripe();
-    setStripeClientForTests({
-      webhooks: stripe.webhooks,
-      subscriptions: {
-        retrieve: mock(() =>
-          Promise.resolve(
-            subscription({ metadata: { compassUserId: userId.toString() } }),
-          ),
+    spyOn(stripeBillingGateway, "retrieveSubscription").mockImplementation(
+      mock(() =>
+        Promise.resolve(
+          subscription({ metadata: { compassUserId: userId.toString() } }),
         ),
-      },
-    } as unknown as Stripe);
+      ),
+    );
 
     const payload = checkoutPayload(userId.toString());
     const signature = await stripe.webhooks.generateTestHeaderStringAsync({
@@ -203,16 +198,13 @@ describe("Stripe webhook", () => {
     using _env = mockEnv(stripeConfigured);
     const userId = await seedAwaitingUser("http-signed@example.com");
     const stripe = realStripe();
-    setStripeClientForTests({
-      webhooks: stripe.webhooks,
-      subscriptions: {
-        retrieve: mock(() =>
-          Promise.resolve(
-            subscription({ metadata: { compassUserId: userId.toString() } }),
-          ),
+    spyOn(stripeBillingGateway, "retrieveSubscription").mockImplementation(
+      mock(() =>
+        Promise.resolve(
+          subscription({ metadata: { compassUserId: userId.toString() } }),
         ),
-      },
-    } as unknown as Stripe);
+      ),
+    );
 
     // Pretty-printed so JSON.parse + stringify would change the bytes and
     // fail HMAC. The Express stack must hand the original payload through.
@@ -252,10 +244,9 @@ describe("Stripe webhook", () => {
     using _env = mockEnv(stripeConfigured);
     const userId = await seedAwaitingUser("tampered@example.com");
     const stripe = realStripe();
-    setStripeClientForTests({
-      webhooks: stripe.webhooks,
-      subscriptions: { retrieve: mock() },
-    } as unknown as Stripe);
+    spyOn(stripeBillingGateway, "retrieveSubscription").mockImplementation(
+      mock(),
+    );
 
     const payload = checkoutPayload(userId.toString());
     const signature = await stripe.webhooks.generateTestHeaderStringAsync({
@@ -293,31 +284,32 @@ describe("Stripe webhook", () => {
       billing: { subscriptionStatus: "awaiting_checkout" },
     });
 
-    setStripeClientForTests({
-      subscriptions: {
-        retrieve: mock(() =>
-          Promise.resolve(
-            subscription({
-              metadata: { compassUserId: userId.toString() },
-            }),
-          ),
+    const stripe = stubBillingGateway({
+      retrieveSubscription: mock(() =>
+        Promise.resolve(
+          subscription({
+            metadata: { compassUserId: userId.toString() },
+          }),
         ),
-      },
-    } as unknown as Stripe);
+      ),
+    });
 
-    await processStripeEvent({
-      id: "evt_checkout_1",
-      type: "checkout.session.completed",
-      created: 1_775_000_100,
-      data: {
-        object: {
-          id: "cs_1",
-          client_reference_id: userId.toString(),
-          customer: "cus_1",
-          subscription: "sub_1",
+    await processStripeEvent(
+      {
+        id: "evt_checkout_1",
+        type: "checkout.session.completed",
+        created: 1_775_000_100,
+        data: {
+          object: {
+            id: "cs_1",
+            client_reference_id: userId.toString(),
+            customer: "cus_1",
+            subscription: "sub_1",
+          },
         },
-      },
-    } as unknown as Stripe.Event);
+      } as unknown as Stripe.Event,
+      stripe,
+    );
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("trialing");
@@ -339,9 +331,7 @@ describe("Stripe webhook", () => {
     });
 
     const retrieve = mock(() => Promise.resolve(subscription()));
-    setStripeClientForTests({
-      subscriptions: { retrieve },
-    } as unknown as Stripe);
+    const stripe = stubBillingGateway({ retrieveSubscription: retrieve });
 
     const event = {
       id: "evt_dup_1",
@@ -355,8 +345,8 @@ describe("Stripe webhook", () => {
       { $set: { "billing.stripeSubscriptionId": "sub_1" } },
     );
 
-    await processStripeEvent(event);
-    await processStripeEvent(event);
+    await processStripeEvent(event, stripe);
+    await processStripeEvent(event, stripe);
 
     expect(retrieve).toHaveBeenCalledTimes(1);
     expect(await mongoService.billingEvent.countDocuments()).toBe(1);
@@ -381,20 +371,21 @@ describe("Stripe webhook", () => {
       },
     });
 
-    setStripeClientForTests({
-      subscriptions: {
-        retrieve: mock(() =>
-          Promise.resolve(subscription({ status: "canceled" })),
-        ),
-      },
-    } as unknown as Stripe);
+    const stripe = stubBillingGateway({
+      retrieveSubscription: mock(() =>
+        Promise.resolve(subscription({ status: "canceled" })),
+      ),
+    });
 
-    await processStripeEvent({
-      id: "evt_stale_1",
-      type: "customer.subscription.updated",
-      created: Math.floor(newer.getTime() / 1000) - 90,
-      data: { object: { id: "sub_1" } },
-    } as unknown as Stripe.Event);
+    await processStripeEvent(
+      {
+        id: "evt_stale_1",
+        type: "customer.subscription.updated",
+        created: Math.floor(newer.getTime() / 1000) - 90,
+        data: { object: { id: "sub_1" } },
+      } as unknown as Stripe.Event,
+      stripe,
+    );
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("active");
@@ -419,20 +410,21 @@ describe("Stripe webhook", () => {
       },
     });
 
-    setStripeClientForTests({
-      subscriptions: {
-        retrieve: mock(() =>
-          Promise.resolve(subscription({ status: "canceled" })),
-        ),
-      },
-    } as unknown as Stripe);
+    const stripe = stubBillingGateway({
+      retrieveSubscription: mock(() =>
+        Promise.resolve(subscription({ status: "canceled" })),
+      ),
+    });
 
-    await processStripeEvent({
-      id: "evt_same_second_1",
-      type: "customer.subscription.deleted",
-      created: Math.floor(created.getTime() / 1000),
-      data: { object: { id: "sub_1" } },
-    } as unknown as Stripe.Event);
+    await processStripeEvent(
+      {
+        id: "evt_same_second_1",
+        type: "customer.subscription.deleted",
+        created: Math.floor(created.getTime() / 1000),
+        data: { object: { id: "sub_1" } },
+      } as unknown as Stripe.Event,
+      stripe,
+    );
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("canceled");
@@ -454,11 +446,11 @@ describe("Stripe webhook", () => {
       },
     });
 
-    setStripeClientForTests({
-      subscriptions: {
-        retrieve: mock(() => Promise.reject(new Error("stripe unavailable"))),
-      },
-    } as unknown as Stripe);
+    const stripe = stubBillingGateway({
+      retrieveSubscription: mock(() =>
+        Promise.reject(new Error("stripe unavailable")),
+      ),
+    });
 
     const event = {
       id: "evt_throw_1",
@@ -467,7 +459,7 @@ describe("Stripe webhook", () => {
       data: { object: { id: "sub_1" } },
     } as unknown as Stripe.Event;
 
-    await expect(processStripeEvent(event)).rejects.toThrow(
+    await expect(processStripeEvent(event, stripe)).rejects.toThrow(
       "stripe unavailable",
     );
 
@@ -481,10 +473,10 @@ describe("Stripe webhook", () => {
     expect(stored?.billing?.subscriptionStatus).toBe("awaiting_checkout");
 
     // A retry after Stripe recovers is reprocessed rather than deduped away.
-    setStripeClientForTests({
-      subscriptions: { retrieve: mock(() => Promise.resolve(subscription())) },
-    } as unknown as Stripe);
-    await processStripeEvent(event);
+    const recovered = stubBillingGateway({
+      retrieveSubscription: mock(() => Promise.resolve(subscription())),
+    });
+    await processStripeEvent(event, recovered);
 
     const retried = await mongoService.user.findOne({ _id: userId });
     expect(retried?.billing?.subscriptionStatus).toBe("trialing");
@@ -508,16 +500,17 @@ describe("Stripe webhook", () => {
     });
 
     const retrieve = mock(() => Promise.resolve(subscription()));
-    setStripeClientForTests({
-      subscriptions: { retrieve },
-    } as unknown as Stripe);
+    const stripe = stubBillingGateway({ retrieveSubscription: retrieve });
 
-    await processStripeEvent({
-      id: "evt_invoice_paid_1",
-      type: "invoice.paid",
-      created: 1_775_000_100,
-      data: { object: { id: "in_1", subscription: "sub_1" } },
-    } as unknown as Stripe.Event);
+    await processStripeEvent(
+      {
+        id: "evt_invoice_paid_1",
+        type: "invoice.paid",
+        created: 1_775_000_100,
+        data: { object: { id: "in_1", subscription: "sub_1" } },
+      } as unknown as Stripe.Event,
+      stripe,
+    );
 
     expect(retrieve).not.toHaveBeenCalled();
     const stored = await mongoService.user.findOne({ _id: userId });
@@ -597,13 +590,13 @@ describe("Stripe webhook", () => {
       const sessionsRetrieve = mock(() =>
         Promise.resolve(retrievedSetupSession(userId.toString())),
       );
-      setStripeClientForTests({
-        checkout: { sessions: { retrieve: sessionsRetrieve } },
-        customers: { update: customersUpdate },
-        subscriptions: { update: subscriptionsUpdate },
-      } as unknown as Stripe);
+      const stripe = stubBillingGateway({
+        retrieveCheckoutSession: sessionsRetrieve,
+        updateCustomer: customersUpdate,
+        updateSubscription: subscriptionsUpdate,
+      });
 
-      await processStripeEvent(setupEvent(userId.toString()));
+      await processStripeEvent(setupEvent(userId.toString()), stripe);
 
       expect(sessionsRetrieve.mock.calls[0]?.[0]).toBe("cs_setup_1");
       expect(sessionsRetrieve.mock.calls[0]?.[1]).toEqual({
@@ -627,19 +620,18 @@ describe("Stripe webhook", () => {
       const userId = await seedCustomer();
       const customersUpdate = mock(() => Promise.resolve({ id: "cus_setup" }));
       const subscriptionsUpdate = mock();
-      setStripeClientForTests({
-        checkout: {
-          sessions: {
-            retrieve: mock(() =>
-              Promise.resolve(retrievedSetupSession(userId.toString())),
-            ),
-          },
-        },
-        customers: { update: customersUpdate },
-        subscriptions: { update: subscriptionsUpdate },
-      } as unknown as Stripe);
+      const stripe = stubBillingGateway({
+        retrieveCheckoutSession: mock(() =>
+          Promise.resolve(retrievedSetupSession(userId.toString())),
+        ),
+        updateCustomer: customersUpdate,
+        updateSubscription: subscriptionsUpdate,
+      });
 
-      await processStripeEvent(setupEvent(userId.toString(), "evt_setup_2"));
+      await processStripeEvent(
+        setupEvent(userId.toString(), "evt_setup_2"),
+        stripe,
+      );
 
       expect(customersUpdate).toHaveBeenCalled();
       expect(subscriptionsUpdate).not.toHaveBeenCalled();
@@ -663,25 +655,28 @@ describe("Stripe webhook", () => {
           subscription({ metadata: { compassUserId: userId.toString() } }),
         ),
       );
-      setStripeClientForTests({
-        checkout: { sessions: { retrieve: sessionsRetrieve } },
-        subscriptions: { retrieve },
-      } as unknown as Stripe);
+      const stripe = stubBillingGateway({
+        retrieveCheckoutSession: sessionsRetrieve,
+        retrieveSubscription: retrieve,
+      });
 
-      await processStripeEvent({
-        id: "evt_sub_mode_1",
-        type: "checkout.session.completed",
-        created: 1_775_000_100,
-        data: {
-          object: {
-            id: "cs_sub_1",
-            mode: "subscription",
-            client_reference_id: userId.toString(),
-            customer: "cus_1",
-            subscription: "sub_1",
+      await processStripeEvent(
+        {
+          id: "evt_sub_mode_1",
+          type: "checkout.session.completed",
+          created: 1_775_000_100,
+          data: {
+            object: {
+              id: "cs_sub_1",
+              mode: "subscription",
+              client_reference_id: userId.toString(),
+              customer: "cus_1",
+              subscription: "sub_1",
+            },
           },
-        },
-      } as unknown as Stripe.Event);
+        } as unknown as Stripe.Event,
+        stripe,
+      );
 
       expect(sessionsRetrieve).not.toHaveBeenCalled();
       expect(retrieve).toHaveBeenCalled();
@@ -692,18 +687,14 @@ describe("Stripe webhook", () => {
     it("leaves no billingEvent row when Stripe fails, so the retry reprocesses", async () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedCustomer({ stripeSubscriptionId: "sub_setup" });
-      setStripeClientForTests({
-        checkout: {
-          sessions: {
-            retrieve: mock(() =>
-              Promise.reject(new Error("stripe unavailable")),
-            ),
-          },
-        },
-      } as unknown as Stripe);
+      const stripe = stubBillingGateway({
+        retrieveCheckoutSession: mock(() =>
+          Promise.reject(new Error("stripe unavailable")),
+        ),
+      });
 
       const event = setupEvent(userId.toString(), "evt_setup_fail");
-      await expect(processStripeEvent(event)).rejects.toThrow(
+      await expect(processStripeEvent(event, stripe)).rejects.toThrow(
         "stripe unavailable",
       );
       expect(
@@ -725,18 +716,15 @@ describe("Stripe webhook", () => {
           }),
         ),
       );
-      setStripeClientForTests({
-        webhooks: stripe.webhooks,
-        checkout: {
-          sessions: {
-            retrieve: mock(() =>
-              Promise.resolve(retrievedSetupSession(userId.toString())),
-            ),
-          },
-        },
-        customers: { update: customersUpdate },
-        subscriptions: { update: subscriptionsUpdate },
-      } as unknown as Stripe);
+      spyOn(stripeBillingGateway, "retrieveCheckoutSession").mockImplementation(
+        mock(() => Promise.resolve(retrievedSetupSession(userId.toString()))),
+      );
+      spyOn(stripeBillingGateway, "updateCustomer").mockImplementation(
+        customersUpdate,
+      );
+      spyOn(stripeBillingGateway, "updateSubscription").mockImplementation(
+        subscriptionsUpdate,
+      );
 
       const payload = JSON.stringify({
         id: "evt_setup_signed",
