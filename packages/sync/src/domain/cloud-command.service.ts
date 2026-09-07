@@ -1,4 +1,3 @@
-import { type DateTime } from "@core/types/domain-primitives";
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
@@ -13,8 +12,6 @@ import {
 import {
   isFollowingSplitAtSeriesStart,
   occurrenceScheduleAt,
-  stripRuleBounds,
-  truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
 import {
   executeProviderCreate,
@@ -31,12 +28,13 @@ import {
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
+  buildRemainderMaster,
   deleteExceptions,
   deleteFollowingExceptions,
   exceptionInstant,
-  isCancelledException,
-  remainderMasterId,
+  partitionEditAllExceptions,
   reprojectMaster,
+  truncatedSeriesMaster,
 } from "@sync/domain/series-exception";
 import {
   ProviderNotConfiguredError,
@@ -602,10 +600,10 @@ async function updateCloudSeries(
     command.principalId,
     master._id,
   );
-  const kept = convertsToSingle ? [] : exceptions.filter(isCancelledException);
-  const discarded = convertsToSingle
-    ? exceptions
-    : exceptions.filter((exception) => !isCancelledException(exception));
+  const { kept, discarded } = partitionEditAllExceptions(
+    exceptions,
+    convertsToSingle,
+  );
 
   await deleteExceptions(deps, command, discarded);
   const updated = applyCloudUpdate(master, command, now());
@@ -644,9 +642,6 @@ async function deleteCloudSeries(
   );
   return confirmCloud(deps, command);
 }
-
-// deleteExceptions / isCancelledException / exceptionInstant now live in
-// series-exception.ts, shared with the provider-linked executors below.
 
 // Cancel one occurrence of a cloud series (scope "this"): upsert a cancelled
 // exception tombstone at the target instant, reproject the master to exclude
@@ -713,9 +708,6 @@ async function updateCloudOccurrence(
   return confirmCloud(deps, command);
 }
 
-// reprojectMaster now lives in series-exception.ts, shared with the
-// provider-linked executors below.
-
 // Delete one occurrence of a cloud series and every occurrence after it (scope
 // "thisAndFollowing"): truncate the master's rule to end before the split point,
 // drop the exceptions at or after it, and reproject the shortened master. A
@@ -738,22 +730,12 @@ async function deleteCloudSeriesFollowing(
   }
 
   await deleteFollowingExceptions(deps, command, master._id, splitAt);
-  const truncated: EventRecord = {
-    ...master,
-    recurrence: {
-      kind: "seriesMaster",
-      rules: truncateRulesBefore(master.recurrence.rules, splitAt),
-    },
-    updatedAt: now(),
-  };
+  const truncated = truncatedSeriesMaster(master, splitAt, now());
   const applied = await deps.events.replaceExisting(truncated);
   if (!applied) return command;
   await reprojectMaster(deps, command, truncated, now);
   return confirmCloud(deps, command);
 }
-
-// deleteFollowingExceptions now lives in series-exception.ts, shared
-// with the provider-linked executors below.
 
 // Edit one occurrence of a cloud series and every occurrence after it (scope
 // "thisAndFollowing") by SPLITTING the series: truncate the original master to
@@ -789,14 +771,7 @@ async function updateCloudSeriesFollowing(
   }
 
   await deleteFollowingExceptions(deps, command, master._id, splitAt);
-  const truncated: EventRecord = {
-    ...master,
-    recurrence: {
-      kind: "seriesMaster",
-      rules: truncateRulesBefore(master.recurrence.rules, splitAt),
-    },
-    updatedAt: now(),
-  };
+  const truncated = truncatedSeriesMaster(master, splitAt, now());
   const applied = await deps.events.replaceExisting(truncated);
   if (!applied) return command;
   await reprojectMaster(deps, command, truncated, now);
@@ -806,47 +781,6 @@ async function updateCloudSeriesFollowing(
   await reprojectOccurrences(deps.occurrences, remainder, now);
   return confirmCloud(deps, command);
 }
-
-// Build the remainder series of a thisAndFollowing split: a fresh master at the
-// edit's schedule, carrying the edited content and recurrence, with a
-// deterministic id so a retry converges on one series. "preserve" continues the
-// original cadence (bounds stripped, so it runs open-ended from the split).
-function buildRemainderMaster(
-  master: EventRecord,
-  command: CommandRecord,
-  now: Date,
-): EventRecord {
-  if (command.input.kind !== "update") {
-    throw new Error("buildRemainderMaster requires an update command");
-  }
-  if (master.recurrence.kind !== "seriesMaster") {
-    throw new Error("buildRemainderMaster requires a series master");
-  }
-  const { input } = command;
-  const recurrence: SyncEventRecurrence =
-    input.recurrence.kind === "series"
-      ? { kind: "seriesMaster", rules: input.recurrence.rules }
-      : input.recurrence.kind === "single"
-        ? { kind: "single" }
-        : {
-            kind: "seriesMaster",
-            rules: stripRuleBounds(master.recurrence.rules),
-          };
-  return {
-    ...master,
-    _id: remainderMasterId(master._id, command.input.recurrenceId as DateTime),
-    clientEventId: null,
-    content: mergeUpdateContent(master.content, input.content),
-    schedule: input.schedule,
-    recurrence,
-    createdAt: now,
-    updatedAt: now,
-    confirmedAt: now,
-  };
-}
-
-// remainderMasterId now lives in series-exception.ts, shared with the
-// provider-linked split executors below.
 
 // Confirm a cloud command with no provider identity — local persistence is the
 // only durability it needs. updateOutcome only misses if the command vanished
