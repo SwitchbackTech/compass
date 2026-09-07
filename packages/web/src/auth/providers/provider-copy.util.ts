@@ -93,12 +93,6 @@ export function bookingConnectPromptCopy(
   return "Connect a calendar account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.";
 }
 
-export const BOOKING_CONNECT_BUTTON_LABEL: Record<ProviderKind, string> = {
-  google: "Connect Google",
-  microsoft: CONNECT_CALENDAR_LABEL.microsoft,
-  apple: CONNECT_CALENDAR_LABEL.apple,
-};
-
 export function defaultCalendarGroupLabel(
   accountEmail: string,
   kind: ProviderKind,

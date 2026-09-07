@@ -8,8 +8,10 @@ import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 let available: ProviderKind[] = ["google"];
+const connectingKind: ProviderKind | null = null;
 const mockConnectGoogle = mock();
 const mockConnectMicrosoft = mock();
+const mockConnectApple = mock();
 
 mockModuleForFile(
   "@web/auth/providers/useAvailableConnectProviders",
@@ -20,7 +22,7 @@ mockModuleForFile(
 const connectByKind: Record<ProviderKind, ReturnType<typeof mock>> = {
   google: mockConnectGoogle,
   microsoft: mockConnectMicrosoft,
-  apple: mock(),
+  apple: mockConnectApple,
 };
 
 const labelByKind: Record<ProviderKind, string> = {
@@ -36,7 +38,7 @@ mockModuleForFile(
     useConnectProvider: (kind: ProviderKind) => ({
       state: "NOT_CONNECTED",
       isAvailable: true,
-      isConnecting: false,
+      isConnecting: connectingKind === kind,
       isRefreshing: false,
       commandAction: {
         label: labelByKind[kind],
@@ -58,8 +60,10 @@ const { ConnectProviderChooser } = (await import(
 describe("ConnectProviderChooser", () => {
   beforeEach(() => {
     available = ["google"];
+    connectingKind = null;
     mockConnectGoogle.mockClear();
     mockConnectMicrosoft.mockClear();
+    mockConnectApple.mockClear();
   });
 
   afterEach(() => {
@@ -108,5 +112,56 @@ describe("ConnectProviderChooser", () => {
     expect(mockConnectMicrosoft).toHaveBeenCalledTimes(1);
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("renders branded connect pills for the prompt variant", async () => {
+    const user = userEvent.setup();
+    available = ["google", "microsoft", "apple"];
+
+    render(
+      <ConnectProviderChooser
+        idleLabel="Connect Google Calendar"
+        variant="prompt"
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Connect Google Calendar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Connect Apple Calendar" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
+    );
+    expect(mockConnectMicrosoft).toHaveBeenCalledTimes(1);
+    expect(mockConnectGoogle).not.toHaveBeenCalled();
+    expect(mockConnectApple).not.toHaveBeenCalled();
+  });
+
+  it("relabels the connecting prompt pill and disables the others", () => {
+    available = ["google", "microsoft", "apple"];
+    connectingKind = "microsoft";
+
+    render(
+      <ConnectProviderChooser
+        idleLabel="Connect Google Calendar"
+        variant="prompt"
+      />,
+    );
+
+    const busy = screen.getByRole("button", { name: "Opening Microsoft…" });
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    expect(busy).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Connect Google Calendar" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Connect Apple Calendar" }),
+    ).toBeDisabled();
   });
 });

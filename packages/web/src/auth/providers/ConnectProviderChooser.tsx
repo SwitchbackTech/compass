@@ -13,15 +13,13 @@ import {
   providerDisplayName,
 } from "@core/types/sync/identity.contracts";
 import { openingProviderLabel } from "@web/auth/providers/connection-provider.util";
-import { BOOKING_CONNECT_BUTTON_LABEL } from "@web/auth/providers/provider-copy.util";
+import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
 import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 import { useConnectProvider } from "@web/auth/providers/useConnectProvider";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { MicrosoftLogo } from "@web/components/AuthModal/components/MicrosoftButton";
-import {
-  OverlayPanelActionButton,
-  OverlayPanelActions,
-} from "@web/components/OverlayPanel/OverlayPanel";
+import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
+import { OverlayPanelActionButton } from "@web/components/OverlayPanel/OverlayPanel";
 
 const PROVIDER_MENU_ICON: Partial<Record<ProviderKind, typeof MicrosoftLogo>> =
   {
@@ -137,21 +135,14 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
 
   if (variant === "prompt") {
     return (
-      <OverlayPanelActions align="start">
-        {available.map((kind) => (
-          <OverlayPanelActionButton
-            aria-busy={byKind[kind].isConnecting || undefined}
-            disabled={isConnecting}
-            key={kind}
-            onClick={() => runConnect(kind)}
-            variant="primary"
-          >
-            {byKind[kind].isConnecting
-              ? openingProviderLabel(kind)
-              : BOOKING_CONNECT_BUTTON_LABEL[kind]}
-          </OverlayPanelActionButton>
-        ))}
-      </OverlayPanelActions>
+      <SignInProviderButtons
+        available={available}
+        busyLabel={openingProviderLabel}
+        labels={CONNECT_CALENDAR_LABEL}
+        loadingKind={connectingKind ?? null}
+        onSignIn={runConnect}
+        shortcutKeys={null}
+      />
     );
   }
 
