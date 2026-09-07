@@ -6,6 +6,7 @@ import {
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
+import { type BookingSequenceField } from "@web/booking/booking-sequence.fields";
 import {
   getLocalCalendar,
   getWritableCalendars,
@@ -148,4 +149,73 @@ export function isUnconfiguredBookingPage(
   page: AdminGetBookingPageResult,
 ): boolean {
   return "isConfigured" in page && page.isConfigured === false;
+}
+
+export const WELCOME_TEXT_MAX_LENGTH = 500;
+export const WELCOME_TEXT_TOO_LONG_MESSAGE = `Welcome text must be ${WELCOME_TEXT_MAX_LENGTH} characters or fewer.`;
+
+export const isWelcomeTextTooLong = (
+  welcomeText: string | null | undefined,
+): boolean => (welcomeText?.length ?? 0) > WELCOME_TEXT_MAX_LENGTH;
+
+export type BookingFormValidationError = {
+  message: string;
+  field?: BookingSequenceField;
+};
+
+export function validateBookingForm({
+  areHoursValid,
+  enabling,
+  form,
+  horizonInvalid,
+  minNoticeInvalid,
+  writableCalendars,
+}: {
+  areHoursValid: boolean;
+  enabling: boolean;
+  form: AdminPutBookingPageInput;
+  horizonInvalid: boolean;
+  minNoticeInvalid: boolean;
+  writableCalendars: Calendar[];
+}): BookingFormValidationError | null {
+  if (!areHoursValid) {
+    return {
+      field: "hours",
+      message: "Fix the weekly hours that could not be read.",
+    };
+  }
+  if (isWelcomeTextTooLong(form.welcomeText)) {
+    return { field: "welcome", message: WELCOME_TEXT_TOO_LONG_MESSAGE };
+  }
+  if (minNoticeInvalid) {
+    return {
+      field: "notice",
+      message: "Fix the highlighted number fields before saving.",
+    };
+  }
+  if (horizonInvalid) {
+    return {
+      field: "horizon",
+      message: "Fix the highlighted number fields before saving.",
+    };
+  }
+  if (enabling && !canEnableBookingPage(form, writableCalendars)) {
+    return {
+      field: "destination",
+      message: "Choose a destination calendar before enabling booking.",
+    };
+  }
+  if (enabling && form.blockingCalendarIds.length === 0) {
+    return {
+      field: "blocking",
+      message: "Select at least one blocking calendar.",
+    };
+  }
+  if (enabling && form.weeklyAvailability.length === 0) {
+    return {
+      field: "hours",
+      message: "Add weekly hours before turning on your booking page.",
+    };
+  }
+  return null;
 }

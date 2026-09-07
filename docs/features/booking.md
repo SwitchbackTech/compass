@@ -215,26 +215,48 @@ blocks.
 
 ### Host Settings controls
 
-The Settings **Booking** page is keyboard-first. It is not a native
-timezone `<select>` plus a checkbox and two time inputs per weekday.
+The Settings **Booking** page is keyboard-first. It is split into a
+status header, an Essentials group, and a collapsed **More options**
+group. It is not a native timezone `<select>` plus a checkbox and two
+time inputs per weekday.
 
+- **Status:** a live page shows "Your booking page is live" and the
+  public link with Copy and **Open booking page**. A page that is not
+  live shows "Your booking page is not live yet".
+- **Essentials:** Duration, booking timezone, weekly hours, and
+  destination calendar. These fit without scrolling at 1440x900.
+- **More options:** an uncontrolled native `<details>` that starts
+  collapsed. It holds blocking calendars, welcome text, notice and
+  horizon, and buffer and limits. Jumping to a field inside it, or an
+  invalid field in the group, opens it. Do not control the `open` prop
+  from React: the jump-key code opens the element imperatively.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
 - **Weekly hours** are one typed range per weekday (`9-5`, or `9-12, 1-5`
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
-- **Jump:** `e` then a letter focuses a field (`e` enable, `d` duration,
-  `c` destination, `b` blocking, `z` timezone, `h` hours, `w` welcome,
-  `n` notice, `x` horizon, `o` buffer and limits, `l` link). Settings
-  owns Mod+Enter (save) and digits `1/2/3` (nav) on this page, which is
+- **Jump:** `e` then a letter focuses a field (`e` booking page on or
+  off, `d` duration, `c` destination, `b` blocking, `z` timezone,
+  `h` hours, `m` More options, `w` welcome, `n` notice, `x` horizon,
+  `o` buffer and limits, `l` link). Settings owns Mod+Enter (the
+  primary save action) and digits `1/2/3` (nav) on this page, which is
   why the leader is `e` rather than `Mod+digit`. Focus uses
   `data-booking-field` and does not click, so jumping onto a checkbox
-  does not toggle it.
-- **Save:** a successful save that returns a booking URL copies it. A
-  page that has never been enabled has no slug yet, so the toast says to
-  enable booking instead. Safari can drop a copy that follows the save
-  round trip; the toast then names `e` then `l`, and the Copy button
-  stays.
+  does not toggle it. Before focusing, the helper opens any ancestor
+  `<details>`.
+- **Turn on / Save:** going live is one click. When the page is not
+  live, the primary action is **Turn on booking page** (Mod+Enter).
+  **Save draft** appears only when the form is dirty. When the page is
+  live, the primary action is **Save changes** and the secondary action
+  is **Turn off booking page**. The Enable booking page checkbox is
+  gone. Validation and server errors render beside the save bar and
+  focus the offending field.
+- **Toasts:** turning on copies the link (`Your booking page is live.
+  Link copied.`, or `Live. Press e then l to copy your link.` if the
+  clipboard fails). Save changes copies the link with today's Saved
+  copy. Turn off says `Booking page turned off.` Save draft says
+  `Saved. Turn on your booking page to share the link.` Safari can drop
+  a copy that follows the save round trip; the Copy button stays.
 - **Open booking page** sits next to Copy and opens the public URL in a
   new tab. There is no authenticated preview iframe.
 - **Discard:** Escape on a dirty Booking form opens **Discard unsaved
