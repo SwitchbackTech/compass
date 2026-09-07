@@ -1,12 +1,18 @@
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
-  type ConnectionId,
   type EventId,
   type IdempotencyKey,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import {
+  bindCommandRepos,
+  COMMAND_NOW,
+  FakeProviderEventWriter,
+  newCommandIds,
+  seedCommandCalendar,
+} from "@sync/__tests__/helpers/command-scenario";
 import { fakeAdapters } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
@@ -16,34 +22,47 @@ import {
 import { type ProviderConnectionLookup } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
-import {
-  type ProviderCreateInput,
-  type ProviderEventWriter,
-  type ProviderPatchInput,
-  type ProviderWriteResult,
-} from "@sync/providers/provider-event-writer.port";
+import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { findSafetyCanaryHit } from "@sync/safety/safety-canary";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
+import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const storage = setupSyncStorage(import.meta.url);
+const repos = bindCommandRepos(storage);
 const objectId = () => faker.database.mongodbObjectId();
+const now = COMMAND_NOW;
 
-class FakeWriter implements ProviderEventWriter {
-  calls: ProviderCreateInput[] = [];
-  patchCalls: ProviderPatchInput[] = [];
-  // A stub current provider event for the update path's replay-detection fetch;
-  // its content differs from any command's intent so an update always patches.
-  fetched: ProviderEvent | null = {
+let mongo: SyncMongoService;
+let commands: CommandRepository;
+let events: EventRepository;
+let occurrences: EventOccurrenceRepository;
+let resources: SyncResourceRepository;
+let calendars: ProviderCalendarRepository;
+let markers: DeletionMarkerRepository;
+
+beforeEach(() => {
+  mongo = repos.mongo;
+  commands = repos.commands;
+  events = repos.events;
+  occurrences = repos.occurrences;
+  resources = repos.resources;
+  calendars = repos.calendars;
+  markers = repos.markers;
+});
+
+const providerWriter = () => {
+  const writer = new FakeProviderEventWriter();
+  writer.matchFetchedById = false;
+  writer.fetched = {
     kind: "event",
     providerEventId: "g-evt-1",
     providerVersion: "etag-1",
@@ -65,10 +84,7 @@ class FakeWriter implements ProviderEventWriter {
     busy: true,
     recurrence: { kind: "single" },
   };
-  // The resolved instance a this/thisAndFollowing-scope fetchInstanceAt call
-  // returns — its own distinct provider identity, never the master's (see
-  // upsertException's providerIdentity param).
-  fetchedInstance: ProviderEvent | null = {
+  writer.fetchedInstance = {
     kind: "event",
     providerEventId: "g-inst-1",
     providerVersion: "etag-1",
@@ -90,25 +106,8 @@ class FakeWriter implements ProviderEventWriter {
     busy: true,
     recurrence: { kind: "single" },
   };
-  async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
-    this.calls.push(input);
-    return { providerEventId: "g-evt-1", providerVersion: "etag-1" };
-  }
-  async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
-    this.patchCalls.push(input);
-    return { providerEventId: "g-evt-1", providerVersion: "etag-2" };
-  }
-  deleteCalls = 0;
-  async deleteEvent(): Promise<void> {
-    this.deleteCalls++;
-  }
-  async fetchEvent(): Promise<ProviderEvent | null> {
-    return this.fetched;
-  }
-  async fetchInstanceAt(): Promise<ProviderEvent | null> {
-    return this.fetchedInstance;
-  }
-}
+  return writer;
+};
 
 const provider = (writer: ProviderEventWriter) => ({
   resolveAdapters: () =>
@@ -128,14 +127,6 @@ const provider = (writer: ProviderEventWriter) => ({
 });
 
 describe("submitCloudCommand provider dispatch", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-  let markers: DeletionMarkerRepository;
-
   const connections: ProviderConnectionLookup = {
     findById: async () => ({
       account: { email: "user@example.com" },
@@ -143,29 +134,15 @@ describe("submitCloudCommand provider dispatch", () => {
     }),
   };
 
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
   const seedProviderCalendar = (tenantId: TenantId, principalId: PrincipalId) =>
-    calendars.upsertByProviderCalendar({
+    seedCommandCalendar(calendars, {
+      ...newCommandIds(),
       tenantId,
       principalId,
-      connectionId: objectId() as ConnectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
     });
 
   const commandDeps = (
-    writer?: FakeWriter,
+    writer?: FakeProviderEventWriter,
     extra: Record<string, unknown> = {},
   ) => ({
     commands,
@@ -212,21 +189,11 @@ describe("submitCloudCommand provider dispatch", () => {
     expectedVersion: null,
   });
 
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-    markers = new DeletionMarkerRepository(mongo.db);
-  });
-
   it("executes a provider-targeted create when active and provider-capable", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -245,7 +212,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const submit = submitCloudCommand(
       commandDeps(writer, { execution: "passive" }),
@@ -274,7 +241,7 @@ describe("submitCloudCommand provider dispatch", () => {
   it("still confirms a cloud (non-provider) create locally when active", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -449,7 +416,7 @@ describe("submitCloudCommand provider dispatch", () => {
       providerVersion: "etag-1" as never,
       deliveryState: "confirmed",
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -499,7 +466,7 @@ describe("submitCloudCommand provider dispatch", () => {
       providerVersion: "etag-1" as never,
       deliveryState: "confirmed",
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -508,7 +475,7 @@ describe("submitCloudCommand provider dispatch", () => {
     );
 
     expect(command.outcome.state).toBe("confirmed");
-    expect(writer.deleteCalls).toBe(1);
+    expect(writer.deleteCalls).toHaveLength(1);
     // Local content removed only after the provider confirmed.
     expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
     expect(
@@ -533,7 +500,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -542,7 +509,7 @@ describe("submitCloudCommand provider dispatch", () => {
     );
 
     expect(command.outcome.state).toBe("confirmed");
-    expect(writer.deleteCalls).toBe(1);
+    expect(writer.deleteCalls).toHaveLength(1);
     expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
   });
 
@@ -559,7 +526,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -576,7 +543,7 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(command.outcome.state).toBe("confirmed");
     // Deletes the RESOLVED INSTANCE at the provider — the series master and
     // every other occurrence are untouched.
-    expect(writer.deleteCalls).toBe(1);
+    expect(writer.deleteCalls).toHaveLength(1);
     expect(
       await events.findById(tenantId, principalId, eventId),
     ).not.toBeNull();
@@ -647,7 +614,7 @@ describe("submitCloudCommand provider dispatch", () => {
         conference: null,
       },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
     writer.fetched = {
       ...(writer.fetched as ProviderEvent),
       content: {
@@ -721,7 +688,7 @@ describe("submitCloudCommand provider dispatch", () => {
         conference: null,
       },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       {
@@ -763,7 +730,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       {
@@ -799,7 +766,7 @@ describe("submitCloudCommand provider dispatch", () => {
     // conflict, mirroring the update path.
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       {
@@ -872,7 +839,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -921,7 +888,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    const writer = new FakeWriter();
+    const writer = providerWriter();
 
     const { command } = await submitCloudCommand(
       commandDeps(writer),
@@ -1698,13 +1665,13 @@ describe("submitCloudCommand provider dispatch", () => {
         providerVersion: "etag-1" as never,
         deliveryState: "confirmed",
       });
-      const writer = new FakeWriter();
+      const writer = providerWriter();
       const activeDeps = commandDeps(writer);
       const submit = deleteFor(tenantId, principalId, eventId);
 
       const first = await submitCloudCommand(activeDeps, submit, now);
       expect(first.command.outcome.state).toBe("confirmed");
-      expect(writer.deleteCalls).toBe(1);
+      expect(writer.deleteCalls).toHaveLength(1);
 
       // Recreated under the same id (the undo path re-links it to the provider
       // too, but a fresh provider-linked seed exercises the same collision).
@@ -1721,7 +1688,7 @@ describe("submitCloudCommand provider dispatch", () => {
       const second = await submitCloudCommand(activeDeps, submit, now);
 
       expect(second.command.outcome.state).toBe("confirmed");
-      expect(writer.deleteCalls).toBe(2);
+      expect(writer.deleteCalls).toHaveLength(2);
       expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
     });
 
@@ -1737,17 +1704,17 @@ describe("submitCloudCommand provider dispatch", () => {
         providerVersion: "etag-1" as never,
         deliveryState: "confirmed",
       });
-      const writer = new FakeWriter();
+      const writer = providerWriter();
       const activeDeps = commandDeps(writer);
       const submit = deleteFor(tenantId, principalId, eventId);
 
       await submitCloudCommand(activeDeps, submit, now);
-      expect(writer.deleteCalls).toBe(1);
+      expect(writer.deleteCalls).toHaveLength(1);
 
       const second = await submitCloudCommand(activeDeps, submit, now);
 
       expect(second.changed).toBe(false);
-      expect(writer.deleteCalls).toBe(1);
+      expect(writer.deleteCalls).toHaveLength(1);
       expect(
         await mongo.db
           .collection(SYNC_COLLECTIONS.commands)
@@ -2056,26 +2023,6 @@ describe("submitCloudCommand provider dispatch", () => {
 // typed. "preserve"/legacy stays byte-identical (covered by every pre-existing
 // test in this file, none of which set attendeesEdit).
 describe("cloud-only attendeesEdit replace", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-  let markers: DeletionMarkerRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-    markers = new DeletionMarkerRepository(mongo.db);
-  });
-
   const deps = () => ({
     commands,
     events,
