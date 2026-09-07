@@ -36,6 +36,7 @@ import {
   expect,
   it,
   mock,
+  setSystemTime,
   spyOn,
 } from "bun:test";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
@@ -151,6 +152,15 @@ describe("PublicBookingService", () => {
   beforeAll(async () => {
     await setupTestDb(import.meta.url);
     await ensureBookingIndexes();
+    // Every slot below is pinned to Monday 2026-09-07, inside the fixture's
+    // weekday-1 09:00-17:00 window. assertSlotAvailable rejects a slot that
+    // starts before now + minNoticeHours, so with the real clock these tests
+    // passed only until 2026-09-07T10:00:00Z and then failed forever. Freeze
+    // "now" to that morning instead of re-pinning the dates: shifting them a
+    // day would move them off weekday 1 and out of the window. Set after the
+    // Mongo connection is established so the driver's own timeouts are
+    // measured against the real clock.
+    setSystemTime(new Date("2026-09-07T08:00:00.000Z"));
   });
 
   beforeEach(async () => {
@@ -172,7 +182,10 @@ describe("PublicBookingService", () => {
     service = new PublicBookingService(port);
   });
 
-  afterAll(cleanupTestDb);
+  afterAll(async () => {
+    setSystemTime();
+    await cleanupTestDb();
+  });
 
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
