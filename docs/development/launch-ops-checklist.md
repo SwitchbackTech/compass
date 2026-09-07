@@ -28,7 +28,25 @@ Alert on `sync_health_snapshot` properties (low cardinality — safe to alert):
 Also watch:
 
 - Web `$exception` rate (Error Tracking)
-- Client event `sse_connection_degraded` (prolonged EventSource non-OPEN)
+
+### Alerts that already exist in PostHog
+
+Created by hand in the PostHog UI or via the PostHog MCP; all evaluate hourly
+and email the founder's PostHog account. Check the
+[alerts page](https://us.posthog.com/project/165441/alerts) before creating
+another one.
+
+| Alert | Insight | Fires when |
+| --- | --- | --- |
+| Sync job terminal failure | hourly count of `sync_job_terminal_failure` | count above 0 in the current hour |
+| Sync reconcile sweep starved (production) | `sync_reconcile_sweep` completions, trailing 45 minutes, production | count below 1 |
+| SSE connection degraded burst (production) | `sse_connection_degraded`, trailing 60 minutes, production | count above 3 |
+
+The SSE alert samples a trailing 60-minute window once an hour, so a burst
+that straddles two checks can be under-counted. Widen the insight's window to
+90 minutes if that bites; 15-minute evaluation needs a PostHog add-on. The
+web app shows its own "Reconnecting…" header badge for the same condition
+(`LiveUpdatesStatus`), with a reload prompt after 30 seconds.
 
 ## During launch
 

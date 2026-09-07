@@ -1,6 +1,7 @@
 import * as posthogBootstrap from "@web/auth/posthog/posthog.bootstrap";
 import {
   closeStream,
+  getSseDegradedSinceMs,
   isSseDegraded,
   openStream,
   subscribeSseDegraded,
@@ -189,6 +190,44 @@ describe("sse.client degraded state", () => {
     closeStream();
 
     expect(isSseDegraded()).toBe(false);
+  });
+
+  it("records when degradation began and keeps the first timestamp", () => {
+    expect(getSseDegradedSinceMs()).toBeNull();
+
+    openStream();
+    fakeEs.dispatch("error");
+    runDegradedTimer();
+    expect(getSseDegradedSinceMs()).toBe(nowMs);
+
+    // A later error re-arms the timer; a second fire must not restart the
+    // header's reload countdown.
+    const firstDegradedAt = nowMs;
+    nowMs += 20_000;
+    fakeEs.dispatch("error");
+    for (const timer of timerCallbacks.filter((t) => t.delayMs === 15_000)) {
+      timer.callback();
+    }
+    expect(getSseDegradedSinceMs()).toBe(firstDegradedAt);
+  });
+
+  it("clears the degraded timestamp on reopen and on close", () => {
+    openStream();
+    fakeEs.dispatch("error");
+    runDegradedTimer();
+    fakeEs.readyState = FakeEventSource.OPEN;
+    fakeEs.dispatch("open");
+    expect(getSseDegradedSinceMs()).toBeNull();
+
+    fakeEs.readyState = FakeEventSource.CONNECTING;
+    fakeEs.dispatch("error");
+    for (const timer of timerCallbacks.filter((t) => t.delayMs === 15_000)) {
+      timer.callback();
+    }
+    expect(getSseDegradedSinceMs()).toBe(nowMs);
+
+    closeStream();
+    expect(getSseDegradedSinceMs()).toBeNull();
   });
 
   it("captures diagnostic properties on the first degraded report", () => {

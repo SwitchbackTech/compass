@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import {
+  getSseDegradedSinceMs,
   isSseDegraded,
   subscribeSseDegraded,
 } from "@web/sse/client/sse.client";
@@ -12,4 +13,13 @@ import {
  */
 export function useSseDegraded(): boolean {
   return useSyncExternalStore(subscribeSseDegraded, isSseDegraded);
+}
+
+/**
+ * Epoch ms at which the stream became degraded, or null while healthy. The
+ * header uses it to offer a reload once an outage has run long enough that
+ * native EventSource reconnect is unlikely to recover on its own.
+ */
+export function useSseDegradedSince(): number | null {
+  return useSyncExternalStore(subscribeSseDegraded, getSseDegradedSinceMs);
 }
