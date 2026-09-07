@@ -1,5 +1,8 @@
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
-import { bookingConnectPromptCopy } from "@web/auth/providers/provider-copy.util";
+import {
+  bookingConnectPromptCopy,
+  CONNECT_CALENDAR_LABEL,
+} from "@web/auth/providers/provider-copy.util";
 import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 
 export function BookingConnectGooglePrompt() {
@@ -11,7 +14,10 @@ export function BookingConnectGooglePrompt() {
         {bookingConnectPromptCopy(connectable)}
       </p>
       {connectable.length > 0 ? (
-        <ConnectProviderChooser idleLabel="Connect Google" variant="prompt" />
+        <ConnectProviderChooser
+          idleLabel={CONNECT_CALENDAR_LABEL.google}
+          variant="prompt"
+        />
       ) : (
         <p className="text-sm text-text-muted">
           Google sign-in is not configured in this environment.

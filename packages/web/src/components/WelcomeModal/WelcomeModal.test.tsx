@@ -639,7 +639,7 @@ describe("WelcomeModal", () => {
       ).toBeNull();
       expect(screen.queryByText("You'll pick your calendar next.")).toBeNull();
       expect(
-        screen.queryByRole("button", { name: "Connect Microsoft" }),
+        screen.queryByRole("button", { name: "Connect Microsoft Calendar" }),
       ).toBeNull();
     });
 
@@ -708,10 +708,10 @@ describe("WelcomeModal", () => {
         screen.getByRole("heading", { name: "Connect the calendar you use" }),
       ).toBeTruthy();
       expect(
-        screen.getByRole("button", { name: "Connect Microsoft" }),
+        screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
       ).toBeTruthy();
       await user.click(
-        screen.getByRole("button", { name: "Connect Microsoft" }),
+        screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
       );
       expect(mockOpenModal).toHaveBeenCalledWith("signUp");
     });

@@ -21,18 +21,21 @@ export const AppleButton = ({
   label = "Continue with Apple",
   shortcutKey,
   style,
+  busy,
 }: {
   onClick: () => void;
   disabled?: boolean;
   label?: string;
   shortcutKey?: string;
   style?: React.CSSProperties;
+  busy?: boolean;
 }) => {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-busy={busy || undefined}
       aria-label={label}
       className={classNames(
         "inline-flex h-10 items-center justify-center gap-2.5 whitespace-nowrap rounded-full border border-[#1f1f1f] bg-[#000] px-3 font-medium text-[#fff] text-sm transition-[background-color,box-shadow,transform] duration-200",
