@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # After "Release on main": smoke staging and comment on the issue if
-# this SHA came from an agent-automerge PR. Topping the fleet up to N
-# happens in agent-loop.yml after this script succeeds.
+# this SHA came from an agent-automerge PR. Launching the next WP is
+# launch-next (merge) or kick (hourly / dispatch), not this job.
 set -euo pipefail
 
 # shellcheck disable=SC1091
@@ -33,8 +33,7 @@ issue_number=""
 is_loop_pr=false
 if [ -n "$pr_number" ]; then
   labels=$(gh pr view "$pr_number" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null || true)
-  if printf '%s\n' "$labels" | grep -qx "$AUTOMERGE_LABEL" \
-    || printf '%s\n' "$labels" | grep -qx "$LEGACY_AUTOMERGE_LABEL"; then
+  if printf '%s\n' "$labels" | grep -qx "$AUTOMERGE_LABEL"; then
     is_loop_pr=true
   fi
   issue_number=$(gh pr view "$pr_number" --repo "$REPO" --json body --jq '.body' 2>/dev/null |
@@ -49,7 +48,7 @@ if ! "${AGENT_LOOP_SCRIPT_DIR}/agent-loop-staging-smoke.sh"; then
       2>/dev/null || true
     gh issue edit "$issue_number" --repo "$REPO" \
       --add-label "$NEEDS_HUMAN_LABEL" --remove-label "$RUNNING_LABEL" \
-      --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
+      2>/dev/null || true
   fi
   notify "${COMMENT_PREFIX} staging smoke failed (PR #${pr_number:-unknown})"
   exit 1
@@ -59,7 +58,7 @@ set_output smoke_ok true
 
 if [ -n "$issue_number" ]; then
   gh issue edit "$issue_number" --repo "$REPO" --remove-label "$RUNNING_LABEL" \
-    --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
+    2>/dev/null || true
   if [ "$is_loop_pr" = true ]; then
     gh issue comment "$issue_number" --repo "$REPO" --body \
       "${COMMENT_PREFIX} staging smoke passed on ${STAGING_URL} after #${pr_number}." \

@@ -10,8 +10,8 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check). Desktop script transfer is calibrated to 1,060 KB as of 2026-09-07 (main measured 1,034,338 bytes). |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
-| Agent review (`agent-review.yml`) | PR opened / ready_for_review, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check). Does not re-run on every synchronize. |
-| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / hourly cron / `Release on main` / `agent-automerge` label or close | Governed Routine: next milestone WP → merge → staging smoke |
+| Agent review (`agent-review.yml`) | `workflow_dispatch` only (parked). Kill switch `AGENT_REVIEW_ENABLED` still in the job `if:`. Restore `pull_request` types to turn it on. | Independent read-only diff review posted as a PR comment (not a required check) |
+| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / hourly cron / `agent-automerge` labeled or merged; `Release on main` smokes only | Governed Routine: next milestone WP → Cursor API → merge-guard → merge queue → staging smoke |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
@@ -24,10 +24,12 @@ Error autofix is a governed Routine. Contract, drills, and recovery packet:
 [error-autofix-routine.md](./error-autofix-routine.md). Kill switch
 (`ERROR_AUTOFIX_ENABLED`) and mode (`AUTOFIX_MODE`) stay as repo variables.
 
-Agent loop is a governed Routine. Contract, kill switch, dual-launch, and
-staging smoke: [agent-loop-routine.md](./agent-loop-routine.md). Kill
-switch (`AGENT_LOOP_ENABLED` or alias `BOOKING_LOOP_ENABLED`) stays a
-repo variable (default off). Ordered queue: `AGENT_LOOP_MILESTONES`.
+Agent loop is a governed Routine. Contract, kill switch, Cursor API
+launch, and staging smoke: [agent-loop-routine.md](./agent-loop-routine.md).
+Kill switch (`AGENT_LOOP_ENABLED`) stays a repo variable (default off).
+Ordered queue: `AGENT_LOOP_MILESTONES` (empty idles). Two launch paths:
+hourly/`workflow_dispatch` kick, and `launch-next` on automerge merge.
+`post-deploy` smokes only.
 
 ---
 

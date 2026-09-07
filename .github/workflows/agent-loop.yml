@@ -4,9 +4,12 @@ name: Agent loop
 # Contract: docs/CI-CD/agent-loop-routine.md
 # Prompt: .github/prompts/agent-loop.md (or .github/prompts/<milestone-slug>.md)
 #
-# Kill switch: repo variable AGENT_LOOP_ENABLED or BOOKING_LOOP_ENABLED
-# (string "true"; default off). Manual re-runs: dispatch a fresh run instead
-# of "Re-run jobs" on a failed snapshot so workflow file fixes apply.
+# Kill switch: repo variable AGENT_LOOP_ENABLED (string "true"; default off).
+# Manual re-runs: dispatch a fresh run instead of "Re-run jobs" on a failed
+# snapshot so workflow file fixes apply.
+#
+# Two launch paths: kick (hourly cron + workflow_dispatch) and launch-next
+# (automerge PR merged). post-deploy only smokes staging and annotates.
 #
 # Concurrency is per job, not per workflow. One shared group used to hold
 # every merge-guard, post-deploy, and launch in a single queue; GitHub keeps
@@ -15,9 +18,6 @@ name: Agent loop
 # 2026-09-03). merge-guard now runs per PR and never waits on CI: it enables
 # GitHub auto-merge and exits. The loop-wide group only serialises the jobs
 # that launch agents.
-#
-# Alias notes: booking-automerge and BOOKING_LOOP_ENABLED still arm the
-# workflow for one release.
 on:
   workflow_dispatch:
     inputs:
@@ -26,18 +26,19 @@ on:
         required: false
         type: string
   schedule:
-    # Hourly watchdog. Launch-on-merge and post-deploy-on-release fill the
-    # fleet; */15 was ~96 skip-runs/day on top of every PR synchronize.
+    # Hourly watchdog. Launch-on-merge fills the fleet; docs-only merges
+    # skip Release, so kick is the recovery path for those.
     - cron: "0 * * * *"
   workflow_run:
     workflows: ["Release on main"]
     types: [completed]
   pull_request:
-    # Label and close only. synchronize/opened/ready_for_review on every PR
+    # Label and close only. Removing a label is skip-noise; merge-guard
+    # does not use it. synchronize/opened/ready_for_review on every PR
     # created a skipped run even with no agent-automerge label. Auto-merge,
     # once enabled, does not need a re-run on each push; the hourly job
     # re-runs merge-guard on labeled PRs.
-    types: [labeled, unlabeled, closed]
+    types: [labeled, closed]
 
 permissions:
   contents: read
@@ -48,19 +49,15 @@ jobs:
   merge-guard:
     name: Merge agent-automerge PRs
     if: >-
-      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
+      vars.AGENT_LOOP_ENABLED == 'true' &&
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (
         github.event.action != 'labeled' ||
-        github.event.label.name == 'agent-automerge' ||
-        github.event.label.name == 'booking-automerge'
+        github.event.label.name == 'agent-automerge'
       ) &&
-      (
-        contains(github.event.pull_request.labels.*.name, 'agent-automerge') ||
-        contains(github.event.pull_request.labels.*.name, 'booking-automerge')
-      )
+      contains(github.event.pull_request.labels.*.name, 'agent-automerge')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     concurrency:
@@ -72,7 +69,7 @@ jobs:
 
       - name: Deterministic merge guard, then enable auto-merge
         env:
-          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
         run: .github/scripts/agent-loop-merge-guard.sh "${{ github.event.pull_request.number }}"
@@ -80,14 +77,11 @@ jobs:
   launch-next:
     name: Launch next WP after merge
     if: >-
-      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
+      vars.AGENT_LOOP_ENABLED == 'true' &&
       github.event_name == 'pull_request' &&
       github.event.action == 'closed' &&
       github.event.pull_request.merged == true &&
-      (
-        contains(github.event.pull_request.labels.*.name, 'agent-automerge') ||
-        contains(github.event.pull_request.labels.*.name, 'booking-automerge')
-      )
+      contains(github.event.pull_request.labels.*.name, 'agent-automerge')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
@@ -123,7 +117,7 @@ jobs:
   post-deploy:
     name: Smoke staging after release
     if: >-
-      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
+      vars.AGENT_LOOP_ENABLED == 'true' &&
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
@@ -145,26 +139,10 @@ jobs:
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: .github/scripts/agent-loop-postdeploy.sh
 
-      - name: Pick WPs to top the fleet up to N
-        id: next
-        env:
-          GH_TOKEN: ${{ github.token }}
-          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
-          AGENT_LOOP_CONCURRENCY: ${{ vars.AGENT_LOOP_CONCURRENCY }}
-        run: .github/scripts/agent-loop-next.sh
-
-      - name: Launch agents
-        if: steps.next.outputs.found == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
-        run: .github/scripts/agent-loop-launch.sh ${{ steps.next.outputs.issue_numbers }}
-
   kick:
     name: Pick and launch a WP
     if: >-
-      (vars.AGENT_LOOP_ENABLED == 'true' || vars.BOOKING_LOOP_ENABLED == 'true') &&
+      vars.AGENT_LOOP_ENABLED == 'true' &&
       (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -179,7 +157,7 @@ jobs:
         if: github.event_name == 'schedule'
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.BOOKING_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
           AGENT_LOOP_MILESTONES: ${{ vars.AGENT_LOOP_MILESTONES }}
         run: .github/scripts/agent-loop-merge-guard.sh

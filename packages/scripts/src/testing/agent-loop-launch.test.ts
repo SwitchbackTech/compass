@@ -149,6 +149,47 @@ describe("agent-loop launch quota recovery", () => {
     expect(result.commands).not.toContain(
       "--add-label agent-loop-waiting-for-credits",
     );
+    expect(result.commands).not.toContain("agent-loop: pickup");
+  });
+
+  it("fails closed when CURSOR_API_KEY is unset", () => {
+    const directory = mkdtempSync(join(tmpdir(), "agent-loop-launch-nokey-"));
+    temporaryDirectories.push(directory);
+    const bin = join(directory, "bin");
+    const log = join(directory, "commands.log");
+    const output = join(directory, "github-output");
+    mkdirSync(bin);
+    writeExecutable(
+      join(bin, "gh"),
+      `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$AGENT_LOOP_TEST_LOG"
+`,
+    );
+
+    const result = spawnSync(
+      "bash",
+      [".github/scripts/agent-loop-launch.sh", "42"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          AGENT_LOOP_TEST_LOG: log,
+          GITHUB_OUTPUT: output,
+          GITHUB_REPOSITORY: "example/compass",
+          PATH: `${bin}:${process.env.PATH}`,
+          CURSOR_API_KEY: "",
+        },
+      },
+    );
+
+    expect(result.status, result.stderr).toBe(1);
+    const commands = existsSync(log) ? readFileSync(log, "utf8") : "";
+    const githubOutput = existsSync(output) ? readFileSync(output, "utf8") : "";
+    expect(commands).toContain("--add-label agent-loop-needs-human");
+    expect(commands).not.toContain("agent-loop: pickup");
+    expect(commands).not.toContain("issue comment");
+    expect(githubOutput).toContain("launch_mode=missing-key");
   });
 
   it("does not launch before the recorded credit retry time", () => {
