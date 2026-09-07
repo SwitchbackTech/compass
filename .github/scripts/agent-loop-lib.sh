@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Shared helpers for the agent-loop scripts. Source, don't execute:
-#   source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh
+#   source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 # shellcheck disable=SC2034 # sourced constants consumed by sibling scripts
 REPO=${GH_REPO:-${GITHUB_REPOSITORY:-}}
 AGENT_LOOP_SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-STAGING_URL="${AGENT_LOOP_STAGING_URL:-${BOOKING_LOOP_STAGING_URL:-https://staging.compasscalendar.com}}"
-PICKUP_PHRASE="agent-loop: pickup"
+STAGING_URL="${AGENT_LOOP_STAGING_URL:-https://staging.compasscalendar.com}"
 RUNNING_LABEL="agent-loop-running"
 QUOTA_WAITING_LABEL="agent-loop-waiting-for-credits"
 NEEDS_HUMAN_LABEL="agent-loop-needs-human"
@@ -14,18 +13,7 @@ QUOTA_RETRY_MARKER="agent-loop-quota-retry-at="
 COMMENT_PREFIX="agent-loop:"
 READY_LABEL="agent-ready"
 
-# Alias notes: booking-loop-* labels, booking-automerge, the old pickup
-# phrase, and the old quota HTML marker remain valid for one release so
-# open booking PRs still merge and in-flight booking WPs still idle.
-LEGACY_RUNNING_LABEL="booking-loop-running"
-LEGACY_QUOTA_WAITING_LABEL="booking-loop-waiting-for-credits"
-LEGACY_NEEDS_HUMAN_LABEL="booking-loop-needs-human"
-LEGACY_AUTOMERGE_LABEL="booking-automerge"
-LEGACY_QUOTA_RETRY_MARKER="booking-loop-quota-retry-at="
-LEGACY_PICKUP_PHRASE="booking-loop: pickup"
-
 ALLOWLIST_DIR="${AGENT_LOOP_SCRIPT_DIR}/../agent-loop/allowlists"
-DEFAULT_MILESTONES="Compass Booking v1"
 
 set_output() {
   local key=$1
@@ -55,17 +43,16 @@ gh() {
 }
 
 # Ordered milestone titles from AGENT_LOOP_MILESTONES (comma or newline
-# separated). Falls back to Compass Booking v1 when the variable is empty.
+# separated). Empty input is fail-closed: the picker idles.
 parse_milestones() {
   local raw="${AGENT_LOOP_MILESTONES:-}"
   if [ -z "$raw" ]; then
-    raw="${BOOKING_LOOP_MILESTONE:-$DEFAULT_MILESTONES}"
+    return 0
   fi
   printf '%s\n' "$raw" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true
 }
 
 # "Providers L: loop + CI acceleration" -> "providers-l"
-# "Compass Booking v1" -> "compass-booking-v1"
 milestone_slug() {
   local title=$1
   local head="${title%%:*}"

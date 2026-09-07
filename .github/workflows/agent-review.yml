@@ -4,12 +4,14 @@ name: Agent review
 # Findings land as one PR comment; this is not a required check. It replaces
 # the in-session "Reviewer" role, which had the implementer's own context.
 #
+# Parked: workflow_dispatch only so a disabled kill switch does not create a
+# skipped Actions run on every ready PR. To turn it back on, set
+# AGENT_REVIEW_ENABLED=true and restore pull_request types
+# (opened, ready_for_review) on this workflow.
+#
 # Kill switch: repo variable AGENT_REVIEW_ENABLED (string "true"; default off).
 on:
-  pull_request:
-    # opened / ready_for_review only. synchronize on every push created a
-    # skipped run while AGENT_REVIEW_ENABLED is off.
-    types: [opened, ready_for_review]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,7 +19,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: agent-review-${{ github.event.pull_request.number }}
+  group: agent-review-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:

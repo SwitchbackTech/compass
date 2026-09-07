@@ -14,11 +14,9 @@ that change secrets, git history, the ruleset, or a kill switch.
 
 1. `docs/features/calendar-providers.md` (locked decisions; do not re-litigate)
 2. `AGENTS.md`
-3. `.agents/skills/ship/SKILL.md`
-4. Tracking issue #3206: its Locked decisions and Deferred sections are binding.
+3. Tracking issue #3206: its Locked decisions and Deferred sections are binding.
 
-If neither `BOOKING_LOOP_ENABLED` nor `AGENT_LOOP_ENABLED` is `true` in
-the launch context, stop.
+If `AGENT_LOOP_ENABLED` is not `true` in the launch context, stop.
 
 Follow `.github/prompts/agent-loop.md` for pick, concurrency, implement,
 validate, PR, merge, staging, escalate, and stop rules.
@@ -27,4 +25,4 @@ Every WP that touches `.github/`, `self-host/`, or the ruleset is
 human-merged: do not add `agent-automerge`. Add `agent-loop-needs-human`
 and stop.
 
-Do not flip `BOOKING_LOOP_ENABLED` or `AGENT_LOOP_ENABLED`.
+Do not flip `AGENT_LOOP_ENABLED`.

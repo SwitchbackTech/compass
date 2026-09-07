@@ -82,12 +82,10 @@ esac
 
 if [ -n "$label" ]; then
   case "$label" in
-    # Alias notes: booking-loop-* labels still count for one release.
-    agent-loop-waiting-for-credits|booking-loop-waiting-for-credits)
+    agent-loop-waiting-for-credits)
       eval "printf '%s' \"\${STUB_${key}_QUOTA:-[]}\""
       ;;
-    # Alias notes: booking-loop-running still idles the picker.
-    agent-loop-running|booking-loop-running)
+    agent-loop-running)
       eval "printf '%s' \"\${STUB_${key}_RUNNING:-[]}\""
       ;;
     *)
@@ -251,6 +249,32 @@ if printf '%s' "$out" | grep -Eq 'ISSUE_NUMBERS=.*11'; then
   FAIL=$((FAIL + 1))
 else
   echo "ok running sync-core blocks the overlapping candidate"
+  PASS=$((PASS + 1))
+fi
+
+out=$(
+  env -u GITHUB_OUTPUT -u AGENT_LOOP_MILESTONES \
+    GH_STUB="${STUB_DIR}/gh" \
+    GH_REPO="example/compass" \
+    bash "${ROOT}/.github/scripts/agent-loop-next.sh"
+)
+assert_contains "$out" "found=false" "empty AGENT_LOOP_MILESTONES idles"
+assert_contains "$out" "AGENT_LOOP_MILESTONES is empty" "empty milestones prints idle reason"
+if printf '%s' "$out" | grep -q 'ISSUE_NUMBER='; then
+  echo "FAIL empty milestones must not print ISSUE_NUMBER" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok empty milestones omit ISSUE_NUMBER"
+  PASS=$((PASS + 1))
+fi
+
+if grep -qE 'BOOKING_LOOP_|booking-loop-|booking-automerge|LEGACY_|DEFAULT_MILESTONES|Compass Booking v1' \
+  "${ROOT}/.github/scripts/agent-loop-lib.sh" \
+  "${ROOT}/.github/scripts/agent-loop-next.sh"; then
+  echo "FAIL picker or lib still mentions booking-loop aliases or a default milestone" >&2
+  FAIL=$((FAIL + 1))
+else
+  echo "ok picker and lib have no booking-loop aliases"
   PASS=$((PASS + 1))
 fi
 
