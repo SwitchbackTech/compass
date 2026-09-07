@@ -8,6 +8,19 @@ const CONSENT_REQUIRED_COPY =
 const MICROSOFT_AUTHORIZE_URL =
   "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=test";
 
+/** 1 for rgb()/hex with no alpha channel; otherwise the CSS alpha 0-1. */
+function cssColorAlpha(color: string): number {
+  const slash = color.match(/\/\s*([\d.]+%?)\s*\)/);
+  if (slash?.[1]) {
+    const token = slash[1];
+    return token.endsWith("%") ? Number.parseFloat(token) / 100 : Number(token);
+  }
+  const rgba = color.match(
+    /rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/,
+  );
+  return rgba?.[1] == null ? 1 : Number(rgba[1]);
+}
+
 test.use({ viewport: { width: 1600, height: 900 } });
 
 test("shows a Microsoft connected toast from the connect-status query", async ({
@@ -75,7 +88,15 @@ test("Add account starts Microsoft OAuth from the chooser", async ({
   });
   await expect(addAccount).toBeVisible();
   await addAccount.click();
-  await expect(settingsDialog.getByRole("menu")).toBeVisible();
+  const menu = settingsDialog.getByRole("menu");
+  await expect(menu).toBeVisible();
+  const backgroundColor = await menu.evaluate(
+    (el) => getComputedStyle(el).backgroundColor,
+  );
+  expect(
+    cssColorAlpha(backgroundColor),
+    `chooser menu must be opaque, got ${backgroundColor}`,
+  ).toBe(1);
 
   await Promise.all([
     page.waitForURL(
