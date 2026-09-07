@@ -204,6 +204,19 @@ test("blocks turn on with empty hours", async ({ page }) => {
   expect(captured.putBodies.length).toBe(0);
 });
 
+test("changes the page address and PUTs slug", async ({ page }) => {
+  const captured = await prepareSignedInBookingSettingsPage(page);
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await dispatchFill(settingsDialog.getByLabel("Page address"), "new-address");
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Save changes" }),
+  );
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]).toMatchObject({ slug: "new-address" });
+});
+
 test("essentials fit without scrolling at 1440x900", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await prepareSignedInBookingSettingsPage(page);

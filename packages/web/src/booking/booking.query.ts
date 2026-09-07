@@ -44,6 +44,7 @@ export const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
   TIMEZONE_REQUIRED: "Choose a booking timezone before enabling booking.",
   AVAILABILITY_REQUIRED:
     "Add weekly hours before turning on your booking page.",
+  SLUG_TAKEN: "That address is already taken. Try another.",
   INVALID_INPUT:
     "Some settings couldn't be saved. Check the highlighted fields and try again.",
 };
@@ -53,6 +54,7 @@ const INLINE_SAVE_ERROR_FIELDS: Record<string, BookingSequenceField> = {
   DESTINATION_NOT_WRITABLE: "destination",
   BLOCKING_CALENDAR_INVALID: "blocking",
   AVAILABILITY_REQUIRED: "hours",
+  SLUG_TAKEN: "address",
 };
 
 export function bookingSaveErrorInline(

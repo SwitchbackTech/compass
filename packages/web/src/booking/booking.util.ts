@@ -1,6 +1,7 @@
 import {
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
+  BookingSlugSchema,
   pickAdminPutBookingPageInput,
   type WeeklyAvailabilityInterval,
 } from "@core/types/booking.contracts";
@@ -151,6 +152,16 @@ export function isUnconfiguredBookingPage(
   return "isConfigured" in page && page.isConfigured === false;
 }
 
+/** Live pages carry `slug`; setup pages carry the suggestion (or a draft). */
+export function slugFromAdminBookingPage(
+  page: AdminGetBookingPageResult,
+): string {
+  if ("suggestedSlug" in page) {
+    return page.suggestedSlug;
+  }
+  return page.slug;
+}
+
 export const WELCOME_TEXT_MAX_LENGTH = 500;
 export const WELCOME_TEXT_TOO_LONG_MESSAGE = `Welcome text must be ${WELCOME_TEXT_MAX_LENGTH} characters or fewer.`;
 
@@ -178,6 +189,15 @@ export function validateBookingForm({
   minNoticeInvalid: boolean;
   writableCalendars: Calendar[];
 }): BookingFormValidationError | null {
+  const slugError = BookingSlugSchema.safeParse(form.slug);
+  if (!slugError.success) {
+    return {
+      field: "address",
+      message:
+        slugError.error.issues[0]?.message ??
+        "Use 3 to 32 lowercase letters, digits, or hyphens",
+    };
+  }
   if (!areHoursValid) {
     return {
       field: "hours",

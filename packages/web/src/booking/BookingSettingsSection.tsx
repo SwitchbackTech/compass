@@ -22,6 +22,10 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import {
+  BookingAddressField,
+  bookingAddressPrefix,
+} from "@web/booking/BookingAddressField";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -46,6 +50,7 @@ import {
   isUnconfiguredBookingPage,
   isWelcomeTextTooLong,
   resolveWritableCalendars,
+  slugFromAdminBookingPage,
   toBookingPageInput,
   validateBookingForm,
   WELCOME_TEXT_MAX_LENGTH,
@@ -166,8 +171,13 @@ const buildInitialForm = (
       ? base.timeZone
       : effectiveTimeZone;
 
+  const slug = page ? slugFromAdminBookingPage(page) : undefined;
+
   return {
-    ...toBookingPageInput(base),
+    ...toBookingPageInput({
+      ...base,
+      ...(slug !== undefined ? { slug } : {}),
+    }),
     destinationCalendarId,
     blockingCalendarIds,
     timeZone: TimeZoneSchema.parse(timeZone || effectiveTimeZone),
@@ -381,6 +391,12 @@ export function BookingSettingsSection({
   const savedPage =
     serverPage && isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
+  const savedSlug =
+    serverPage && !isUnconfiguredBookingPage(serverPage)
+      ? slugFromAdminBookingPage(serverPage)
+      : null;
+  const addressPrefix = bookingAddressPrefix(savedPage?.bookingUrl ?? null);
+  const addressPreview = form.slug ? `${addressPrefix}${form.slug}` : null;
   const { groups: writableGroups, ungrouped: writableUngrouped } =
     groupCalendarsByAccount(writableCalendars, connections);
   const destinationCalendar = writableCalendars.find(
@@ -509,9 +525,18 @@ export function BookingSettingsSection({
         </p>
 
         <BookingStatusHeader
-          addressPreview={null}
+          addressPreview={addressPreview}
           bookingUrl={savedPage?.bookingUrl ?? null}
           isLive={isLive}
+        />
+
+        <BookingAddressField
+          bookingUrl={savedPage?.bookingUrl ?? null}
+          forceInvalid={saveError?.field === "address"}
+          onChange={(nextSlug) => updateForm({ slug: nextSlug })}
+          savedSlug={savedSlug}
+          showShortcuts={showShortcuts}
+          slug={form.slug ?? ""}
         />
 
         <div className="grid grid-cols-2 gap-3">
