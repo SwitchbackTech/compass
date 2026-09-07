@@ -957,7 +957,9 @@ describe("SettingsModal", () => {
     });
 
     await screen.findByRole("button", { name: "Save booking settings" });
-    await user.type(screen.getByLabelText("Monday"), "9");
+    const monday = screen.getByLabelText("Monday");
+    await user.clear(monday);
+    await user.type(monday, "9");
     await user.keyboard("{Escape}");
 
     expect(
