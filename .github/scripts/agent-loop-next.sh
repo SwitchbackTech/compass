@@ -19,9 +19,13 @@ if ! [[ "$CONCURRENCY" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 mapfile -t MILESTONES < <(parse_milestones)
-if [ "${#MILESTONES[@]}" -eq 0 ]; then
-  echo "AGENT_LOOP_MILESTONES is empty" >&2
-  exit 1
+if [ "${#MILESTONES[@]}" -eq 0 ] || [ -z "${MILESTONES[0]:-}" ]; then
+  echo "AGENT_LOOP_MILESTONES is empty; idle."
+  set_output found false
+  if [ -z "${GITHUB_OUTPUT:-}" ]; then
+    echo "found=false"
+  fi
+  exit 0
 fi
 
 list_labeled_in_milestone() {
@@ -48,9 +52,7 @@ collect_labeled() {
 
 quota_waiting_json='[]'
 for milestone in "${MILESTONES[@]}"; do
-  chunk=$(json_concat \
-    "$(list_labeled_in_milestone "$milestone" "$QUOTA_WAITING_LABEL" "number,title,url")" \
-    "$(list_labeled_in_milestone "$milestone" "$LEGACY_QUOTA_WAITING_LABEL" "number,title,url")")
+  chunk=$(list_labeled_in_milestone "$milestone" "$QUOTA_WAITING_LABEL" "number,title,url")
   if [ "$chunk" != "[]" ]; then
     quota_waiting_json=$chunk
     break
@@ -67,7 +69,6 @@ print(issues[0]["number"])
   quota_retry_at=$(gh api "repos/${REPO}/issues/${quota_waiting_number}/comments" --paginate \
     | sed -n \
       -e "s/.*${QUOTA_RETRY_MARKER}\\([^ >]*\\).*/\\1/p" \
-      -e "s/.*${LEGACY_QUOTA_RETRY_MARKER}\\([^ >]*\\).*/\\1/p" \
     | tail -n 1)
   quota_retry_due=$(RETRY_AT="$quota_retry_at" python3 - <<'PY'
 from datetime import datetime, timezone
@@ -118,7 +119,7 @@ print(json.dumps(issues[0]))
   exit 0
 fi
 
-running_json=$(collect_labeled "number,updatedAt,labels" "$RUNNING_LABEL" "$LEGACY_RUNNING_LABEL")
+running_json=$(collect_labeled "number,updatedAt,labels" "$RUNNING_LABEL")
 
 stale=$(
   python3 -c '
@@ -158,7 +159,6 @@ if [ -n "$stale_list" ]; then
     [ -n "$n" ] || continue
     echo "Clearing stale ${RUNNING_LABEL} on #${n} (>3h)."
     gh issue edit "$n" --repo "$REPO" --remove-label "$RUNNING_LABEL" 2>/dev/null || true
-    gh issue edit "$n" --repo "$REPO" --remove-label "$LEGACY_RUNNING_LABEL" 2>/dev/null || true
     gh issue comment "$n" --repo "$REPO" --body \
       "${COMMENT_PREFIX} cleared stale \`${RUNNING_LABEL}\` after 3 hours with no progress. This WP is eligible again." \
       2>/dev/null || true
@@ -208,9 +208,9 @@ printf '%s' "$all_issues" >"${picker_tmp}/issues.json"
 
 selected=$(
   OPEN_NUMBERS="${open_numbers[*]}" \
-  SKIP_LABEL="$NEEDS_HUMAN_LABEL" LEGACY_SKIP_LABEL="$LEGACY_NEEDS_HUMAN_LABEL" \
-  RUNNING_LABEL="$RUNNING_LABEL" LEGACY_RUNNING_LABEL="$LEGACY_RUNNING_LABEL" \
-  QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" LEGACY_QUOTA_WAITING_LABEL="$LEGACY_QUOTA_WAITING_LABEL" \
+  SKIP_LABEL="$NEEDS_HUMAN_LABEL" \
+  RUNNING_LABEL="$RUNNING_LABEL" \
+  QUOTA_WAITING_LABEL="$QUOTA_WAITING_LABEL" \
   READY_LABEL="$READY_LABEL" \
   CONCURRENCY="$CONCURRENCY" \
   FRESH_COUNT="${fresh_count:-0}" \
@@ -238,11 +238,8 @@ open_numbers = {int(n) for n in os.environ.get("OPEN_NUMBERS", "").split() if n}
 ready_label = os.environ["READY_LABEL"]
 skip_labels = {
     os.environ["SKIP_LABEL"],
-    os.environ["LEGACY_SKIP_LABEL"],
     os.environ["RUNNING_LABEL"],
-    os.environ["LEGACY_RUNNING_LABEL"],
     os.environ["QUOTA_WAITING_LABEL"],
-    os.environ["LEGACY_QUOTA_WAITING_LABEL"],
 }
 concurrency = int(os.environ["CONCURRENCY"])
 fresh_count = int(os.environ["FRESH_COUNT"])
@@ -257,10 +254,7 @@ def partitions(labels):
 
 def is_fresh_running(issue):
     labels = label_names(issue)
-    if not (
-        os.environ["RUNNING_LABEL"] in labels
-        or os.environ["LEGACY_RUNNING_LABEL"] in labels
-    ):
+    if os.environ["RUNNING_LABEL"] not in labels:
         return False
     raw = issue.get("updatedAt") or ""
     try:

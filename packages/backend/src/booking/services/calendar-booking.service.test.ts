@@ -33,7 +33,15 @@ describe("CalendarBookingService", () => {
     mock.restore();
   });
 
-  it("queries busy availability with booking_confirmation purpose and short maxAge", async () => {
+  it("covers Google reconcile lag so quiet calendars stay bookable", () => {
+    const reconcileStaleAfterMs = 15 * 60_000;
+    const reconcileSweepIntervalMs = 10 * 60_000;
+    expect(BOOKING_CONFIRMATION_MAX_AGE_MS).toBeGreaterThanOrEqual(
+      reconcileStaleAfterMs + reconcileSweepIntervalMs,
+    );
+  });
+
+  it("queries busy availability with booking_confirmation purpose and reconcile-sized maxAge", async () => {
     const queryBusyAvailability = mock(async () => ({
       ok: true as const,
       value: busyResponse,

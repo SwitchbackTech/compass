@@ -56,17 +56,35 @@ describe("agent-loop Routine contract", () => {
       "utf8",
     );
     expect(postdeploy).not.toContain("launch_next");
+    expect(workflow).not.toContain("unlabeled");
+    const postDeployJob =
+      workflow.split("  kick:")[0]?.split("  post-deploy:")[1] ?? "";
+    expect(postDeployJob).toContain("agent-loop-postdeploy.sh");
+    expect(postDeployJob).not.toContain("agent-loop-next.sh");
+    expect(postDeployJob).not.toContain("agent-loop-launch.sh");
+    expect(workflow).toContain("vars.AGENT_LOOP_ENABLED == 'true'");
+    expect(workflow).not.toContain("BOOKING_LOOP_ENABLED");
+    expect(workflow).not.toContain("booking-automerge");
   });
 
-  it("launches via Cursor API or pickup comment, never both", () => {
+  it("launches only via the Cursor API", () => {
     const launch = readFileSync(".github/scripts/agent-loop-launch.sh", "utf8");
     expect(launch).toContain("https://api.cursor.com/v0/agents");
-    expect(launch).toContain("agent-loop: pickup");
-    expect(launch).toContain(`if [ -n "\${CURSOR_API_KEY:-}" ]`);
+    expect(launch).toContain('if [ -z "${CURSOR_API_KEY:-}" ]');
     expect(launch).toContain('if [ "$http_code" = "429" ]');
+    expect(launch).not.toContain("agent-loop: pickup");
+    expect(launch).not.toContain("LEGACY_PICKUP_PHRASE");
+    expect(launch).not.toContain("ship/SKILL.md");
     const next = readFileSync(".github/scripts/agent-loop-next.sh", "utf8");
     expect(next).toContain("is_human_approval");
     expect(next).toContain("has_open_dependency");
+    expect(next).toContain("AGENT_LOOP_MILESTONES is empty; idle.");
+    const prompt = readFileSync(".github/prompts/agent-loop.md", "utf8");
+    expect(prompt).not.toContain("ship/SKILL.md");
+    expect(prompt).not.toContain("BOOKING_LOOP_ENABLED");
+    const review = readFileSync(".github/workflows/agent-review.yml", "utf8");
+    expect(review).toContain("workflow_dispatch");
+    expect(review).not.toMatch(/^ {2}pull_request:/m);
   });
 
   it("runs up to AGENT_LOOP_CONCURRENCY issues from different partitions", () => {
@@ -86,6 +104,20 @@ describe("agent-loop Routine contract", () => {
     const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
     expect(unit).toMatch(/^ {2}merge_group:$/m);
     expect(e2e).toMatch(/^ {2}merge_group:$/m);
+  });
+
+  it("requeues conflicted automerge PRs without needs-human", () => {
+    const guard = readFileSync(
+      ".github/scripts/agent-loop-merge-guard.sh",
+      "utf8",
+    );
+    expect(guard).toContain("close_and_requeue");
+    expect(guard).toContain("try_update_branch");
+    expect(guard).toContain("gh pr update-branch");
+    expect(guard).toContain("still conflicting after update-branch onto main");
+    expect(guard).toContain("Issue stays \\`${READY_LABEL}\\`");
+    expect(guard).not.toContain("BOOKING_LOOP_");
+    expect(guard).not.toContain("LEGACY_");
   });
 
   it("smokes staging without logging in", () => {

@@ -484,6 +484,13 @@ export class PublicBookingService {
     );
 
     if (!availability.bookable) {
+      logger.warn("Public booking slots unbookable", {
+        complete: availability.complete,
+        issueReasons: availability.issues.map((issue) => issue.reason),
+        connectionStates: availability.connections.map(
+          (connection) => connection.state,
+        ),
+      });
       return BookingSlotsResponseSchema.parse({
         slots: [],
         bookable: false,
