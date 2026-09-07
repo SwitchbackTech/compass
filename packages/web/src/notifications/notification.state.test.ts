@@ -1,13 +1,17 @@
+import { act, renderHook } from "@testing-library/react";
 import { createTestNotificationPort } from "@web/__tests__/helpers/web-test-seams";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { registerNotificationPort } from "@web/notifications/notification.port";
 import {
+  getNotificationPort,
+  registerNotificationPort,
+} from "@web/notifications/notification.port";
+import {
+  areNotificationsEffectivelyOn,
+  isNotificationsPrefEnabled,
   notificationActions,
-  resetNotificationStoreForTests,
-  selectNotificationsEffectivelyOn,
-  useNotificationStore,
-} from "@web/notifications/notification.store";
+  useNotificationsEffectivelyOn,
+} from "@web/notifications/notification.state";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 const installPort = (
@@ -15,12 +19,8 @@ const installPort = (
 ) => {
   const seam = createTestNotificationPort(options);
   registerNotificationPort(seam.port);
-  resetNotificationStoreForTests();
   return seam;
 };
-
-const isOn = () =>
-  selectNotificationsEffectivelyOn(useNotificationStore.getState());
 
 describe("notificationActions.enable", () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe("notificationActions.enable", () => {
     await notificationActions.enable("palette");
 
     expect(seam.mocks.requestPermission).toHaveBeenCalled();
-    expect(isOn()).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(true);
     expect(persistentBrowserStore.get(STORAGE_KEYS.NOTIFICATIONS_ENABLED)).toBe(
       "true",
     );
@@ -44,7 +44,7 @@ describe("notificationActions.enable", () => {
 
     await notificationActions.enable("palette");
 
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.NOTIFICATIONS_ENABLED),
     ).toBeNull();
@@ -55,7 +55,7 @@ describe("notificationActions.enable", () => {
 
     await notificationActions.enable("palette");
 
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
   });
 
   it("never prompts on a browser without the API", async () => {
@@ -64,7 +64,7 @@ describe("notificationActions.enable", () => {
     await notificationActions.enable("palette");
 
     expect(seam.mocks.requestPermission).not.toHaveBeenCalled();
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
   });
 });
 
@@ -75,11 +75,11 @@ describe("notificationActions.disable", () => {
 
     notificationActions.disable("palette");
 
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.NOTIFICATIONS_ENABLED),
     ).toBeNull();
-    expect(useNotificationStore.getState().permission).toBe("granted");
+    expect(getNotificationPort().getPermission()).toBe("granted");
   });
 });
 
@@ -87,49 +87,44 @@ describe("permission revoked outside the app", () => {
   it("reads as off once the grant is withdrawn", async () => {
     const seam = installPort({ respondWith: "granted" });
     await notificationActions.enable("palette");
-    expect(isOn()).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(true);
 
     seam.setPermission("denied");
-    notificationActions.syncPermission();
 
     // The pref survives, but nothing fires and the UI offers to enable again.
-    expect(isOn()).toBe(false);
-    expect(useNotificationStore.getState().prefEnabled).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
+    expect(isNotificationsPrefEnabled()).toBe(true);
   });
 });
 
-describe("notificationActions.syncPrefFromStorage", () => {
+describe("cross-tab preference", () => {
   it("picks up an opt-out made in another tab", async () => {
     installPort({ respondWith: "granted" });
     await notificationActions.enable("palette");
-    expect(isOn()).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(true);
 
-    // What another tab's disable() leaves behind; the storage event that
-    // announces it never fires in the tab that wrote it.
     persistentBrowserStore.remove(STORAGE_KEYS.NOTIFICATIONS_ENABLED);
-    notificationActions.syncPrefFromStorage();
 
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
   });
 
   it("picks up an opt-in made in another tab", () => {
     installPort({ permission: "granted" });
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
 
     persistentBrowserStore.set(STORAGE_KEYS.NOTIFICATIONS_ENABLED, "true");
-    notificationActions.syncPrefFromStorage();
 
-    expect(isOn()).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(true);
   });
 });
 
-describe("store seeding", () => {
+describe("effective state on load", () => {
   it("re-reads a stored opt-in and the live permission on load", () => {
     persistentBrowserStore.set(STORAGE_KEYS.NOTIFICATIONS_ENABLED, "true");
 
     installPort({ permission: "granted" });
 
-    expect(isOn()).toBe(true);
+    expect(areNotificationsEffectivelyOn()).toBe(true);
   });
 
   it("ignores a stored opt-in the browser no longer backs", () => {
@@ -137,6 +132,40 @@ describe("store seeding", () => {
 
     installPort({ permission: "default" });
 
-    expect(isOn()).toBe(false);
+    expect(areNotificationsEffectivelyOn()).toBe(false);
+  });
+});
+
+describe("useNotificationsEffectivelyOn", () => {
+  it("notifies subscribers when another tab opts in", () => {
+    installPort({ permission: "granted" });
+    const { result } = renderHook(() => useNotificationsEffectivelyOn());
+    expect(result.current).toBe(false);
+
+    persistentBrowserStore.set(STORAGE_KEYS.NOTIFICATIONS_ENABLED, "true");
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: STORAGE_KEYS.NOTIFICATIONS_ENABLED,
+        }),
+      );
+    });
+
+    expect(result.current).toBe(true);
+  });
+
+  it("notifies subscribers when the browser grant is withdrawn", async () => {
+    const seam = installPort({ respondWith: "granted" });
+    const { result } = renderHook(() => useNotificationsEffectivelyOn());
+    await act(async () => {
+      await notificationActions.enable("palette");
+    });
+    expect(result.current).toBe(true);
+
+    act(() => {
+      seam.setPermission("denied");
+    });
+
+    expect(result.current).toBe(false);
   });
 });

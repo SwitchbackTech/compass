@@ -52,7 +52,6 @@ import {
   useUndoHistoryStore,
 } from "@web/events/stores/undo.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
-import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import {
   initialSettingsState,
   useSettingsStore,
@@ -104,7 +103,6 @@ const storeResets: StoreReset[] = [
     useTimezoneDialogStore.setState({ isOpen: false, purpose: "pin" }, true),
   resetCollapsedAccountsStoreForTests,
   resetRecentCommandsStoreForTests,
-  resetNotificationStoreForTests,
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
   () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
   () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),

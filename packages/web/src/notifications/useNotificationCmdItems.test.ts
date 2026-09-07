@@ -2,10 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { createTestNotificationPort } from "@web/__tests__/helpers/web-test-seams";
 import { registerNotificationPort } from "@web/notifications/notification.port";
-import {
-  notificationActions,
-  resetNotificationStoreForTests,
-} from "@web/notifications/notification.store";
+import { notificationActions } from "@web/notifications/notification.state";
 import { useNotificationCmdItems } from "@web/notifications/useNotificationCmdItems";
 import { describe, expect, it } from "bun:test";
 
@@ -14,9 +11,6 @@ const installPort = (
 ) => {
   const seam = createTestNotificationPort(options);
   registerNotificationPort(seam.port);
-  act(() => {
-    resetNotificationStoreForTests();
-  });
   return seam;
 };
 
@@ -64,7 +58,6 @@ describe("useNotificationCmdItems", () => {
 
     act(() => {
       seam.setPermission("denied");
-      notificationActions.syncPermission();
     });
 
     expect(result.current[0]?.label).toBe("Enable event notifications");
