@@ -9,7 +9,6 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -25,7 +24,6 @@ import {
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
-import { type SelectOption } from "@web/common/types/component.types";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import {
   getTimeOptionByValue,
@@ -47,8 +45,8 @@ import {
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   patchGridDraftFields,
-  patchGridDraftScheduleDates,
   replaceGridDraftSchedule,
+  scheduleDatesFromDraft,
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -78,7 +76,7 @@ import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import {
   type GridEventFormProps,
-  type SetEventFormSchedule,
+  type OnEventFormScheduleChange,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
@@ -142,48 +140,6 @@ const FormCard = ({ children }: { children: ReactNode }) => (
 const mapsUrlForLocation = (location: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
 
-interface EventFormDateTimeState {
-  displayEndDate: Date;
-  endTime: SelectOption<string>;
-  selectedEndDate: Date;
-  selectedStartDate: Date;
-  sourceEndDate: string;
-  sourceStartDate: string;
-  startTime: SelectOption<string>;
-}
-
-const createDateTimeState = (
-  sourceStartDate: string,
-  sourceEndDate: string,
-): EventFormDateTimeState => {
-  const dt = getFormDates(sourceStartDate, sourceEndDate);
-
-  return {
-    displayEndDate: dayjs(dt.displayEndDate).toDate(),
-    endTime: dt.endTime,
-    selectedEndDate: dt.endDate,
-    selectedStartDate: dt.startDate,
-    sourceEndDate,
-    sourceStartDate,
-    startTime: dt.startTime,
-  };
-};
-
-const resolveDateTimeState = (
-  state: EventFormDateTimeState,
-  sourceStartDate: string,
-  sourceEndDate: string,
-) => {
-  if (
-    state.sourceStartDate === sourceStartDate &&
-    state.sourceEndDate === sourceEndDate
-  ) {
-    return state;
-  }
-
-  return createDateTimeState(sourceStartDate, sourceEndDate);
-};
-
 const handleEventFormDelete = ({
   isDraft,
   onClose,
@@ -202,22 +158,6 @@ const handleEventFormDelete = ({
 };
 
 const DEFAULT_TIMED_START_HOUR = 9; // fallback when the grid can't be measured
-
-const scheduleDateStrings = (draft: GridEventDraft) => {
-  const { schedule } = draft.values;
-
-  if (schedule.kind === "allDay") {
-    return {
-      startDate: dayjs(schedule.start).toYearMonthDayString(),
-      endDate: dayjs(schedule.end).toYearMonthDayString(),
-    };
-  }
-
-  return {
-    startDate: dayjs(schedule.start).format(),
-    endDate: dayjs(schedule.end).format(),
-  };
-};
 
 export const EventForm: React.FC<GridEventFormProps> = memo(
   ({
@@ -362,78 +302,18 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           );
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
-      scheduleDateStrings(draft);
+      scheduleDatesFromDraft(draft);
+    const formDates = getFormDates(eventStartDate, eventEndDate);
+    const selectedStartDate = formDates.startDate;
+    const selectedEndDate = formDates.endDate;
+    const displayEndDate = dayjs(formDates.displayEndDate).toDate();
+    const { startTime, endTime } = formDates;
 
     /********
      * State
      ********/
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-    const [dateTimeState, setDateTimeState] = useState<EventFormDateTimeState>(
-      () => createDateTimeState(eventStartDate, eventEndDate),
-    );
-
-    const currentDateTimeState = useMemo(
-      () => resolveDateTimeState(dateTimeState, eventStartDate, eventEndDate),
-      [dateTimeState, eventEndDate, eventStartDate],
-    );
-    const {
-      displayEndDate,
-      endTime,
-      selectedEndDate,
-      selectedStartDate,
-      startTime,
-    } = currentDateTimeState;
-
-    const updateDateTimeState = useCallback(
-      (
-        field: Partial<
-          Omit<EventFormDateTimeState, "sourceStartDate" | "sourceEndDate">
-        >,
-      ) => {
-        setDateTimeState((state) => {
-          const resolvedState = resolveDateTimeState(
-            state,
-            eventStartDate,
-            eventEndDate,
-          );
-          const nextState = { ...resolvedState, ...field };
-
-          if (fastDeepEqual(nextState, state)) {
-            return state;
-          }
-
-          if (fastDeepEqual(nextState, resolvedState)) {
-            return resolvedState;
-          }
-
-          return nextState;
-        });
-      },
-      [eventEndDate, eventStartDate],
-    );
-
-    const setStartTime = useCallback(
-      (value: SelectOption<string>) =>
-        updateDateTimeState({ startTime: value }),
-      [updateDateTimeState],
-    );
-    const setEndTime = useCallback(
-      (value: SelectOption<string>) => updateDateTimeState({ endTime: value }),
-      [updateDateTimeState],
-    );
-    const setSelectedStartDate = useCallback(
-      (value: Date) => updateDateTimeState({ selectedStartDate: value }),
-      [updateDateTimeState],
-    );
-    const setSelectedEndDate = useCallback(
-      (value: Date) => updateDateTimeState({ selectedEndDate: value }),
-      [updateDateTimeState],
-    );
-    const setDisplayEndDate = useCallback(
-      (value: Date) => updateDateTimeState({ displayEndDate: value }),
-      [updateDateTimeState],
-    );
 
     const setLatestDraft = useCallback(
       (nextDraft: SetStateAction<GridEventDraft | null>) => {
@@ -481,11 +361,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       [setLatestDraft],
     );
 
-    const onSetScheduleField: SetEventFormSchedule = useCallback(
-      (patch) => {
+    const onScheduleChange: OnEventFormScheduleChange = useCallback(
+      (schedule) => {
         setLatestDraft((current) => {
           if (!current) return current;
-          return patchGridDraftScheduleDates(current, patch);
+          return replaceGridDraftSchedule(current, schedule);
         });
       },
       [setLatestDraft],
@@ -627,13 +507,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
         if (schedule.kind !== "allDay") return;
 
-        setLatestDraft(
-          replaceGridDraftSchedule(currentDraft, {
-            kind: "allDay",
-            start: dayjs(schedule.start).toDate(),
-            end: dayjs(schedule.end).toDate(),
-          }),
-        );
+        onScheduleChange({
+          kind: "allDay",
+          start: dayjs(schedule.start).toDate(),
+          end: dayjs(schedule.end).toDate(),
+        });
         return;
       }
 
@@ -655,21 +533,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
       if (schedule.kind !== "timed") return;
 
-      updateDateTimeState({
-        displayEndDate: timedStart.toDate(),
-        endTime: nextEndTime,
-        selectedEndDate: timedEnd.toDate(),
-        selectedStartDate: timedStart.toDate(),
-        startTime: nextStartTime,
+      onScheduleChange({
+        kind: "timed",
+        start: dayjs(schedule.start).toDate(),
+        end: dayjs(schedule.end).toDate(),
+        timeZone: schedule.timeZone,
       });
-      setLatestDraft(
-        replaceGridDraftSchedule(currentDraft, {
-          kind: "timed",
-          start: dayjs(schedule.start).toDate(),
-          end: dayjs(schedule.end).toDate(),
-          timeZone: schedule.timeZone,
-        }),
-      );
     };
 
     const dateTimeSectionProps = {
@@ -679,18 +548,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       endTime,
       isEndDatePickerOpen,
       isStartDatePickerOpen,
-      onSetScheduleField,
+      onScheduleChange,
       selectedEndDate,
       selectedStartDate,
-      setEndTime,
-      setSelectedEndDate,
-      setSelectedStartDate,
-      setStartTime,
       startTime,
-      setDisplayEndDate,
       setIsEndDatePickerOpen,
       setIsStartDatePickerOpen,
-      setDraft: setLatestDraft,
     };
 
     const recurrenceSectionProps = {

@@ -36,9 +36,35 @@ import {
   expect,
   it,
   mock,
+  setSystemTime,
   spyOn,
 } from "bun:test";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+
+const utcDatePlusDays = (isoDate: string, days: number): string => {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(year!, month! - 1, day! + days))
+    .toISOString()
+    .slice(0, 10);
+};
+
+/** Upcoming Monday in UTC, skipping today so 09:00-17:00 slots stay bookable. */
+const nextUtcMonday = (): string => {
+  const now = new Date();
+  const todayUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const weekday = new Date(todayUtc).getUTCDay();
+  const daysUntilMonday = weekday === 1 ? 7 : (8 - weekday) % 7;
+  return new Date(todayUtc + daysUntilMonday * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+};
+
+const BOOKING_MONDAY = nextUtcMonday();
+const BOOKING_TUESDAY = utcDatePlusDays(BOOKING_MONDAY, 1);
 
 const calendarId = () => new ObjectId().toString();
 
@@ -133,7 +159,7 @@ const createNamedUser = async (name: string) => {
 
 const busyResponse = (bookable = true) => ({
   intervals: [],
-  computedAt: "2026-09-07T12:00:00.000Z",
+  computedAt: `${BOOKING_MONDAY}T12:00:00.000Z`,
   connections: [],
   complete: true,
   issues: [],
@@ -151,6 +177,15 @@ describe("PublicBookingService", () => {
   beforeAll(async () => {
     await setupTestDb(import.meta.url);
     await ensureBookingIndexes();
+    // Every slot below is pinned to Monday 2026-09-07, inside the fixture's
+    // weekday-1 09:00-17:00 window. assertSlotAvailable rejects a slot that
+    // starts before now + minNoticeHours, so with the real clock these tests
+    // passed only until 2026-09-07T10:00:00Z and then failed forever. Freeze
+    // "now" to that morning instead of re-pinning the dates: shifting them a
+    // day would move them off weekday 1 and out of the window. Set after the
+    // Mongo connection is established so the driver's own timeouts are
+    // measured against the real clock.
+    setSystemTime(new Date("2026-09-07T08:00:00.000Z"));
   });
 
   beforeEach(async () => {
@@ -172,7 +207,10 @@ describe("PublicBookingService", () => {
     service = new PublicBookingService(port);
   });
 
-  afterAll(cleanupTestDb);
+  afterAll(async () => {
+    setSystemTime();
+    await cleanupTestDb();
+  });
 
   const mockHealthySync = (
     calendars: ReturnType<typeof writableCalendar>[],
@@ -267,7 +305,7 @@ describe("PublicBookingService", () => {
 
   it("confirms a reservation and calls createBookingEvent once", async () => {
     const { slug } = await enableBookingPage();
-    const slotStart = "2026-09-07T10:00:00.000Z";
+    const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
 
     const response = await service.createReservation(slug, {
       slotStart,
@@ -290,7 +328,7 @@ describe("PublicBookingService", () => {
 
   it("confirms at the pinned duration and calls createBookingEvent once", async () => {
     const { slug } = await enableBookingPage();
-    const slotStart = "2026-09-07T10:00:00.000Z";
+    const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
 
     const response = await service.createReservation(slug, {
       slotStart,
@@ -303,10 +341,10 @@ describe("PublicBookingService", () => {
     expect(createBookingEvent).toHaveBeenCalledTimes(1);
     expect(createBookingEvent.mock.calls[0]?.[1]).toMatchObject({
       start: slotStart,
-      end: "2026-09-07T10:30:00.000Z",
+      end: `${BOOKING_MONDAY}T10:30:00.000Z`,
     });
     expect(response.slotStart).toBe(slotStart);
-    expect(response.slotEnd).toBe("2026-09-07T10:30:00.000Z");
+    expect(response.slotEnd).toBe(`${BOOKING_MONDAY}T10:30:00.000Z`);
   });
 
   it("rejects confirm when pinned duration does not match the page", async () => {
@@ -325,7 +363,7 @@ describe("PublicBookingService", () => {
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -343,7 +381,7 @@ describe("PublicBookingService", () => {
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -360,7 +398,7 @@ describe("PublicBookingService", () => {
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -382,7 +420,7 @@ describe("PublicBookingService", () => {
 
     const error = await service
       .createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -410,8 +448,8 @@ describe("PublicBookingService", () => {
     );
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
@@ -447,15 +485,15 @@ describe("PublicBookingService", () => {
       ...busyResponse(true),
       intervals: [
         {
-          start: "2026-09-07T10:00:00.000Z",
-          end: "2026-09-07T11:00:00.000Z",
+          start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+          end: `${BOOKING_MONDAY}T11:00:00.000Z`,
         },
       ],
     }));
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -472,15 +510,15 @@ describe("PublicBookingService", () => {
       ...busyResponse(false),
       intervals: [
         {
-          start: "2026-09-07T10:00:00.000Z",
-          end: "2026-09-07T11:00:00.000Z",
+          start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+          end: `${BOOKING_MONDAY}T11:00:00.000Z`,
         },
       ],
     }));
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
@@ -494,8 +532,8 @@ describe("PublicBookingService", () => {
       ...busyResponse(true),
       intervals: [
         {
-          start: "2026-09-07T10:00:00.000Z",
-          end: "2026-09-07T11:00:00.000Z",
+          start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+          end: `${BOOKING_MONDAY}T11:00:00.000Z`,
           hostIsOrganizer: false,
           hostResponseStatus: "needsAction",
         },
@@ -503,15 +541,16 @@ describe("PublicBookingService", () => {
     }));
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
     expect(
       response.slots.some(
         (slot) =>
-          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
+          Date.parse(slot.slotStart) ===
+          Date.parse(`${BOOKING_MONDAY}T10:00:00.000Z`),
       ),
     ).toBe(true);
   });
@@ -522,8 +561,8 @@ describe("PublicBookingService", () => {
       ...busyResponse(true),
       intervals: [
         {
-          start: "2026-09-07T10:00:00.000Z",
-          end: "2026-09-07T11:00:00.000Z",
+          start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+          end: `${BOOKING_MONDAY}T11:00:00.000Z`,
           hostIsOrganizer: true,
           hostResponseStatus: null,
         },
@@ -531,15 +570,16 @@ describe("PublicBookingService", () => {
     }));
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
     expect(
       response.slots.some(
         (slot) =>
-          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
+          Date.parse(slot.slotStart) ===
+          Date.parse(`${BOOKING_MONDAY}T10:00:00.000Z`),
       ),
     ).toBe(false);
   });
@@ -574,8 +614,8 @@ describe("PublicBookingService", () => {
         ...busyResponse(true),
         intervals: [
           {
-            start: "2026-09-07T10:00:00.000Z",
-            end: "2026-09-07T11:00:00.000Z",
+            start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+            end: `${BOOKING_MONDAY}T11:00:00.000Z`,
             hostIsOrganizer: true,
             hostResponseStatus: null,
           },
@@ -584,14 +624,15 @@ describe("PublicBookingService", () => {
     });
 
     const slots = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
     expect(
       slots.slots.some(
         (slot) =>
-          Date.parse(slot.slotStart) === Date.parse("2026-09-07T10:00:00.000Z"),
+          Date.parse(slot.slotStart) ===
+          Date.parse(`${BOOKING_MONDAY}T10:00:00.000Z`),
       ),
     ).toBe(false);
 
@@ -604,7 +645,7 @@ describe("PublicBookingService", () => {
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T12:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T12:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -655,7 +696,7 @@ describe("PublicBookingService", () => {
     expect(publicPage.conference).toBe("none");
 
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -705,7 +746,7 @@ describe("PublicBookingService", () => {
     );
 
     const created = await bookingService.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "Zoom: https://example.com/meet",
@@ -765,7 +806,7 @@ describe("PublicBookingService", () => {
     );
 
     const created = await bookingService.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -819,7 +860,7 @@ describe("PublicBookingService", () => {
     );
 
     await bookingService.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -873,8 +914,8 @@ describe("PublicBookingService", () => {
   it("accepts a month-length slot window within the existing 60-day cap", async () => {
     const { slug } = await enableBookingPage();
     const response = await service.getSlots(slug, {
-      start: "2026-08-01T00:00:00.000Z",
-      end: "2026-09-01T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${utcDatePlusDays(BOOKING_MONDAY, 31)}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
@@ -887,8 +928,8 @@ describe("PublicBookingService", () => {
 
     await expect(
       service.getSlots(slug, {
-        start: "2026-09-08T00:00:00.000Z",
-        end: "2026-09-07T00:00:00.000Z",
+        start: `${BOOKING_TUESDAY}T00:00:00.000Z`,
+        end: `${BOOKING_MONDAY}T00:00:00.000Z`,
         timeZone: "UTC",
       }),
     ).rejects.toMatchObject({ bookingCode: "INVALID_INPUT" });
@@ -896,7 +937,7 @@ describe("PublicBookingService", () => {
 
   it("cancels idempotently", async () => {
     const { slug } = await enableBookingPage();
-    const slotStart = "2026-09-07T10:00:00.000Z";
+    const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
     const created = await service.createReservation(slug, {
       slotStart,
       guestName: "Ada Lovelace",
@@ -919,7 +960,7 @@ describe("PublicBookingService", () => {
 
   it("marks cancelled before delete so a failed provider delete does not keep the slot", async () => {
     const { slug } = await enableBookingPage();
-    const slotStart = "2026-09-07T10:00:00.000Z";
+    const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
     const created = await service.createReservation(slug, {
       slotStart,
       guestName: "Ada Lovelace",
@@ -995,7 +1036,7 @@ describe("PublicBookingService", () => {
   it("returns minimal public reservation details", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "secret notes",
@@ -1027,7 +1068,7 @@ describe("PublicBookingService", () => {
   it("returns the booked slot duration after the host changes page duration", async () => {
     const { slug, userId, calendarId } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "secret notes",
@@ -1056,7 +1097,7 @@ describe("PublicBookingService", () => {
   it("returns cancelled status without leaking guest contact", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1082,7 +1123,7 @@ describe("PublicBookingService", () => {
 
   it("still returns slots when the page already has a confirmed reservation", async () => {
     const { slug } = await enableBookingPage();
-    const booked = "2026-09-07T10:00:00.000Z";
+    const booked = `${BOOKING_MONDAY}T10:00:00.000Z`;
     await service.createReservation(slug, {
       slotStart: booked,
       guestName: "Ada Lovelace",
@@ -1092,8 +1133,8 @@ describe("PublicBookingService", () => {
     });
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     });
 
@@ -1105,8 +1146,8 @@ describe("PublicBookingService", () => {
   it("returns the same slot set for two different guest timeZone values", async () => {
     const { slug } = await enableBookingPage();
     const window = {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
     };
 
     const utc = await service.getSlots(slug, {
@@ -1137,8 +1178,8 @@ describe("PublicBookingService", () => {
 
     try {
       const response = await service.getSlots(slug, {
-        start: "2026-09-07T00:00:00.000Z",
-        end: "2026-09-08T00:00:00.000Z",
+        start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+        end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
         timeZone: "UTC",
       });
 
@@ -1148,7 +1189,7 @@ describe("PublicBookingService", () => {
       );
       expect(response.bookable).toBe(true);
       expect(response.slots.map((slot) => slot.slotStart)).toContain(
-        "2026-09-07T10:00:00Z",
+        `${BOOKING_MONDAY}T10:00:00Z`,
       );
     } finally {
       listSpy.mockRestore();
@@ -1161,21 +1202,21 @@ describe("PublicBookingService", () => {
     });
     await seedConfirmedReservation(
       pageId,
-      "2026-09-07T09:00:00.000Z",
-      "2026-09-07T09:30:00.000Z",
+      `${BOOKING_MONDAY}T09:00:00.000Z`,
+      `${BOOKING_MONDAY}T09:30:00.000Z`,
     );
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T09:30:00.000Z",
-      end: "2026-09-07T11:00:00.000Z",
+      start: `${BOOKING_MONDAY}T09:30:00.000Z`,
+      end: `${BOOKING_MONDAY}T11:00:00.000Z`,
       timeZone: "UTC",
     });
 
     expect(response.slots.map((slot) => slot.slotStart)).not.toContain(
-      "2026-09-07T09:30:00Z",
+      `${BOOKING_MONDAY}T09:30:00Z`,
     );
     expect(response.slots.map((slot) => slot.slotStart)).toContain(
-      "2026-09-07T09:45:00Z",
+      `${BOOKING_MONDAY}T09:45:00Z`,
     );
   });
 
@@ -1186,19 +1227,19 @@ describe("PublicBookingService", () => {
     });
     await seedConfirmedReservation(
       pageId,
-      "2026-09-08T00:10:00.000Z",
-      "2026-09-08T00:40:00.000Z",
+      `${BOOKING_TUESDAY}T00:10:00.000Z`,
+      `${BOOKING_TUESDAY}T00:40:00.000Z`,
     );
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T21:00:00.000Z",
-      end: "2026-09-07T23:30:00.000Z",
+      start: `${BOOKING_MONDAY}T21:00:00.000Z`,
+      end: `${BOOKING_MONDAY}T23:30:00.000Z`,
       timeZone: "UTC",
     });
 
     const starts = response.slots.map((slot) => slot.slotStart);
-    expect(starts).toContain("2026-09-07T21:00:00Z");
-    expect(starts).not.toContain("2026-09-07T23:15:00Z");
+    expect(starts).toContain(`${BOOKING_MONDAY}T21:00:00Z`);
+    expect(starts).not.toContain(`${BOOKING_MONDAY}T23:15:00Z`);
   });
 
   it("still applies max bookings per day when the only reservation is earlier the same local day", async () => {
@@ -1207,13 +1248,13 @@ describe("PublicBookingService", () => {
     });
     await seedConfirmedReservation(
       pageId,
-      "2026-09-07T10:00:00.000Z",
-      "2026-09-07T10:30:00.000Z",
+      `${BOOKING_MONDAY}T10:00:00.000Z`,
+      `${BOOKING_MONDAY}T10:30:00.000Z`,
     );
 
     const response = await service.getSlots(slug, {
-      start: "2026-09-07T14:00:00.000Z",
-      end: "2026-09-07T17:00:00.000Z",
+      start: `${BOOKING_MONDAY}T14:00:00.000Z`,
+      end: `${BOOKING_MONDAY}T17:00:00.000Z`,
       timeZone: "UTC",
     });
 
@@ -1223,7 +1264,7 @@ describe("PublicBookingService", () => {
   it("accepts a second non-overlapping booking on the same page", async () => {
     const { slug } = await enableBookingPage();
     await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1231,7 +1272,7 @@ describe("PublicBookingService", () => {
     });
 
     const second = await service.createReservation(slug, {
-      slotStart: "2026-09-07T11:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
       guestName: "Grace Hopper",
       guestEmail: "grace@example.com",
       guestTimeZone: "America/New_York",
@@ -1250,15 +1291,15 @@ describe("PublicBookingService", () => {
     createBookingEvent.mockImplementation(async () => {
       await seedConfirmedReservation(
         pageId,
-        "2026-09-07T10:15:00.000Z",
-        "2026-09-07T10:45:00.000Z",
+        `${BOOKING_MONDAY}T10:15:00.000Z`,
+        `${BOOKING_MONDAY}T10:45:00.000Z`,
       );
       return "our-evt";
     });
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -1273,8 +1314,8 @@ describe("PublicBookingService", () => {
     const survivors =
       await bookingReservationRepository.listConfirmedOverlapping(
         pageId,
-        new Date("2026-09-07T09:00:00.000Z"),
-        new Date("2026-09-07T12:00:00.000Z"),
+        new Date(`${BOOKING_MONDAY}T09:00:00.000Z`),
+        new Date(`${BOOKING_MONDAY}T12:00:00.000Z`),
       );
     expect(survivors).toHaveLength(1);
   });
@@ -1284,8 +1325,8 @@ describe("PublicBookingService", () => {
     createBookingEvent.mockImplementation(async () => {
       await seedConfirmedReservation(
         pageId,
-        "2026-09-07T10:15:00.000Z",
-        "2026-09-07T10:45:00.000Z",
+        `${BOOKING_MONDAY}T10:15:00.000Z`,
+        `${BOOKING_MONDAY}T10:45:00.000Z`,
       );
       return "our-evt";
     });
@@ -1302,7 +1343,7 @@ describe("PublicBookingService", () => {
     try {
       await expect(
         service.createReservation(slug, {
-          slotStart: "2026-09-07T10:00:00.000Z",
+          slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
           guestName: "Ada Lovelace",
           guestEmail: "ada@example.com",
           guestTimeZone: "Europe/London",
@@ -1319,13 +1360,13 @@ describe("PublicBookingService", () => {
         principalId: userId.toString(),
         calendarId,
         eventId: "our-evt",
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       });
       const survivors =
         await bookingReservationRepository.listConfirmedOverlapping(
           pageId,
-          new Date("2026-09-07T09:00:00.000Z"),
-          new Date("2026-09-07T12:00:00.000Z"),
+          new Date(`${BOOKING_MONDAY}T09:00:00.000Z`),
+          new Date(`${BOOKING_MONDAY}T12:00:00.000Z`),
         );
       expect(survivors).toHaveLength(1);
     } finally {
@@ -1338,15 +1379,15 @@ describe("PublicBookingService", () => {
     createBookingEvent.mockImplementation(async () => {
       await seedConfirmedReservation(
         pageId,
-        "2026-09-07T10:00:00.000Z",
-        "2026-09-07T10:30:00.000Z",
+        `${BOOKING_MONDAY}T10:00:00.000Z`,
+        `${BOOKING_MONDAY}T10:30:00.000Z`,
       );
       return "our-evt";
     });
 
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",
@@ -1361,7 +1402,7 @@ describe("PublicBookingService", () => {
     const { slug } = await enableBookingPage();
 
     await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "bring coffee",
@@ -1383,7 +1424,7 @@ describe("PublicBookingService", () => {
     });
 
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1417,7 +1458,7 @@ describe("PublicBookingService", () => {
     );
 
     await bookingService.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1433,7 +1474,7 @@ describe("PublicBookingService", () => {
   it("patches guest name and notes and submits an event update", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "bring coffee",
@@ -1465,7 +1506,7 @@ describe("PublicBookingService", () => {
   it("rejects a wrong patch token without changing the row", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "bring coffee",
@@ -1490,7 +1531,7 @@ describe("PublicBookingService", () => {
   it("rejects patching a cancelled reservation without a command", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "bring coffee",
@@ -1548,7 +1589,7 @@ describe("PublicBookingService", () => {
     const { slug } = await enableBookingPage();
     await expect(
       service.createReservation(slug, {
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "not-an-email",
         guestTimeZone: "Europe/London",
@@ -1560,7 +1601,7 @@ describe("PublicBookingService", () => {
   it("reschedules a confirmed reservation to a new slot", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1573,32 +1614,34 @@ describe("PublicBookingService", () => {
 
     const response = await service.rescheduleReservation(reservationId, {
       token,
-      slotStart: "2026-09-07T11:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
       guestTimeZone: "America/Denver",
       durationMinutes: 30,
     });
 
     expect(updateBookingEvent).toHaveBeenCalledTimes(1);
     expect(updateBookingEvent.mock.calls[0]?.[1]).toMatchObject({
-      start: "2026-09-07T11:00:00.000Z",
-      end: "2026-09-07T11:30:00.000Z",
+      start: `${BOOKING_MONDAY}T11:00:00.000Z`,
+      end: `${BOOKING_MONDAY}T11:30:00.000Z`,
     });
     expect(createBookingEvent).not.toHaveBeenCalled();
-    expect(response.slotStart).toBe("2026-09-07T11:00:00.000Z");
-    expect(response.slotEnd).toBe("2026-09-07T11:30:00.000Z");
+    expect(response.slotStart).toBe(`${BOOKING_MONDAY}T11:00:00.000Z`);
+    expect(response.slotEnd).toBe(`${BOOKING_MONDAY}T11:30:00.000Z`);
     expect(response.guestTimeZone).toBe("America/Denver");
     expect(response.status).toBe("confirmed");
     expect(response).not.toHaveProperty("guestEmail");
     expect(response).not.toHaveProperty("cancelUrl");
     const stored = await bookingReservationRepository.findById(reservationId);
-    expect(stored?.slotStart.toISOString()).toBe("2026-09-07T11:00:00.000Z");
+    expect(stored?.slotStart.toISOString()).toBe(
+      `${BOOKING_MONDAY}T11:00:00.000Z`,
+    );
     expect(stored?.calendarEventId).toBeTruthy();
   });
 
   it("rejects reschedule when pinned duration does not match the page", async () => {
     const { slug, userId, calendarId } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1623,7 +1666,7 @@ describe("PublicBookingService", () => {
     await expect(
       service.rescheduleReservation(reservationId, {
         token,
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
@@ -1638,7 +1681,7 @@ describe("PublicBookingService", () => {
   it("treats a second reschedule to the same slot as idempotent", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1648,7 +1691,7 @@ describe("PublicBookingService", () => {
     const reservationId = new ObjectId(created.reservationId);
     await service.rescheduleReservation(reservationId, {
       token,
-      slotStart: "2026-09-07T11:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
       guestTimeZone: "America/Denver",
       durationMinutes: 30,
     });
@@ -1656,20 +1699,20 @@ describe("PublicBookingService", () => {
 
     const again = await service.rescheduleReservation(reservationId, {
       token,
-      slotStart: "2026-09-07T11:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
       guestTimeZone: "UTC",
       durationMinutes: 30,
     });
 
     expect(updateBookingEvent).not.toHaveBeenCalled();
-    expect(again.slotStart).toBe("2026-09-07T11:00:00.000Z");
+    expect(again.slotStart).toBe(`${BOOKING_MONDAY}T11:00:00.000Z`);
     expect(again.guestTimeZone).toBe("America/Denver");
   });
 
   it("rejects reschedule onto another confirmed reservation", async () => {
     const { slug, pageId } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1677,8 +1720,8 @@ describe("PublicBookingService", () => {
     });
     await seedConfirmedReservation(
       pageId,
-      "2026-09-07T11:00:00.000Z",
-      "2026-09-07T11:30:00.000Z",
+      `${BOOKING_MONDAY}T11:00:00.000Z`,
+      `${BOOKING_MONDAY}T11:30:00.000Z`,
     );
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
@@ -1687,7 +1730,7 @@ describe("PublicBookingService", () => {
     await expect(
       service.rescheduleReservation(reservationId, {
         token,
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
@@ -1698,7 +1741,7 @@ describe("PublicBookingService", () => {
   it("rejects reschedule of a cancelled reservation", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1712,7 +1755,7 @@ describe("PublicBookingService", () => {
     await expect(
       service.rescheduleReservation(reservationId, {
         token,
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
@@ -1723,7 +1766,7 @@ describe("PublicBookingService", () => {
   it("rejects a bad or missing reschedule token as not-found", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1735,14 +1778,14 @@ describe("PublicBookingService", () => {
     await expect(
       service.rescheduleReservation(reservationId, {
         token: "not-the-token",
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
     ).rejects.toMatchObject({ bookingCode: "RESERVATION_NOT_FOUND" });
     await expect(
       service.rescheduleReservation(reservationId, {
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
@@ -1750,7 +1793,7 @@ describe("PublicBookingService", () => {
     await expect(
       service.rescheduleReservation(new ObjectId(), {
         token: "a".repeat(32),
-        slotStart: "2026-09-07T11:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
         guestTimeZone: "Europe/London",
         durationMinutes: 30,
       }),
@@ -1761,7 +1804,7 @@ describe("PublicBookingService", () => {
   it("includes the current start on tokenized slots and hides it on public slots", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1770,8 +1813,8 @@ describe("PublicBookingService", () => {
     const token = new URL(created.cancelUrl).searchParams.get("token");
     const reservationId = new ObjectId(created.reservationId);
     const window = {
-      start: "2026-09-07T00:00:00.000Z",
-      end: "2026-09-08T00:00:00.000Z",
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
       timeZone: "UTC",
     };
 
@@ -1781,7 +1824,7 @@ describe("PublicBookingService", () => {
       token,
     });
 
-    const booked = Date.parse("2026-09-07T10:00:00.000Z");
+    const booked = Date.parse(`${BOOKING_MONDAY}T10:00:00.000Z`);
     expect(
       publicSlots.slots.map((slot) => Date.parse(slot.slotStart)),
     ).not.toContain(booked);
@@ -1797,7 +1840,7 @@ describe("PublicBookingService", () => {
   it("keeps overlapping host busy after self-exclusion", async () => {
     const { slug } = await enableBookingPage();
     const created = await service.createReservation(slug, {
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       guestTimeZone: "Europe/London",
@@ -1808,8 +1851,8 @@ describe("PublicBookingService", () => {
       ...busyResponse(true),
       intervals: [
         {
-          start: "2026-09-07T10:00:00.000Z",
-          end: "2026-09-07T11:00:00.000Z",
+          start: `${BOOKING_MONDAY}T10:00:00.000Z`,
+          end: `${BOOKING_MONDAY}T11:00:00.000Z`,
           hostIsOrganizer: true,
         },
       ],
@@ -1819,14 +1862,14 @@ describe("PublicBookingService", () => {
       new ObjectId(created.reservationId),
       {
         token,
-        start: "2026-09-07T00:00:00.000Z",
-        end: "2026-09-08T00:00:00.000Z",
+        start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+        end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
         timeZone: "UTC",
       },
     );
 
-    const occupied = Date.parse("2026-09-07T10:00:00.000Z");
-    const halfHour = Date.parse("2026-09-07T10:30:00.000Z");
+    const occupied = Date.parse(`${BOOKING_MONDAY}T10:00:00.000Z`);
+    const halfHour = Date.parse(`${BOOKING_MONDAY}T10:30:00.000Z`);
     const starts = tokenized.slots.map((slot) => Date.parse(slot.slotStart));
     expect(starts).not.toContain(occupied);
     expect(starts).not.toContain(halfHour);
@@ -1957,8 +2000,8 @@ describe("Public booking routes", () => {
     await bookingReservationRepository.insert({
       _id: reservationId,
       pageId: new ObjectId(page.id),
-      slotStart: new Date("2026-09-07T10:00:00.000Z"),
-      slotEnd: new Date("2026-09-07T10:30:00.000Z"),
+      slotStart: new Date(`${BOOKING_MONDAY}T10:00:00.000Z`),
+      slotEnd: new Date(`${BOOKING_MONDAY}T10:30:00.000Z`),
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
       notes: "secret notes",
@@ -1974,7 +2017,7 @@ describe("Public booking routes", () => {
       .expect(Status.OK);
 
     expect(response.body).toEqual({
-      slotStart: "2026-09-07T10:00:00.000Z",
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestTimeZone: "Europe/London",
       durationMinutes: 30,
       hostDisplayName: "Permalink Host",
@@ -2010,7 +2053,7 @@ describe("Public booking routes", () => {
       .getServer()
       .post(`/api/booking/pages/${slug}/reservations`)
       .send({
-        slotStart: "2026-09-07T10:00:00.000Z",
+        slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
         guestName: "Ada Lovelace",
         guestEmail: "ada@example.com",
         guestTimeZone: "Europe/London",

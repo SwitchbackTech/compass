@@ -1,10 +1,21 @@
 import { type DateTime, type EventId } from "@core/types/domain-primitives";
+import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
+import { mergeUpdateContent } from "@sync/domain/merge-update-content";
+import {
+  stripRuleBounds,
+  truncateRulesBefore,
+} from "@sync/domain/occurrence-projection";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { createHash } from "node:crypto";
+
+type SeriesMasterRecurrence = Extract<
+  SyncEventRecurrence,
+  { kind: "seriesMaster" }
+>;
 
 // Whether a series exception is a cancelled tombstone (a per-instance deletion)
 // rather than a content override. Shared by the cloud and provider command
@@ -110,4 +121,79 @@ export function remainderMasterId(
     .update(`${seriesId}:${splitAt}`)
     .digest("hex")
     .slice(0, 24) as EventId;
+}
+
+// Split an edit-all's exceptions into kept cancelled tombstones versus
+// discarded content/time overrides. Converting the series to a single event
+// drops every exception, cancellations included.
+export function partitionEditAllExceptions(
+  exceptions: readonly EventRecord[],
+  convertsToSingle: boolean,
+): { kept: EventRecord[]; discarded: EventRecord[] } {
+  if (convertsToSingle) {
+    return { kept: [], discarded: [...exceptions] };
+  }
+  return {
+    kept: exceptions.filter(isCancelledException),
+    discarded: exceptions.filter((event) => !isCancelledException(event)),
+  };
+}
+
+// Local truncated master for a this-and-following split: same identity,
+// rules bounded strictly before the split instant. Callers overlay
+// provider version fields after a write.
+export function truncatedSeriesMaster(
+  master: EventRecord,
+  splitAt: Date,
+  now: Date,
+): EventRecord & { recurrence: SeriesMasterRecurrence } {
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("truncatedSeriesMaster requires a series master");
+  }
+  return {
+    ...master,
+    recurrence: {
+      kind: "seriesMaster",
+      rules: truncateRulesBefore(master.recurrence.rules, splitAt),
+    },
+    updatedAt: now,
+  };
+}
+
+// Remainder series of a this-and-following edit: a fresh master at the
+// edit's schedule, carrying the edited content and recurrence, with a
+// deterministic id so a retry converges on one series. "preserve" continues
+// the original cadence (bounds stripped, so it runs open-ended from the split).
+export function buildRemainderMaster(
+  master: EventRecord,
+  command: CommandRecord,
+  now: Date,
+): EventRecord {
+  if (command.input.kind !== "update") {
+    throw new Error("buildRemainderMaster requires an update command");
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("buildRemainderMaster requires a series master");
+  }
+  const { input } = command;
+  const recurrence: SyncEventRecurrence =
+    input.recurrence.kind === "series"
+      ? { kind: "seriesMaster", rules: input.recurrence.rules }
+      : input.recurrence.kind === "single"
+        ? { kind: "single" }
+        : {
+            kind: "seriesMaster",
+            rules: stripRuleBounds(master.recurrence.rules),
+          };
+  return {
+    ...master,
+    _id: remainderMasterId(master._id, command.input.recurrenceId as DateTime),
+    clientEventId: null,
+    content: mergeUpdateContent(master.content, input.content),
+    schedule: input.schedule,
+    recurrence,
+    createdAt: now,
+    updatedAt: now,
+    confirmedAt: now,
+  };
 }

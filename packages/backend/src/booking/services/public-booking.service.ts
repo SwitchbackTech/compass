@@ -142,6 +142,11 @@ const buildGuestActionUrl = (
     CONFIG.FRONTEND_URL,
   ).href;
 
+const guestActionUrls = (reservationId: string, token: string) => ({
+  cancelUrl: buildGuestActionUrl("cancel", reservationId, token),
+  rescheduleUrl: buildGuestActionUrl("reschedule", reservationId, token),
+});
+
 const assertGuestEmail = (email: string): void => {
   if (!isGuestEmail(email)) {
     throw bookingError("INVALID_INPUT", "Invalid guest email");
@@ -590,13 +595,7 @@ export class PublicBookingService {
     );
     const cancelToken = generateCancelToken();
     const reservationId = mongoService.objectId();
-    const cancelUrl = buildGuestActionUrl(
-      "cancel",
-      reservationId.toString(),
-      cancelToken,
-    );
-    const rescheduleUrl = buildGuestActionUrl(
-      "reschedule",
+    const { cancelUrl, rescheduleUrl } = guestActionUrls(
       reservationId.toString(),
       cancelToken,
     );
@@ -737,13 +736,7 @@ export class PublicBookingService {
     const guestName = input.name ?? reservation.guestName;
     const notes = nextGuestNotes(input.notes, reservation.notes);
     const hostDisplayName = await getHostDisplayName(page.userId);
-    const cancelUrl = buildGuestActionUrl(
-      "cancel",
-      reservationId.toString(),
-      input.token,
-    );
-    const rescheduleUrl = buildGuestActionUrl(
-      "reschedule",
+    const { cancelUrl, rescheduleUrl } = guestActionUrls(
       reservationId.toString(),
       input.token,
     );
@@ -796,13 +789,7 @@ export class PublicBookingService {
     const slotStart = new Date(input.slotStart);
     const slotEnd = slotEndForStart(slotStart, input.durationMinutes);
     const hostDisplayName = await getHostDisplayName(page.userId);
-    const cancelUrl = buildGuestActionUrl(
-      "cancel",
-      reservationId.toString(),
-      input.token,
-    );
-    const rescheduleUrl = buildGuestActionUrl(
-      "reschedule",
+    const { cancelUrl, rescheduleUrl } = guestActionUrls(
       reservationId.toString(),
       input.token,
     );

@@ -1,16 +1,21 @@
 import type Stripe from "stripe";
 import { Logger } from "@core/logger/winston.logger";
+import { billingAnalytics } from "@backend/billing/billing.analytics";
 import {
   STRIPE_TO_COMPASS_STATUS,
   type StripeSubscriptionStatus,
 } from "@backend/billing/billing.constants";
-import { getStripeClient } from "@backend/billing/services/stripe.client";
+import {
+  type StripeBillingGateway,
+  stripeBillingGateway,
+} from "@backend/billing/services/stripe.client";
 import mongoService from "@backend/common/services/mongo.service";
 
 const logger = Logger("app:billing.webhook");
 
 const HANDLED_TYPES = new Set<Stripe.Event.Type>([
   "checkout.session.completed",
+  "checkout.session.expired",
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
@@ -135,12 +140,24 @@ async function findUserIdForSubscription(
   return null;
 }
 
+async function findUserIdForCheckoutSession(
+  session: Pick<Stripe.Checkout.Session, "client_reference_id" | "customer">,
+): Promise<string | null> {
+  if (session.client_reference_id) return session.client_reference_id;
+  const customerId = customerIdOf(session.customer);
+  if (!customerId) return null;
+  const byCustomer = await mongoService.user.findOne({
+    "billing.stripeCustomerId": customerId,
+  });
+  return byCustomer?._id.toString() ?? null;
+}
+
 async function handleSetupCheckoutSession(
-  stripe: Stripe,
+  stripe: StripeBillingGateway,
   session: Stripe.Checkout.Session,
   eventCreatedAt: Date,
 ): Promise<void> {
-  const retrieved = await stripe.checkout.sessions.retrieve(session.id, {
+  const retrieved = await stripe.retrieveCheckoutSession(session.id, {
     expand: ["setup_intent"],
   });
   const setupIntent = retrieved.setup_intent;
@@ -179,23 +196,25 @@ async function handleSetupCheckoutSession(
     return;
   }
 
-  await stripe.customers.update(resolvedCustomerId, {
+  await stripe.updateCustomer(resolvedCustomerId, {
     invoice_settings: { default_payment_method: paymentMethodId },
   });
 
   const subscriptionId = user?.billing?.stripeSubscriptionId;
   if (!subscriptionId) return;
 
-  const subscription = await stripe.subscriptions.update(subscriptionId, {
+  const subscription = await stripe.updateSubscription(subscriptionId, {
     default_payment_method: paymentMethodId,
   });
   await applySubscription(userId, subscription, eventCreatedAt);
 }
 
-async function handleEvent(event: Stripe.Event): Promise<void> {
+async function handleEvent(
+  event: Stripe.Event,
+  stripe: StripeBillingGateway,
+): Promise<void> {
   if (!HANDLED_TYPES.has(event.type)) return;
 
-  const stripe = getStripeClient();
   const eventCreatedAt = toDate(event.created) ?? new Date();
 
   if (event.type === "checkout.session.completed") {
@@ -209,7 +228,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       logger.warn("checkout.session.completed had no subscription id");
       return;
     }
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe.retrieveSubscription(subscriptionId);
     const userId = await findUserIdForSubscription(
       subscription,
       session.client_reference_id,
@@ -221,6 +240,33 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
       return;
     }
     await applySubscription(userId, subscription, eventCreatedAt);
+    await billingAnalytics.capture({
+      event: "checkout_completed",
+      userId,
+      properties: {
+        checkout_session_id: session.id,
+        subscription_status: subscription.status,
+        trial: subscription.status === "trialing",
+      },
+    });
+    return;
+  }
+
+  // An expired session is the "reached Stripe and left" signal. Nothing to
+  // write: billing stays awaiting_checkout and a new session can be opened.
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode === "setup") return;
+    const userId = await findUserIdForCheckoutSession(session);
+    if (!userId) {
+      logger.warn(`No Compass user for expired checkout session ${session.id}`);
+      return;
+    }
+    await billingAnalytics.capture({
+      event: "checkout_expired",
+      userId,
+      properties: { checkout_session_id: session.id },
+    });
     return;
   }
 
@@ -229,7 +275,7 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
     logger.warn(`${event.type} had no subscription id`);
     return;
   }
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await stripe.retrieveSubscription(subscriptionId);
   const userId = await findUserIdForSubscription(subscription);
   if (!userId) {
     logger.warn(
@@ -240,7 +286,10 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
   await applySubscription(userId, subscription, eventCreatedAt);
 }
 
-export async function processStripeEvent(event: Stripe.Event): Promise<void> {
+export async function processStripeEvent(
+  event: Stripe.Event,
+  stripe: StripeBillingGateway = stripeBillingGateway,
+): Promise<void> {
   try {
     await mongoService.billingEvent.insertOne({
       _id: event.id,
@@ -254,7 +303,7 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
   }
 
   try {
-    await handleEvent(event);
+    await handleEvent(event, stripe);
   } catch (error) {
     await mongoService.billingEvent.deleteOne({ _id: event.id });
     throw error;

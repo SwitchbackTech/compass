@@ -102,8 +102,12 @@ main() {
   fi
 
   # Merge queue owns the strategy and the repo deletes branches on merge.
-  if ! gh pr merge "$pr_number" --repo "$REPO" --auto; then
-    notify "Autofix PR #${pr_number} (issue #${ISSUE_NUMBER}) passed the merge guard but \`gh pr merge --auto\` failed — needs a human to enable merge manually — https://github.com/${REPO}/pull/${pr_number}"
+  # Carry gh's own error into the notice: without it the 2026-09-06 token
+  # permission failure read as a generic "failed" and took a log dig to find.
+  local merge_error
+  if ! merge_error=$(gh pr merge "$pr_number" --repo "$REPO" --auto 2>&1); then
+    printf '%s\n' "$merge_error" >&2
+    notify "Autofix PR #${pr_number} (issue #${ISSUE_NUMBER}) passed the merge guard but \`gh pr merge --auto\` failed (${merge_error%%$'\n'*}); needs a human to enable merge manually: https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi
   # Do not watch CI here: this job runs under a cancel-in-progress:false

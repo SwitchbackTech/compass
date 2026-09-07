@@ -16,7 +16,14 @@ const SOCIAL_ICONS = {
   github: GithubLogoIcon,
 } as const;
 
-const LEGAL_LINKS = [
+const PRICING_LINK = {
+  shortcut: "P",
+  letter: "p",
+  label: "Pricing",
+  href: "https://compasscalendar.com/pricing",
+} as const;
+
+const DIGIT_LEGAL_LINKS = [
   {
     digit: "9",
     label: "Privacy",
@@ -31,6 +38,7 @@ const LEGAL_LINKS = [
 
 function JumpAnchor({
   jumpIndex,
+  letter,
   digit,
   href,
   label,
@@ -38,7 +46,8 @@ function JumpAnchor({
   className,
   children,
 }: {
-  jumpIndex: number;
+  jumpIndex?: number;
+  letter?: string;
   digit: string;
   href: string;
   label?: string;
@@ -53,7 +62,10 @@ function JumpAnchor({
       rel="noopener noreferrer"
       aria-label={label}
       className={className}
-      data-welcome-jump={String(jumpIndex)}
+      data-welcome-jump={
+        jumpIndex !== undefined ? String(jumpIndex) : undefined
+      }
+      data-welcome-letter={letter}
       {...pointerShortcutAttributes(digit)}
     >
       {children}
@@ -91,7 +103,16 @@ export function WelcomeLinks({ flashedKey }: { flashedKey: string | null }) {
         })}
       </div>
       <div className="flex items-center gap-4 text-text-muted text-xs">
-        {LEGAL_LINKS.map(({ digit, label, href }, index) => (
+        <JumpAnchor
+          letter={PRICING_LINK.letter}
+          digit={PRICING_LINK.shortcut}
+          href={PRICING_LINK.href}
+          flashedKey={flashedKey}
+          className="c-focus-ring inline-flex items-center gap-1 underline-offset-4 hover:text-text hover:underline"
+        >
+          {PRICING_LINK.label}
+        </JumpAnchor>
+        {DIGIT_LEGAL_LINKS.map(({ digit, label, href }, index) => (
           <JumpAnchor
             key={label}
             jumpIndex={SOCIAL_LINKS.length + index}

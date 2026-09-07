@@ -4,10 +4,9 @@ import {
   microsoftFailureCause,
   microsoftStatus,
 } from "@sync/providers/microsoft/microsoft-error";
-import {
-  MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
-} from "@sync/providers/microsoft/microsoft-http.constants";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
+import { MICROSOFT_GRAPH_BASE_URL } from "@sync/providers/microsoft/microsoft-http.constants";
+import { classifyProviderWatchError } from "@sync/providers/provider-notification-error";
 import {
   type NotificationChannel,
   type NotificationParseResult,
@@ -146,51 +145,23 @@ class FetchMicrosoftSubscriptionsApi implements MicrosoftSubscriptionsApi {
   async createSubscription(
     body: MicrosoftSubscriptionCreateBody,
   ): Promise<GraphSubscription> {
-    const response = await fetch(`${MICROSOFT_GRAPH_BASE_URL}/subscriptions`, {
+    return microsoftGraphRequest<GraphSubscription>({
+      accessToken: this.accessToken,
+      url: `${MICROSOFT_GRAPH_BASE_URL}/subscriptions`,
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
+      body,
+      fallbackError: "microsoft_subscription_create_failed",
     });
-
-    const data = (await response.json()) as GraphSubscription & {
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(
-          data.error?.message ?? "microsoft_subscription_create_failed",
-        ),
-        { response: { status: response.status, data } },
-      );
-    }
-
-    return data;
   }
 
   async deleteSubscription(subscriptionId: string): Promise<void> {
-    const response = await fetch(
-      `${MICROSOFT_GRAPH_BASE_URL}/subscriptions/${encodeURIComponent(subscriptionId)}`,
-      {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${this.accessToken}` },
-        signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
-      },
-    );
-
-    if (response.ok) return;
-
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: { code?: string; message?: string };
-    };
-    throw Object.assign(
-      new Error(data.error?.message ?? "microsoft_subscription_delete_failed"),
-      { response: { status: response.status, data } },
-    );
+    await microsoftGraphRequest<void>({
+      accessToken: this.accessToken,
+      url: `${MICROSOFT_GRAPH_BASE_URL}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      method: "DELETE",
+      fallbackError: "microsoft_subscription_delete_failed",
+      emptyOk: true,
+    });
   }
 }
 
@@ -276,54 +247,22 @@ function parseExpiration(
 }
 
 function classifyWatchError(error: unknown): ProviderNotificationError {
-  if (error instanceof ProviderNotificationError) return error;
-
-  const cause = microsoftFailureCause(error);
-  const status = microsoftStatus(error);
-  const code = microsoftErrorCode(error);
-  const detail = cause?.message;
-
-  if (status === 401) {
-    return new ProviderNotificationError(
-      "authorizationRevoked",
-      detail ?? "Microsoft rejected the credential",
-      { cause },
-    );
-  }
-  if (isWatchUnsupported(error, status, code)) {
-    return new ProviderNotificationError(
-      "watchUnsupported",
-      detail ?? "Microsoft does not support watching this resource",
-      { cause },
-    );
-  }
-  if (isMicrosoftTransient(error, status)) {
-    return new ProviderNotificationError(
-      "transient",
-      detail
-        ? `Microsoft watch temporarily unavailable (${detail})`
-        : "Microsoft watch temporarily unavailable",
-      { cause },
-    );
-  }
-  return new ProviderNotificationError(
-    "watchFailed",
-    detail
-      ? `Microsoft refused to open the channel (${detail})`
-      : "Microsoft refused to open the channel",
-    { cause },
-  );
+  return classifyProviderWatchError(error, {
+    status: microsoftStatus,
+    cause: microsoftFailureCause,
+    isTransient: isMicrosoftTransient,
+    isWatchUnsupported,
+    credentialRejectedMessage: "Microsoft rejected the credential",
+    watchUnsupportedMessage:
+      "Microsoft does not support watching this resource",
+    transientUnavailableMessage: "Microsoft watch temporarily unavailable",
+    watchFailedMessage: "Microsoft refused to open the channel",
+  });
 }
 
-function isWatchUnsupported(
-  error: unknown,
-  status: number | undefined,
-  code: string | undefined,
-): boolean {
-  if (status !== 400) return false;
-  if (code === "ExtensionError") return true;
-  const data = (
-    error as { response?: { data?: { error?: { code?: string } } } }
-  )?.response?.data?.error?.code;
-  return data === "ExtensionError";
+function isWatchUnsupported(error: unknown): boolean {
+  return (
+    microsoftStatus(error) === 400 &&
+    microsoftErrorCode(error) === "ExtensionError"
+  );
 }

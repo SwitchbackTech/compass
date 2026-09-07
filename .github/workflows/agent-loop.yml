@@ -26,12 +26,18 @@ on:
         required: false
         type: string
   schedule:
-    - cron: "*/15 * * * *"
+    # Hourly watchdog. Launch-on-merge and post-deploy-on-release fill the
+    # fleet; */15 was ~96 skip-runs/day on top of every PR synchronize.
+    - cron: "0 * * * *"
   workflow_run:
     workflows: ["Release on main"]
     types: [completed]
   pull_request:
-    types: [labeled, synchronize, opened, reopened, ready_for_review, closed]
+    # Label and close only. synchronize/opened/ready_for_review on every PR
+    # created a skipped run even with no agent-automerge label. Auto-merge,
+    # once enabled, does not need a re-run on each push; the hourly job
+    # re-runs merge-guard on labeled PRs.
+    types: [labeled, unlabeled, closed]
 
 permissions:
   contents: read

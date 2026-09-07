@@ -15,6 +15,14 @@ export interface ProviderAdapters {
   contacts?: ContactsPort;
 }
 
+/**
+ * Per-provider adapter injection for tests and local harnesses. Provider
+ * neutral on purpose: it must not live in any one provider's directory.
+ */
+export type ProviderAdapterOverrides = Partial<
+  Record<ProviderKind, Partial<ProviderAdapters>>
+>;
+
 export type ResolveProviderAdapters = (
   provider: ProviderKind,
   connection?: {

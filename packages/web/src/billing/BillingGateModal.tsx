@@ -96,7 +96,17 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   );
 
   const onCheckoutComplete = useCallback(() => {
-    track("trial_converted");
+    // Read before close() clears it.
+    const source = useCheckoutPanelStore.getState().source;
+    const attribution = {
+      source: source?.kind ?? "gate",
+      ...(source?.featureArea ? { feature_area: source.featureArea } : {}),
+      ...(source?.actionId ? { action_id: source.actionId } : {}),
+    };
+    track("trial_converted", attribution);
+    if (source?.kind === "shortcut_prompt") {
+      track("billing_gate_shortcut_converted", attribution);
+    }
     checkoutCelebrationActions.celebrate();
     checkoutPanelActions.close();
     startBillingStatusPoll(queryClient, () => {});

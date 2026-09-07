@@ -11,6 +11,7 @@ import {
   googleSyncSupportMailto,
   SSE_DEGRADED_STATUS,
 } from "@web/auth/providers/connect.util";
+import { MICROSOFT_SELF_HOSTING_DOC_URL } from "@web/auth/providers/connection-health-copy.util";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import { CALENDAR_HOST_EXPLAINER } from "@web/auth/providers/provider-copy.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/providers/sync.refresh";
@@ -511,6 +512,18 @@ const AccountRow: FC<AccountRowProps> = ({
               href={googleSyncSupportMailto}
             >
               Email support
+            </a>
+          </p>
+        ) : null}
+        {connection.stateReason === "consentRequired" ? (
+          <p className="text-text-muted text-xs">
+            <a
+              className="underline hover:text-text"
+              href={MICROSOFT_SELF_HOSTING_DOC_URL}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Admin consent setup guide
             </a>
           </p>
         ) : null}

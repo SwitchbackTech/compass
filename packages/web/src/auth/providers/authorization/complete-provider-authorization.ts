@@ -7,7 +7,6 @@ import { type ApiError } from "@web/api/api.types";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTHORIZATION_ERROR_MESSAGE,
-  MISSING_GOOGLE_SCOPES_ERROR_MESSAGE,
   MISSING_PROVIDER_SCOPES_ERROR_MESSAGE,
   PROVIDER_AUTH_SCOPES_REQUIRED,
   PROVIDER_AUTHORIZATION_ERROR_MESSAGE,
@@ -58,12 +57,6 @@ const AUTHORIZATION_ERROR_MESSAGE: Record<ProviderKind, string> = {
   google: GOOGLE_AUTHORIZATION_ERROR_MESSAGE,
   microsoft: PROVIDER_AUTHORIZATION_ERROR_MESSAGE,
   apple: PROVIDER_AUTHORIZATION_ERROR_MESSAGE,
-};
-
-const MISSING_SCOPES_ERROR_MESSAGE: Record<ProviderKind, string> = {
-  google: MISSING_GOOGLE_SCOPES_ERROR_MESSAGE,
-  microsoft: MISSING_PROVIDER_SCOPES_ERROR_MESSAGE,
-  apple: MISSING_PROVIDER_SCOPES_ERROR_MESSAGE,
 };
 
 const CONSENT_RETRY_ERROR_CODES_BY_PROVIDER: Partial<
@@ -133,7 +126,7 @@ export async function completeProviderAuthorization({
   );
 
   if (isMissingRequiredScope) {
-    return fail(provider, returnPath, MISSING_SCOPES_ERROR_MESSAGE[provider]);
+    return fail(provider, returnPath, MISSING_PROVIDER_SCOPES_ERROR_MESSAGE);
   }
 
   const payload = buildProviderAuthCodePayload({

@@ -1,5 +1,8 @@
 import { type Dispatch, type SetStateAction } from "react";
-import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  type GridEventDraft,
+  type GridScheduleDraft,
+} from "@web/events/event-draft.types";
 
 // EventForm's props: the grid draft forms (Day + Week) both converge on the
 // canonical GridEventDraft.
@@ -15,7 +18,4 @@ export interface GridEventFormProps {
   setDraft: Dispatch<SetStateAction<GridEventDraft | null>>;
 }
 
-export type SetEventFormSchedule = (patch: {
-  startDate?: string;
-  endDate?: string;
-}) => void;
+export type OnEventFormScheduleChange = (schedule: GridScheduleDraft) => void;

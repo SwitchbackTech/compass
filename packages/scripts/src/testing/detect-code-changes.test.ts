@@ -61,6 +61,53 @@ printf '%s' "$DETECT_CODE_CHANGES_TEST_FILES"
   return details;
 }
 
+const ALL_ON = [
+  "code=true",
+  "e2e=true",
+  "core=true",
+  "web=true",
+  "backend=true",
+  "sync=true",
+  "scripts=true",
+  "",
+].join("\n");
+
+const ALL_OFF = [
+  "code=false",
+  "e2e=false",
+  "core=false",
+  "web=false",
+  "backend=false",
+  "sync=false",
+  "scripts=false",
+  "",
+].join("\n");
+
+function flags(values: {
+  code?: boolean;
+  e2e?: boolean;
+  core?: boolean;
+  web?: boolean;
+  backend?: boolean;
+  sync?: boolean;
+  scripts?: boolean;
+}) {
+  const resolved = {
+    code: false,
+    e2e: false,
+    core: false,
+    web: false,
+    backend: false,
+    sync: false,
+    scripts: false,
+    ...values,
+  };
+  return (["code", "e2e", "core", "web", "backend", "sync", "scripts"] as const)
+    .map((key) => `${key}=${resolved[key]}`)
+    .concat("")
+    .join("\n");
+}
+
 describe("detect-code-changes", () => {
   it("is the single detector used by both required-check workflows", () => {
     for (const workflowPath of [
@@ -74,7 +121,7 @@ describe("detect-code-changes", () => {
     }
   });
 
-  it("gates the e2e shards on the e2e output and the unit legs on code", () => {
+  it("gates the e2e shards on the e2e output and the unit legs on package outputs", () => {
     const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
     const e2e = readFileSync(".github/workflows/test-e2e.yml", "utf8");
 
@@ -82,6 +129,9 @@ describe("detect-code-changes", () => {
     expect(e2e).toContain("if: needs.changes.outputs.e2e == 'true'");
     expect(e2e).not.toContain("needs.changes.outputs.code");
     expect(unit).toContain("code: ${{ steps.filter.outputs.code }}");
+    expect(unit).toContain("web: ${{ steps.filter.outputs.web }}");
+    expect(unit).toContain("needs.changes.outputs[matrix.project]");
+    expect(unit).toContain("bash .github/scripts/detect-code-changes.test.sh");
     expect(unit).not.toContain("outputs.e2e");
   });
 
@@ -116,7 +166,7 @@ describe("detect-code-changes", () => {
       const result = runDetector(eventName);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\ne2e=true\n");
+      expect(result.output).toBe(ALL_ON);
       expect(result.command).toBe("");
     }
   });
@@ -128,17 +178,19 @@ describe("detect-code-changes", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=false\ne2e=false\n");
+    expect(result.output).toBe(ALL_OFF);
   });
 
-  it("skips only e2e for backend, sync, and scripts pull requests", () => {
+  it("skips e2e and unrelated unit legs for backend, sync, and scripts pull requests", () => {
     const result = runDetector(
       "pull_request",
       "packages/backend/src/app.ts\npackages/sync/src/jobs.ts\npackages/scripts/src/cli.ts\ndocs/sync.md",
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\ne2e=false\n");
+    expect(result.output).toBe(
+      flags({ code: true, backend: true, sync: true, scripts: true }),
+    );
   });
 
   it("runs e2e when a backend pull request also touches anything else", () => {
@@ -156,21 +208,36 @@ describe("detect-code-changes", () => {
       );
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output, other).toBe("code=true\ne2e=true\n");
+      expect(result.output, other).toMatch(/^code=true\ne2e=true\n/);
     }
   });
 
-  it("runs checks for pull requests containing code", () => {
+  it("runs only the web unit legs for a web-only pull request", () => {
     const result = runDetector(
       "pull_request",
       "docs/testing.md\npackages/web/src/app.tsx",
     );
 
     expect(result.status, result.stderr).toBe(0);
-    expect(result.output).toBe("code=true\ne2e=true\n");
+    expect(result.output).toBe(flags({ code: true, e2e: true, web: true }));
     expect(result.command).toContain(
       "api --paginate repos/example/compass/pulls/42/files --jq .[].filename",
     );
+  });
+
+  it("runs every unit leg when core, the lockfile, or a root tsconfig changes", () => {
+    for (const file of [
+      "packages/core/src/types.ts",
+      "package.json",
+      "bun.lock",
+      "tsconfig.json",
+      "tsconfig.typecheck.json",
+    ]) {
+      const result = runDetector("pull_request", file);
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.output, file).toBe(ALL_ON);
+    }
   });
 
   it("runs checks when the pull request file list cannot be verified", () => {
@@ -181,7 +248,7 @@ describe("detect-code-changes", () => {
       const result = runDetector("pull_request", files, ghStatus);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(result.output).toBe("code=true\ne2e=true\n");
+      expect(result.output).toBe(ALL_ON);
     }
   });
 });

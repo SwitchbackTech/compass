@@ -92,7 +92,7 @@ describe("ShortcutList", () => {
       />,
     );
 
-    expect(screen.getByText("Pro")).toBeInTheDocument();
+    expect(screen.getByText("Premium")).toBeInTheDocument();
     expect(screen.getByText("Premium shortcut.")).toBeInTheDocument();
     await user.hover(screen.getByText("Create timed event"));
     expect(

@@ -1,5 +1,6 @@
 import { type FC } from "react";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
+import { LiveUpdatesStatus } from "@web/components/CalendarHeader/LiveUpdatesStatus";
 import { UpdateAvailableButton } from "@web/components/CalendarHeader/UpdateAvailableButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
@@ -63,6 +64,7 @@ export const CalendarHeader: FC<Props> = ({
           </div>
         )}
         <SelectView label={label} onToday={onToday} />
+        <LiveUpdatesStatus />
         {isUpdateAvailable ? <UpdateAvailableButton /> : null}
       </div>
 

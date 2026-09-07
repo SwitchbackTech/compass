@@ -1,13 +1,15 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { AuthApi } from "@web/api/auth.api";
-import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
+import { PROVIDER_AUTH_SCOPES_REQUIRED } from "@web/auth/providers/authorization/provider-authorization.constants";
 import {
-  readGoogleAuthorizationIntent,
-  writeGoogleAuthorizationIntent,
-} from "@web/auth/google/authorization/google-authorization.storage";
+  readProviderAuthorizationIntent,
+  writeProviderAuthorizationIntent,
+} from "@web/auth/providers/authorization/provider-authorization.storage";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { completeProviderAuthCallback } from "@web/views/ProviderAuthCallback/ProviderAuthCallback";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+
+const GOOGLE_SCOPES_REQUIRED = PROVIDER_AUTH_SCOPES_REQUIRED.google;
 
 const mockLoginOrSignup = mock();
 const realLoginOrSignup = AuthApi.loginOrSignup;
@@ -21,14 +23,14 @@ const { port, mocks } = createTestToastPort();
 
 const callbackSearch = (
   state: string,
-  scope = GOOGLE_AUTH_SCOPES_REQUIRED.join(" "),
+  scope = GOOGLE_SCOPES_REQUIRED.join(" "),
 ) =>
   `?state=${encodeURIComponent(
     state,
   )}&code=auth-code&scope=${encodeURIComponent(scope)}`;
 
 const writeIntent = (state: string, returnPath = "/week") => {
-  writeGoogleAuthorizationIntent(state, {
+  writeProviderAuthorizationIntent("google", state, {
     intent: "signIn",
     returnPath,
     createdAt: Date.now(),
@@ -77,7 +79,9 @@ describe("completeProviderAuthCallback (google)", () => {
     });
     expect(mocks.error).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
-    expect(readGoogleAuthorizationIntent("sign-in-state")).toBeNull();
+    expect(
+      readProviderAuthorizationIntent("google", "sign-in-state"),
+    ).toBeNull();
   });
 
   it("rejects a Google callback that is missing required calendar scopes", async () => {
@@ -89,7 +93,7 @@ describe("completeProviderAuthCallback (google)", () => {
       navigate,
       search: callbackSearch(
         "missing-scopes-state",
-        GOOGLE_AUTH_SCOPES_REQUIRED[0]!,
+        GOOGLE_SCOPES_REQUIRED[0]!,
       ),
     });
 

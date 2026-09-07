@@ -6,10 +6,10 @@ import {
   microsoftFailureCause,
   microsoftStatus,
 } from "@sync/providers/microsoft/microsoft-error";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
 import {
   MICROSOFT_CALENDAR_LIST_SELECT,
   MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
 } from "@sync/providers/microsoft/microsoft-http.constants";
 import {
   type CalendarDiscovery,
@@ -147,23 +147,14 @@ class FetchMicrosoftCalendarListApi implements MicrosoftCalendarListApi {
     const url =
       params.nextLink ??
       `${MICROSOFT_GRAPH_BASE_URL}/me/calendars?$select=${MICROSOFT_CALENDAR_LIST_SELECT}`;
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${this.#accessToken}` },
-      signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
-    });
-
-    const data = (await response.json()) as {
+    const data = await microsoftGraphRequest<{
       value?: MicrosoftGraphCalendar[];
       "@odata.nextLink"?: string;
-      error?: { message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_calendar_list_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
+    }>({
+      accessToken: this.#accessToken,
+      url,
+      fallbackError: "microsoft_calendar_list_failed",
+    });
 
     return {
       items: data.value ?? [],

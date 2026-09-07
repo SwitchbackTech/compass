@@ -12,7 +12,7 @@ import {
   ProviderNotConfiguredError,
 } from "@sync/providers/provider-adapters";
 
-function appleConfigured(config: SyncConfig): boolean {
+export function appleProviderConfigured(config: SyncConfig): boolean {
   return Boolean(config.CREDENTIAL_ENCRYPTION_KEY);
 }
 
@@ -53,7 +53,7 @@ export function appleAdapters(
   override?: Partial<ProviderAdapters>,
 ): ProviderAdapters {
   // Tests inject partial overrides (auth/writer only) without the encryption key.
-  if (!appleConfigured(config) && override?.auth === undefined) {
+  if (!appleProviderConfigured(config) && override?.auth === undefined) {
     throw new ProviderNotConfiguredError("apple");
   }
   return {
@@ -63,8 +63,4 @@ export function appleAdapters(
     writer: override?.writer ?? new AppleEventWriter(),
     notifications: override?.notifications ?? new AppleNotificationAdapter(),
   };
-}
-
-export function appleProviderConfigured(config: SyncConfig): boolean {
-  return appleConfigured(config);
 }

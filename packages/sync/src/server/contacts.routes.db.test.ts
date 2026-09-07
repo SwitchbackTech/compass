@@ -1,5 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
+import {
+  GOOGLE_SCOPE_CALENDAR_EVENTS,
+  GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
+  GOOGLE_SCOPE_CONTACTS_READONLY,
+} from "@core/providers/google.scopes";
+import {
+  MICROSOFT_SCOPE_CALENDARS_READWRITE,
+  MICROSOFT_SCOPE_PEOPLE_READ,
+} from "@core/providers/microsoft.scopes";
 import { type ContactSuggestion } from "@core/types/contact.contracts";
 import {
   type PrincipalId,
@@ -13,15 +22,6 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
-import {
-  GOOGLE_SCOPE_CALENDAR_EVENTS,
-  GOOGLE_SCOPE_CONTACTS_OTHER_READONLY,
-  GOOGLE_SCOPE_CONTACTS_READONLY,
-} from "@sync/providers/google/google.scopes";
-import {
-  MICROSOFT_SCOPE_CALENDARS_READWRITE,
-  MICROSOFT_SCOPE_PEOPLE_READ,
-} from "@sync/providers/microsoft/microsoft-scopes";
 import {
   type ProviderAuthAdapter,
   type ProviderAuthorization,

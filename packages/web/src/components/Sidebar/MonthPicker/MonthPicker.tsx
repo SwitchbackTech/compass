@@ -10,9 +10,9 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { TrialBadge } from "@web/billing/TrialBadge";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { POINTER_ACTIONS } from "@web/shortcuts/keyboard-only/pointer-action";
 import { pageJumpAttrs } from "@web/shortcuts/page-jump/page-jump.targets";
+import { MonthPickerHint } from "./MonthPickerHint";
 import {
   type MonthPickerUnit,
   normalizePickerCursor,
@@ -166,7 +166,7 @@ export const MonthPicker: FC<Props> = ({
       onMouseDownCapture={swallowDayPointer}
       {...pageJumpAttrs("month-picker")}
     >
-      <div className="group relative">
+      <MonthPickerHint unit={unit}>
         <DatePicker
           key={jumpGeneration}
           animationOnToggle={false}
@@ -211,11 +211,7 @@ export const MonthPicker: FC<Props> = ({
           view="sidebar"
           withTodayButton={true}
         />
-        <span className="c-context-tooltip top-full bottom-auto left-1/2 mt-1.5 mb-0 flex -translate-x-1/2 items-center gap-1.5">
-          <ShortcutKeys keys="I" /> focuses the picker · Arrows move by {unit} ·
-          Enter opens it
-        </span>
-      </div>
+      </MonthPickerHint>
     </fieldset>
   );
 };

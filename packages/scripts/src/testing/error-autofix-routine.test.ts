@@ -23,6 +23,25 @@ describe("error-autofix Routine contract", () => {
     expect(guard).toMatch(/^MAX_LINES=250$/m);
   });
 
+  it("enables auto-merge with a token that has contents:write", () => {
+    // AUTOFIX_GITHUB_TOKEN alone failed every gate with "Resource not
+    // accessible by personal access token (enablePullRequestAutoMerge)"
+    // (2026-09-06, PR #3450); the agent-loop PAT carries both scopes.
+    const workflow = readFileSync(
+      ".github/workflows/error-autofix.yml",
+      "utf8",
+    );
+    expect(workflow).toContain(
+      "GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}",
+    );
+    const guard = readFileSync(
+      ".github/scripts/autofix-merge-guard.sh",
+      "utf8",
+    );
+    // The notice carries gh's own error so a token failure reads from Discord.
+    expect(guard).toMatch(/merge_error=\$\(gh pr merge[^\n]*--auto 2>&1\)/);
+  });
+
   it("still blocks the sensitive paths from auto-merging", () => {
     const guard = readFileSync(
       ".github/scripts/autofix-merge-guard.sh",

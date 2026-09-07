@@ -35,11 +35,22 @@ class SSEServer {
   }
 
   subscribe(userId: string, res: Response): () => void {
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-    res.flushHeaders();
+    try {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no");
+      res.flushHeaders();
+    } catch {
+      // The client can disconnect between the request arriving and headers
+      // being flushed. Bun's runtime throws on flushHeaders() in that race
+      // instead of no-op'ing like Node, so treat it like any other dead
+      // connection: nothing was registered, so there is nothing to tear down.
+      logger.debug(
+        `SSE connection already closed before open for user: ${userId}`,
+      );
+      return () => {};
+    }
 
     const conns = this.connections.get(userId) ?? new Set<Response>();
     conns.add(res);

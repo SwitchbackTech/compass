@@ -59,6 +59,7 @@ function promptLockedWriteShortcut(
   promptShortcutUpgrade({
     featureArea: upgradeFeatureArea ?? hint?.featureArea ?? "event_editing",
     actionId: hint?.actionId,
+    hintId: telemetryHintId,
     source: "keyboard",
   });
 }
@@ -88,11 +89,14 @@ export function useAppShortcut(
     hotkey,
     (event) => {
       if (!ignoreAppLock && isAppLocked()) {
-        if (telemetryHintId) {
-          recordShortcutUnavailableAttempt(telemetryHintId, "app_locked", {
-            hotkey,
-            event,
-          });
+        // The onboarding game owns these keys on purpose; its practice
+        // presses are not attempts at an unavailable feature.
+        if (telemetryHintId && !hasAppLockReason("shortcutShowcase")) {
+          recordShortcutUnavailableAttempt(
+            telemetryHintId,
+            hasAppLockReason("billingGate") ? "billing_locked" : "overlay_open",
+            { hotkey, event },
+          );
         }
         if (
           requiresWrite &&
@@ -105,6 +109,12 @@ export function useAppShortcut(
       }
 
       if (requiresWrite && isBillingWriteLocked()) {
+        if (telemetryHintId) {
+          recordShortcutUnavailableAttempt(telemetryHintId, "billing_locked", {
+            hotkey,
+            event,
+          });
+        }
         promptLockedWriteShortcut(telemetryHintId, upgradeFeatureArea);
         return;
       }

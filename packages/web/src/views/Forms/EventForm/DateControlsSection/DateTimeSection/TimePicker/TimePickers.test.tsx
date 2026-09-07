@@ -1,11 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import dayjs from "@core/util/date/dayjs";
-import { getTimeOptionByValue } from "@web/common/utils/datetime/web.date.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
+  replaceGridDraftSchedule,
   scheduleDatesFromDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
@@ -16,11 +15,10 @@ import { describe, expect, it } from "bun:test";
 const START_DATE = new Date("2026-04-24T14:00:00.000Z");
 const END_DATE = new Date("2026-04-24T15:00:00.000Z");
 
-// The selected dates come from getFormDates over the draft's schedule, which
-// is how EventForm builds them (createDateTimeState). That mapping matters
-// here: for a same-day draft getFormDates returns the *start* instant as the
-// end date, so the two dates only diverge once a draft crosses midnight.
-// startTime/endTime stay component state, as they are in EventForm.
+// The selected dates and times come from getFormDates over the draft's
+// schedule, which is how EventForm builds them. That mapping matters here:
+// for a same-day draft getFormDates returns the *start* instant as the end
+// date, so the two dates only diverge once a draft crosses midnight.
 function Harness({
   start = START_DATE,
   end = END_DATE,
@@ -31,10 +29,6 @@ function Harness({
   const [draft, setDraft] = useState<GridEventDraft>(
     createGridEventDraft(timedGridSchedule(start, end)),
   );
-  const [startTime, setStartTime] = useState(
-    getTimeOptionByValue(dayjs(start)),
-  );
-  const [endTime, setEndTime] = useState(getTimeOptionByValue(dayjs(end)));
 
   const { startDate, endDate } = scheduleDatesFromDraft(draft);
   const formDates = getFormDates(startDate, endDate);
@@ -42,14 +36,13 @@ function Harness({
   return (
     <>
       <TimePickers
-        draft={draft}
-        endTime={endTime}
+        endTime={formDates.endTime}
+        onScheduleChange={(schedule) => {
+          setDraft((current) => replaceGridDraftSchedule(current, schedule));
+        }}
         selectedEndDate={formDates.endDate}
         selectedStartDate={formDates.startDate}
-        setDraft={setDraft}
-        setEndTime={setEndTime}
-        setStartTime={setStartTime}
-        startTime={startTime}
+        startTime={formDates.startTime}
       />
       <p>{`draft: ${startDate} / ${endDate}`}</p>
     </>

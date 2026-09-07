@@ -2,13 +2,20 @@ import { type Request, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { processStripeEvent } from "@backend/billing/services/billing.webhook.service";
-import { getStripeClient } from "@backend/billing/services/stripe.client";
+import {
+  type StripeBillingGateway,
+  stripeBillingGateway,
+} from "@backend/billing/services/stripe.client";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { isStripeConfigured } from "@backend/common/constants/config.util";
 
 const logger = Logger("app:billing.webhook");
 
-class BillingWebhookController {
+export class BillingWebhookController {
+  constructor(
+    private readonly stripe: StripeBillingGateway = stripeBillingGateway,
+  ) {}
+
   handleStripe = async (req: Request, res: Response) => {
     if (!isStripeConfigured(CONFIG) || !CONFIG.STRIPE_WEBHOOK_SECRET) {
       res.status(Status.NOT_FOUND).json({ error: "Stripe is not configured" });
@@ -35,12 +42,12 @@ class BillingWebhookController {
       // Must be the async variant: under Bun the SDK selects
       // SubtleCryptoProvider, whose synchronous HMAC path throws
       // unconditionally, so constructEvent() rejects every signature.
-      const event = await getStripeClient().webhooks.constructEventAsync(
+      const event = await this.stripe.constructWebhookEvent(
         req.body,
         signature,
         CONFIG.STRIPE_WEBHOOK_SECRET,
       );
-      await processStripeEvent(event);
+      await processStripeEvent(event, this.stripe);
       res.status(Status.OK).json({ received: true });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Webhook error";

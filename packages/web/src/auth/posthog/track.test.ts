@@ -136,7 +136,7 @@ describe("shortcut telemetry", () => {
     document.body.appendChild(input);
     input.focus();
 
-    recordShortcutUnavailableAttempt("edge-focus", "app_locked", {
+    recordShortcutUnavailableAttempt("edge-focus", "billing_locked", {
       hotkey: "Tab",
       event: {
         altKey: false,
@@ -154,7 +154,7 @@ describe("shortcut telemetry", () => {
       feature_area: "event_editing",
       is_repeat: true,
       outcome: "unavailable",
-      reason_code: "app_locked",
+      reason_code: "billing_locked",
       shortcut_key: "Tab",
       source: "keyboard",
       view: "week_view",
@@ -166,7 +166,7 @@ describe("shortcut telemetry", () => {
 
   it("names the lock context unknown when no reason is registered", () => {
     window.history.pushState({}, "", "/day");
-    recordShortcutUnavailableAttempt("nudge", "app_locked", {
+    recordShortcutUnavailableAttempt("nudge", "overlay_open", {
       hotkey: { key: "ArrowLeft", shift: true },
       event: {
         altKey: false,
@@ -181,6 +181,7 @@ describe("shortcut telemetry", () => {
       "shortcut_unavailable_attempt",
       expect.objectContaining({
         context: "unknown",
+        reason_code: "overlay_open",
         shortcut_key: "Shift+ArrowLeft",
         view: "day_view",
         was_modifier_held: true,

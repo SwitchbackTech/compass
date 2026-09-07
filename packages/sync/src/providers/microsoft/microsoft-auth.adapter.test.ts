@@ -1,5 +1,9 @@
 import { generateKeyPair, type KeyLike, SignJWT } from "jose";
 import {
+  CONTACTS_FEATURE_SCOPES,
+  MICROSOFT_SCOPES,
+} from "@core/providers/microsoft.scopes";
+import {
   MICROSOFT_AUTHORIZE_URL,
   MicrosoftAuthAdapter,
   type MicrosoftIdTokenClaims,
@@ -8,10 +12,6 @@ import {
   type MicrosoftTokenResponse,
 } from "@sync/providers/microsoft/microsoft-auth.adapter";
 import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
-import {
-  CONTACTS_FEATURE_SCOPES,
-  MICROSOFT_SCOPES,
-} from "@sync/providers/microsoft/microsoft-scopes";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 
 class FakeTokenEndpoint implements MicrosoftTokenEndpoint {

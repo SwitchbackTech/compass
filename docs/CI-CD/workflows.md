@@ -4,14 +4,14 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 
 | Workflow | Trigger | Purpose |
 |---|---|---|
-| Unit (`test-unit.yml`) | Push / PR / merge_group to `main` | Runs `static` (lint, knip, type-check) and unit tests |
+| Unit (`test-unit.yml`) | Push / PR / merge_group to `main` | Runs `static` (lint, knip, type-check) and unit tests. PRs run only the packages they touched (`packages/core`, root `package.json` / `bun.lock` / `tsconfig*` still turn every leg on). Merge queue and `main` always run every leg. |
 | E2E (`test-e2e.yml`) | Push / PR / merge_group to `main` | Playwright e2e in four shards behind one required `e2e` gate (PRs that touch only docs, or only `packages/backend`, `packages/sync`, `packages/scripts`, skip the shards; merge queue and `main` always run them) |
 | CodeQL | Push / PR to `main` | Static security analysis |
-| Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check) |
+| Performance budget | Push to `main` (web/core/lock/budget), nightly schedule, `workflow_dispatch`; PR only when `.github/perf/**` or the workflow file changes | Lighthouse budget (not a required merge check). Desktop script transfer is calibrated to 1,060 KB as of 2026-09-07 (main measured 1,034,338 bytes). |
 | Error autofix (`error-autofix.yml`) | `posthog[bot]` issue / `workflow_dispatch` | Governed Routine: triage or fix PostHog error issues |
 | Error autofix post-deploy (`error-autofix-postdeploy.yml`) | `Release on main` completed | Notifies Discord/GitHub of autofix release outcome |
-| Agent review (`agent-review.yml`) | PR opened / ready / synchronize, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check) |
-| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / `*/15` cron / `Release on main` / `agent-automerge` PRs | Governed Routine: next milestone WP → merge → staging smoke |
+| Agent review (`agent-review.yml`) | PR opened / ready_for_review, non-draft; repo var `AGENT_REVIEW_ENABLED` | Independent read-only diff review posted as a PR comment (not a required check). Does not re-run on every synchronize. |
+| Agent loop (`agent-loop.yml`) | `workflow_dispatch` / hourly cron / `Release on main` / `agent-automerge` label or close | Governed Routine: next milestone WP → merge → staging smoke |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
@@ -53,6 +53,13 @@ processes of about 96 files (a single 191-file process exceeds the 7 GB
 runner). Local `bun test:web` still runs every shard sequentially.
 `WEB_TEST_SHARDS=2 WEB_TEST_SHARD_INDEX=2 bun test:web` still runs only
 the second half.
+
+On pull requests, `detect-code-changes.sh` also emits per-package outputs
+(`core`, `web`, `backend`, `sync`, `scripts`). A backend-only PR still
+runs `static` and the backend leg, and skips the web runners. Changes
+under `packages/core`, or to root `package.json`, `bun.lock`, or
+`tsconfig*.json`, turn every leg on. `merge_group` and push to `main`
+always run every leg.
 
 **Known flakiness**: a job can occasionally hang for several minutes on
 runner/network flakiness unrelated to the diff, while the identical job on

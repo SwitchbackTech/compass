@@ -253,8 +253,12 @@ check_and_merge() {
   # The ruleset merge queue owns the strategy (SQUASH) and the repo deletes
   # branches on merge; passing --squash or --delete-branch here is rejected
   # ("Cannot use --delete-branch when merge queue enabled", 2026-09-04).
-  if ! gh pr merge "$pr_number" --repo "$REPO" --auto; then
-    notify "Agent-loop PR #${pr_number} passed verification but \`gh pr merge --auto\` failed: https://github.com/${REPO}/pull/${pr_number}"
+  # Carry gh's own error into the notice so a token or queue problem is
+  # readable from Discord instead of needing a job-log dig.
+  local merge_error
+  if ! merge_error=$(gh pr merge "$pr_number" --repo "$REPO" --auto 2>&1); then
+    printf '%s\n' "$merge_error" >&2
+    notify "Agent-loop PR #${pr_number} passed verification but \`gh pr merge --auto\` failed (${merge_error%%$'\n'*}): https://github.com/${REPO}/pull/${pr_number}"
     return 0
   fi
   printf 'enabled auto-merge on agent PR #%s; the merge queue squash-merges when required checks pass\n' "$pr_number"

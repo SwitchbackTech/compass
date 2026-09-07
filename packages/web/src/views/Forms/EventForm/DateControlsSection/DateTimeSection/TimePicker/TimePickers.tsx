@@ -8,8 +8,7 @@ import {
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
-import { type GridEventDraft } from "@web/events/event-draft.types";
-import { replaceGridDraftSchedule } from "@web/events/grid-event-draft.adapter";
+import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 import { TimePicker } from "./TimePicker";
 
 export const END_TIME_ORDER_ERROR = "End time must be after start time";
@@ -17,24 +16,18 @@ export const END_TIME_ORDER_ERROR = "End time must be after start time";
 const timeOptions = getTimeOptions();
 
 interface Props {
-  draft: GridEventDraft;
   endTime: SelectOption<string>;
+  onScheduleChange: OnEventFormScheduleChange;
   selectedEndDate: Date;
   selectedStartDate: Date;
-  setDraft: (draft: GridEventDraft) => void;
-  setEndTime: (value: SelectOption<string>) => void;
-  setStartTime: (value: SelectOption<string>) => void;
   startTime: SelectOption<string>;
 }
 
 export const TimePickers: FC<Props> = ({
-  draft,
   endTime,
+  onScheduleChange,
   selectedEndDate,
   selectedStartDate,
-  setDraft,
-  setEndTime,
-  setStartTime,
   startTime,
 }) => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
@@ -128,19 +121,15 @@ export const TimePickers: FC<Props> = ({
     }
 
     setTimeError(null);
-    (changed === "start" ? setStartTime : setEndTime)(option);
-    (changed === "start" ? setEndTime : setStartTime)(corrected);
 
     // TS guard: isAllDay: false above always yields "timed".
     if (mapped.schedule.kind === "timed") {
-      setDraft(
-        replaceGridDraftSchedule(draft, {
-          kind: "timed",
-          start: dayjs(mapped.schedule.start).toDate(),
-          end: dayjs(mapped.schedule.end).toDate(),
-          timeZone: mapped.schedule.timeZone,
-        }),
-      );
+      onScheduleChange({
+        kind: "timed",
+        start: dayjs(mapped.schedule.start).toDate(),
+        end: dayjs(mapped.schedule.end).toDate(),
+        timeZone: mapped.schedule.timeZone,
+      });
     }
     closeMenu(changed);
   };

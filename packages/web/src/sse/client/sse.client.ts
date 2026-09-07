@@ -73,19 +73,26 @@ function resetConnectionDiagnostics() {
   lastErrorType = "timeout";
 }
 
-// Whether the live stream has been down long enough that displayed data can
-// no longer be trusted as fresh. Previously this was analytics-only
-// (sse_connection_degraded, PostHog) with no UI representation at all: a tab
-// with a dead stream kept showing "Calendar connected" and a "Updated N
-// minutes ago" timestamp that both silently stopped being true.
-const sseDegradedStore = createExternalStore(false);
+// Epoch ms at which the live stream had been down long enough that displayed
+// data can no longer be trusted as fresh, or null while healthy. Previously
+// this was analytics-only (sse_connection_degraded, PostHog) with no UI
+// representation at all: a tab with a dead stream kept showing "Calendar
+// connected" and a "Updated N minutes ago" timestamp that both silently
+// stopped being true. The timestamp (not a boolean) lets the header offer a
+// reload once an outage has outlived native reconnect's usefulness, and it
+// survives header remounts on view switches.
+const sseDegradedSinceStore = createExternalStore<number | null>(null);
 
 export function isSseDegraded(): boolean {
-  return sseDegradedStore.get();
+  return sseDegradedSinceStore.get() !== null;
+}
+
+export function getSseDegradedSinceMs(): number | null {
+  return sseDegradedSinceStore.get();
 }
 
 export function subscribeSseDegraded(onChange: () => void): () => void {
-  return sseDegradedStore.subscribe(onChange);
+  return sseDegradedSinceStore.subscribe(onChange);
 }
 
 function clearDegradedTimer() {
@@ -96,7 +103,11 @@ function clearDegradedTimer() {
 }
 
 function reportSseDegraded() {
-  sseDegradedStore.set(true);
+  // The timer re-arms on every error, so it can fire more than once per
+  // outage; the badge keeps the first timestamp.
+  if (sseDegradedSinceStore.get() === null) {
+    sseDegradedSinceStore.set(Date.now());
+  }
   if (hasReportedDegraded) return;
   hasReportedDegraded = true;
   try {
@@ -158,7 +169,7 @@ export const openStream = (): EventSource => {
     connectionOpenedAtMs = Date.now();
     userEventCount = 0;
     lastErrorType = "timeout";
-    sseDegradedStore.set(false);
+    sseDegradedSinceStore.set(null);
     for (const listener of reopenListeners) {
       listener();
     }
@@ -183,7 +194,7 @@ export const openStream = (): EventSource => {
 
 export const closeStream = (): void => {
   clearDegradedTimer();
-  sseDegradedStore.set(false);
+  sseDegradedSinceStore.set(null);
   if (es && forwardingHandler) {
     es.removeEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   }

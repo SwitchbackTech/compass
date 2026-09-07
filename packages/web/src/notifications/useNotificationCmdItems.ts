@@ -3,9 +3,8 @@ import { type CommandItem } from "@web/components/CommandPalette/command-palette
 import { getNotificationPort } from "@web/notifications/notification.port";
 import {
   notificationActions,
-  selectNotificationsEffectivelyOn,
-  useNotificationStore,
-} from "@web/notifications/notification.store";
+  useNotificationsEffectivelyOn,
+} from "@web/notifications/notification.state";
 
 /**
  * One toggle, labelled by the effective state. A grant revoked in browser
@@ -13,7 +12,7 @@ import {
  * browser — which explains the block rather than silently doing nothing.
  */
 export function useNotificationCmdItems(): CommandItem[] {
-  const isOn = useNotificationStore(selectNotificationsEffectivelyOn);
+  const isOn = useNotificationsEffectivelyOn();
 
   // Nothing to offer where the API does not exist (older Safari, some
   // in-app browsers): hide the row rather than show a dead end.

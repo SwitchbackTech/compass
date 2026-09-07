@@ -4,6 +4,7 @@ import {
   type CalendarConnectionBannerKind,
   calendarReconnectBannerMessage,
 } from "@web/auth/providers/connect.util";
+import { MICROSOFT_SELF_HOSTING_DOC_URL } from "@web/auth/providers/connection-health-copy.util";
 import { CONSENT_REQUIRED_COPY } from "@web/auth/providers/provider-copy.util";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
@@ -51,7 +52,7 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
       : kind === "consentRequired"
         ? {
             message: CONSENT_REQUIRED_COPY,
-            action: "Reconnect",
+            action: "Learn more",
           }
         : STATIC_COPY[kind];
   const isError =
@@ -59,11 +60,21 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
     kind === "consentRequired" ||
     kind === "importFailed";
   const pointerAction =
-    kind === "reconnect" || kind === "consentRequired"
-      ? POINTER_ACTIONS.reconnectGoogle
-      : undefined;
+    kind === "reconnect" ? POINTER_ACTIONS.reconnectGoogle : undefined;
 
   useNoticeActionShortcut(CONNECTION_BANNER_SHORTCUT_KEY, onAction);
+
+  const handleAction = () => {
+    if (kind === "consentRequired") {
+      window.open(
+        MICROSOFT_SELF_HOSTING_DOC_URL,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      return;
+    }
+    onAction();
+  };
 
   return (
     <div
@@ -78,7 +89,7 @@ export const CalendarConnectionBanner: FC<CalendarConnectionBannerProps> = ({
       <p>{message}</p>
       <button
         className="c-focus-ring inline-flex shrink-0 items-center gap-2 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
-        onClick={onAction}
+        onClick={handleAction}
         type="button"
         {...pointerShortcutAttributes(CONNECTION_BANNER_SHORTCUT_KEY)}
         {...(pointerAction

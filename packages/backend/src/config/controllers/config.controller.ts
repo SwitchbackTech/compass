@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { type AppConfig, AppConfigSchema } from "@core/types/config.types";
+import { isMicrosoftOffered } from "@core/util/env.util";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   isAppleConnectConfigured,
@@ -15,7 +16,8 @@ import { getCloudMutationMode } from "@backend/common/services/sync-service/clou
 class ConfigController {
   get = (_req: Request<never, AppConfig, never, never>, res: Response) => {
     const google = isGoogleConfigured(CONFIG);
-    const microsoft = isMicrosoftConfigured(CONFIG);
+    const microsoft =
+      isMicrosoftConfigured(CONFIG) && isMicrosoftOffered(CONFIG.NODE_ENV);
     const appleSignIn = isAppleSignInConfigured(CONFIG);
     const appleConnect = isAppleConnectConfigured(CONFIG);
     const stripe = isStripeConfigured(CONFIG);

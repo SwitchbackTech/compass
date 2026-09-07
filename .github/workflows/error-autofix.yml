@@ -110,9 +110,13 @@ jobs:
 
       # Uses a PAT, not GITHUB_TOKEN: the merge push must fire
       # release-on-main.yml (see comment above), which GITHUB_TOKEN-authored
-      # events do not do.
+      # events do not do. Prefers the agent-loop token: enabling auto-merge
+      # (enablePullRequestAutoMerge) needs contents:write as well as
+      # pull_requests:write, and AUTOFIX_GITHUB_TOKEN lacked it, failing every
+      # gate with "Resource not accessible by personal access token"
+      # (2026-09-06, PR #3450).
       - name: Deterministic merge guard + enable auto-merge
         env:
-          GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.AGENT_LOOP_GITHUB_TOKEN || secrets.AUTOFIX_GITHUB_TOKEN }}
           DISCORD_ERRORS_WEBHOOK_URL: ${{ secrets.DISCORD_ERRORS_WEBHOOK_URL }}
         run: .github/scripts/autofix-merge-guard.sh "${{ github.event.issue.number || inputs.issue_number }}"

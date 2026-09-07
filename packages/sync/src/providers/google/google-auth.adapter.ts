@@ -3,8 +3,8 @@ import {
   OAuth2Client,
   type TokenPayload,
 } from "google-auth-library";
+import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import { ProviderAccountFactsSchema } from "@core/types/sync/connection.contracts";
-import { GOOGLE_SCOPES } from "@sync/providers/google/google.scopes";
 import { googleStatus } from "@sync/providers/google/google-error";
 import {
   type ProviderAuthAdapter,

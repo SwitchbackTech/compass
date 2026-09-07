@@ -20,7 +20,7 @@ export const BillingReadOnlyBanner: FC = () => {
       onCta={() => {
         track("billing_gate_cta_clicked", { cta: "banner_checkout" });
         billingPreviewActions.exit();
-        checkoutPanelActions.open();
+        checkoutPanelActions.open({ kind: "banner" });
       }}
       pointerAction={POINTER_ACTIONS.startTrial}
       shortcutKey={START_TRIAL_SHORTCUT_KEY}

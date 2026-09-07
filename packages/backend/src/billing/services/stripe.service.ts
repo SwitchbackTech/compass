@@ -15,7 +15,10 @@ import {
 } from "@backend/billing/billing.errors";
 import billingService from "@backend/billing/services/billing.service";
 import { applySubscription } from "@backend/billing/services/billing.webhook.service";
-import { getStripeClient } from "@backend/billing/services/stripe.client";
+import {
+  type StripeBillingGateway,
+  stripeBillingGateway,
+} from "@backend/billing/services/stripe.client";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { isStripeConfigured } from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
@@ -23,7 +26,11 @@ import mongoService from "@backend/common/services/mongo.service";
 /** Bump when Checkout Session create params change so Stripe does not replay a failed create. */
 const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v3-";
 
-class StripeService {
+export class StripeService {
+  constructor(
+    private readonly stripe: StripeBillingGateway = stripeBillingGateway,
+  ) {}
+
   /**
    * Account deletion is deliberately stronger than cancelling a plan: deleting
    * the Stripe customer immediately ends every subscription and removes saved
@@ -45,9 +52,8 @@ class StripeService {
       );
     }
 
-    const stripe = getStripeClient();
     try {
-      await stripe.customers.del(customerId, {
+      await this.stripe.deleteCustomer(customerId, {
         idempotencyKey: `compass-account-delete-${userId}`,
       });
     } catch (error) {
@@ -87,13 +93,12 @@ class StripeService {
       );
     }
 
-    const stripe = getStripeClient();
     let customerId = user.billing?.stripeCustomerId;
     const grantTrial = !user.billing?.stripeSubscriptionId;
 
     if (!customerId) {
-      const customer = await stripe.customers
-        .create(
+      const customer = await this.stripe
+        .createCustomer(
           {
             email: user.email,
             metadata: { compassUserId: userId },
@@ -116,8 +121,8 @@ class StripeService {
       );
     }
 
-    const session = await stripe.checkout.sessions
-      .create(
+    const session = await this.stripe
+      .createCheckoutSession(
         {
           mode: "subscription",
           customer: customerId,
@@ -194,9 +199,8 @@ class StripeService {
       throw new BillingHttpError(Status.CONFLICT, "No active trial to end.");
     }
 
-    const stripe = getStripeClient();
-    const subscription = await stripe.subscriptions
-      .update(
+    const subscription = await this.stripe
+      .updateSubscription(
         subscriptionId,
         {
           trial_end: "now",
@@ -240,9 +244,10 @@ class StripeService {
       throw new Error("Stripe is not configured");
     }
 
-    const stripe = getStripeClient();
-    const subscription = await stripe.subscriptions
-      .retrieve(subscriptionId, { expand: ["default_payment_method"] })
+    const subscription = await this.stripe
+      .retrieveSubscription(subscriptionId, {
+        expand: ["default_payment_method"],
+      })
       .catch(wrapStripeFailure);
 
     let paymentMethod = cardFromPaymentMethod(
@@ -251,8 +256,8 @@ class StripeService {
     const customerId =
       customerIdOf(subscription.customer) ?? billing?.stripeCustomerId;
     if (!paymentMethod && customerId) {
-      const customer = await stripe.customers
-        .retrieve(customerId, {
+      const customer = await this.stripe
+        .retrieveCustomer(customerId, {
           expand: ["invoice_settings.default_payment_method"],
         })
         .catch(wrapStripeFailure);
@@ -265,8 +270,8 @@ class StripeService {
 
     const invoices = customerId
       ? (
-          await stripe.invoices
-            .list({ customer: customerId, limit: 12 })
+          await this.stripe
+            .listInvoices({ customer: customerId, limit: 12 })
             .catch(wrapStripeFailure)
         ).data.flatMap((invoice) => {
           const mapped = mapInvoice(invoice);
@@ -308,9 +313,8 @@ class StripeService {
       );
     }
 
-    const stripe = getStripeClient();
-    const subscription = await stripe.subscriptions
-      .update(subscriptionId, { cancel_at_period_end: cancel })
+    const subscription = await this.stripe
+      .updateSubscription(subscriptionId, { cancel_at_period_end: cancel })
       .catch(wrapStripeFailure);
 
     await applySubscription(userId, subscription, new Date());
@@ -336,9 +340,8 @@ class StripeService {
       throw new BillingHttpError(Status.CONFLICT, "No billing account yet.");
     }
 
-    const stripe = getStripeClient();
-    const session = await stripe.checkout.sessions
-      .create({
+    const session = await this.stripe
+      .createCheckoutSession({
         mode: "setup",
         customer: customerId,
         payment_method_types: ["card"],

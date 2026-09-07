@@ -5,12 +5,11 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
-import { setStripeClientForTests } from "@backend/billing/services/stripe.client";
-import stripeService from "@backend/billing/services/stripe.service";
+import { StripeService } from "@backend/billing/services/stripe.service";
+import { stubBillingGateway } from "@backend/billing/services/stripe-billing-gateway.test-helpers";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -32,9 +31,6 @@ describe("StripeService", () => {
     await setupTestDb(import.meta.url);
   });
   beforeEach(cleanupCollections);
-  afterEach(() => {
-    setStripeClientForTests(undefined);
-  });
   afterAll(cleanupTestDb);
 
   it("creates a Checkout session in subscription mode with a trial", async () => {
@@ -54,10 +50,12 @@ describe("StripeService", () => {
       Promise.resolve({ client_secret: "cs_test_1" }),
     );
 
-    setStripeClientForTests({
-      customers: { create: customersCreate },
-      checkout: { sessions: { create: sessionsCreate } },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCustomer: customersCreate,
+        createCheckoutSession: sessionsCreate,
+      }),
+    );
 
     const result = await stripeService.createCheckoutSession(userId.toString());
 
@@ -130,10 +128,12 @@ describe("StripeService", () => {
     const sessionsCreate = mock(() =>
       Promise.resolve({ client_secret: "cs_test_2" }),
     );
-    setStripeClientForTests({
-      customers: { create: customersCreate },
-      checkout: { sessions: { create: sessionsCreate } },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCustomer: customersCreate,
+        createCheckoutSession: sessionsCreate,
+      }),
+    );
 
     await stripeService.createCheckoutSession(userId.toString());
 
@@ -162,7 +162,11 @@ describe("StripeService", () => {
     const del = mock(() =>
       Promise.resolve({ id: "cus_delete", deleted: true }),
     );
-    setStripeClientForTests({ customers: { del } } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        deleteCustomer: del,
+      }),
+    );
 
     await stripeService.deleteCustomerForAccount(userId.toString());
 
@@ -191,9 +195,11 @@ describe("StripeService", () => {
       type: "invalid_request_error",
       statusCode: 404,
     });
-    setStripeClientForTests({
-      customers: { del: mock(() => Promise.reject(missing)) },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        deleteCustomer: mock(() => Promise.reject(missing)),
+      }),
+    );
 
     await expect(
       stripeService.deleteCustomerForAccount(userId.toString()),
@@ -220,9 +226,11 @@ describe("StripeService", () => {
     const sessionsCreate = mock(() =>
       Promise.resolve({ client_secret: "cs_test_stale" }),
     );
-    setStripeClientForTests({
-      checkout: { sessions: { create: sessionsCreate } },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCheckoutSession: sessionsCreate,
+      }),
+    );
 
     const result = await stripeService.createCheckoutSession(userId.toString());
 
@@ -253,10 +261,12 @@ describe("StripeService", () => {
     const sessionsCreate = mock(() =>
       Promise.resolve({ client_secret: "cs_test_3" }),
     );
-    setStripeClientForTests({
-      customers: { create: mock() },
-      checkout: { sessions: { create: sessionsCreate } },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCustomer: mock(),
+        createCheckoutSession: sessionsCreate,
+      }),
+    );
 
     await stripeService.createCheckoutSession(userId.toString());
 
@@ -271,9 +281,11 @@ describe("StripeService", () => {
     const sessionsCreate = mock(() =>
       Promise.resolve({ client_secret: "cs_should_not_create" }),
     );
-    setStripeClientForTests({
-      checkout: { sessions: { create: sessionsCreate } },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCheckoutSession: sessionsCreate,
+      }),
+    );
 
     for (const status of ["trialing", "active", "past_due"] as const) {
       const userId = mongoService.objectId();
@@ -321,16 +333,12 @@ describe("StripeService", () => {
       type: "invalid_request_error",
       statusCode: 400,
     });
-    setStripeClientForTests({
-      customers: {
-        create: mock(() => Promise.resolve({ id: "cus_1" })),
-      },
-      checkout: {
-        sessions: {
-          create: mock(() => Promise.reject(stripeError)),
-        },
-      },
-    } as unknown as Stripe);
+    const stripeService = new StripeService(
+      stubBillingGateway({
+        createCustomer: mock(() => Promise.resolve({ id: "cus_1" })),
+        createCheckoutSession: mock(() => Promise.reject(stripeError)),
+      }),
+    );
 
     await expect(
       stripeService.createCheckoutSession(userId.toString()),
@@ -387,9 +395,11 @@ describe("StripeService", () => {
       const userId = await seedTrialingUser();
 
       const update = mock(() => Promise.resolve(stripeSubscription("active")));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       const result = await stripeService.endTrialNow(userId.toString());
 
@@ -418,11 +428,13 @@ describe("StripeService", () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedTrialingUser();
 
-      setStripeClientForTests({
-        subscriptions: {
-          update: mock(() => Promise.resolve(stripeSubscription("past_due"))),
-        },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: mock(() =>
+            Promise.resolve(stripeSubscription("past_due")),
+          ),
+        }),
+      );
 
       const result = await stripeService.endTrialNow(userId.toString());
 
@@ -435,9 +447,11 @@ describe("StripeService", () => {
       const userId = await seedTrialingUser({ cancelAtPeriodEnd: true });
 
       const update = mock(() => Promise.resolve(stripeSubscription("active")));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       const result = await stripeService.endTrialNow(userId.toString());
 
@@ -455,9 +469,11 @@ describe("StripeService", () => {
       const userId = await seedTrialingUser({ subscriptionStatus: "active" });
 
       const update = mock(() => Promise.resolve(stripeSubscription("active")));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       await expect(
         stripeService.endTrialNow(userId.toString()),
@@ -474,6 +490,7 @@ describe("StripeService", () => {
       const userId = await seedTrialingUser({
         stripeSubscriptionId: undefined,
       });
+      const stripeService = new StripeService(stubBillingGateway({}));
 
       await expect(
         stripeService.endTrialNow(userId.toString()),
@@ -489,9 +506,11 @@ describe("StripeService", () => {
         type: "invalid_request_error",
         statusCode: 400,
       });
-      setStripeClientForTests({
-        subscriptions: { update: mock(() => Promise.reject(stripeError)) },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: mock(() => Promise.reject(stripeError)),
+        }),
+      );
 
       await expect(
         stripeService.endTrialNow(userId.toString()),
@@ -581,11 +600,13 @@ describe("StripeService", () => {
           ],
         }),
       );
-      setStripeClientForTests({
-        subscriptions: { retrieve },
-        customers: { retrieve: customersRetrieve },
-        invoices: { list: invoicesList },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          retrieveCustomer: customersRetrieve,
+          retrieveSubscription: retrieve,
+          listInvoices: invoicesList,
+        }),
+      );
 
       const result = await stripeService.getSubscriptionSummary(
         userId.toString(),
@@ -640,11 +661,13 @@ describe("StripeService", () => {
           invoice_settings: { default_payment_method: cardPaymentMethod },
         }),
       );
-      setStripeClientForTests({
-        subscriptions: { retrieve },
-        customers: { retrieve: customersRetrieve },
-        invoices: { list: mock(() => Promise.resolve({ data: [] })) },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          retrieveCustomer: customersRetrieve,
+          retrieveSubscription: retrieve,
+          listInvoices: mock(() => Promise.resolve({ data: [] })),
+        }),
+      );
 
       const result = await stripeService.getSubscriptionSummary(
         userId.toString(),
@@ -671,10 +694,12 @@ describe("StripeService", () => {
 
       const retrieve = mock(() => Promise.reject(new Error("no stripe")));
       const invoicesList = mock(() => Promise.reject(new Error("no stripe")));
-      setStripeClientForTests({
-        subscriptions: { retrieve },
-        invoices: { list: invoicesList },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          retrieveSubscription: retrieve,
+          listInvoices: invoicesList,
+        }),
+      );
 
       const result = await stripeService.getSubscriptionSummary(
         userId.toString(),
@@ -734,9 +759,11 @@ describe("StripeService", () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedSubscriber();
       const update = mock(() => Promise.resolve(updatedSubscription(true)));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       const result = await stripeService.setCancelAtPeriodEnd(
         userId.toString(),
@@ -755,9 +782,11 @@ describe("StripeService", () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedSubscriber({ cancelAtPeriodEnd: true });
       const update = mock(() => Promise.resolve(updatedSubscription(false)));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       const result = await stripeService.setCancelAtPeriodEnd(
         userId.toString(),
@@ -780,9 +809,11 @@ describe("StripeService", () => {
       using _env = mockEnv(stripeConfigured);
       const userId = await seedSubscriber({ subscriptionStatus: status });
       const update = mock(() => Promise.resolve(updatedSubscription(true)));
-      setStripeClientForTests({
-        subscriptions: { update },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          updateSubscription: update,
+        }),
+      );
 
       await expect(
         stripeService.setCancelAtPeriodEnd(userId.toString(), true),
@@ -799,6 +830,7 @@ describe("StripeService", () => {
       const userId = await seedSubscriber({
         stripeSubscriptionId: undefined,
       });
+      const stripeService = new StripeService(stubBillingGateway({}));
 
       await expect(
         stripeService.setCancelAtPeriodEnd(userId.toString(), true),
@@ -830,9 +862,11 @@ describe("StripeService", () => {
       const sessionsCreate = mock(() =>
         Promise.resolve({ client_secret: "seti_secret_1" }),
       );
-      setStripeClientForTests({
-        checkout: { sessions: { create: sessionsCreate } },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          createCheckoutSession: sessionsCreate,
+        }),
+      );
 
       const result = await stripeService.createPaymentMethodSession(
         userId.toString(),
@@ -867,9 +901,11 @@ describe("StripeService", () => {
       const sessionsCreate = mock(() =>
         Promise.resolve({ client_secret: "seti_secret_1" }),
       );
-      setStripeClientForTests({
-        checkout: { sessions: { create: sessionsCreate } },
-      } as unknown as Stripe);
+      const stripeService = new StripeService(
+        stubBillingGateway({
+          createCheckoutSession: sessionsCreate,
+        }),
+      );
 
       await expect(
         stripeService.createPaymentMethodSession(userId.toString()),

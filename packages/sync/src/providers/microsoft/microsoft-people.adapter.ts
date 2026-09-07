@@ -6,19 +6,18 @@ import {
   microsoftFailureCause,
   microsoftStatus,
 } from "@sync/providers/microsoft/microsoft-error";
-import {
-  MICROSOFT_GRAPH_BASE_URL,
-  MICROSOFT_REQUEST_TIMEOUT_MS,
-} from "@sync/providers/microsoft/microsoft-http.constants";
+import { microsoftGraphRequest } from "@sync/providers/microsoft/microsoft-graph-request";
+import { MICROSOFT_GRAPH_BASE_URL } from "@sync/providers/microsoft/microsoft-http.constants";
 import {
   rankContactSuggestions,
   toContactSuggestion,
 } from "@sync/providers/provider-contact-suggestions";
 import {
   type ContactsPort,
-  ContactsSearchError,
+  type ContactsSearchError,
   type ContactsSearchInput,
 } from "@sync/providers/provider-contacts.port";
+import { classifyContactsSearchError } from "@sync/providers/provider-contacts-error";
 
 export interface GraphScoredEmailAddress {
   readonly address?: string | null;
@@ -100,28 +99,14 @@ class FetchMicrosoftPeopleApi implements MicrosoftPeopleApi {
       $select: params.select,
       $top: String(params.top),
     });
-    const response = await fetch(
-      `${MICROSOFT_GRAPH_BASE_URL}/me/people?${query}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.#accessToken}`,
-          ConsistencyLevel: "eventual",
-        },
-        signal: AbortSignal.timeout(MICROSOFT_REQUEST_TIMEOUT_MS),
-      },
-    );
-
-    const data = (await response.json()) as {
+    const data = await microsoftGraphRequest<{
       value?: GraphPersonMatch[];
-      error?: { code?: string; message?: string };
-    };
-
-    if (!response.ok) {
-      throw Object.assign(
-        new Error(data.error?.message ?? "microsoft_people_search_failed"),
-        { response: { status: response.status, data } },
-      );
-    }
+    }>({
+      accessToken: this.#accessToken,
+      url: `${MICROSOFT_GRAPH_BASE_URL}/me/people?${query}`,
+      headers: { ConsistencyLevel: "eventual" },
+      fallbackError: "microsoft_people_search_failed",
+    });
 
     return { value: data.value ?? [] };
   }
@@ -139,22 +124,12 @@ function toSuggestions(person: GraphPersonMatch): ContactSuggestion[] {
 }
 
 function toContactsSearchError(error: unknown): ContactsSearchError {
-  const status = microsoftStatus(error);
-  if (status === 429) {
-    return new ContactsSearchError(
-      "rateLimited",
-      "Microsoft throttled the contact search",
-      { cause: microsoftFailureCause(error) },
-    );
-  }
-  if (status === 401 || status === 403) {
-    return new ContactsSearchError(
-      "unauthorized",
+  return classifyContactsSearchError(error, {
+    status: microsoftStatus,
+    cause: microsoftFailureCause,
+    isRateLimited: (_err, status) => status === 429,
+    rateLimitedMessage: "Microsoft throttled the contact search",
+    unauthorizedMessage:
       "Microsoft refused the contact search credential or scope",
-      { cause: microsoftFailureCause(error) },
-    );
-  }
-  return new ContactsSearchError("searchFailed", "Contact search failed", {
-    cause: microsoftFailureCause(error),
   });
 }

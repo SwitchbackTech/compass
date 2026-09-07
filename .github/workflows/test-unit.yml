@@ -35,6 +35,11 @@ jobs:
     timeout-minutes: 2
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      core: ${{ steps.filter.outputs.core }}
+      web: ${{ steps.filter.outputs.web }}
+      backend: ${{ steps.filter.outputs.backend }}
+      sync: ${{ steps.filter.outputs.sync }}
+      scripts: ${{ steps.filter.outputs.scripts }}
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v7
@@ -119,13 +124,16 @@ jobs:
           bash -n .github/scripts/*.sh
           bash .github/scripts/agent-loop-next.test.sh
           bash .github/scripts/agent-loop-merge-guard.test.sh
+          bash .github/scripts/detect-code-changes.test.sh
 
   # A skipped MATRIX job collapses to one check run, so the `unit` rollup
   # below would see `skipped` for a docs-only PR only if every leg started.
   # Let the legs start and skip every step instead: each reports in a few
-  # seconds, for free. `unit-leg (web, 1)` and `unit-leg (web, 2)` each cover
-  # half the suite as two sequential shards (`WEB_TEST_SHARDS=4` with index
-  # `1,2` / `3,4`) so RSS stays under 7 GB.
+  # seconds, for free. Per-package outputs skip unrelated legs the same way
+  # (a backend-only PR must not pay two web runners). `unit-leg (web, 1)`
+  # and `unit-leg (web, 2)` each cover half the suite as two sequential
+  # shards (`WEB_TEST_SHARDS=4` with index `1,2` / `3,4`) so RSS stays
+  # under 7 GB.
   unit-leg:
     needs: changes
     runs-on: ubuntu-latest
@@ -152,17 +160,17 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        if: needs.changes.outputs.code == 'true'
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' }}
         uses: actions/checkout@v7
 
       - name: Install Bun
-        if: needs.changes.outputs.code == 'true'
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
 
       - name: Cache Bun dependencies
-        if: needs.changes.outputs.code == 'true'
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' }}
         uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
@@ -171,21 +179,21 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: Install Dependencies
-        if: needs.changes.outputs.code == 'true'
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' }}
         run: |
           bun install --frozen-lockfile
 
       # backend and scripts boot an in-memory MongoDB; cache the downloaded
       # mongod binary so each run doesn't re-fetch it.
       - name: Cache MongoDB binaries
-        if: needs.changes.outputs.code == 'true' && (matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync')
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' && (matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync') }}
         uses: actions/cache@v6
         with:
           path: ~/.cache/mongodb-binaries
           key: ${{ runner.os }}-mongodb-memory-server
 
       - name: Run web tests
-        if: needs.changes.outputs.code == 'true' && (matrix.project == 'web')
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' && matrix.project == 'web' }}
         timeout-minutes: 5
         env:
           TZ: Etc/UTC
@@ -206,7 +214,7 @@ jobs:
       # which now kills a wedged run at 4 minutes and names the likely cause
       # instead of letting this timeout fire with no output.
       - name: Run ${{ matrix.project }} tests
-        if: needs.changes.outputs.code == 'true' && (matrix.project != 'web')
+        if: ${{ needs.changes.outputs.code == 'true' && needs.changes.outputs[matrix.project] == 'true' && matrix.project != 'web' }}
         timeout-minutes: 5
         env:
           TZ: Etc/UTC

@@ -1,4 +1,3 @@
-import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 import {
   GOOGLE_SCOPE_CALENDAR_EVENTS as CALENDAR_EVENTS,
   GOOGLE_SCOPE_CALENDAR_READONLY as CALENDAR_READONLY,
@@ -6,7 +5,8 @@ import {
   GOOGLE_SCOPE_CONTACTS_OTHER_READONLY as CONTACTS_OTHER_READONLY,
   GOOGLE_SCOPE_CONTACTS_READONLY as CONTACTS_READONLY,
   GOOGLE_SCOPES,
-} from "@sync/providers/google/google.scopes";
+} from "@core/providers/google.scopes";
+import { type ProviderCapability } from "@core/types/sync/identity.contracts";
 
 // Derive connection capabilities from the scopes Google actually granted (which
 // may be a subset of those requested). Read access — plus push channels and

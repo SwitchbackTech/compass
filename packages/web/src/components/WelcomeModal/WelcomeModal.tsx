@@ -3,10 +3,7 @@ import { useContext, useEffect, useId, useRef, useState } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
-import {
-  CALENDAR_HOST_EXPLAINER,
-  CONNECT_THE_CALENDAR_YOU_USE,
-} from "@web/auth/providers/provider-copy.util";
+import { CONNECT_THE_CALENDAR_YOU_USE } from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
@@ -90,9 +87,9 @@ export function WelcomeModal() {
   // handoff during the fade must cancel that so the takeover does not cover
   // the auth form.
   const startShowcaseAfterDismissRef = useRef(false);
-  // openModal() only schedules a URL update. Hide immediately so Explore
-  // cannot start the practice on top of a login that has not committed yet.
-  const [hidingForAuth, setHidingForAuth] = useState(false);
+  // openModal() only schedules a URL update. Keep this overlay up until
+  // Auth actually opens so the calendar does not flash through the gap.
+  // hidingForAuthRef still blocks Explore and shortcuts during that wait.
   const hidingForAuthRef = useRef(false);
   const providerHandoffRef = useRef(false);
   // Each screen has one primary button, and Enter is its native activation.
@@ -108,13 +105,11 @@ export function WelcomeModal() {
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
   // back button (or Escape) removes the param again.
-  const visible =
-    isOpen && !isAuthModalOpen && !authenticated && !hidingForAuth;
+  const visible = isOpen && !isAuthModalOpen && !authenticated;
 
   useEffect(() => {
     if (isAuthModalOpen) return;
     hidingForAuthRef.current = false;
-    setHidingForAuth(false);
   }, [isAuthModalOpen]);
 
   useEffect(() => {
@@ -193,7 +188,6 @@ export function WelcomeModal() {
     skipFocusRestoreRef.current = true;
     startShowcaseAfterDismissRef.current = false;
     hidingForAuthRef.current = true;
-    setHidingForAuth(true);
     cancelDismiss();
   };
 
@@ -377,12 +371,7 @@ export function WelcomeModal() {
               <h2 className="font-bold text-2xl text-text leading-snug">
                 {CONNECT_THE_CALENDAR_YOU_USE}
               </h2>
-              <p className="text-text-muted">
-                Pick how you want to start. You can sign up later.
-              </p>
-              <p className="text-text-muted text-xs">
-                {CALENDAR_HOST_EXPLAINER}
-              </p>
+              <p className="text-text-muted">Pick how you want to start.</p>
             </div>
             {/* Connecting a calendar is the moment Compass starts being
                 useful, so the Google round trip, which signs up and grants
@@ -394,7 +383,6 @@ export function WelcomeModal() {
                   available={available}
                   loadingKind={isLoading ? loadingKind : null}
                   onSignIn={handOffToProvider}
-                  variant="welcome"
                 />
               ) : null}
               {showMicrosoftConnectCta ? (

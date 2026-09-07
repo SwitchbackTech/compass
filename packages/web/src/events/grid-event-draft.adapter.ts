@@ -470,39 +470,6 @@ export function patchGridDraftRecurrence(
   return { ...draft, values: { ...draft.values, recurrence } };
 }
 
-export function patchGridDraftScheduleDates(
-  current: GridEventDraft,
-  patch: { startDate?: string; endDate?: string },
-): GridEventDraft {
-  const { schedule } = current.values;
-  const nextSchedule: GridScheduleDraft =
-    schedule.kind === "allDay"
-      ? {
-          kind: "allDay",
-          start: patch.startDate
-            ? dayjs(patch.startDate).toDate()
-            : schedule.start,
-          end: patch.endDate ? dayjs(patch.endDate).toDate() : schedule.end,
-        }
-      : {
-          kind: "timed",
-          start: patch.startDate
-            ? dayjs(patch.startDate).toDate()
-            : schedule.start,
-          end: patch.endDate ? dayjs(patch.endDate).toDate() : schedule.end,
-          timeZone: schedule.timeZone,
-        };
-
-  if (current.kind === "create") {
-    return {
-      ...current,
-      values: { ...current.values, schedule: nextSchedule },
-    };
-  }
-
-  return { ...current, values: { ...current.values, schedule: nextSchedule } };
-}
-
 export function patchGridDraftFields(
   current: GridEventDraft,
   patch: Partial<
