@@ -8,7 +8,7 @@ import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 let available: ProviderKind[] = ["google"];
-const connectingKind: ProviderKind | null = null;
+let connectingKind: ProviderKind | null = null;
 const mockConnectGoogle = mock();
 const mockConnectMicrosoft = mock();
 const mockConnectApple = mock();
