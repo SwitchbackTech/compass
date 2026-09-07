@@ -27,7 +27,6 @@ import {
   occurrenceScheduleAfterSeriesEdit,
   occurrenceScheduleAt,
   scheduleStartAt,
-  stripRuleBounds,
   truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
 import {
@@ -37,11 +36,12 @@ import {
 } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
+  buildRemainderMaster,
   deleteFollowingExceptions,
   exceptionInstant,
-  isCancelledException,
-  remainderMasterId,
+  partitionEditAllExceptions,
   reprojectMaster,
+  truncatedSeriesMaster,
 } from "@sync/domain/series-exception";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -747,10 +747,10 @@ async function commitProviderSeriesUpdate(
     command.principalId,
     master._id,
   );
-  const kept = convertsToSingle ? [] : exceptions.filter(isCancelledException);
-  const discarded = convertsToSingle
-    ? exceptions
-    : exceptions.filter((exception) => !isCancelledException(exception));
+  const { kept, discarded } = partitionEditAllExceptions(
+    exceptions,
+    convertsToSingle,
+  );
 
   // Align or remove discarded overrides at Google first, then clear local
   // copies. Kept cancelled tombstones are not touched at the provider.
@@ -1253,7 +1253,7 @@ export async function executeProviderSeriesFollowingDelete(
       deps,
       command,
       master,
-      truncatedRules,
+      splitAt,
       current.providerVersion,
       now,
     );
@@ -1279,7 +1279,7 @@ export async function executeProviderSeriesFollowingDelete(
     deps,
     command,
     master,
-    truncatedRules,
+    splitAt,
     result.providerVersion,
     now,
   );
@@ -1289,17 +1289,15 @@ async function commitProviderSeriesFollowingDelete(
   deps: ProviderMutationDeps,
   command: CommandRecord,
   master: EventRecord,
-  truncatedRules: readonly string[],
+  splitAt: Date,
   providerVersion: string,
   now: () => Date,
 ): Promise<CommandRecord> {
   const truncated: EventRecord = {
-    ...master,
-    recurrence: { kind: "seriesMaster", rules: truncatedRules },
+    ...truncatedSeriesMaster(master, splitAt, now()),
     providerVersion: providerVersion as ProviderEventVersion,
     providerUpdatedAt: null,
     deliveryState: "confirmed",
-    updatedAt: now(),
   };
   const applied = await deps.events.replaceExisting(truncated);
   if (!applied) return command;
@@ -1434,40 +1432,31 @@ export async function executeProviderSeriesFollowingUpdate(
   }
 
   const truncated: EventRecord = {
-    ...master,
-    recurrence: { kind: "seriesMaster", rules: truncatedRules },
+    ...truncatedSeriesMaster(master, splitAt, now()),
     providerVersion: originalVersion as ProviderEventVersion,
     providerUpdatedAt: null,
     deliveryState: "confirmed",
-    updatedAt: now(),
   };
   const appliedTruncate = await deps.events.replaceExisting(truncated);
   if (!appliedTruncate) return command;
   await reprojectMaster(deps, command, truncated, now);
 
-  // "preserve" continues the original (pre-truncation) cadence, open-ended
-  // from the split — mirroring buildRemainderMaster's own "preserve" case,
-  // NOT intendedSeriesRecurrence's (which would re-write the already-bounded
-  // rules the master just got truncated to).
+  // Remainder comes from the original (pre-truncation) master. "preserve"
+  // must not use intendedSeriesRecurrence, which would re-write the already
+  // bounded rules the original just got truncated to.
+  const remainderDraft = buildRemainderMaster(master, command, now());
   const remainderRecurrence: ProviderWriteRecurrence =
-    input.recurrence.kind === "series"
-      ? { kind: "series", rules: input.recurrence.rules }
-      : input.recurrence.kind === "single"
-        ? { kind: "single" }
-        : { kind: "series", rules: stripRuleBounds(master.recurrence.rules) };
-  const remainderId = remainderMasterId(
-    master._id,
-    input.recurrenceId as DateTime,
-  );
-  const remainderContent = mergeUpdateContent(master.content, input.content);
+    remainderDraft.recurrence.kind === "seriesMaster"
+      ? { kind: "series", rules: remainderDraft.recurrence.rules }
+      : { kind: "single" };
 
   const createResultAttempt = await runProviderWrite(() =>
     deps.writer.createEvent({
       accessToken,
       calendarId: calendar.providerCalendarId,
-      providerEventId: remainderId,
-      content: remainderContent,
-      schedule: input.schedule,
+      providerEventId: remainderDraft._id,
+      content: remainderDraft.content,
+      schedule: remainderDraft.schedule,
       recurrence: remainderRecurrence,
       invitation: input.invitation,
     }),
@@ -1484,22 +1473,11 @@ export async function executeProviderSeriesFollowingUpdate(
   const createResult = createResultAttempt.value;
 
   const remainder: EventRecord = {
-    ...master,
-    _id: remainderId,
-    clientEventId: null,
+    ...remainderDraft,
     providerEventId: createResult.providerEventId as ProviderEventId,
     providerVersion: createResult.providerVersion as ProviderEventVersion,
     providerUpdatedAt: null,
     deliveryState: "confirmed",
-    content: remainderContent,
-    schedule: input.schedule,
-    recurrence:
-      remainderRecurrence.kind === "series"
-        ? { kind: "seriesMaster", rules: remainderRecurrence.rules }
-        : { kind: "single" },
-    createdAt: now(),
-    updatedAt: now(),
-    confirmedAt: now(),
   };
   await deps.events.put(remainder);
   await reprojectOccurrences(deps.occurrences, remainder, now);
@@ -1851,9 +1829,6 @@ function storedSeriesRecurrence(
   if (recurrence.kind === "single") return { kind: "single" };
   return master.recurrence;
 }
-
-// isCancelledException / exceptionInstant now come from series-exception.ts,
-// shared with the cloud path.
 
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.
