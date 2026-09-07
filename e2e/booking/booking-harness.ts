@@ -963,6 +963,8 @@ export interface HostBookingSettingsStubOptions {
   bookingUrl?: string;
   microsoftConnect?: boolean;
   enabled?: boolean;
+  isConfigured?: boolean;
+  suggestedSlug?: string;
   weeklyAvailability?: Array<{
     weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
     start: string;
@@ -982,6 +984,8 @@ export async function prepareSignedInBookingSettingsPage(
   const bookingUrl =
     options.bookingUrl ?? `https://compasscalendar.com/book/${slug}`;
   const enabled = options.enabled ?? true;
+  const isConfigured = options.isConfigured ?? true;
+  const suggestedSlug = options.suggestedSlug ?? slug;
   const weeklyAvailability =
     options.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY;
   const captured: CapturedHostBookingRequests = { putBodies: [] };
@@ -1011,14 +1015,19 @@ export async function prepareSignedInBookingSettingsPage(
     guestsCanInviteOthers: true,
   };
 
-  const savedPageFields = {
-    id: "000000000000000000000001",
-    slug,
-    hostUserId: "000000000000000000000002",
-    createdAt: new Date(0).toISOString(),
-    updatedAt: new Date(0).toISOString(),
-    bookingUrl,
-  };
+  const savedPageFields = isConfigured
+    ? {
+        id: "000000000000000000000001",
+        slug,
+        hostUserId: "000000000000000000000002",
+        createdAt: new Date(0).toISOString(),
+        updatedAt: new Date(0).toISOString(),
+        bookingUrl,
+      }
+    : {
+        isConfigured: false,
+        suggestedSlug,
+      };
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -1048,10 +1057,31 @@ export async function prepareSignedInBookingSettingsPage(
     if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
       const body = request.postDataJSON() as Record<string, unknown>;
       captured.putBodies.push(body);
+      const nextSlug = typeof body.slug === "string" ? body.slug : slug;
+      const nextBookingUrl = `https://compasscalendar.com/book/${nextSlug}`;
+      const putResponseFields = isConfigured
+        ? {
+            id: "000000000000000000000001",
+            slug: nextSlug,
+            hostUserId: "000000000000000000000002",
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+            bookingUrl: nextBookingUrl,
+          }
+        : {
+            isConfigured: true,
+            suggestedSlug: nextSlug,
+            id: "000000000000000000000001",
+            slug: nextSlug,
+            hostUserId: "000000000000000000000002",
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+            bookingUrl: nextBookingUrl,
+          };
       return route.fulfill(
         jsonResponse({
           ...bookingPagePayload,
-          ...savedPageFields,
+          ...putResponseFields,
           ...body,
         }),
       );

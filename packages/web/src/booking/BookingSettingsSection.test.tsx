@@ -1853,6 +1853,265 @@ describe("BookingSettingsSection", () => {
     expect(details).toHaveAttribute("open");
   });
 
+  it("shows suggested address on an unconfigured page and is not dirty", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    expect(screen.getByLabelText("Page address")).toHaveValue("hostuser");
+    expect(
+      screen.getByText(/It will be at .*\/book\/hostuser/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("PUTs slug when the page address is edited", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            id: createObjectIdString(),
+            slug: (savedBody as { slug: string }).slug,
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: `https://compasscalendar.com/book/${(savedBody as { slug: string }).slug}`,
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "my-page");
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ slug: "my-page" });
+    });
+  });
+
+  it("blocks save for an invalid page address and focuses the field", async () => {
+    const user = userEvent.setup({ delay: null });
+    let putCount = 0;
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) => {
+        putCount += 1;
+        return res(ctx.status(500));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "ab");
+    await user.tab();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Use 3 to 32 lowercase letters, digits, or hyphens",
+    );
+    expect(address).toHaveAttribute("aria-invalid", "true");
+
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+    expect(putCount).toBe(0);
+    expect(document.activeElement).toBe(address);
+  });
+
+  it("renders SLUG_TAKEN inline beside the save bar, focuses the field, and does not toast", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(409),
+          ctx.json({
+            code: "SLUG_TAKEN",
+            message: "That address is already taken",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "taken-slug");
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        BOOKING_SAVE_ERROR_COPY.SLUG_TAKEN,
+      );
+    });
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(address);
+  });
+
+  it("shows the address-change warning only when a saved slug is changed", async () => {
+    const user = userEvent.setup({ delay: null });
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: true,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    expect(
+      screen.queryByText("Links using your old address will stop working."),
+    ).not.toBeInTheDocument();
+
+    await user.clear(address);
+    await user.type(address, "new-slug");
+    expect(
+      screen.getByText("Links using your old address will stop working."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the address-change warning on an unconfigured page", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "other-slug");
+    expect(
+      screen.queryByText("Links using your old address will stop working."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("jumps to the page address with e then a", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+
+    await user.keyboard("e");
+    await user.keyboard("a");
+
+    expect(document.activeElement).toBe(screen.getByLabelText("Page address"));
+  });
+
   it("renders DESTINATION_NOT_WRITABLE inline, focuses destination, and does not toast", async () => {
     const user = userEvent.setup({ delay: null });
     const { port, mocks } = createTestToastPort();

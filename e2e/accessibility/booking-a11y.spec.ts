@@ -356,6 +356,50 @@ test.describe("settings booking section", () => {
     });
   });
 
+  test("page address validation error has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      enabled: false,
+      isConfigured: false,
+      suggestedSlug: "hostuser",
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    const address = settingsDialog.getByLabel("Page address");
+    await dispatchFill(address, "ab");
+    await address.blur();
+    await expect(
+      settingsDialog.getByText(
+        "Use 3 to 32 lowercase letters, digits, or hyphens",
+      ),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking address error",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("page address change warning has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      enabled: true,
+      slug: "hostuser",
+      bookingUrl: "https://compasscalendar.com/book/hostuser",
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchFill(settingsDialog.getByLabel("Page address"), "new-slug");
+    await expect(
+      settingsDialog.getByText(
+        "Links using your old address will stop working.",
+      ),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking address warning",
+      include: "[role='dialog']",
+    });
+  });
+
   test("discard confirmation has no automatically detectable accessibility violations", async ({
     page,
   }) => {

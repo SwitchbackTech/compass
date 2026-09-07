@@ -13,6 +13,24 @@ const openMoreOptions = async (settingsDialog: Locator) => {
   await settingsDialog.getByText("More options", { exact: true }).click();
 };
 
+test("changes the page address and PUTs slug", async ({ page }) => {
+  const captured = await prepareSignedInBookingSettingsPage(page, {
+    enabled: false,
+    isConfigured: false,
+    suggestedSlug: "hostuser",
+  });
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const address = settingsDialog.getByLabel("Page address");
+  await dispatchFill(address, "my-booking-page");
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+  );
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]).toMatchObject({ slug: "my-booking-page" });
+});
+
 test("settings booking page shows a copyable public link after save", async ({
   page,
 }) => {

@@ -1,6 +1,7 @@
 import {
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
+  BookingSlugSchema,
   pickAdminPutBookingPageInput,
   type WeeklyAvailabilityInterval,
 } from "@core/types/booking.contracts";
@@ -163,6 +164,28 @@ export type BookingFormValidationError = {
   field?: BookingSequenceField;
 };
 
+export function bookingSlugValidationError(
+  slug: string | undefined,
+): BookingFormValidationError | null {
+  const result = BookingSlugSchema.safeParse(slug ?? "");
+  if (result.success) {
+    return null;
+  }
+  return {
+    field: "address",
+    message: result.error.issues[0]?.message ?? "Enter a valid page address.",
+  };
+}
+
+export function resolveBookingFormSlug(
+  page: AdminGetBookingPageResult | undefined,
+): string | undefined {
+  if (!page) {
+    return undefined;
+  }
+  return "bookingUrl" in page ? page.slug : page.suggestedSlug;
+}
+
 export function validateBookingForm({
   areHoursValid,
   enabling,
@@ -178,6 +201,10 @@ export function validateBookingForm({
   minNoticeInvalid: boolean;
   writableCalendars: Calendar[];
 }): BookingFormValidationError | null {
+  const slugError = bookingSlugValidationError(form.slug);
+  if (slugError) {
+    return slugError;
+  }
   if (!areHoursValid) {
     return {
       field: "hours",

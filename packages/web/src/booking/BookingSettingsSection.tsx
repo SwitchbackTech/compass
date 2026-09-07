@@ -22,6 +22,10 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import {
+  BookingAddressField,
+  bookingAddressPrefix,
+} from "@web/booking/BookingAddressField";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -45,6 +49,7 @@ import {
   isPlaceholderDestinationCalendar,
   isUnconfiguredBookingPage,
   isWelcomeTextTooLong,
+  resolveBookingFormSlug,
   resolveWritableCalendars,
   toBookingPageInput,
   validateBookingForm,
@@ -168,6 +173,7 @@ const buildInitialForm = (
 
   return {
     ...toBookingPageInput(base),
+    slug: resolveBookingFormSlug(page),
     destinationCalendarId,
     blockingCalendarIds,
     timeZone: TimeZoneSchema.parse(timeZone || effectiveTimeZone),
@@ -381,6 +387,10 @@ export function BookingSettingsSection({
   const savedPage =
     serverPage && isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
+  const addressPreview =
+    form.slug !== undefined
+      ? `${bookingAddressPrefix(savedPage?.bookingUrl ?? null)}${form.slug}`
+      : null;
   const { groups: writableGroups, ungrouped: writableUngrouped } =
     groupCalendarsByAccount(writableCalendars, connections);
   const destinationCalendar = writableCalendars.find(
@@ -509,10 +519,21 @@ export function BookingSettingsSection({
         </p>
 
         <BookingStatusHeader
-          addressPreview={null}
+          addressPreview={addressPreview}
           bookingUrl={savedPage?.bookingUrl ?? null}
           isLive={isLive}
         />
+
+        {form.slug !== undefined ? (
+          <BookingAddressField
+            bookingUrl={savedPage?.bookingUrl ?? null}
+            highlightInvalid={saveError?.field === "address"}
+            onChange={(slug) => updateForm({ slug })}
+            savedSlug={savedPage?.slug}
+            showShortcuts={showShortcuts}
+            value={form.slug}
+          />
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3">
           <div>

@@ -230,8 +230,12 @@ time inputs per weekday.
 - **Status:** a live page shows "Your booking page is live" and the
   public link with Copy and **Open booking page**. A page that is not
   live shows "Your booking page is not live yet".
-- **Essentials:** Duration, booking timezone, weekly hours, and
+- **Essentials:** Page address, duration, booking timezone, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
+- **Page address:** shows `<origin>/book/` as a visible prefix with an
+  editable slug. An unconfigured page shows the server's `suggestedSlug`.
+  Changing a saved address warns that old links stop working. A taken address
+  (`SLUG_TAKEN`) renders inline beside the save bar and focuses the field.
 - **More options:** an uncontrolled native `<details>` that starts
   collapsed. It holds blocking calendars, welcome text, notice and
   horizon, and buffer and limits. Jumping to a field inside it, or an
@@ -243,7 +247,7 @@ time inputs per weekday.
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
 - **Jump:** `e` then a letter focuses a field (`e` booking page on or
-  off, `d` duration, `c` destination, `b` blocking, `z` timezone,
+  off, `a` address, `d` duration, `c` destination, `b` blocking, `z` timezone,
   `h` hours, `m` More options, `w` welcome, `n` notice, `x` horizon,
   `o` buffer and limits, `l` link). Settings owns Mod+Enter (the
   primary save action) and digits `1/2/3` (nav) on this page, which is

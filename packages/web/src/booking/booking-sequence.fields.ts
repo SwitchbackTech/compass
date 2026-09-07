@@ -13,6 +13,7 @@
  */
 export const BOOKING_SEQUENCE_FIELDS = [
   { key: "e", field: "enabled", label: "Booking page on or off" },
+  { key: "a", field: "address", label: "Page address" },
   { key: "d", field: "duration", label: "Duration" },
   { key: "c", field: "destination", label: "Destination calendar" },
   { key: "b", field: "blocking", label: "Blocking calendars" },
