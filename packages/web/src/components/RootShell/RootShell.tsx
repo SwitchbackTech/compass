@@ -30,7 +30,7 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
-import { UpcomingEventNotifier } from "@web/notifications/UpcomingEventNotifier";
+import { useUpcomingEventNotifier } from "@web/notifications/useUpcomingEventNotifier";
 import { useEventContextMenuShortcut } from "@web/shortcuts/context-menu/useEventContextMenuShortcut";
 import { usePointerConfusionTracker } from "@web/shortcuts/keyboard-only/usePointerConfusionTracker";
 import { useFocusNoticeShortcut } from "@web/shortcuts/notice-focus/useFocusNoticeShortcut";
@@ -65,6 +65,9 @@ export function RootShell() {
   usePointerConfusionTracker(!isLifeView);
   useFocusNoticeShortcut();
   useEventContextMenuShortcut();
+  // Must stay mounted on every route, including Life, so the 5-minute
+  // heads-up still fires while the calendar grid is not on screen.
+  useUpcomingEventNotifier();
 
   const readOnlyStatus =
     access.kind === "server" && access.isReadOnly ? access.status : null;
@@ -98,7 +101,6 @@ export function RootShell() {
       {showPastDue && <BillingPastDueBanner />}
       {showReadOnlyBanner && <BillingReadOnlyBanner />}
       <Outlet />
-      <UpcomingEventNotifier />
       <AuthModal />
       <ConnectAppleForm />
       {gateStatus === null && <ConnectCalendarPromptGate />}

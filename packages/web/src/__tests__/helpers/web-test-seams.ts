@@ -25,7 +25,6 @@ import {
   registerNotificationPort,
   resetNotificationPort,
 } from "@web/notifications/notification.port";
-import { resetNotificationStoreForTests } from "@web/notifications/notification.store";
 import { mock } from "bun:test";
 
 export function createDefaultTestSessionPort(): SessionApiPort {
@@ -162,10 +161,6 @@ export function installDefaultWebTestSeams(): void {
   registerSessionApiPort(createDefaultTestSessionPort());
   registerToastPort(createTestToastPort().port);
   registerNotificationPort(createTestNotificationPort().port);
-  // Re-seed after the port is in place: store resets run in afterEach, while
-  // the previous test's port is still registered, so a test that granted
-  // permission would otherwise leak "granted" into the next one.
-  resetNotificationStoreForTests();
   registerUseStartProviderAuthorizationForTests(
     createDefaultTestProviderAuthorizationHook(),
   );
