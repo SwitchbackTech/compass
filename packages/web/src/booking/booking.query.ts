@@ -41,6 +41,8 @@ const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
   DESTINATION_NOT_WRITABLE:
     "The destination calendar can't accept new events. Choose a different calendar and save again.",
   TIMEZONE_REQUIRED: "Choose a booking timezone before enabling booking.",
+  AVAILABILITY_REQUIRED:
+    "Add weekly hours before turning on your booking page.",
   INVALID_INPUT:
     "Some settings couldn't be saved. Check the highlighted fields and try again.",
 };

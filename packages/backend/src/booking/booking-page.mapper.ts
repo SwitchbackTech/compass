@@ -4,6 +4,7 @@ import {
   type AdminPutBookingPageInput,
   type BookingPage,
   BookingPageSchema,
+  DEFAULT_WEEKLY_AVAILABILITY,
   pickAdminPutBookingPageInput,
 } from "@core/types/booking.contracts";
 import { CalendarIdSchema, type TimeZone } from "@core/types/domain-primitives";
@@ -88,7 +89,7 @@ export const buildDefaultAdminPutInput = (
   destinationCalendarId: PLACEHOLDER_CALENDAR_ID,
   blockingCalendarIds: [PLACEHOLDER_CALENDAR_ID],
   timeZone,
-  weeklyAvailability: [],
+  weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   welcomeText: null,
   minNoticeHours: 4,
   maxHorizonDays: 60,

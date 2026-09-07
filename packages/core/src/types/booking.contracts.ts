@@ -156,6 +156,14 @@ export const WeeklyAvailabilitySchema = z
   });
 export type WeeklyAvailability = z.infer<typeof WeeklyAvailabilitySchema>;
 
+export const DEFAULT_WEEKLY_AVAILABILITY = WeeklyAvailabilitySchema.parse(
+  ([1, 2, 3, 4, 5] as const).map((weekday) => ({
+    weekday,
+    start: "09:00",
+    end: "17:00",
+  })),
+);
+
 export const BookingWelcomeTextSchema = z
   .string()
   .trim()

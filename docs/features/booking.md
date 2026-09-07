@@ -202,7 +202,7 @@ One booking-page record per user.
 | Duration | `15` / `30` / `45` / `60` minutes. Default `30`. Custom minutes later. |
 | Destination calendar | Writable calendar (`canWriteEvents`) on a healthy connection. Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
-| General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
+| General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default Mon-Fri 09:00-17:00. Turning on requires at least one window (`AVAILABILITY_REQUIRED`). Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
 | Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
 | Scheduling window | Minimum notice default **4 hours**, capped at **1440 hours** (the 60-day horizon in hours). Maximum horizon default **60 days**. Buffer default off, capped at **1440 minutes** (one working day). The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 | Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
@@ -397,6 +397,7 @@ Authenticated (host session + writable billing, same as event writes):
   enable.
 - Enabling without a healthy calendar connection is a typed `403`
   (`CALENDAR_NOT_CONNECTED`; `GOOGLE_NOT_CONNECTED` remains an alias).
+- Enabling with zero weekly hours is a typed `400` (`AVAILABILITY_REQUIRED`).
 
 ## Out of v1 / v1.1
 

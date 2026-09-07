@@ -12,6 +12,7 @@ import {
   BOOKING_MAX_HORIZON_DAYS,
   BOOKING_MAX_MIN_NOTICE_HOURS,
   type BookingDurationMinutes,
+  DEFAULT_WEEKLY_AVAILABILITY,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
@@ -149,7 +150,7 @@ const buildInitialForm = (
     destinationCalendarId: BOOKING_PLACEHOLDER_CALENDAR_ID,
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
     timeZone: TimeZoneSchema.parse(effectiveTimeZone),
-    weeklyAvailability: [],
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
     welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
@@ -429,6 +430,10 @@ export function BookingSettingsSection({
     }
     if (form.enabled && form.blockingCalendarIds.length === 0) {
       setEnableError("Select at least one blocking calendar.");
+      return;
+    }
+    if (form.enabled && form.weeklyAvailability.length === 0) {
+      setEnableError("Add weekly hours before turning on your booking page.");
       return;
     }
     setEnableError(null);

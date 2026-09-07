@@ -11,6 +11,7 @@ import {
   CancelBookingReservationInputSchema,
   CreateBookingReservationInputSchema,
   CreateBookingReservationResponseSchema,
+  DEFAULT_WEEKLY_AVAILABILITY,
   isGuestEmail,
   PatchBookingReservationInputSchema,
   PublicBookingPageSchema,
@@ -274,6 +275,18 @@ describe("WeeklyAvailabilityIntervalSchema", () => {
         end: "09:00",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("DEFAULT_WEEKLY_AVAILABILITY", () => {
+  it("parses as five weekday intervals from 09:00 to 17:00", () => {
+    const parsed = DEFAULT_WEEKLY_AVAILABILITY;
+    expect(parsed).toHaveLength(5);
+    expect(parsed.map((interval) => interval.weekday)).toEqual([1, 2, 3, 4, 5]);
+    for (const interval of parsed) {
+      expect(interval.start).toBe("09:00");
+      expect(interval.end).toBe("17:00");
+    }
   });
 });
 

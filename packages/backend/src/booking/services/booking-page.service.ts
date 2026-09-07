@@ -179,6 +179,12 @@ class BookingPageService {
   ): Promise<AdminGetBookingPageResult> {
     assertTimeZoneForEnable(rawInput);
     const input = AdminPutBookingPageInputSchema.parse(rawInput);
+    if (input.enabled && input.weeklyAvailability.length === 0) {
+      throw bookingError(
+        "AVAILABILITY_REQUIRED",
+        "Add weekly hours before turning on your booking page",
+      );
+    }
 
     if (input.enabled) {
       await assertBillingAllowsWrites(userId.toString());

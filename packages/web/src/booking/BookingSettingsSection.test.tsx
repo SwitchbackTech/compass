@@ -3,6 +3,7 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
@@ -85,7 +86,7 @@ const unconfiguredPage = () => ({
   destinationCalendarId: writableCalendar.id,
   blockingCalendarIds: [writableCalendar.id],
   timeZone: "UTC",
-  weeklyAvailability: [],
+  weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   minNoticeHours: 4,
   maxHorizonDays: 60,
   bufferMinutes: null,
@@ -1315,6 +1316,77 @@ describe("BookingSettingsSection", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Choose a destination calendar before enabling booking.",
     );
+  });
+
+  it("blocks enabling a page with no weekly hours and does not PUT", async () => {
+    const user = userEvent.setup({ delay: null });
+    let putCount = 0;
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...unconfiguredPage(),
+            weeklyAvailability: [],
+          }),
+        ),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) => {
+        putCount += 1;
+        return res(ctx.status(500));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByLabelText("Enable booking page");
+    await user.click(screen.getByLabelText("Enable booking page"));
+    await user.click(
+      screen.getByRole("button", { name: "Save booking settings" }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Add weekly hours before turning on your booking page.",
+    );
+    expect(putCount).toBe(0);
+  });
+
+  it("renders Monday through Friday as 9-5 on a fresh unconfigured page", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(await screen.findByLabelText("Monday")).toHaveValue("9-5");
+    expect(screen.getByLabelText("Tuesday")).toHaveValue("9-5");
+    expect(screen.getByLabelText("Wednesday")).toHaveValue("9-5");
+    expect(screen.getByLabelText("Thursday")).toHaveValue("9-5");
+    expect(screen.getByLabelText("Friday")).toHaveValue("9-5");
+    expect(screen.getByLabelText("Saturday")).toHaveValue("");
+    expect(screen.getByLabelText("Sunday")).toHaveValue("");
   });
 
   it("shows an error on PUT 403 without crashing Settings", async () => {
