@@ -199,7 +199,8 @@ export function BookingSettingsSection({
   const access = useAppAccess();
   const isReadOnly = access.kind === "server" && access.isReadOnly;
   const effectiveTimeZone = useEffectiveTimeZone();
-  const { data: calendars = [] } = useCalendarsQuery();
+  const { data: calendars = [], isPending: calendarsPending } =
+    useCalendarsQuery();
   const accountEmailOrder = useConnectedAccountEmails();
   const writableCalendars = useMemo(
     () =>
@@ -277,6 +278,10 @@ export function BookingSettingsSection({
   );
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
+    // Calendars often resolve after the booking page. Seeding against an
+    // empty list writes a placeholder destination and the identity guard
+    // then refuses to correct it, so Turn on / Save changes fail validation.
+    if (calendarsPending) return;
     seededPageRef.current = serverPage;
     const seeded = buildInitialForm(
       serverPage,
@@ -288,7 +293,13 @@ export function BookingSettingsSection({
     setMinNoticeText(String(seeded.minNoticeHours));
     setHorizonText(String(seeded.maxHorizonDays));
     baselineFormRef.current = seeded;
-  }, [availabilityCalendars, effectiveTimeZone, serverPage, writableCalendars]);
+  }, [
+    availabilityCalendars,
+    calendarsPending,
+    effectiveTimeZone,
+    serverPage,
+    writableCalendars,
+  ]);
 
   const isDirty =
     (baselineFormRef.current !== null &&
@@ -318,7 +329,11 @@ export function BookingSettingsSection({
     return <BookingConnectGooglePrompt />;
   }
 
-  if (isPending) {
+  if (
+    isPending ||
+    calendarsPending ||
+    (serverPage != null && seededPageRef.current !== serverPage)
+  ) {
     return <p className="text-sm text-text-muted">Loading booking settings…</p>;
   }
 
