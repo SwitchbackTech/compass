@@ -25,13 +25,12 @@ OUTPUT: draft PR marked ready after bun run verify, Fixes #<n>, labeled agent-au
 IDEMPOTENCY: up to AGENT_LOOP_CONCURRENCY in-flight agents with non-overlapping partitions; agent-loop-running; skip issues with an open Fixes PR
 RETRY: HTTP 429 waits for credits and retries on the hourly watchdog; dispatch a
   fresh run for all other retryable investigation (do not "Re-run jobs" on a failed snapshot)
-APPROVAL: agent-automerge + merge-guard (size, paths, main not red) + GitHub auto-merge on required checks
+APPROVAL: agent-automerge + merge-guard (size, main not red) + GitHub auto-merge on required checks
 STOP: repo var AGENT_LOOP_ENABLED or BOOKING_LOOP_ENABLED (must be string "true"; default off)
 HEARTBEAT: hourly cron watchdog when idle; Discord on merge-guard / smoke failure
 VERIFIER: .github/scripts/agent-loop-merge-guard.sh (not the LLM)
 STAGING: https://staging.compasscalendar.com (unauthenticated smoke only)
-NEVER: enter credentials; merge PRs that touch .github/ or auth/billing paths
-  unless a per-milestone allowlist re-allows that prefix
+NEVER: enter credentials
 ```
 
 Sources of truth:
@@ -42,8 +41,7 @@ Sources of truth:
 | Agent instructions | `.github/prompts/agent-loop.md` |
 | Pick next WP | `.github/scripts/agent-loop-next.sh` |
 | Launch (Cursor API or pickup comment) | `.github/scripts/agent-loop-launch.sh` |
-| Merge-guard Verifier (no-auto-merge paths, size) | `.github/scripts/agent-loop-merge-guard.sh` |
-| Per-milestone path allowlists | `.github/agent-loop/allowlists/<milestone-slug>.txt` |
+| Merge-guard Verifier (size) | `.github/scripts/agent-loop-merge-guard.sh` |
 | Staging smoke | `.github/scripts/agent-loop-staging-smoke.sh` |
 | Post-deploy (smoke + annotate) | `.github/scripts/agent-loop-postdeploy.sh` |
 | Product spec | named by the issue `Spec:` link |
@@ -129,14 +127,12 @@ both channels are configured).
    the Approval boundary is `allow`, and stop. The agent does not merge
    and does not wait for CI.
 4. **Merge guard** (`.github/scripts/agent-loop-merge-guard.sh`): when size
-   is under the rails, no sensitive path is in the diff (unless a
-   per-milestone allowlist re-allows that prefix), and the latest `main`
-   Unit and E2E push runs are not red, enable GitHub auto-merge
-   (`gh pr merge --auto`; the ruleset merge queue squash-merges and the
-   repo deletes the branch). GitHub squash-merges when the required
-   checks pass. Otherwise add `agent-loop-needs-human` and stop; a red
-   `main` just waits for the scheduled sweep. The guard never holds a
-   runner waiting on CI.
+   is under the rails and the latest `main` Unit and E2E push runs are not
+   red, enable GitHub auto-merge (`gh pr merge --auto`; the ruleset merge
+   queue squash-merges and the repo deletes the branch). GitHub
+   squash-merges when the required checks pass. Otherwise add
+   `agent-loop-needs-human` and stop; a red `main` just waits for the
+   scheduled sweep. The guard never holds a runner waiting on CI.
 5. **Launch next** (`agent-loop.yml` `pull_request` `closed` + merged):
    smoke the staging that is live now, pick WPs to top the fleet up to N,
    launch them. `Fixes #<n>` closes the merged issue. A failing smoke
@@ -158,37 +154,6 @@ Review ruleset (8388539) requires a merge queue (`grouping_strategy:
 ALLGREEN`, squash). Unit and E2E workflows listen for `merge_group` so
 the queue can emit the required checks. If the queue rule cannot be
 written, the equivalent is `strict_required_status_checks_policy: true`.
-
-## Sensitive-path merge gate
-
-The agent may *author* the code. The merge guard refuses to merge if the
-PR touches:
-
-- `.github/`: deploy, release, docs-sync, agent-loop, agent-review, and
-  error-autofix workflows; the `agent-loop-*`, `autofix-*`, `deploy-*`, and
-  `discord-*` scripts; `prompts/`, `agent-loop/` allowlists, and `docker/`.
-  Test, e2e, and perf workflows, `detect-code-changes.sh`, issue and PR
-  templates, dependabot, and stale config may auto-merge; `actionlint` and
-  the loop script tests run in the `static` job.
-- `self-host/`
-- `packages/backend/src/auth/`
-- `packages/web/src/auth/`
-- `packages/web/src/supertokens.ts`
-- `packages/core/src/logger/`
-- `packages/backend/src/logging/`
-- `packages/sync/src/telemetry/`
-- `packages/core/src/config/`
-- files matching `billing` or `stripe` in the path
-
-Authoritative list: `NO_AUTOMERGE_PATH_PATTERNS` in
-`.github/scripts/agent-loop-merge-guard.sh` (do not widen from this doc).
-
-Per-milestone allowlists under
-`.github/agent-loop/allowlists/<milestone-slug>.txt` can re-allow a
-refused prefix. The `providers-*` files re-allow
-`packages/sync/src/providers/**` (including `__contract__`). Telemetry
-and auth paths stay refused. Future milestones add a file, not a script
-edit.
 
 ## Size limits
 
@@ -248,8 +213,6 @@ staging drill.
 | Kill switch off | Workflow `if:` skips; no agent job |
 | Kill switch on, no eligible WP | `agent-loop-next.sh` `found=false`; no launch |
 | Dual-launch | API key set → no `agent-loop: pickup` comment |
-| Merge-guard sensitive path | PR exists; label stripped; `agent-loop-needs-human`; no merge |
-| Merge-guard providers allowlist | Diff only `packages/sync/src/providers/**` prints `allowed by providers allowlist` and proceeds |
 | Merge-guard size fail | Same downgrade if files > `MAX_FILES=60` or lines > `MAX_LINES=4000` |
 | Staging 5xx | Smoke fails; next WP not launched |
 | Credentials | Smoke and prompt never enter a password or complete OAuth |

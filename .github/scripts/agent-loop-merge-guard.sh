@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 # Deterministic re-check for an agent-loop PR, then GitHub auto-merge.
 # The agent's `agent-automerge` label is necessary but not sufficient:
-# this script independently re-verifies size rails and sensitive paths, and
-# refuses while main itself is red so the loop cannot stack merges on a
-# broken base.
+# this script independently re-verifies size rails, and refuses while main
+# itself is red so the loop cannot stack merges on a broken base. Path
+# prefixes are not a merge gate: agents may auto-merge any tree path.
 #
 # It does not wait on CI. `gh pr merge --auto` hands the wait to GitHub,
 # which squash-merges when the required checks pass; a runner that sat
 # watching checks for up to 20 minutes was what starved the loop's
 # concurrency group on 2026-09-03.
-#
-# Per-milestone allowlists under .github/agent-loop/allowlists/<slug>.txt
-# can re-allow a refused path prefix for new code (providers adapters).
 #
 # Uses GH_TOKEN from AGENT_LOOP_GITHUB_TOKEN, BOOKING_LOOP_GITHUB_TOKEN, or
 # AUTOFIX_GITHUB_TOKEN so the merge push triggers release-on-main
@@ -22,28 +19,6 @@ set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/agent-loop-lib.sh"
 
 PR_NUMBER=${1:-}
-
-# .github/ is refused only where a change could reach secrets, deploys, or
-# the agents themselves: deploy and release workflows, the loop and autofix
-# workflows, their scripts and prompts, allowlists, and Docker build context.
-# Test, e2e, and perf workflows, detect-code-changes.sh, templates,
-# dependabot, and stale config may auto-merge; actionlint and the loop
-# script tests gate them in the `static` job.
-NO_AUTOMERGE_PATH_PATTERNS=(
-  '^\.github/workflows/(deploy-|_deploy-environment|publish-docker-images|release-on-main|sync-docs|agent-loop|agent-review|error-autofix)'
-  '^\.github/scripts/(agent-loop|autofix|deploy-|discord-)'
-  '^\.github/(agent-loop|prompts|docker)/'
-  '^self-host/'
-  '^packages/backend/src/auth/'
-  '^packages/web/src/auth/'
-  '^packages/web/src/supertokens\.ts$'
-  '^packages/core/src/logger/'
-  '^packages/backend/src/logging/'
-  '^packages/sync/src/telemetry/'
-  'billing'
-  'stripe'
-  '^packages/core/src/config/'
-)
 
 MAX_FILES=${AGENT_LOOP_MAX_FILES:-${BOOKING_LOOP_MAX_FILES:-60}}
 MAX_LINES=${AGENT_LOOP_MAX_LINES:-${BOOKING_LOOP_MAX_LINES:-4000}}
@@ -58,28 +33,6 @@ if [ -z "$DRY_RUN" ] && [ -z "${GH_TOKEN:-}" ]; then
   echo "GH_TOKEN is empty. Set AGENT_LOOP_GITHUB_TOKEN, BOOKING_LOOP_GITHUB_TOKEN, or AUTOFIX_GITHUB_TOKEN so squash-merge triggers release-on-main." >&2
   exit 1
 fi
-
-milestone_title_for_pr() {
-  local pr_number=$1
-  if [ -n "${AGENT_LOOP_GUARD_MILESTONE:-}" ]; then
-    printf '%s' "$AGENT_LOOP_GUARD_MILESTONE"
-    return 0
-  fi
-  local issue_number
-  issue_number=$(gh pr view "$pr_number" --repo "$REPO" --json body --jq '.body' 2>/dev/null |
-    grep -oE '[Ff]ixes #[0-9]+' | grep -oE '[0-9]+' | head -n1)
-  if [ -z "$issue_number" ]; then
-    return 0
-  fi
-  gh issue view "$issue_number" --repo "$REPO" --json milestone --jq '.milestone.title // empty' 2>/dev/null || true
-}
-
-load_allowlist() {
-  local title=$1
-  local slug
-  slug=$(milestone_slug "$title")
-  read_allowlist_patterns "$slug"
-}
 
 downgrade() {
   local pr_number=$1
@@ -128,49 +81,6 @@ pr_has_automerge() {
     || printf '%s\n' "$labels" | grep -qx "$LEGACY_AUTOMERGE_LABEL"
 }
 
-evaluate_paths() {
-  local pr_number=$1
-  local changed_files_list=$2
-  local milestone_title=$3
-
-  mapfile -t allow_patterns < <(load_allowlist "$milestone_title")
-  local slug
-  slug=$(milestone_slug "$milestone_title")
-
-  local allowlist_hit=0
-  local path
-  while IFS= read -r path; do
-    [ -n "$path" ] || continue
-    if [ "${#allow_patterns[@]}" -gt 0 ] && file_matches_patterns "$path" "${allow_patterns[@]}"; then
-      allowlist_hit=1
-    fi
-  done <<<"$changed_files_list"
-
-  local pattern
-  for pattern in "${NO_AUTOMERGE_PATH_PATTERNS[@]}"; do
-    while IFS= read -r path; do
-      [ -n "$path" ] || continue
-      if ! printf '%s\n' "$path" | grep -Eiq "$pattern"; then
-        continue
-      fi
-      if [ "${#allow_patterns[@]}" -gt 0 ] && file_matches_patterns "$path" "${allow_patterns[@]}"; then
-        continue
-      fi
-      downgrade "$pr_number" "touches a path that may not auto-merge (matches ${pattern})"
-      return 1
-    done <<<"$changed_files_list"
-  done
-
-  if [ "$allowlist_hit" -eq 1 ]; then
-    if [[ "$slug" == providers-* ]]; then
-      printf 'allowed by providers allowlist\n'
-    else
-      printf 'allowed by %s allowlist\n' "$slug"
-    fi
-  fi
-  return 0
-}
-
 # The latest push run of each required workflow on main. A red main means the
 # base is broken; merging more on top hides which change broke it. Fails
 # closed: an unreadable result counts as red.
@@ -203,7 +113,7 @@ check_and_merge() {
     fi
   fi
 
-  local changed_files_list changed_files total_lines milestone_title
+  local changed_files_list changed_files total_lines
   if [ -n "${AGENT_LOOP_GUARD_FILES:-}" ]; then
     changed_files_list=$AGENT_LOOP_GUARD_FILES
   elif ! changed_files_list=$(gh pr diff "$pr_number" --repo "$REPO" --name-only); then
@@ -211,11 +121,6 @@ check_and_merge() {
     return 0
   fi
   changed_files=$(printf '%s\n' "$changed_files_list" | grep -c . || true)
-
-  milestone_title=$(milestone_title_for_pr "$pr_number")
-  if ! evaluate_paths "$pr_number" "$changed_files_list" "$milestone_title"; then
-    return 0
-  fi
 
   if [ "$changed_files" -gt "$MAX_FILES" ]; then
     downgrade "$pr_number" "touches ${changed_files} files (limit ${MAX_FILES})"

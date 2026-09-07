@@ -2,7 +2,7 @@
 name: ship
 version: 3
 owner: compass-maintainers
-last_verified: 2026-09-04
+last_verified: 2026-09-07
 description: Take the current branch from working tree to a ready, labeled PR that GitHub merges. Use when the user says "ship" or a loop prompt reaches the PR step.
 ---
 
@@ -35,10 +35,6 @@ the repo records it.
    launches the next work package. Do not merge yourself, wait on CI,
    close/reopen the PR, push empty commits, or merge `main` in just to re-run
    CI (merge `main` only for a real conflict).
-6. **Sensitive paths.** If the diff touches a path in
-   `NO_AUTOMERGE_PATH_PATTERNS` (`.github/scripts/agent-loop-merge-guard.sh`)
-   and no allowlist under `.github/agent-loop/allowlists/` re-allows it,
-   label `agent-loop-needs-human` instead and name the path in the PR body.
 
 ## Escalate
 

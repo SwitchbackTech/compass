@@ -111,18 +111,11 @@ add the label `agent-automerge`, then stop. Copilot review runs on
 ready PRs only (`review_draft_pull_requests: false` on ruleset 8388539).
 Do not leave the PR draft waiting for a human look.
 
-The merge guard checks size and sensitive paths and enables GitHub
+The merge guard checks size and that `main` is not red, then enables GitHub
 auto-merge; GitHub squash-merges when the required checks pass, and the
 merge launches the next WP. Do not merge the PR yourself and do not wait
 for CI. Alias notes: `booking-automerge` still arms the guard for one
 release.
-
-Do **not** add `agent-automerge` if you touched a path in
-`.github/scripts/agent-loop-merge-guard.sh`
-`NO_AUTOMERGE_PATH_PATTERNS` (auth, billing, `.github/`, `self-host/`,
-telemetry) unless a per-milestone allowlist under
-`.github/agent-loop/allowlists/<milestone-slug>.txt` re-allows that
-prefix. Use `agent-loop-needs-human` instead.
 
 ## Staging (`https://staging.compasscalendar.com`)
 

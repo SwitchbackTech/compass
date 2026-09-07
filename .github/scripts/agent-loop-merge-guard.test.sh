@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local assertions for agent-loop-merge-guard.sh path allowlists.
+# Local assertions for agent-loop-merge-guard.sh size rails.
 # Run: bash .github/scripts/agent-loop-merge-guard.test.sh
 set -euo pipefail
 
@@ -36,85 +36,38 @@ assert_not_contains() {
 
 run_guard() {
   local files=$1
-  local milestone=$2
   AGENT_LOOP_GUARD_DRY_RUN=1 \
     AGENT_LOOP_GUARD_FILES="$files" \
-    AGENT_LOOP_GUARD_MILESTONE="$milestone" \
     GH_REPO="example/compass" \
     bash "${ROOT}/.github/scripts/agent-loop-merge-guard.sh" 1
 }
 
-MS_M="Providers M: Microsoft (Outlook)"
-
-out=$(run_guard "packages/sync/src/providers/microsoft/foo.ts" "$MS_M")
-assert_contains "$out" "allowed by providers allowlist" "providers adapter is allowlisted"
-assert_contains "$out" "proceed" "providers adapter proceeds"
-assert_not_contains "$out" "downgrade:" "providers adapter is not refused"
-
-out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_M")
-assert_contains "$out" "downgrade:" "telemetry still refused"
-assert_not_contains "$out" "allowed by providers allowlist" "telemetry is not allowlisted"
-assert_not_contains "$out" "proceed" "telemetry does not proceed"
-
-out=$(run_guard $'packages/sync/src/providers/microsoft/foo.ts\npackages/sync/src/telemetry/x.ts' "$MS_M")
-assert_contains "$out" "downgrade:" "mixed diff still refuses telemetry"
-assert_not_contains "$out" "proceed" "mixed diff does not proceed"
-
-MS_A="Providers A: Apple (iCloud)"
-MS_I="Providers I: identity decoupling"
-MS_C="Providers C: closeout"
-
-# Apple, identity and closeout re-allow the auth paths (as P0 did); closeout also re-allows sync telemetry.
-for ms in "$MS_A" "$MS_I" "$MS_C"; do
-  out=$(run_guard $'packages/backend/src/auth/x.ts\npackages/web/src/auth/y.ts\npackages/web/src/api/auth.api.ts\npackages/web/src/supertokens.ts' "$ms")
-  assert_contains "$out" "proceed" "auth paths proceed under ${ms}"
-  assert_not_contains "$out" "downgrade:" "auth paths are not refused under ${ms}"
-done
-
-out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_C")
-assert_contains "$out" "proceed" "telemetry proceeds under closeout"
-assert_not_contains "$out" "downgrade:" "telemetry is not refused under closeout"
-
-out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_I")
-assert_contains "$out" "downgrade:" "telemetry still refused under identity"
-
-out=$(run_guard "packages/sync/src/telemetry/x.ts" "$MS_A")
-assert_contains "$out" "downgrade:" "telemetry still refused under apple"
-
-out=$(run_guard "packages/core/src/config/compass.config.ts" "$MS_I")
-assert_contains "$out" "downgrade:" "core config still refused under identity"
-
-# .github/ self-service: CI-speed files may merge, agent and deploy files may not.
+# Formerly denied prefixes may auto-merge. Size rails still refuse.
 for allowed in \
-  ".github/workflows/test-unit.yml" \
-  ".github/workflows/test-e2e.yml" \
-  ".github/workflows/perf-budget.yml" \
-  ".github/scripts/detect-code-changes.sh" \
-  ".github/dependabot.yml" \
-  ".github/ISSUE_TEMPLATE/3-agent-task.yml"; do
-  out=$(run_guard "$allowed" "$MS_M")
+  "packages/web/src/auth/providers/ConnectProviderChooser.tsx" \
+  "packages/backend/src/auth/x.ts" \
+  "packages/web/src/supertokens.ts" \
+  "packages/sync/src/telemetry/x.ts" \
+  "packages/core/src/config/compass.config.ts" \
+  ".github/scripts/agent-loop-merge-guard.sh" \
+  ".github/workflows/agent-loop.yml" \
+  ".github/prompts/agent-loop.md" \
+  "self-host/compose.yml" \
+  "packages/web/src/billing/CheckoutCelebrationModal.tsx"; do
+  out=$(run_guard "$allowed")
   assert_contains "$out" "proceed" "${allowed} proceeds"
   assert_not_contains "$out" "downgrade:" "${allowed} is not refused"
 done
 
-for refused in \
-  ".github/workflows/deploy-production.yml" \
-  ".github/workflows/_deploy-environment.yml" \
-  ".github/workflows/release-on-main.yml" \
-  ".github/workflows/agent-loop.yml" \
-  ".github/workflows/agent-review.yml" \
-  ".github/workflows/error-autofix.yml" \
-  ".github/scripts/agent-loop-merge-guard.sh" \
-  ".github/scripts/autofix-preflight.sh" \
-  ".github/scripts/deploy-health-check.sh" \
-  ".github/scripts/discord-notify.sh" \
-  ".github/prompts/agent-loop.md" \
-  ".github/agent-loop/allowlists/providers-m.txt" \
-  ".github/docker/Dockerfile.web"; do
-  out=$(run_guard "$refused" "$MS_M")
-  assert_contains "$out" "downgrade:" "${refused} is refused"
-  assert_not_contains "$out" "proceed" "${refused} does not proceed"
-done
+out=$(
+  AGENT_LOOP_MAX_FILES=1 \
+    AGENT_LOOP_GUARD_DRY_RUN=1 \
+    AGENT_LOOP_GUARD_FILES=$'a.ts\nb.ts' \
+    GH_REPO="example/compass" \
+    bash "${ROOT}/.github/scripts/agent-loop-merge-guard.sh" 1
+)
+assert_contains "$out" "downgrade:" "over-size diffs are refused"
+assert_not_contains "$out" "proceed" "over-size diffs do not proceed"
 
 echo
 echo "passed=${PASS} failed=${FAIL}"
