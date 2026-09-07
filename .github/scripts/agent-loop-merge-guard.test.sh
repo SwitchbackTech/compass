@@ -154,32 +154,33 @@ fi
 
 # Live stub: --auto fails with a conflict, update-branch leaves it dirty, close.
 STUB_DIR=$(mktemp -d)
+STUB_LOG="${STUB_DIR}/commands.log"
 trap 'rm -rf "$STUB_DIR"' EXIT
-cat >"${STUB_DIR}/gh" <<'STUB'
+cat >"${STUB_DIR}/gh" <<STUB
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "$*" >> "${STUB_DIR}/commands.log"
-cmd=${1:-}
+printf '%s\\n' "\$*" >> "${STUB_LOG}"
+cmd=\${1:-}
 shift || true
-if [ "$cmd" = "pr" ]; then
-  sub=${1:-}
+if [ "\$cmd" = "pr" ]; then
+  sub=\${1:-}
   shift || true
-  case "$sub" in
+  case "\$sub" in
     view)
       json=""
-      while [ "$#" -gt 0 ]; do
-        case "$1" in
-          --json) json=$2; shift 2 ;;
+      while [ "\$#" -gt 0 ]; do
+        case "\$1" in
+          --json) json=\$2; shift 2 ;;
           *) shift ;;
         esac
       done
-      case "$json" in
-        labels) printf 'agent-automerge\n' ;;
-        additions,deletions) printf '12\n' ;;
-        autoMergeRequest) printf '\n' ;;
-        mergeable) printf 'MERGEABLE\n' ;;
-        body) printf 'Fixes #99\n' ;;
-        *) printf '\n' ;;
+      case "\$json" in
+        labels) printf 'agent-automerge\\n' ;;
+        additions,deletions) printf '12\\n' ;;
+        autoMergeRequest) printf '\\n' ;;
+        mergeable) printf 'MERGEABLE\\n' ;;
+        body) printf 'Fixes #99\\n' ;;
+        *) printf '\\n' ;;
       esac
       ;;
     update-branch)
@@ -187,27 +188,30 @@ if [ "$cmd" = "pr" ]; then
       exit 1
       ;;
     merge)
-      if printf '%s\n' "$*" | grep -q -- '--auto'; then
+      if printf '%s\\n' "\$*" | grep -q -- '--disable-auto'; then
+        exit 0
+      fi
+      if printf '%s\\n' "\$*" | grep -q -- '--auto'; then
         echo "GraphQL: Pull request is not mergeable" >&2
         exit 1
       fi
       ;;
     comment|edit|close) ;;
     *)
-      echo "unexpected gh pr $sub $*" >&2
+      echo "unexpected gh pr \$sub \$*" >&2
       exit 1
       ;;
   esac
   exit 0
 fi
-if [ "$cmd" = "run" ]; then
-  printf 'success\n'
+if [ "\$cmd" = "run" ]; then
+  printf 'success\\n'
   exit 0
 fi
-if [ "$cmd" = "issue" ]; then
+if [ "\$cmd" = "issue" ]; then
   exit 0
 fi
-echo "unexpected gh command: $cmd $*" >&2
+echo "unexpected gh command: \$cmd \$*" >&2
 exit 1
 STUB
 chmod +x "${STUB_DIR}/gh"
@@ -222,18 +226,18 @@ out=$(
 )
 assert_contains "$out" "closed PR #7 and requeued" "auto-merge conflict closes and requeues"
 assert_not_contains "$out" "needs-human" "conflict requeue output does not mention needs-human"
-if grep -q 'needs-human' "${STUB_DIR}/commands.log"; then
-  echo "FAIL conflict requeue must not add needs-human: $(cat "${STUB_DIR}/commands.log")" >&2
+if grep -q 'needs-human' "$STUB_LOG"; then
+  echo "FAIL conflict requeue must not add needs-human: $(cat "$STUB_LOG")" >&2
   FAIL=$((FAIL + 1))
 else
   echo "ok conflict requeue stub did not add needs-human"
   PASS=$((PASS + 1))
 fi
-if grep -q 'pr close 7' "${STUB_DIR}/commands.log"; then
+if grep -q 'pr close 7' "$STUB_LOG"; then
   echo "ok conflict requeue stub closed the PR"
   PASS=$((PASS + 1))
 else
-  echo "FAIL conflict requeue stub did not close the PR: $(cat "${STUB_DIR}/commands.log")" >&2
+  echo "FAIL conflict requeue stub did not close the PR: $(cat "$STUB_LOG")" >&2
   FAIL=$((FAIL + 1))
 fi
 
