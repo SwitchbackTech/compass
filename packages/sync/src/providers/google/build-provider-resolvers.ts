@@ -1,4 +1,3 @@
-import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
 import { GoogleCalendarAdapter } from "@sync/providers/google/google-calendar.adapter";
@@ -11,11 +10,7 @@ import {
   ProviderNotConfiguredError,
 } from "@sync/providers/provider-adapters";
 
-export type ProviderAdapterOverrides = Partial<
-  Record<ProviderKind, Partial<ProviderAdapters>>
->;
-
-function googleConfigured(config: SyncConfig): boolean {
+export function googleProviderConfigured(config: SyncConfig): boolean {
   return Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET);
 }
 
@@ -24,7 +19,7 @@ export function googleAdapters(
   override?: Partial<ProviderAdapters>,
 ): ProviderAdapters {
   // Tests inject partial overrides (auth/writer only) without real OAuth config.
-  if (!googleConfigured(config) && override?.auth === undefined) {
+  if (!googleProviderConfigured(config) && override?.auth === undefined) {
     throw new ProviderNotConfiguredError("google");
   }
   return {
@@ -40,8 +35,4 @@ export function googleAdapters(
     notifications: override?.notifications ?? new GoogleNotificationAdapter(),
     contacts: override?.contacts ?? new GooglePeopleAdapter(),
   };
-}
-
-export function googleProviderConfigured(config: SyncConfig): boolean {
-  return googleConfigured(config);
 }

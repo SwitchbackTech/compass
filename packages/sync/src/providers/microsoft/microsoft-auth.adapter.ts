@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
+import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { ProviderAccountFactsSchema } from "@core/types/sync/connection.contracts";
 import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
-import { MICROSOFT_SCOPES } from "@sync/providers/microsoft/microsoft-scopes";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,

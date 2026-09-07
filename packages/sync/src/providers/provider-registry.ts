@@ -1,3 +1,5 @@
+import { googleScopesForFeatures } from "@core/providers/google.scopes";
+import { microsoftScopesForFeatures } from "@core/providers/microsoft.scopes";
 import {
   type ProviderCapability,
   type ProviderKind,
@@ -16,9 +18,7 @@ import {
 import {
   googleAdapters,
   googleProviderConfigured,
-  type ProviderAdapterOverrides,
 } from "@sync/providers/google/build-provider-resolvers";
-import { googleScopesForFeatures } from "@sync/providers/google/google.scopes";
 import {
   GOOGLE_PROVIDER_CAPABILITIES,
   googleCapabilitiesFromScopes,
@@ -30,9 +30,9 @@ import {
 import {
   MICROSOFT_PROVIDER_CAPABILITIES,
   microsoftCapabilitiesFromScopes,
-  microsoftScopesForFeatures,
-} from "@sync/providers/microsoft/microsoft-scopes";
+} from "@sync/providers/microsoft/microsoft-capabilities";
 import {
+  type ProviderAdapterOverrides,
   type ProviderAdapters,
   ProviderNotConfiguredError,
   type ResolveProviderAdapters,
@@ -99,46 +99,75 @@ export const APPLE_NOTIFICATIONS_PATH = "/sync/notifications/apple";
 export const OAUTH_CALLBACK_PARAM_PATH = "/sync/:provider";
 export const NOTIFICATIONS_PARAM_PATH = "/sync/notifications/:provider";
 
+/**
+ * Everything `buildProviderRegistry` needs to decide whether a provider is
+ * available and, if so, what to register for it. One row per provider: adding
+ * the next one is a row here, not another copy of the register-if-configured
+ * block.
+ */
+interface ProviderBuilder extends Omit<ProviderRegistration, "adapters"> {
+  kind: ProviderKind;
+  isConfigured(config: SyncConfig): boolean;
+  buildAdapters(
+    config: SyncConfig,
+    override?: Partial<ProviderAdapters>,
+  ): ProviderAdapters;
+}
+
+const PROVIDER_BUILDERS: readonly ProviderBuilder[] = [
+  {
+    kind: "google",
+    isConfigured: googleProviderConfigured,
+    buildAdapters: googleAdapters,
+    scopes: { forFeatures: googleScopesForFeatures },
+    capabilities: GOOGLE_PROVIDER_CAPABILITIES,
+    callbackPath: GOOGLE_CALLBACK_PATH,
+    notificationsCallbackPath: GOOGLE_NOTIFICATIONS_PATH,
+    capabilitiesFromScopes: googleCapabilitiesFromScopes,
+  },
+  {
+    kind: "microsoft",
+    isConfigured: microsoftProviderConfigured,
+    buildAdapters: microsoftAdapters,
+    scopes: { forFeatures: microsoftScopesForFeatures },
+    capabilities: MICROSOFT_PROVIDER_CAPABILITIES,
+    callbackPath: MICROSOFT_CALLBACK_PATH,
+    notificationsCallbackPath: MICROSOFT_NOTIFICATIONS_PATH,
+    capabilitiesFromScopes: microsoftCapabilitiesFromScopes,
+  },
+  {
+    kind: "apple",
+    isConfigured: appleProviderConfigured,
+    buildAdapters: appleAdapters,
+    scopes: { forFeatures: appleScopesForFeatures },
+    capabilities: APPLE_PROVIDER_CAPABILITIES,
+    callbackPath: APPLE_CALLBACK_PATH,
+    notificationsCallbackPath: APPLE_NOTIFICATIONS_PATH,
+    capabilitiesFromScopes: appleCapabilitiesFromScopes,
+    bindAdaptersForConnection: bindAppleAdaptersForConnection,
+  },
+];
+
 export function buildProviderRegistry(
   config: SyncConfig,
   overrides: ProviderAdapterOverrides = {},
 ): ProviderRegistry {
   const registrations = new Map<ProviderKind, ProviderRegistration>();
-  const googleOverride = overrides.google;
-  if (googleProviderConfigured(config) || googleOverride?.auth !== undefined) {
-    registrations.set("google", {
-      adapters: googleAdapters(config, googleOverride),
-      scopes: { forFeatures: googleScopesForFeatures },
-      capabilities: GOOGLE_PROVIDER_CAPABILITIES,
-      callbackPath: GOOGLE_CALLBACK_PATH,
-      notificationsCallbackPath: GOOGLE_NOTIFICATIONS_PATH,
-      capabilitiesFromScopes: googleCapabilitiesFromScopes,
-    });
-  }
-  const microsoftOverride = overrides.microsoft;
-  if (
-    microsoftProviderConfigured(config) ||
-    microsoftOverride?.auth !== undefined
-  ) {
-    registrations.set("microsoft", {
-      adapters: microsoftAdapters(config, microsoftOverride),
-      scopes: { forFeatures: microsoftScopesForFeatures },
-      capabilities: MICROSOFT_PROVIDER_CAPABILITIES,
-      callbackPath: MICROSOFT_CALLBACK_PATH,
-      notificationsCallbackPath: MICROSOFT_NOTIFICATIONS_PATH,
-      capabilitiesFromScopes: microsoftCapabilitiesFromScopes,
-    });
-  }
-  const appleOverride = overrides.apple;
-  if (appleProviderConfigured(config) || appleOverride?.auth !== undefined) {
-    registrations.set("apple", {
-      adapters: appleAdapters(config, appleOverride),
-      scopes: { forFeatures: appleScopesForFeatures },
-      capabilities: APPLE_PROVIDER_CAPABILITIES,
-      callbackPath: APPLE_CALLBACK_PATH,
-      notificationsCallbackPath: APPLE_NOTIFICATIONS_PATH,
-      capabilitiesFromScopes: appleCapabilitiesFromScopes,
-      bindAdaptersForConnection: bindAppleAdaptersForConnection,
+  for (const {
+    kind,
+    isConfigured,
+    buildAdapters,
+    ...registration
+  } of PROVIDER_BUILDERS) {
+    const override = overrides[kind];
+    // An injected auth adapter stands in for real provider config so tests can
+    // register a provider the deployment has no credentials for.
+    if (!isConfigured(config) && override?.auth === undefined) {
+      continue;
+    }
+    registrations.set(kind, {
+      ...registration,
+      adapters: buildAdapters(config, override),
     });
   }
   return new ProviderRegistry(registrations);

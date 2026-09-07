@@ -39,7 +39,7 @@ import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
-import { type ProviderAdapterOverrides } from "@sync/providers/google/build-provider-resolvers";
+import { type ProviderAdapterOverrides } from "@sync/providers/provider-adapters";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ContactsPort } from "@sync/providers/provider-contacts.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";

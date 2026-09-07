@@ -2,7 +2,7 @@ import { type Credentials, type TokenPayload } from "google-auth-library";
 import {
   CONTACTS_FEATURE_SCOPES,
   GOOGLE_SCOPES,
-} from "@sync/providers/google/google.scopes";
+} from "@core/providers/google.scopes";
 import {
   GoogleAuthAdapter,
   type GoogleOAuthClient,
