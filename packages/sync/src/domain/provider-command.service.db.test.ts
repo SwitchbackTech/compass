@@ -10,9 +10,18 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import {
-  seedOauthCredential,
+  bindCommandRepos,
+  COMMAND_NOW,
+  FakeProviderEventWriter,
+  failingTokenSource,
+  newCommandIds,
+  RevokedAuthAdapter,
+  seedCommandCalendar,
+  seedLinkedEvent,
+  storeCommandCredential,
   TEST_CREDENTIAL_ENCRYPTION_KEY,
-} from "@sync/__tests__/helpers/credential-encryption";
+  tokenSource,
+} from "@sync/__tests__/helpers/command-scenario";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { truncateRulesBefore } from "@sync/domain/occurrence-projection";
@@ -28,133 +37,53 @@ import {
   executeProviderUpdate,
   type ProviderConnectionLookup,
 } from "@sync/domain/provider-command.service";
-import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
-import {
-  type ProviderAuthAdapter,
-  ProviderAuthError,
-  type RefreshedCredential,
-} from "@sync/providers/provider-auth.port";
+import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
-  type ProviderCreateInput,
-  type ProviderDeleteInput,
   type ProviderEventWriter,
-  type ProviderFetchInput,
-  type ProviderInstanceFetchInput,
-  type ProviderPatchInput,
   ProviderWriteError,
-  type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
 import { findSafetyCanaryHit } from "@sync/safety/safety-canary";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
+import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const storage = setupSyncStorage(import.meta.url);
+const repos = bindCommandRepos(storage);
 const objectId = () => faker.database.mongodbObjectId();
+const now = COMMAND_NOW;
 
-// A writer that records its calls and returns a fixed identity, or throws a
-// preset error. No network.
-class FakeWriter implements ProviderEventWriter {
-  calls: ProviderCreateInput[] = [];
-  result: ProviderWriteResult = {
-    providerEventId: "g-evt-1",
-    providerVersion: "etag-1",
-  };
-  error?: unknown;
-  async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
-    this.calls.push(input);
-    if (this.error) throw this.error;
-    return this.result;
-  }
-  patchEvent(): Promise<ProviderWriteResult> {
-    throw new Error("unused");
-  }
-  deleteEvent(): Promise<void> {
-    throw new Error("unused");
-  }
-  fetchEvent(): Promise<null> {
-    throw new Error("unused");
-  }
-}
+let mongo: SyncMongoService;
+let commands: CommandRepository;
+let events: EventRepository;
+let occurrences: EventOccurrenceRepository;
+let resources: SyncResourceRepository;
+let calendars: ProviderCalendarRepository;
+let markers: DeletionMarkerRepository;
+let credentials: CredentialRepository;
 
-const tokenSource = (token = "access-token"): AccessTokenSource => ({
-  getValidAccessToken: async () => token,
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
+beforeEach(() => {
+  mongo = repos.mongo;
+  commands = repos.commands;
+  events = repos.events;
+  occurrences = repos.occurrences;
+  resources = repos.resources;
+  calendars = repos.calendars;
+  markers = repos.markers;
+  credentials = repos.credentials;
 });
-const failingTokenSource = (error: unknown): AccessTokenSource => ({
-  getValidAccessToken: async () => {
-    throw error;
-  },
-  discardRevoked: async () => {},
-  invalidateAccessToken: async () => {},
-});
-
-// Minimal auth adapter for CredentialCustody in the revoked-grant cases.
-class RevokedAuthAdapter implements ProviderAuthAdapter {
-  constructor(
-    private readonly behavior: {
-      refreshError?: unknown;
-      refreshed?: RefreshedCredential;
-    } = {},
-  ) {}
-  buildAuthorizationUrl(): string {
-    throw new Error("not used");
-  }
-  exchangeAuthorizationCode(): Promise<never> {
-    throw new Error("not used");
-  }
-  async refreshAccessToken(): Promise<RefreshedCredential> {
-    if (this.behavior.refreshError) throw this.behavior.refreshError;
-    return (
-      this.behavior.refreshed ?? {
-        accessToken: "refreshed",
-        expiresAt: new Date("2099-01-01T00:00:00Z"),
-        grantedScopes: [],
-      }
-    );
-  }
-  async revoke(): Promise<void> {}
-}
-
-const storeCredential = async (
-  credentials: CredentialRepository,
-  connectionId: ConnectionId,
-  accessToken?: { token: string; expiresAt: Date },
-) => {
-  await seedOauthCredential(credentials, {
-    connectionId,
-    provider: "google",
-    refreshToken: "stored-refresh-token",
-    scopes: ["https://www.googleapis.com/auth/calendar.events"],
-  });
-  if (accessToken) {
-    await credentials.cacheAccessToken(
-      connectionId,
-      accessToken.token,
-      accessToken.expiresAt,
-    );
-  }
-};
 
 describe("executeProviderCreate", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-
   const createInput = (
     calendarId: string,
     invitation = "none",
@@ -183,52 +112,29 @@ describe("executeProviderCreate", () => {
   // Seed a pending create command plus its target provider calendar, and return
   // both with the fake dependencies wired up.
   const seed = async (invitation = "none") => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar: ProviderCalendarRecord =
-      await calendars.upsertByProviderCalendar({
-        tenantId,
-        principalId,
-        connectionId,
-        providerCalendarId: "primary@group.calendar.google.com",
-        displayName: "Google",
-        color: null,
-        active: true,
-        primary: true,
-        accessRole: "owner",
-        capabilities: {
-          canReadEvents: true,
-          canWriteEvents: true,
-          canReadBusy: true,
-          canInviteAttendees: true,
-        },
-      });
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids, {
+      providerCalendarId: "primary@group.calendar.google.com",
+    });
     const { record: command } = await commands.submit({
-      tenantId,
-      principalId,
-      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
-      eventId: objectId() as EventId,
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      idempotencyKey: ids.idempotencyKey,
+      eventId: ids.eventId,
       input: createInput(calendar._id, invitation),
       expectedVersion: null,
     });
-    return { tenantId, principalId, calendar, command };
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      command,
+    };
   };
-
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
 
   it("writes to the provider, commits its identity, and confirms", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderCreate(
       {
@@ -277,7 +183,7 @@ describe("executeProviderCreate", () => {
 
   it("stores iCalUID from the write result on create", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
     writer.result = {
       providerEventId: "g-evt-1",
       providerVersion: "etag-1",
@@ -308,7 +214,7 @@ describe("executeProviderCreate", () => {
 
   it("stores the Meet URL Google minted on create, not the command's null", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
     writer.result = {
       providerEventId: "g-evt-1",
       providerVersion: "etag-1",
@@ -348,7 +254,7 @@ describe("executeProviderCreate", () => {
 
   it("passes the caller's invitation intent through to the writer", async () => {
     const { calendar, command } = await seed("all");
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
 
     await executeProviderCreate(
       {
@@ -369,7 +275,7 @@ describe("executeProviderCreate", () => {
 
   it("converges on one event when executed twice (idempotent write)", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
     const deps = {
       commands,
       events,
@@ -412,7 +318,7 @@ describe("executeProviderCreate", () => {
         events,
         occurrences,
         resources,
-        writer: new FakeWriter(),
+        writer: new FakeProviderEventWriter(),
         custody: tokenSource(),
       },
       command,
@@ -431,7 +337,7 @@ describe("executeProviderCreate", () => {
 
   it("leaves the command pending on a transient write failure", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
     writer.error = new ProviderWriteError("transient", "network blip");
 
     const result = await executeProviderCreate(
@@ -456,7 +362,7 @@ describe("executeProviderCreate", () => {
 
   it("fails the command on a terminal write error", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
     writer.error = new ProviderWriteError("readOnlyCalendar", "read only");
 
     const result = await executeProviderCreate(
@@ -484,9 +390,8 @@ describe("executeProviderCreate", () => {
 
   it("fails the command when the credential is revoked, without writing", async () => {
     const { calendar, command } = await seed();
-    const writer = new FakeWriter();
-    const credentials = new CredentialRepository(mongo.db);
-    await storeCredential(credentials, calendar.connectionId);
+    const writer = new FakeProviderEventWriter();
+    await storeCommandCredential(credentials, calendar.connectionId);
     const custody = new CredentialCustody(
       credentials,
       () =>
@@ -526,7 +431,7 @@ describe("executeProviderCreate", () => {
 
   it("leaves the command pending on a transient refresh failure", async () => {
     const { calendar, command } = await seed();
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderCreate(
       {
@@ -548,65 +453,7 @@ describe("executeProviderCreate", () => {
   });
 });
 
-// A writer for the update path: configurable fetchEvent (replay detection) and
-// patchEvent (conditional write) results/errors, recording their inputs.
-class FakeUpdateWriter implements ProviderEventWriter {
-  fetched: ProviderEvent | null = null;
-  fetchError?: unknown;
-  patchResult: ProviderWriteResult = {
-    providerEventId: "g-evt-1",
-    providerVersion: "etag-2",
-  };
-  patchError?: unknown;
-  // Fail only instance patches (edit-all override align), not the master patch.
-  instancePatchError?: unknown;
-  deleteError?: unknown;
-  fetchCalls: ProviderFetchInput[] = [];
-  patchCalls: ProviderPatchInput[] = [];
-  deleteCalls: ProviderDeleteInput[] = [];
-  createEvent(): Promise<ProviderWriteResult> {
-    throw new Error("unused");
-  }
-  async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
-    this.patchCalls.push(input);
-    if (input.recurrence.kind === "instance" && this.instancePatchError) {
-      throw this.instancePatchError;
-    }
-    if (this.patchError) throw this.patchError;
-    return this.patchResult;
-  }
-  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
-    this.deleteCalls.push(input);
-    if (this.deleteError) throw this.deleteError;
-  }
-  async fetchEvent(input: ProviderFetchInput): Promise<ProviderEvent | null> {
-    this.fetchCalls.push(input);
-    if (this.fetchError) throw this.fetchError;
-    // Master replay uses `fetched`; unknown ids (e.g. discarded overrides)
-    // resolve as absent so align can exercise delete's 404-OK path.
-    if (
-      this.fetched &&
-      input.providerEventId === this.fetched.providerEventId
-    ) {
-      return this.fetched;
-    }
-    return null;
-  }
-  fetchInstanceAt(): Promise<ProviderEvent | null> {
-    throw new Error("unused");
-  }
-}
-
 describe("executeProviderUpdate", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
   const schedule = {
     kind: "timed" as const,
     start: "2026-07-14T09:00:00-06:00",
@@ -635,56 +482,21 @@ describe("executeProviderUpdate", () => {
   // Seed a provider-linked event plus an update command that renames it to
   // "New". The provider currently holds "Old" at etag-1.
   const seed = async () => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar = await calendars.upsertByProviderCalendar({
-      tenantId,
-      principalId,
-      connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids);
+    const event = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-evt-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
       content: content("Old"),
       schedule,
       recurrence: { kind: "single" },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const event = await events.findById(tenantId, principalId, eventId);
-    if (!event) throw new Error("seed failed to read back the event");
+      now: now(),
+    });
     const { record: command } = await commands.submit({
-      tenantId,
-      principalId,
-      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
-      eventId,
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      idempotencyKey: ids.idempotencyKey,
+      eventId: event._id,
       input: {
         kind: "update",
         invitation: "all",
@@ -695,21 +507,18 @@ describe("executeProviderUpdate", () => {
       } as unknown as SyncCommandInput,
       expectedVersion: "etag-1" as never,
     });
-    return { tenantId, principalId, calendar, event, command };
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      event,
+      command,
+    };
   };
-
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-  });
 
   it("patches the provider and commits the new version and content", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The provider still holds the old content, so this is a real edit.
     writer.fetched = providerEvent("Old", "etag-1");
 
@@ -747,7 +556,7 @@ describe("executeProviderUpdate", () => {
 
   it("confirms without re-patching when the edit already landed (replay)", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The provider already holds this command's intended content at a new
     // version — a prior attempt landed before the crash.
     writer.fetched = providerEvent("New", "etag-2");
@@ -776,7 +585,7 @@ describe("executeProviderUpdate", () => {
 
   it("recognizes a replay even when read-reflected fields drifted", async () => {
     const { calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The written fields (title/description/location/schedule) match this
     // command's edit, but an attendee RSVP'd after our patch landed — a field
     // the patch never writes. This must still count as a replay, not a false
@@ -826,7 +635,7 @@ describe("executeProviderUpdate", () => {
 
   it("fails with a conflict on a genuine concurrent external edit", async () => {
     const { calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The provider was edited externally (different content, and the
     // conditional patch is rejected).
     writer.fetched = providerEvent("Someone else's edit", "etag-9");
@@ -855,7 +664,7 @@ describe("executeProviderUpdate", () => {
 
   it("fails when the provider event no longer exists", async () => {
     const { calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = null;
 
     const result = await executeProviderUpdate(
@@ -882,7 +691,7 @@ describe("executeProviderUpdate", () => {
 
   it("leaves the command pending on a transient patch failure", async () => {
     const { calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerEvent("Old", "etag-1");
     writer.patchError = new ProviderWriteError("transient", "blip");
 
@@ -906,7 +715,7 @@ describe("executeProviderUpdate", () => {
 
   it("fails without touching the provider when the credential is revoked", async () => {
     const { calendar, event, command } = await seed();
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderUpdate(
       {
@@ -931,8 +740,7 @@ describe("executeProviderUpdate", () => {
 
   it("discards the credential when a writer 401 classifies as authorizationRevoked", async () => {
     const { calendar, event, command } = await seed();
-    const credentials = new CredentialRepository(mongo.db);
-    await storeCredential(credentials, calendar.connectionId, {
+    await storeCommandCredential(credentials, calendar.connectionId, {
       token: "still-cached",
       expiresAt: new Date("2099-01-01T00:00:00Z"),
     });
@@ -943,7 +751,7 @@ describe("executeProviderUpdate", () => {
       undefined,
       TEST_CREDENTIAL_ENCRYPTION_KEY,
     );
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchError = new ProviderWriteError(
       "authorizationRevoked",
       "token rejected",
@@ -967,35 +775,7 @@ describe("executeProviderUpdate", () => {
   });
 });
 
-// A writer for the delete path: a configurable deleteEvent (success or a preset
-// error), recording its inputs.
-class FakeDeleteWriter implements ProviderEventWriter {
-  deleteCalls: ProviderDeleteInput[] = [];
-  deleteError?: unknown;
-  createEvent(): Promise<ProviderWriteResult> {
-    throw new Error("unused");
-  }
-  patchEvent(): Promise<ProviderWriteResult> {
-    throw new Error("unused");
-  }
-  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
-    this.deleteCalls.push(input);
-    if (this.deleteError) throw this.deleteError;
-  }
-  fetchEvent(): Promise<null> {
-    throw new Error("unused");
-  }
-}
-
 describe("executeProviderDelete", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let markers: DeletionMarkerRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
   const schedule = {
     kind: "timed" as const,
     start: "2026-07-14T09:00:00-06:00",
@@ -1005,14 +785,12 @@ describe("executeProviderDelete", () => {
 
   // Seed a provider-linked event plus a delete command for it.
   const seed = async () => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
+    const ids = newCommandIds();
     const calendar: ProviderCalendarRecord = {
       _id: objectId() as never,
-      tenantId,
-      principalId,
-      connectionId,
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      connectionId: ids.connectionId,
       providerCalendarId: "primary@google.com" as never,
       displayName: "Google",
       color: null,
@@ -1023,20 +801,9 @@ describe("executeProviderDelete", () => {
       createdAt: now(),
       updatedAt: now(),
     } as never;
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const event = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-evt-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
       content: {
         title: "Doomed",
         description: "",
@@ -1047,36 +814,28 @@ describe("executeProviderDelete", () => {
       },
       schedule,
       recurrence: { kind: "single" },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const event = await events.findById(tenantId, principalId, eventId);
-    if (!event) throw new Error("seed failed to read back the event");
+      now: now(),
+    });
     const { record: command } = await commands.submit({
-      tenantId,
-      principalId,
-      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
-      eventId,
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      idempotencyKey: ids.idempotencyKey,
+      eventId: event._id,
       input: { kind: "delete", invitation: "all", scope: "all" } as never,
       expectedVersion: null,
     });
-    return { tenantId, principalId, calendar, event, command };
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      event,
+      command,
+    };
   };
-
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    markers = new DeletionMarkerRepository(mongo.db);
-  });
 
   it("deletes at the provider, tombstones, removes the local event, and confirms", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeDeleteWriter();
+    const writer = new FakeProviderEventWriter();
     // Project the event first so the delete has occurrences to clear.
     await reprojectOccurrences(occurrences, event, now);
     const occurrenceCount = () =>
@@ -1117,7 +876,7 @@ describe("executeProviderDelete", () => {
 
   it("confirms idempotently when the local event is already gone (replay)", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeDeleteWriter();
+    const writer = new FakeProviderEventWriter();
     // Simulate a prior attempt having already removed the local event.
     await events.deleteById(tenantId, principalId, event._id);
 
@@ -1255,7 +1014,7 @@ describe("executeProviderDelete", () => {
         commands,
         events,
         occurrences,
-        writer: new FakeDeleteWriter(),
+        writer: new FakeProviderEventWriter(),
         custody: tokenSource(),
         markers,
       },
@@ -1382,7 +1141,7 @@ describe("executeProviderDelete", () => {
         commands,
         events,
         occurrences,
-        writer: new FakeDeleteWriter(),
+        writer: new FakeProviderEventWriter(),
         custody: tokenSource(),
         markers,
       },
@@ -1400,7 +1159,7 @@ describe("executeProviderDelete", () => {
 
   it("keeps the event deletionPending and stays pending on a transient failure", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeDeleteWriter();
+    const writer = new FakeProviderEventWriter();
     writer.deleteError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderDelete(
@@ -1425,7 +1184,7 @@ describe("executeProviderDelete", () => {
 
   it("reverts the event to active and fails on a terminal error", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeDeleteWriter();
+    const writer = new FakeProviderEventWriter();
     writer.deleteError = new ProviderWriteError(
       "readOnlyCalendar",
       "read only",
@@ -1457,7 +1216,7 @@ describe("executeProviderDelete", () => {
 
   it("reverts and fails without deleting when the credential is revoked", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
-    const writer = new FakeDeleteWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderDelete(
       {
@@ -1484,14 +1243,6 @@ describe("executeProviderDelete", () => {
 });
 
 describe("executeProviderSeriesUpdate", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let calendars: ProviderCalendarRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
   // A weekly series of four occurrences starting 2026-07-14 09:00 Denver.
   const schedule = {
     kind: "timed" as const,
@@ -1527,54 +1278,23 @@ describe("executeProviderSeriesUpdate", () => {
 
   // Seed a provider-linked series master ("Old", weekly x4 at etag-1).
   const seedMaster = async () => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar = await calendars.upsertByProviderCalendar({
-      tenantId,
-      principalId,
-      connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids);
+    const master = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-evt-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
       content: content("Old"),
       schedule,
       recurrence: { kind: "seriesMaster", rules: [...weekly4] },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const master = await events.findById(tenantId, principalId, eventId);
-    if (!master) throw new Error("seed failed to read back the master");
-    // Project the master so the read model starts with its four occurrences.
+      now: now(),
+    });
     await reprojectOccurrences(occurrences, master, now);
-    return { tenantId, principalId, calendar, master };
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      master,
+    };
   };
 
   // An edit-all update command for the seeded master.
@@ -1662,14 +1382,6 @@ describe("executeProviderSeriesUpdate", () => {
     return stored;
   };
 
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
   const deps = (writer: ProviderEventWriter) => ({
     commands,
     events,
@@ -1684,7 +1396,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.patchResult = {
       providerEventId: "g-evt-1",
@@ -1728,7 +1440,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "Old",
       recurrence: { kind: "series", rules: weekly2 },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.patchResult = {
       providerEventId: "g-evt-1",
@@ -1764,7 +1476,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "series", rules: weekly2 },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // Provider already holds the edited content AND the new rules at a fresh
     // version — a prior attempt landed before the crash.
     writer.fetched = providerSeries("New", "etag-2", weekly2);
@@ -1790,7 +1502,7 @@ describe("executeProviderSeriesUpdate", () => {
         rules: ["RRULE:FREQ=WEEKLY;COUNT=4;INTERVAL=1"],
       },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The provider echoes the same rule reordered and lowercased at a new
     // version — our edit landed on a prior attempt. A byte-for-byte compare
     // would miss it and re-patch with a now-stale version, failing a write that
@@ -1817,7 +1529,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Someone else", "etag-9", weekly4);
     writer.patchError = new ProviderWriteError("versionConflict", "stale");
 
@@ -1854,7 +1566,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
 
     const result = await executeProviderSeriesUpdate(
@@ -1923,7 +1635,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.instancePatchError = new ProviderWriteError(
       "transient",
@@ -1969,7 +1681,7 @@ describe("executeProviderSeriesUpdate", () => {
       recurrence: { kind: "preserve" },
       schedule: movedSchedule,
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
 
     const result = await executeProviderSeriesUpdate(
@@ -2004,7 +1716,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.instancePatchError = new ProviderWriteError(
       "permanentProviderError",
@@ -2046,7 +1758,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "Just once",
       recurrence: { kind: "single" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
 
     const result = await executeProviderSeriesUpdate(
@@ -2081,7 +1793,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "series", rules: weekly2 },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.patchResult = {
       providerEventId: "g-evt-1",
@@ -2122,7 +1834,7 @@ describe("executeProviderSeriesUpdate", () => {
       title: "New",
       recurrence: { kind: "preserve" },
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
     writer.patchError = new ProviderWriteError("transient", "blip");
 
@@ -2138,72 +1850,7 @@ describe("executeProviderSeriesUpdate", () => {
   });
 });
 
-// A writer covering every method the recurring-scope executors below use:
-// fetchInstanceAt (resolve one occurrence), fetchEvent/patchEvent (the master,
-// for a thisAndFollowing truncation), deleteEvent (cancel one instance), and
-// createEvent (the remainder series of a split). Each result/error is
-// independently scriptable so a test can isolate exactly which call it means
-// to exercise.
-class FakeRecurringWriter implements ProviderEventWriter {
-  fetchEventResult: ProviderEvent | null = null;
-  fetchEventError?: unknown;
-  fetchInstanceResult: ProviderEvent | null = null;
-  fetchInstanceError?: unknown;
-  patchResult: ProviderWriteResult = {
-    providerEventId: "g-evt-1",
-    providerVersion: "etag-2",
-  };
-  patchError?: unknown;
-  deleteError?: unknown;
-  createResult: ProviderWriteResult = {
-    providerEventId: "g-remainder-1",
-    providerVersion: "etag-1",
-  };
-  createError?: unknown;
-  fetchEventCalls: ProviderFetchInput[] = [];
-  fetchInstanceCalls: ProviderInstanceFetchInput[] = [];
-  patchCalls: ProviderPatchInput[] = [];
-  deleteCalls: ProviderDeleteInput[] = [];
-  createCalls: ProviderCreateInput[] = [];
-
-  async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
-    this.createCalls.push(input);
-    if (this.createError) throw this.createError;
-    return this.createResult;
-  }
-  async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
-    this.patchCalls.push(input);
-    if (this.patchError) throw this.patchError;
-    return this.patchResult;
-  }
-  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
-    this.deleteCalls.push(input);
-    if (this.deleteError) throw this.deleteError;
-  }
-  async fetchEvent(input: ProviderFetchInput): Promise<ProviderEvent | null> {
-    this.fetchEventCalls.push(input);
-    if (this.fetchEventError) throw this.fetchEventError;
-    return this.fetchEventResult;
-  }
-  async fetchInstanceAt(
-    input: ProviderInstanceFetchInput,
-  ): Promise<ProviderEvent | null> {
-    this.fetchInstanceCalls.push(input);
-    if (this.fetchInstanceError) throw this.fetchInstanceError;
-    return this.fetchInstanceResult;
-  }
-}
-
 describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let calendars: ProviderCalendarRepository;
-  let markers: DeletionMarkerRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
-
   // A weekly series of three occurrences starting 2026-07-14 09:00 Denver:
   // 07-14, 07-21, 07-28 (all 15:00Z). Matches the cloud-path test fixtures
   // exactly, so results are directly comparable.
@@ -2268,53 +1915,24 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
   });
 
   const seedMaster = async () => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar = await calendars.upsertByProviderCalendar({
-      tenantId,
-      principalId,
-      connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids);
+    const master = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-series-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
+      providerEventId: "g-series-1",
       content: content("Old"),
       schedule,
       recurrence: { kind: "seriesMaster", rules: [...weekly3] },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const master = await events.findById(tenantId, principalId, eventId);
-    if (!master) throw new Error("seed failed to read back the master");
+      now: now(),
+    });
     await reprojectOccurrences(occurrences, master, now);
-    return { tenantId, principalId, calendar, master };
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      master,
+    };
   };
 
   const occurrenceStartsFor = async (eventId: EventId): Promise<string[]> => {
@@ -2414,32 +2032,23 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       })
     ).record;
 
-  const deps = (writer: FakeRecurringWriter) => ({
+  const deps = (writer: FakeProviderEventWriter) => ({
     commands,
     events,
     occurrences,
     writer,
     custody: tokenSource(),
   });
-  const deleteDeps = (writer: FakeRecurringWriter) => ({
+  const deleteDeps = (writer: FakeProviderEventWriter) => ({
     ...deps(writer),
     markers,
-  });
-
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    calendars = new ProviderCalendarRepository(mongo.db);
-    markers = new DeletionMarkerRepository(mongo.db);
   });
 
   describe("executeProviderOccurrenceUpdate", () => {
     it("resolves the instance, patches IT (not the master), and stores its own provider identity", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "update", "Moved");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
         "Old",
@@ -2486,7 +2095,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("confirms without re-patching when the edit already landed (replay)", async () => {
       const { calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "update", "Moved");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       // The instance already carries this command's intended content.
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
@@ -2509,7 +2118,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("fails without writing when no instance exists at that instant", async () => {
       const { calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "update");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = null;
 
       const result = await executeProviderOccurrenceUpdate(
@@ -2530,7 +2139,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("leaves the command pending on a transient patch failure", async () => {
       const { calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "update");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
         "Old",
@@ -2554,7 +2163,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("deletes the resolved instance at the provider and tombstones it locally", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
         "Old",
@@ -2592,7 +2201,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("converges without a second provider call when the instance is already gone", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = null;
 
       const result = await executeProviderOccurrenceDelete(
@@ -2622,7 +2231,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("leaves the command pending on a transient delete failure", async () => {
       const { calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
         "Old",
@@ -2648,7 +2257,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       // resurrected it — the command fails honestly instead.
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerInstance(
         "g-inst-1",
         "Old",
@@ -2685,7 +2294,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("still deletes when the resolved instance is identity-only (unreadable content)", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = {
         ...providerInstance("g-inst-unreadable", "", "etag-1"),
         content: content(""),
@@ -2712,7 +2321,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("does not delete the series master when lookup returns the master's id", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchInstanceResult = providerSeries("Old", "etag-1", weekly3);
 
       const result = await executeProviderOccurrenceDelete(
@@ -2739,7 +2348,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("truncates the provider master and drops following occurrences", async () => {
       const { tenantId, principalId, calendar, master } = await seedMaster();
       const command = await followingCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
 
       const result = await executeProviderSeriesFollowingDelete(
@@ -2764,7 +2373,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("confirms without re-patching when the truncation already landed", async () => {
       const { calendar, master } = await seedMaster();
       const command = await followingCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       // Provider already reflects the truncated rules — the exact UNTIL-based
       // form truncateRulesBefore itself produces, not just an equivalent
       // COUNT-based rule (matchesIntendedEdit compares rule strings, not
@@ -2794,7 +2403,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
         "delete",
         "2026-07-14T09:00:00-06:00",
       );
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
 
       const result = await executeProviderSeriesFollowingDelete(
         deleteDeps(writer),
@@ -2815,7 +2424,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("leaves the command pending on a transient patch failure", async () => {
       const { calendar, master } = await seedMaster();
       const command = await followingCommand(master, "delete");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
       writer.patchError = new ProviderWriteError("transient", "blip");
 
@@ -2835,7 +2444,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("truncates the original and creates a deterministic remainder at the provider", async () => {
       const { principalId, calendar, master } = await seedMaster();
       const command = await followingCommand(master, "update");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
       writer.createResult = {
         providerEventId: "g-remainder-1",
@@ -2884,7 +2493,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
         SECOND_START,
         "First",
       );
-      const writerA = new FakeRecurringWriter();
+      const writerA = new FakeProviderEventWriter();
       writerA.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
       await executeProviderSeriesFollowingUpdate(
         deps(writerA),
@@ -2900,7 +2509,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
         SECOND_START,
         "Second",
       );
-      const writerB = new FakeRecurringWriter();
+      const writerB = new FakeProviderEventWriter();
       writerB.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
 
       await executeProviderSeriesFollowingUpdate(
@@ -2922,7 +2531,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
         "2026-07-14T09:00:00-06:00",
         "Whole",
       );
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
 
       const result = await executeProviderSeriesFollowingUpdate(
@@ -2943,7 +2552,7 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     it("leaves the command pending on a transient create failure for the remainder", async () => {
       const { calendar, master } = await seedMaster();
       const command = await followingCommand(master, "update");
-      const writer = new FakeRecurringWriter();
+      const writer = new FakeProviderEventWriter();
       writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
       writer.createError = new ProviderWriteError("transient", "blip");
 
@@ -2964,14 +2573,6 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
 // provider state, organizer guard, replay by email set, and byte-identical
 // "preserve"/legacy behavior.
 describe("attendeesEdit replace", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
   const OWNER = "owner@example.com";
 
   const schedule = {
@@ -3022,78 +2623,30 @@ describe("attendeesEdit replace", () => {
     custody: tokenSource(),
   });
 
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  const seedCalendar = async (
-    tenantId: TenantId,
-    principalId: PrincipalId,
-    connectionId: ConnectionId,
-  ) =>
-    calendars.upsertByProviderCalendar({
-      tenantId,
-      principalId,
-      connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
-
-  // Seed a provider-linked single event, optionally with a stored organizer
-  // and (stale) stored attendee list.
   const seedLinked = async (opts: {
     organizer?: { email: string; displayName: string | null } | null;
     storedAttendees?: Attendee[];
     recurrence?: { kind: "seriesMaster"; rules: string[] };
   }) => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar = await seedCalendar(tenantId, principalId, connectionId);
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids);
+    const event = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-evt-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
       content: contentWith("Old", {
         organizer: opts.organizer,
         attendees: opts.storedAttendees,
       }),
       schedule,
       recurrence: opts.recurrence ?? { kind: "single" },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const event = await events.findById(tenantId, principalId, eventId);
-    if (!event) throw new Error("seed failed to read back the event");
-    return { tenantId, principalId, calendar, event };
+      now: now(),
+    });
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      event,
+    };
   };
 
   const replaceCommand = async (
@@ -3167,7 +2720,7 @@ describe("attendeesEdit replace", () => {
         attendee("d@example.com", "needsAction", "Dee"),
       ],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("Old", "etag-1", [
       attendee("a@example.com", "accepted"),
       attendee("b@example.com", "needsAction"),
@@ -3206,7 +2759,7 @@ describe("attendeesEdit replace", () => {
       storedAttendees: [attendee("a@example.com", "accepted")],
     });
     const command = await replaceCommand(event, { attendees: [] });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("Old", "etag-1", [
       attendee("a@example.com", "accepted"),
     ]);
@@ -3233,7 +2786,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com"), attendee("b@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderUpdate(
       deps(writer, connectionsWith(OWNER)),
@@ -3269,7 +2822,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderUpdate(
       deps(writer, missingConnection),
@@ -3293,7 +2846,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("Old", "etag-1", []);
 
     const result = await executeProviderUpdate(
@@ -3316,7 +2869,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com"), attendee("b@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The prior attempt landed; since then the provider reordered the list
     // and one guest RSVP'd. Same membership => replay, never a second write.
     writer.fetched = providerSingle("Old", "etag-7", [
@@ -3346,7 +2899,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com"), attendee("b@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("Old", "etag-1", [
       attendee("a@example.com", "accepted"),
       attendee("c@example.com", "accepted"),
@@ -3381,7 +2934,7 @@ describe("attendeesEdit replace", () => {
       attendees: [attendee("stray@example.com")],
       attendeesEdit: "preserve",
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("Old", "etag-1", [
       attendee("kept@example.com", "accepted"),
       attendee("provider-only@example.com", "tentative"),
@@ -3414,7 +2967,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderUpdate(
@@ -3439,7 +2992,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com"), attendee("b@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = {
       ...providerSingle("Old", "etag-1", [
         attendee("a@example.com", "accepted"),
@@ -3479,7 +3032,7 @@ describe("attendeesEdit replace", () => {
     const command = await replaceCommand(event, {
       attendees: [attendee("a@example.com")],
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderSeriesUpdate(
       deps(writer, connectionsWith(OWNER)),
@@ -3510,7 +3063,7 @@ describe("attendeesEdit replace", () => {
       scope: "this",
       recurrenceId: "2026-07-21T15:00:00.000Z",
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderOccurrenceUpdate(
       deps(writer, connectionsWith(OWNER)),
@@ -3540,7 +3093,7 @@ describe("attendeesEdit replace", () => {
       scope: "thisAndFollowing",
       recurrenceId: "2026-07-21T15:00:00.000Z",
     });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderSeriesFollowingUpdate(
       deps(writer, connectionsWith(OWNER)),
@@ -3568,7 +3121,11 @@ describe("attendeesEdit replace", () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const connectionId = objectId() as ConnectionId;
-    const calendar = await seedCalendar(tenantId, principalId, connectionId);
+    const calendar = await seedCommandCalendar(calendars, {
+      tenantId,
+      principalId,
+      connectionId,
+    });
     const { record: command } = await commands.submit({
       tenantId,
       principalId,
@@ -3592,7 +3149,7 @@ describe("attendeesEdit replace", () => {
       } as unknown as SyncCommandInput,
       expectedVersion: null,
     });
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderCreate(
       deps(writer, connectionsWith(OWNER)),
@@ -3621,7 +3178,11 @@ describe("attendeesEdit replace", () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const connectionId = objectId() as ConnectionId;
-    const calendar = await seedCalendar(tenantId, principalId, connectionId);
+    const calendar = await seedCommandCalendar(calendars, {
+      tenantId,
+      principalId,
+      connectionId,
+    });
     const { record: command } = await commands.submit({
       tenantId,
       principalId,
@@ -3638,7 +3199,7 @@ describe("attendeesEdit replace", () => {
       } as unknown as SyncCommandInput,
       expectedVersion: null,
     });
-    const writer = new FakeWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderCreate(
       deps(writer, connectionsWith(OWNER)),
@@ -3662,14 +3223,6 @@ describe("attendeesEdit replace", () => {
 // Google instance for scope "this", replay without a second write, and fail
 // typed (unsupportedCapability) on every guard.
 describe("executeProviderRsvp", () => {
-  let mongo: SyncMongoService;
-  let commands: CommandRepository;
-  let events: EventRepository;
-  let occurrences: EventOccurrenceRepository;
-  let resources: SyncResourceRepository;
-  let calendars: ProviderCalendarRepository;
-
-  const now = () => new Date("2026-07-10T00:00:00.000Z");
   const SELF = "self@example.com";
 
   const schedule = {
@@ -3724,40 +3277,6 @@ describe("executeProviderRsvp", () => {
     custody: tokenSource(),
   });
 
-  beforeEach(() => {
-    mongo = storage.mongo();
-    commands = new CommandRepository(mongo.db);
-    events = new EventRepository(mongo.db);
-    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
-    resources = new SyncResourceRepository(mongo.db);
-    calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  const seedCalendar = async (
-    tenantId: TenantId,
-    principalId: PrincipalId,
-    connectionId: ConnectionId,
-  ) =>
-    calendars.upsertByProviderCalendar({
-      tenantId,
-      principalId,
-      connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
-
-  // Seed a provider-linked event the account is invited to (stored guest
-  // list includes SELF by default).
   const seedLinked = async (
     opts: {
       organizer?: { email: string; displayName: string | null } | null;
@@ -3765,24 +3284,11 @@ describe("executeProviderRsvp", () => {
       recurrence?: { kind: "seriesMaster"; rules: string[] };
     } = {},
   ) => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const connectionId = objectId() as ConnectionId;
-    const calendar = await seedCalendar(tenantId, principalId, connectionId);
-    const eventId = objectId() as EventId;
-    await events.put({
-      _id: eventId,
-      tenantId,
-      principalId,
-      origin: "compass",
+    const ids = newCommandIds();
+    const calendar = await seedCommandCalendar(calendars, ids);
+    const event = await seedLinkedEvent(events, {
+      ids,
       calendarId: calendar._id,
-      clientEventId: null,
-      connectionId,
-      providerEventId: "g-evt-1" as never,
-      providerVersion: "etag-1" as never,
-      providerUpdatedAt: null,
-      deliveryState: "confirmed",
-      providerMetadata: null,
       content: contentWith("Invited", {
         organizer: opts.organizer ?? {
           email: "organizer@example.com",
@@ -3795,15 +3301,14 @@ describe("executeProviderRsvp", () => {
       }),
       schedule,
       recurrence: opts.recurrence ?? { kind: "single" },
-      lifecycleState: "active",
-      generation: 0,
-      createdAt: now(),
-      updatedAt: now(),
-      confirmedAt: now(),
-    } as never);
-    const event = await events.findById(tenantId, principalId, eventId);
-    if (!event) throw new Error("seed failed to read back the event");
-    return { tenantId, principalId, calendar, event };
+      now: now(),
+    });
+    return {
+      tenantId: ids.tenantId,
+      principalId: ids.principalId,
+      calendar,
+      event,
+    };
   };
 
   const rsvpCommand = async (
@@ -3855,7 +3360,7 @@ describe("executeProviderRsvp", () => {
     // provider list carries fresher sibling RSVPs than the stored copy.
     const { tenantId, principalId, calendar, event } = await seedLinked();
     const command = await rsvpCommand(event, { responseStatus: "declined" });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     const fetchedList = [
       attendee("organizer@example.com", "accepted", "Org"),
       attendee("Self@Example.COM", "accepted"),
@@ -3913,7 +3418,7 @@ describe("executeProviderRsvp", () => {
   it("confirms a replay without a second write when the provider already holds the answer", async () => {
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event, { responseStatus: "tentative" });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     // The prior attempt landed (or the user answered from another client).
     writer.fetched = providerSingle("etag-7", [
       attendee("organizer@example.com", "accepted"),
@@ -3946,7 +3451,7 @@ describe("executeProviderRsvp", () => {
       ],
     });
     const command = await rsvpCommand(event, { responseStatus: "tentative" });
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("etag-1", [
       attendee(SELF, "accepted"),
       attendee("guest@example.com", "needsAction"),
@@ -3978,7 +3483,7 @@ describe("executeProviderRsvp", () => {
       ],
     });
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderRsvp(
       deps(writer, connectionsWith(SELF)),
@@ -4007,7 +3512,7 @@ describe("executeProviderRsvp", () => {
   it("fails closed when the connection cannot be resolved", async () => {
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderRsvp(
       deps(writer, missingConnection),
@@ -4027,7 +3532,7 @@ describe("executeProviderRsvp", () => {
   it("fails closed when the connection has no account email", async () => {
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
 
     const result = await executeProviderRsvp(
       deps(writer, connectionsWith(null)),
@@ -4050,7 +3555,7 @@ describe("executeProviderRsvp", () => {
     // discovered after the fetch — never a write.
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = providerSingle("etag-3", [
       attendee("organizer@example.com", "accepted"),
     ]);
@@ -4075,7 +3580,7 @@ describe("executeProviderRsvp", () => {
     // Acceptance "Tool failure": fetch 5xx → the command stays retryable.
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderRsvp(
@@ -4093,7 +3598,7 @@ describe("executeProviderRsvp", () => {
   it("fails permanently when nothing live exists to answer", async () => {
     const { calendar, event } = await seedLinked();
     const command = await rsvpCommand(event);
-    const writer = new FakeUpdateWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetched = null;
 
     const result = await executeProviderRsvp(
@@ -4148,7 +3653,7 @@ describe("executeProviderRsvp", () => {
       scope: "this",
       recurrenceId: SECOND_START_UTC,
     });
-    const writer = new FakeRecurringWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchInstanceResult = providerInstance([
       attendee("organizer@example.com", "accepted"),
       attendee(SELF, "accepted"),
@@ -4235,7 +3740,7 @@ describe("executeProviderRsvp", () => {
       recurrence: { kind: "seriesMaster", rules: weekly3 },
     });
     const command = await rsvpCommand(event, { responseStatus: "declined" });
-    const writer = new FakeRecurringWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchEventResult = {
       ...providerSingle("etag-1", [
         attendee("organizer@example.com", "accepted"),
@@ -4296,7 +3801,7 @@ describe("executeProviderRsvp", () => {
       now(),
     );
     const command = await rsvpCommand(event, { responseStatus: "declined" });
-    const writer = new FakeRecurringWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchEventResult = {
       ...providerSingle("etag-1", [attendee(SELF, "accepted")]),
       recurrence: { kind: "seriesMaster", rules: weekly3 },
@@ -4329,7 +3834,7 @@ describe("executeProviderRsvp", () => {
       scope: "this",
       recurrenceId: SECOND_START_UTC,
     });
-    const writer = new FakeRecurringWriter();
+    const writer = new FakeProviderEventWriter();
     writer.fetchInstanceResult = providerInstance([attendee(SELF, "declined")]);
 
     const result = await executeProviderRsvp(
