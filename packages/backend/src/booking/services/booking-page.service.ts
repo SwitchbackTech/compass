@@ -29,6 +29,8 @@ import { getSyncServiceClient } from "@backend/common/services/sync-service/sync
 const SLUG_ALLOCATION_MAX_ATTEMPTS = 8;
 const FALLBACK_HOST_TIME_ZONE = TimeZoneSchema.parse("UTC");
 
+type SlugSource = "requested" | "allocated";
+
 const emailLocalPart = (email: string): string => email.split("@")[0] ?? email;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -134,7 +136,7 @@ const assertHealthyWritableDestinationForEnable = async (
   }
 };
 
-const allocateSlugForUser = async (userId: ObjectId): Promise<string> => {
+const suggestSlugForUser = async (userId: ObjectId): Promise<string> => {
   const user = await mongoService.user.findOne(
     { _id: userId },
     { projection: { name: 1, email: 1 } },
@@ -155,22 +157,51 @@ const allocateSlugForUser = async (userId: ObjectId): Promise<string> => {
 const isDuplicateSlugError = (error: unknown): boolean =>
   error instanceof MongoServerError && error.code === 11000;
 
+const resolveSuggestedSlug = async (
+  userId: ObjectId,
+  bookingSlug: string | undefined,
+): Promise<string> => bookingSlug ?? (await suggestSlugForUser(userId));
+
+const toAdminResult = async (
+  userId: ObjectId,
+  saved: Awaited<ReturnType<typeof bookingPageRepository.upsertByUserId>>,
+): Promise<AdminGetBookingPageResult> => {
+  if (saved.enabled && saved.bookingSlug) {
+    return mapBookingPageRecordToAdminResponse({
+      ...saved,
+      bookingSlug: saved.bookingSlug,
+    });
+  }
+
+  return mapBookingPageRecordToSetupResponse(
+    saved,
+    await resolveSuggestedSlug(userId, saved.bookingSlug),
+  );
+};
+
 class BookingPageService {
   async getAdminPage(userId: ObjectId): Promise<AdminGetBookingPageResult> {
     const record = await bookingPageRepository.findByUserId(userId);
     if (!record) {
       const timeZone = await resolveHostTimeZone(userId);
-      return { ...buildDefaultAdminPutInput(timeZone), isConfigured: false };
+      return {
+        ...buildDefaultAdminPutInput(timeZone),
+        isConfigured: false,
+        suggestedSlug: await suggestSlugForUser(userId),
+      };
     }
 
-    if (!record.bookingSlug) {
-      return mapBookingPageRecordToSetupResponse(record);
+    if (record.enabled && record.bookingSlug) {
+      return mapBookingPageRecordToAdminResponse({
+        ...record,
+        bookingSlug: record.bookingSlug,
+      });
     }
 
-    return mapBookingPageRecordToAdminResponse({
-      ...record,
-      bookingSlug: record.bookingSlug,
-    });
+    return mapBookingPageRecordToSetupResponse(
+      record,
+      await resolveSuggestedSlug(userId, record.bookingSlug),
+    );
   }
 
   async putAdminPage(
@@ -194,9 +225,23 @@ class BookingPageService {
     const existing = await bookingPageRepository.findByUserId(userId);
     const fields = mapPutInputToRecordFields(input);
     let bookingSlug = existing?.bookingSlug;
+    let slugSource: SlugSource = "allocated";
 
-    if (input.enabled && !bookingSlug) {
-      bookingSlug = await allocateSlugForUser(userId);
+    if (input.slug !== undefined) {
+      if (input.slug !== existing?.bookingSlug) {
+        const taken = await bookingPageRepository.isSlugTakenByOther(
+          input.slug,
+          userId,
+        );
+        if (taken) {
+          throw bookingError("SLUG_TAKEN", "That address is already taken");
+        }
+      }
+      bookingSlug = input.slug;
+      slugSource = "requested";
+    } else if (input.enabled && !bookingSlug) {
+      bookingSlug = await suggestSlugForUser(userId);
+      slugSource = "allocated";
     }
 
     for (
@@ -210,19 +255,15 @@ class BookingPageService {
           ...(bookingSlug ? { bookingSlug } : {}),
         });
 
-        if (!saved.bookingSlug) {
-          return mapBookingPageRecordToSetupResponse(saved);
-        }
-
-        return mapBookingPageRecordToAdminResponse({
-          ...saved,
-          bookingSlug: saved.bookingSlug,
-        });
+        return toAdminResult(userId, saved);
       } catch (error) {
-        if (!isDuplicateSlugError(error) || !input.enabled) {
+        if (!isDuplicateSlugError(error)) {
           throw error;
         }
-        bookingSlug = await allocateSlugForUser(userId);
+        if (slugSource === "requested") {
+          throw bookingError("SLUG_TAKEN", "That address is already taken");
+        }
+        bookingSlug = await suggestSlugForUser(userId);
       }
     }
 

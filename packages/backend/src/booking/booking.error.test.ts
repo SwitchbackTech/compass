@@ -59,6 +59,17 @@ describe("toBookingErrorResponse", () => {
     expect(JSON.stringify(body)).not.toContain("cancelTokenHash");
   });
 
+  it("maps SLUG_TAKEN to conflict", () => {
+    const { status, body } = toBookingErrorResponse(
+      bookingError("SLUG_TAKEN", "That address is already taken"),
+    );
+    expect(status).toBe(Status.CONFLICT);
+    expect(body).toEqual({
+      code: "SLUG_TAKEN",
+      message: "That address is already taken",
+    });
+  });
+
   it("returns INTERNAL_ERROR without echoing the internal message", () => {
     const { status, body } = toBookingErrorResponse(
       new Error("mongo connection string leaked"),

@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import {
   AdminGetBookingPageResponseSchema,
+  AdminGetBookingPageSetupResponseSchema,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
   BOOKING_MAX_BUFFER_MINUTES,
@@ -56,12 +57,61 @@ describe("BookingSlugSchema", () => {
     expect(BookingSlugSchema.safeParse("tylerdane").success).toBe(true);
   });
 
+  it("accepts interior hyphens", () => {
+    expect(BookingSlugSchema.safeParse("tyler-dane").success).toBe(true);
+  });
+
+  it("rejects a leading hyphen", () => {
+    expect(BookingSlugSchema.safeParse("-tyler").success).toBe(false);
+  });
+
+  it("rejects a trailing hyphen", () => {
+    expect(BookingSlugSchema.safeParse("tyler-").success).toBe(false);
+  });
+
+  it("rejects consecutive hyphens", () => {
+    expect(BookingSlugSchema.safeParse("ty--ler").success).toBe(false);
+  });
+
+  it("rejects slugs shorter than 3 characters", () => {
+    expect(BookingSlugSchema.safeParse("ab").success).toBe(false);
+  });
+
+  it("rejects slugs longer than 32 characters", () => {
+    expect(BookingSlugSchema.safeParse("a".repeat(33)).success).toBe(false);
+  });
+
   it("rejects an empty slug", () => {
     expect(BookingSlugSchema.safeParse("").success).toBe(false);
   });
 
   it("rejects reserved slug week", () => {
     expect(BookingSlugSchema.safeParse("week").success).toBe(false);
+  });
+
+  it("rejects every reserved word", () => {
+    for (const reserved of [
+      "week",
+      "day",
+      "life",
+      "auth",
+      "api",
+      "cleanup",
+      "book",
+      "cancel",
+      "reschedule",
+      "confirmed",
+      "p",
+      "settings",
+      "admin",
+      "login",
+      "logout",
+      "signup",
+      "invite",
+      "calendar",
+    ]) {
+      expect(BookingSlugSchema.safeParse(reserved).success).toBe(false);
+    }
   });
 
   it("rejects uppercase characters", () => {
@@ -198,6 +248,7 @@ describe("PublicBookingPageSchema", () => {
   it("picks only the admin PUT fields from a full page", () => {
     const page = BookingPageSchema.parse(fullAdminPage());
     expect(pickAdminPutBookingPageInput(page)).toEqual({
+      slug: page.slug,
       enabled: page.enabled,
       durationMinutes: page.durationMinutes,
       destinationCalendarId: page.destinationCalendarId,
@@ -212,7 +263,6 @@ describe("PublicBookingPageSchema", () => {
       guestsCanInviteOthers: page.guestsCanInviteOthers,
     });
     expect(pickAdminPutBookingPageInput(page)).not.toHaveProperty("id");
-    expect(pickAdminPutBookingPageInput(page)).not.toHaveProperty("slug");
   });
 });
 
@@ -366,6 +416,54 @@ describe("HTTP booking contracts", () => {
     );
     expect(id).toBeDefined();
     expect(slug).toBeDefined();
+  });
+
+  it("accepts an optional slug on admin replace input", () => {
+    const admin = fullAdminPage();
+    const { id, slug, hostUserId, createdAt, updatedAt, ...replaceInput } =
+      admin;
+
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...replaceInput,
+        slug: "tyler-dane",
+      }).success,
+    ).toBe(true);
+    expect(
+      AdminPutBookingPageInputSchema.safeParse({
+        ...replaceInput,
+        slug: "tyler-dane",
+        extra: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("requires suggestedSlug on setup response", () => {
+    const admin = fullAdminPage();
+    const { id, slug, hostUserId, createdAt, updatedAt, ...replaceInput } =
+      admin;
+
+    expect(
+      AdminGetBookingPageSetupResponseSchema.safeParse({
+        ...replaceInput,
+        isConfigured: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      AdminGetBookingPageSetupResponseSchema.safeParse({
+        ...replaceInput,
+        isConfigured: false,
+        suggestedSlug: "tyler-dane",
+      }).success,
+    ).toBe(true);
+    expect(
+      AdminGetBookingPageSetupResponseSchema.safeParse({
+        ...replaceInput,
+        slug: "tyler-dane",
+        isConfigured: false,
+        suggestedSlug: "tyler-dane",
+      }).success,
+    ).toBe(false);
   });
 
   it("accepts a simple guest email and rejects missing domains", () => {

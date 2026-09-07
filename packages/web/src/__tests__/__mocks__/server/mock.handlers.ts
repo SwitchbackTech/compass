@@ -124,6 +124,7 @@ export const globalHandlers = [
         maxBookingsPerDay: null,
         guestsCanInviteOthers: true,
         isConfigured: false,
+        suggestedSlug: "hostuser",
       }),
     );
   }),

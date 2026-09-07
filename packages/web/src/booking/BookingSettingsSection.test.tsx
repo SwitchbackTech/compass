@@ -101,6 +101,7 @@ const unconfiguredPage = () => ({
   maxBookingsPerDay: null,
   guestsCanInviteOthers: true,
   isConfigured: false,
+  suggestedSlug: "hostuser",
 });
 
 const healthyGoogleMetadata = {
@@ -487,6 +488,7 @@ describe("BookingSettingsSection", () => {
       "maxBookingsPerDay",
       "maxHorizonDays",
       "minNoticeHours",
+      "slug",
       "timeZone",
       "weeklyAvailability",
       "welcomeText",
@@ -574,6 +576,7 @@ describe("BookingSettingsSection", () => {
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
             isConfigured: false,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -616,6 +619,7 @@ describe("BookingSettingsSection", () => {
             guestsCanInviteOthers: true,
             // Saved, never enabled. UTC here is a deliberate choice.
             isConfigured: true,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -1010,7 +1014,13 @@ describe("BookingSettingsSection", () => {
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         putCount += 1;
         const body = (await req.json()) as Record<string, unknown>;
-        return res(ctx.json({ ...body, isConfigured: true }));
+        return res(
+          ctx.json({
+            ...body,
+            isConfigured: true,
+            suggestedSlug: "hostuser",
+          }),
+        );
       }),
     );
 
@@ -1546,7 +1556,13 @@ describe("BookingSettingsSection", () => {
       ),
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
-        return res(ctx.json({ ...(savedBody as object), isConfigured: true }));
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            isConfigured: true,
+            suggestedSlug: "hostuser",
+          }),
+        );
       }),
     );
 
@@ -1596,7 +1612,13 @@ describe("BookingSettingsSection", () => {
       ),
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
-        return res(ctx.json({ ...(savedBody as object), isConfigured: true }));
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            isConfigured: true,
+            suggestedSlug: "hostuser",
+          }),
+        );
       }),
     );
 

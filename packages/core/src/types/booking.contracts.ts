@@ -54,8 +54,11 @@ export type BookingReservationId = z.infer<typeof BookingReservationIdSchema>;
 export const BookingSlugSchema = z
   .string()
   .trim()
-  .regex(/^[a-z0-9]{3,32}$/, {
-    message: "Slug must be 3-32 lowercase letters or digits",
+  .regex(/^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/, {
+    message: "Use 3 to 32 lowercase letters, digits, or hyphens",
+  })
+  .refine((slug) => !slug.includes("--"), {
+    message: "Use 3 to 32 lowercase letters, digits, or hyphens",
   })
   .refine(
     (slug) => !BOOKING_RESERVED_SLUGS.includes(slug as BookingReservedSlug),
@@ -396,6 +399,7 @@ export type AdminGetBookingPageResponse = z.infer<
 >;
 
 export const AdminPutBookingPageInputSchema = z.strictObject({
+  slug: BookingSlugSchema.optional(),
   enabled: z.boolean(),
   durationMinutes: BookingDurationMinutesSchema,
   destinationCalendarId: CalendarIdSchema,
@@ -430,6 +434,7 @@ export type AdminPutBookingPageInput = z.infer<
  * backend record mapper on the same field list.
  */
 export function pickAdminPutBookingPageInput(source: {
+  slug?: AdminPutBookingPageInput["slug"];
   enabled: AdminPutBookingPageInput["enabled"];
   durationMinutes: AdminPutBookingPageInput["durationMinutes"];
   destinationCalendarId: AdminPutBookingPageInput["destinationCalendarId"];
@@ -444,6 +449,7 @@ export function pickAdminPutBookingPageInput(source: {
   guestsCanInviteOthers: AdminPutBookingPageInput["guestsCanInviteOthers"];
 }): AdminPutBookingPageInput {
   return {
+    ...(source.slug !== undefined ? { slug: source.slug } : {}),
     enabled: source.enabled,
     durationMinutes: source.durationMinutes,
     destinationCalendarId: source.destinationCalendarId,
@@ -461,15 +467,19 @@ export function pickAdminPutBookingPageInput(source: {
 
 /**
  * GET response for a page with no public link yet: either never saved, or
- * saved but never enabled (so no slug was allocated). `isConfigured` tells
- * those two apart, which the wire otherwise could not - both came back as a
- * bare input object. The client needs the distinction to know whether it may
- * seed the timezone from the calendar view: an unconfigured GET already
- * returns the host calendar timezone, and the client must not overwrite a
- * stored choice (including UTC) once isConfigured is true.
+ * saved but not currently live. `isConfigured` tells those two apart, which
+ * the wire otherwise could not - both came back as a bare input object. A
+ * draft may already have a chosen address; that value is `suggestedSlug`,
+ * not `slug`. The client needs the distinction to know whether it may seed
+ * the timezone from the calendar view: an unconfigured GET already returns
+ * the host calendar timezone, and the client must not overwrite a stored
+ * choice (including UTC) once isConfigured is true.
  */
 export const AdminGetBookingPageSetupResponseSchema =
-  AdminPutBookingPageInputSchema.extend({ isConfigured: z.boolean() });
+  AdminPutBookingPageInputSchema.omit({ slug: true }).extend({
+    isConfigured: z.boolean(),
+    suggestedSlug: BookingSlugSchema,
+  });
 export type AdminGetBookingPageSetupResponse = z.infer<
   typeof AdminGetBookingPageSetupResponseSchema
 >;
