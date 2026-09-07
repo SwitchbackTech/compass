@@ -3,13 +3,15 @@ import { useContext, useEffect, useId, useRef, useState } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
-import { CONNECT_THE_CALENDAR_YOU_USE } from "@web/auth/providers/provider-copy.util";
+import {
+  CONNECT_CALENDAR_LABEL,
+  CONNECT_THE_CALENDAR_YOU_USE,
+} from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
-import { MicrosoftButton } from "@web/components/AuthModal/components/MicrosoftButton";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
@@ -387,12 +389,13 @@ export function WelcomeModal() {
               ) : null}
               {showMicrosoftConnectCta ? (
                 <>
-                  <MicrosoftButton
-                    onClick={() => handOffToAuth("sign_up")}
-                    disabled={isLoading}
-                    label="Connect Microsoft"
-                    shortcutKey="M"
-                    style={{ width: "100%" }}
+                  <SignInProviderButtons
+                    available={["microsoft"]}
+                    labels={CONNECT_CALENDAR_LABEL}
+                    loadingKind={
+                      isLoading ? (loadingKind ?? "microsoft") : null
+                    }
+                    onSignIn={() => handOffToAuth("sign_up")}
                   />
                   <p className="text-center text-text-muted text-xs">
                     Create an account, then connect Microsoft from Settings.

@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
@@ -46,5 +47,66 @@ describe("SignInProviderButtons", () => {
     );
 
     expect(onSignIn).toHaveBeenCalledWith("microsoft");
+  });
+
+  it("renders custom labels as the accessible names", () => {
+    render(
+      <SignInProviderButtons
+        available={["google", "microsoft", "apple"]}
+        labels={{
+          google: "Connect Google Calendar",
+          microsoft: "Connect Microsoft Calendar",
+          apple: "Connect Apple Calendar",
+        }}
+        loadingKind={null}
+        onSignIn={mock()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Connect Google Calendar" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Connect Apple Calendar" }),
+    ).toBeTruthy();
+  });
+
+  it("hides shortcut chips when shortcutKeys is null", () => {
+    render(
+      <SignInProviderButtons
+        available={["google", "microsoft", "apple"]}
+        loadingKind={null}
+        onSignIn={mock()}
+        shortcutKeys={null}
+      />,
+    );
+
+    expect(screen.queryByText("G")).toBeNull();
+    expect(screen.queryByText("M")).toBeNull();
+    expect(screen.queryByText("A")).toBeNull();
+  });
+
+  it("relabels the loading pill and disables the others", () => {
+    render(
+      <SignInProviderButtons
+        available={["google", "microsoft", "apple"]}
+        busyLabel={(kind) => `Opening ${kind}…`}
+        loadingKind="microsoft"
+        onSignIn={mock()}
+      />,
+    );
+
+    const busy = screen.getByRole("button", { name: "Opening microsoft…" });
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    expect(busy).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Continue with Apple" }),
+    ).toBeDisabled();
   });
 });

@@ -13,6 +13,9 @@ type SignInProviderButtonsProps = {
   loadingKind: ProviderKind | null;
   onSignIn: (kind: ProviderKind) => void;
   fullWidth?: boolean;
+  labels?: Record<ProviderKind, string>;
+  shortcutKeys?: Record<ProviderKind, string> | null;
+  busyLabel?: (kind: ProviderKind) => string;
 };
 
 const SIGN_IN_BUTTONS = {
@@ -27,15 +30,26 @@ const renderProviderButton = (
     style?: CSSProperties;
   },
 ) => {
-  const { loadingKind, onSignIn, style } = props;
+  const {
+    loadingKind,
+    onSignIn,
+    style,
+    labels = CONTINUE_WITH_LABEL,
+    shortcutKeys = SIGN_IN_SHORTCUT_KEY,
+    busyLabel,
+  } = props;
   const Button = SIGN_IN_BUTTONS[kind];
+  const isBusy = loadingKind === kind;
+  const label = isBusy && busyLabel ? busyLabel(kind) : labels[kind];
+  const shortcutKey = shortcutKeys == null ? undefined : shortcutKeys[kind];
   return (
     <Button
       key={kind}
+      busy={isBusy}
       disabled={loadingKind != null}
-      label={CONTINUE_WITH_LABEL[kind]}
+      label={label}
       onClick={() => onSignIn(kind)}
-      shortcutKey={SIGN_IN_SHORTCUT_KEY[kind]}
+      shortcutKey={shortcutKey}
       style={style}
     />
   );
@@ -46,22 +60,29 @@ export const SignInProviderButtons: FC<SignInProviderButtonsProps> = ({
   loadingKind,
   onSignIn,
   fullWidth = true,
+  labels,
+  shortcutKeys,
+  busyLabel,
 }) => {
   if (available.length === 0) {
     return null;
   }
 
   const buttonStyle = fullWidth ? { width: "100%" } : undefined;
-
-  return (
-    <>
-      {available.map((kind) =>
-        renderProviderButton(kind, {
-          loadingKind,
-          onSignIn,
-          style: buttonStyle,
-        }),
-      )}
-    </>
+  const buttons = available.map((kind) =>
+    renderProviderButton(kind, {
+      loadingKind,
+      onSignIn,
+      style: buttonStyle,
+      labels,
+      shortcutKeys,
+      busyLabel,
+    }),
   );
+
+  if (fullWidth) {
+    return <div className="flex flex-col gap-3">{buttons}</div>;
+  }
+
+  return <>{buttons}</>;
 };

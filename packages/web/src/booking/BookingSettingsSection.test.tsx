@@ -12,6 +12,8 @@ import {
   createMockConnection,
 } from "@web/__tests__/utils/factories/calendar.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
+import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import {
   BOOKING_SETTINGS_HINT_PARTS,
@@ -142,6 +144,7 @@ function dispatchModKey(target: HTMLElement, key: string) {
 
 describe("BookingSettingsSection", () => {
   it("shows connect Google prompt when Google is not healthy", () => {
+    setProviderAvailabilityForTests("google", "available", "connect");
     userMetadataActions.set({
       google: {
         connectionState: "NOT_CONNECTED",
@@ -159,6 +162,9 @@ describe("BookingSettingsSection", () => {
 
     expect(
       screen.getByText(/Connect a Google account to enable your booking page/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: CONNECT_CALENDAR_LABEL.google }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
   });

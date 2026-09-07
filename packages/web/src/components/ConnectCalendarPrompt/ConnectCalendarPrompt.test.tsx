@@ -40,7 +40,7 @@ const connectByKind: Record<ProviderKind, ReturnType<typeof mock>> = {
 };
 
 const buttonLabelByKind: Record<ProviderKind, string> = {
-  google: "Connect Google",
+  google: "Connect Google Calendar",
   microsoft: "Connect Microsoft Calendar",
   apple: "Connect Apple Calendar",
 };

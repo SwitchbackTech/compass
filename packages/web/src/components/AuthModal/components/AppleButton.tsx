@@ -18,12 +18,14 @@ const AppleLogo = ({ size = 18 }: { size?: number }) => (
 export const AppleButton = ({
   onClick,
   disabled,
+  busy,
   label = "Continue with Apple",
   shortcutKey,
   style,
 }: {
   onClick: () => void;
   disabled?: boolean;
+  busy?: boolean;
   label?: string;
   shortcutKey?: string;
   style?: React.CSSProperties;
@@ -33,6 +35,7 @@ export const AppleButton = ({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-busy={busy || undefined}
       aria-label={label}
       className={classNames(
         "inline-flex h-10 items-center justify-center gap-2.5 whitespace-nowrap rounded-full border border-[#1f1f1f] bg-[#000] px-3 font-medium text-[#fff] text-sm transition-[background-color,box-shadow,transform] duration-200",
