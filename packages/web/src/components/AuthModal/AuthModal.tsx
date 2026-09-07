@@ -90,6 +90,7 @@ export const AuthModal: FC = () => {
   const prevViewRef = useRef(currentView);
   // OverlayPanel would otherwise seat the view-switch chip (first focusable).
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const pricingLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     if (prevViewRef.current !== "signUp" && currentView === "signUp") {
@@ -138,12 +139,18 @@ export const AuthModal: FC = () => {
   const showAuthSwitch = isLoginView || currentView === "signUp";
 
   useEffect(() => {
-    if (!isOpen || !showAuthSwitch) return;
+    if (!isOpen) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isEditableKeyboardTarget(event)) return;
       const key = keyboardKey(event).toLowerCase();
+      if (key === "p") {
+        event.preventDefault();
+        pricingLinkRef.current?.click();
+        return;
+      }
+      if (!showAuthSwitch) return;
       const providerKind = signInProviderForShortcutLetter(key, available);
       if (providerKind) {
         event.preventDefault();
@@ -279,8 +286,28 @@ export const AuthModal: FC = () => {
             anytime.
           </p>
         ) : null}
-        {/* Privacy & Terms links */}
+        <div className="flex w-full justify-center">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="c-focus-ring inline-flex items-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+          >
+            Back
+            <ShortcutHint className="ml-2">Esc</ShortcutHint>
+          </button>
+        </div>
         <div className="flex items-center justify-center text-center text-text-muted text-xs">
+          <a
+            ref={pricingLinkRef}
+            href="https://compasscalendar.com/pricing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-text hover:underline"
+          >
+            Pricing
+            <ShortcutHint>P</ShortcutHint>
+          </a>
+          <DotIcon size={26} />
           <a
             href="https://www.compasscalendar.com/terms"
             target="_blank"

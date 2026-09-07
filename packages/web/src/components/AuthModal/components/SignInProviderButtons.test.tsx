@@ -22,27 +22,12 @@ describe("SignInProviderButtons", () => {
     expect(
       screen.getByRole("button", { name: "Continue with Apple" }),
     ).toHaveTextContent("Continue with Apple");
-  });
-
-  it("renders welcome sublines for each provider", () => {
-    render(
-      <SignInProviderButtons
-        available={["google", "microsoft", "apple"]}
-        loadingKind={null}
-        onSignIn={mock()}
-        variant="welcome"
-      />,
-    );
-
     expect(
-      screen.getByText("Signs you up and connects your Google Calendar."),
-    ).toBeInTheDocument();
+      screen.queryByText("Signs you up and connects your Google Calendar."),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByText("Signs you up and connects your Outlook calendar."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("You'll pick your calendar next."),
-    ).toBeInTheDocument();
+      screen.queryByText("Signs you up and connects your Outlook calendar."),
+    ).not.toBeInTheDocument();
   });
 
   it("calls onSignIn with the clicked provider kind", async () => {

@@ -1,9 +1,14 @@
 import { useEffect } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
+import {
+  isBareLetterKey,
+  keyboardKey,
+} from "@web/shortcuts/is-bare-letter-key";
 import { FAQ_ITEMS } from "./faq";
 
 export const WELCOME_JUMP_ATTR = "data-welcome-jump";
+export const WELCOME_LETTER_ATTR = "data-welcome-letter";
 
 /**
  * Press a number (with or without Mod) to toggle that FAQ or open a footer
@@ -11,7 +16,8 @@ export const WELCOME_JUMP_ATTR = "data-welcome-jump";
  *
  * 1–5 toggle FAQ items when `toggleFaqAt` is given (omit it on a screen with
  * no FAQ). 6–0 activate matching `[data-welcome-jump]` links, and no-op when
- * none is mounted.
+ * none is mounted. Bare letters activate matching `[data-welcome-letter]`
+ * links (Pricing / P).
  */
 export function useWelcomeJumpShortcuts(toggleFaqAt?: (index: number) => void) {
   useEffect(() => {
@@ -19,23 +25,34 @@ export function useWelcomeJumpShortcuts(toggleFaqAt?: (index: number) => void) {
       if (isEditableKeyboardTarget(event)) return;
 
       const index = physicalDigitIndex(event);
-      if (index === null) return;
+      if (index !== null) {
+        if (index < FAQ_ITEMS.length) {
+          if (!toggleFaqAt) return;
+          event.preventDefault();
+          toggleFaqAt(index);
+          return;
+        }
 
-      if (index < FAQ_ITEMS.length) {
-        if (!toggleFaqAt) return;
+        const footerIndex = index - FAQ_ITEMS.length;
+        const el = document.querySelector<HTMLElement>(
+          `[${WELCOME_JUMP_ATTR}="${footerIndex}"]`,
+        );
+        if (!el) return;
+
         event.preventDefault();
-        toggleFaqAt(index);
+        el.click();
         return;
       }
 
-      const footerIndex = index - FAQ_ITEMS.length;
-      const el = document.querySelector<HTMLElement>(
-        `[${WELCOME_JUMP_ATTR}="${footerIndex}"]`,
+      const letter = keyboardKey(event).toLowerCase();
+      if (!isBareLetterKey(event, letter)) return;
+      const letterEl = document.querySelector<HTMLElement>(
+        `[${WELCOME_LETTER_ATTR}="${letter}"]`,
       );
-      if (!el) return;
+      if (!letterEl) return;
 
       event.preventDefault();
-      el.click();
+      letterEl.click();
     };
 
     window.addEventListener("keydown", onKeyDown);

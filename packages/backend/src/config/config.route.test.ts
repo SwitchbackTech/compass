@@ -1,3 +1,4 @@
+import { NodeEnv } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -118,6 +119,60 @@ describe("GET /api/config", () => {
     } finally {
       CONFIG.GOOGLE_CLIENT_ID = originals.googleId;
       CONFIG.GOOGLE_CLIENT_SECRET = originals.googleSecret;
+      CONFIG.MICROSOFT_CLIENT_ID = originals.microsoftId;
+      CONFIG.MICROSOFT_CLIENT_SECRET = originals.microsoftSecret;
+    }
+  });
+
+  it("hides Microsoft in production even when credentials are configured", async () => {
+    const originals = {
+      nodeEnv: CONFIG.NODE_ENV,
+      microsoftId: CONFIG.MICROSOFT_CLIENT_ID,
+      microsoftSecret: CONFIG.MICROSOFT_CLIENT_SECRET,
+    };
+    CONFIG.NODE_ENV = NodeEnv.Production;
+    CONFIG.MICROSOFT_CLIENT_ID = "ms-client-id";
+    CONFIG.MICROSOFT_CLIENT_SECRET = "ms-client-secret";
+
+    try {
+      const response = await baseDriver
+        .getServer()
+        .get("/api/config")
+        .expect(Status.OK);
+
+      expect(response.body.providers.microsoft).toEqual({
+        signIn: false,
+        connect: false,
+      });
+    } finally {
+      CONFIG.NODE_ENV = originals.nodeEnv;
+      CONFIG.MICROSOFT_CLIENT_ID = originals.microsoftId;
+      CONFIG.MICROSOFT_CLIENT_SECRET = originals.microsoftSecret;
+    }
+  });
+
+  it("offers Microsoft in staging when credentials are configured", async () => {
+    const originals = {
+      nodeEnv: CONFIG.NODE_ENV,
+      microsoftId: CONFIG.MICROSOFT_CLIENT_ID,
+      microsoftSecret: CONFIG.MICROSOFT_CLIENT_SECRET,
+    };
+    CONFIG.NODE_ENV = NodeEnv.Staging;
+    CONFIG.MICROSOFT_CLIENT_ID = "ms-client-id";
+    CONFIG.MICROSOFT_CLIENT_SECRET = "ms-client-secret";
+
+    try {
+      const response = await baseDriver
+        .getServer()
+        .get("/api/config")
+        .expect(Status.OK);
+
+      expect(response.body.providers.microsoft).toEqual({
+        signIn: true,
+        connect: true,
+      });
+    } finally {
+      CONFIG.NODE_ENV = originals.nodeEnv;
       CONFIG.MICROSOFT_CLIENT_ID = originals.microsoftId;
       CONFIG.MICROSOFT_CLIENT_SECRET = originals.microsoftSecret;
     }

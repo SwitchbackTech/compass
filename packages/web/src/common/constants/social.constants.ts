@@ -14,6 +14,6 @@ export const SOCIAL_LINKS: SocialLink[] = [
   {
     id: "github",
     label: "GitHub",
-    href: "https://www.github.com/SwitchbackTech/compass-calendar",
+    href: "https://github.com/KeepSoftwareSimple/compass-calendar",
   },
 ];

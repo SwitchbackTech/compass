@@ -131,6 +131,10 @@ describe("WelcomeModal", () => {
 
     expect(mockOpenModal).toHaveBeenCalledWith("login");
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+    // Stay mounted until auth actually opens so the calendar does not flash.
+    expect(
+      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeTruthy();
 
     // The welcome screen hides while the auth modal is open
     authModalState.isOpen = true;
@@ -232,12 +236,19 @@ describe("WelcomeModal", () => {
     expect(
       screen.getByRole("heading", { name: "Connect the calendar you use" }),
     ).toBeTruthy();
+    expect(screen.getByText("Pick how you want to start.")).toBeTruthy();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "If you view your calendar in Apple Calendar, it may still be hosted by Google or Microsoft.",
       ),
-    ).toBeTruthy();
+    ).toBeNull();
+    expect(screen.queryByText(/You can sign up later/)).toBeNull();
     expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/KeepSoftwareSimple/compass-calendar",
+    );
     expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
 
     await user.keyboard("{Escape}");
@@ -426,8 +437,8 @@ describe("WelcomeModal", () => {
     await user.keyboard("i");
     expect(mockOpenModal).toHaveBeenCalledWith("login");
     expect(
-      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-    ).toBeNull();
+      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeTruthy();
 
     await user.keyboard("s");
     await act(async () => {
@@ -562,8 +573,8 @@ describe("WelcomeModal", () => {
         screen.getByRole("button", { name: "Continue with Google" }),
       ).toBeTruthy();
       expect(
-        screen.getByText(/Signs you up and connects your Google Calendar/),
-      ).toBeTruthy();
+        screen.queryByText(/Signs you up and connects your Google Calendar/),
+      ).toBeNull();
       expect(
         within(
           screen.getByRole("button", { name: "Continue with Google" }),
@@ -621,12 +632,12 @@ describe("WelcomeModal", () => {
         screen.getByRole("button", { name: "Continue with Apple" }),
       ).toHaveTextContent("Continue with Apple");
       expect(
-        screen.getByText("Signs you up and connects your Google Calendar."),
-      ).toBeTruthy();
+        screen.queryByText("Signs you up and connects your Google Calendar."),
+      ).toBeNull();
       expect(
-        screen.getByText("Signs you up and connects your Outlook calendar."),
-      ).toBeTruthy();
-      expect(screen.getByText("You'll pick your calendar next.")).toBeTruthy();
+        screen.queryByText("Signs you up and connects your Outlook calendar."),
+      ).toBeNull();
+      expect(screen.queryByText("You'll pick your calendar next.")).toBeNull();
       expect(
         screen.queryByRole("button", { name: "Connect Microsoft" }),
       ).toBeNull();
@@ -688,7 +699,7 @@ describe("WelcomeModal", () => {
       resetProviderAvailabilityForTests();
     });
 
-    it("offers a Connect Microsoft button and the host explainer", async () => {
+    it("offers a Connect Microsoft button when sign-in is not available", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
       await goToChooseScreen(user);

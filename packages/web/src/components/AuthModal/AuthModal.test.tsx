@@ -913,13 +913,16 @@ describe("AuthModal", () => {
   });
 
   describe("Privacy and Terms Links", () => {
-    it("renders privacy and terms links", async () => {
+    it("renders pricing, privacy, and terms links", async () => {
       const user = userEvent.setup();
       await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
+        expect(
+          screen.getByRole("link", { name: /pricing/i }),
+        ).toBeInTheDocument();
         expect(
           screen.getByRole("link", { name: /terms/i }),
         ).toBeInTheDocument();
@@ -929,6 +932,19 @@ describe("AuthModal", () => {
       });
     });
 
+    it("shows an Esc hint to leave the form", async () => {
+      const user = userEvent.setup();
+      await renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitForAuthModal();
+
+      expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
+      expect(
+        within(screen.getByRole("button", { name: /back/i })).getByText("Esc"),
+      ).toBeInTheDocument();
+    });
+
     it("links open in new tab", async () => {
       const user = userEvent.setup();
       await renderWithProviders(<ModalTrigger />);
@@ -936,6 +952,9 @@ describe("AuthModal", () => {
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
       await waitFor(() => {
+        const pricingLink = screen.getByRole("link", {
+          name: /pricing/i,
+        });
         const termsLink = screen.getByRole("link", {
           name: /terms/i,
         });
@@ -943,10 +962,16 @@ describe("AuthModal", () => {
           name: /privacy/i,
         });
 
+        expect(pricingLink).toHaveAttribute("target", "_blank");
         expect(termsLink).toHaveAttribute("target", "_blank");
         expect(privacyLink).toHaveAttribute("target", "_blank");
+        expect(pricingLink).toHaveAttribute("rel", "noopener noreferrer");
         expect(termsLink).toHaveAttribute("rel", "noopener noreferrer");
         expect(privacyLink).toHaveAttribute("rel", "noopener noreferrer");
+        expect(pricingLink).toHaveAttribute(
+          "href",
+          "https://compasscalendar.com/pricing",
+        );
       });
     });
   });
