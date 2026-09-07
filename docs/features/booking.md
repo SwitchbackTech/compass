@@ -27,11 +27,12 @@ extraction path; they are not a second service in v1.
 
 `https://compasscalendar.com/book/:username`
 
-Example: `https://compasscalendar.com/book/tylerdane`
+Example: `https://compasscalendar.com/book/tyler-dane`
 
-The username is a `bookingSlug` allocated from the Compass account. It
-is not editable in v1. Changing it later is a dedicated migration with
-redirects.
+The username is a `bookingSlug` on the host's booking page. Hosts choose it
+in Settings before or after enabling. Interior hyphens are allowed (for
+example `tyler-dane`). Changing the address overwrites the stored slug;
+old links stop working and there are no redirects.
 
 The guest's selection lives in `/book/:slug` search params
 (`?month=&date=&slot=&tz=`): Back returns from the details step to the
@@ -60,8 +61,14 @@ Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
 ### Slug allocation
 
 Compass users have `name` and `email`, not a username
-(`packages/core/src/types/user.types.ts`). Allocate `bookingSlug` once
-when the host first enables booking:
+(`packages/core/src/types/user.types.ts`). When the host opens Booking
+Settings, the setup response includes a `suggestedSlug` derived from their
+account so the address is visible before the page is first enabled. The
+host may replace it on any save; a draft keeps its chosen address even
+while disabled.
+
+When no slug is stored yet and the host enables without choosing one,
+allocate `bookingSlug` once:
 
 1. Slugify `name`: lowercase, keep `[a-z0-9]` only, so `Tyler Dane`
    becomes `tylerdane`.
@@ -393,8 +400,9 @@ Unauthenticated:
 Authenticated (host session + writable billing, same as event writes):
 
 - `GET /api/booking/page` — host page, including slug and copyable URL.
-- `PUT /api/booking/page` — replace settings. Allocates slug on first
-  enable.
+- `PUT /api/booking/page` — replace settings. Accepts optional `slug`.
+  Allocates slug on first enable when none is stored. `409` with
+  `SLUG_TAKEN` when the requested address belongs to another host.
 - Enabling without a healthy calendar connection is a typed `403`
   (`CALENDAR_NOT_CONNECTED`; `GOOGLE_NOT_CONNECTED` remains an alias).
 - Enabling with zero weekly hours is a typed `400` (`AVAILABILITY_REQUIRED`).
@@ -409,7 +417,6 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 - Team pages and round-robin
 - Compass-sent email or SMS
 - `guestsCanModify`
-- Editable slug
 - Standalone booking brand, domain, or deployable
 - Production billing packaging specific to booking (uses the existing
   calendar write gate)
@@ -459,8 +466,9 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
   (`packages/web/src/shortcuts/shift-hint/event-jump.store.ts`). Enter has
   nothing in that store to check. Recorded in WP-12; do not fold targeting
   into the store in a drive-by.
-- **Slug is not editable in v1.** Allocation runs once on first enable; changing
-  slugs needs a migration with redirects.
+- **Changing the booking address breaks old links.** The host may edit the
+  slug in Settings; the stored value is overwritten with no previous-slug
+  list and no redirect. Public resolution 404s the old slug after a rename.
 - **Host-edited etag overwrite uses `expectedVersion: null`.** Guest
   reschedule PATCHes the same Google event in place. Host-edited events
   still omit a stored etag on the booking update path, so a concurrent

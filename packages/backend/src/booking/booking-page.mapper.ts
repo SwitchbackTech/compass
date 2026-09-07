@@ -65,9 +65,11 @@ export const mapBookingPageRecordToSetupResponse = (
     | "maxBookingsPerDay"
     | "guestsCanInviteOthers"
   >,
+  suggestedSlug: string,
 ): AdminGetBookingPageSetupResponse => ({
   ...pickAdminPutBookingPageInput(record),
   isConfigured: true,
+  suggestedSlug,
 });
 
 export const mapPutInputToRecordFields = (
@@ -75,7 +77,10 @@ export const mapPutInputToRecordFields = (
 ): Omit<
   BookingPageRecord,
   "_id" | "userId" | "bookingSlug" | "createdAt" | "updatedAt"
-> => pickAdminPutBookingPageInput(input);
+> => {
+  const { slug: _slug, ...withoutSlug } = input;
+  return pickAdminPutBookingPageInput(withoutSlug);
+};
 
 const PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
   "000000000000000000000001",

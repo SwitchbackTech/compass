@@ -155,6 +155,7 @@ describe("BookingPageService", () => {
         durationMinutes: 30,
         weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
         isConfigured: false,
+        suggestedSlug: expect.any(String),
       }),
     );
     expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
@@ -170,6 +171,19 @@ describe("BookingPageService", () => {
       ),
     ).rejects.toMatchObject({ bookingCode: "AVAILABILITY_REQUIRED" });
     expect(await bookingPageRepository.findByUserId(user._id)).toBeNull();
+  });
+
+  it("returns suggestedSlug on GET before any PUT", async () => {
+    const userId = await createNamedUser("Tyler Dane");
+
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        isConfigured: false,
+        suggestedSlug: "tylerdane",
+      }),
+    );
   });
 
   it("returns the host calendar timezone on GET before any PUT, not UTC", async () => {
@@ -223,8 +237,113 @@ describe("BookingPageService", () => {
       expect.objectContaining({
         isConfigured: true,
         timeZone: "America/Denver",
+        suggestedSlug: expect.any(String),
       }),
     );
+  });
+
+  it("returns suggestedSlug after a disabled PUT", async () => {
+    const userId = await createNamedUser("Draft Slug User");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+
+    await bookingPageService.putAdminPage(
+      userId,
+      samplePutInput({ enabled: false }),
+    );
+
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect(page).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        suggestedSlug: "draftsluguser",
+      }),
+    );
+  });
+
+  it("persists a requested slug on a disabled page", async () => {
+    const userId = await createNamedUser("Disabled Slug Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      enabled: false,
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+      slug: "tyler-dane",
+    });
+
+    const saved = await bookingPageService.putAdminPage(userId, input);
+    expect(saved).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        suggestedSlug: "tyler-dane",
+      }),
+    );
+
+    const page = await bookingPageService.getAdminPage(userId);
+    expect(page).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        suggestedSlug: "tyler-dane",
+      }),
+    );
+
+    const record = await bookingPageRepository.findByUserId(userId);
+    expect(record?.bookingSlug).toBe("tyler-dane");
+    expect(record).not.toHaveProperty("slug");
+  });
+
+  it("renames an enabled page slug", async () => {
+    const userId = await createNamedUser("Rename Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+
+    const enabled = await bookingPageService.putAdminPage(userId, input);
+    expect("slug" in enabled && enabled.slug).toBe("renamehost");
+
+    const renamed = await bookingPageService.putAdminPage(userId, {
+      ...input,
+      slug: "new-address",
+    });
+    expect("slug" in renamed && renamed.slug).toBe("new-address");
+
+    const record = await bookingPageRepository.findByUserId(userId);
+    expect(record?.bookingSlug).toBe("new-address");
+  });
+
+  it("rejects renaming to another host's slug", async () => {
+    const firstUserId = await createNamedUser("First Host");
+    const secondUserId = await createNamedUser("Second Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+
+    const firstPage = await bookingPageService.putAdminPage(firstUserId, input);
+    expect("slug" in firstPage && firstPage.slug).toBe("firsthost");
+
+    await expect(
+      bookingPageService.putAdminPage(secondUserId, {
+        ...samplePutInput({
+          enabled: false,
+          destinationCalendarId: calendar.id,
+          blockingCalendarIds: [calendar.id],
+        }),
+        slug: "firsthost",
+      }),
+    ).rejects.toMatchObject({
+      bookingCode: "SLUG_TAKEN",
+    });
+
+    const secondRecord = await bookingPageRepository.findByUserId(secondUserId);
+    expect(secondRecord?.bookingSlug).toBeUndefined();
   });
 
   it("marks a disabled PUT response as configured too", async () => {
@@ -238,7 +357,12 @@ describe("BookingPageService", () => {
     );
 
     expect("bookingUrl" in saved).toBe(false);
-    expect(saved).toEqual(expect.objectContaining({ isConfigured: true }));
+    expect(saved).toEqual(
+      expect.objectContaining({
+        isConfigured: true,
+        suggestedSlug: expect.any(String),
+      }),
+    );
   });
 
   it("allocates a slug once and keeps it on later PUTs", async () => {

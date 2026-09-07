@@ -38,6 +38,16 @@ class BookingPageRepository {
     );
   }
 
+  async isSlugTakenByOther(slug: string, userId: ObjectId): Promise<boolean> {
+    const record = await mongoService.bookingPage.findOne({
+      bookingSlug: slug,
+    });
+    if (!record) {
+      return false;
+    }
+    return !record.userId.equals(userId);
+  }
+
   async upsertByUserId(
     userId: ObjectId,
     fields: Omit<

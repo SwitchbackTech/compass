@@ -303,6 +303,40 @@ describe("PublicBookingService", () => {
     });
   });
 
+  it("returns PAGE_NOT_FOUND for the old slug after a rename", async () => {
+    const userId = await createNamedUser("Rename Public Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    spyOn(billingGuard, "assertBillingAllowsWrites").mockResolvedValue(
+      undefined,
+    );
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+    });
+    const page = await bookingPageService.putAdminPage(userId, input);
+    const oldSlug = "slug" in page ? page.slug : "";
+    expect(oldSlug).toBe("renamepublichost");
+
+    const renamed = await bookingPageService.putAdminPage(userId, {
+      ...input,
+      slug: "new-public-slug",
+    });
+    expect("slug" in renamed && renamed.slug).toBe("new-public-slug");
+
+    await expect(service.getPublicPage(oldSlug)).rejects.toMatchObject({
+      bookingCode: "PAGE_NOT_FOUND",
+    });
+
+    const publicPage = await service.getPublicPage("new-public-slug");
+    expect(publicPage).toEqual(
+      expect.objectContaining({
+        hostDisplayName: "Rename Public Host",
+        enabled: true,
+      }),
+    );
+  });
+
   it("confirms a reservation and calls createBookingEvent once", async () => {
     const { slug } = await enableBookingPage();
     const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
