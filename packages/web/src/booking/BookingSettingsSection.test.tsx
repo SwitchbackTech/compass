@@ -1946,7 +1946,17 @@ describe("BookingSettingsSection", () => {
       ),
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
-        return res(ctx.json({ ...(savedBody as object), bookingUrl }));
+        return res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            ...(savedBody as object),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        );
       }),
     );
 
@@ -1966,10 +1976,12 @@ describe("BookingSettingsSection", () => {
     await waitFor(() => {
       expect(savedBody).toMatchObject({ enabled: false });
     });
-    expect(mocks.toast).toHaveBeenCalledWith(
-      "Meeting page turned off.",
-      expect.any(Object),
-    );
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledWith(
+        "Meeting page turned off.",
+        expect.any(Object),
+      );
+    });
   });
 
   it("saves changes while off without turning the page on", async () => {
