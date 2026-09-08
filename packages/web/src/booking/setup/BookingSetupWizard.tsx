@@ -54,6 +54,7 @@ export function BookingSetupWizard({
   const stepNumber = index < 0 ? 1 : index + 1;
   const stepCount = steps.length;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: step.id is the focus trigger when the wizard advances
   useEffect(() => {
     const body = bodyRef.current;
     const first =
@@ -89,8 +90,9 @@ export function BookingSetupWizard({
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a wizard-scoped shortcut layer, not an interactive element in its own right
     <div className="flex flex-col gap-4" onKeyDown={handleKeyDown}>
-      <p aria-live="polite" className="text-text-muted text-sm">
+      <p aria-live="polite" className="text-sm text-text-muted">
         {`Step ${stepNumber} of ${stepCount}`}
       </p>
       <div className="flex flex-col gap-2">

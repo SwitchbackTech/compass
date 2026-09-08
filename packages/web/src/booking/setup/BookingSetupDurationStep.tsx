@@ -67,6 +67,7 @@ export function BookingSetupDurationStep({
       role="radiogroup"
     >
       {BOOKING_DURATION_OPTIONS.map((minutes) => (
+        // biome-ignore lint/a11y/useSemanticElements: pill radios match the weekly-hours day pills; native inputs cannot rover as a styled group
         <button
           aria-checked={value === minutes}
           className={pillClassName}
