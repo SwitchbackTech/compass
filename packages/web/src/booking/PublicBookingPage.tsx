@@ -1,6 +1,7 @@
 import { useParams } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { PublicBookingNotFoundError } from "@web/api/public-booking.api";
+import { track } from "@web/auth/posthog/track";
 import {
   formatBookingDurationWithConference,
   resolveBookingConference,
@@ -33,10 +34,20 @@ export function PublicBookingPage() {
   const flow = usePublicBookingFlow();
   const { pageQuery, slotsQuery } = flow;
   const focusHostHeadingRef = useRef(isPublicBookingPageHeadingFocusPending());
+  const viewedSlugRef = useRef<string | null>(null);
   const pageReady = pageQuery.isSuccess && Boolean(pageQuery.data?.enabled);
   const headingRef = useBookingHeadingFocus(
     focusHostHeadingRef.current && pageReady ? username : null,
   );
+
+  useEffect(() => {
+    if (!pageQuery.isSuccess || !pageQuery.data?.enabled) return;
+    if (viewedSlugRef.current === username) return;
+    viewedSlugRef.current = username;
+    track("booking_page_viewed", {
+      duration_minutes: pageQuery.data.durationMinutes,
+    });
+  }, [pageQuery.data, pageQuery.isSuccess, username]);
 
   useEffect(() => {
     if (!focusHostHeadingRef.current || pageQuery.isPending) {

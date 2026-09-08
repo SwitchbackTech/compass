@@ -46,7 +46,12 @@ export type ProductEvent =
   | "shortcut_suggestion_shown"
   | "shortcut_invoked"
   | "shortcut_suggestion_engaged"
-  | "shortcut_unavailable_attempt";
+  | "shortcut_unavailable_attempt"
+  | "booking_settings_opened"
+  | "booking_page_enabled"
+  | "booking_link_copied"
+  | "booking_page_viewed"
+  | "booking_reservation_created";
 
 export type ProductEventProperties = Record<string, boolean | number | string>;
 

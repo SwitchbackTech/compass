@@ -9,13 +9,35 @@ import {
 import userEvent from "@testing-library/user-event";
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
+
+const mockTrack = mock();
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
+let isTrackMocked = true;
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (...args: Parameters<typeof actualTrack.track>) =>
+    isTrackMocked ? mockTrack(...args) : actualTrack.track(...args),
+}));
+
+afterAll(() => {
+  isTrackMocked = false;
+});
 
 describe("BookingCopyLink", () => {
   const mockWriteText = mock(() => Promise.resolve());
 
   beforeEach(() => {
     mockWriteText.mockClear();
+    mockTrack.mockClear();
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
       value: { writeText: mockWriteText },
@@ -30,6 +52,9 @@ describe("BookingCopyLink", () => {
 
     await waitFor(() => {
       expect(mockWriteText).toHaveBeenCalledWith(bookingUrl);
+    });
+    expect(mockTrack).toHaveBeenCalledWith("booking_link_copied", {
+      source: "button",
     });
   });
 

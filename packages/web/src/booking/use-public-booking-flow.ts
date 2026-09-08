@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CreateBookingReservationInputSchema } from "@core/types/booking.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getErrorStatus } from "@web/api/util/api.util";
+import { track } from "@web/auth/posthog/track";
 import {
   type PublicBookingGuestDetails,
   type PublicBookingGuestFormValues,
@@ -281,6 +282,9 @@ export function usePublicBookingFlow() {
           durationMinutes: pageQuery.data.durationMinutes,
         }),
       );
+      track("booking_reservation_created", {
+        duration_minutes: pageQuery.data.durationMinutes,
+      });
       const token = tokenFromGuestActionUrl(result.cancelUrl);
       await navigate({
         to: ROOT_ROUTES.BOOK_CONFIRMED,

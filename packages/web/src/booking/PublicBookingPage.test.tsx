@@ -22,10 +22,24 @@ import {
 import { releasePublicBookingPageHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { routeTree } from "@web/routers/router.routes";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
+
+const mockTrack = mock();
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
+let isTrackMocked = true;
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (...args: Parameters<typeof actualTrack.track>) =>
+    isTrackMocked ? mockTrack(...args) : actualTrack.track(...args),
+}));
+
+afterAll(() => {
+  isTrackMocked = false;
+});
 
 afterEach(() => {
   releasePublicBookingPageHeadingFocus();
+  mockTrack.mockClear();
 });
 
 function renderBookingRoute(path: string) {
@@ -292,6 +306,45 @@ describe("PublicBookingPage", () => {
     expect(
       screen.getByText(/may be incorrect or the host has turned booking off/),
     ).toBeInTheDocument();
+    expect(mockTrack).not.toHaveBeenCalledWith(
+      "booking_page_viewed",
+      expect.anything(),
+    );
+  });
+
+  it("fires booking_page_viewed once for an enabled page", async () => {
+    server.use(pageHandler(), slotsInWindow([currentSlot]));
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+    ).toBeInTheDocument();
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith("booking_page_viewed", {
+      duration_minutes: 30,
+    });
+  });
+
+  it("does not fire booking_page_viewed for a disabled page", async () => {
+    server.use(
+      rest.get(
+        `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
+        (_req, res, ctx) =>
+          res(
+            ctx.status(Status.OK),
+            ctx.json(publicPagePayload({ enabled: false })),
+          ),
+      ),
+    );
+    renderBookingRoute("/book/tylerdane");
+
+    expect(
+      await screen.findByRole("heading", { name: "Booking page not found" }),
+    ).toBeInTheDocument();
+    expect(mockTrack).not.toHaveBeenCalledWith(
+      "booking_page_viewed",
+      expect.anything(),
+    );
   });
 
   it("skips the month grid to the slot list", async () => {
@@ -496,6 +549,15 @@ describe("PublicBookingPage", () => {
     expect(
       screen.getByRole("link", { name: "Cancel this booking" }),
     ).toBeInTheDocument();
+    expect(mockTrack).toHaveBeenCalledWith("booking_reservation_created", {
+      duration_minutes: 30,
+    });
+    const reservationEvents = mockTrack.mock.calls.filter(
+      (call) => call[0] === "booking_reservation_created",
+    );
+    expect(reservationEvents).toEqual([
+      ["booking_reservation_created", { duration_minutes: 30 }],
+    ]);
     expect(
       screen.getByRole("link", { name: "Reschedule this booking" }),
     ).toBeInTheDocument();
