@@ -126,11 +126,9 @@ export function BookingWeeklyHoursEditor({
     );
   };
 
-  const commitText = (id: number) => {
-    const current = rows.find((row) => row.id === id);
-    if (!current) return;
-    const parsed = parseHoursRanges(current.text);
-    const snapped = parsed.ok ? formatHoursRanges(parsed.ranges) : current.text;
+  const commitText = (id: number, rawText: string) => {
+    const parsed = parseHoursRanges(rawText);
+    const snapped = parsed.ok ? formatHoursRanges(parsed.ranges) : rawText;
     const nextRows = rows.map((row) =>
       row.id === id ? { ...row, text: snapped } : row,
     );
@@ -234,12 +232,14 @@ export function BookingWeeklyHoursEditor({
                 aria-label={hoursInputLabel(row)}
                 className="c-focus-ring min-w-40 flex-1 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
                 id={`booking-hours-row-${row.id}`}
-                onBlur={() => commitText(row.id)}
+                onBlur={(event) =>
+                  commitText(row.id, event.currentTarget.value)
+                }
                 onChange={(event) => setRowText(row.id, event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
-                    commitText(row.id);
+                    commitText(row.id, event.currentTarget.value);
                   }
                 }}
                 placeholder="9-5"

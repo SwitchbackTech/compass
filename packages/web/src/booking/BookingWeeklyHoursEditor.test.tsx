@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DEFAULT_WEEKLY_AVAILABILITY,
@@ -129,6 +129,21 @@ describe("BookingWeeklyHoursEditor", () => {
     expect(
       screen.queryByRole("button", { name: "Remove" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("commits the input's current value on focusout even if React state lags", () => {
+    const onChange = renderEditor();
+    const input = hoursInput();
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    setter?.call(input, "");
+    act(() => {
+      input.dispatchEvent(new Event("focusout", { bubbles: true }));
+    });
+
+    expect(lastCall(onChange)).toEqual([]);
   });
 
   it("keeps an unreadable range, shows the alert, and reports invalid", async () => {

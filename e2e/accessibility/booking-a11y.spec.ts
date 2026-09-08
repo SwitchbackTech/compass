@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
+  dispatchBlur,
   dispatchClick,
   dispatchFill,
   formatSlotButtonLabel,
@@ -346,9 +347,7 @@ test.describe("settings booking section", () => {
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
     await dispatchFill(hours, "");
-    await hours.evaluate((el) => {
-      el.dispatchEvent(new Event("blur", { bubbles: true }));
-    });
+    await dispatchBlur(hours);
     await dispatchClick(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
     );
@@ -374,9 +373,7 @@ test.describe("settings booking section", () => {
     const hoursInputs = settingsDialog.getByRole("textbox", { name: /Hours/ });
     await expect(hoursInputs).toHaveCount(2);
     await dispatchFill(hoursInputs.nth(0), "whenever");
-    await hoursInputs.nth(0).evaluate((el) => {
-      el.dispatchEvent(new Event("blur", { bubbles: true }));
-    });
+    await dispatchBlur(hoursInputs.nth(0));
     await expect(settingsDialog.getByRole("alert")).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking hours row error",
