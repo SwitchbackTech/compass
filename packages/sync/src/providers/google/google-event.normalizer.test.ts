@@ -445,4 +445,26 @@ describe("normalizeGoogleEvent", () => {
 
     expect(read.content).not.toHaveProperty("colorHex");
   });
+
+  it("sets providerManaged for a non-default eventType", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ eventType: "fromGmail" })),
+    );
+
+    expect(read.providerManaged).toBe(true);
+  });
+
+  it("omits providerManaged for eventType default", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ eventType: "default" })),
+    );
+
+    expect(read).not.toHaveProperty("providerManaged");
+  });
+
+  it("omits providerManaged when eventType is absent", () => {
+    const read = asProviderEvent(normalizeGoogleEvent(gEvent({})));
+
+    expect(read).not.toHaveProperty("providerManaged");
+  });
 });

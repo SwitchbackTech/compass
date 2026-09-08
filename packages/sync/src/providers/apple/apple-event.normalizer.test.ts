@@ -88,6 +88,7 @@ END:VEVENT`),
     expect(Date.parse(event.schedule.start)).toBe(
       Date.parse("2025-01-15T09:00:00-05:00"),
     );
+    expect(event).not.toHaveProperty("providerManaged");
   });
 
   it("anchors floating times to the connection zone", () => {

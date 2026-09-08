@@ -328,6 +328,79 @@ describe("EventRepository", () => {
     expect(read?.content.title).toBe("Changed");
   });
 
+  it("leaves existing customizations untouched on upsertByProviderIdentity", async () => {
+    const identity = {
+      connectionId: objectId(),
+      calendarId: objectId(),
+      providerEventId: "evt-custom",
+    };
+    const first = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        customizations: { title: "My title" },
+      }),
+    );
+    expect(first.customizations).toEqual({ title: "My title" });
+
+    const second = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        providerVersion: "etag-2",
+        content: { ...baseContent, title: "Provider title" },
+      }),
+    );
+    expect(second._id).toBe(first._id);
+    expect(second.customizations).toEqual({ title: "My title" });
+  });
+
+  it("preserves customizations on the iCalUID-preserving upsert path", async () => {
+    const identity = {
+      connectionId: objectId(),
+      calendarId: objectId(),
+      providerEventId: "evt-custom-uid",
+    };
+    const first = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        customizations: { description: "My notes" },
+        providerMetadata: { iCalUID: "kept@google.com" },
+      }),
+      { preserveIcalUidWhenAbsent: true },
+    );
+    expect(first.customizations).toEqual({ description: "My notes" });
+
+    const second = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        providerVersion: "etag-2",
+        providerMetadata: null,
+      }),
+      { preserveIcalUidWhenAbsent: true },
+    );
+    expect(second.customizations).toEqual({ description: "My notes" });
+  });
+
+  it("writes customizations through replaceExisting", async () => {
+    const record = compassRecord({
+      customizations: { title: "Overlay" },
+    });
+    await repo.put(record);
+    const updated = {
+      ...record,
+      customizations: { title: "Updated overlay", location: "Room 2" },
+    };
+    expect(await repo.replaceExisting(updated)).toBe(true);
+    const read = await repo.findById(
+      record.tenantId,
+      record.principalId,
+      record._id,
+    );
+    expect(read?.customizations).toEqual({
+      title: "Updated overlay",
+      location: "Room 2",
+    });
+  });
+
   it("finds only the owner's exceptions of one series", async () => {
     const tenantId = objectId();
     const principalId = objectId();

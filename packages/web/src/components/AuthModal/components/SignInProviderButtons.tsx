@@ -81,7 +81,7 @@ export const SignInProviderButtons: FC<SignInProviderButtonsProps> = ({
   );
 
   if (fullWidth) {
-    return <div className="flex flex-col gap-3">{buttons}</div>;
+    return <div className="flex w-full flex-col gap-3">{buttons}</div>;
   }
 
   return <>{buttons}</>;

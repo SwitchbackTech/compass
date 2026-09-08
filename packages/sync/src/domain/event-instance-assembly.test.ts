@@ -123,6 +123,77 @@ describe("assembleEventInstances", () => {
     expect(instance && "icalUid" in instance).toBe(false);
   });
 
+  it("lifts providerManaged out of the metadata bag on every row shape", () => {
+    const managedMetadata = { providerManaged: "true" as const };
+    const singleEvent = makeEvent({
+      recurrence: { kind: "single" },
+      providerMetadata: managedMetadata,
+    });
+    const master = makeEvent({
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
+      providerMetadata: managedMetadata,
+    });
+    const exception = makeEvent({
+      recurrence: {
+        kind: "exception",
+        seriesId: master._id,
+        recurrenceId: "2026-07-14T15:00:00.000Z",
+        cancelled: false,
+      },
+      providerMetadata: managedMetadata,
+    });
+    const monday = makeOccurrence({
+      eventId: master._id,
+      startAt: new Date("2026-07-13T15:00:00.000Z"),
+    });
+    const movedOccurrence = makeOccurrence({
+      eventId: exception._id,
+      startAt: new Date("2026-07-14T18:00:00.000Z"),
+    });
+
+    const singleRow = assembleEventInstances(
+      [makeOccurrence({ eventId: singleEvent._id })],
+      byId(singleEvent),
+    )[0];
+    const seriesRows = assembleEventInstances(
+      [monday, movedOccurrence],
+      byId(master, exception),
+    );
+
+    expect(singleRow?.providerManaged).toBe(true);
+    for (const row of seriesRows) {
+      expect(row.providerManaged).toBe(true);
+    }
+  });
+
+  it("omits providerManaged when the metadata bag has no such entry", () => {
+    const event = makeEvent({
+      recurrence: { kind: "single" },
+      providerMetadata: null,
+    });
+
+    const [instance] = assembleEventInstances(
+      [makeOccurrence({ eventId: event._id })],
+      byId(event),
+    );
+
+    expect(instance && "providerManaged" in instance).toBe(false);
+  });
+
+  it("overlays customizations.title onto assembled instance content", () => {
+    const event = makeEvent({
+      content: { ...baseContent, title: "Provider title" },
+      customizations: { title: "Compass title" },
+    });
+    const occurrence = makeOccurrence({ eventId: event._id });
+
+    const [instance] = assembleEventInstances([occurrence], byId(event));
+
+    expect(instance?.content.title).toBe("Compass title");
+    expect(instance?.content.description).toBe(baseContent.description);
+    expect(instance?.content.location).toBe(baseContent.location);
+  });
+
   it("maps a single event to one single row carrying full content", () => {
     const event = makeEvent({ recurrence: { kind: "single" } });
     const occurrence = makeOccurrence({ eventId: event._id });

@@ -42,6 +42,16 @@ export const EventRecordSchema = z.strictObject({
   providerUpdatedAt: z.date().nullable(),
   deliveryState: ProviderDeliveryStateSchema.nullable(),
   providerMetadata: z.record(z.string(), z.string()).nullable(),
+  // Compass overlays for provider-managed events: served over the provider's
+  // title, description, and location while schedule follows the provider.
+  customizations: z
+    .strictObject({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      location: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: SyncEventRecurrenceSchema,

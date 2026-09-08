@@ -111,6 +111,28 @@ describe("ProviderPageApplier", () => {
     });
   });
 
+  it("stores providerManaged in providerMetadata when the read is managed", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+
+    await run.applyPage([
+      { ...single("managed"), providerManaged: true },
+      { ...single("normal") },
+    ]);
+
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    expect((await byId("managed"))?.providerMetadata).toEqual({
+      providerManaged: "true",
+    });
+    expect((await byId("normal"))?.providerMetadata).toBeNull();
+  });
+
   it("projects transparent imports as non-busy while opaque siblings occupy listBusyOverlapping", async () => {
     const calendar = await seedCalendar();
     const run = applier(calendar);
@@ -341,5 +363,56 @@ describe("ProviderPageApplier", () => {
       .countDocuments({ calendarId: calendar._id });
     // One single-occurrence event each.
     expect(occCount).toBe(250);
+  });
+
+  it("keeps customizations when a pull changes the provider schedule", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+    const providerEventId = "managed-schedule";
+
+    await run.applyPage([
+      { ...single(providerEventId), providerManaged: true },
+    ]);
+    const existing = await events.findByProviderIdentity(
+      calendar.tenantId,
+      calendar.principalId,
+      {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      },
+    );
+    if (!existing) throw new Error("seed failed");
+    await events.replaceExisting({
+      ...existing,
+      customizations: { title: "My overlay" },
+    });
+
+    const movedSchedule = {
+      kind: "timed" as const,
+      start: "2026-07-14T10:00:00-06:00",
+      end: "2026-07-14T11:00:00-06:00",
+      timeZone: "America/Denver",
+    };
+    await run.applyPage([
+      {
+        ...single(providerEventId),
+        providerManaged: true,
+        schedule: movedSchedule,
+        providerVersion: "etag-moved",
+      },
+    ]);
+
+    const updated = await events.findByProviderIdentity(
+      calendar.tenantId,
+      calendar.principalId,
+      {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      },
+    );
+    expect(updated?.schedule).toEqual(movedSchedule);
+    expect(updated?.customizations).toEqual({ title: "My overlay" });
   });
 });

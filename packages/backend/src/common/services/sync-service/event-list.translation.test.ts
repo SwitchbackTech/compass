@@ -74,6 +74,20 @@ describe("syncEventInstanceToBrowser", () => {
     expect("icalUid" in event).toBe(false);
   });
 
+  it("carries providerManaged through to the browser event", () => {
+    const event = syncEventInstanceToBrowser(
+      baseInstance({ providerManaged: true }),
+    );
+
+    expect(event.providerManaged).toBe(true);
+  });
+
+  it("leaves providerManaged absent when sync reported none", () => {
+    const event = syncEventInstanceToBrowser(baseInstance());
+
+    expect("providerManaged" in event).toBe(false);
+  });
+
   it("maps a series master row keeping the real eventId and rules", () => {
     const instance = baseInstance({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
