@@ -49,7 +49,10 @@ export function assembleEventInstances(
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     };
-    const correlation = toIcalUid(event);
+    const correlation = {
+      ...toIcalUid(event),
+      ...toProviderManaged(event),
+    };
 
     if (event.recurrence.kind === "single") {
       instances.push(
@@ -123,6 +126,7 @@ export function assembleEventInstances(
         createdAt: master.createdAt.toISOString(),
         updatedAt: master.updatedAt.toISOString(),
         ...toIcalUid(master),
+        ...toProviderManaged(master),
       }),
     );
   }
@@ -136,6 +140,12 @@ export function assembleEventInstances(
 const toIcalUid = (event: EventRecord): { icalUid?: string } => {
   const icalUid = event.providerMetadata?.["iCalUID"];
   return icalUid ? { icalUid } : {};
+};
+
+const toProviderManaged = (event: EventRecord): { providerManaged?: true } => {
+  return event.providerMetadata?.["providerManaged"] === "true"
+    ? { providerManaged: true }
+    : {};
 };
 
 const toInstanceContent = (content: EventRecord["content"]) => ({

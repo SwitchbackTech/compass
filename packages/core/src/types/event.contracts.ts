@@ -111,6 +111,9 @@ export const EventSchema = z.strictObject({
   // meeting. Absent for events the provider reported none for, and for
   // locally created events.
   icalUid: z.string().optional(),
+  // The provider owns this event's details and schedule. Omitted rather than
+  // nulled so events imported before it was recorded stay contract-valid.
+  providerManaged: z.literal(true).optional(),
 });
 export type Event = z.infer<typeof EventSchema>;
 

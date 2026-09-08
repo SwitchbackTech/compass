@@ -68,6 +68,7 @@ describe("normalizeMicrosoftEvent", () => {
     expect(read.icalUid).toBe(
       "040000008200E00074C5B7101A82E00800000000000000000000000000000000000000000000000000",
     );
+    expect(read).not.toHaveProperty("providerManaged");
   });
 
   it("normalizes an all-day free event", () => {

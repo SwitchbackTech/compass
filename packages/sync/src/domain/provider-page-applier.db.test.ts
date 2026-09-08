@@ -111,6 +111,28 @@ describe("ProviderPageApplier", () => {
     });
   });
 
+  it("stores providerManaged in providerMetadata when the read is managed", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+
+    await run.applyPage([
+      { ...single("managed"), providerManaged: true },
+      { ...single("normal") },
+    ]);
+
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    expect((await byId("managed"))?.providerMetadata).toEqual({
+      providerManaged: "true",
+    });
+    expect((await byId("normal"))?.providerMetadata).toBeNull();
+  });
+
   it("projects transparent imports as non-busy while opaque siblings occupy listBusyOverlapping", async () => {
     const calendar = await seedCalendar();
     const run = applier(calendar);

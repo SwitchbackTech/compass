@@ -32,6 +32,9 @@ export const syncEventInstanceToBrowser = (
     // Absent stays absent: the browser contract treats a missing key as "the
     // provider reported no correlation key", not as an empty one.
     ...(instance.icalUid ? { icalUid: instance.icalUid } : {}),
+    ...(instance.providerManaged
+      ? { providerManaged: instance.providerManaged }
+      : {}),
   };
 
   switch (instance.recurrence.kind) {

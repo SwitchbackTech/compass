@@ -298,6 +298,24 @@ describe("Event Contracts", () => {
 
       expect(EventSchema.safeParse(event).success).toBe(false);
     });
+
+    it("accepts providerManaged: true", () => {
+      expect(
+        EventSchema.safeParse(baseEvent({ providerManaged: true })).success,
+      ).toBe(true);
+    });
+
+    it("rejects providerManaged: false", () => {
+      expect(
+        EventSchema.safeParse(baseEvent({ providerManaged: false })).success,
+      ).toBe(false);
+    });
+
+    it('rejects providerManaged: "true"', () => {
+      expect(
+        EventSchema.safeParse(baseEvent({ providerManaged: "true" })).success,
+      ).toBe(false);
+    });
   });
 
   describe("BusyPeriodSchema", () => {

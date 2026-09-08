@@ -36,6 +36,11 @@ export interface ProviderEvent {
   // the same meeting on different accounts share it, unlike providerEventId.
   // Absent when the provider reported none.
   readonly icalUid?: string;
+  // The provider owns this event's details and schedule and refuses writes to
+  // them; only presentation fields (color, attendees) may be written. Today
+  // Google sets this for any eventType other than "default"; birthday's
+  // slightly looser rules are ignored on purpose.
+  readonly providerManaged?: true;
   // CalDAV resource href for resolving sync-collection deletions.
   readonly resourceHref?: string;
   readonly recurrence: ProviderEventRecurrence;

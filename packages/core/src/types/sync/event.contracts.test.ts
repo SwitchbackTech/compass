@@ -398,6 +398,21 @@ describe("Sync event contracts", () => {
       const instance = baseInstance({ calendarId: "not-an-id" });
       expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(false);
     });
+
+    it("accepts providerManaged: true", () => {
+      const instance = baseInstance({ providerManaged: true });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(true);
+    });
+
+    it("rejects providerManaged: false", () => {
+      const instance = baseInstance({ providerManaged: false });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(false);
+    });
+
+    it('rejects providerManaged: "true"', () => {
+      const instance = baseInstance({ providerManaged: "true" });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(false);
+    });
   });
 
   describe("EventInstanceListQuerySchema", () => {
