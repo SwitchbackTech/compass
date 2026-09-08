@@ -1,6 +1,7 @@
 import {
   type MutableRefObject,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -289,6 +290,13 @@ export function BookingSettingsSection({
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
+  // The settings fieldset is disabled while a save is in flight, so focusing
+  // from onError is a no-op. Wait until the mutation settles and the field
+  // is enabled again.
+  useLayoutEffect(() => {
+    if (saveMutation.isPending || saveError?.field == null) return;
+    focusBookingField(saveError.field);
+  }, [saveError, saveMutation.isPending]);
   const sectionRef = useRef<HTMLFieldSetElement>(null);
   const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
@@ -491,7 +499,6 @@ export function BookingSettingsSection({
     });
     if (error) {
       setSaveError(error);
-      if (error.field) focusBookingField(error.field);
       return;
     }
     setSaveError(null);
@@ -501,10 +508,7 @@ export function BookingSettingsSection({
       {
         onError: (mutationError) => {
           const inline = bookingSaveErrorInline(mutationError);
-          if (inline) {
-            setSaveError(inline);
-            if (inline.field) focusBookingField(inline.field);
-          }
+          if (inline) setSaveError(inline);
         },
         onSuccess: (page) => {
           if (enabled && !wasLive) {
