@@ -18,6 +18,15 @@ describe("SignInProviderButtons", () => {
       screen.getByRole("button", { name: "Continue with Google" }),
     ).toHaveTextContent("Continue with Google");
     expect(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).toHaveClass("w-full");
+    expect(
+      screen.getByRole("button", { name: "Continue with Microsoft" }),
+    ).toHaveClass("w-full");
+    expect(
+      screen.getByRole("button", { name: "Continue with Apple" }),
+    ).toHaveClass("w-full");
+    expect(
       screen.getByRole("button", { name: "Continue with Microsoft" }),
     ).toHaveTextContent("Continue with Microsoft");
     expect(
@@ -29,6 +38,28 @@ describe("SignInProviderButtons", () => {
     expect(
       screen.queryByText("Signs you up and connects your Outlook calendar."),
     ).not.toBeInTheDocument();
+  });
+
+  it("stretches the button stack to the container width", () => {
+    const { container } = render(
+      <SignInProviderButtons
+        available={["google"]}
+        loadingKind={null}
+        onSignIn={mock()}
+      />,
+    );
+
+    expect(container.firstElementChild).toHaveClass(
+      "w-full",
+      "flex",
+      "flex-col",
+    );
+    expect(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).toHaveClass("w-full");
+    expect(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).toHaveStyle({ width: "100%" });
   });
 
   it("calls onSignIn with the clicked provider kind", async () => {

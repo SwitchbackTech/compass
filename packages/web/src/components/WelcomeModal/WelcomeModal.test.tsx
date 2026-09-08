@@ -584,6 +584,9 @@ describe("WelcomeModal", () => {
       expect(
         screen.getByRole("button", { name: "Sign up with email" }),
       ).toHaveClass("w-full", "h-10", "c-button-elevated");
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toHaveClass("w-full", "h-10");
     });
 
     it("starts Google auth from the button and queues the practice offer", async () => {
