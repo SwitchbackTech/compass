@@ -2,6 +2,7 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
@@ -1198,5 +1199,112 @@ describe("SettingsModal", () => {
     await waitFor(() => {
       expect(savedBody).toMatchObject({ durationMinutes: 45 });
     });
+  });
+
+  it("continues a meeting setup wizard step with Mod+Enter", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    let savedBody: unknown;
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/booking/page`, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: calendar.id,
+            blockingCalendarIds: [calendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
+          }),
+        ),
+      ),
+      rest.put(`${ENV_WEB.API_BASEURL}/booking/page`, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            id: "000000000000000000000001",
+            slug: "hostuser",
+            hostUserId: "000000000000000000000002",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            updatedAt: "2026-01-01T00:00:00.000Z",
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        );
+      }),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("heading", { name: "Pick your address" });
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}{Enter}{/${modKey}}`);
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ enabled: false, slug: "hostuser" });
+    });
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("holding Mod on a wizard step shows only nav chips and Continue Enter", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/booking/page`, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: calendar.id,
+            blockingCalendarIds: [calendar.id],
+            timeZone: "UTC",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
+          }),
+        ),
+      ),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("heading", { name: "Pick your address" });
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}`);
+
+    expect(
+      within(screen.getByRole("button", { name: "Accounts" })).getByText("1", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("button", { name: "Meeting" })).getByText("3", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("button", { name: /^Continue/ })).getByText(
+        "Enter",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
   });
 });

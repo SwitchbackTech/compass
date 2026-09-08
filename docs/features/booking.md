@@ -11,7 +11,8 @@ turn on, Essentials / More options, editable address, default hours,
 branded connect pills, and funnel analytics. v1.7 shipped the Meeting
 page redesign: `/meet` URLs, meeting copy, hold-Mod section chords, the
 on/off switch, grouped weekly hours rows, and the first-run address
-screen. The production gate stays off.
+screen. v1.8 replaces that address screen with a guided setup wizard.
+The production gate stays off.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
@@ -23,7 +24,7 @@ monorepo (public `/meet/:username`, host Settings, backend APIs, guest
 cancel, guest reschedule, edit-details, one-click turn on, Essentials /
 More options, editable address, default hours, branded connect pills,
 funnel analytics, meeting copy, hold-Mod section chords, the on/off
-switch, grouped weekly hours, and the first-run address screen). Booking
+switch, grouped weekly hours, and the guided first-run setup wizard). Booking
 is enabled in development and staging (`runtime.nodeEnv` other than
 `production`) and disabled in production. Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
@@ -73,11 +74,14 @@ Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
 
 Compass users have `name` and `email`, not a username
 (`packages/core/src/types/user.types.ts`). When the host opens Booking
-Settings for the first time, a guided screen shows the suggested address
-from `suggestedSlug` under the `.../meet/` prefix. **Continue**
-(Mod+Enter) saves a draft (`PUT` with `enabled: false` and the seeded
-defaults) so "That address is already taken" shows on that screen.
-Reopening Settings later lands on the normal page with the switch off.
+Settings for the first time, a guided wizard asks one question per
+screen: address, weekly hours, duration, destination (only when more than
+one writable calendar exists), then go live. **Continue** on the address
+step (Enter, `k`, or Mod+Enter) saves a draft (`PUT` with `enabled: false`)
+so "That address is already taken" shows on that screen. `j` and Esc go
+back a step; Esc on the first step closes Settings. Go live turns the page
+on, copies the link, and opens the full form. Reopening Settings after the
+draft exists lands on the normal page with the switch off.
 The host may replace the address later under More options; a draft keeps
 its chosen address even while disabled.
 
@@ -246,10 +250,15 @@ time inputs per weekday.
   minimum notice, and maximum horizon. Jumping to a field inside it, or
   an invalid field in the group, opens it. Do not control the `open`
   prop from React: the jump-key code opens the element imperatively.
-- **First run:** before any draft exists, the Meeting tab is only the
-  address screen: heading "Your meeting page", one sentence, the address
-  field, the helper, and **Continue**. There is no switch, duration, or
-  hours editor until Continue saves the draft.
+- **First run:** before any draft exists, Meeting is a wizard: Step N of
+  M, one heading, one sentence, and the step body. Steps are address
+  ("Pick your address"), weekly hours, duration, destination (omitted
+  when fewer than two writable calendars), and go live. Address Continue
+  saves the draft. `k` continues and `j` goes back when focus is not in
+  an editable control. Enter continues from the address input or the
+  Continue / Turn on button. Esc goes back one step, or closes Settings
+  on step 1. The dirty-form discard prompt is not shown while the wizard
+  is mounted.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
 - **Weekly hours** are grouped rows of day pills, a Start menu, the
@@ -484,7 +493,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingAddressSetup.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/booking/setup/`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |

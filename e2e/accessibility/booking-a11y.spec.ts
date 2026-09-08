@@ -520,11 +520,92 @@ test.describe("settings booking section", () => {
       enabled: false,
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(settingsDialog.getByText("Step 1 of 4")).toBeVisible();
     await expect(
-      settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+      settingsDialog.getByRole("heading", { name: "Pick your address" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run address",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run duration step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    await page.route("**/api/booking/page", async (route) => {
+      if (route.request().method() === "PUT") {
+        const body = route.request().postDataJSON() as Record<string, unknown>;
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...body,
+            id: "000000000000000000000001",
+            slug: "hostuser",
+            hostUserId: "000000000000000000000002",
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        });
+      }
+      return route.fallback();
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByRole("button", { name: /Continue/ }).click();
+    await expect(settingsDialog.getByText("Step 2 of 4")).toBeVisible();
+    await settingsDialog.getByRole("button", { name: /Continue/ }).click();
+    await expect(
+      settingsDialog.getByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run duration",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run go-live step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    await page.route("**/api/booking/page", async (route) => {
+      if (route.request().method() === "PUT") {
+        const body = route.request().postDataJSON() as Record<string, unknown>;
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ...body,
+            id: "000000000000000000000001",
+            slug: "hostuser",
+            hostUserId: "000000000000000000000002",
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        });
+      }
+      return route.fallback();
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByRole("button", { name: /Continue/ }).click();
+    await expect(settingsDialog.getByText("Step 2 of 4")).toBeVisible();
+    await settingsDialog.getByRole("button", { name: /Continue/ }).click();
+    await expect(settingsDialog.getByText("Step 3 of 4")).toBeVisible();
+    await settingsDialog.getByRole("button", { name: /Continue/ }).click();
+    await expect(
+      settingsDialog.getByRole("heading", { name: "Ready to go live" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run go live",
       include: "[role='dialog']",
     });
   });

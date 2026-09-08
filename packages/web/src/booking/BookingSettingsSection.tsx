@@ -29,7 +29,6 @@ import {
   BookingAddressField,
   bookingAddressPrefix,
 } from "@web/booking/BookingAddressField";
-import { BookingAddressSetup } from "@web/booking/BookingAddressSetup";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectPrompt } from "@web/booking/BookingConnectPrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -65,6 +64,24 @@ import {
   bookingFieldAttrs,
   focusBookingField,
 } from "@web/booking/booking-sequence.fields";
+import { BookingSetupAddressStep } from "@web/booking/setup/BookingSetupAddressStep";
+import { BookingSetupDestinationStep } from "@web/booking/setup/BookingSetupDestinationStep";
+import {
+  BOOKING_DURATION_OPTIONS,
+  BookingSetupDurationStep,
+} from "@web/booking/setup/BookingSetupDurationStep";
+import { BookingSetupGoLiveStep } from "@web/booking/setup/BookingSetupGoLiveStep";
+import { BookingSetupHoursStep } from "@web/booking/setup/BookingSetupHoursStep";
+import {
+  BookingSetupWizard,
+  setupContinueLabel,
+} from "@web/booking/setup/BookingSetupWizard";
+import {
+  nextSetupStep,
+  prevSetupStep,
+  type SetupStepId,
+  visibleSetupSteps,
+} from "@web/booking/setup/setup-steps";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -78,7 +95,7 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 
-const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
+const DURATION_OPTIONS = BOOKING_DURATION_OPTIONS;
 
 const MORE_OPTIONS_FIELDS = new Set<BookingField>([
   "address",
@@ -265,6 +282,10 @@ export function BookingSettingsSection({
     String(form.maxHorizonDays),
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [setupStep, setSetupStep] = useState<SetupStepId | null>(null);
+  const setupStepRef = useRef<SetupStepId | null>(null);
+  setupStepRef.current = setupStep;
+  const reservingAddressRef = useRef(false);
   const focusSwitchAfterSetupRef = useRef(false);
   // The settings fieldset is disabled while a save is in flight, so focusing
   // from onError is a no-op. Wait until the mutation settles and the field
@@ -301,7 +322,10 @@ export function BookingSettingsSection({
     // writable list sticks a placeholder destination that the identity guard
     // will not correct.
     if (calendarsPending || waitingForHostCalendars) return;
+    const keepWizardEdits =
+      seededPageRef.current != null && setupStepRef.current != null;
     seededPageRef.current = serverPage;
+    if (keepWizardEdits) return;
     const seeded = buildInitialForm(
       serverPage,
       effectiveTimeZone,
@@ -341,6 +365,12 @@ export function BookingSettingsSection({
 
   if (dismissGuardRef) {
     dismissGuardRef.current = () => {
+      if (setupStep != null) {
+        const steps = visibleSetupSteps(writableCalendars.length);
+        if (setupStep === steps[0]?.id) return false;
+        setSetupStep(prevSetupStep(setupStep, steps));
+        return true;
+      }
       if (!isDirty) return false;
       setIsConfirmOpen(true);
       return true;
@@ -372,15 +402,20 @@ export function BookingSettingsSection({
     });
   }, [hasHealthyConnection, isSeedingForm, serverPage]);
 
+  useEffect(() => {
+    if (setupStep != null) return;
+    if (serverPage != null && isUnconfiguredBookingPage(serverPage)) {
+      setSetupStep("address");
+    }
+  }, [serverPage, setupStep]);
+
   if (!hasHealthyConnection) {
     return <BookingConnectPrompt />;
   }
 
-  if (isSeedingForm) {
+  if (isSeedingForm && setupStep == null) {
     return <p className="text-sm text-text-muted">Loading meeting settings…</p>;
   }
-
-  const isSetup = serverPage != null && isUnconfiguredBookingPage(serverPage);
 
   const savedPage = isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
@@ -451,16 +486,37 @@ export function BookingSettingsSection({
     setSaveError(null);
     const wasLive = isLive;
     const silent = options?.silent === true;
-    if (silent) focusSwitchAfterSetupRef.current = true;
+    if (silent && !enabled && setupStepRef.current === "address") {
+      reservingAddressRef.current = true;
+    }
     saveMutation.mutate(
       { ...form, enabled },
       {
         onError: (mutationError) => {
-          if (silent) focusSwitchAfterSetupRef.current = false;
+          if (reservingAddressRef.current) {
+            reservingAddressRef.current = false;
+            setSetupStep("address");
+          }
           const inline = bookingSaveErrorInline(mutationError);
           if (inline) setSaveError(inline);
         },
         onSuccess: (page) => {
+          const wizardStep = setupStepRef.current;
+          if (reservingAddressRef.current && !enabled) {
+            reservingAddressRef.current = false;
+            setSetupStep((current) =>
+              current === "address"
+                ? nextSetupStep(
+                    "address",
+                    visibleSetupSteps(writableCalendars.length),
+                  )
+                : current,
+            );
+          }
+          if (wizardStep === "live" && enabled) {
+            setSetupStep(null);
+            focusSwitchAfterSetupRef.current = true;
+          }
           if (!enabled) {
             if (!silent) {
               showStatusToast(
@@ -474,7 +530,7 @@ export function BookingSettingsSection({
           }
           if (!wasLive) {
             track("booking_page_enabled", {
-              first_time: savedPage == null,
+              first_time: savedPage == null || wizardStep === "live",
             });
           }
           if (!isSavedBookingPage(page)) return;
@@ -500,23 +556,109 @@ export function BookingSettingsSection({
     horizonInvalid ||
     (saveError?.field != null && MORE_OPTIONS_FIELDS.has(saveError.field));
 
-  if (isSetup) {
+  if (setupStep != null) {
+    const steps = visibleSetupSteps(writableCalendars.length);
+    const current =
+      steps.find((step) => step.id === setupStep) ?? steps[0] ?? null;
+    if (current == null) return null;
     const parseMessage = bookingSlugParseMessage(form.slug);
-    const setupError =
+    const addressSaveError =
       saveError?.field === "address" &&
       (parseMessage == null || saveError.message !== parseMessage)
         ? saveError.message
         : null;
+    const wizardError =
+      setupStep === "live"
+        ? (saveError?.message ?? null)
+        : (addressSaveError ??
+          (saveError?.field === "hours" ? saveError.message : null));
+
+    const handleWizardContinue = () => {
+      if (setupStep === "address") {
+        if (parseMessage) {
+          setSaveError({ message: parseMessage, field: "address" });
+          return;
+        }
+        submit(false, { silent: true });
+        return;
+      }
+      if (setupStep === "hours") {
+        if (form.weeklyAvailability.length === 0) {
+          setSaveError({
+            message: "Choose at least one day.",
+            field: "hours",
+          });
+          return;
+        }
+        setSaveError(null);
+        setSetupStep(nextSetupStep(setupStep, steps));
+        return;
+      }
+      if (setupStep === "live") {
+        submit(true);
+        return;
+      }
+      setSaveError(null);
+      setSetupStep(nextSetupStep(setupStep, steps));
+    };
+
+    const handleWizardBack = () => {
+      if (setupStep === steps[0]?.id) return;
+      setSaveError(null);
+      setSetupStep(prevSetupStep(setupStep, steps));
+    };
+
     return (
-      <BookingAddressSetup
-        bookingUrl={null}
-        error={setupError}
-        forceInvalid={saveError?.field === "address"}
+      <BookingSetupWizard
+        continueLabel={setupContinueLabel(current.id)}
+        error={wizardError}
         isPending={saveMutation.isPending}
-        onChange={(nextSlug) => updateForm({ slug: nextSlug })}
-        onContinue={() => submit(false, { silent: true })}
-        slug={form.slug ?? ""}
-      />
+        onBack={handleWizardBack}
+        onContinue={handleWizardContinue}
+        step={current}
+        steps={steps}
+      >
+        {current.id === "address" ? (
+          <BookingSetupAddressStep
+            bookingUrl={null}
+            forceInvalid={saveError?.field === "address"}
+            onChange={(nextSlug) => updateForm({ slug: nextSlug })}
+            slug={form.slug ?? ""}
+          />
+        ) : null}
+        {current.id === "hours" ? (
+          <BookingSetupHoursStep
+            onChange={(weeklyAvailability) =>
+              updateForm({ weeklyAvailability })
+            }
+            timeZone={form.timeZone}
+            value={form.weeklyAvailability}
+          />
+        ) : null}
+        {current.id === "duration" ? (
+          <BookingSetupDurationStep
+            onChange={(durationMinutes) => updateForm({ durationMinutes })}
+            value={form.durationMinutes}
+          />
+        ) : null}
+        {current.id === "destination" ? (
+          <BookingSetupDestinationStep
+            connections={connections}
+            onChange={handleDestinationChange}
+            value={form.destinationCalendarId}
+            writableCalendars={writableCalendars}
+          />
+        ) : null}
+        {current.id === "live" ? (
+          <BookingSetupGoLiveStep
+            destinationCalendar={destinationCalendar}
+            durationMinutes={form.durationMinutes}
+            error={wizardError}
+            linkPreview={addressPreview}
+            weeklyAvailability={form.weeklyAvailability}
+          />
+        ) : null}
+      </BookingSetupWizard>
     );
   }
 

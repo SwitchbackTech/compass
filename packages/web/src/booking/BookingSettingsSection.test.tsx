@@ -508,12 +508,14 @@ describe("BookingSettingsSection", () => {
 
     await userEvent
       .setup({ delay: null })
-      .click(await screen.findByRole("button", { name: "Continue" }));
+      .click(await screen.findByRole("button", { name: /^Continue/ }));
 
-    const trigger = await screen.findByRole("button", {
-      name: /^Meeting timezone:/,
-    });
-    expect(trigger).toHaveAccessibleName("Meeting timezone: Chicago (CDT)");
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Times are in Chicago/)).toBeInTheDocument();
   });
 
   it("keeps a configured page's stored timezone even when it is UTC", async () => {
@@ -575,19 +577,22 @@ describe("BookingSettingsSection", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Your meeting page" }),
+      await screen.findByRole("heading", { name: "Pick your address" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Pick the address people will use to book time with you. You can change it later.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Page address")).toHaveValue("hostuser");
+    const address = screen.getByLabelText("Page address");
+    expect(address).toHaveValue("hostuser");
+    expect(address).toHaveFocus();
     expect(
       screen.getByText(`Your link: ${window.location.origin}/meet/hostuser`),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Continue" }),
+      screen.getByRole("button", { name: /^Continue/ }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
     expect(
@@ -649,16 +654,12 @@ describe("BookingSettingsSection", () => {
     });
     expect(mocks.toast).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
-    const meetingSwitch = await screen.findByRole("switch", {
-      name: "Meeting page",
-    });
-    expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
-    expect(meetingSwitch).toHaveFocus();
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
     expect(
-      screen.getByText("Off. Turn it on to share your link."),
+      screen.getByRole("heading", { name: "When can people meet with you?" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "Your meeting page" }),
+      screen.queryByRole("switch", { name: "Meeting page" }),
     ).not.toBeInTheDocument();
   });
 
@@ -690,8 +691,9 @@ describe("BookingSettingsSection", () => {
     await user.click(await screen.findByRole("button", { name: /^Continue/ }));
 
     expect(
-      await screen.findByRole("heading", { name: "Your meeting page" }),
+      await screen.findByRole("heading", { name: "Pick your address" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       BOOKING_SAVE_ERROR_COPY.SLUG_TAKEN,
     );
@@ -774,6 +776,247 @@ describe("BookingSettingsSection", () => {
     await waitFor(() => {
       expect(savedBody).toMatchObject({ enabled: false, slug: "hostuser" });
     });
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("advances hours with k and returns with j", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("k");
+    expect(
+      await screen.findByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("j");
+    expect(
+      screen.getByRole("heading", { name: "When can people meet with you?" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not advance the duration step on Enter and selects with Space", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+
+    const fortyFive = screen.getByRole("radio", { name: "45 minutes" });
+    fortyFive.focus();
+    await user.keyboard("{Enter}");
+    expect(
+      screen.getByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard(" ");
+    expect(fortyFive).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("steps back from duration on Escape without closing Settings", async () => {
+    const user = userEvent.setup({ delay: null });
+    const dismissGuardRef: { current: (() => boolean) | null } = {
+      current: null,
+    };
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection dismissGuardRef={dismissGuardRef} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+    expect(dismissGuardRef.current?.()).toBe(true);
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets Escape on step 1 close Settings", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+    const dismissGuardRef: { current: (() => boolean) | null } = {
+      current: null,
+    };
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection dismissGuardRef={dismissGuardRef} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("heading", { name: "Pick your address" });
+    expect(dismissGuardRef.current?.()).toBe(false);
+  });
+
+  it("shows destination as step 4 of 5 when two writable calendars exist", async () => {
+    const user = userEvent.setup({ delay: null });
+    const second = createMockCalendar({
+      name: "Personal",
+      accountEmail: "second@example.com",
+    });
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY" as const,
+        connections: [
+          createMockConnection("host@example.com"),
+          createMockConnection("second@example.com"),
+        ],
+      },
+    });
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar, second]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(await screen.findByText("Step 4 of 5")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Where should meetings go?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Destination calendar" }),
+    ).toBeInTheDocument();
   });
 
   it("PUTs slug when the host edits the page address", async () => {
@@ -1045,22 +1288,25 @@ describe("BookingSettingsSection", () => {
     });
   });
 
-  it("fires booking_page_enabled after Continue, then turn on, with first_time false", async () => {
+  it("go live PUTs enabled true with first_time true and focuses the switch", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
     const slug = "hostuser";
     const bookingUrl = `https://compasscalendar.com/meet/${slug}`;
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
+    const putBodies: unknown[] = [];
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(ctx.json(unconfiguredPage())),
       ),
-      rest.put(bookingPageUrl, async (req, res, ctx) =>
-        res(
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = (await req.json()) as Record<string, unknown>;
+        putBodies.push(body);
+        return res(
           ctx.json({
-            ...((await req.json()) as Record<string, unknown>),
+            ...body,
             id: createObjectIdString(),
             slug,
             hostUserId: createObjectIdString(),
@@ -1068,8 +1314,8 @@ describe("BookingSettingsSection", () => {
             updatedAt: new Date().toISOString(),
             bookingUrl,
           }),
-        ),
-      ),
+        );
+      }),
     );
 
     const { wrapper, queryClient } = createStoreWrapper();
@@ -1081,19 +1327,108 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: "Continue" }));
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "my-page");
+    await user.keyboard("{Enter}");
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    const fortyFive = await screen.findByRole("radio", { name: "45 minutes" });
+    await user.click(fortyFive);
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
     await user.click(
-      await screen.findByRole("switch", { name: "Meeting page" }),
+      await screen.findByRole("button", { name: /Turn on and copy link/ }),
     );
 
     await waitFor(() => {
-      expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
-        first_time: false,
+      expect(putBodies.at(-1)).toMatchObject({
+        enabled: true,
+        durationMinutes: 45,
+        slug: "my-page",
+        weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
       });
     });
+    expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
+      first_time: true,
+    });
+    const meetingSwitch = await screen.findByRole("switch", {
+      name: "Meeting page",
+    });
+    expect(meetingSwitch).toHaveFocus();
     expect(mockTrack).toHaveBeenCalledWith("booking_link_copied", {
       source: "save",
     });
+  });
+
+  it("keeps the go-live step and shows a save error", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    let putCount = 0;
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        putCount += 1;
+        const body = (await req.json()) as Record<string, unknown>;
+        if (body.enabled === true) {
+          return res(
+            ctx.status(400),
+            ctx.json({
+              code: "AVAILABILITY_REQUIRED",
+              message: "hours",
+            }),
+          );
+        }
+        return res(
+          ctx.json({
+            ...body,
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(
+      await screen.findByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", { name: /Turn on and copy link/ }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Ready to go live" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      BOOKING_SAVE_ERROR_COPY.AVAILABILITY_REQUIRED,
+    );
+    expect(putCount).toBe(2);
   });
 
   it("fires booking_page_enabled with first_time false when a saved page turns on", async () => {

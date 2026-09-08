@@ -11,6 +11,10 @@ interface BookingTimezoneFieldProps {
   disabled?: boolean;
 }
 
+export function bookingTimezoneLabel(timeZone: TimeZone): string {
+  return `${timeZoneCityName(timeZone)} (${formatTimeZoneAbbreviation(timeZone)})`;
+}
+
 /**
  * The meeting page's timezone, picked through the same searchable combobox as
  * time travel and the default-timezone dialog. It was a native <select> over
@@ -27,8 +31,7 @@ export function BookingTimezoneField({
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const label = `${timeZoneCityName(timeZone)} (${formatTimeZoneAbbreviation(timeZone)})`;
+  const label = bookingTimezoneLabel(timeZone);
 
   return (
     <div>
