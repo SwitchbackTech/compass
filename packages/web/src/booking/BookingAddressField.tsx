@@ -87,16 +87,20 @@ export function BookingAddressField({
           value={slug}
         />
       </div>
-      <p className="mt-1 text-text-muted text-xs" id={helperId}>
+      <p className="text-text-muted text-xs" id={helperId}>
         {BOOKING_ADDRESS_HELPER}
       </p>
       {showError ? (
-        <p className="text-error text-xs" id={errorId} role="alert">
+        <p className="font-medium text-sm text-text" id={errorId} role="alert">
           {parseMessage}
         </p>
       ) : null}
       {showWarning ? (
-        <p className="text-sm text-warning" id={warningId} role="status">
+        <p
+          className="font-medium text-sm text-text"
+          id={warningId}
+          role="status"
+        >
           {BOOKING_ADDRESS_CHANGE_WARNING}
         </p>
       ) : null}

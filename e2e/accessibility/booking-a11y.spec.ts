@@ -362,10 +362,9 @@ test.describe("settings booking section", () => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     const address = settingsDialog.getByLabel("Page address");
+    await address.click();
     await dispatchFill(address, "ab");
-    await address.evaluate((el) => {
-      el.dispatchEvent(new Event("blur", { bubbles: true }));
-    });
+    await settingsDialog.getByLabel("Duration").click();
     await expect(
       settingsDialog.getByText(
         "Use 3 to 32 lowercase letters, digits, or hyphens",
