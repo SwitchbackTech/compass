@@ -1193,10 +1193,9 @@ describe("SettingsModal", () => {
 
     expect(document.activeElement).toBe(before);
     expect(screen.getByLabelText("Duration")).not.toHaveFocus();
-    expect(screen.getByRole("switch", { name: "Meeting page" })).toHaveAttribute(
-      "aria-checked",
-      checked,
-    );
+    expect(
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", checked);
   });
 
   it("saves with Mod+Enter on the Meeting page", async () => {
@@ -1224,3 +1223,4 @@ describe("SettingsModal", () => {
       expect(savedBody).toMatchObject({ durationMinutes: 45 });
     });
   });
+});
