@@ -498,6 +498,7 @@ export class SyncResourceRepository {
         connectionId: ConnectionId;
         activeGeneration: number;
         lastSuccessAt: Date | null;
+        cursorExpiredBackoffUntil: Date | null;
       }
     >
   > {
@@ -513,11 +514,13 @@ export class SyncResourceRepository {
         connectionId: ConnectionId;
         activeGeneration: number;
         lastSuccessAt: Date | null;
+        cursorExpiredBackoffUntil: Date | null;
       }>({
         calendarId: 1,
         connectionId: 1,
         activeGeneration: 1,
         lastSuccessAt: 1,
+        cursorExpiredBackoffUntil: 1,
       })
       .toArray();
     return new Map(
@@ -527,6 +530,7 @@ export class SyncResourceRepository {
           connectionId: r.connectionId,
           activeGeneration: r.activeGeneration,
           lastSuccessAt: r.lastSuccessAt,
+          cursorExpiredBackoffUntil: r.cursorExpiredBackoffUntil ?? null,
         },
       ]),
     );

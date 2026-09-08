@@ -132,6 +132,19 @@ export const publicBookingCompensationLog = {
   },
 };
 
+export const publicBookingSlotsLog = {
+  unbookable(meta: {
+    slug: string;
+    userId: string;
+    complete: boolean;
+    issueReasons: string[];
+    issueCalendarIds: string[];
+    connectionStates: string[];
+  }): void {
+    logger.warn("Public booking slots unbookable", meta);
+  },
+};
+
 const buildGuestActionUrl = (
   action: "cancel" | "reschedule",
   reservationId: string,
@@ -484,9 +497,12 @@ export class PublicBookingService {
     );
 
     if (!availability.bookable) {
-      logger.warn("Public booking slots unbookable", {
+      publicBookingSlotsLog.unbookable({
+        slug: page.bookingSlug ?? "",
+        userId: page.userId.toString(),
         complete: availability.complete,
         issueReasons: availability.issues.map((issue) => issue.reason),
+        issueCalendarIds: availability.issues.map((issue) => issue.calendarId),
         connectionStates: availability.connections.map(
           (connection) => connection.state,
         ),

@@ -313,6 +313,14 @@ decides whether a busy interval occupies a slot
   unhealthy, or incomplete), the slot is not offered and confirm is
   rejected (`409`). See
   [Product Suite Boundaries](../architecture/product-suite-boundaries.md).
+- **Cursor-expiry hold-off freshness:** when Sync is holding off
+  incremental pulls on a calendar because its watch cursor keeps expiring
+  (`cursorExpiredBackoffUntil`), booking treats the resource as fresh for
+  the hold-off window plus a short reconcile grace. Sync chose not to poll,
+  so the last completed repair stays authoritative; the grace covers the
+  sweep lap after hold-off expiry. The rule keys on the hold-off timestamp,
+  not watch support, so unwatchable Apple CalDAV calendars still use the
+  normal 30-minute `maxAgeMs` gate.
 - The public busy wire never includes titles, attendees, or emails.
   Optional facts are `hostIsOrganizer` and `hostResponseStatus` only.
 

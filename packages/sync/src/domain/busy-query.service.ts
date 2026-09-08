@@ -22,6 +22,11 @@ import { type SyncResourceRepository } from "@sync/storage/repositories/sync-res
 // generation 0. See `buildCloudEventRecord` in cloud-command.service.ts.
 const UNBACKED_CALENDAR_GENERATION = 0;
 
+// After a cursor-expiry hold-off ends, reconcile may not sweep the resource
+// until the next lap. Treat lastSuccessAt as fresh through this grace so
+// booking does not flap unbookable between hold-off expiry and the next pull.
+const HOLD_OFF_SWEEP_GRACE_MS = 15 * 60 * 1000;
+
 // A normalized, half-open [start, end) busy interval on the UTC instant axis.
 export interface BusyInterval {
   start: Date;
@@ -264,9 +269,15 @@ export async function computeBusyAvailability(
       calendarId,
       generation: resource.activeGeneration,
     });
-    const ageMs = now.getTime() - resource.lastSuccessAt.getTime();
-    if (ageMs > input.maxAgeMs) {
-      issues.push({ calendarId, reason: "stale" });
+    const holdOffActive =
+      resource.cursorExpiredBackoffUntil !== null &&
+      now.getTime() <
+        resource.cursorExpiredBackoffUntil.getTime() + HOLD_OFF_SWEEP_GRACE_MS;
+    if (!holdOffActive) {
+      const ageMs = now.getTime() - resource.lastSuccessAt.getTime();
+      if (ageMs > input.maxAgeMs) {
+        issues.push({ calendarId, reason: "stale" });
+      }
     }
   }
 

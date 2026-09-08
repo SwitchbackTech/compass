@@ -570,4 +570,33 @@ describe("SyncResourceRepository", () => {
       expect(results.map((r) => r._id)).toEqual([google._id]);
     });
   });
+
+  it("listEventResourceFreshnessByCalendar projects cursorExpiredBackoffUntil", async () => {
+    const tenantId = objectId() as never;
+    const principalId = objectId() as never;
+    const calendarId = objectId() as never;
+    const resource = await repo.ensure(
+      upsert({ tenantId, principalId, calendarId }) as SyncResourceUpsert,
+    );
+    const holdOffUntil = new Date("2026-07-14T15:00:00.000Z");
+    await repo.recordCursorExpiry(
+      tenantId,
+      principalId,
+      resource._id,
+      holdOffUntil,
+    );
+
+    const freshness = await repo.listEventResourceFreshnessByCalendar(
+      tenantId,
+      principalId,
+      [calendarId],
+    );
+
+    expect(freshness.get(calendarId)).toMatchObject({
+      connectionId: resource.connectionId,
+      activeGeneration: 0,
+      lastSuccessAt: null,
+      cursorExpiredBackoffUntil: holdOffUntil,
+    });
+  });
 });
