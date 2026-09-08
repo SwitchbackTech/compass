@@ -304,7 +304,9 @@ describe("PublicBookingPage", () => {
       await screen.findByRole("heading", { name: "Meeting page not found" }),
     ).toHaveFocus();
     expect(
-      screen.getByText(/may be incorrect or the host has turned this meeting page off/),
+      screen.getByText(
+        /may be incorrect or the host has turned this meeting page off/,
+      ),
     ).toBeInTheDocument();
     expect(mockTrack).not.toHaveBeenCalledWith(
       "booking_page_viewed",
