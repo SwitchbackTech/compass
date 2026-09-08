@@ -1,3 +1,4 @@
+import { LoggerFactory } from "@core/logger/logger.factory";
 import { type SyncCommandFailureReason } from "@core/types/sync/command.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
@@ -58,6 +59,11 @@ export async function runProviderWrite<T>(
       if (error.reason === "transient") {
         return { ok: false, stop: { kind: "pending" } };
       }
+      const causeMessage =
+        error.cause instanceof Error ? error.cause.message : undefined;
+      LoggerFactory("sync:provider-write").warn(
+        causeMessage ? `${error.message} ${causeMessage}` : error.message,
+      );
       return { ok: false, stop: { kind: "failed", reason: error.reason } };
     }
     throw error;

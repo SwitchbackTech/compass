@@ -10,7 +10,10 @@ import {
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
-import { googleStatus } from "@sync/providers/google/google-error";
+import {
+  googleFailureCause,
+  googleStatus,
+} from "@sync/providers/google/google-error";
 import {
   mapConference,
   normalizeGoogleEvent,
@@ -39,7 +42,6 @@ import {
   isNotFoundStatus,
   type ProviderWriteErrorPolicy,
 } from "@sync/providers/provider-write-error";
-import { redactedCause } from "@sync/safety/redact-error";
 
 // The Google event calls the writer makes. Depending on this narrow interface
 // (not the concrete googleapis client) lets tests script results and errors
@@ -205,6 +207,12 @@ export class GoogleEventWriter implements ProviderEventWriter {
           throw classifyWriteError(getError);
         }
       }
+      if (googleStatus(error) === 400) {
+        throw googleUnsupportedCapability(
+          error,
+          "Google declined to change this event",
+        );
+      }
       throw classifyWriteError(error);
     }
   }
@@ -243,6 +251,12 @@ export class GoogleEventWriter implements ProviderEventWriter {
       });
       return toResult(patched);
     } catch (error) {
+      if (googleStatus(error) === 400) {
+        throw googleUnsupportedCapability(
+          error,
+          "Google declined to change this event",
+        );
+      }
       throw classifyWriteError(error);
     }
   }
@@ -267,10 +281,9 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // never resolve; a typed capability refusal maps to an honest,
       // non-retryable error instead.
       if (googleStatus(error) === 400) {
-        throw new ProviderWriteError(
-          "unsupportedCapability",
+        throw googleUnsupportedCapability(
+          error,
           "Google declined to delete this event",
-          { cause: redactedCause(error) },
         );
       }
       throw classifyWriteError(error);
@@ -574,10 +587,19 @@ const RETRYABLE_403_REASONS = new Set([
 
 const GOOGLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
   status: googleStatus,
-  cause: redactedCause,
+  cause: googleFailureCause,
   credentialRejectedMessage: "Google rejected the credential",
   writeRejectedMessage: "Google rejected the write",
 };
+
+function googleUnsupportedCapability(
+  error: unknown,
+  message: string,
+): ProviderWriteError {
+  return new ProviderWriteError("unsupportedCapability", message, {
+    cause: googleFailureCause(error),
+  });
+}
 
 function classifyWriteError(error: unknown): ProviderWriteError {
   // An already-classified error (e.g. a missing-identity result) must not be
@@ -589,7 +611,7 @@ function classifyWriteError(error: unknown): ProviderWriteError {
   // leftover throw is a permanent rejection, not a blip.
   if (error instanceof ProviderEventError) {
     return new ProviderWriteError("permanentProviderError", error.message, {
-      cause: redactedCause(error),
+      cause: googleFailureCause(error),
     });
   }
   // A quota 403 is retryable. Every other 403 falls through to the shared
@@ -598,7 +620,7 @@ function classifyWriteError(error: unknown): ProviderWriteError {
     return new ProviderWriteError(
       "transient",
       "Google rate limited the write",
-      { cause: redactedCause(error) },
+      { cause: googleFailureCause(error) },
     );
   }
   return classifyProviderWriteError(error, GOOGLE_WRITE_ERROR_POLICY);

@@ -190,9 +190,10 @@ describe("handleError", () => {
   });
 
   it("shows curated copy for a mutation failure the user can act on, not the catch-all", () => {
-    // A deterministic provider refusal (Google declining a birthday-occurrence
-    // delete) used to show "Something went wrong behind the scenes. Please try
-    // again later." — an invitation to retry something that can never work.
+    // A deterministic provider refusal (Google declining a patch of an
+    // email-created event) used to show "Something went wrong behind the
+    // scenes. Please try again later." — an invitation to retry something
+    // that can never work.
     const error = createServerError(Status.FORBIDDEN);
     error.response = {
       status: Status.FORBIDDEN,
@@ -208,9 +209,8 @@ describe("handleError", () => {
     expect(mockCaptureException).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledTimes(1);
     const [message] = mocks.error.mock.calls[0] ?? [];
-    expect(message).toContain("This calendar doesn't allow this change");
-    expect(message).not.toBe(
-      "Something went wrong behind the scenes. Please try again later.",
+    expect(message).toBe(
+      "Google doesn't allow this change for this event (for example events created from an email, birthdays, or holidays). Delete it or manage it in your calendar.",
     );
   });
 

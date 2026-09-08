@@ -1,3 +1,8 @@
+import {
+  type LoggerInstance,
+  registerLoggerFactory,
+  resetLoggerFactory,
+} from "@core/logger/logger.factory";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import {
   type AccessTokenSource,
@@ -6,7 +11,7 @@ import {
 } from "@sync/domain/provider-write-ladder";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const connectionId = "507f1f77bcf86cd799439011" as ConnectionId;
 
@@ -53,6 +58,10 @@ describe("resolveAccessToken", () => {
 });
 
 describe("runProviderWrite", () => {
+  afterEach(() => {
+    resetLoggerFactory();
+  });
+
   it("returns the value on success", async () => {
     await expect(runProviderWrite(async () => 42)).resolves.toEqual({
       ok: true,
@@ -85,5 +94,37 @@ describe("runProviderWrite", () => {
         throw new Error("boom");
       }),
     ).rejects.toThrow("boom");
+  });
+
+  it("logs one warn containing the cause message when a write fails", async () => {
+    const warn = mock(() => {});
+    registerLoggerFactory(
+      () =>
+        ({
+          warn,
+          error: mock(),
+          info: mock(),
+          debug: mock(),
+        }) as LoggerInstance,
+    );
+
+    await expect(
+      runProviderWrite(async () => {
+        throw new ProviderWriteError(
+          "unsupportedCapability",
+          "Google declined to change this event",
+          { cause: new Error("google error 400 (HTTP 400, reason invalid)") },
+        );
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      stop: { kind: "failed", reason: "unsupportedCapability" },
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    const [message] = warn.mock.calls[0] ?? [];
+    expect(message).toContain("Google declined to change this event");
+    expect(message).toContain("HTTP 400");
+    expect(message).toContain("reason invalid");
   });
 });
