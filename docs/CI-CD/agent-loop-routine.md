@@ -157,9 +157,9 @@ Override per run with env `AGENT_LOOP_MAX_FILES` and
 
 ## Staging smoke
 
-`GET https://staging.compasscalendar.com`, `/book/`, and
-`/book/tylerdeane` must not return 5xx. 404 is success (page disabled or
-not yet shipped). The smoke script never logs in.
+`GET https://staging.compasscalendar.com`, `/book/`, `/book/tylerdeane`,
+`/meet/`, and `/meet/tylerdeane` must not return 5xx. 404 is success
+(page disabled or not yet shipped). The smoke script never logs in.
 
 Authenticated Settings is out of unattended smoke.
 The `qa-test-staging` skill remains the signed-in sweep when a human is present

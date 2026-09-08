@@ -376,6 +376,7 @@ describe("BookingPageService", () => {
 
     const enabled = await bookingPageService.putAdminPage(userId, input);
     expect("slug" in enabled && enabled.slug).toBe("guarduser");
+    expect("bookingUrl" in enabled && enabled.bookingUrl).toContain("/meet/");
 
     const updated = await bookingPageService.putAdminPage(userId, {
       ...input,

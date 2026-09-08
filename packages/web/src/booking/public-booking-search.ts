@@ -122,7 +122,7 @@ function publicGuestActionUrlForReservation(
   token: string,
   origin: string,
 ): string {
-  const url = new URL(`/book/${action}/${reservationId}`, origin);
+  const url = new URL(`/meet/${action}/${reservationId}`, origin);
   url.searchParams.set("token", token);
   return url.toString();
 }

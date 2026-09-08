@@ -17,7 +17,7 @@ const openMoreOptions = async (settingsDialog: Locator) => {
 test("settings booking page shows a copyable public link after save", async ({
   page,
 }) => {
-  const bookingUrl = "https://compasscalendar.com/book/hostuser";
+  const bookingUrl = "https://compasscalendar.com/meet/hostuser";
   const captured = await prepareSignedInBookingSettingsPage(page, {
     bookingUrl,
   });
@@ -80,7 +80,7 @@ test("clearing the horizon field shows an inline error and blocks save", async (
 });
 
 test("saves welcome text", async ({ page }) => {
-  const bookingUrl = "https://compasscalendar.com/book/hostuser";
+  const bookingUrl = "https://compasscalendar.com/meet/hostuser";
   const captured = await prepareSignedInBookingSettingsPage(page, {
     bookingUrl,
   });
@@ -108,7 +108,7 @@ test("keyboard hint sits above the public link and the last control stays above 
   page,
 }) => {
   await prepareSignedInBookingSettingsPage(page, {
-    bookingUrl: "https://compasscalendar.com/book/hostuser",
+    bookingUrl: "https://compasscalendar.com/meet/hostuser",
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
@@ -200,7 +200,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
     "hostuser",
   );
   await expect(
-    settingsDialog.getByText(/It will be at .*\/book\/hostuser/),
+    settingsDialog.getByText(/It will be at .*\/meet\/hostuser/),
   ).toBeVisible();
 
   await dispatchClick(
@@ -217,14 +217,14 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
     settingsDialog.getByText("Your booking page is live"),
   ).toBeVisible();
   await expect(settingsDialog.getByLabel("Public booking link")).toHaveValue(
-    "https://compasscalendar.com/book/hostuser",
+    "https://compasscalendar.com/meet/hostuser",
   );
   await expect(
     settingsDialog.getByRole("button", { name: "Copy booking link" }),
   ).toBeVisible();
   await expect(
     settingsDialog.getByRole("link", { name: "Open booking page" }),
-  ).toHaveAttribute("href", "https://compasscalendar.com/book/hostuser");
+  ).toHaveAttribute("href", "https://compasscalendar.com/meet/hostuser");
 });
 
 test("blocks turn on with empty hours", async ({ page }) => {

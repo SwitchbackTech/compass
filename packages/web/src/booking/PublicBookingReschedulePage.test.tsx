@@ -16,7 +16,7 @@ import { routeTree } from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
 
 const reservationId = "000000000000000000000099";
-const reschedulePath = `/book/reschedule/${reservationId}?token=abc`;
+const reschedulePath = `/meet/reschedule/${reservationId}?token=abc`;
 const slotStart = (() => {
   const start = new Date(Date.now() + 48 * 60 * 60 * 1000);
   start.setUTCMinutes(0, 0, 0);
@@ -146,12 +146,12 @@ describe("PublicBookingReschedulePage", () => {
     });
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(
-        `/book/confirmed/${reservationId}`,
+        `/meet/confirmed/${reservationId}`,
       );
     });
     expect(router.state.location.state).toMatchObject({
-      cancelUrl: `${window.location.origin}/book/cancel/${reservationId}?token=abc`,
-      rescheduleUrl: `${window.location.origin}/book/reschedule/${reservationId}?token=abc`,
+      cancelUrl: `${window.location.origin}/meet/cancel/${reservationId}?token=abc`,
+      rescheduleUrl: `${window.location.origin}/meet/reschedule/${reservationId}?token=abc`,
     });
   });
 
@@ -214,7 +214,7 @@ describe("PublicBookingReschedulePage", () => {
       }),
     );
 
-    renderRescheduleRoute(`/book/reschedule/${reservationId}`);
+    renderRescheduleRoute(`/meet/reschedule/${reservationId}`);
 
     expect(
       await screen.findByRole("heading", { name: "Booking not found" }),
@@ -258,7 +258,7 @@ describe("PublicBookingReschedulePage", () => {
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
-      `/book/reschedule/${reservationId}`,
+      `/meet/reschedule/${reservationId}`,
     );
   });
 

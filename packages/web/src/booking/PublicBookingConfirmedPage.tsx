@@ -71,10 +71,10 @@ function rescheduleUrlFromHistory(state: unknown): string | undefined {
 
 export function PublicBookingConfirmedPage() {
   const { reservationId } = useParams({
-    from: "/book/confirmed/$reservationId",
+    from: ROOT_ROUTES.BOOK_CONFIRMED,
   });
   const { token: searchToken } = useSearch({
-    from: "/book/confirmed/$reservationId",
+    from: ROOT_ROUTES.BOOK_CONFIRMED,
   });
   const historyCancelUrl = useRouterState({
     select: (routerState) => cancelUrlFromHistory(routerState.location.state),

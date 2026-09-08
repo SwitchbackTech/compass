@@ -278,7 +278,7 @@ describe("BookingSettingsSection", () => {
   it("saves 30-minute duration and shows the copyable booking link", async () => {
     const user = userEvent.setup({ delay: null });
     const slug = "hostuser";
-    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const bookingUrl = `https://compasscalendar.com/meet/${slug}`;
     let savedBody: unknown;
 
     userMetadataActions.set(healthyGoogleMetadata);
@@ -361,7 +361,7 @@ describe("BookingSettingsSection", () => {
 
   it("renders the keyboard hint above the public link, outside the sticky save bar", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
@@ -462,7 +462,7 @@ describe("BookingSettingsSection", () => {
   it("saves again after the first save, sending only PUT input keys", async () => {
     const user = userEvent.setup({ delay: null });
     const slug = "hostuser";
-    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const bookingUrl = `https://compasscalendar.com/meet/${slug}`;
     const savedBodies: Record<string, unknown>[] = [];
 
     userMetadataActions.set(healthyGoogleMetadata);
@@ -564,7 +564,7 @@ describe("BookingSettingsSection", () => {
             hostUserId: createObjectIdString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            bookingUrl: "https://compasscalendar.com/book/hostuser",
+            bookingUrl: "https://compasscalendar.com/meet/hostuser",
           }),
         );
       }),
@@ -877,7 +877,7 @@ describe("BookingSettingsSection", () => {
 
     view.unmount();
 
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(
@@ -972,7 +972,7 @@ describe("BookingSettingsSection", () => {
 
   it("fires booking_settings_opened for a live connected page", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(
@@ -1019,7 +1019,7 @@ describe("BookingSettingsSection", () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
     const slug = "hostuser";
-    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const bookingUrl = `https://compasscalendar.com/meet/${slug}`;
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
 
@@ -1068,7 +1068,7 @@ describe("BookingSettingsSection", () => {
   it("fires booking_page_enabled with first_time false when a saved page turns on", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
 
@@ -1446,7 +1446,7 @@ describe("BookingSettingsSection", () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
     const slug = "hostuser";
-    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const bookingUrl = `https://compasscalendar.com/meet/${slug}`;
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
 
@@ -2164,7 +2164,7 @@ describe("BookingSettingsSection", () => {
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
     let savedBody: unknown;
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
 
     userMetadataActions.set(healthyGoogleMetadata);
     server.use(
@@ -2213,7 +2213,7 @@ describe("BookingSettingsSection", () => {
   it("turns off a live page", async () => {
     const user = userEvent.setup({ delay: null });
     let savedBody: unknown;
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
 
     userMetadataActions.set(healthyGoogleMetadata);
     server.use(

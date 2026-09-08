@@ -28,9 +28,10 @@ import {
   useBookingHeadingFocus,
 } from "@web/booking/use-booking-heading-focus";
 import { usePublicBookingFlow } from "@web/booking/use-public-booking-flow";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export function PublicBookingPage() {
-  const { username } = useParams({ from: "/book/$username" });
+  const { username } = useParams({ from: ROOT_ROUTES.BOOK });
   const flow = usePublicBookingFlow();
   const { pageQuery, slotsQuery } = flow;
   const focusHostHeadingRef = useRef(isPublicBookingPageHeadingFocusPending());

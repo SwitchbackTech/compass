@@ -11,6 +11,21 @@ import {
 } from "./booking-harness";
 
 test.describe("public booking page", () => {
+  test("legacy /book path redirects to /meet and keeps the query string", async ({
+    page,
+  }) => {
+    await page.goto("/book/tylerdane?token=abc", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(page).toHaveURL(/\/meet\/tylerdane/);
+    expect(new URL(page.url()).searchParams.get("token")).toBe("abc");
+
+    await page.goto("/book/cancel/000000000000000000000099?token=abc", {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(page).toHaveURL(/\/meet\/cancel\/000000000000000000000099/);
+    expect(new URL(page.url()).searchParams.get("token")).toBe("abc");
+  });
   test("renders Teams copy for a Microsoft destination on the public page and confirmation", async ({
     page,
   }) => {
@@ -195,7 +210,7 @@ test.describe("public booking page", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("link", {
-        name: "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        name: "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
       }),
     ).toHaveCount(0);
     expect(captured.reservationPosts).toHaveLength(1);
@@ -225,7 +240,7 @@ test.describe("public booking page", () => {
 
     await page.keyboard.press("Escape");
 
-    await expect(page).toHaveURL(/\/book\/tylerdane(?:\?|$)/);
+    await expect(page).toHaveURL(/\/meet\/tylerdane(?:\?|$)/);
     await expect(
       page.getByRole("heading", { name: "Book with Tyler Dane" }),
     ).toBeFocused();
@@ -278,7 +293,7 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
+      /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
     );
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
@@ -293,7 +308,7 @@ test.describe("public booking page", () => {
     await expect(page.getByText("Duration")).toBeVisible();
     await expect(page.getByText("30 minutes")).toBeVisible();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
+      /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
     );
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
@@ -349,7 +364,7 @@ test.describe("public booking page", () => {
       page.getByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute(
       "href",
-      "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
     );
     await page.getByRole("button", { name: "Copy cancel link" }).click();
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
@@ -357,7 +372,7 @@ test.describe("public booking page", () => {
     await expect
       .poll(async () => page.evaluate(() => navigator.clipboard.readText()))
       .toBe(
-        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
       );
   });
 

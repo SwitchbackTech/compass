@@ -38,6 +38,8 @@ check_url() {
 check_url "/"
 check_url "/book/"
 check_url "/book/tylerdeane"
+check_url "/meet/"
+check_url "/meet/tylerdeane"
 
 if [ "$failures" -gt 0 ]; then
   echo "staging smoke failed (${failures} URL(s))" >&2

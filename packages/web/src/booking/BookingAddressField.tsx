@@ -12,7 +12,7 @@ export function bookingAddressPrefix(bookingUrl: string | null): string {
   const origin = bookingUrl
     ? new URL(bookingUrl).origin
     : window.location.origin;
-  return `${origin}/book/`;
+  return `${origin}/meet/`;
 }
 
 interface BookingAddressFieldProps {

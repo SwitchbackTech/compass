@@ -29,21 +29,26 @@ extraction path; they are not a second service in v1.
 
 ## Public URL
 
-`https://compasscalendar.com/book/:username`
+`https://compasscalendar.com/meet/:username`
 
-Example: `https://compasscalendar.com/book/tyler-dane`
+Example: `https://compasscalendar.com/meet/tyler-dane`
 
 The username is a `bookingSlug` on the host's booking page. Hosts choose it
 in Settings before or after enabling. Interior hyphens are allowed (for
 example `tyler-dane`). Changing the address overwrites the stored slug;
-old links stop working and there are no redirects.
+old slug links stop working and there are no slug redirects.
 
-The guest's selection lives in `/book/:slug` search params
+Old `/book/:username`, `/book/cancel/:id`, `/book/reschedule/:id`, and
+`/book/confirmed/:id` links still work through client-side redirect
+routes that keep the search params (`?token=` rides on cancel and
+reschedule links). API paths stay `/api/booking/*`.
+
+The guest's selection lives in `/meet/:slug` search params
 (`?month=&date=&slot=&tz=`): Back returns from the details step to the
 picker, refresh keeps the selection, and the link is shareable. Invalid
 params drop to defaults; they never error.
 
-Confirmation permalink: `/book/confirmed/:reservationId?token=…`.
+Confirmation permalink: `/meet/confirmed/:reservationId?token=…`.
 The cancel (and post-confirm edit) capability is that unguessable token,
 not the reservation id. Just-confirmed navigation writes `?token=` into
 the permalink so a reload, bookmark, or self-sent link keeps cancel and
@@ -54,13 +59,13 @@ a cancel link in the invite: that URL is omitted from the event
 description when guests can invite others, which is the default.
 Reschedule copy stays history-only (v1.3).
 
-Cancel: `/book/cancel/:reservationId?token=…`.
+Cancel: `/meet/cancel/:reservationId?token=…`.
 
-Reschedule: `/book/reschedule/:reservationId?token=…`.
+Reschedule: `/meet/reschedule/:reservationId?token=…`.
 
 Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
-`cleanup`, `book`, `cancel`, `confirmed`, `reschedule`, `p`, `settings`,
-`admin`, `login`, `logout`, `signup`, `invite`, `calendar`.
+`cleanup`, `book`, `meet`, `cancel`, `confirmed`, `reschedule`, `p`,
+`settings`, `admin`, `login`, `logout`, `signup`, `invite`, `calendar`.
 
 ### Slug allocation
 

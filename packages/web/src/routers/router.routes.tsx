@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRoute,
   lazyRouteComponent,
+  redirect,
 } from "@tanstack/react-router";
 import { APPLE_AUTH_CALLBACK_PATH } from "@web/auth/apple/authorization/apple-authorization.constants";
 import {
@@ -13,7 +14,13 @@ import {
   IS_BOOKING_ENABLED,
   IS_DEV,
 } from "@web/common/constants/env.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  LEGACY_BOOK,
+  LEGACY_BOOK_CANCEL,
+  LEGACY_BOOK_CONFIRMED,
+  LEGACY_BOOK_RESCHEDULE,
+  ROOT_ROUTES,
+} from "@web/common/constants/routes";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   loadAuthenticated,
@@ -82,6 +89,54 @@ export const publicBookConfirmedRoute = createRoute({
     () => import("@web/booking/PublicBookingConfirmedPage"),
     "PublicBookingConfirmedPage",
   ),
+});
+
+export const legacyBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: LEGACY_BOOK,
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
+      to: ROOT_ROUTES.BOOK,
+      params,
+      search,
+    });
+  },
+});
+
+export const legacyBookCancelRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: LEGACY_BOOK_CANCEL,
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
+      to: ROOT_ROUTES.BOOK_CANCEL,
+      params,
+      search,
+    });
+  },
+});
+
+export const legacyBookRescheduleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: LEGACY_BOOK_RESCHEDULE,
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
+      to: ROOT_ROUTES.BOOK_RESCHEDULE,
+      params,
+      search,
+    });
+  },
+});
+
+export const legacyBookConfirmedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: LEGACY_BOOK_CONFIRMED,
+  beforeLoad: ({ params, search }) => {
+    throw redirect({
+      to: ROOT_ROUTES.BOOK_CONFIRMED,
+      params,
+      search,
+    });
+  },
 });
 
 export const lifeRoute = createRoute({
@@ -201,6 +256,10 @@ export const routeTree = rootRoute.addChildren([
         publicBookCancelRoute,
         publicBookRescheduleRoute,
         publicBookRoute,
+        legacyBookConfirmedRoute,
+        legacyBookCancelRoute,
+        legacyBookRescheduleRoute,
+        legacyBookRoute,
       ]
     : []),
   appleAuthCallbackRoute,

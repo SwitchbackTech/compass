@@ -35,10 +35,10 @@ const SLOT_CONFLICT_ALERT =
 
 export function usePublicBookingRescheduleFlow() {
   const { reservationId } = useParams({
-    from: "/book/reschedule/$reservationId",
+    from: ROOT_ROUTES.BOOK_RESCHEDULE,
   });
   const search: PublicBookingRescheduleSearch = useSearch({
-    from: "/book/reschedule/$reservationId",
+    from: ROOT_ROUTES.BOOK_RESCHEDULE,
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();

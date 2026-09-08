@@ -357,7 +357,8 @@ describe("PublicBookingService", () => {
     expect(response.reservationId).toBeTruthy();
     expect(response.cancelUrl).toContain("token=");
     expect(response.rescheduleUrl).toContain("token=");
-    expect(response.rescheduleUrl).toContain("/book/reschedule/");
+    expect(response.cancelUrl).toContain("/meet/cancel/");
+    expect(response.rescheduleUrl).toContain("/meet/reschedule/");
   });
 
   it("confirms at the pinned duration and calls createBookingEvent once", async () => {

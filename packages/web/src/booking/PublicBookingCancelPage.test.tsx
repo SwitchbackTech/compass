@@ -15,7 +15,7 @@ import { routeTree } from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
 
 const reservationId = "000000000000000000000099";
-const cancelPath = `/book/cancel/${reservationId}?token=abc`;
+const cancelPath = `/meet/cancel/${reservationId}?token=abc`;
 const slotStart = "2026-09-15T15:00:00.000Z";
 
 function reservationGetHandler(overrides: Record<string, unknown> = {}) {
@@ -181,7 +181,7 @@ describe("PublicBookingCancelPage", () => {
       ),
     );
 
-    renderCancelRoute(`/book/cancel/${reservationId}`);
+    renderCancelRoute(`/meet/cancel/${reservationId}`);
 
     expect(
       await screen.findByRole("heading", { name: "Booking not found" }),
@@ -257,7 +257,7 @@ describe("PublicBookingCancelPage", () => {
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
-      `/book/confirmed/${reservationId}`,
+      `/meet/confirmed/${reservationId}`,
     );
     expect(router.state.location.search).toEqual({ token: "abc" });
     expect(
@@ -303,7 +303,7 @@ describe("PublicBookingCancelPage", () => {
       screen.getByRole("heading", { name: "Cancel this booking?" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
-      `/book/cancel/${reservationId}`,
+      `/meet/cancel/${reservationId}`,
     );
     expect(cancelPosts).toBe(1);
 
@@ -316,7 +316,7 @@ describe("PublicBookingCancelPage", () => {
 
   it("does not navigate on Escape from the not-found heading", async () => {
     const user = userEvent.setup({ delay: null });
-    const { router } = renderCancelRoute(`/book/cancel/${reservationId}`);
+    const { router } = renderCancelRoute(`/meet/cancel/${reservationId}`);
 
     const heading = await screen.findByRole("heading", {
       name: "Booking not found",
@@ -330,7 +330,7 @@ describe("PublicBookingCancelPage", () => {
       screen.getByRole("heading", { name: "Booking not found" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
-      `/book/cancel/${reservationId}`,
+      `/meet/cancel/${reservationId}`,
     );
   });
 
@@ -422,7 +422,7 @@ describe("PublicBookingCancelPage", () => {
     const rebook = await screen.findByRole("link", {
       name: "Book another time",
     });
-    expect(rebook).toHaveAttribute("href", "/book/tylerdane");
+    expect(rebook).toHaveAttribute("href", "/meet/tylerdane");
     expect(rebook.getAttribute("href")).not.toContain("token");
   });
 
@@ -435,7 +435,7 @@ describe("PublicBookingCancelPage", () => {
       await screen.findByRole("heading", { name: "Booking canceled" }),
     ).toBeInTheDocument();
     const rebook = screen.getByRole("link", { name: "Book another time" });
-    expect(rebook).toHaveAttribute("href", "/book/tylerdane");
+    expect(rebook).toHaveAttribute("href", "/meet/tylerdane");
     expect(rebook.getAttribute("href")).not.toContain("token");
     expect(rebook.getAttribute("href")).not.toContain(reservationId);
   });

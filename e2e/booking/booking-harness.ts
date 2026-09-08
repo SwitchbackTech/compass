@@ -478,8 +478,8 @@ export async function preparePublicBookingPage(
           slotStart: body.slotStart,
           slotEnd: postedSlotEnd,
           guestTimeZone: body.guestTimeZone,
-          cancelUrl: `https://compasscalendar.com/book/cancel/${reservationId}?token=abc`,
-          rescheduleUrl: `https://compasscalendar.com/book/reschedule/${reservationId}?token=abc`,
+          cancelUrl: `https://compasscalendar.com/meet/cancel/${reservationId}?token=abc`,
+          rescheduleUrl: `https://compasscalendar.com/meet/reschedule/${reservationId}?token=abc`,
         }),
       );
     }
@@ -598,7 +598,7 @@ export async function preparePublicBookingPage(
     return route.fulfill(jsonResponse({}));
   });
 
-  await page.goto(`/book/${slug}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`/meet/${slug}`, { waitUntil: "domcontentloaded" });
   if (options.notFound || options.enabled === false) {
     await expect(
       page.getByRole("heading", { name: "Booking page not found" }),
@@ -716,7 +716,7 @@ export async function preparePublicBookingConfirmedPage(
   const search = options.token
     ? `?token=${encodeURIComponent(options.token)}`
     : "";
-  await page.goto(`/book/confirmed/${reservationId}${search}`, {
+  await page.goto(`/meet/confirmed/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -803,7 +803,7 @@ export async function preparePublicBookingCancelPage(
   });
 
   const search = token ? `?token=${encodeURIComponent(token)}` : "";
-  await page.goto(`/book/cancel/${reservationId}${search}`, {
+  await page.goto(`/meet/cancel/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -963,7 +963,7 @@ export async function preparePublicBookingReschedulePage(
   });
 
   const search = token ? `?token=${encodeURIComponent(token)}` : "";
-  await page.goto(`/book/reschedule/${reservationId}${search}`, {
+  await page.goto(`/meet/reschedule/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -996,7 +996,7 @@ export async function prepareSignedInBookingSettingsPage(
 ): Promise<CapturedHostBookingRequests> {
   const slug = options.slug ?? "hostuser";
   const bookingUrl =
-    options.bookingUrl ?? `https://compasscalendar.com/book/${slug}`;
+    options.bookingUrl ?? `https://compasscalendar.com/meet/${slug}`;
   const configured = options.configured ?? true;
   const healthyConnection = options.healthyConnection ?? true;
   const enabled = options.enabled ?? configured;
@@ -1105,7 +1105,7 @@ export async function prepareSignedInBookingSettingsPage(
         ...savedPageFields,
         ...body,
         slug: nextSlug,
-        bookingUrl: `https://compasscalendar.com/book/${nextSlug}`,
+        bookingUrl: `https://compasscalendar.com/meet/${nextSlug}`,
       };
       return route.fulfill(jsonResponse(getPayload));
     }
