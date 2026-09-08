@@ -61,6 +61,7 @@ each with a tracking issue:
 | Conference link on create | Google Meet | Microsoft Teams when the mailbox allows it | none |
 | Event colors | 11 slots plus labels | categories read as hex; no write in v1 | calendar color only |
 | Attendees and invitations | yes | yes | yes, server-side scheduling |
+| Provider-managed events | yes (`eventType !== "default"`) | no equivalent | no equivalent |
 | Contact suggestions | People API | `/me/people` | none |
 | Booking destination | yes | yes | yes, without a video link |
 
@@ -275,6 +276,13 @@ Each alias names the release that removes it.
   milestone C.
 - Microsoft category colors are read but never written back.
 - Apple freshness depends on polling and is bounded by iCloud rate limits.
+- **Provider-managed events.** Google is the only provider that sets
+  `providerManaged` today: its reader marks any event whose `eventType` is not
+  `"default"` (for example `fromGmail` events created from forwarded
+  confirmations when "Events from Gmail" is on). Microsoft and Apple readers
+  leave `providerManaged` unset; their writers ignore the hint. On patch, the
+  writer receives `providerManaged: true` on the input and sends only the body
+  fields that provider accepts (Google: `colorId` and attendees).
 
 ## Microsoft Graph event reads
 

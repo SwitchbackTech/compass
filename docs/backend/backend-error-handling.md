@@ -10,6 +10,10 @@ Compass uses typed operational errors plus a centralized Express error handler.
   (`code` / `message` / `retryable`). Unknown/programmer errors are
   **non-retryable 500** — only true Sync/provider failures stay retryable
   `PROVIDER_FAILURE`.
+- When a provider refuses a patch with HTTP 400 because the operation is not
+  supported for that event (for example editing title on a Gmail-created event),
+  Sync reports `unsupportedCapability` and the backend answers
+  `UNSUPPORTED_OPERATION` 403 (non-retryable), not `PROVIDER_FAILURE` 502.
 - Sync proxy failures on calendar/auth reads use `throwSyncProxyFailure` /
   `unwrapSyncResult` (503/502), never `GenericError.NotSure`.
 
