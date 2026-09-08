@@ -189,21 +189,33 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await expect(
-    settingsDialog.getByText("Off. Turn it on to share your link."),
+    settingsDialog.getByRole("heading", { name: "Your meeting page" }),
   ).toBeVisible();
   await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
     "hostuser",
   );
-  await expect(
-    settingsDialog.getByText(/It will be at .*\/meet\/hostuser/),
-  ).toBeVisible();
 
-  await dispatchClick(
-    settingsDialog.getByRole("switch", { name: "Meeting page" }),
-  );
+  await dispatchClick(settingsDialog.getByRole("button", { name: /Continue/ }));
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({
+    enabled: false,
+    slug: "hostuser",
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+  });
+
+  const meetingSwitch = settingsDialog.getByRole("switch", {
+    name: "Meeting page",
+  });
+  await expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
+  await expect(
+    settingsDialog.getByText("Off. Turn it on to share your link."),
+  ).toBeVisible();
+
+  await dispatchClick(meetingSwitch);
+
+  await expect.poll(() => captured.putBodies.length).toBe(2);
+  expect(captured.putBodies[1]).toMatchObject({
     enabled: true,
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
@@ -248,6 +260,7 @@ test("changes the page address and PUTs slug", async ({ page }) => {
   const captured = await prepareSignedInBookingSettingsPage(page);
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await openMoreOptions(settingsDialog);
   await dispatchFill(settingsDialog.getByLabel("Page address"), "new-address");
   await dispatchClick(
     settingsDialog.getByRole("button", { name: "Save changes" }),

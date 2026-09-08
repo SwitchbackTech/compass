@@ -111,6 +111,9 @@ export const globalHandlers = [
     return res(
       ctx.status(Status.OK),
       ctx.json({
+        id: "000000000000000000000001",
+        slug: "hostuser",
+        hostUserId: "000000000000000000000002",
         enabled: false,
         durationMinutes: 30,
         destinationCalendarId: "000000000000000000000001",
@@ -123,8 +126,9 @@ export const globalHandlers = [
         bufferMinutes: null,
         maxBookingsPerDay: null,
         guestsCanInviteOthers: true,
-        isConfigured: false,
-        suggestedSlug: "hostuser",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+        bookingUrl: "https://compasscalendar.com/meet/hostuser",
       }),
     );
   }),

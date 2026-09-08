@@ -1166,7 +1166,7 @@ describe("SettingsModal", () => {
     await user.keyboard(`{${modKey}>}9{/${modKey}}`);
 
     expect(details).toHaveAttribute("open");
-    expect(screen.getByRole("checkbox", { name: "Work" })).toHaveFocus();
+    expect(screen.getByLabelText("Page address")).toHaveFocus();
   });
 
   it("copies the meeting link with Mod+U", async () => {
