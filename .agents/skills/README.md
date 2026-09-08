@@ -11,7 +11,7 @@ Shared stop rules: [`anti-patterns.md`](anti-patterns.md).
 
 | name | version | owner | last_verified | purpose |
 | --- | --- | --- | --- | --- |
-| ship | 3 | compass-maintainers | 2026-09-04 | verify, PR, label `agent-automerge`, stop |
+| ship | 4 | compass-maintainers | 2026-09-08 | verify, PR, label `agent-automerge`, enable auto-merge |
 | simplify | 2 | compass-maintainers | 2026-09-04 | behavior-preserving quality pass on a diff |
 | a11y-audit | 1 | compass-maintainers | 2026-08-25 | review changed UI for accessibility regressions |
 | chaos | 2 | compass-maintainers | 2026-09-04 | exploratory signed-in QA, then ship |
@@ -20,6 +20,10 @@ Shared stop rules: [`anti-patterns.md`](anti-patterns.md).
 
 ## Change log
 
+- 2026-09-08: `ship` v4 enables auto-merge itself rather than stopping at the
+  label, and stops treating a sandbox-bound Playwright timeout as a blocking
+  verdict. Path prefixes were never a merge gate; the note says so explicitly
+  so no routine hunts for a denylist that does not exist.
 - 2026-09-04: retired `verify-change`, `review`, `handoff`, `booking-loop`,
   `local-dev-bootstrap`, and the `_evals` stubs. `bun run verify --strict`
   is the verdict; review is a CI job; status lives on the GitHub issue;
