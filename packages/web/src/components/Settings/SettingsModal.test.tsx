@@ -10,7 +10,6 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
-import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { AuthApi } from "@web/api/auth.api";
 import {
@@ -1219,19 +1218,7 @@ describe("SettingsModal", () => {
 
       await screen.findByRole("button", { name: "Copy meeting link" });
       const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-      await user.keyboard(`{${modKey}>}`);
-      const linkRow = screen.getByRole("textbox", {
-        name: "Meeting link",
-      }).parentElement;
-      if (!linkRow) throw new Error("missing meeting link row");
-      expect(
-        within(linkRow).getByText("U", { exact: true }),
-      ).toBeInTheDocument();
-      const modInit: KeyboardEventInit =
-        resolveModifier("Mod") === "Meta"
-          ? { metaKey: true, code: "KeyU" }
-          : { ctrlKey: true, code: "KeyU" };
-      pressKey("u", { keyDownInit: modInit, keyUpInit: modInit });
+      await user.keyboard(`{${modKey}>}u{/${modKey}}`);
 
       await waitFor(() => {
         expect(writeText).toHaveBeenCalledWith(bookingUrl);
@@ -1240,6 +1227,16 @@ describe("SettingsModal", () => {
         "Meeting link copied",
         expect.any(Object),
       );
+
+      await user.keyboard(`{${modKey}>}`);
+      const linkRow = screen.getByRole("textbox", {
+        name: "Meeting link",
+      }).parentElement;
+      if (!linkRow) throw new Error("missing meeting link row");
+      expect(
+        within(linkRow).getByText("U", { exact: true }),
+      ).toBeInTheDocument();
+      await user.keyboard(`{/${modKey}}`);
     } finally {
       Object.defineProperty(navigator, "clipboard", {
         configurable: true,
