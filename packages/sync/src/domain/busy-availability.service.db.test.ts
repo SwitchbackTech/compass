@@ -82,6 +82,7 @@ describe("computeBusyAvailability", () => {
   const seedCalendar = async (opts: {
     connectionId: ConnectionId;
     lastSuccessAt?: Date | null;
+    cursorExpiredBackoffUntil?: Date;
     intervals?: Array<[string, string]>;
   }): Promise<SyncEventCalendarId> => {
     const calendarId = objectId() as SyncEventCalendarId;
@@ -99,6 +100,14 @@ describe("computeBusyAvailability", () => {
         resource._id,
         "cursor",
         opts.lastSuccessAt,
+      );
+    }
+    if (opts.cursorExpiredBackoffUntil) {
+      await resources.recordCursorExpiry(
+        tenantId,
+        principalId,
+        resource._id,
+        opts.cursorExpiredBackoffUntil,
       );
     }
     for (const [start, end] of opts.intervals ?? []) {
@@ -145,6 +154,8 @@ describe("computeBusyAvailability", () => {
 
   const fresh = new Date(NOW.getTime() - 60_000); // 1 min ago
   const old = new Date(NOW.getTime() - 60 * 60_000); // 1 hour ago (> maxAge)
+  const bookingMaxAgeMs = 30 * 60_000; // 30 minutes, matches booking confirmation
+  const threeHoursAgo = new Date(NOW.getTime() - 3 * 60 * 60_000);
 
   it("is complete and bookable when every calendar is fresh and its connection is healthy", async () => {
     const conn = await seedConnection("healthy", fresh);
@@ -284,6 +295,65 @@ describe("computeBusyAvailability", () => {
       result.intervals.map((i) => [i.start.toISOString(), i.end.toISOString()]),
     ).toEqual([["2026-07-14T13:00:00.000Z", "2026-07-14T14:00:00.000Z"]]);
     // ...but its staleness is disclosed and it is not bookable.
+    expect(result.issues).toEqual([{ calendarId: cal, reason: "stale" }]);
+    expect(result.complete).toBe(false);
+    expect(result.bookable).toBe(false);
+  });
+
+  it("a resource under an active cursor-expiry hold-off is not stale", async () => {
+    const conn = await seedConnection("healthy", threeHoursAgo);
+    const holdOffUntil = new Date(NOW.getTime() + 60 * 60_000);
+    const cal = await seedCalendar({
+      connectionId: conn,
+      lastSuccessAt: threeHoursAgo,
+      cursorExpiredBackoffUntil: holdOffUntil,
+      intervals: [["2026-07-14T13:00Z", "2026-07-14T14:00Z"]],
+    });
+
+    const result = await computeBusyAvailability(
+      { occurrences, resources, connections, calendars },
+      {
+        tenantId,
+        principalId,
+        calendarIds: [cal],
+        start: WINDOW_START,
+        end: WINDOW_END,
+        maxAgeMs: bookingMaxAgeMs,
+        now: NOW,
+      },
+    );
+
+    expect(result.complete).toBe(true);
+    expect(result.bookable).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(
+      result.intervals.map((i) => [i.start.toISOString(), i.end.toISOString()]),
+    ).toEqual([["2026-07-14T13:00:00.000Z", "2026-07-14T14:00:00.000Z"]]);
+  });
+
+  it("a hold-off that expired more than the grace ago is stale again", async () => {
+    const conn = await seedConnection("healthy", threeHoursAgo);
+    const expiredHoldOff = new Date(NOW.getTime() - 20 * 60_000);
+    const cal = await seedCalendar({
+      connectionId: conn,
+      lastSuccessAt: threeHoursAgo,
+      cursorExpiredBackoffUntil: expiredHoldOff,
+      intervals: [["2026-07-14T13:00Z", "2026-07-14T14:00Z"]],
+    });
+
+    const result = await computeBusyAvailability(
+      { occurrences, resources, connections, calendars },
+      {
+        tenantId,
+        principalId,
+        calendarIds: [cal],
+        start: WINDOW_START,
+        end: WINDOW_END,
+        maxAgeMs: bookingMaxAgeMs,
+        now: NOW,
+      },
+    );
+
     expect(result.issues).toEqual([{ calendarId: cal, reason: "stale" }]);
     expect(result.complete).toBe(false);
     expect(result.bookable).toBe(false);

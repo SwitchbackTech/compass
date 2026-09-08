@@ -22,6 +22,7 @@ import { CalendarBookingService } from "@backend/booking/services/calendar-booki
 import {
   PublicBookingService,
   publicBookingCompensationLog,
+  publicBookingSlotsLog,
 } from "@backend/booking/services/public-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
@@ -559,6 +560,29 @@ describe("PublicBookingService", () => {
 
     expect(response).toEqual({ slots: [], bookable: false });
     expect(JSON.stringify(response)).not.toContain("intervals");
+  });
+
+  it("logs slug and issueCalendarIds when slots are unbookable", async () => {
+    const { slug, userId, calendarId } = await enableBookingPage();
+    getAvailability.mockImplementation(async () => ({
+      ...busyResponse(false),
+      complete: false,
+      issues: [{ calendarId, reason: "stale" }],
+    }));
+    const logSpy = spyOn(publicBookingSlotsLog, "unbookable");
+
+    await service.getSlots(slug, {
+      start: `${BOOKING_MONDAY}T00:00:00.000Z`,
+      end: `${BOOKING_TUESDAY}T00:00:00.000Z`,
+      timeZone: "UTC",
+    });
+
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(logSpy.mock.calls[0]?.[0]).toMatchObject({
+      slug,
+      userId: userId.toString(),
+      issueCalendarIds: [calendarId],
+    });
   });
 
   it("does not occupy a slot for a needsAction invite", async () => {
