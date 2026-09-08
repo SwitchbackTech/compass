@@ -58,7 +58,6 @@ function pageHandler() {
           timeZone: "America/Chicago",
           enabled: true,
           maxHorizonDays: 60,
-          welcomeText: null,
         }),
       ),
   );

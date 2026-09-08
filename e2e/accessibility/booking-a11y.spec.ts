@@ -502,7 +502,10 @@ test.describe("settings booking section", () => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await settingsDialog.getByText("More options", { exact: true }).click();
-    await expect(settingsDialog.getByLabel("Welcome text")).toBeVisible();
+    await expect(settingsDialog.getByLabel("Page address")).toBeVisible();
+    await expect(
+      settingsDialog.getByLabel("Minimum notice (hours)"),
+    ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking more options",
       include: "[role='dialog']",

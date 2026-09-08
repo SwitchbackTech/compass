@@ -4,7 +4,6 @@ import {
   AdminGetBookingPageSetupResponseSchema,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
-  BOOKING_MAX_BUFFER_MINUTES,
   BOOKING_MAX_HORIZON_DAYS,
   BOOKING_MAX_MIN_NOTICE_HOURS,
   BOOKING_PLACEHOLDER_CALENDAR_ID,
@@ -49,9 +48,6 @@ const fullAdminPage = () => ({
   ],
   minNoticeHours: 4,
   maxHorizonDays: 60,
-  bufferMinutes: null,
-  maxBookingsPerDay: null,
-  guestsCanInviteOthers: true,
   createdAt: dateTime(),
   updatedAt: dateTime(),
 });
@@ -156,7 +152,7 @@ describe("BookingPageSchema", () => {
     ).toBe(false);
   });
 
-  it("accepts minNoticeHours and bufferMinutes at their caps and rejects above", () => {
+  it("accepts minNoticeHours at its cap and rejects above", () => {
     const base = {
       enabled: true,
       durationMinutes: 30,
@@ -166,9 +162,6 @@ describe("BookingPageSchema", () => {
       weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
       minNoticeHours: 4,
       maxHorizonDays: 60,
-      bufferMinutes: null as number | null,
-      maxBookingsPerDay: null,
-      guestsCanInviteOthers: true,
     };
 
     expect(
@@ -181,18 +174,6 @@ describe("BookingPageSchema", () => {
       AdminPutBookingPageInputSchema.safeParse({
         ...base,
         minNoticeHours: BOOKING_MAX_MIN_NOTICE_HOURS + 1,
-      }).success,
-    ).toBe(false);
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        ...base,
-        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES,
-      }).success,
-    ).toBe(true);
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        ...base,
-        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES + 1,
       }).success,
     ).toBe(false);
   });
@@ -224,7 +205,6 @@ describe("PublicBookingPageSchema", () => {
       "timeZone",
       "enabled",
       "maxHorizonDays",
-      "welcomeText",
       "createsGoogleMeet",
       "conference",
     ]);
@@ -241,13 +221,13 @@ describe("PublicBookingPageSchema", () => {
       timeZone: "America/Denver",
       enabled: true,
       maxHorizonDays: 60,
-      welcomeText: null,
       createsGoogleMeet: true,
       conference: "meet",
     });
     expect(Object.keys(pub)).not.toContain("destinationCalendarId");
     expect(Object.keys(pub)).not.toContain("blockingCalendarIds");
     expect(Object.keys(pub)).not.toContain("dateOverrides");
+    expect(Object.keys(pub)).not.toContain("welcomeText");
   });
 
   it("picks only the admin PUT fields from a full page", () => {
@@ -260,64 +240,34 @@ describe("PublicBookingPageSchema", () => {
       blockingCalendarIds: page.blockingCalendarIds,
       timeZone: page.timeZone,
       weeklyAvailability: page.weeklyAvailability,
-      welcomeText: page.welcomeText ?? null,
       minNoticeHours: page.minNoticeHours,
       maxHorizonDays: page.maxHorizonDays,
-      bufferMinutes: page.bufferMinutes,
-      maxBookingsPerDay: page.maxBookingsPerDay,
-      guestsCanInviteOthers: page.guestsCanInviteOthers,
     });
     expect(pickAdminPutBookingPageInput(page)).not.toHaveProperty("id");
   });
 });
 
-describe("welcome text", () => {
-  it("defaults missing welcomeText", () => {
-    const page = BookingPageSchema.parse(fullAdminPage());
-    expect(page.welcomeText).toBeNull();
-  });
-
-  it("parses welcome text on admin put input", () => {
-    const parsed = AdminPutBookingPageInputSchema.safeParse({
+describe("removed host settings keys", () => {
+  it("strips buffer, max per day, welcome text, and guest invites from admin PUT output", () => {
+    const parsed = AdminPutBookingPageInputSchema.parse({
       enabled: true,
       durationMinutes: 30,
       destinationCalendarId: calendarId(),
       blockingCalendarIds: [calendarId()],
       timeZone: "America/Denver",
       weeklyAvailability: [{ weekday: 1, start: "09:00", end: "12:00" }],
-      welcomeText: "30 minutes to talk through Compass Calendar.",
       minNoticeHours: 4,
       maxHorizonDays: 60,
-      bufferMinutes: null,
-      maxBookingsPerDay: null,
+      bufferMinutes: 30,
+      maxBookingsPerDay: 4,
+      welcomeText: "hello",
       guestsCanInviteOthers: true,
     });
 
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.welcomeText).toBe(
-        "30 minutes to talk through Compass Calendar.",
-      );
-    }
-  });
-
-  it("rejects welcome text longer than 500 characters", () => {
-    expect(
-      AdminPutBookingPageInputSchema.safeParse({
-        enabled: false,
-        durationMinutes: 30,
-        destinationCalendarId: calendarId(),
-        blockingCalendarIds: [calendarId()],
-        timeZone: "UTC",
-        weeklyAvailability: [],
-        welcomeText: "w".repeat(501),
-        minNoticeHours: 4,
-        maxHorizonDays: 60,
-        bufferMinutes: null,
-        maxBookingsPerDay: null,
-        guestsCanInviteOthers: true,
-      }).success,
-    ).toBe(false);
+    expect(parsed).not.toHaveProperty("bufferMinutes");
+    expect(parsed).not.toHaveProperty("maxBookingsPerDay");
+    expect(parsed).not.toHaveProperty("welcomeText");
+    expect(parsed).not.toHaveProperty("guestsCanInviteOthers");
   });
 });
 
@@ -345,12 +295,8 @@ describe("buildDefaultAdminPutInput", () => {
       blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
       timeZone: "America/Denver",
       weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-      welcomeText: null,
       minNoticeHours: 4,
       maxHorizonDays: BOOKING_MAX_HORIZON_DAYS,
-      bufferMinutes: null,
-      maxBookingsPerDay: null,
-      guestsCanInviteOthers: true,
     });
     expect(AdminPutBookingPageInputSchema.safeParse(input).success).toBe(true);
   });
@@ -422,7 +368,6 @@ describe("HTTP booking contracts", () => {
         timeZone: admin.timeZone,
         enabled: admin.enabled,
         maxHorizonDays: admin.maxHorizonDays,
-        welcomeText: null,
       }).success,
     ).toBe(true);
 

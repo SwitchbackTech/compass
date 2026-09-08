@@ -218,16 +218,10 @@ const assertPinnedDuration = (
 
 const bookingEventDescription = (
   notes: string | null | undefined,
-  guestsCanInviteOthers: boolean,
   cancelUrl: string,
   rescheduleUrl: string,
 ): string =>
-  [
-    notes?.trim() || null,
-    guestsCanInviteOthers
-      ? null
-      : `Cancel: ${cancelUrl}\nReschedule: ${rescheduleUrl}`,
-  ]
+  [notes?.trim() || null, `Cancel: ${cancelUrl}\nReschedule: ${rescheduleUrl}`]
     .filter(Boolean)
     .join("\n\n");
 
@@ -380,8 +374,6 @@ const slotEngineInputForPage = (
   weeklyAvailability: page.weeklyAvailability,
   minNoticeHours: page.minNoticeHours,
   maxHorizonDays: page.maxHorizonDays,
-  bufferMinutes: page.bufferMinutes,
-  maxBookingsPerDay: page.maxBookingsPerDay,
   busyIntervals: availability.intervals
     .filter((interval) => occupiesBookingSlot(interval))
     .map((interval) => ({
@@ -630,12 +622,8 @@ export class PublicBookingService {
         {
           calendarId: page.destinationCalendarId,
           title: `${input.guestName} and ${hostDisplayName}`,
-          // The cancel URL is a capability: anyone holding it can cancel. When
-          // the guest may invite others, every invitee sees the description, so
-          // keep the URL out of it — the guest gets it on the confirmation page.
           description: bookingEventDescription(
             input.notes,
-            page.guestsCanInviteOthers,
             cancelUrl,
             rescheduleUrl,
           ),
@@ -646,7 +634,7 @@ export class PublicBookingService {
             email: input.guestEmail,
             displayName: input.guestName,
           },
-          guestsCanInviteOthers: page.guestsCanInviteOthers,
+          guestsCanInviteOthers: false,
           createConference: conference !== "none",
         },
       );
@@ -768,12 +756,7 @@ export class PublicBookingService {
       await this.calendarBooking.updateBookingEvent(page.userId.toString(), {
         eventId: reservation.calendarEventId as EventId,
         title: `${guestName} and ${hostDisplayName}`,
-        description: bookingEventDescription(
-          notes,
-          page.guestsCanInviteOthers,
-          cancelUrl,
-          rescheduleUrl,
-        ),
+        description: bookingEventDescription(notes, cancelUrl, rescheduleUrl),
         start: DateTimeSchema.parse(reservation.slotStart.toISOString()),
         end: DateTimeSchema.parse(reservation.slotEnd.toISOString()),
         timeZone: page.timeZone,
@@ -848,7 +831,6 @@ export class PublicBookingService {
         title: `${reservation.guestName} and ${hostDisplayName}`,
         description: bookingEventDescription(
           reservation.notes,
-          page.guestsCanInviteOthers,
           cancelUrl,
           rescheduleUrl,
         ),

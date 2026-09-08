@@ -89,12 +89,8 @@ const bookingForm = (
     blockingCalendarIds: [destinationCalendarId],
     timeZone: TimeZoneSchema.parse("UTC"),
     weeklyAvailability: [],
-    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
     ...overrides,
   };
 };
