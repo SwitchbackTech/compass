@@ -118,6 +118,9 @@ const leftmostAllDayEvent = createMockEvent({
 // by visible calendars (S39 A2), so an incomplete list would hide the
 // editable event under test.
 const READ_ONLY_EVENT_ID = EventIdSchema.parse("cccccccccccccccccccccccc");
+const PROVIDER_MANAGED_EVENT_ID = EventIdSchema.parse(
+  "ffffffffffffffffffffffff",
+);
 const readOnlyCalendarId = CalendarIdSchema.parse(createObjectIdString());
 const writableCalendar: Calendar = {
   id: editableEvent.calendarId,
@@ -155,6 +158,21 @@ const readOnlyEvent = createMockEvent({
     kind: "timed",
     start: "2026-05-20T13:00:00.000Z",
     end: "2026-05-20T14:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
+const providerManagedEvent = createMockEvent({
+  id: PROVIDER_MANAGED_EVENT_ID,
+  providerManaged: true,
+  content: {
+    kind: "details",
+    title: "Provider-managed event",
+    description: "",
+  },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-20T11:00:00.000Z",
+    end: "2026-05-20T12:00:00.000Z",
     timeZone: "UTC",
   }),
 });
@@ -1083,6 +1101,36 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     expect(getEditMutation(queryClient)).toBeUndefined();
     // Read-only focus must not fall through into place-create either.
     expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
+
+  it("does not nudge a provider-managed event with Shift+ArrowRight but still deletes it", async () => {
+    const button = addCalendarTarget(providerManagedEvent.id);
+    button.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [providerManagedEvent],
+      calendars: [writableCalendar],
+    });
+
+    pressKey("ArrowRight", shiftKey);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(getEditMutation(queryClient)).toBeUndefined();
+
+    pressKey("Delete");
+
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            mutation.options.mutationKey?.[2] === "delete" &&
+            (mutation.state.variables as { id?: string }).id ===
+              PROVIDER_MANAGED_EVENT_ID,
+        ),
+    ).toBe(true);
   });
 
   it("moves the focused timed event by 15 minutes with Shift+ArrowUp and Shift+ArrowDown", async () => {

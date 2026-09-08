@@ -215,3 +215,67 @@ describe("EventForm read-only gate", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("EventForm provider-managed schedule lock", () => {
+  const providerManagedNote =
+    "Your calendar provider keeps this event updated (for example from an email), so its time follows the provider. Changes to the title, notes, and location stay in Compass.";
+
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+  });
+
+  it("disables schedule and recurrence, keeps title and Save enabled, and shows the note", () => {
+    const writableCalendar = makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    });
+    const event = createMockEvent({
+      calendarId: writableCalendar.id,
+      providerManaged: true,
+      content: {
+        kind: "details",
+        title: "Flight reminder",
+        description: "Pack light",
+        location: "SFO",
+      },
+    });
+    const draft = editGridEventDraft(event);
+    if (!draft) throw new Error("expected an edit draft");
+
+    const { container } = renderEventForm(draft, [writableCalendar]);
+
+    expect(screen.getByPlaceholderText("Title")).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: "Location" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Event schedule" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("group", { name: "Recurrence" })).toBeDisabled();
+    expect(screen.getByRole("note")).toHaveTextContent(providerManagedNote);
+
+    const outerFieldset = container.querySelector("fieldset.contents");
+    expect(outerFieldset).not.toBeDisabled();
+  });
+
+  it("renders no provider-managed note for a normal editable event", () => {
+    const writableCalendar = makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    });
+    const event = createMockEvent({
+      calendarId: writableCalendar.id,
+      content: {
+        kind: "details",
+        title: "Regular meeting",
+        description: "",
+      },
+    });
+    const draft = editGridEventDraft(event);
+    if (!draft) throw new Error("expected an edit draft");
+
+    renderEventForm(draft, [writableCalendar]);
+
+    expect(screen.queryByText(providerManagedNote)).not.toBeInTheDocument();
+  });
+});

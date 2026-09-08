@@ -187,3 +187,23 @@ export function isGridEventInteractionReadOnly(
     isGridEventContentReadOnly(event),
   );
 }
+
+/**
+ * Gate for anything that changes when an event happens: pointer drag/resize,
+ * keyboard nudge, and edge resize. Provider-managed events keep a writable
+ * calendar's delete/details paths available via {@link isEventReadOnly} alone.
+ */
+export function isGridEventScheduleLocked(
+  lookup: ReadonlyMap<CalendarId, Calendar>,
+  event: {
+    calendarId?: CalendarId | null;
+    isBusy?: boolean;
+    isTimedMultiDayDisplay?: boolean;
+    isProviderManaged?: boolean;
+  },
+): boolean {
+  return (
+    isGridEventInteractionReadOnly(lookup, event) ||
+    event.isProviderManaged === true
+  );
+}

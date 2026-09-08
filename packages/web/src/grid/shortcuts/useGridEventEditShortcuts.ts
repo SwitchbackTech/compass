@@ -5,6 +5,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   isGridEventInteractionReadOnly,
+  isGridEventScheduleLocked,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
@@ -451,6 +452,10 @@ export function useGridEventEditShortcuts({
 
     const event = getFocusedMutableCalendarEvent();
     if (event?._id) {
+      if (isGridEventScheduleLocked(calendarLookup, event)) {
+        return;
+      }
+
       const edgeFocus = useEdgeFocusStore.getState();
       if (edgeFocus.eventId === event._id && edgeFocus.edge) {
         moveFocusedEventEdge(keyboardEvent, event, edgeFocus.edge);

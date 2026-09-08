@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import {
-  isGridEventInteractionReadOnly,
+  isGridEventScheduleLocked,
   resolveCalendarCardIdentity,
   resolveCalendarFocusColor,
   useCalendarLookup,
@@ -78,7 +78,7 @@ export const DayCalendarAllDayEventsLayer = ({
           focusColor={resolveCalendarFocusColor(calendarLookup, event)}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
-          isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}
+          isReadOnly={isGridEventScheduleLocked(calendarLookup, event)}
           key={event._id ?? "all-day-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
@@ -136,7 +136,7 @@ export const DayCalendarTimedEventsLayer = ({
           focusColor={resolveCalendarFocusColor(calendarLookup, event)}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
-          isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}
+          isReadOnly={isGridEventScheduleLocked(calendarLookup, event)}
           key={event._id ?? "timed-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}

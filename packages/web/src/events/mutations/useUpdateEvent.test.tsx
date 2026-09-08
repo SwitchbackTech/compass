@@ -3,9 +3,14 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import {
+  registerToastPort,
+  resetToastPort,
+} from "@web/common/utils/toast/toast.port";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
@@ -15,7 +20,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { useUpdateEvent } from "./useUpdateEvent";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const calendarKey = eventQueryKeys.week({
   source: "local",
@@ -64,6 +69,10 @@ function createWrapper(events: Event[]) {
 describe("useUpdateEvent", () => {
   beforeEach(() => {
     draftActions.discard();
+  });
+
+  afterEach(() => {
+    resetToastPort();
   });
 
   it("runs onOptimisticApplied after the optimistic cache write", async () => {
@@ -117,5 +126,83 @@ describe("useUpdateEvent", () => {
     });
     expect(startAtCallback).toBe("2026-07-02T18:00:00Z");
     expect(useDraftStore.getState()).toEqual(initialDraftState);
+  });
+
+  it("refuses a schedule change on a provider-managed event with a toast", () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+
+    const existing = createMockEvent({
+      providerManaged: true,
+      content: {
+        kind: "details",
+        title: "Managed",
+        description: "",
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-02T16:00:00.000Z" as never,
+        end: "2026-07-02T17:00:00.000Z" as never,
+        timeZone: "UTC" as never,
+      },
+    });
+    const { queryClient, Wrapper } = createWrapper([existing]);
+    const { result } = renderHook(() => useUpdateEvent(), {
+      wrapper: Wrapper,
+    });
+
+    const moved = toGridEvent(existing);
+    moved.startDate = "2026-07-02T18:00:00.000Z";
+    moved.endDate = "2026-07-02T19:00:00.000Z";
+
+    act(() => {
+      result.current({ event: moved }, true);
+    });
+
+    expect(mocks.error).toHaveBeenCalledWith(
+      "This event's time follows your calendar provider and can't be moved in Compass.",
+      expect.any(Object),
+    );
+    expect(
+      (
+        queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[existing.id].schedule as { start?: string }
+      ).start,
+    ).toBe("2026-07-02T16:00:00.000Z");
+  });
+
+  it("allows a title-only replace on a provider-managed event", async () => {
+    const existing = createMockEvent({
+      providerManaged: true,
+      content: {
+        kind: "details",
+        title: "Managed",
+        description: "",
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-02T16:00:00.000Z" as never,
+        end: "2026-07-02T17:00:00.000Z" as never,
+        timeZone: "UTC" as never,
+      },
+    });
+    const { queryClient, Wrapper } = createWrapper([existing]);
+    const { result } = renderHook(() => useUpdateEvent(), {
+      wrapper: Wrapper,
+    });
+
+    const retitled = toGridEvent(existing);
+    retitled.title = "Renamed in Compass";
+
+    act(() => {
+      result.current({ event: retitled }, true);
+    });
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[existing.id].content,
+      ).toMatchObject({ kind: "details", title: "Renamed in Compass" });
+    });
   });
 });
