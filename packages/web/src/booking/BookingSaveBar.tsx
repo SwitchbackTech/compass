@@ -23,12 +23,9 @@ export function BookingSaveBar({
   const pendingLabel = isPending ? "Saving…" : BOOKING_SAVE_CHANGES_LABEL;
 
   return (
-    <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
-      {error ? (
-        <p className="mb-2 font-medium text-sm text-text" role="alert">
-          {error}
-        </p>
-      ) : null}
+    <div
+      className={`${BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME} flex flex-wrap items-center justify-end gap-3`}
+    >
       {/* Default align=end keeps the always-on chip Save off the hours column. */}
       <OverlayPanelActions>
         <OverlayPanelActionButton
@@ -45,6 +42,14 @@ export function BookingSaveBar({
           {pendingLabel}
         </OverlayPanelActionButton>
       </OverlayPanelActions>
+      {error ? (
+        <p
+          className="min-w-0 basis-full font-medium text-sm text-text"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

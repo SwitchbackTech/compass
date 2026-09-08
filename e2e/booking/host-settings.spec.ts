@@ -340,3 +340,40 @@ test("essentials fit without scrolling at 1440x900", async ({ page }) => {
     dialogBox!.y + dialogBox!.height,
   );
 });
+
+test("settings dialog never scrolls horizontally with more options open", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await prepareSignedInBookingSettingsPage(page);
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await openMoreOptions(settingsDialog);
+  await settingsDialog
+    .getByRole("button", { name: /Meeting timezone:/ })
+    .click();
+
+  const timezoneDialog = page.getByRole("dialog", { name: "Meeting timezone" });
+  await dispatchFill(
+    timezoneDialog.getByRole("combobox", { name: "Search meeting timezones" }),
+    "Buenos Aires",
+  );
+  await timezoneDialog.getByRole("option", { name: /Buenos Aires/ }).click();
+  await expect(
+    settingsDialog.getByRole("button", { name: /Buenos Aires/ }),
+  ).toBeVisible();
+
+  const noHorizontalOverflow = async () => {
+    const { scrollWidth, clientWidth } = await settingsDialog.evaluate(
+      (el) => ({
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+      }),
+    );
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  };
+
+  await noHorizontalOverflow();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await noHorizontalOverflow();
+});
