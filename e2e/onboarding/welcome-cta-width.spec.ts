@@ -1,0 +1,42 @@
+import { expect, test } from "@playwright/test";
+
+test.use({ storageState: { cookies: [], origins: [] } });
+test.use({ viewport: { width: 1600, height: 900 } });
+
+test("keeps Google and email signup buttons the same width", async ({
+  page,
+}) => {
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ google: { isConfigured: true } }),
+    });
+  });
+
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
+
+  const welcomeDialog = page.getByRole("dialog", {
+    name: "Welcome to Compass Calendar",
+  });
+  await expect(welcomeDialog).toBeVisible();
+  await welcomeDialog
+    .getByRole("button", { name: "Get started for free" })
+    .click();
+  await welcomeDialog.getByRole("button", { name: "Next" }).click();
+
+  const google = welcomeDialog.getByRole("button", {
+    name: "Continue with Google",
+  });
+  const email = welcomeDialog.getByRole("button", {
+    name: "Sign up with email",
+  });
+  await expect(google).toBeVisible();
+  await expect(email).toBeVisible();
+
+  const googleBox = await google.boundingBox();
+  const emailBox = await email.boundingBox();
+  expect(googleBox).not.toBeNull();
+  expect(emailBox).not.toBeNull();
+  expect(googleBox?.width).toBe(emailBox?.width);
+});
