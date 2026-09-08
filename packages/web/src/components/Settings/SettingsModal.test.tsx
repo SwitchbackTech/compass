@@ -10,6 +10,7 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { AuthApi } from "@web/api/auth.api";
 import {
@@ -1226,7 +1227,11 @@ describe("SettingsModal", () => {
       expect(
         within(linkRow).getByText("U", { exact: true }),
       ).toBeInTheDocument();
-      await user.keyboard(`u{/${modKey}}`);
+      const modInit: KeyboardEventInit =
+        resolveModifier("Mod") === "Meta"
+          ? { metaKey: true, code: "KeyU" }
+          : { ctrlKey: true, code: "KeyU" };
+      pressKey("u", { keyDownInit: modInit, keyUpInit: modInit });
 
       await waitFor(() => {
         expect(writeText).toHaveBeenCalledWith(bookingUrl);

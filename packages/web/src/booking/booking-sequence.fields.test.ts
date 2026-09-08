@@ -59,8 +59,9 @@ describe("BOOKING_SECTION_CHORDS", () => {
       /^[a-z]$/.test(chord.key),
     ).map((chord) => chord.key);
     expect(letters.length).toBeGreaterThan(0);
+    const pool: readonly string[] = SETTINGS_MOD_LETTER_POOL;
     for (const letter of letters) {
-      expect(SETTINGS_MOD_LETTER_POOL).toContain(letter);
+      expect(pool).toContain(letter);
       expect(EXCLUDED_LETTERS.has(letter)).toBe(false);
     }
   });

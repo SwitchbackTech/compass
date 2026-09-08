@@ -48,6 +48,3 @@ export const editSequenceActions = {
 
 export const selectEditSequenceMenuVisible = (state: EditSequenceState) =>
   state.isMenuVisible;
-
-export const selectEditSequenceScope = (state: EditSequenceState) =>
-  state.scope;

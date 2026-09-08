@@ -25,7 +25,6 @@ import {
 import { BOOKING_CONNECT_EMPTY_ENV_COPY } from "@web/booking/BookingConnectPrompt";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
 import {
-  BOOKING_SAVE_CHANGES_LABEL,
   BOOKING_SAVE_DRAFT_LABEL,
   BOOKING_TURN_OFF_LABEL,
   BOOKING_TURN_ON_LABEL,
