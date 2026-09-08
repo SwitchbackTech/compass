@@ -29,11 +29,11 @@ test("settings booking page shows a copyable public link after save", async ({
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
-  await expect(settingsDialog.getByLabel("Public booking link")).toHaveValue(
-    bookingUrl,
-  );
   await expect(
-    settingsDialog.getByRole("link", { name: "Open booking page" }),
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toHaveValue(bookingUrl);
+  await expect(
+    settingsDialog.getByRole("link", { name: "Open meeting page" }),
   ).toHaveAttribute("href", bookingUrl);
   expect(captured.putBodies[0]).toMatchObject({ durationMinutes: 30 });
 
@@ -100,7 +100,7 @@ test("saves welcome text", async ({ page }) => {
     welcomeText: "30 minutes to talk through Compass.",
   });
   await expect(
-    settingsDialog.getByRole("link", { name: "Open booking page" }),
+    settingsDialog.getByRole("link", { name: "Open meeting page" }),
   ).toHaveAttribute("href", bookingUrl);
 });
 
@@ -116,7 +116,9 @@ test("keyboard hint sits above the public link and the last control stays above 
   const hint = settingsDialog
     .locator("p")
     .filter({ hasText: "then a letter to jump to a field" });
-  const publicLink = settingsDialog.getByLabel("Public booking link");
+  const publicLink = settingsDialog.getByRole("textbox", {
+    name: "Meeting link",
+  });
   const lastControl = settingsDialog.getByRole("checkbox", {
     name: "Guest can invite others",
   });
@@ -179,7 +181,7 @@ test("turns on a not-live page in one click", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
@@ -194,7 +196,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await expect(
-    settingsDialog.getByText("Your booking page is not live yet"),
+    settingsDialog.getByText("Your meeting page is not live yet"),
   ).toBeVisible();
   await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
     "hostuser",
@@ -204,7 +206,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
   ).toBeVisible();
 
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
@@ -214,16 +216,16 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
   });
 
   await expect(
-    settingsDialog.getByText("Your booking page is live"),
-  ).toBeVisible();
-  await expect(settingsDialog.getByLabel("Public booking link")).toHaveValue(
-    "https://compasscalendar.com/meet/hostuser",
-  );
-  await expect(
-    settingsDialog.getByRole("button", { name: "Copy booking link" }),
+    settingsDialog.getByText("Your meeting page is live"),
   ).toBeVisible();
   await expect(
-    settingsDialog.getByRole("link", { name: "Open booking page" }),
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toHaveValue("https://compasscalendar.com/meet/hostuser");
+  await expect(
+    settingsDialog.getByRole("button", { name: "Copy meeting link" }),
+  ).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("link", { name: "Open meeting page" }),
   ).toHaveAttribute("href", "https://compasscalendar.com/meet/hostuser");
 });
 
@@ -235,12 +237,12 @@ test("blocks turn on with empty hours", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
   );
 
   await expect(
     settingsDialog.getByRole("alert").filter({
-      hasText: "Add weekly hours before turning on your booking page.",
+      hasText: "Add weekly hours before turning on your meeting page.",
     }),
   ).toBeVisible();
   expect(captured.putBodies.length).toBe(0);

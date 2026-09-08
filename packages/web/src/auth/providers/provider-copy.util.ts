@@ -77,11 +77,11 @@ export function emptyCalendarsCopy(
 
 const BOOKING_CONNECT_PROMPT: Record<ProviderKind, string> = {
   google:
-    "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    "Connect a Google account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
   microsoft:
-    "Connect a Microsoft account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    "Connect a Microsoft account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
   apple:
-    "Connect an Apple account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+    "Connect an Apple account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
 };
 
 export function bookingConnectPromptCopy(
@@ -90,7 +90,7 @@ export function bookingConnectPromptCopy(
   if (connectable.length <= 1) {
     return BOOKING_CONNECT_PROMPT[connectable[0] ?? "google"];
   }
-  return "Connect a calendar account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.";
+  return "Connect a calendar account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.";
 }
 
 export function defaultCalendarGroupLabel(

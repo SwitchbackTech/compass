@@ -451,7 +451,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   {
     id: "other-booking-jump",
     keys: ["e", "letter"],
-    label: "Jump to a booking settings field",
+    label: "Jump to a meeting settings field",
     section: "other",
   },
   {

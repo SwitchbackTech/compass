@@ -41,9 +41,9 @@ export const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
     "One of your blocking calendars can't be checked for busy times. Uncheck it and save again.",
   DESTINATION_NOT_WRITABLE:
     "The destination calendar can't accept new events. Choose a different calendar and save again.",
-  TIMEZONE_REQUIRED: "Choose a booking timezone before enabling booking.",
+  TIMEZONE_REQUIRED: "Choose a meeting timezone before enabling.",
   AVAILABILITY_REQUIRED:
-    "Add weekly hours before turning on your booking page.",
+    "Add weekly hours before turning on your meeting page.",
   SLUG_TAKEN: "That address is already taken. Try another.",
   INVALID_INPUT:
     "Some settings couldn't be saved. Check the highlighted fields and try again.",
@@ -76,7 +76,7 @@ function handleBookingSaveError(
   if (error instanceof ZodError) {
     // A client-side schema rejection means a form field slipped past its
     // inline validation - point at the fields, not at the server.
-    showErrorToast("Check the booking fields and try again.");
+    showErrorToast("Check the meeting fields and try again.");
     return;
   }
   if (isApiError(error)) {
@@ -97,7 +97,7 @@ function handleBookingSaveError(
       return;
     }
   }
-  showErrorToast("Could not save booking settings. Please try again.");
+  showErrorToast("Could not save meeting settings. Please try again.");
 }
 
 export function useSaveBookingPageMutation() {

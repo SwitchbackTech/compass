@@ -245,7 +245,7 @@ export const SettingsModal: FC = () => {
               type="button"
               {...settingsShortcutAttrs("nav-booking")}
             >
-              Booking
+              Meeting
               {areHintsVisible ? <ShortcutKeys keys="3" /> : null}
             </button>
           ) : null}

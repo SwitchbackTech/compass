@@ -343,11 +343,11 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+      settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
     );
     await expect(
       settingsDialog.getByRole("alert").filter({
-        hasText: "Add weekly hours before turning on your booking page.",
+        hasText: "Add weekly hours before turning on your meeting page.",
       }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
@@ -429,7 +429,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await expect(
-      settingsDialog.getByText("Your booking page is not live yet"),
+      settingsDialog.getByText("Your meeting page is not live yet"),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking not live",

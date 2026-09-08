@@ -414,7 +414,7 @@ export function BookingSettingsSection({
   }
 
   if (isSeedingForm) {
-    return <p className="text-sm text-text-muted">Loading booking settings…</p>;
+    return <p className="text-sm text-text-muted">Loading meeting settings…</p>;
   }
 
   const savedPage = isSavedBookingPage(serverPage) ? serverPage : null;
@@ -498,8 +498,8 @@ export function BookingSettingsSection({
             showStatusToast(
               "booking-link-copied",
               wasLive
-                ? "Booking page turned off."
-                : "Saved. Turn on your booking page to share the link.",
+                ? "Meeting page turned off."
+                : "Saved. Turn on your meeting page to share the link.",
             );
             return;
           }
@@ -513,11 +513,11 @@ export function BookingSettingsSection({
             page.bookingUrl,
             wasLive
               ? {
-                  onCopy: "Saved. Booking link copied.",
+                  onCopy: "Saved. Meeting link copied.",
                   onFail: "Saved. Press e then l to copy your link.",
                 }
               : {
-                  onCopy: "Your booking page is live. Link copied.",
+                  onCopy: "Your meeting page is live. Link copied.",
                   onFail: "Live. Press e then l to copy your link.",
                 },
           );

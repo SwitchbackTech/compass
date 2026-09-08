@@ -58,7 +58,7 @@ const assertTimeZoneForEnable = (rawInput: unknown): void => {
   if (typeof timeZone !== "string" || timeZone.trim() === "") {
     throw bookingError(
       "TIMEZONE_REQUIRED",
-      "Choose a booking timezone before enabling",
+      "Choose a meeting timezone before enabling",
     );
   }
 };
@@ -99,7 +99,7 @@ const assertHealthyWritableDestinationForEnable = async (
   if (healthyConnectionIds.size === 0) {
     throw bookingError(
       "CALENDAR_NOT_CONNECTED",
-      "Connect a healthy calendar account before enabling booking",
+      "Connect a healthy calendar account before enabling your meeting page",
     );
   }
 
@@ -213,7 +213,7 @@ class BookingPageService {
     if (input.enabled && input.weeklyAvailability.length === 0) {
       throw bookingError(
         "AVAILABILITY_REQUIRED",
-        "Add weekly hours before turning on your booking page",
+        "Add weekly hours before turning on your meeting page",
       );
     }
 
@@ -269,7 +269,7 @@ class BookingPageService {
 
     throw bookingError(
       "INVALID_INPUT",
-      "Could not persist booking page due to slug collision",
+      "Could not persist meeting page due to slug collision",
     );
   }
 }

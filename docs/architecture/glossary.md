@@ -155,9 +155,9 @@ Browsers connect with `GET /api/events/stream`.
 ## Booking
 
 **Booking page**:
-The one v1 scheduling page owned by a Compass user. Settings configure
-it; guests open it at `/meet/:username`. Old `/book/:username` links
-redirect client-side.
+The one v1 scheduling page owned by a Compass user, shown to users as
+Meeting page. Settings configure it; guests open it at `/meet/:username`.
+Old `/book/:username` links redirect client-side.
 _Avoid_: event type (v1 has one duration per user, not Calendly-style
 multiple event types)
 

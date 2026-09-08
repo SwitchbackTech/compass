@@ -160,17 +160,17 @@ describe("CommandPalette", () => {
     expect(screen.queryByText("Manage Billing")).toBeNull();
   });
 
-  it("shows Booking settings when signed in", () => {
+  it("shows Meeting settings when signed in", () => {
     authenticated = true;
     renderPalette();
 
-    expect(rowLabel("Booking settings")).toBeInTheDocument();
+    expect(rowLabel("Meeting settings")).toBeInTheDocument();
   });
 
-  it("hides Booking settings when signed out", () => {
+  it("hides Meeting settings when signed out", () => {
     renderPalette();
 
-    expect(screen.queryByText("Booking settings")).toBeNull();
+    expect(screen.queryByText("Meeting settings")).toBeNull();
   });
 
   it("badges create actions as Premium when billing is read-only", () => {

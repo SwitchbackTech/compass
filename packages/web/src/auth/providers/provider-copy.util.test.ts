@@ -85,16 +85,16 @@ describe("provider copy", () => {
 
   it("keeps Google booking-connect copy byte-identical", () => {
     expect(bookingConnectPromptCopy(["google"])).toBe(
-      "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+      "Connect a Google account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
     );
     expect(bookingConnectPromptCopy(["microsoft"])).toBe(
-      "Connect a Microsoft account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+      "Connect a Microsoft account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
     );
     expect(bookingConnectPromptCopy(["google", "microsoft"])).toBe(
-      "Connect a calendar account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+      "Connect a calendar account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
     );
     expect(bookingConnectPromptCopy([])).toBe(
-      "Connect a Google account to enable your booking page. Guests book through a public link and Compass creates events on your calendar.",
+      "Connect a Google account to enable your meeting page. Guests book through a public link and Compass creates events on your calendar.",
     );
   });
 

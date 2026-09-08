@@ -17,7 +17,7 @@ export const useShowBookingCmdItems = (
   return [
     {
       id: "show-booking",
-      label: "Booking settings",
+      label: "Meeting settings",
       icon: CalendarIcon,
       keywords: [
         "booking",

@@ -222,7 +222,7 @@ One booking-page record per user.
 | Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
 | Scheduling window | Minimum notice default **4 hours**, capped at **1440 hours** (the 60-day horizon in hours). Maximum horizon default **60 days**. Buffer default off, capped at **1440 minutes** (one working day). The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 | Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
-| Max bookings per day | Off by default. When on, default **4**. Counts confirmed booking reservations that day in the host timezone, not every calendar event. |
+| Max meetings per day | Off by default. When on, default **4**. Counts confirmed booking reservations that day in the host timezone, not every calendar event. |
 | Guest permissions | Maps to Google `guestsCanInviteOthers`. Default **on**. This is not Compass UI. `guestsCanModify` stays off. |
 
 **Slot grid:** 15-minute starts in the host timezone, filtered so a slot
@@ -231,15 +231,15 @@ blocks.
 
 ### Host Settings controls
 
-The Settings **Booking** page is keyboard-first. It is split into a
+The Settings **Meeting** page is keyboard-first. It is split into a
 status header, an Essentials group, and a collapsed **More options**
 group. It is not a native timezone `<select>` plus a checkbox and two
 time inputs per weekday.
 
-- **Status:** a live page shows "Your booking page is live" and the
-  public link with Copy and **Open booking page**. A page that is not
-  live shows "Your booking page is not live yet".
-- **Essentials:** Page address, duration, booking timezone, weekly hours, and
+- **Status:** a live page shows "Your meeting page is live" and the
+  meeting link with Copy and **Open meeting page**. A page that is not
+  live shows "Your meeting page is not live yet".
+- **Essentials:** Page address, duration, meeting timezone, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
 - **More options:** an uncontrolled native `<details>` that starts
   collapsed. It holds blocking calendars, welcome text, notice and
@@ -251,7 +251,7 @@ time inputs per weekday.
 - **Weekly hours** are one typed range per weekday (`9-5`, or `9-12, 1-5`
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
-- **Jump:** `e` then a letter focuses a field (`e` booking page on or
+- **Jump:** `e` then a letter focuses a field (`e` meeting page on or
   off, `a` page address, `d` duration, `c` destination, `b` blocking, `z` timezone,
   `h` hours, `m` More options, `w` welcome, `n` notice, `x` horizon,
   `o` buffer and limits, `l` link). Settings owns Mod+Enter (the
@@ -261,19 +261,19 @@ time inputs per weekday.
   does not toggle it. Before focusing, the helper opens any ancestor
   `<details>`.
 - **Turn on / Save:** going live is one click. When the page is not
-  live, the primary action is **Turn on booking page** (Mod+Enter).
+  live, the primary action is **Turn on meeting page** (Mod+Enter).
   **Save draft** appears only when the form is dirty. When the page is
   live, the primary action is **Save changes** and the secondary action
-  is **Turn off booking page**. The Enable booking page checkbox is
+  is **Turn off meeting page**. The Enable meeting page checkbox is
   gone. Validation and server errors render beside the save bar and
   focus the offending field.
-- **Toasts:** turning on copies the link (`Your booking page is live.
+- **Toasts:** turning on copies the link (`Your meeting page is live.
   Link copied.`, or `Live. Press e then l to copy your link.` if the
   clipboard fails). Save changes copies the link with today's Saved
-  copy. Turn off says `Booking page turned off.` Save draft says
-  `Saved. Turn on your booking page to share the link.` Safari can drop
+  copy. Turn off says `Meeting page turned off.` Save draft says
+  `Saved. Turn on your meeting page to share the link.` Safari can drop
   a copy that follows the save round trip; the Copy button stays.
-- **Open booking page** sits next to Copy and opens the public URL in a
+- **Open meeting page** sits next to Copy and opens the public URL in a
   new tab. There is no authenticated preview iframe.
 - **Discard:** Escape on a dirty Booking form opens **Discard unsaved
   changes?** instead of closing Settings. Cancel (Escape) keeps the
@@ -398,7 +398,7 @@ Unauthenticated:
 - `GET /api/booking/pages/:slug` — public page (host display name,
   duration, timezone, enabled, optional welcome text). `404` when
   missing or disabled. A host who cannot write is `409` with
-  `This page is not accepting bookings.` (no billing, plan, or payment
+  `This page is not accepting meetings.` (no billing, plan, or payment
   wording).
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
   instants for that window, computed in the **host** timezone. `timeZone`
