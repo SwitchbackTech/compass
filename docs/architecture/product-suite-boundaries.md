@@ -202,7 +202,7 @@ rule is maintained now.
    in Calendar. Keep Sync as-is operationally.
 2. **First Booking slice:** specified in
    [Compass Calendar Booking (v1)](../features/booking.md). Add a `booking`
-   domain module in the existing API and public `/book/` routes in Compass
+   domain module in the existing API and public `/meet/` routes in Compass
    Web. Use Calendar application interfaces. Do not extract a microservice.
 3. **First Reminders slice:** add reminder contracts/policy plus a worker
    entrypoint backed by durable, idempotent jobs.

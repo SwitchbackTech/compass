@@ -28,6 +28,7 @@ Use this guide to validate:
 - toggling event-jump chips (`H`); the mouse is permanently inert (Compass is keyboard-only)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
+- jumping Meeting settings sections with hold-Mod (`Mod+4` through `Mod+9`, `Mod+U`)
 - confirming that shortcuts do not fire while typing in inputs
 
 Do not use this guide to validate:
@@ -481,6 +482,28 @@ With a grid event focused (form closed, not typing in an input), Cmd+C (Mac) or 
 
 ---
 
+## Scenario 18: Jump Meeting Settings With Hold-Mod
+
+### UX
+
+Settings > Meeting uses hold-Mod section chords. Settings nav still owns digits `1` / `2` / `3`. `Mod+4` through `Mod+9` jump to on or off, Duration, Timezone, Weekly hours, Destination calendar, and More options. `Mod+U` copies the meeting link. Save is Mod+Enter. Meeting settings do not use a letter leader.
+
+### Steps
+
+1. Open Settings and go to Meeting with the page already configured and live.
+2. Hold Mod until the section chips appear.
+3. Press `5`.
+4. Press `U` while Mod is still held.
+
+### Expected Results
+
+- Chips `4` through `9` and `U` appear while Mod is held. The nav hint **Hold Mod to see shortcuts.** hides while chips are visible.
+- `Mod+5` focuses Duration.
+- `Mod+U` copies the meeting link.
+- Releasing Mod hides the chips and restores the nav hint.
+
+---
+
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping shortcut-related changes:
@@ -506,3 +529,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 19. `Z` opens time travel in Day and Week view; Cmd+Z / Ctrl+Z still undoes and does not open the picker.
 20. On Day view, hold Mod then a column digit (2+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
 21. Cmd+C / Ctrl+C copies a focused event; Cmd+V / Ctrl+V pastes a duplicate at the original time without requiring focus. A later copy replaces the clipboard. Empty paste is a no-op. Copy/paste do not fire while typing in an input (native text clipboard). Cmd+D is unchanged.
+22. In Settings > Meeting, hold Mod to reveal chips `4`–`9` and `U`; `Mod+5` focuses Duration; `Mod+U` copies the meeting link.
