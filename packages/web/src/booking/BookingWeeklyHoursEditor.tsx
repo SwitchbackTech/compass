@@ -257,7 +257,11 @@ export function BookingWeeklyHoursEditor({
               ) : null}
             </div>
             {error ? (
-              <p className="text-error text-xs" id={errorId} role="alert">
+              <p
+                className="font-medium text-sm text-text"
+                id={errorId}
+                role="alert"
+              >
                 {error}
               </p>
             ) : null}
