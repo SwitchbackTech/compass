@@ -1,4 +1,5 @@
 import { expect, type Locator, test } from "@playwright/test";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import {
   BOOKING_CALENDAR_ID,
   COMPASS_CALENDAR_ID,
@@ -183,6 +184,47 @@ test("turns on a not-live page in one click", async ({ page }) => {
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({ enabled: true });
+});
+
+test("turns a not-live unconfigured page on in one click", async ({ page }) => {
+  const captured = await prepareSignedInBookingSettingsPage(page, {
+    configured: false,
+    enabled: false,
+  });
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(
+    settingsDialog.getByText("Your booking page is not live yet"),
+  ).toBeVisible();
+  await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
+    "hostuser",
+  );
+  await expect(
+    settingsDialog.getByText(/It will be at .*\/book\/hostuser/),
+  ).toBeVisible();
+
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: "Turn on booking page" }),
+  );
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]).toMatchObject({
+    enabled: true,
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+  });
+
+  await expect(
+    settingsDialog.getByText("Your booking page is live"),
+  ).toBeVisible();
+  await expect(settingsDialog.getByLabel("Public booking link")).toHaveValue(
+    "https://compasscalendar.com/book/hostuser",
+  );
+  await expect(
+    settingsDialog.getByRole("button", { name: "Copy booking link" }),
+  ).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("link", { name: "Open booking page" }),
+  ).toHaveAttribute("href", "https://compasscalendar.com/book/hostuser");
 });
 
 test("blocks turn on with empty hours", async ({ page }) => {

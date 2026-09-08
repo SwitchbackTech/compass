@@ -290,6 +290,9 @@ export interface PublicBookingStubOptions {
   welcomeText?: string | null;
   slots?: Array<{ slotStart: string; slotEnd: string }>;
   bookable?: boolean;
+  /** When true, GET /pages/:slug returns 404 (renamed or unknown address). */
+  notFound?: boolean;
+  enabled?: boolean;
   /** When set, POST /reservations returns this status instead of 200. */
   confirmStatus?: number;
   /** When set, the reservation POST waits until this resolves (for in-flight UI). */
@@ -399,12 +402,15 @@ export async function preparePublicBookingPage(
     const path = url.pathname;
 
     if (path === `/api/booking/pages/${slug}` && request.method() === "GET") {
+      if (options.notFound) {
+        return route.fulfill(jsonResponse({ error: "not found" }, 404));
+      }
       return route.fulfill(
         jsonResponse({
           hostDisplayName,
           durationMinutes,
           timeZone: "America/Chicago",
-          enabled: true,
+          enabled: options.enabled ?? true,
           maxHorizonDays: 60,
           welcomeText: options.welcomeText ?? null,
           conference,
@@ -593,6 +599,12 @@ export async function preparePublicBookingPage(
   });
 
   await page.goto(`/book/${slug}`, { waitUntil: "domcontentloaded" });
+  if (options.notFound || options.enabled === false) {
+    await expect(
+      page.getByRole("heading", { name: "Booking page not found" }),
+    ).toBeVisible({ timeout: 15000 });
+    return captured;
+  }
   await expect(
     page.getByRole("heading", { name: "Book with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
@@ -963,6 +975,10 @@ export interface HostBookingSettingsStubOptions {
   bookingUrl?: string;
   microsoftConnect?: boolean;
   enabled?: boolean;
+  /** When false, GET returns the setup shape with `suggestedSlug`. */
+  configured?: boolean;
+  /** When false, Settings > Booking shows the connect pills. */
+  healthyConnection?: boolean;
   weeklyAvailability?: Array<{
     weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
     start: string;
@@ -981,7 +997,9 @@ export async function prepareSignedInBookingSettingsPage(
   const slug = options.slug ?? "hostuser";
   const bookingUrl =
     options.bookingUrl ?? `https://compasscalendar.com/book/${slug}`;
-  const enabled = options.enabled ?? true;
+  const configured = options.configured ?? true;
+  const healthyConnection = options.healthyConnection ?? true;
+  const enabled = options.enabled ?? configured;
   const weeklyAvailability =
     options.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY;
   const captured: CapturedHostBookingRequests = { putBodies: [] };
@@ -1019,6 +1037,38 @@ export async function prepareSignedInBookingSettingsPage(
     updatedAt: new Date(0).toISOString(),
     bookingUrl,
   };
+  const setupPageFields = {
+    isConfigured: false,
+    suggestedSlug: slug,
+  };
+  let getPayload: Record<string, unknown> = configured
+    ? { ...bookingPagePayload, ...savedPageFields }
+    : { ...bookingPagePayload, enabled: false, ...setupPageFields };
+  const hostMetadata = healthyConnection
+    ? {
+        google: {
+          connectionState: "HEALTHY" as const,
+          connections: [
+            {
+              id: "e2e-connection-1",
+              state: "healthy",
+              stateReason: null,
+              lastSyncedAt: null,
+              lastHealthyAt: null,
+              accountEmail: HOST_ACCOUNT_EMAIL,
+              connectionState: "HEALTHY" as const,
+              canSuggestContacts: false,
+            },
+          ],
+        },
+      }
+    : {
+        google: {
+          connectionState: "NOT_CONNECTED" as const,
+          connections: [],
+        },
+        connections: [],
+      };
 
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -1040,43 +1090,28 @@ export async function prepareSignedInBookingSettingsPage(
       // exists. Returning the bare input shape here hid a bug where the
       // response-only keys rode into the strict PUT schema and killed every
       // save after the first.
-      return route.fulfill(
-        jsonResponse({ ...bookingPagePayload, ...savedPageFields }),
-      );
+      return route.fulfill(jsonResponse(getPayload));
     }
 
     if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
       const body = request.postDataJSON() as Record<string, unknown>;
       captured.putBodies.push(body);
-      return route.fulfill(
-        jsonResponse({
-          ...bookingPagePayload,
-          ...savedPageFields,
-          ...body,
-        }),
-      );
+      const nextSlug =
+        typeof body.slug === "string" && body.slug.length > 0
+          ? body.slug
+          : slug;
+      getPayload = {
+        ...bookingPagePayload,
+        ...savedPageFields,
+        ...body,
+        slug: nextSlug,
+        bookingUrl: `https://compasscalendar.com/book/${nextSlug}`,
+      };
+      return route.fulfill(jsonResponse(getPayload));
     }
 
     if (path.endsWith("/api/user/metadata")) {
-      return route.fulfill(
-        jsonResponse({
-          google: {
-            connectionState: "HEALTHY",
-            connections: [
-              {
-                id: "e2e-connection-1",
-                state: "healthy",
-                stateReason: null,
-                lastSyncedAt: null,
-                lastHealthyAt: null,
-                accountEmail: HOST_ACCOUNT_EMAIL,
-                connectionState: "HEALTHY",
-                canSuggestContacts: false,
-              },
-            ],
-          },
-        }),
-      );
+      return route.fulfill(jsonResponse(hostMetadata));
     }
 
     if (path.endsWith("/api/config")) {
@@ -1087,9 +1122,9 @@ export async function prepareSignedInBookingSettingsPage(
             google: { signIn: true, connect: true },
             microsoft: {
               signIn: false,
-              connect: Boolean(options.microsoftConnect),
+              connect: Boolean(options.microsoftConnect) || !healthyConnection,
             },
-            apple: { signIn: false, connect: false },
+            apple: { signIn: false, connect: !healthyConnection },
           },
         }),
       );
@@ -1127,35 +1162,16 @@ export async function prepareSignedInBookingSettingsPage(
     ).__COMPASS_E2E_STORE__;
     return Boolean(bridge?.userMetadata);
   });
-  await page.evaluate(
-    (metadata) => {
-      const bridge = (
-        window as Window & {
-          __COMPASS_E2E_STORE__?: {
-            userMetadata?: { set: (metadata: unknown) => void };
-          };
-        }
-      ).__COMPASS_E2E_STORE__;
-      bridge?.userMetadata?.set(metadata);
-    },
-    {
-      google: {
-        connectionState: "HEALTHY",
-        connections: [
-          {
-            id: "e2e-connection-1",
-            state: "healthy",
-            stateReason: null,
-            lastSyncedAt: null,
-            lastHealthyAt: null,
-            accountEmail: HOST_ACCOUNT_EMAIL,
-            connectionState: "HEALTHY",
-            canSuggestContacts: false,
-          },
-        ],
-      },
-    },
-  );
+  await page.evaluate((metadata) => {
+    const bridge = (
+      window as Window & {
+        __COMPASS_E2E_STORE__?: {
+          userMetadata?: { set: (metadata: unknown) => void };
+        };
+      }
+    ).__COMPASS_E2E_STORE__;
+    bridge?.userMetadata?.set(metadata);
+  }, hostMetadata);
 
   await page.keyboard.press("Escape");
   await page.keyboard.press("Control+Comma");
@@ -1167,11 +1183,17 @@ export async function prepareSignedInBookingSettingsPage(
       .querySelector<HTMLElement>('[data-settings-shortcut="nav-booking"]')
       ?.click();
   });
-  await expect(
-    settingsDialog.getByRole("button", {
-      name: enabled ? "Save changes" : "Turn on booking page",
-    }),
-  ).toBeVisible({ timeout: 15000 });
+  if (!healthyConnection) {
+    await expect(
+      settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
+    ).toBeVisible({ timeout: 15000 });
+  } else {
+    await expect(
+      settingsDialog.getByRole("button", {
+        name: enabled ? "Save changes" : "Turn on booking page",
+      }),
+    ).toBeVisible({ timeout: 15000 });
+  }
 
   return captured;
 }

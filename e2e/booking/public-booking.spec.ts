@@ -87,6 +87,24 @@ test.describe("public booking page", () => {
     ).toBeVisible();
   });
 
+  test("old address is not found after a rename and the new address shows the picker", async ({
+    page,
+  }) => {
+    await preparePublicBookingPage(page, {
+      slug: "old-address",
+      notFound: true,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Booking page not found" }),
+    ).toBeVisible();
+
+    await page.unroute("**/api/**");
+    await preparePublicBookingPage(page, { slug: "new-address" });
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toBeVisible();
+  });
+
   test("shows Saturday times when Saturday has bookable slots", async ({
     page,
   }) => {

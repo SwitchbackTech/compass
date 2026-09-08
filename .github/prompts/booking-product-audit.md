@@ -30,6 +30,10 @@ guest, without turning Compass into Calendly.
   blocker, date-override removal, keyboard hints, save errors,
   confirmation redesign, cancel-page details, design-system utilities,
   command-palette entry).
+- Re-propose closed Booking v1.6 setup work (branded connect pills,
+  one-click turn on, Essentials / More options split, editable address,
+  default hours, funnel events) unless you show a regression in current
+  main.
 - Recommend flipping `isBookingEnabled` in production, Compass-sent
   email/SMS, paid booking, team/round-robin pages, a standalone booking
   brand/domain, or `guestsCanModify` unless you have concrete evidence
