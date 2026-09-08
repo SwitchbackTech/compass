@@ -1,6 +1,7 @@
 import {
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
+  BOOKING_PLACEHOLDER_CALENDAR_ID,
   BookingSlugSchema,
   pickAdminPutBookingPageInput,
   type WeeklyAvailabilityInterval,
@@ -8,13 +9,7 @@ import {
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type BookingSequenceField } from "@web/booking/booking-sequence.fields";
-import {
-  getLocalCalendar,
-  getWritableCalendars,
-} from "@web/calendars/calendar.util";
-
-export const BOOKING_PLACEHOLDER_CALENDAR_ID =
-  "000000000000000000000001" as CalendarId;
+import { getLocalCalendar } from "@web/calendars/calendar.util";
 
 export function getAvailabilityReadableCalendars(
   calendars: Calendar[],
@@ -68,13 +63,6 @@ export function canEnableBookingPage(
   return writableCalendars.some(
     (calendar) => calendar.id === input.destinationCalendarId,
   );
-}
-
-export function resolveWritableCalendars(
-  calendars: Calendar[],
-  hasConnectedAccount: boolean,
-): Calendar[] {
-  return getWritableCalendars(calendars, { hasConnectedAccount });
 }
 
 const WEEKDAY_LABELS: Record<WeeklyAvailabilityInterval["weekday"], string> = {

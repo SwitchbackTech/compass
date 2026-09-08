@@ -5,10 +5,13 @@ import {
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
   BOOKING_MAX_BUFFER_MINUTES,
+  BOOKING_MAX_HORIZON_DAYS,
   BOOKING_MAX_MIN_NOTICE_HOURS,
+  BOOKING_PLACEHOLDER_CALENDAR_ID,
   BookingPageSchema,
   BookingReservationSlotsQuerySchema,
   BookingSlugSchema,
+  buildDefaultAdminPutInput,
   CancelBookingReservationInputSchema,
   CreateBookingReservationInputSchema,
   CreateBookingReservationResponseSchema,
@@ -24,6 +27,7 @@ import {
   toPublicBookingPage,
   WeeklyAvailabilityIntervalSchema,
 } from "@core/types/booking.contracts";
+import { TimeZoneSchema } from "@core/types/domain-primitives";
 import { describe, expect, it } from "bun:test";
 
 const calendarId = () => faker.database.mongodbObjectId();
@@ -325,6 +329,29 @@ describe("WeeklyAvailabilityIntervalSchema", () => {
         end: "09:00",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("buildDefaultAdminPutInput", () => {
+  it("seeds an unconfigured page on the placeholder destination", () => {
+    const input = buildDefaultAdminPutInput(
+      TimeZoneSchema.parse("America/Denver"),
+    );
+    expect(input).toEqual({
+      enabled: false,
+      durationMinutes: 30,
+      destinationCalendarId: BOOKING_PLACEHOLDER_CALENDAR_ID,
+      blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
+      timeZone: "America/Denver",
+      weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+      welcomeText: null,
+      minNoticeHours: 4,
+      maxHorizonDays: BOOKING_MAX_HORIZON_DAYS,
+      bufferMinutes: null,
+      maxBookingsPerDay: null,
+      guestsCanInviteOthers: true,
+    });
+    expect(AdminPutBookingPageInputSchema.safeParse(input).success).toBe(true);
   });
 });
 

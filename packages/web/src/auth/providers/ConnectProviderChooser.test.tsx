@@ -118,12 +118,7 @@ describe("ConnectProviderChooser", () => {
     const user = userEvent.setup();
     available = ["google", "microsoft", "apple"];
 
-    render(
-      <ConnectProviderChooser
-        idleLabel="Connect Google Calendar"
-        variant="prompt"
-      />,
-    );
+    render(<ConnectProviderChooser variant="prompt" />);
 
     expect(
       screen.getByRole("button", { name: "Connect Google Calendar" }),
@@ -147,12 +142,7 @@ describe("ConnectProviderChooser", () => {
     available = ["google", "microsoft", "apple"];
     connectingKind = "microsoft";
 
-    render(
-      <ConnectProviderChooser
-        idleLabel="Connect Google Calendar"
-        variant="prompt"
-      />,
-    );
+    render(<ConnectProviderChooser variant="prompt" />);
 
     const busy = screen.getByRole("button", { name: "Opening Microsoft…" });
     expect(busy).toHaveAttribute("aria-busy", "true");

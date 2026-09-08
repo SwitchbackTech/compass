@@ -29,14 +29,21 @@ const PROVIDER_MENU_ICON: Partial<Record<ProviderKind, typeof MicrosoftLogo>> =
 const SIDEBAR_PRIMARY_CLASSNAME =
   "c-button-compact c-button-primary mb-2 w-full rounded-xs px-2 py-1.5 text-left text-xs";
 
-type ConnectProviderChooserProps = {
-  idleLabel: string;
+type ConnectProviderChooserBaseProps = {
   newAccount?: boolean;
-  variant?: "overlay-primary" | "sidebar-primary" | "prompt";
   showShortcut?: boolean;
   shortcut?: string;
   shortcutAttrs?: Record<string, string>;
 };
+
+type ConnectProviderChooserProps = ConnectProviderChooserBaseProps &
+  (
+    | { variant: "prompt"; idleLabel?: never }
+    | {
+        variant?: "overlay-primary" | "sidebar-primary";
+        idleLabel: string;
+      }
+  );
 
 export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
   idleLabel,

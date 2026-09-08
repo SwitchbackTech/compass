@@ -1,11 +1,11 @@
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
-import {
-  bookingConnectPromptCopy,
-  CONNECT_CALENDAR_LABEL,
-} from "@web/auth/providers/provider-copy.util";
+import { bookingConnectPromptCopy } from "@web/auth/providers/provider-copy.util";
 import { useAvailableConnectProviders } from "@web/auth/providers/useAvailableConnectProviders";
 
-export function BookingConnectGooglePrompt() {
+export const BOOKING_CONNECT_EMPTY_ENV_COPY =
+  "Calendar sign-in is not configured in this environment.";
+
+export function BookingConnectPrompt() {
   const connectable = useAvailableConnectProviders();
 
   return (
@@ -14,13 +14,10 @@ export function BookingConnectGooglePrompt() {
         {bookingConnectPromptCopy(connectable)}
       </p>
       {connectable.length > 0 ? (
-        <ConnectProviderChooser
-          idleLabel={CONNECT_CALENDAR_LABEL.google}
-          variant="prompt"
-        />
+        <ConnectProviderChooser variant="prompt" />
       ) : (
         <p className="text-sm text-text-muted">
-          Google sign-in is not configured in this environment.
+          {BOOKING_CONNECT_EMPTY_ENV_COPY}
         </p>
       )}
     </div>
