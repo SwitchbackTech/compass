@@ -83,7 +83,20 @@ Important event fields:
 - `recurrence`: discriminated union: `single` (standalone event), `series`
   (recurring base, carries `rules`), or `occurrence` (references its parent
   via `seriesId`)
+- `providerManaged`: optional, present only when `true` (same convention as
+  `icalUid`). Marks events the provider owns and keeps updating (today: Google
+  events whose `eventType` is not `"default"`, such as Gmail-created flights).
+  Omitted on events imported before the field existed and on locally created
+  events.
 - `createdAt`, `updatedAt`
+
+Sync persists Compass overlays for provider-managed events in a separate
+`customizations` record field (`packages/sync/src/storage/contracts/event.contracts.ts`):
+optional `title`, `description`, and `location` served over the provider's
+values while schedule follows the provider. The wire contract exposes
+`providerManaged` on `SyncEventInstanceSchema`; customizations stay on the sync
+record and are applied when instances are assembled
+(`packages/sync/src/domain/event-instance-assembly.ts`).
 
 The backend record shape (`packages/backend/src/event/event.record.ts`) mirrors
 this with Mongo-native types (`ObjectId`, `Date`) plus a single nullable
@@ -142,6 +155,10 @@ Do not assume every incoming `id` is already a durable Mongo id.
 - Every persisted event must have a stable Compass `id`.
 - Occurrences reference their series via `recurrence.seriesId`.
 - Series events carry `recurrence.rules`.
+- The schedule of a provider-managed event is never customized; start and end
+  always follow the provider.
+- A customization set back to the provider's exact value for that field is
+  cleared, so later provider updates to that field show through.
 - Local storage schemas can evolve, but migrations must preserve existing user data.
 
 ## Before Changing The Domain

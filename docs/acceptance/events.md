@@ -335,7 +335,51 @@ action is unavailable.
 
 ---
 
-## Scenario 13: Busy Private Events Show No Details
+## Scenario 13: Provider-Managed Event Keeps Provider Schedule, Compass Overlays Details
+
+### UX
+
+Some events stay owned by the calendar provider and keep receiving updates
+from it (today: Google events auto-created from forwarded email when "Events
+from Gmail" is on). Compass lets you rename and annotate them, but their time
+follows the provider. Drag, resize, and Shift+Arrow nudges are refused; Delete
+still works.
+
+### Steps
+
+1. Forward a flight or hotel confirmation email to a Gmail account that has
+   "Events from Gmail" enabled in Google Calendar settings. Wait for the event
+   to sync into Compass (see `google-sync.md`).
+2. Open the synced event in Compass (`M` or left-click).
+3. Note which fields are editable and read the schedule note.
+4. Change the title and save.
+5. Change the event color and save.
+6. Try to drag the event to a new time slot.
+7. Focus the event on the grid and press Shift+ArrowRight.
+8. Delete the event.
+
+### Expected Results
+
+- The form keeps the title, location, description, and color controls enabled
+  and shows a Save button.
+- Schedule and recurrence controls are disabled.
+- A note reads: "Your calendar provider keeps this event updated (for example
+  from an email), so its time follows the provider. Changes to the title,
+  notes, and location stay in Compass."
+- After a title-only save, the new title appears in Compass and the sync log
+  shows no `patchEvent` call for that update (the overlay is stored locally in
+  Sync).
+- After a color change, the sync log shows a `patchEvent` that writes only
+  provider-allowed fields (for Google: `colorId`).
+- Dragging the event does not move it; no drag preview appears.
+- Shift+ArrowRight does not nudge the event; no schedule-change toast appears
+  unless you change the time from the form (then the toast reads: "This
+  event's time follows your calendar provider and can't be moved in Compass.").
+- Delete removes the event from Compass and the provider.
+
+---
+
+## Scenario 14: Busy Private Events Show No Details
 
 ### UX
 
