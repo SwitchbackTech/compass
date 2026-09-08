@@ -1219,11 +1219,12 @@ describe("SettingsModal", () => {
       await screen.findByRole("button", { name: "Copy meeting link" });
       const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
       await user.keyboard(`{${modKey}>}`);
+      const linkRow = screen.getByRole("textbox", {
+        name: "Meeting link",
+      }).parentElement;
+      if (!linkRow) throw new Error("missing meeting link row");
       expect(
-        within(
-          screen.getByRole("textbox", { name: "Meeting link" }).parentElement
-            as HTMLElement,
-        ).getByText("U", { exact: true }),
+        within(linkRow).getByText("U", { exact: true }),
       ).toBeInTheDocument();
       await user.keyboard(`u{/${modKey}}`);
 
