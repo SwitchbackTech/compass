@@ -584,6 +584,9 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Page address")).toHaveValue("hostuser");
     expect(
+      screen.getByText(`Your link: ${window.location.origin}/meet/hostuser`),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: "Continue" }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
@@ -804,6 +807,10 @@ describe("BookingSettingsSection", () => {
     );
 
     const address = await screen.findByLabelText("Page address");
+    expect(address).toHaveValue("hostuser");
+    expect(
+      screen.getByText("Your link: https://compasscalendar.com/meet/hostuser"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Your meeting page" }),
     ).not.toBeInTheDocument();
@@ -2255,6 +2262,88 @@ describe("BookingSettingsSection", () => {
 
     expect(control).not.toHaveFocus();
     expect(control).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("hides the blocking-calendar account caption for a single account", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+
+    const blocking = screen.getByRole("group", { name: "Blocking calendars" });
+    expect(
+      within(blocking).getByRole("checkbox", { name: "Work" }),
+    ).toBeInTheDocument();
+    expect(
+      within(blocking).queryByText("host@example.com"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows blocking-calendar account captions when two accounts have calendars", async () => {
+    const user = userEvent.setup({ delay: null });
+    const secondCalendar = createMockCalendar({
+      name: "Personal",
+      accountEmail: "second@example.com",
+    });
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY" as const,
+        connections: [
+          createMockConnection("host@example.com"),
+          createMockConnection("second@example.com"),
+        ],
+      },
+    });
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...savedOffPage(),
+            blockingCalendarIds: [writableCalendar.id, secondCalendar.id],
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      writableCalendar,
+      secondCalendar,
+    ]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+
+    const blocking = screen.getByRole("group", { name: "Blocking calendars" });
+    expect(within(blocking).getByText("host@example.com")).toBeInTheDocument();
+    expect(
+      within(blocking).getByText("second@example.com"),
+    ).toBeInTheDocument();
+    expect(
+      within(blocking).getByRole("checkbox", { name: "Work" }),
+    ).toBeInTheDocument();
+    expect(
+      within(blocking).getByRole("checkbox", { name: "Personal" }),
+    ).toBeInTheDocument();
   });
 
   it("keeps More options closed by default", async () => {

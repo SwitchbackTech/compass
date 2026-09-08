@@ -47,29 +47,28 @@ export function BookingAddressField({
     .join(" ");
 
   return (
-    <div>
+    <div className="min-w-0">
       <BookingFieldLabel htmlFor="booking-address">
         Page address
       </BookingFieldLabel>
-      <div
-        className={`flex min-w-0 items-center rounded border bg-surface-overlay ${
+      <input
+        {...bookingFieldAttrs("address")}
+        aria-describedby={describedBy}
+        aria-invalid={showError || undefined}
+        autoCapitalize="none"
+        className={`c-focus-ring w-full min-w-0 rounded border bg-surface-overlay px-2 py-1 text-sm text-text ${
           showError ? "border-error" : "border-border"
         }`}
-      >
-        <span className="shrink-0 pl-2 text-sm text-text-muted">{prefix}</span>
-        <input
-          {...bookingFieldAttrs("address")}
-          aria-describedby={describedBy}
-          aria-invalid={showError || undefined}
-          autoCapitalize="none"
-          className="c-focus-ring min-w-0 flex-1 rounded border-0 bg-transparent px-1 py-1 text-sm text-text"
-          id="booking-address"
-          onBlur={() => setBlurred(true)}
-          onChange={(event) => onChange(event.target.value.toLowerCase())}
-          spellCheck={false}
-          value={slug}
-        />
-      </div>
+        id="booking-address"
+        onBlur={() => setBlurred(true)}
+        onChange={(event) => onChange(event.target.value.toLowerCase())}
+        spellCheck={false}
+        value={slug}
+      />
+      <p className="break-all text-text-muted text-xs">
+        Your link: {prefix}
+        {slug}
+      </p>
       <p className="text-text-muted text-xs" id={helperId}>
         {BOOKING_ADDRESS_HELPER}
       </p>
