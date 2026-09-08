@@ -43,7 +43,7 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
       page.getByText("A Microsoft Teams invite is on its way to your email."),
@@ -71,7 +71,7 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
       page.getByText("The calendar invite is on its way to your email."),
@@ -90,7 +90,7 @@ test.describe("public booking page", () => {
     });
 
     await expect(
-      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+      page.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByText("30 minutes Google Meet")).toBeVisible();
     await expect(
@@ -110,7 +110,7 @@ test.describe("public booking page", () => {
       notFound: true,
     });
     await expect(
-      page.getByRole("heading", { name: "Booking page not found" }),
+      page.getByRole("heading", { name: "Meeting page not found" }),
     ).toBeVisible();
 
     await page.unroute("**/api/**");
@@ -194,10 +194,10 @@ test.describe("public booking page", () => {
     ).toBeVisible();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(page.getByText("When")).toBeVisible();
     await expect(page.getByText("Duration")).toBeVisible();
@@ -206,7 +206,7 @@ test.describe("public booking page", () => {
       page.getByText("A Google Meet invite is on its way to your email."),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this meeting" }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", {
@@ -233,16 +233,16 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
 
     await page.keyboard.press("Escape");
 
     await expect(page).toHaveURL(/\/meet\/tylerdane(?:\?|$)/);
     await expect(
-      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+      page.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeFocused();
   });
 
@@ -266,10 +266,10 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     expect(captured.reservationPosts).toHaveLength(1);
     expect(captured.reservationPosts[0]).toMatchObject({
@@ -287,10 +287,10 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(page).toHaveURL(
       /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
@@ -302,7 +302,7 @@ test.describe("public booking page", () => {
     await page.reload({ waitUntil: "domcontentloaded" });
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(page.getByText("When")).toBeVisible();
     await expect(page.getByText("Duration")).toBeVisible();
@@ -314,7 +314,7 @@ test.describe("public booking page", () => {
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this meeting" }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Edit details" }),
@@ -326,13 +326,13 @@ test.describe("public booking page", () => {
   }) => {
     await preparePublicBookingConfirmedPage(page);
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this meeting" }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Edit details" }),
@@ -358,10 +358,10 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this meeting" }),
     ).toHaveAttribute(
       "href",
       "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
@@ -383,7 +383,7 @@ test.describe("public booking page", () => {
       reservationStatus: "cancelled",
     });
     await expect(
-      page.getByRole("heading", { name: "This booking was canceled" }),
+      page.getByRole("heading", { name: "This meeting was canceled" }),
     ).toBeFocused();
   });
 
@@ -394,7 +394,7 @@ test.describe("public booking page", () => {
       reservationNotFound: true,
     });
     await expect(
-      page.getByRole("heading", { name: "Booking not found" }),
+      page.getByRole("heading", { name: "Meeting not found" }),
     ).toBeFocused();
   });
 
@@ -405,7 +405,7 @@ test.describe("public booking page", () => {
       reservationGetStatus: 500,
     });
     await expect(
-      page.getByRole("heading", { name: "Could not load booking" }),
+      page.getByRole("heading", { name: "Could not load meeting" }),
     ).toBeFocused();
   });
 
@@ -417,7 +417,7 @@ test.describe("public booking page", () => {
       .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
       .click();
     await page.getByLabel("Name").fill("Guest User");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     expect(captured.reservationPosts).toHaveLength(0);
     await expect(page.getByLabel("Email")).toBeFocused();
@@ -517,7 +517,7 @@ test.describe("public booking page", () => {
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
     await page.getByLabel("Notes (optional)").fill("Bring slides");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     const alert = page.getByRole("alert");
     await expect(alert).toHaveText(
@@ -535,7 +535,7 @@ test.describe("public booking page", () => {
       }),
     ).toHaveAttribute("aria-pressed", "false");
     await expect(
-      page.getByRole("button", { name: "Confirm booking" }),
+      page.getByRole("button", { name: "Confirm meeting" }),
     ).toBeDisabled();
     await expect.poll(() => captured.slotGets).toBeGreaterThan(1);
 
@@ -546,7 +546,7 @@ test.describe("public booking page", () => {
       page.getByRole("heading", { name: "Your details" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Confirm booking" }),
+      page.getByRole("button", { name: "Confirm meeting" }),
     ).toBeEnabled();
     await expect(page.getByLabel("Name")).toHaveValue("Guest User");
   });
@@ -735,7 +735,7 @@ test.describe("public booking page", () => {
       .getByRole("button", { name: formatSlotButtonLabel(slotStart) })
       .click();
     await expect(
-      page.getByRole("button", { name: "Confirm booking" }),
+      page.getByRole("button", { name: "Confirm meeting" }),
     ).toBeVisible();
   });
 
@@ -794,7 +794,7 @@ test.describe("public booking page", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
     const confirming = page.getByRole("button", { name: "Confirming..." });
     await expect(confirming).toHaveAttribute("aria-busy", "true");
     await expect.poll(() => captured.reservationPosts.length).toBe(1);
@@ -802,7 +802,7 @@ test.describe("public booking page", () => {
     expect(captured.reservationPosts).toHaveLength(1);
     release();
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     expect(captured.reservationPosts).toHaveLength(1);
   });
@@ -817,7 +817,7 @@ test.describe("public booking page", () => {
     await preparePublicBookingPage(page, { holdFirstSlots });
 
     await expect(
-      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+      page.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByRole("status")).toHaveText("Loading open times");
     await expect(
@@ -842,7 +842,7 @@ test.describe("public booking page", () => {
 
     await expect(page.getByRole("button", { name: "Retry" })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Book with Tyler Dane" }),
+      page.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeVisible();
     slotFailGate.fail = false;
     await page.getByRole("button", { name: "Retry" }).click();

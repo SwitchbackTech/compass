@@ -8,20 +8,20 @@ test.describe("public booking cancel page", () => {
     const captured = await preparePublicBookingCancelPage(page);
 
     await expect(
-      page.getByRole("heading", { name: "Cancel this booking?" }),
+      page.getByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeVisible();
     await expect(
-      page.getByText("You are canceling a booking with Tyler Dane."),
+      page.getByText("You are canceling a meeting with Tyler Dane."),
     ).toBeVisible();
     await expect(page.getByText("When")).toBeVisible();
     await expect(page.getByText("Duration")).toBeVisible();
     await expect(page.getByText("Timezone")).toBeVisible();
     expect(captured.cancelPosts).toHaveLength(0);
 
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await page.getByRole("button", { name: "Cancel this meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "Meeting canceled" }),
     ).toBeFocused();
     expect(captured.cancelPosts).toHaveLength(1);
     expect(captured.cancelPosts[0]).toMatchObject({ token: "abc" });
@@ -32,12 +32,12 @@ test.describe("public booking cancel page", () => {
   }) => {
     await preparePublicBookingCancelPage(page);
 
-    const heading = page.getByRole("heading", { name: "Cancel this booking?" });
+    const heading = page.getByRole("heading", { name: "Cancel this meeting?" });
     await expect(heading).toBeFocused();
 
     await page.keyboard.press("Tab");
     await expect(
-      page.getByRole("button", { name: "Cancel this booking" }),
+      page.getByRole("button", { name: "Cancel this meeting" }),
     ).toBeFocused();
   });
 
@@ -49,10 +49,10 @@ test.describe("public booking cancel page", () => {
     });
 
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "Meeting canceled" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Cancel this booking" }),
+      page.getByRole("button", { name: "Cancel this meeting" }),
     ).toHaveCount(0);
     expect(captured.cancelPosts).toHaveLength(0);
   });
@@ -62,13 +62,13 @@ test.describe("public booking cancel page", () => {
   }) => {
     await preparePublicBookingCancelPage(page, { cancelStatus: 500 });
 
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await page.getByRole("button", { name: "Cancel this meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Could not cancel booking" }),
+      page.getByRole("heading", { name: "Could not cancel meeting" }),
     ).toBeFocused();
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "Meeting canceled" }),
     ).not.toBeVisible();
   });
 });

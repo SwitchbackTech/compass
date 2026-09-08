@@ -301,10 +301,12 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/unknown-host");
 
     expect(
-      await screen.findByRole("heading", { name: "Booking page not found" }),
+      await screen.findByRole("heading", { name: "Meeting page not found" }),
     ).toHaveFocus();
     expect(
-      screen.getByText(/may be incorrect or the host has turned booking off/),
+      screen.getByText(
+        /may be incorrect or the host has turned this meeting page off/,
+      ),
     ).toBeInTheDocument();
     expect(mockTrack).not.toHaveBeenCalledWith(
       "booking_page_viewed",
@@ -317,7 +319,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(mockTrack).toHaveBeenCalledTimes(1);
     expect(mockTrack).toHaveBeenCalledWith("booking_page_viewed", {
@@ -339,7 +341,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Booking page not found" }),
+      await screen.findByRole("heading", { name: "Meeting page not found" }),
     ).toBeInTheDocument();
     expect(mockTrack).not.toHaveBeenCalledWith(
       "booking_page_viewed",
@@ -399,7 +401,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(screen.getByText("30 minutes Google Meet")).toBeInTheDocument();
     expect(
@@ -423,7 +425,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(screen.getByText("30 minutes Microsoft Teams")).toBeInTheDocument();
     expect(screen.queryByText(/Google Meet/)).not.toBeInTheDocument();
@@ -445,7 +447,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(screen.getByText("30 minutes")).toBeInTheDocument();
     expect(screen.queryByText(/Google Meet/)).not.toBeInTheDocument();
@@ -484,7 +486,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(screen.getByText("30 minutes Google Meet")).toBeInTheDocument();
     expect(screen.getByRole("main").parentElement).toHaveAttribute(
@@ -526,11 +528,11 @@ describe("PublicBookingPage", () => {
     ).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toHaveFocus();
     expect(postedBody).toMatchObject({
@@ -547,7 +549,7 @@ describe("PublicBookingPage", () => {
       screen.getByRole("button", { name: "Copy reschedule link" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this meeting" }),
     ).toBeInTheDocument();
     expect(mockTrack).toHaveBeenCalledWith("booking_reservation_created", {
       duration_minutes: 30,
@@ -559,7 +561,7 @@ describe("PublicBookingPage", () => {
       ["booking_reservation_created", { duration_minutes: 30 }],
     ]);
     expect(
-      screen.getByRole("link", { name: "Reschedule this booking" }),
+      screen.getByRole("link", { name: "Reschedule this meeting" }),
     ).toBeInTheDocument();
   });
 
@@ -679,11 +681,11 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(postedBody).toMatchObject({
@@ -794,7 +796,7 @@ describe("PublicBookingPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Booking temporarily unavailable",
+        name: "Meeting temporarily unavailable",
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/week/i)).not.toBeInTheDocument();
@@ -817,7 +819,7 @@ describe("PublicBookingPage", () => {
 
     renderBookingRoute("/meet/tylerdane");
 
-    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await screen.findByRole("heading", { name: "Meet with Tyler Dane" });
     await user.click(
       await screen.findByRole("button", {
         name: slotButtonName(currentSlot.slotStart),
@@ -826,7 +828,7 @@ describe("PublicBookingPage", () => {
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
     await user.type(screen.getByLabelText("Notes (optional)"), "Bring slides");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(
@@ -841,7 +843,7 @@ describe("PublicBookingPage", () => {
       "Bring slides",
     );
     expect(
-      screen.getByRole("button", { name: "Confirm booking" }),
+      screen.getByRole("button", { name: "Confirm meeting" }),
     ).toBeDisabled();
     await waitFor(() => {
       expect(slotRequests).toBeGreaterThan(1);
@@ -859,7 +861,7 @@ describe("PublicBookingPage", () => {
       await screen.findByRole("heading", { name: "Your details" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Confirm booking" }),
+      screen.getByRole("button", { name: "Confirm meeting" }),
     ).toBeEnabled();
     expect(screen.getByLabelText("Name")).toHaveValue("Guest User");
   });
@@ -876,7 +878,7 @@ describe("PublicBookingPage", () => {
 
     renderBookingRoute("/meet/tylerdane");
 
-    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await screen.findByRole("heading", { name: "Meet with Tyler Dane" });
     expect(screen.queryByText(/Keyboard shortcuts/i)).not.toBeInTheDocument();
   });
 
@@ -924,7 +926,7 @@ describe("PublicBookingPage", () => {
     expect(events).not.toContain("slots-end");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
@@ -944,7 +946,7 @@ describe("PublicBookingPage", () => {
 
     renderBookingRoute("/meet/tylerdane");
 
-    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await screen.findByRole("heading", { name: "Meet with Tyler Dane" });
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
     ).toBeInTheDocument();
@@ -955,7 +957,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Next month" }));
     expect(
-      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+      screen.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Pick a time" }),
@@ -1010,7 +1012,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Could not load times" }),
@@ -1074,7 +1076,7 @@ describe("PublicBookingPage", () => {
 
     renderBookingRoute("/meet/tylerdane");
 
-    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await screen.findByRole("heading", { name: "Meet with Tyler Dane" });
     expect(
       await screen.findByText("No open times this month."),
     ).toBeInTheDocument();
@@ -1115,7 +1117,7 @@ describe("PublicBookingPage", () => {
 
     renderBookingRoute("/meet/tylerdane");
 
-    await screen.findByRole("heading", { name: "Book with Tyler Dane" });
+    await screen.findByRole("heading", { name: "Meet with Tyler Dane" });
     expect(
       await screen.findByText("No open times this month."),
     ).toBeInTheDocument();
@@ -1138,7 +1140,7 @@ describe("PublicBookingPage", () => {
       screen.queryByRole("heading", { name: "Your details" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Confirm booking" }),
+      screen.queryByRole("button", { name: "Confirm meeting" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText("Select a time to continue.")).toBeInTheDocument();
   });
@@ -1238,7 +1240,7 @@ describe("PublicBookingPage", () => {
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
-    const confirm = screen.getByRole("button", { name: "Confirm booking" });
+    const confirm = screen.getByRole("button", { name: "Confirm meeting" });
     await user.click(confirm);
     const confirming = await screen.findByRole("button", {
       name: "Confirming...",
@@ -1250,7 +1252,7 @@ describe("PublicBookingPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(posts).toBe(1);
@@ -1279,7 +1281,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/tylerdane");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent(
@@ -1295,7 +1297,7 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Times loaded");
     expect(
-      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+      screen.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
   });
 
@@ -1326,7 +1328,7 @@ describe("PublicBookingPage", () => {
     renderBookingRoute("/meet/retryhost");
 
     expect(
-      await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
+      await screen.findByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "Retry" }),
@@ -1348,7 +1350,7 @@ describe("PublicBookingPage", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+      screen.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
   });
 
@@ -1394,7 +1396,7 @@ describe("PublicBookingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Next month" }));
     expect(
-      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+      screen.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
@@ -1512,7 +1514,7 @@ describe("PublicBookingPage", () => {
     expect(day).toHaveFocus();
     expect(router.state.location.href).toBe(href);
     expect(
-      screen.getByRole("heading", { name: "Book with Tyler Dane" }),
+      screen.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Pick a time" }),
@@ -1527,7 +1529,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toHaveFocus();
     expect(
@@ -1560,7 +1562,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(
@@ -1573,13 +1575,13 @@ describe("PublicBookingConfirmedPage", () => {
       screen.getByRole("button", { name: "Edit details" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this meeting" }),
     ).toHaveAttribute(
       "href",
       `${window.location.origin}/meet/cancel/000000000000000000000099?token=abc`,
     );
     expect(
-      screen.getByRole("link", { name: "Reschedule this booking" }),
+      screen.getByRole("link", { name: "Reschedule this meeting" }),
     ).toHaveAttribute(
       "href",
       `${window.location.origin}/meet/reschedule/000000000000000000000099?token=abc`,
@@ -1598,7 +1600,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(
@@ -1624,12 +1626,12 @@ describe("PublicBookingConfirmedPage", () => {
     );
 
     await screen.findByRole("heading", {
-      name: "You are booked with Tyler Dane",
+      name: "You're meeting with Tyler Dane",
     });
     await user.keyboard("{Escape}");
 
     const heading = await screen.findByRole("heading", {
-      name: "Book with Tyler Dane",
+      name: "Meet with Tyler Dane",
     });
     await waitFor(() => {
       expect(heading).toHaveFocus();
@@ -1645,7 +1647,7 @@ describe("PublicBookingConfirmedPage", () => {
     );
 
     const heading = await screen.findByRole("heading", {
-      name: "This booking was canceled",
+      name: "This meeting was canceled",
     });
     await user.keyboard("{Escape}");
 
@@ -1668,7 +1670,7 @@ describe("PublicBookingConfirmedPage", () => {
     );
 
     const heading = await screen.findByRole("heading", {
-      name: "Booking not found",
+      name: "Meeting not found",
     });
     await user.keyboard("{Escape}");
 
@@ -1684,7 +1686,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "This booking was canceled",
+        name: "This meeting was canceled",
       }),
     ).toHaveFocus();
     expect(
@@ -1694,7 +1696,7 @@ describe("PublicBookingConfirmedPage", () => {
       screen.queryByRole("button", { name: "Copy reschedule link" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Reschedule this booking" }),
+      screen.queryByRole("link", { name: "Reschedule this meeting" }),
     ).not.toBeInTheDocument();
   });
 
@@ -1708,7 +1710,7 @@ describe("PublicBookingConfirmedPage", () => {
     renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
-      await screen.findByRole("heading", { name: "Booking not found" }),
+      await screen.findByRole("heading", { name: "Meeting not found" }),
     ).toHaveFocus();
   });
 
@@ -1723,7 +1725,7 @@ describe("PublicBookingConfirmedPage", () => {
     renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
-      await screen.findByRole("heading", { name: "Could not load booking" }),
+      await screen.findByRole("heading", { name: "Could not load meeting" }),
     ).toHaveFocus();
   });
 
@@ -1770,15 +1772,15 @@ describe("PublicBookingConfirmedPage", () => {
     );
     await user.type(screen.getByLabelText("Name"), "Guest User");
     await user.type(screen.getByLabelText("Email"), "guest@example.com");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
     expect(
-      await screen.findByRole("link", { name: "Cancel this booking" }),
+      await screen.findByRole("link", { name: "Cancel this meeting" }),
     ).toHaveAttribute(
       "href",
       "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
     );
     expect(
-      screen.getByRole("link", { name: "Reschedule this booking" }),
+      screen.getByRole("link", { name: "Reschedule this meeting" }),
     ).toHaveAttribute(
       "href",
       "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
@@ -1859,7 +1861,7 @@ describe("PublicBookingConfirmedPage", () => {
     await user.type(screen.getByLabelText("Name"), "Ada Lovelace");
     await user.type(screen.getByLabelText("Email"), "ada@example.com");
     await user.type(screen.getByLabelText("Notes (optional)"), "bring coffee");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
 
     expect(
       await screen.findByRole("button", { name: "Edit details" }),
@@ -1887,7 +1889,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Grace Hopper")).toBeInTheDocument();
@@ -1934,7 +1936,7 @@ describe("PublicBookingConfirmedPage", () => {
     );
     await user.type(screen.getByLabelText("Name"), "Ada Lovelace");
     await user.type(screen.getByLabelText("Email"), "ada@example.com");
-    await user.click(screen.getByRole("button", { name: "Confirm booking" }));
+    await user.click(screen.getByRole("button", { name: "Confirm meeting" }));
     await user.click(
       await screen.findByRole("button", { name: "Edit details" }),
     );
@@ -1943,7 +1945,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(

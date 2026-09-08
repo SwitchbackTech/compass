@@ -118,16 +118,16 @@ notes), and confirm. They do not need a Compass account.
 
 ```mermaid
 flowchart TD
-  load["Open /book/:slug"]
+  load["Open /meet/:slug"]
   picker["Two-pane: month grid + day's times"]
   details["Your details"]
-  permalink["/book/confirmed/:id"]
-  cancel["/book/cancel/:id"]
-  reschedule["/book/reschedule/:id"]
+  permalink["/meet/confirmed/:id"]
+  cancel["/meet/cancel/:id"]
+  reschedule["/meet/reschedule/:id"]
   load --> picker
   picker -->|select a time| details
   details -->|Change time| picker
-  details -->|Confirm booking| permalink
+  details -->|Confirm meeting| permalink
   permalink -->|tokenized cancel URL| cancel
   permalink -->|tokenized reschedule URL| reschedule
   reschedule -->|reuse picker| picker
@@ -151,16 +151,16 @@ focus uses the accent ring. Intended Tab order on the picker:
    to the first slot. Enter or Space on a slot opens **Your details**
    and moves focus to that heading. **Skip to your details** is the
    first tab stop on that step.
-4. **Change time**, then name, email, notes, **Confirm booking**.
+4. **Change time**, then name, email, notes, **Confirm meeting**.
    **Change time** returns focus to **Pick a time**.
-5. After confirm, `/book/confirmed/:id` focuses **You are booked with
+5. After confirm, `/meet/confirmed/:id` focuses **You're meeting with
    {host}**. Unknown, cancelled, and load-error states focus their
    headings.
 6. A 409 conflict focuses the alert. Slot-load retry focuses **Pick a
    time**. Jump to next available day does the same.
-7. Cancel (`/book/cancel/:id`) focuses its heading on load and after
-   each state change. Tab then reaches **Cancel this booking**.
-8. Reschedule (`/book/reschedule/:id`) focuses **Reschedule your booking
+7. Cancel (`/meet/cancel/:id`) focuses its heading on load and after
+   each state change. Tab then reaches **Cancel this meeting**.
+8. Reschedule (`/meet/reschedule/:id`) focuses **Reschedule your meeting
    with {host}** on load and after each state change. Tab then reaches
    the picker (same month grid and slot list as the public page), then
    **Confirm**. A 409 conflict focuses the alert. Missing or invalid
@@ -182,13 +182,13 @@ holds the app lock first.
   step (picker or details) in place.
 - **Slot list:** Escape moves focus to the selected day. It does not
   change the URL.
-- **Month grid:** Escape is a no-op. It does not leave `/book/:slug`.
-- **Confirmation** (`/book/confirmed/:id`): Escape returns to
-  `/book/:bookingSlug` and focuses **Book with {host}**. Unknown,
+- **Month grid:** Escape is a no-op. It does not leave `/meet/:slug`.
+- **Confirmation** (`/meet/confirmed/:id`): Escape returns to
+  `/meet/:bookingSlug` and focuses **Meet with {host}**. Unknown,
   cancelled, and load-error states have no slug path and stay put.
 - **Edit details:** Escape returns to confirmation without PATCHing.
-- **Cancel confirm** (`/book/cancel/:id`): Escape returns to
-  `/book/confirmed/:id` with the same `?token=` and does not POST.
+- **Cancel confirm** (`/meet/cancel/:id`): Escape returns to
+  `/meet/confirmed/:id` with the same `?token=` and does not POST.
   In-flight cancel does not navigate or abort.
 
 ### Outcome

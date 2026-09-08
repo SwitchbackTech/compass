@@ -27,23 +27,23 @@ type CancelActionState =
   | "error";
 
 const BOOKING_NOT_FOUND = {
-  title: "Booking not found",
+  title: "Meeting not found",
   description: "This cancel link may be invalid or already used.",
 } as const;
 
 const BOOKING_CANCELED = {
-  title: "Booking canceled",
+  title: "Meeting canceled",
   description: "Your appointment has been canceled. You can close this page.",
 } as const;
 
 const BOOKING_CANCEL_FAILED = {
-  title: "Could not cancel booking",
+  title: "Could not cancel meeting",
   description: "Please try again or use the link from your calendar invite.",
 } as const;
 
 const BOOKING_LOADING = {
-  title: "Loading booking",
-  description: "One moment while we load this booking.",
+  title: "Loading meeting",
+  description: "One moment while we load this meeting.",
 } as const;
 
 const resolveCancelPageView = (
@@ -78,7 +78,7 @@ export function PublicBookingCancelPage() {
     `${action}:${reservationQuery.status}:${reservationQuery.data?.status ?? ""}`,
   );
   const inFlightRef = useRef(false);
-  useBookingDocumentTitle("Cancel booking");
+  useBookingDocumentTitle("Cancel meeting");
 
   const handleConfirm = async () => {
     if (!reservationId || !token || inFlightRef.current) {
@@ -156,7 +156,7 @@ export function PublicBookingCancelPage() {
             href={`/meet/${bookingSlug}`}
             className="c-focus-ring mt-4 inline-block text-accent text-sm underline"
           >
-            Book another time
+            Meet another time
           </a>
         ) : null}
       </PublicBookingStatusMessage>
@@ -173,10 +173,10 @@ export function PublicBookingCancelPage() {
           tabIndex={-1}
           className={PUBLIC_BOOKING_HEADING_CLASS}
         >
-          Cancel this booking?
+          Cancel this meeting?
         </h1>
         <p className="mt-2 text-sm text-text">
-          You are canceling a booking with {reservation.hostDisplayName}.
+          You are canceling a meeting with {reservation.hostDisplayName}.
         </p>
         <p className="mt-2 text-sm text-text-muted">
           This will remove the appointment from the host calendar.
@@ -196,7 +196,7 @@ export function PublicBookingCancelPage() {
           }}
           className="c-button c-button-primary mt-6"
         >
-          {busy ? "Canceling..." : "Cancel this booking"}
+          {busy ? "Canceling..." : "Cancel this meeting"}
         </button>
       </section>
     </PublicBookingLayout>

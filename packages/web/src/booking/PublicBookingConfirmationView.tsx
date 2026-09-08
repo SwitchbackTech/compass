@@ -58,7 +58,7 @@ export function PublicBookingConfirmationView({
             tabIndex={-1}
             className={PUBLIC_BOOKING_HEADING_CLASS}
           >
-            You are booked with {hostDisplayName}
+            You're meeting with {hostDisplayName}
           </h1>
         </div>
         <PublicBookingSlotSummary
@@ -99,19 +99,19 @@ export function PublicBookingConfirmationView({
           <div
             className="flex flex-col items-start gap-3"
             role="group"
-            aria-label="Booking actions"
+            aria-label="Meeting actions"
           >
             {cancelUrl ? (
               <PublicBookingCopyGuestAction
                 copyLabel="Copy cancel link"
-                linkLabel="Cancel this booking"
+                linkLabel="Cancel this meeting"
                 url={cancelUrl}
               />
             ) : null}
             {rescheduleUrl ? (
               <PublicBookingCopyGuestAction
                 copyLabel="Copy reschedule link"
-                linkLabel="Reschedule this booking"
+                linkLabel="Reschedule this meeting"
                 url={rescheduleUrl}
               />
             ) : null}

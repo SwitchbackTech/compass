@@ -601,12 +601,12 @@ export async function preparePublicBookingPage(
   await page.goto(`/meet/${slug}`, { waitUntil: "domcontentloaded" });
   if (options.notFound || options.enabled === false) {
     await expect(
-      page.getByRole("heading", { name: "Booking page not found" }),
+      page.getByRole("heading", { name: "Meeting page not found" }),
     ).toBeVisible({ timeout: 15000 });
     return captured;
   }
   await expect(
-    page.getByRole("heading", { name: "Book with Tyler Dane" }),
+    page.getByRole("heading", { name: "Meet with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
   // The h1 renders before the slots request settles, and while slots are
   // pending the picker shows a skeleton without the "Pick a time" heading.

@@ -22,22 +22,22 @@ import { useBookingHeadingFocus } from "@web/booking/use-booking-heading-focus";
 import { usePublicBookingRescheduleFlow } from "@web/booking/use-public-booking-reschedule-flow";
 
 const BOOKING_LOADING = {
-  title: "Loading booking",
-  description: "One moment while we load this booking.",
+  title: "Loading meeting",
+  description: "One moment while we load this meeting.",
 } as const;
 
 const BOOKING_NOT_FOUND = {
-  title: "Booking not found",
+  title: "Meeting not found",
   description: "This reschedule link may be invalid or already used.",
 } as const;
 
 const BOOKING_LOAD_FAILED = {
-  title: "Could not load booking",
+  title: "Could not load meeting",
   description: "Please refresh and try again.",
 } as const;
 
 const BOOKING_CANCELED = {
-  title: "This booking was canceled",
+  title: "This meeting was canceled",
   description:
     "The appointment is no longer on the host calendar. You can close this page.",
 } as const;
@@ -58,7 +58,7 @@ export function PublicBookingReschedulePage() {
       ? hostDisplayName
       : null,
   );
-  useBookingDocumentTitle("Reschedule booking");
+  useBookingDocumentTitle("Reschedule meeting");
 
   if (reservationView.kind === "status") {
     return <PublicBookingStatusMessage {...reservationView} />;
@@ -69,7 +69,7 @@ export function PublicBookingReschedulePage() {
   if (pageQuery.isLoading) {
     return (
       <PublicBookingStatusMessage
-        title="Loading booking page"
+        title="Loading meeting page"
         description="One moment while we load available times."
       />
     );
@@ -92,8 +92,8 @@ export function PublicBookingReschedulePage() {
   if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
       <PublicBookingStatusMessage
-        title="Booking temporarily unavailable"
-        description="The host calendar is not ready for new bookings. Please try again later."
+        title="Meeting temporarily unavailable"
+        description="The host calendar is not ready for new meetings. Please try again later."
       />
     );
   }
@@ -111,7 +111,7 @@ export function PublicBookingReschedulePage() {
           ref={headingRef}
           tabIndex={-1}
         >
-          Reschedule your booking with {reservation.hostDisplayName}
+          Reschedule your meeting with {reservation.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">Current time</p>
         <PublicBookingSlotSummary

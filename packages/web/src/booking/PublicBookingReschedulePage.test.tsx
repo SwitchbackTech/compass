@@ -127,7 +127,7 @@ describe("PublicBookingReschedulePage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toHaveFocus();
     expect(posts).toHaveLength(0);
@@ -217,12 +217,12 @@ describe("PublicBookingReschedulePage", () => {
     renderRescheduleRoute(`/meet/reschedule/${reservationId}`);
 
     expect(
-      await screen.findByRole("heading", { name: "Booking not found" }),
+      await screen.findByRole("heading", { name: "Meeting not found" }),
     ).toHaveFocus();
     expect(slotGets).toBe(0);
     expect(
       screen.queryByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).not.toBeInTheDocument();
   });
@@ -254,7 +254,7 @@ describe("PublicBookingReschedulePage", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
@@ -276,7 +276,7 @@ describe("PublicBookingReschedulePage", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "This booking was canceled",
+        name: "This meeting was canceled",
       }),
     ).toHaveFocus();
     expect(

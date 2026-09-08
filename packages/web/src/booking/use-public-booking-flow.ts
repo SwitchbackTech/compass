@@ -310,11 +310,11 @@ export function usePublicBookingFlow() {
       if (getErrorStatus(error) === 404) {
         // The host disabled the page mid-flow; the refetch flips the whole
         // page to its not-found state.
-        setAlertMessage("This booking page is no longer available.");
+        setAlertMessage("This meeting page is no longer available.");
         await pageQuery.refetch();
         return;
       }
-      setAlertMessage("Could not confirm this booking. Please try again.");
+      setAlertMessage("Could not confirm this meeting. Please try again.");
     } finally {
       submitInFlightRef.current = false;
     }
