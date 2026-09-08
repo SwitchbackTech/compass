@@ -1,6 +1,7 @@
 import {
   type MutableRefObject,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -22,6 +23,10 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useAppAccess } from "@web/billing/useAppAccess";
+import {
+  BookingAddressField,
+  bookingAddressPrefix,
+} from "@web/booking/BookingAddressField";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -46,6 +51,7 @@ import {
   isUnconfiguredBookingPage,
   isWelcomeTextTooLong,
   resolveWritableCalendars,
+  slugFromAdminBookingPage,
   toBookingPageInput,
   validateBookingForm,
   WELCOME_TEXT_MAX_LENGTH,
@@ -166,8 +172,13 @@ const buildInitialForm = (
       ? base.timeZone
       : effectiveTimeZone;
 
+  const slug = page ? slugFromAdminBookingPage(page) : undefined;
+
   return {
-    ...toBookingPageInput(base),
+    ...toBookingPageInput({
+      ...base,
+      ...(slug !== undefined ? { slug } : {}),
+    }),
     destinationCalendarId,
     blockingCalendarIds,
     timeZone: TimeZoneSchema.parse(timeZone || effectiveTimeZone),
@@ -278,6 +289,13 @@ export function BookingSettingsSection({
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
+  // The settings fieldset is disabled while a save is in flight, so focusing
+  // from onError is a no-op. Wait until the mutation settles and the field
+  // is enabled again.
+  useLayoutEffect(() => {
+    if (saveMutation.isPending || saveError?.field == null) return;
+    focusBookingField(saveError.field);
+  }, [saveError, saveMutation.isPending]);
   const sectionRef = useRef<HTMLFieldSetElement>(null);
   const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
@@ -381,6 +399,12 @@ export function BookingSettingsSection({
   const savedPage =
     serverPage && isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
+  const savedSlug =
+    serverPage && !isUnconfiguredBookingPage(serverPage)
+      ? slugFromAdminBookingPage(serverPage)
+      : null;
+  const addressPrefix = bookingAddressPrefix(savedPage?.bookingUrl ?? null);
+  const addressPreview = form.slug ? `${addressPrefix}${form.slug}` : null;
   const { groups: writableGroups, ungrouped: writableUngrouped } =
     groupCalendarsByAccount(writableCalendars, connections);
   const destinationCalendar = writableCalendars.find(
@@ -438,7 +462,6 @@ export function BookingSettingsSection({
     });
     if (error) {
       setSaveError(error);
-      if (error.field) focusBookingField(error.field);
       return;
     }
     setSaveError(null);
@@ -448,10 +471,7 @@ export function BookingSettingsSection({
       {
         onError: (mutationError) => {
           const inline = bookingSaveErrorInline(mutationError);
-          if (inline) {
-            setSaveError(inline);
-            if (inline.field) focusBookingField(inline.field);
-          }
+          if (inline) setSaveError(inline);
         },
         onSuccess: (page) => {
           if (enabled && !wasLive) {
@@ -500,7 +520,7 @@ export function BookingSettingsSection({
   return (
     <>
       <fieldset
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-2"
         disabled={isReadOnly || saveMutation.isPending}
         ref={sectionRef}
       >
@@ -509,9 +529,18 @@ export function BookingSettingsSection({
         </p>
 
         <BookingStatusHeader
-          addressPreview={null}
+          addressPreview={addressPreview}
           bookingUrl={savedPage?.bookingUrl ?? null}
           isLive={isLive}
+        />
+
+        <BookingAddressField
+          bookingUrl={savedPage?.bookingUrl ?? null}
+          forceInvalid={saveError?.field === "address"}
+          onChange={(nextSlug) => updateForm({ slug: nextSlug })}
+          savedSlug={savedSlug}
+          showShortcuts={showShortcuts}
+          slug={form.slug ?? ""}
         />
 
         <div className="grid grid-cols-2 gap-3">

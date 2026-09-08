@@ -356,6 +356,46 @@ test.describe("settings booking section", () => {
     });
   });
 
+  test("address errors have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    const address = settingsDialog.getByLabel("Page address");
+    await address.click();
+    await dispatchFill(address, "ab");
+    await settingsDialog.getByLabel("Duration").click();
+    await expect(
+      settingsDialog.getByText(
+        "Use 3 to 32 lowercase letters, digits, or hyphens",
+      ),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking address error",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("address change warning has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchFill(
+      settingsDialog.getByLabel("Page address"),
+      "new-address",
+    );
+    await expect(
+      settingsDialog.getByText(
+        "Links using your old address will stop working.",
+      ),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking address warning",
+      include: "[role='dialog']",
+    });
+  });
+
   test("discard confirmation has no automatically detectable accessibility violations", async ({
     page,
   }) => {

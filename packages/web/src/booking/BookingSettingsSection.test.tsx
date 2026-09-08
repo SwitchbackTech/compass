@@ -16,6 +16,10 @@ import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
 import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import {
+  BOOKING_ADDRESS_CHANGE_WARNING,
+  bookingAddressPrefix,
+} from "@web/booking/BookingAddressField";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
 import {
   BOOKING_SAVE_CHANGES_LABEL,
@@ -250,6 +254,8 @@ describe("BookingSettingsSection", () => {
             bufferMinutes: null,
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -639,6 +645,262 @@ describe("BookingSettingsSection", () => {
       name: /^Booking timezone:/,
     });
     expect(trigger).toHaveAccessibleName("Booking timezone: UTC (UTC)");
+  });
+
+  it("shows the suggested address before the page is live and is not dirty", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    expect(address).toHaveValue("hostuser");
+    expect(
+      screen.getByText(`It will be at ${bookingAddressPrefix(null)}hostuser`),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("PUTs slug when the host edits the page address", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            isConfigured: true,
+            suggestedSlug: "tyler-dane",
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "tyler-dane");
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ slug: "tyler-dane" });
+    });
+  });
+
+  it("blocks save on an invalid address, shows the inline error, and focuses the input", async () => {
+    const user = userEvent.setup({ delay: null });
+    let putCount = 0;
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) => {
+        putCount += 1;
+        return res(ctx.status(500));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const address = await screen.findByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "ab");
+    await user.tab();
+
+    expect(
+      screen.getByText("Use 3 to 32 lowercase letters, digits, or hyphens"),
+    ).toHaveAttribute("role", "alert");
+    expect(address).toHaveAttribute("aria-invalid", "true");
+
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+    expect(putCount).toBe(0);
+    expect(document.activeElement).toBe(address);
+  });
+
+  it("renders SLUG_TAKEN inline, focuses the address, and does not toast", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(409),
+          ctx.json({
+            code: "SLUG_TAKEN",
+            message: "That address is already taken",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        BOOKING_SAVE_ERROR_COPY.SLUG_TAKEN,
+      );
+    });
+    expect(mocks.error).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Page address"),
+      );
+    });
+  });
+
+  it("warns when a saved address changes, not on an unconfigured page", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    const view = render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const draftAddress = await screen.findByLabelText("Page address");
+    await user.clear(draftAddress);
+    await user.type(draftAddress, "new-draft");
+    expect(
+      screen.queryByText(BOOKING_ADDRESS_CHANGE_WARNING),
+    ).not.toBeInTheDocument();
+
+    view.unmount();
+
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: true,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "America/New_York",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const live = createStoreWrapper();
+    live.queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper: live.wrapper },
+    );
+
+    const liveAddress = await screen.findByLabelText("Page address");
+    await user.clear(liveAddress);
+    await user.type(liveAddress, "new-address");
+    const warning = screen.getByText(BOOKING_ADDRESS_CHANGE_WARNING);
+    expect(warning).toBeInTheDocument();
+    expect(warning).toHaveAttribute("role", "status");
+  });
+
+  it("jumps to the page address with e then a", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+
+    await user.keyboard("e");
+    await user.keyboard("a");
+
+    expect(document.activeElement).toBe(screen.getByLabelText("Page address"));
   });
 
   it("jumps to a field with the e leader, under the Settings app lock", async () => {
@@ -1319,6 +1581,8 @@ describe("BookingSettingsSection", () => {
             bufferMinutes: null,
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -1439,6 +1703,8 @@ describe("BookingSettingsSection", () => {
             bufferMinutes: null,
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -1505,6 +1771,8 @@ describe("BookingSettingsSection", () => {
             bufferMinutes: null,
             maxBookingsPerDay: null,
             guestsCanInviteOthers: true,
+            isConfigured: false,
+            suggestedSlug: "hostuser",
           }),
         ),
       ),
@@ -1893,9 +2161,11 @@ describe("BookingSettingsSection", () => {
       );
     });
     expect(mocks.error).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(
-      screen.getByRole("combobox", { name: "Destination calendar" }),
-    );
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole("combobox", { name: "Destination calendar" }),
+      );
+    });
   });
 });
 
