@@ -1,61 +1,85 @@
+import {
+  PICK_KEY_LABELS,
+  physicalDigitIndex,
+} from "@web/shortcuts/digit-pick.util";
+import { normalizedKeyboardKey } from "@web/shortcuts/is-bare-letter-key";
+
 /**
- * The one source of truth for the booking form's `e`-leader sequences: the
- * dispatch map, the which-key menu, the hold-Mod chips beside each label, and
- * the shortcuts-legend row all derive from this list, so behavior and
- * documentation cannot drift apart.
+ * Hold-Mod chords for Meeting settings sections. Nav already owns 1/2/3.
+ * Save stays Mod+Enter on Settings. Fields inside More options have no chord.
  *
- * Data-only on purpose, mirroring edit-sequence.fields.ts.
- *
- * `s` is deliberately absent so it can type in hours and welcome fields.
- * Save is Mod+Enter, owned by Settings. Digits are unavailable too - Settings
- * nav owns 1/2/3 - which is why this surface reuses the letter leader rather
- * than the event form's Mod+digit jump.
+ * Letter pool exclusions: editing (A C V X Z), find (F G), OS level (H M Q),
+ * browser owned (N T W L), risky (R P S D), app owned (K palette, E edit
+ * leader, comma settings).
  */
-export const BOOKING_SEQUENCE_FIELDS = [
-  { key: "e", field: "enabled", label: "Meeting page on or off" },
-  { key: "a", field: "address", label: "Page address" },
-  { key: "d", field: "duration", label: "Duration" },
-  { key: "c", field: "destination", label: "Destination calendar" },
-  { key: "b", field: "blocking", label: "Blocking calendars" },
-  { key: "z", field: "timezone", label: "Meeting timezone" },
-  { key: "h", field: "hours", label: "Weekly hours" },
-  { key: "m", field: "more", label: "More options" },
-  { key: "w", field: "welcome", label: "Welcome text" },
-  { key: "n", field: "notice", label: "Minimum notice" },
-  { key: "x", field: "horizon", label: "Maximum horizon" },
-  { key: "o", field: "options", label: "Buffer and limits" },
-  { key: "l", field: "link", label: "Meeting link" },
-] as const satisfies readonly {
-  key: string;
-  field: string;
-  label: string;
-}[];
+export const SETTINGS_MOD_LETTER_POOL = ["u", "i", "j", "y", "b", "o"] as const;
 
-export type BookingSequenceField =
-  (typeof BOOKING_SEQUENCE_FIELDS)[number]["field"];
+export const BOOKING_SECTION_CHORDS = [
+  { key: "4", field: "enabled", label: "Meeting page on or off" },
+  { key: "5", field: "duration", label: "Duration" },
+  { key: "6", field: "timezone", label: "Timezone" },
+  { key: "7", field: "hours", label: "Weekly hours" },
+  { key: "8", field: "destination", label: "Destination calendar" },
+  { key: "9", field: "more", label: "More options" },
+  { key: "u", field: "link", label: "Copy link", activate: true },
+] as const;
 
-/** Second key -> booking field, for dispatch. */
-export const BOOKING_FIELD_BY_KEY = Object.fromEntries(
-  BOOKING_SEQUENCE_FIELDS.map(({ key, field }) => [key, field]),
-) as Record<string, BookingSequenceField>;
+export type BookingSectionChord = (typeof BOOKING_SECTION_CHORDS)[number];
+
+/** Every `data-booking-field` anchor, including More-options fields with no chord. */
+export const BOOKING_FIELDS = [
+  "enabled",
+  "address",
+  "duration",
+  "destination",
+  "blocking",
+  "timezone",
+  "hours",
+  "more",
+  "welcome",
+  "notice",
+  "horizon",
+  "options",
+  "link",
+] as const;
+
+export type BookingField = (typeof BOOKING_FIELDS)[number];
 
 export const BOOKING_FIELD_ATTR = "data-booking-field";
 
-export const bookingFieldAttrs = (field: BookingSequenceField) =>
+export const bookingFieldAttrs = (field: BookingField) =>
   ({ [BOOKING_FIELD_ATTR]: field }) as const;
 
-/** The key a given field answers to, for rendering a chip beside its label. */
-export const bookingFieldKey = (field: BookingSequenceField): string =>
-  BOOKING_SEQUENCE_FIELDS.find((entry) => entry.field === field)?.key ?? "";
+const chordForField = (field: BookingField): BookingSectionChord | undefined =>
+  BOOKING_SECTION_CHORDS.find((entry) => entry.field === field);
 
-/** Hold-Mod chips for a field: leader then the field's letter. */
-export const bookingJumpKeys = (field: BookingSequenceField): string[] => [
-  "e",
-  bookingFieldKey(field),
-];
+/** Hold-Mod chip for a section, or nothing when the field has no chord. */
+export const bookingJumpKeys = (field: BookingField): string[] => {
+  const chord = chordForField(field);
+  return chord ? [chord.key] : [];
+};
+
+export function bookingChordForEvent(
+  event: Pick<KeyboardEvent, "code" | "key">,
+): BookingSectionChord | null {
+  const digit = physicalDigitIndex(event);
+  const key =
+    digit !== null
+      ? (PICK_KEY_LABELS[digit] ?? null)
+      : normalizedKeyboardKey(event);
+  if (!key) return null;
+  return BOOKING_SECTION_CHORDS.find((chord) => chord.key === key) ?? null;
+}
 
 const FOCUSABLE =
   'input, select, textarea, button, summary, [role="combobox"], [tabindex]:not([tabindex="-1"])';
+
+const enclosingDialog = (node: Element | null): HTMLElement | null =>
+  node instanceof HTMLElement ? node.closest("[role='dialog']") : null;
+
+const isDisabledAnchor = (anchor: HTMLElement): boolean =>
+  anchor.hasAttribute("disabled") ||
+  ("disabled" in anchor && Boolean(anchor.disabled));
 
 /**
  * Focus a booking field by data attribute rather than a selector map.
@@ -63,7 +87,7 @@ const FOCUSABLE =
  * Focus, never click: several of these targets are checkboxes, and the
  * Settings idiom's focus-then-click would toggle them on the way past.
  */
-export function focusBookingField(field: BookingSequenceField): boolean {
+export function focusBookingField(field: BookingField): boolean {
   const anchor = document.querySelector<HTMLElement>(
     `[${BOOKING_FIELD_ATTR}="${field}"]`,
   );
@@ -82,4 +106,26 @@ export function focusBookingField(field: BookingSequenceField): boolean {
 
   target.focus();
   return true;
+}
+
+export function dispatchBookingChord(chord: BookingSectionChord): boolean {
+  const anchor = document.querySelector<HTMLElement>(
+    `[${BOOKING_FIELD_ATTR}="${chord.field}"]`,
+  );
+  if (!anchor) return false;
+  if (isDisabledAnchor(anchor)) return false;
+
+  const activeDialog = enclosingDialog(document.activeElement);
+  const anchorDialog = enclosingDialog(anchor);
+  if (activeDialog && activeDialog !== anchorDialog) {
+    return true;
+  }
+
+  if ("activate" in chord && chord.activate) {
+    anchor.focus({ preventScroll: true });
+    anchor.click();
+    return true;
+  }
+
+  return focusBookingField(chord.field);
 }

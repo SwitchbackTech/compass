@@ -3,11 +3,9 @@ import { devtools } from "zustand/middleware";
 import { IS_DEV } from "@web/common/constants/env.constants";
 
 /**
- * Which surface armed the leader. One store rather than one per surface, so a
- * sequence armed in the booking form cannot leave a menu pinned over the grid;
- * the menu renders only for its own scope.
+ * Which surface armed the leader. Booking settings no longer use this store.
  */
-export type EditSequenceScope = "event" | "booking";
+export type EditSequenceScope = "event";
 
 export type EditSequenceState = {
   /** True from the leader keypress until a second key, Escape, or a cancel. */

@@ -1,16 +1,17 @@
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
-import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 
 interface BookingStatusHeaderProps {
   isLive: boolean;
   bookingUrl: string | null;
   addressPreview: string | null;
+  showShortcuts?: boolean;
 }
 
 export function BookingStatusHeader({
   isLive,
   bookingUrl,
   addressPreview,
+  showShortcuts = false,
 }: BookingStatusHeaderProps) {
   if (isLive) {
     return (
@@ -19,9 +20,10 @@ export function BookingStatusHeader({
           Your meeting page is live
         </p>
         {bookingUrl ? (
-          <div {...bookingFieldAttrs("link")}>
-            <BookingCopyLink bookingUrl={bookingUrl} />
-          </div>
+          <BookingCopyLink
+            bookingUrl={bookingUrl}
+            showShortcuts={showShortcuts}
+          />
         ) : null}
       </div>
     );

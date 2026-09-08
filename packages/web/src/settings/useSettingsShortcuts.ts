@@ -1,4 +1,8 @@
 import { useEffect } from "react";
+import {
+  bookingChordForEvent,
+  dispatchBookingChord,
+} from "@web/booking/booking-sequence.fields";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { type SettingsPage } from "@web/settings/settings.store";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
@@ -93,8 +97,12 @@ export function useSettingsShortcuts({
     ignoreAppLock: true,
     onModChord: (event) => {
       const id = shortcutIdForEvent(event, page, hasBilling, hasBooking);
-      if (!id) return false;
-      return clickSettingsShortcut(id);
+      if (id) return clickSettingsShortcut(id);
+      if (page === "booking") {
+        const chord = bookingChordForEvent(event);
+        return chord ? dispatchBookingChord(chord) : false;
+      }
+      return false;
     },
   });
 

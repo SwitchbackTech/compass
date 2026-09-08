@@ -1,8 +1,12 @@
-import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
+import {
+  bookingFieldAttrs,
+  bookingJumpKeys,
+} from "@web/booking/booking-sequence.fields";
 import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
 
 export const BOOKING_TURN_ON_LABEL = "Turn on meeting page";
@@ -19,6 +23,7 @@ interface BookingSaveBarProps {
   isLive: boolean;
   isPending: boolean;
   onSubmit: (enabled: boolean) => void;
+  showShortcuts?: boolean;
 }
 
 export function BookingSaveBar({
@@ -27,7 +32,11 @@ export function BookingSaveBar({
   isLive,
   isPending,
   onSubmit,
+  showShortcuts = false,
 }: BookingSaveBarProps) {
+  const enabledChip = showShortcuts ? (
+    <ShortcutKeys className="ml-2" keys={bookingJumpKeys("enabled")} />
+  ) : null;
   const primaryLabel = isLive
     ? BOOKING_SAVE_CHANGES_LABEL
     : BOOKING_TURN_ON_LABEL;
@@ -51,6 +60,7 @@ export function BookingSaveBar({
             {...bookingFieldAttrs("enabled")}
           >
             {BOOKING_TURN_OFF_LABEL}
+            {enabledChip}
           </OverlayPanelActionButton>
         ) : isDirty ? (
           <OverlayPanelActionButton
@@ -75,6 +85,7 @@ export function BookingSaveBar({
           {...(isLive ? {} : bookingFieldAttrs("enabled"))}
         >
           {pendingLabel}
+          {isLive ? null : enabledChip}
         </OverlayPanelActionButton>
       </OverlayPanelActions>
     </div>

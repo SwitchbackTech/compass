@@ -104,7 +104,7 @@ test("saves welcome text", async ({ page }) => {
   ).toHaveAttribute("href", bookingUrl);
 });
 
-test("keyboard hint sits above the public link and the last control stays above Save", async ({
+test("keyboard hint sits in the nav column and the last control stays above Save", async ({
   page,
 }) => {
   await prepareSignedInBookingSettingsPage(page, {
@@ -113,11 +113,8 @@ test("keyboard hint sits above the public link and the last control stays above 
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await openMoreOptions(settingsDialog);
-  const hint = settingsDialog
-    .locator("p")
-    .filter({ hasText: "then a letter to jump to a field" });
-  const publicLink = settingsDialog.getByRole("textbox", {
-    name: "Meeting link",
+  const hint = settingsDialog.locator("nav p", {
+    hasText: "to see shortcuts.",
   });
   const lastControl = settingsDialog.getByRole("checkbox", {
     name: "Guest can invite others",
@@ -127,11 +124,6 @@ test("keyboard hint sits above the public link and the last control stays above 
   });
 
   await expect(hint).toBeVisible();
-  const hintBox = await hint.boundingBox();
-  const linkBox = await publicLink.boundingBox();
-  expect(hintBox).not.toBeNull();
-  expect(linkBox).not.toBeNull();
-  expect(hintBox!.y + hintBox!.height).toBeLessThan(linkBox!.y);
 
   await lastControl.scrollIntoViewIfNeeded();
   await settingsDialog.evaluate((el) => {

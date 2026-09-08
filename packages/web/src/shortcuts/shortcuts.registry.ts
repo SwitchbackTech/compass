@@ -445,13 +445,13 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   // One summary row rather than ten, following the collapsed Mod+E / Mod 0-9
   // rows above. Ungated for the same reason as the edit sequences: the legend
-  // is a reference, not a live-focus readout. The which-key menu carries the
-  // per-field detail in the moment, which matters here because the legend
+  // is a reference, not a live-focus readout. Hold-Mod chips carry the
+  // per-section detail in the moment, which matters here because the legend
   // overlay is unreachable while the Settings modal holds app-lock.
   {
     id: "other-booking-jump",
-    keys: ["e", "letter"],
-    label: "Jump to a meeting settings field",
+    keys: ["Mod", "4-9"],
+    label: "Jump to a meeting settings section",
     section: "other",
   },
   {

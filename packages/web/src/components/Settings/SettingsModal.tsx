@@ -66,13 +66,19 @@ import {
   useSettingsShortcuts,
 } from "@web/settings/useSettingsShortcuts";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
+import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 import { DefaultTimezonePicker } from "@web/timezone/DefaultTimezonePicker";
 
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
 
-const SETTINGS_NAV_HINT = "Click a page or press its number.";
+export const SETTINGS_HOLD_MOD_HINT_PARTS: readonly ShortcutTipPart[] = [
+  "Hold ",
+  { keys: ["Mod"] },
+  " to see shortcuts.",
+];
 
 const navButtonClassName = (current: boolean) =>
   current
@@ -157,8 +163,7 @@ export const SettingsModal: FC = () => {
       setConfirmingId(null);
       return;
     }
-    // Booking form is dirty: ask before dropping the modal. The e-leader
-    // capture-phase Escape never reaches here.
+    // Booking form is dirty: ask before dropping the modal.
     if (bookingDismissGuardRef.current?.()) return;
     dismissToPalette();
   };
@@ -249,9 +254,11 @@ export const SettingsModal: FC = () => {
               {areHintsVisible ? <ShortcutKeys keys="3" /> : null}
             </button>
           ) : null}
-          <p className="mt-2 px-2 text-text-muted text-xs">
-            {SETTINGS_NAV_HINT}
-          </p>
+          {!areHintsVisible ? (
+            <p className="mt-2 px-2 text-text-muted text-xs">
+              <ShortcutTipParts parts={SETTINGS_HOLD_MOD_HINT_PARTS} />
+            </p>
+          ) : null}
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {page === "billing" ? (

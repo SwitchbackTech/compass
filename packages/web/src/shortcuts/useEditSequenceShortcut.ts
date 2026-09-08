@@ -137,9 +137,8 @@ export function useEditSequenceShortcut<
       if (event.defaultPrevented) return;
 
       if (isEditSequenceArmed()) {
-        // Two surfaces share this store (grid event form and booking settings).
-        // The grid listener stays mounted under Settings; without a scope
-        // check it would disarm the booking sequence on the follow key.
+        // The grid listener stays mounted under Settings. Ignore a foreign
+        // scope so a leftover arm from another surface cannot steal keys.
         if (useEditSequenceStore.getState().scope !== scope) {
           return;
         }
