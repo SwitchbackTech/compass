@@ -12,8 +12,9 @@ import {
   type AdminPutBookingPageInput,
   BOOKING_MAX_HORIZON_DAYS,
   BOOKING_MAX_MIN_NOTICE_HOURS,
+  BOOKING_PLACEHOLDER_CALENDAR_ID,
   type BookingDurationMinutes,
-  DEFAULT_WEEKLY_AVAILABILITY,
+  buildDefaultAdminPutInput,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
@@ -29,7 +30,7 @@ import {
   bookingAddressPrefix,
 } from "@web/booking/BookingAddressField";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
-import { BookingConnectGooglePrompt } from "@web/booking/BookingConnectGooglePrompt";
+import { BookingConnectPrompt } from "@web/booking/BookingConnectPrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import { BookingLimitsFieldset } from "@web/booking/BookingLimitsFieldset";
 import { BookingMoreOptions } from "@web/booking/BookingMoreOptions";
@@ -44,14 +45,12 @@ import {
   useSaveBookingPageMutation,
 } from "@web/booking/booking.query";
 import {
-  BOOKING_PLACEHOLDER_CALENDAR_ID,
   defaultBlockingCalendarIdsForDestination,
   getAvailabilityReadableCalendars,
   isBookingSettingsFormDirty,
   isPlaceholderDestinationCalendar,
   isUnconfiguredBookingPage,
   isWelcomeTextTooLong,
-  resolveWritableCalendars,
   slugFromAdminBookingPage,
   toBookingPageInput,
   validateBookingForm,
@@ -74,6 +73,7 @@ import {
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
+  getWritableCalendars,
   groupCalendarsByAccount,
 } from "@web/calendars/calendar.util";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
@@ -135,20 +135,8 @@ const buildInitialForm = (
   writableCalendars: Calendar[],
   availabilityCalendars: Calendar[],
 ): AdminPutBookingPageInput => {
-  const base = page ?? {
-    enabled: false,
-    durationMinutes: 30 as BookingDurationMinutes,
-    destinationCalendarId: BOOKING_PLACEHOLDER_CALENDAR_ID,
-    blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
-    timeZone: TimeZoneSchema.parse(effectiveTimeZone),
-    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-    welcomeText: null,
-    minNoticeHours: 4,
-    maxHorizonDays: 60,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
-  };
+  const base =
+    page ?? buildDefaultAdminPutInput(TimeZoneSchema.parse(effectiveTimeZone));
 
   const destinationCalendarId =
     !isPlaceholderDestinationCalendar(base.destinationCalendarId) &&
@@ -223,9 +211,9 @@ export function BookingSettingsSection({
   const accountEmailOrder = useConnectedAccountEmails();
   const writableCalendars = useMemo(
     () =>
-      resolveWritableCalendars(calendars, accountEmailOrder.length > 0).sort(
-        compareCalendars(accountEmailOrder),
-      ),
+      getWritableCalendars(calendars, {
+        hasConnectedAccount: accountEmailOrder.length > 0,
+      }).sort(compareCalendars(accountEmailOrder)),
     [accountEmailOrder, calendars],
   );
   const availabilityCalendars = useMemo(
@@ -421,7 +409,7 @@ export function BookingSettingsSection({
   ]);
 
   if (!hasHealthyConnection) {
-    return <BookingConnectGooglePrompt />;
+    return <BookingConnectPrompt />;
   }
 
   if (

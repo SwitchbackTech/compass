@@ -4,10 +4,8 @@ import {
   type AdminPutBookingPageInput,
   type BookingPage,
   BookingPageSchema,
-  DEFAULT_WEEKLY_AVAILABILITY,
   pickAdminPutBookingPageInput,
 } from "@core/types/booking.contracts";
-import { CalendarIdSchema, type TimeZone } from "@core/types/domain-primitives";
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { CONFIG } from "@backend/common/constants/config.constants";
 
@@ -81,24 +79,3 @@ export const mapPutInputToRecordFields = (
   const { slug: _slug, ...withoutSlug } = input;
   return pickAdminPutBookingPageInput(withoutSlug);
 };
-
-const PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
-  "000000000000000000000001",
-);
-
-export const buildDefaultAdminPutInput = (
-  timeZone: TimeZone,
-): AdminPutBookingPageInput => ({
-  enabled: false,
-  durationMinutes: 30,
-  destinationCalendarId: PLACEHOLDER_CALENDAR_ID,
-  blockingCalendarIds: [PLACEHOLDER_CALENDAR_ID],
-  timeZone,
-  weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-  welcomeText: null,
-  minNoticeHours: 4,
-  maxHorizonDays: 60,
-  bufferMinutes: null,
-  maxBookingsPerDay: null,
-  guestsCanInviteOthers: true,
-});

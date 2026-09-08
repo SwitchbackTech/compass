@@ -6,6 +6,7 @@ import {
 import {
   CalendarIdSchema,
   DateTimeSchema,
+  type TimeZone,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import { ObjectIdStringSchema } from "@core/types/type.utils";
@@ -462,6 +463,31 @@ export function pickAdminPutBookingPageInput(source: {
     bufferMinutes: source.bufferMinutes,
     maxBookingsPerDay: source.maxBookingsPerDay,
     guestsCanInviteOthers: source.guestsCanInviteOthers,
+  };
+}
+
+/** Sentinel destination until the host picks a writable calendar. */
+export const BOOKING_PLACEHOLDER_CALENDAR_ID = CalendarIdSchema.parse(
+  "000000000000000000000001",
+);
+
+/** The form and GET-setup seed share this unconfigured page. */
+export function buildDefaultAdminPutInput(
+  timeZone: TimeZone,
+): AdminPutBookingPageInput {
+  return {
+    enabled: false,
+    durationMinutes: 30,
+    destinationCalendarId: BOOKING_PLACEHOLDER_CALENDAR_ID,
+    blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
+    timeZone,
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+    welcomeText: null,
+    minNoticeHours: 4,
+    maxHorizonDays: BOOKING_MAX_HORIZON_DAYS,
+    bufferMinutes: null,
+    maxBookingsPerDay: null,
+    guestsCanInviteOthers: true,
   };
 }
 

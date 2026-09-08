@@ -35,10 +35,7 @@ export const ConnectCalendarPrompt: FC = () => {
           </h2>
           <p className="text-sm text-text-muted">{CALENDAR_HOST_EXPLAINER}</p>
         </div>
-        <ConnectProviderChooser
-          idleLabel={CONNECT_THE_CALENDAR_YOU_USE}
-          variant="prompt"
-        />
+        <ConnectProviderChooser variant="prompt" />
         <button
           className="c-focus-ring self-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
           onClick={dismiss}

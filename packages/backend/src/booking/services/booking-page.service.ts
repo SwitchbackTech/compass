@@ -4,13 +4,13 @@ import {
   type AdminPutBookingPageInput,
   AdminPutBookingPageInputSchema,
   allocateBookingSlug,
+  buildDefaultAdminPutInput,
 } from "@core/types/booking.contracts";
 import { type TimeZone, TimeZoneSchema } from "@core/types/domain-primitives";
 import { type ProviderCalendar } from "@core/types/sync/connection.contracts";
 import { assertBillingAllowsWrites } from "@backend/billing/billing.guard";
 import { bookingError } from "@backend/booking/booking.error";
 import {
-  buildDefaultAdminPutInput,
   mapBookingPageRecordToAdminResponse,
   mapBookingPageRecordToSetupResponse,
   mapPutInputToRecordFields,

@@ -14,12 +14,16 @@ import {
 } from "@web/__tests__/utils/factories/calendar.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
-import { setProviderAvailabilityForTests } from "@web/auth/providers/useIsProviderAvailable";
+import {
+  resetProviderAvailabilityForTests,
+  setProviderAvailabilityForTests,
+} from "@web/auth/providers/useIsProviderAvailable";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import {
   BOOKING_ADDRESS_CHANGE_WARNING,
   bookingAddressPrefix,
 } from "@web/booking/BookingAddressField";
+import { BOOKING_CONNECT_EMPTY_ENV_COPY } from "@web/booking/BookingConnectPrompt";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
 import {
   BOOKING_SAVE_CHANGES_LABEL,
@@ -85,6 +89,7 @@ afterEach(() => {
   clearAppLockReasons();
   setClipboard(originalClipboard);
   resetToastPort();
+  resetProviderAvailabilityForTests();
 });
 
 const writableCalendar = createMockCalendar({
@@ -171,7 +176,7 @@ function dispatchModKey(target: HTMLElement, key: string) {
 }
 
 describe("BookingSettingsSection", () => {
-  it("shows connect Google prompt when Google is not healthy", () => {
+  it("shows a connect prompt when no healthy connection exists", () => {
     setProviderAvailabilityForTests("google", "available", "connect");
     userMetadataActions.set({
       google: {
@@ -195,6 +200,31 @@ describe("BookingSettingsSection", () => {
       screen.getByRole("button", { name: CONNECT_CALENDAR_LABEL.google }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
+  });
+
+  it("shows provider-neutral empty-env copy when no connect provider is configured", () => {
+    setProviderAvailabilityForTests("google", "unavailable", "connect");
+    setProviderAvailabilityForTests("microsoft", "unavailable", "connect");
+    setProviderAvailabilityForTests("apple", "unavailable", "connect");
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+    });
+
+    const { wrapper } = createStoreWrapper();
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(
+      screen.getByText(BOOKING_CONNECT_EMPTY_ENV_COPY),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("shows booking settings when a healthy non-google connection exists", async () => {
