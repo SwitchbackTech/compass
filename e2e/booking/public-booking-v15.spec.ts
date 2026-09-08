@@ -37,7 +37,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     await expect(
       page.getByRole("heading", { name: "Your details" }),
     ).toHaveCount(0);
-    await expect(page).toHaveURL(/\/book\/tylerdane/);
+    await expect(page).toHaveURL(/\/meet\/tylerdane/);
   });
 
   test("closes the timezone overlay on Escape without leaving Your details", async ({
@@ -93,7 +93,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
     ).toBeVisible();
-    await expect(page).toHaveURL(/\/book\/tylerdane/);
+    await expect(page).toHaveURL(/\/meet\/tylerdane/);
   });
 
   test("does not leave the month grid on Escape", async ({ page }) => {
@@ -134,7 +134,7 @@ test.describe("booking v1.5 escape and self-service", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeVisible();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
+      /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
     );
     await expect(
       page.getByRole("button", { name: "Edit details" }),
@@ -155,7 +155,7 @@ test.describe("booking v1.5 escape and self-service", () => {
       page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
     ).toBeFocused();
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
+      /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
     );
     await expect(page.getByText("Ada Lovelace")).toBeVisible();
     await expect(page.getByText("bring coffee")).toBeVisible();
@@ -215,7 +215,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     await expect(page.getByText("Ada Lovelace")).toBeVisible();
     await expect(page.getByText("Grace Hopper")).toHaveCount(0);
     await expect(page).toHaveURL(
-      /\/book\/confirmed\/000000000000000000000099\?token=abc$/,
+      /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
     );
   });
 });
