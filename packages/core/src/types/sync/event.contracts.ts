@@ -232,6 +232,9 @@ export const SyncEventInstanceSchema = z.strictObject({
   // metadata bag so consumers get a plain scalar. Copies of one meeting on
   // different accounts share it. Absent when the provider reported none.
   icalUid: z.string().optional(),
+  // The provider owns this event's details and schedule. Omitted rather than
+  // nulled so events imported before it was recorded stay contract-valid.
+  providerManaged: z.literal(true).optional(),
 });
 export type SyncEventInstance = z.infer<typeof SyncEventInstanceSchema>;
 
