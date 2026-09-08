@@ -29,9 +29,9 @@ test("settings booking page shows a copyable public link after save", async ({
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
-  await expect(settingsDialog.getByLabel("Meeting link")).toHaveValue(
-    bookingUrl,
-  );
+  await expect(
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toHaveValue(bookingUrl);
   await expect(
     settingsDialog.getByRole("link", { name: "Open meeting page" }),
   ).toHaveAttribute("href", bookingUrl);
@@ -116,7 +116,9 @@ test("keyboard hint sits above the public link and the last control stays above 
   const hint = settingsDialog
     .locator("p")
     .filter({ hasText: "then a letter to jump to a field" });
-  const publicLink = settingsDialog.getByLabel("Meeting link");
+  const publicLink = settingsDialog.getByRole("textbox", {
+    name: "Meeting link",
+  });
   const lastControl = settingsDialog.getByRole("checkbox", {
     name: "Guest can invite others",
   });
@@ -216,9 +218,9 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
   await expect(
     settingsDialog.getByText("Your meeting page is live"),
   ).toBeVisible();
-  await expect(settingsDialog.getByLabel("Meeting link")).toHaveValue(
-    "https://compasscalendar.com/meet/hostuser",
-  );
+  await expect(
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toHaveValue("https://compasscalendar.com/meet/hostuser");
   await expect(
     settingsDialog.getByRole("button", { name: "Copy meeting link" }),
   ).toBeVisible();
