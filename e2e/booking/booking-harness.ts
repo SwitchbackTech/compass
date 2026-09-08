@@ -1187,6 +1187,10 @@ export async function prepareSignedInBookingSettingsPage(
     await expect(
       settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
     ).toBeVisible({ timeout: 15000 });
+  } else if (!configured) {
+    await expect(
+      settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+    ).toBeVisible({ timeout: 15000 });
   } else {
     await expect(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
