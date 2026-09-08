@@ -128,6 +128,8 @@ export class AppleEventWriter implements ProviderEventWriter {
   }
 
   async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
+    // providerManaged is a Google-only hint today; Apple readers never set the
+    // fact, so this adapter ignores it and sends the full body as before.
     const api = this.#makeApi(input.accessToken);
     const calendarUrl = resolveCalendarUrl(input.calendarId);
     const parsedInstance = parseAppleInstanceId(input.providerEventId);

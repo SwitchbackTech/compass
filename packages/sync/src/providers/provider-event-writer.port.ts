@@ -58,6 +58,9 @@ export interface ProviderPatchInput extends ProviderWriteBody {
   readonly accessToken: string;
   readonly calendarId: string;
   readonly providerEventId: string;
+  // When true, the writer must send only the fields its provider accepts on
+  // a provider-managed event (Google: color and attendees; others ignore).
+  readonly providerManaged?: true;
   // The version to condition the write on. Non-null sends an If-Match
   // precondition, so a stale caller loses to a concurrent change instead of
   // overwriting it. Null writes unconditionally (no known prior version).
