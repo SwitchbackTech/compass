@@ -211,6 +211,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const isReadOnly =
       draft.kind === "edit" &&
       isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
+    const isScheduleLocked =
+      draft.kind === "edit" && draft.source.providerManaged === true;
     const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
     // Read-only, provider-sourced fields live on the source event's content,
     // never on draft.values (EditableContentSchema doesn't carry them) - a
@@ -750,6 +752,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   aria-invalid={scheduleError ? true : undefined}
                   aria-describedby={scheduleErrorDescribedBy}
                   tabIndex={scheduleError ? -1 : undefined}
+                  disabled={isScheduleLocked}
                   className={classNames(
                     "min-w-0 rounded-xs border-0 p-0",
                     scheduleError && "ring-1 ring-error",
@@ -768,6 +771,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   aria-invalid={recurrenceError ? true : undefined}
                   aria-describedby={recurrenceErrorDescribedBy}
                   tabIndex={recurrenceError ? -1 : undefined}
+                  disabled={isScheduleLocked}
                   className={classNames(
                     "min-w-0 rounded-xs border-0 p-0",
                     recurrenceError && "ring-1 ring-error",
@@ -901,6 +905,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 details={liveDetails ?? sourceDetails}
                 hideAttendees={showAttendeeEditor}
               />
+            )}
+
+            {isScheduleLocked && (
+              <p role="note" className="text-text-muted text-xs">
+                Your calendar provider keeps this event updated (for example
+                from an email), so its time follows the provider. Changes to the
+                title, notes, and location stay in Compass.
+              </p>
             )}
 
             {isReadOnly && (

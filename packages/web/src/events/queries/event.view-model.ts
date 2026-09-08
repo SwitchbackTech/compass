@@ -58,6 +58,7 @@ const eventToGridEvent = (
   const startDate = scheduleOverride?.startDate ?? schedule.start;
   const endDate = scheduleOverride?.endDate ?? schedule.end;
   const isBusy = event.content.kind === "busy";
+  const isProviderManaged = event.providerManaged === true;
   const details = event.content.kind === "details" ? event.content : undefined;
 
   return {
@@ -79,6 +80,7 @@ const eventToGridEvent = (
     position: gridEventDefaultPosition,
     calendarId: event.calendarId,
     isBusy,
+    ...(isProviderManaged ? { isProviderManaged: true as const } : {}),
     isDemo: Boolean(demoEventIds?.includes(event.id)),
     ...(crossAccountDuplicates?.has(event.id)
       ? { otherAccount: crossAccountDuplicates.get(event.id) }

@@ -44,6 +44,7 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
 import {
   dismissRecurrenceScopeToast,
@@ -53,6 +54,7 @@ import {
 import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/first-event.store";
 import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
+import { eventSchedulesEqual } from "@web/events/mutations/event-schedule-equal";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -947,6 +949,15 @@ export function useEventMutations(
         if (isTargetReadOnly(original)) {
           console.warn(
             `[useEventMutations] blocked replace on read-only event ${payload.id}`,
+          );
+          return false;
+        }
+        if (
+          original?.providerManaged === true &&
+          !eventSchedulesEqual(original.schedule, payload.input.schedule)
+        ) {
+          showErrorToast(
+            "This event's time follows your calendar provider and can't be moved in Compass.",
           );
           return false;
         }

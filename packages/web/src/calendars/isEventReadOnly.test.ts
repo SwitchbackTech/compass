@@ -11,6 +11,7 @@ import {
   buildCalendarLookup,
   isEventReadOnly,
   isGridEventInteractionReadOnly,
+  isGridEventScheduleLocked,
 } from "@web/calendars/useCalendarLookup";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -155,5 +156,35 @@ describe("isGridEventInteractionReadOnly", () => {
     expect(
       isGridEventInteractionReadOnly(lookup, { calendarId: owner.id }),
     ).toBe(false);
+  });
+});
+
+describe("isGridEventScheduleLocked", () => {
+  it("is true for provider-managed events on a writable calendar", () => {
+    const calendar = makeCalendar({ access: "owner" });
+    const lookup = buildCalendarLookup([calendar]);
+
+    expect(
+      isGridEventScheduleLocked(lookup, {
+        calendarId: calendar.id,
+        isProviderManaged: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("is false for a normal writable-calendar event", () => {
+    const calendar = makeCalendar({ access: "owner" });
+    const lookup = buildCalendarLookup([calendar]);
+
+    expect(isGridEventScheduleLocked(lookup, { calendarId: calendar.id })).toBe(
+      false,
+    );
+  });
+
+  it("leaves isEventReadOnly unchanged for provider-managed events", () => {
+    const calendar = makeCalendar({ access: "owner" });
+    const lookup = buildCalendarLookup([calendar]);
+
+    expect(isEventReadOnly(lookup, calendar.id, false)).toBe(false);
   });
 });

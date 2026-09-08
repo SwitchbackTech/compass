@@ -370,4 +370,27 @@ describe("Week grid read-only interaction gate", () => {
     expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
     expect(weekEventRegistry.resolve(event.id, "timed")).toBeNull();
   });
+
+  it("marks a provider-managed timed event read-only for drag/resize while keeping it navigable", () => {
+    const writableCalendar = makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    });
+    seededCalendars = [writableCalendar];
+    const event = createTimedEvent(writableCalendar.id, {
+      providerManaged: true,
+      content: {
+        kind: "details",
+        title: "From email",
+        description: "",
+      },
+    });
+    seededEvents = [event];
+
+    renderMainGridEvents();
+
+    const card = screen.getByRole("button", { name: /from email/i });
+    expect(card).toHaveAttribute(GRID_EVENT_READ_ONLY_ATTRIBUTE, "true");
+    expect(weekEventRegistry.resolve(event.id, "timed")).toBeNull();
+  });
 });

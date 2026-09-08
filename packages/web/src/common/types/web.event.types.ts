@@ -62,6 +62,8 @@ const GridEventSchema = WebEventSchema.extend({
   }),
   calendarId: CalendarIdSchema.optional(),
   isBusy: z.boolean().optional(),
+  /** Provider-owned event: schedule follows the provider, details editable. */
+  isProviderManaged: z.literal(true).optional(),
   isDemo: z.boolean().optional(),
   /** Timed event shown in the all-day row because it spans midnight. */
   isTimedMultiDayDisplay: z.boolean().optional(),
