@@ -100,9 +100,6 @@ const unconfiguredPage = () => ({
   weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   minNoticeHours: 4,
   maxHorizonDays: 60,
-  bufferMinutes: null,
-  maxBookingsPerDay: null,
-  guestsCanInviteOthers: true,
   isConfigured: false,
   suggestedSlug: "hostuser",
 });
@@ -116,9 +113,6 @@ const savedOffPage = () => ({
   weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   minNoticeHours: 4,
   maxHorizonDays: 60,
-  bufferMinutes: null,
-  maxBookingsPerDay: null,
-  guestsCanInviteOthers: true,
   id: createObjectIdString(),
   slug: "hostuser",
   hostUserId: createObjectIdString(),
@@ -366,9 +360,6 @@ describe("BookingSettingsSection", () => {
       weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
       minNoticeHours: 4,
       maxHorizonDays: 60,
-      bufferMinutes: null,
-      maxBookingsPerDay: null,
-      guestsCanInviteOthers: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       bookingUrl,
@@ -414,44 +405,24 @@ describe("BookingSettingsSection", () => {
     expect(savedBodies[1]).toMatchObject({ durationMinutes: 15 });
     expect(Object.keys(savedBodies[1] ?? {}).sort()).toEqual([
       "blockingCalendarIds",
-      "bufferMinutes",
       "destinationCalendarId",
       "durationMinutes",
       "enabled",
-      "guestsCanInviteOthers",
-      "maxBookingsPerDay",
       "maxHorizonDays",
       "minNoticeHours",
       "slug",
       "timeZone",
       "weeklyAvailability",
-      "welcomeText",
     ]);
   });
 
-  it("explains invite-others cancel tradeoff and RSVP-strict occupancy", async () => {
-    const user = userEvent.setup({ delay: null });
-    let savedBody: unknown;
+  it("shows only address, blocking calendars, notice, and horizon in More options", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(ctx.json(savedOffPage())),
       ),
-      rest.put(bookingPageUrl, async (req, res, ctx) => {
-        savedBody = await req.json();
-        return res(
-          ctx.json({
-            ...(savedBody as object),
-            id: createObjectIdString(),
-            slug: "hostuser",
-            hostUserId: createObjectIdString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl: "https://compasscalendar.com/meet/hostuser",
-          }),
-        );
-      }),
     );
 
     const { wrapper, queryClient } = createStoreWrapper();
@@ -464,24 +435,28 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
+    const summary = await screen.findByText(BOOKING_MORE_OPTIONS_LABEL);
+    await userEvent.setup({ delay: null }).click(summary);
+
+    expect(screen.getByLabelText("Page address")).toBeInTheDocument();
+    expect(screen.getByText("Blocking calendars")).toBeInTheDocument();
+    expect(screen.getByLabelText("Minimum notice (hours)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Maximum horizon (days)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Welcome text")).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("checkbox", { name: "Guest can invite others" }),
-    ).toBeChecked();
+      screen.queryByRole("checkbox", { name: /Buffer between appointments/ }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        "When this is on, Compass cannot put the cancel link in the calendar description. Guests keep it from the confirmation page.",
-      ),
-    ).toBeInTheDocument();
+      screen.queryByRole("checkbox", { name: /Max meetings per day/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("checkbox", { name: "Guest can invite others" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(
         "Pending, maybe, and declined invites do not hold meeting times. Accepted invites and events the host organizes do.",
       ),
     ).toBeInTheDocument();
-
-    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
-    await waitFor(() => {
-      expect(savedBody).toMatchObject({ guestsCanInviteOthers: true });
-    });
   });
 
   it("seeds the booking timezone from the user's zone when never configured", async () => {
@@ -504,9 +479,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: [],
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             isConfigured: false,
             suggestedSlug: "hostuser",
           }),
@@ -564,9 +536,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: [],
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             // Saved, never enabled. UTC here is a deliberate choice.
             isConfigured: true,
             suggestedSlug: "hostuser",
@@ -983,9 +952,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             bookingUrl,
@@ -1052,9 +1018,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             bookingUrl,
@@ -1152,9 +1115,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             bookingUrl,
@@ -1263,86 +1223,6 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByText("Fix the weekly hours that could not be read."),
     ).toBeInTheDocument();
-  });
-
-  it("saves welcome text", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-    let savedBody: unknown;
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(savedOffPage())),
-      ),
-      rest.put(bookingPageUrl, async (req, res, ctx) => {
-        savedBody = await req.json();
-        return res(ctx.json(savedBody as object));
-      }),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("switch", { name: "Meeting page" });
-
-    await user.type(
-      screen.getByLabelText("Welcome text"),
-      "30 minutes to talk through Compass.",
-    );
-
-    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
-
-    await waitFor(() => {
-      expect(savedBody).toMatchObject({
-        welcomeText: "30 minutes to talk through Compass.",
-      });
-    });
-  });
-
-  it("saves with Mod+Enter while welcome text is focused, and ignores bare s", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-    let putCount = 0;
-    let savedBody: unknown;
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(savedOffPage())),
-      ),
-      rest.put(bookingPageUrl, async (req, res, ctx) => {
-        putCount += 1;
-        savedBody = await req.json();
-        return res(ctx.json(savedBody as object));
-      }),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsWithShortcuts />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-
-    const welcome = await screen.findByLabelText("Welcome text");
-    await user.type(welcome, "s");
-    expect(putCount).toBe(0);
-    expect(welcome).toHaveValue("s");
-
-    dispatchModKey(welcome, "Enter");
-
-    await waitFor(() => {
-      expect(savedBody).toMatchObject({ welcomeText: "s" });
-    });
-    expect(putCount).toBe(1);
   });
 
   it("always shows Mod+Enter keycaps on Save when hold-Mod hints are off", async () => {
@@ -2144,9 +2024,6 @@ describe("BookingSettingsSection", () => {
             weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
             minNoticeHours: 4,
             maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             bookingUrl,
@@ -2466,15 +2343,15 @@ describe("focusBookingField", () => {
     const summary = document.createElement("summary");
     summary.textContent = "More options";
     const wrapper = document.createElement("div");
-    wrapper.setAttribute("data-booking-field", "welcome");
-    const textarea = document.createElement("textarea");
-    wrapper.append(textarea);
+    wrapper.setAttribute("data-booking-field", "notice");
+    const input = document.createElement("input");
+    wrapper.append(input);
     details.append(summary, wrapper);
     document.body.append(details);
 
     expect(details.open).toBe(false);
-    expect(focusBookingField("welcome")).toBe(true);
+    expect(focusBookingField("notice")).toBe(true);
     expect(details.open).toBe(true);
-    expect(document.activeElement).toBe(textarea);
+    expect(document.activeElement).toBe(input);
   });
 });

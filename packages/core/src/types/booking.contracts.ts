@@ -38,8 +38,6 @@ export type BookingReservedSlug = (typeof BOOKING_RESERVED_SLUGS)[number];
 export const BOOKING_MAX_HORIZON_DAYS = 60;
 /** Hours in the longest bookable horizon; notice beyond this can never yield a slot. */
 export const BOOKING_MAX_MIN_NOTICE_HOURS = BOOKING_MAX_HORIZON_DAYS * 24;
-/** A buffer longer than a working day is not a buffer. */
-export const BOOKING_MAX_BUFFER_MINUTES = 24 * 60;
 
 export const BookingPageIdSchema =
   ObjectIdStringSchema.brand<"BookingPageId">();
@@ -169,31 +167,6 @@ export const DEFAULT_WEEKLY_AVAILABILITY = WeeklyAvailabilitySchema.parse(
   })),
 );
 
-export const BookingWelcomeTextSchema = z
-  .string()
-  .trim()
-  .max(500)
-  .nullable()
-  .transform((value) => (value === "" ? null : value));
-export type BookingWelcomeText = z.infer<typeof BookingWelcomeTextSchema>;
-
-export const BookingBufferMinutesSchema = z
-  .int()
-  .positive()
-  .max(BOOKING_MAX_BUFFER_MINUTES)
-  .nullable()
-  .default(null);
-export type BookingBufferMinutes = z.infer<typeof BookingBufferMinutesSchema>;
-
-export const BookingMaxBookingsPerDaySchema = z
-  .int()
-  .positive()
-  .nullable()
-  .default(null);
-export type BookingMaxBookingsPerDay = z.infer<
-  typeof BookingMaxBookingsPerDaySchema
->;
-
 export const BookingPageSchema = z.strictObject({
   id: BookingPageIdSchema,
   slug: BookingSlugSchema,
@@ -204,7 +177,6 @@ export const BookingPageSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
-  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z
     .number()
     .int()
@@ -217,9 +189,6 @@ export const BookingPageSchema = z.strictObject({
     .positive()
     .max(BOOKING_MAX_HORIZON_DAYS)
     .default(BOOKING_MAX_HORIZON_DAYS),
-  bufferMinutes: BookingBufferMinutesSchema,
-  maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
-  guestsCanInviteOthers: z.boolean().default(true),
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema,
 });
@@ -231,7 +200,6 @@ export const PublicBookingPageSchema = z.strictObject({
   timeZone: TimeZoneSchema,
   enabled: z.boolean(),
   maxHorizonDays: z.number().int().positive().max(BOOKING_MAX_HORIZON_DAYS),
-  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   createsGoogleMeet: z.boolean().default(true),
   conference: CalendarConferenceSchema.optional(),
 });
@@ -240,11 +208,7 @@ export type PublicBookingPage = z.infer<typeof PublicBookingPageSchema>;
 export const toPublicBookingPage = (
   page: Pick<
     BookingPage,
-    | "durationMinutes"
-    | "timeZone"
-    | "enabled"
-    | "maxHorizonDays"
-    | "welcomeText"
+    "durationMinutes" | "timeZone" | "enabled" | "maxHorizonDays"
   >,
   hostDisplayName: string,
   conference: CalendarConference,
@@ -255,7 +219,6 @@ export const toPublicBookingPage = (
     timeZone: page.timeZone,
     enabled: page.enabled,
     maxHorizonDays: page.maxHorizonDays,
-    welcomeText: page.welcomeText ?? null,
     conference,
     createsGoogleMeet: conference === "meet",
   });
@@ -400,7 +363,21 @@ export type AdminGetBookingPageResponse = z.infer<
   typeof AdminGetBookingPageResponseSchema
 >;
 
-export const AdminPutBookingPageInputSchema = z.strictObject({
+const stripRemovedBookingPagePutKeys = (value: unknown): unknown => {
+  if (typeof value !== "object" || value === null) {
+    return value;
+  }
+  const {
+    bufferMinutes: _bufferMinutes,
+    maxBookingsPerDay: _maxBookingsPerDay,
+    welcomeText: _welcomeText,
+    guestsCanInviteOthers: _guestsCanInviteOthers,
+    ...rest
+  } = value as Record<string, unknown>;
+  return rest;
+};
+
+const AdminPutBookingPageInputObjectSchema = z.strictObject({
   slug: BookingSlugSchema.optional(),
   enabled: z.boolean(),
   durationMinutes: BookingDurationMinutesSchema,
@@ -408,7 +385,6 @@ export const AdminPutBookingPageInputSchema = z.strictObject({
   blockingCalendarIds: z.array(CalendarIdSchema).min(1).readonly(),
   timeZone: TimeZoneSchema,
   weeklyAvailability: WeeklyAvailabilitySchema,
-  welcomeText: BookingWelcomeTextSchema.nullable().default(null),
   minNoticeHours: z
     .number()
     .int()
@@ -421,10 +397,12 @@ export const AdminPutBookingPageInputSchema = z.strictObject({
     .positive()
     .max(BOOKING_MAX_HORIZON_DAYS)
     .default(BOOKING_MAX_HORIZON_DAYS),
-  bufferMinutes: BookingBufferMinutesSchema,
-  maxBookingsPerDay: BookingMaxBookingsPerDaySchema,
-  guestsCanInviteOthers: z.boolean().default(true),
 });
+
+export const AdminPutBookingPageInputSchema = z.preprocess(
+  stripRemovedBookingPagePutKeys,
+  AdminPutBookingPageInputObjectSchema,
+);
 export type AdminPutBookingPageInput = z.infer<
   typeof AdminPutBookingPageInputSchema
 >;
@@ -443,12 +421,8 @@ export function pickAdminPutBookingPageInput(source: {
   blockingCalendarIds: AdminPutBookingPageInput["blockingCalendarIds"];
   timeZone: AdminPutBookingPageInput["timeZone"];
   weeklyAvailability: AdminPutBookingPageInput["weeklyAvailability"];
-  welcomeText?: AdminPutBookingPageInput["welcomeText"] | null;
   minNoticeHours: AdminPutBookingPageInput["minNoticeHours"];
   maxHorizonDays: AdminPutBookingPageInput["maxHorizonDays"];
-  bufferMinutes: AdminPutBookingPageInput["bufferMinutes"];
-  maxBookingsPerDay: AdminPutBookingPageInput["maxBookingsPerDay"];
-  guestsCanInviteOthers: AdminPutBookingPageInput["guestsCanInviteOthers"];
 }): AdminPutBookingPageInput {
   return {
     ...(source.slug !== undefined ? { slug: source.slug } : {}),
@@ -458,12 +432,8 @@ export function pickAdminPutBookingPageInput(source: {
     blockingCalendarIds: source.blockingCalendarIds,
     timeZone: source.timeZone,
     weeklyAvailability: source.weeklyAvailability,
-    welcomeText: source.welcomeText ?? null,
     minNoticeHours: source.minNoticeHours,
     maxHorizonDays: source.maxHorizonDays,
-    bufferMinutes: source.bufferMinutes,
-    maxBookingsPerDay: source.maxBookingsPerDay,
-    guestsCanInviteOthers: source.guestsCanInviteOthers,
   };
 }
 
@@ -483,12 +453,8 @@ export function buildDefaultAdminPutInput(
     blockingCalendarIds: [BOOKING_PLACEHOLDER_CALENDAR_ID],
     timeZone,
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: BOOKING_MAX_HORIZON_DAYS,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
   };
 }
 
@@ -503,7 +469,7 @@ export function buildDefaultAdminPutInput(
  * choice (including UTC) once isConfigured is true.
  */
 export const AdminGetBookingPageSetupResponseSchema =
-  AdminPutBookingPageInputSchema.omit({ slug: true }).extend({
+  AdminPutBookingPageInputObjectSchema.omit({ slug: true }).extend({
     isConfigured: z.boolean(),
     suggestedSlug: BookingSlugSchema,
   });

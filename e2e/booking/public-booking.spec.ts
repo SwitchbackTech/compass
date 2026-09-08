@@ -85,17 +85,12 @@ test.describe("public booking page", () => {
   });
 
   test("loads without login and shows the host heading", async ({ page }) => {
-    await preparePublicBookingPage(page, {
-      welcomeText: "30 minutes to talk through Compass Calendar.",
-    });
+    await preparePublicBookingPage(page);
 
     await expect(
       page.getByRole("heading", { name: "Meet with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByText("30 minutes Google Meet")).toBeVisible();
-    await expect(
-      page.getByText("30 minutes to talk through Compass Calendar."),
-    ).toBeVisible();
     await expect(page.getByText(/Times shown in your timezone/)).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),

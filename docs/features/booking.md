@@ -57,9 +57,8 @@ not the reservation id. Just-confirmed navigation writes `?token=` into
 the permalink so a reload, bookmark, or self-sent link keeps cancel and
 edit. The public reservation GET does not return `cancelUrl` or the
 token. A permalink without `token` still shows the booking from GET,
-with no cancel or edit actions, and does not tell the guest to look for
-a cancel link in the invite: that URL is omitted from the event
-description when guests can invite others, which is the default.
+with no cancel or edit actions. Cancel and reschedule links always appear in
+the event description because guests cannot invite others.
 Reschedule copy stays history-only (v1.3).
 
 Cancel: `/meet/cancel/:reservationId?token=…`.
@@ -208,11 +207,9 @@ Reschedule links stay history state only (v1.3).
 
 **Event title:** `{Guest name} and {Host name}`.
 
-**Event description:** guest notes (if any). The cancel URL and
-reschedule URL are included only when "Guest can invite others" is
-off: those URLs are capabilities, and invitees see the description, so
-with invites open the guest keeps them from the confirmation page
-instead.
+**Event description:** guest notes (if any), plus cancel and reschedule
+URLs. Guests cannot invite others, so those URLs are safe in the
+description every invitee sees.
 
 ## Host inputs
 
@@ -224,15 +221,11 @@ One booking-page record per user.
 | Destination calendar | Writable calendar (`canWriteEvents`) on a healthy connection. Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
 | General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default Mon-Fri 09:00-17:00, shown as one grouped hours row. Turning on requires at least one window (`AVAILABILITY_REQUIRED`). Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
-| Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
-| Scheduling window | Minimum notice default **4 hours**, capped at **1440 hours** (the 60-day horizon in hours). Maximum horizon default **60 days**. Buffer default off, capped at **1440 minutes** (one working day). The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
-| Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
-| Max meetings per day | Off by default. When on, default **4**. Counts confirmed booking reservations that day in the host timezone, not every calendar event. |
-| Guest permissions | Maps to Google `guestsCanInviteOthers`. Default **on**. This is not Compass UI. `guestsCanModify` stays off. |
+| Scheduling window | Minimum notice default **4 hours**, capped at **1440 hours** (the 60-day horizon in hours). Maximum horizon default **60 days**. The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 
 **Slot grid:** 15-minute starts in the host timezone, filtered so a slot
-of `duration` fits inside an availability interval after buffers and busy
-blocks.
+of `duration` fits inside an availability interval after busy blocks.
+Back-to-back meetings are allowed; there is no buffer or per-day cap.
 
 ### Host Settings controls
 
@@ -250,9 +243,8 @@ time inputs per weekday.
 - **More options:** an uncontrolled native `<details>` that starts
   collapsed. It holds page address (with "Links using your old address
   will stop working." when the slug changes), blocking calendars,
-  welcome text, notice and horizon, and buffer and limits. Jumping to a
-  field inside it, or an invalid field in the group, opens it. Do not
-  control the `open` prop from React: the jump-key code opens the
+  minimum notice, and maximum horizon. Jumping to a field inside it, or
+  an invalid field in the group, opens it. Do not control the `open` prop from React: the jump-key code opens the
   element imperatively.
 - **First run:** before any draft exists, the Meeting tab is only the
   address screen: heading "Your meeting page", one sentence, the address
@@ -320,8 +312,8 @@ decides whether a busy interval occupies a slot
 
 - Confirmation page includes a tokenized cancel URL when `?token=` is on
   the permalink (just-confirmed navigation writes it there). The event
-  description carries it too only when guests cannot invite others (see
-  above). A permalink without the token does not invent a cancel path.
+  description always carries cancel and reschedule URLs. A permalink
+  without the token does not invent a cancel path.
 - **Edit details** uses the same token. Name and notes only; email is not
   on the form and is not accepted on PATCH. **Save details** PATCHes
   `{token, name?, notes?}` and rewrites the Google event title and
@@ -397,7 +389,7 @@ flowchart LR
   re-query Sync with `purpose: "booking_confirmation"`, then
   `Calendar.createEvent` with the guest as attendee, `invitation: "all"`,
   `createConference: true` when the destination conference is not
-  `none`, and `guestsCanInviteOthers` from the page setting.
+  `none`, and `guestsCanInviteOthers: false` on every create.
   A race on the same slot: the second confirm fails; no double event.
   Reschedule re-queries the same way, PATCHes the existing event
   (`invitation: "all"`, `attendeesEdit: "preserve"`), and keeps
@@ -412,8 +404,7 @@ session.
 Unauthenticated:
 
 - `GET /api/booking/pages/:slug` — public page (host display name,
-  duration, timezone, enabled, optional welcome text). `404` when
-  missing or disabled. A host who cannot write is `409` with
+  duration, timezone, enabled). `404` when missing or disabled. A host who cannot write is `409` with
   `This page is not accepting meetings.` (no billing, plan, or payment
   wording).
 - `GET /api/booking/pages/:slug/slots?start=&end=&timeZone=` — bookable
@@ -437,8 +428,8 @@ Unauthenticated:
   the token is invalid.
 - `POST /api/booking/reservations/:id/cancel` — `{token}`.
 - `GET /api/booking/reservations/:id/slots?token=&start=&end=&timeZone=`
-  — bookable instants excluding this reservation from occupancy and
-  max-per-day. Same window rules as the public page slots endpoint.
+  — bookable instants excluding this reservation from occupancy.
+  Same window rules as the public page slots endpoint.
 - `POST /api/booking/reservations/:id/reschedule` — `{token, slotStart,
   guestTimeZone, durationMinutes}`. `durationMinutes` must match the page
   (same pin as confirm). In-place calendar PATCH. Same slot is an
@@ -486,7 +477,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingAddressSetup.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `BookingLimitsFieldset.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingAddressSetup.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
@@ -541,6 +532,10 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   exclusion list, not derived from the keymap. Adding a Meeting chord
   means checking that list by hand so it does not collide with editing,
   find, OS, browser, or app-owned letters.
+- **Removed host settings may linger on old Mongo documents.** Buffer,
+  max meetings per day, welcome text, and guest-invite permission were
+  removed in Booking v1.8. Zod strips those keys on read; they are not
+  in the wire contract or Settings UI.
 
 ## Related docs
 

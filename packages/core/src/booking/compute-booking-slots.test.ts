@@ -18,8 +18,6 @@ const baseInput = (
   ],
   minNoticeHours: 0,
   maxHorizonDays: 60,
-  bufferMinutes: null,
-  maxBookingsPerDay: null,
   busyIntervals: [],
   confirmedReservationStarts: [],
   now: new Date("2026-09-01T12:00:00.000Z"),
@@ -80,10 +78,9 @@ describe("computeBookingSlots", () => {
     ).toEqual([]);
   });
 
-  it("removes adjacent starts around a busy block with a 30-minute buffer", () => {
+  it("offers adjacent 30-minute slots on both sides of a busy interval", () => {
     const slots = computeBookingSlots(
       baseInput({
-        bufferMinutes: 30,
         busyIntervals: [
           {
             start: new Date("2026-09-07T16:00:00.000Z"),
@@ -96,7 +93,10 @@ describe("computeBookingSlots", () => {
       }),
     );
 
-    expect(slots).toEqual(["2026-09-07T15:00:00Z", "2026-09-07T17:30:00Z"]);
+    expect(slots).toContain("2026-09-07T15:30:00Z");
+    expect(slots).toContain("2026-09-07T17:00:00Z");
+    expect(slots).not.toContain("2026-09-07T16:00:00Z");
+    expect(slots).not.toContain("2026-09-07T16:30:00Z");
   });
 
   it("enforces minimum notice", () => {
@@ -114,27 +114,6 @@ describe("computeBookingSlots", () => {
       true,
     );
     expect(slots).toContain("2026-09-07T18:30:00Z");
-  });
-
-  it("caps slots at max bookings per host-local day", () => {
-    const reservationStarts = [
-      new Date("2026-09-07T15:00:00.000Z"),
-      new Date("2026-09-07T15:30:00.000Z"),
-      new Date("2026-09-07T16:00:00.000Z"),
-      new Date("2026-09-07T16:30:00.000Z"),
-    ];
-
-    expect(
-      computeBookingSlots(
-        baseInput({
-          maxBookingsPerDay: 4,
-          confirmedReservationStarts: reservationStarts,
-          windowStart: new Date("2026-09-07T06:00:00.000Z"),
-          windowEnd: new Date("2026-09-08T06:00:00.000Z"),
-          weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
-        }),
-      ),
-    ).toEqual([]);
   });
 
   it("respects the 60-day horizon", () => {

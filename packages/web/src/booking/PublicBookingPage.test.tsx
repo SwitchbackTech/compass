@@ -216,7 +216,6 @@ const publicPagePayload = (overrides: Record<string, unknown> = {}) => ({
   timeZone: "America/Chicago",
   enabled: true,
   maxHorizonDays: 60,
-  welcomeText: null,
   ...overrides,
 });
 
@@ -381,19 +380,12 @@ describe("PublicBookingPage", () => {
     expect(screen.getByRole("heading", { name: "Your details" })).toHaveFocus();
   });
 
-  it("shows host-authored welcome text under the Google Meet line", async () => {
+  it("does not render welcome text on the public page", async () => {
     server.use(
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/pages/tylerdane`,
         (_req, res, ctx) =>
-          res(
-            ctx.status(Status.OK),
-            ctx.json(
-              publicPagePayload({
-                welcomeText: "30 minutes to talk through Compass Calendar.",
-              }),
-            ),
-          ),
+          res(ctx.status(Status.OK), ctx.json(publicPagePayload())),
       ),
       slotsInWindow([currentSlot]),
     );
@@ -405,8 +397,8 @@ describe("PublicBookingPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("30 minutes Google Meet")).toBeInTheDocument();
     expect(
-      screen.getByText("30 minutes to talk through Compass Calendar."),
-    ).toBeInTheDocument();
+      screen.queryByText("30 minutes to talk through Compass Calendar."),
+    ).not.toBeInTheDocument();
   });
 
   it("names Teams on the duration line when the destination conference is teams", async () => {

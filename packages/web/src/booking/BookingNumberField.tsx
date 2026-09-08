@@ -59,7 +59,7 @@ export function BookingNumberField({
         value={value}
       />
       {invalid ? (
-        <p className="text-error text-xs" id={errorId} role="alert">
+        <p className="font-medium text-sm text-text" id={errorId} role="alert">
           {invalidMessage}
         </p>
       ) : null}

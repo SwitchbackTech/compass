@@ -230,9 +230,10 @@ test.describe("booking v1.5 settings discard", () => {
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await expect(settingsDialog.getByLabel("Duration")).toBeVisible();
     await settingsDialog.getByLabel("Duration").selectOption("30");
+    await settingsDialog.getByText("More options", { exact: true }).click();
     await dispatchFill(
-      settingsDialog.getByLabel("Welcome text"),
-      "Scratch this welcome.",
+      settingsDialog.getByLabel("Minimum notice (hours)"),
+      "8",
     );
 
     await page.keyboard.press("Escape");
@@ -243,8 +244,8 @@ test.describe("booking v1.5 settings discard", () => {
     await expect(discard).toBeVisible();
     await expect(settingsDialog).toBeVisible();
     await expect(settingsDialog.getByLabel("Duration")).toHaveValue("30");
-    await expect(settingsDialog.getByLabel("Welcome text")).toHaveValue(
-      "Scratch this welcome.",
-    );
+    await expect(
+      settingsDialog.getByLabel("Minimum notice (hours)"),
+    ).toHaveValue("8");
   });
 });

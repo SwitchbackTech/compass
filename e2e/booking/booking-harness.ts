@@ -287,7 +287,6 @@ export interface PublicBookingStubOptions {
   slug?: string;
   hostDisplayName?: string;
   durationMinutes?: number;
-  welcomeText?: string | null;
   slots?: Array<{ slotStart: string; slotEnd: string }>;
   bookable?: boolean;
   /** When true, GET /pages/:slug returns 404 (renamed or unknown address). */
@@ -412,7 +411,6 @@ export async function preparePublicBookingPage(
           timeZone: "America/Chicago",
           enabled: options.enabled ?? true,
           maxHorizonDays: 60,
-          welcomeText: options.welcomeText ?? null,
           conference,
           createsGoogleMeet,
         }),
@@ -868,7 +866,6 @@ export async function preparePublicBookingReschedulePage(
           timeZone: "America/Chicago",
           enabled: true,
           maxHorizonDays: 60,
-          welcomeText: null,
         }),
       );
     }
@@ -1021,12 +1018,8 @@ export async function prepareSignedInBookingSettingsPage(
     blockingCalendarIds: [BOOKING_CALENDAR_ID],
     timeZone: "America/New_York",
     weeklyAvailability,
-    welcomeText: null,
     minNoticeHours: 4,
     maxHorizonDays: 60,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
   };
 
   const savedPageFields = {

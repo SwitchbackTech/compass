@@ -3,7 +3,6 @@ import { ZodError } from "zod/v4";
 import { Status } from "@core/errors/status.codes";
 import {
   AdminPutBookingPageInputSchema,
-  BOOKING_MAX_BUFFER_MINUTES,
   BOOKING_MAX_MIN_NOTICE_HOURS,
   DEFAULT_WEEKLY_AVAILABILITY,
 } from "@core/types/booking.contracts";
@@ -89,9 +88,6 @@ const samplePutInput = (overrides: Record<string, unknown> = {}) => {
     weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
     minNoticeHours: 4,
     maxHorizonDays: 60,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
     ...overrides,
   });
 };
@@ -387,27 +383,7 @@ describe("BookingPageService", () => {
     expect("durationMinutes" in updated && updated.durationMinutes).toBe(45);
   });
 
-  it("persists welcome text", async () => {
-    const userId = await createNamedUser("Welcome Host");
-    const calendar = writableCalendar();
-    mockHealthySync([calendar]);
-    const input = samplePutInput({
-      destinationCalendarId: calendar.id,
-      blockingCalendarIds: [calendar.id],
-      welcomeText: "30 minutes to talk through Compass Calendar.",
-    });
-
-    await bookingPageService.putAdminPage(userId, input);
-    const page = await bookingPageService.getAdminPage(userId);
-
-    expect(page).toEqual(
-      expect.objectContaining({
-        welcomeText: "30 minutes to talk through Compass Calendar.",
-      }),
-    );
-  });
-
-  it("rejects a PUT with out-of-range notice or buffer and does not persist", async () => {
+  it("rejects a PUT with out-of-range notice and does not persist", async () => {
     const userId = await createNamedUser("Bound Host");
     const calendar = writableCalendar();
     mockHealthySync([calendar]);
@@ -423,20 +399,35 @@ describe("BookingPageService", () => {
         minNoticeHours: BOOKING_MAX_MIN_NOTICE_HOURS + 1,
       }),
     ).rejects.toBeInstanceOf(ZodError);
-    await expect(
-      bookingPageService.putAdminPage(userId, {
-        ...input,
-        bufferMinutes: BOOKING_MAX_BUFFER_MINUTES + 1,
-      }),
-    ).rejects.toBeInstanceOf(ZodError);
 
     const page = await bookingPageService.getAdminPage(userId);
     expect(page).toEqual(
       expect.objectContaining({
         minNoticeHours: 4,
-        bufferMinutes: null,
       }),
     );
+  });
+
+  it("strips removed host settings keys from PUT input", async () => {
+    const userId = await createNamedUser("Legacy Host");
+    const calendar = writableCalendar();
+    mockHealthySync([calendar]);
+    const input = samplePutInput({
+      destinationCalendarId: calendar.id,
+      blockingCalendarIds: [calendar.id],
+      bufferMinutes: 30,
+      maxBookingsPerDay: 4,
+      welcomeText: "hello",
+      guestsCanInviteOthers: true,
+    });
+
+    await bookingPageService.putAdminPage(userId, input);
+    const page = await bookingPageService.getAdminPage(userId);
+
+    expect(page).not.toHaveProperty("bufferMinutes");
+    expect(page).not.toHaveProperty("maxBookingsPerDay");
+    expect(page).not.toHaveProperty("welcomeText");
+    expect(page).not.toHaveProperty("guestsCanInviteOthers");
   });
 
   it("suffixes reserved slug collisions", async () => {
