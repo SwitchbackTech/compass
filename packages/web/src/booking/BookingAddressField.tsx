@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { BookingSlugSchema } from "@core/types/booking.contracts";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
+import { bookingSlugParseMessage } from "@web/booking/booking.util";
 import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 
 export const BOOKING_ADDRESS_HELPER =
@@ -13,17 +13,6 @@ export function bookingAddressPrefix(bookingUrl: string | null): string {
     ? new URL(bookingUrl).origin
     : window.location.origin;
   return `${origin}/book/`;
-}
-
-function bookingSlugParseMessage(slug: string | undefined): string | null {
-  const parsed = BookingSlugSchema.safeParse(slug);
-  if (parsed.success) {
-    return null;
-  }
-  return (
-    parsed.error.issues[0]?.message ??
-    "Use 3 to 32 lowercase letters, digits, or hyphens"
-  );
 }
 
 interface BookingAddressFieldProps {
