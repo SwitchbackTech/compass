@@ -396,6 +396,60 @@ test.describe("settings booking section", () => {
     });
   });
 
+  test("connect pills have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      healthyConnection: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(
+      settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
+    ).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("button", {
+        name: "Connect Microsoft Calendar",
+      }),
+    ).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("button", { name: "Connect Apple Calendar" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking connect pills",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("not-live status has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(
+      settingsDialog.getByText("Your booking page is not live yet"),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking not live",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("open More options has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByText("More options", { exact: true }).click();
+    await expect(settingsDialog.getByLabel("Welcome text")).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking more options",
+      include: "[role='dialog']",
+    });
+  });
+
   test("discard confirmation has no automatically detectable accessibility violations", async ({
     page,
   }) => {

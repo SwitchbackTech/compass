@@ -1,4 +1,4 @@
-# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5)
+# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5 / v1.6)
 
 Locked product spec for public scheduling on Compass Cloud
 (`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
@@ -6,7 +6,9 @@ RSVP-strict occupancy and public page identity (date-specific
 availability exceptions were removed in v1.2). v1.5 shipped keyboard
 Escape paths, guest edit-details after confirm, confirmation permalink
 tokens, and the audit fixes on milestone Booking v1.5. v1.3 (guest
-reschedule) is specified here and implemented; the production gate stays
+reschedule) is specified here and implemented. v1.6 shipped one-click
+turn on, Essentials / More options, editable address, default hours,
+branded connect pills, and funnel analytics. The production gate stays
 off.
 
 Compass never sends email itself. Google emails the guest when Compass
@@ -14,9 +16,11 @@ creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1, v1.1, v1.3, and v1.5 are implemented in the Compass monorepo (public
-`/book/:username`, host Settings, backend APIs, guest cancel, guest
-reschedule, and edit-details). Booking is enabled in development and staging
+v1, v1.1, v1.3, v1.5, and v1.6 are implemented in the Compass monorepo
+(public `/book/:username`, host Settings, backend APIs, guest cancel,
+guest reschedule, edit-details, one-click turn on, Essentials / More
+options, editable address, default hours, branded connect pills, and
+funnel analytics). Booking is enabled in development and staging
 (`runtime.nodeEnv` other than `production`) and disabled in production.
 Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
@@ -461,7 +465,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `BookingLimitsFieldset.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
@@ -511,8 +515,6 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
-- **Google-only destination** calendars; password-only hosts see a connect-Google
-  prompt in Settings.
 
 ## Related docs
 
