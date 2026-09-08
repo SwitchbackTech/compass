@@ -157,6 +157,24 @@ export const isWelcomeTextTooLong = (
   welcomeText: string | null | undefined,
 ): boolean => (welcomeText?.length ?? 0) > WELCOME_TEXT_MAX_LENGTH;
 
+const BOOKING_SLUG_FALLBACK_MESSAGE =
+  "Use 3 to 32 lowercase letters, digits, or hyphens";
+
+/**
+ * The first schema complaint about a slug, or null when it parses. The address
+ * field shows this on blur and the save path reuses it, so the inline hint and
+ * the save error can never disagree.
+ */
+export function bookingSlugParseMessage(
+  slug: string | undefined,
+): string | null {
+  const parsed = BookingSlugSchema.safeParse(slug);
+  if (parsed.success) {
+    return null;
+  }
+  return parsed.error.issues[0]?.message ?? BOOKING_SLUG_FALLBACK_MESSAGE;
+}
+
 export type BookingFormValidationError = {
   message: string;
   field?: BookingSequenceField;
@@ -177,14 +195,9 @@ export function validateBookingForm({
   minNoticeInvalid: boolean;
   writableCalendars: Calendar[];
 }): BookingFormValidationError | null {
-  const slugError = BookingSlugSchema.safeParse(form.slug);
-  if (!slugError.success) {
-    return {
-      field: "address",
-      message:
-        slugError.error.issues[0]?.message ??
-        "Use 3 to 32 lowercase letters, digits, or hyphens",
-    };
+  const slugMessage = bookingSlugParseMessage(form.slug);
+  if (slugMessage) {
+    return { field: "address", message: slugMessage };
   }
   if (!areHoursValid) {
     return {

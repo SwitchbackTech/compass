@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import {
-  type AdminGetBookingPageResponse,
   type AdminGetBookingPageResult,
   type AdminPutBookingPageInput,
   BOOKING_MAX_HORIZON_DAYS,
@@ -15,6 +14,7 @@ import {
   BOOKING_PLACEHOLDER_CALENDAR_ID,
   type BookingDurationMinutes,
   buildDefaultAdminPutInput,
+  isSavedBookingPage,
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
@@ -108,9 +108,18 @@ const MORE_OPTIONS_FIELDS = new Set<BookingSequenceField>([
 const BOOKING_SELECT_CLASS_NAME =
   "c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel";
 
-const isSavedBookingPage = (
-  page: AdminPutBookingPageInput | AdminGetBookingPageResponse,
-): page is AdminGetBookingPageResponse => "bookingUrl" in page;
+/** Copy the public link, then report whichever of the two outcomes happened. */
+const copyBookingLinkThenToast = (
+  bookingUrl: string,
+  copy: { onCopy: string; onFail: string },
+) => {
+  void copyText(bookingUrl).then((didCopy) => {
+    if (didCopy) {
+      track("booking_link_copied", { source: "save" });
+    }
+    showStatusToast("booking-link-copied", didCopy ? copy.onCopy : copy.onFail);
+  });
+};
 
 const parseBookingCount = (
   raw: string,
@@ -348,6 +357,15 @@ export function BookingSettingsSection({
     writableCalendars,
   ]);
 
+  // Not ready until the calendars settle and the effect above has consumed
+  // this server page. The analytics effect and the render guard must read the
+  // same value, or "settings opened" fires against a form the host cannot see.
+  const isSeedingForm =
+    isPending ||
+    calendarsPending ||
+    waitingForHostCalendars ||
+    (serverPage != null && seededPageRef.current !== serverPage);
+
   const isDirty =
     (baselineFormRef.current !== null &&
       isBookingSettingsFormDirty({
@@ -383,46 +401,23 @@ export function BookingSettingsSection({
       });
       return;
     }
-    if (
-      isPending ||
-      calendarsPending ||
-      waitingForHostCalendars ||
-      (serverPage != null && seededPageRef.current !== serverPage)
-    ) {
-      return;
-    }
+    if (isSeedingForm) return;
     settingsOpenedRef.current = true;
-    const isLive =
-      serverPage != null &&
-      "bookingUrl" in serverPage &&
-      serverPage.enabled === true;
     track("booking_settings_opened", {
       has_connection: true,
-      is_live: isLive,
+      is_live: isSavedBookingPage(serverPage) && serverPage.enabled === true,
     });
-  }, [
-    calendarsPending,
-    hasHealthyConnection,
-    isPending,
-    serverPage,
-    waitingForHostCalendars,
-  ]);
+  }, [hasHealthyConnection, isSeedingForm, serverPage]);
 
   if (!hasHealthyConnection) {
     return <BookingConnectPrompt />;
   }
 
-  if (
-    isPending ||
-    calendarsPending ||
-    waitingForHostCalendars ||
-    (serverPage != null && seededPageRef.current !== serverPage)
-  ) {
+  if (isSeedingForm) {
     return <p className="text-sm text-text-muted">Loading booking settings…</p>;
   }
 
-  const savedPage =
-    serverPage && isSavedBookingPage(serverPage) ? serverPage : null;
+  const savedPage = isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
   const savedSlug =
     serverPage && !isUnconfiguredBookingPage(serverPage)
@@ -499,47 +494,33 @@ export function BookingSettingsSection({
           if (inline) setSaveError(inline);
         },
         onSuccess: (page) => {
-          if (enabled && !wasLive) {
-            track("booking_page_enabled", {
-              first_time: savedPage == null,
-            });
-            if (!("bookingUrl" in page)) return;
-            void copyText(page.bookingUrl).then((didCopy) => {
-              if (didCopy) {
-                track("booking_link_copied", { source: "save" });
-              }
-              showStatusToast(
-                "booking-link-copied",
-                didCopy
-                  ? "Your booking page is live. Link copied."
-                  : "Live. Press e then l to copy your link.",
-              );
-            });
-            return;
-          }
-          if (!enabled && wasLive) {
-            showStatusToast("booking-link-copied", "Booking page turned off.");
-            return;
-          }
           if (!enabled) {
             showStatusToast(
               "booking-link-copied",
-              "Saved. Turn on your booking page to share the link.",
+              wasLive
+                ? "Booking page turned off."
+                : "Saved. Turn on your booking page to share the link.",
             );
             return;
           }
-          if (!("bookingUrl" in page)) return;
-          void copyText(page.bookingUrl).then((didCopy) => {
-            if (didCopy) {
-              track("booking_link_copied", { source: "save" });
-            }
-            showStatusToast(
-              "booking-link-copied",
-              didCopy
-                ? "Saved. Booking link copied."
-                : "Saved. Press e then l to copy your link.",
-            );
-          });
+          if (!wasLive) {
+            track("booking_page_enabled", {
+              first_time: savedPage == null,
+            });
+          }
+          if (!isSavedBookingPage(page)) return;
+          copyBookingLinkThenToast(
+            page.bookingUrl,
+            wasLive
+              ? {
+                  onCopy: "Saved. Booking link copied.",
+                  onFail: "Saved. Press e then l to copy your link.",
+                }
+              : {
+                  onCopy: "Your booking page is live. Link copied.",
+                  onFail: "Live. Press e then l to copy your link.",
+                },
+          );
         },
       },
     );

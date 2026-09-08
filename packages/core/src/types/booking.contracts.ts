@@ -515,6 +515,17 @@ export type AdminGetBookingPageResult =
   | AdminGetBookingPageResponse
   | AdminGetBookingPageSetupResponse;
 
+/**
+ * `bookingUrl` is the discriminator between the two admin answers: only a
+ * saved, addressable page carries a public link. One predicate keeps the API
+ * parser and every UI consumer narrowing the union the same way. It accepts
+ * `unknown` so the response parser can use it before validation.
+ */
+export const isSavedBookingPage = (
+  page: unknown,
+): page is AdminGetBookingPageResponse =>
+  typeof page === "object" && page !== null && "bookingUrl" in page;
+
 const slugifyBookingCandidate = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
