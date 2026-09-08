@@ -3,6 +3,7 @@ import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import {
   BOOKING_CALENDAR_ID,
   COMPASS_CALENDAR_ID,
+  dispatchBlur,
   dispatchClick,
   dispatchFill,
   prepareSignedInBookingSettingsPage,
@@ -222,10 +223,12 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
 test("blocks turn on with empty hours", async ({ page }) => {
   const captured = await prepareSignedInBookingSettingsPage(page, {
     enabled: false,
-    weeklyAvailability: [],
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
+  await dispatchFill(hours, "");
+  await dispatchBlur(hours);
   await dispatchClick(
     settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );

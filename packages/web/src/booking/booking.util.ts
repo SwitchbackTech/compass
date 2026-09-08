@@ -81,6 +81,22 @@ export function weekdayLabel(weekday: WeeklyAvailabilityInterval["weekday"]) {
 
 export const ISO_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 
+export type IsoWeekday = (typeof ISO_WEEKDAYS)[number];
+
+const WEEKDAY_SHORT_LABELS: Record<IsoWeekday, string> = {
+  1: "Mon",
+  2: "Tue",
+  3: "Wed",
+  4: "Thu",
+  5: "Fri",
+  6: "Sat",
+  7: "Sun",
+};
+
+export function weekdayShortLabel(weekday: IsoWeekday) {
+  return WEEKDAY_SHORT_LABELS[weekday];
+}
+
 /**
  * The PUT body, and only the PUT body.
  *

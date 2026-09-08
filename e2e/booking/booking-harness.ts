@@ -1227,6 +1227,19 @@ export const dispatchFill = async (
   }, value);
 };
 
+/**
+ * React maps `onBlur` to bubbling `focusout`. A native `blur` event does not
+ * reach that listener, so hours-row commit (and similar) would never run.
+ */
+export const dispatchBlur = async (
+  locator: import("@playwright/test").Locator,
+) => {
+  await locator.waitFor({ state: "attached", timeout: 10000 });
+  await locator.evaluate((el) => {
+    el.dispatchEvent(new Event("focusout", { bubbles: true }));
+  });
+};
+
 export function formatSlotButtonLabel(
   slotStart: string,
   timeZone = "UTC",
