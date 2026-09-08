@@ -173,7 +173,7 @@ test("turns on a not-live page in one click", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
+    settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
@@ -188,7 +188,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await expect(
-    settingsDialog.getByText("Your meeting page is not live yet"),
+    settingsDialog.getByText("Off. Turn it on to share your link."),
   ).toBeVisible();
   await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
     "hostuser",
@@ -198,7 +198,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
   ).toBeVisible();
 
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
+    settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
@@ -207,9 +207,7 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
 
-  await expect(
-    settingsDialog.getByText("Your meeting page is live"),
-  ).toBeVisible();
+  await expect(settingsDialog.getByText("Live at")).toBeVisible();
   await expect(
     settingsDialog.getByRole("textbox", { name: "Meeting link" }),
   ).toHaveValue("https://compasscalendar.com/meet/hostuser");
@@ -229,7 +227,7 @@ test("blocks turn on with empty hours", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
+    settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );
 
   await expect(
@@ -237,6 +235,9 @@ test("blocks turn on with empty hours", async ({ page }) => {
       hasText: "Add weekly hours before turning on your meeting page.",
     }),
   ).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("switch", { name: "Meeting page" }),
+  ).toHaveAttribute("aria-checked", "false");
   expect(captured.putBodies.length).toBe(0);
 });
 

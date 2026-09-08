@@ -236,9 +236,10 @@ status header, an Essentials group, and a collapsed **More options**
 group. It is not a native timezone `<select>` plus a checkbox and two
 time inputs per weekday.
 
-- **Status:** a live page shows "Your meeting page is live" and the
-  meeting link with Copy and **Open meeting page**. A page that is not
-  live shows "Your meeting page is not live yet".
+- **Status:** a **Meeting page** switch reflects whether the page is
+  live. When on, it shows "Live at" and the meeting link with Copy and
+  **Open meeting page**. When off, it shows "Off. Turn it on to share
+  your link." and the address the page will use.
 - **Essentials:** Page address, duration, meeting timezone, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
 - **More options:** an uncontrolled native `<details>` that starts
@@ -261,19 +262,19 @@ time inputs per weekday.
   does not toggle it. Before focusing, the helper opens any ancestor
   `<details>`. The Settings nav shows one hint, **Hold Mod to see
   shortcuts.**, while chips are hidden.
-- **Turn on / Save:** going live is one click. When the page is not
-  live, the primary action is **Turn on meeting page** (Mod+Enter).
-  **Save draft** appears only when the form is dirty. When the page is
-  live, the primary action is **Save changes** and the secondary action
-  is **Turn off meeting page**. The Enable meeting page checkbox is
-  gone. Validation and server errors render beside the save bar and
-  focus the offending field.
+- **Turn on / Save:** going live is one click on the Meeting page
+  switch, which saves immediately with the current form. The save bar
+  has one primary **Save changes** (Mod+Enter) that keeps the current
+  on or off state. Validation and server errors render beside the save
+  bar and focus the offending field. A failed enable leaves the switch
+  off.
 - **Toasts:** turning on copies the link (`Your meeting page is live.
   Link copied.`, or `Live. Press Mod U to copy your link.` if the
-  clipboard fails). Save changes copies the link with today's Saved
-  copy. Turn off says `Meeting page turned off.` Save draft says
-  `Saved. Turn on your meeting page to share the link.` Safari can drop
-  a copy that follows the save round trip; the Copy button stays.
+  clipboard fails). Save changes while on copies the link with Saved
+  copy. Turn off says `Meeting page turned off.` Save changes while
+  off says `Saved. Turn on your meeting page to share the link.`
+  Safari can drop a copy that follows the save round trip; the Copy
+  button stays.
 - **Open meeting page** sits next to Copy and opens the public URL in a
   new tab. There is no authenticated preview iframe.
 - **Discard:** Escape on a dirty Booking form opens **Discard unsaved

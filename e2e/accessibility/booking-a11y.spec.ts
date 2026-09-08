@@ -312,6 +312,9 @@ test.describe("settings booking section", () => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await expect(settingsDialog.getByLabel("Duration")).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "true");
     // Scoped to the dialog: the calendar shell behind the modal is not this
     // suite's subject and has its own pre-existing findings.
     await expectNoAxeViolations(page, {
@@ -343,7 +346,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: "Turn on meeting page" }),
+      settingsDialog.getByRole("switch", { name: "Meeting page" }),
     );
     await expect(
       settingsDialog.getByRole("alert").filter({
@@ -429,7 +432,10 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await expect(
-      settingsDialog.getByText("Your meeting page is not live yet"),
+      settingsDialog.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
+    await expect(
+      settingsDialog.getByText("Off. Turn it on to share your link."),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking not live",

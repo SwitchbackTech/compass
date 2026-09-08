@@ -24,11 +24,7 @@ import {
 } from "@web/booking/BookingAddressField";
 import { BOOKING_CONNECT_EMPTY_ENV_COPY } from "@web/booking/BookingConnectPrompt";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
-import {
-  BOOKING_SAVE_DRAFT_LABEL,
-  BOOKING_TURN_OFF_LABEL,
-  BOOKING_TURN_ON_LABEL,
-} from "@web/booking/BookingSaveBar";
+import { BOOKING_SAVE_CHANGES_LABEL } from "@web/booking/BookingSaveBar";
 import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
 import { BOOKING_SAVE_ERROR_COPY } from "@web/booking/booking.query";
 import { BOOKING_APPLE_DESTINATION_HINT } from "@web/booking/booking-conference.copy";
@@ -317,15 +313,13 @@ describe("BookingSettingsSection", () => {
     );
 
     const save = await screen.findByRole("button", {
-      name: BOOKING_TURN_ON_LABEL,
+      name: BOOKING_SAVE_CHANGES_LABEL,
     });
     const stickyBar = findStickyAncestor(save);
     expect(stickyBar).not.toBeNull();
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     await waitFor(() => {
       expect(savedBody).toMatchObject({
@@ -392,11 +386,11 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
-      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
     );
     await waitFor(() => {
       expect(savedBodies).toHaveLength(1);
@@ -404,7 +398,7 @@ describe("BookingSettingsSection", () => {
 
     await user.selectOptions(screen.getByLabelText("Duration"), "15");
     await user.click(
-      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
     );
 
     await waitFor(() => {
@@ -477,9 +471,7 @@ describe("BookingSettingsSection", () => {
       ),
     ).toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     await waitFor(() => {
       expect(savedBody).toMatchObject({ guestsCanInviteOthers: true });
     });
@@ -598,7 +590,7 @@ describe("BookingSettingsSection", () => {
       screen.getByText(`It will be at ${bookingAddressPrefix(null)}hostuser`),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+      screen.queryByRole("button", { name: "Save draft" }),
     ).not.toBeInTheDocument();
   });
 
@@ -636,7 +628,7 @@ describe("BookingSettingsSection", () => {
     await user.clear(address);
     await user.type(address, "tyler-dane");
     await user.click(
-      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
     );
 
     await waitFor(() => {
@@ -678,9 +670,7 @@ describe("BookingSettingsSection", () => {
     ).toHaveAttribute("role", "alert");
     expect(address).toHaveAttribute("aria-invalid", "true");
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     expect(putCount).toBe(0);
     expect(document.activeElement).toBe(address);
   });
@@ -716,7 +706,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {
@@ -909,7 +899,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {
@@ -978,7 +968,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {
@@ -1006,7 +996,7 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
     // "9-5, then 11-2" is not real input, but any typed letter would be: a
     // bare `e` must reach the field, not swallow the next keystroke.
@@ -1042,13 +1032,11 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
     await user.type(screen.getByLabelText("Monday"), "whenever");
     await user.tab();
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     expect(putCount).toBe(0);
     expect(
@@ -1080,16 +1068,14 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
     await user.type(
       screen.getByLabelText("Welcome text"),
       "30 minutes to talk through Compass.",
     );
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     await waitFor(() => {
       expect(savedBody).toMatchObject({
@@ -1158,7 +1144,7 @@ describe("BookingSettingsSection", () => {
     );
 
     const save = await screen.findByRole("button", {
-      name: BOOKING_TURN_ON_LABEL,
+      name: BOOKING_SAVE_CHANGES_LABEL,
     });
     expect(save).toHaveAttribute(
       "aria-keyshortcuts",
@@ -1205,11 +1191,9 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(bookingUrl);
@@ -1250,11 +1234,11 @@ describe("BookingSettingsSection", () => {
       </HotkeysProvider>,
       { wrapper },
     );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
 
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.click(
-      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
     );
 
     await waitFor(() => {
@@ -1554,14 +1538,15 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Choose a destination calendar before enabling your meeting page.",
     );
+    expect(
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
   });
 
   it("blocks enabling a page with no weekly hours and does not PUT", async () => {
@@ -1595,10 +1580,8 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     const hoursAlert = screen.getByRole("alert");
     expect(hoursAlert).toHaveTextContent(
@@ -1607,6 +1590,9 @@ describe("BookingSettingsSection", () => {
     expect(findStickyAncestor(hoursAlert)).not.toBeNull();
     expect(putCount).toBe(0);
     expect(document.activeElement).toBe(screen.getByLabelText("Monday"));
+    expect(
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
   });
 
   it("renders Monday through Friday as 9-5 on a fresh unconfigured page", async () => {
@@ -1686,14 +1672,12 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     expect(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    ).toBeInTheDocument();
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
     await waitFor(() => {
       expect(mocks.error).toHaveBeenCalledWith(
         "Could not save meeting settings. Please try again.",
@@ -1753,10 +1737,8 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -1806,9 +1788,7 @@ describe("BookingSettingsSection", () => {
     expect(screen.getByText("Enter 1 to 60 days.")).toBeInTheDocument();
     expect(horizon).toHaveAttribute("aria-invalid", "true");
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     expect(
       screen.getByText("Fix the highlighted number fields before saving."),
     ).toBeInTheDocument();
@@ -1817,9 +1797,7 @@ describe("BookingSettingsSection", () => {
     await user.type(horizon, "30");
     expect(screen.queryByText("Enter 1 to 60 days.")).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     await waitFor(() => {
       expect(savedBody).toMatchObject({ maxHorizonDays: 30 });
     });
@@ -1863,9 +1841,7 @@ describe("BookingSettingsSection", () => {
     expect(screen.getByText("Enter 0 to 1440 hours.")).toBeInTheDocument();
     expect(notice).toHaveAttribute("aria-invalid", "true");
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     expect(
       screen.getByText("Fix the highlighted number fields before saving."),
     ).toBeInTheDocument();
@@ -1877,9 +1853,7 @@ describe("BookingSettingsSection", () => {
       screen.queryByText("Enter 0 to 1440 hours."),
     ).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
     await waitFor(() => {
       expect(savedBody).toMatchObject({ minNoticeHours: 4 });
     });
@@ -1925,7 +1899,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {
@@ -1940,6 +1914,8 @@ describe("BookingSettingsSection", () => {
 
   it("turns off a live page", async () => {
     const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
     let savedBody: unknown;
     const bookingUrl = "https://compasscalendar.com/meet/hostuser";
 
@@ -1984,20 +1960,90 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_OFF_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {
       expect(savedBody).toMatchObject({ enabled: false });
     });
+    expect(mocks.toast).toHaveBeenCalledWith(
+      "Meeting page turned off.",
+      expect.any(Object),
+    );
   });
 
-  it("shows Save draft only when the form is dirty and not live", async () => {
+  it("saves changes while off without turning the page on", async () => {
     const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
     userMetadataActions.set(healthyGoogleMetadata);
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
         res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json({
+            ...(savedBody as object),
+            isConfigured: true,
+            suggestedSlug: "hostuser",
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("switch", { name: "Meeting page" });
+    expect(
+      screen.queryByRole("button", { name: "Turn on meeting page" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Save draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Turn off meeting page" }),
+    ).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({
+        durationMinutes: 45,
+        enabled: false,
+      });
+    });
+    expect(
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("leaves the switch off when the server rejects enable", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(400),
+          ctx.json({
+            code: "AVAILABILITY_REQUIRED",
+            message: "Weekly availability is required",
+          }),
+        ),
       ),
     );
 
@@ -2010,15 +2056,48 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    expect(
-      screen.queryByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
-    ).not.toBeInTheDocument();
+    await user.click(
+      await screen.findByRole("switch", { name: "Meeting page" }),
+    );
 
-    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        BOOKING_SAVE_ERROR_COPY.AVAILABILITY_REQUIRED,
+      );
+    });
     expect(
-      screen.getByRole("button", { name: BOOKING_SAVE_DRAFT_LABEL }),
-    ).toBeInTheDocument();
+      screen.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("Mod+4 focuses the switch without toggling it", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsWithShortcuts />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const control = await screen.findByRole("switch", {
+      name: "Meeting page",
+    });
+    expect(control).toHaveAttribute("aria-checked", "false");
+
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}4{/${modKey}}`);
+
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-checked", "false");
   });
 
   it("keeps More options closed by default", async () => {
@@ -2101,7 +2180,7 @@ describe("BookingSettingsSection", () => {
     );
 
     await user.click(
-      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+      await screen.findByRole("switch", { name: "Meeting page" }),
     );
 
     await waitFor(() => {

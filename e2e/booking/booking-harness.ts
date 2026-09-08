@@ -1189,9 +1189,7 @@ export async function prepareSignedInBookingSettingsPage(
     ).toBeVisible({ timeout: 15000 });
   } else {
     await expect(
-      settingsDialog.getByRole("button", {
-        name: enabled ? "Save changes" : "Turn on meeting page",
-      }),
+      settingsDialog.getByRole("switch", { name: "Meeting page" }),
     ).toBeVisible({ timeout: 15000 });
   }
 
