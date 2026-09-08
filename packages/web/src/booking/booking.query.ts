@@ -14,7 +14,7 @@ import { BookingApi } from "@web/api/booking.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
-import { type BookingSequenceField } from "@web/booking/booking-sequence.fields";
+import { type BookingField } from "@web/booking/booking-sequence.fields";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
 export const bookingQueryKeys = {
@@ -49,7 +49,7 @@ export const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
     "Some settings couldn't be saved. Check the highlighted fields and try again.",
 };
 
-const INLINE_SAVE_ERROR_FIELDS: Record<string, BookingSequenceField> = {
+const INLINE_SAVE_ERROR_FIELDS: Record<string, BookingField> = {
   TIMEZONE_REQUIRED: "timezone",
   DESTINATION_NOT_WRITABLE: "destination",
   BLOCKING_CALENDAR_INVALID: "blocking",
@@ -59,7 +59,7 @@ const INLINE_SAVE_ERROR_FIELDS: Record<string, BookingSequenceField> = {
 
 export function bookingSaveErrorInline(
   error: unknown,
-): { message: string; field?: BookingSequenceField } | null {
+): { message: string; field?: BookingField } | null {
   if (!isApiError(error)) return null;
   const code = getApiErrorCode(error);
   if (!code) return null;

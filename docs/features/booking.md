@@ -251,15 +251,16 @@ time inputs per weekday.
 - **Weekly hours** are one typed range per weekday (`9-5`, or `9-12, 1-5`
   for a break). A blank day is unavailable. The parser reuses
   `parseUserTime` with an explicit PM-correction rule.
-- **Jump:** `e` then a letter focuses a field (`e` meeting page on or
-  off, `a` page address, `d` duration, `c` destination, `b` blocking, `z` timezone,
-  `h` hours, `m` More options, `w` welcome, `n` notice, `x` horizon,
-  `o` buffer and limits, `l` link). Settings owns Mod+Enter (the
-  primary save action) and digits `1/2/3` (nav) on this page, which is
-  why the leader is `e` rather than `Mod+digit`. Focus uses
+- **Jump:** hold Mod to see section chips. `Mod+4` through `Mod+9`
+  jump to on or off, Duration, Timezone, Weekly hours, Destination
+  calendar, and More options (`Mod+9` opens the group and focuses the
+  first control inside). `Mod+U` copies the meeting link (click, not
+  only focus). Save stays Mod+Enter. Fields inside More options have
+  no chord. Settings nav still owns digits `1/2/3`. Focus uses
   `data-booking-field` and does not click, so jumping onto a checkbox
   does not toggle it. Before focusing, the helper opens any ancestor
-  `<details>`.
+  `<details>`. The Settings nav shows one hint, **Hold Mod to see
+  shortcuts.**, while chips are hidden.
 - **Turn on / Save:** going live is one click. When the page is not
   live, the primary action is **Turn on meeting page** (Mod+Enter).
   **Save draft** appears only when the form is dirty. When the page is
@@ -268,7 +269,7 @@ time inputs per weekday.
   gone. Validation and server errors render beside the save bar and
   focus the offending field.
 - **Toasts:** turning on copies the link (`Your meeting page is live.
-  Link copied.`, or `Live. Press e then l to copy your link.` if the
+  Link copied.`, or `Live. Press Mod U to copy your link.` if the
   clipboard fails). Save changes copies the link with today's Saved
   copy. Turn off says `Meeting page turned off.` Save draft says
   `Saved. Turn on your meeting page to share the link.` Safari can drop

@@ -8,7 +8,7 @@ import {
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type BookingSequenceField } from "@web/booking/booking-sequence.fields";
+import { type BookingField } from "@web/booking/booking-sequence.fields";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
 
 export function getAvailabilityReadableCalendars(
@@ -177,7 +177,7 @@ export function bookingSlugParseMessage(
 
 export type BookingFormValidationError = {
   message: string;
-  field?: BookingSequenceField;
+  field?: BookingField;
 };
 
 export function validateBookingForm({

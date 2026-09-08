@@ -1,12 +1,11 @@
 import {
-  type BookingSequenceField,
+  type BookingField,
   bookingJumpKeys,
 } from "@web/booking/booking-sequence.fields";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 /**
- * A field caption with its `e`-leader key, revealed on hold-Mod alongside the
- * Settings nav digits, so one gesture teaches the whole page.
+ * A field caption with its hold-Mod chord, revealed alongside Settings nav.
  */
 export function BookingFieldLabel({
   children,
@@ -15,7 +14,7 @@ export function BookingFieldLabel({
   showShortcuts,
 }: {
   children: string;
-  field: BookingSequenceField;
+  field: BookingField;
   htmlFor?: string;
   showShortcuts: boolean;
 }) {

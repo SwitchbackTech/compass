@@ -1,11 +1,11 @@
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import {
-  type BookingSequenceField,
+  type BookingField,
   bookingFieldAttrs,
 } from "@web/booking/booking-sequence.fields";
 
 interface BookingNumberFieldProps {
-  field: BookingSequenceField;
+  field: BookingField;
   id: string;
   label: string;
   value: string;

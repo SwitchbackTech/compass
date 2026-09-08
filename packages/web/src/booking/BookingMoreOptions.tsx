@@ -28,16 +28,15 @@ export function BookingMoreOptions({
 
   return (
     <details className="flex flex-col gap-4" ref={detailsRef}>
-      <summary
-        className="c-focus-ring cursor-pointer list-inside font-medium text-sm text-text"
-        {...bookingFieldAttrs("more")}
-      >
+      <summary className="c-focus-ring cursor-pointer list-inside font-medium text-sm text-text">
         {BOOKING_MORE_OPTIONS_LABEL}
         {showShortcuts ? (
           <ShortcutKeys className="ml-1" keys={bookingJumpKeys("more")} />
         ) : null}
       </summary>
-      <div className="mt-3 flex flex-col gap-4">{children}</div>
+      <div className="mt-3 flex flex-col gap-4" {...bookingFieldAttrs("more")}>
+        {children}
+      </div>
     </details>
   );
 }

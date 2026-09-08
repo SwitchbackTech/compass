@@ -63,9 +63,7 @@ import {
   resolveBookingConference,
 } from "@web/booking/booking-conference.copy";
 import {
-  BOOKING_FIELD_BY_KEY,
-  BOOKING_SEQUENCE_FIELDS,
-  type BookingSequenceField,
+  type BookingField,
   bookingFieldAttrs,
   bookingJumpKeys,
   focusBookingField,
@@ -80,24 +78,12 @@ import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentin
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
-import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
-import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
-import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
-import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
-export const BOOKING_SETTINGS_HINT_PARTS: readonly ShortcutTipPart[] = [
-  "Press ",
-  { keys: ["Mod", "E"] },
-  " then a letter to jump to a field. ",
-  { keys: ["Mod", "Enter"] },
-  " saves.",
-];
-
-const MORE_OPTIONS_FIELDS = new Set<BookingSequenceField>([
+const MORE_OPTIONS_FIELDS = new Set<BookingField>([
   "blocking",
   "welcome",
   "notice",
@@ -276,7 +262,7 @@ export function BookingSettingsSection({
   );
   const [saveError, setSaveError] = useState<{
     message: string;
-    field?: BookingSequenceField;
+    field?: BookingField;
   } | null>(null);
   const [areHoursValid, setAreHoursValid] = useState(true);
   const [minNoticeText, setMinNoticeText] = useState(() =>
@@ -301,28 +287,6 @@ export function BookingSettingsSection({
     parseBookingCount(minNoticeText, MIN_NOTICE_BOUNDS) === null;
   const horizonInvalid =
     parseBookingCount(horizonText, HORIZON_BOUNDS) === null;
-
-  // ignoreAppLock because the Settings modal itself holds the lock, the same
-  // reason useSettingsShortcuts sets it. Scoped to "booking" so the which-key
-  // menu cannot appear over the grid, and so the grid's still-mounted listener
-  // cannot disarm this sequence on the follow key.
-  //
-  // Stand down when focus is in a nested dialog (the timezone OverlayPanel):
-  // that panel also holds app-lock, and ignoreAppLock would otherwise arm
-  // Mod+E inside it and jump to a field behind the dialog.
-  useEditSequenceShortcut({
-    canArm: () => {
-      const active = document.activeElement;
-      if (!(active instanceof HTMLElement)) return true;
-      const closestDialog = active.closest("[role='dialog']");
-      const settingsDialog = sectionRef.current?.closest("[role='dialog']");
-      return closestDialog == null || closestDialog === settingsDialog;
-    },
-    fieldByKey: BOOKING_FIELD_BY_KEY,
-    ignoreAppLock: true,
-    onSequence: focusBookingField,
-    scope: "booking",
-  });
 
   // Re-seed only when the server actually answers with a different page.
   // Keying the effect on writableCalendars/effectiveTimeZone as well meant a
@@ -514,11 +478,11 @@ export function BookingSettingsSection({
             wasLive
               ? {
                   onCopy: "Saved. Meeting link copied.",
-                  onFail: "Saved. Press e then l to copy your link.",
+                  onFail: "Saved. Press Mod U to copy your link.",
                 }
               : {
                   onCopy: "Your meeting page is live. Link copied.",
-                  onFail: "Live. Press e then l to copy your link.",
+                  onFail: "Live. Press Mod U to copy your link.",
                 },
           );
         },
@@ -539,14 +503,11 @@ export function BookingSettingsSection({
         disabled={isReadOnly || saveMutation.isPending}
         ref={sectionRef}
       >
-        <p className="text-text-muted text-xs">
-          <ShortcutTipParts parts={BOOKING_SETTINGS_HINT_PARTS} />
-        </p>
-
         <BookingStatusHeader
           addressPreview={addressPreview}
           bookingUrl={savedPage?.bookingUrl ?? null}
           isLive={isLive}
+          showShortcuts={showShortcuts}
         />
 
         <BookingAddressField
@@ -769,13 +730,7 @@ export function BookingSettingsSection({
           isLive={isLive}
           isPending={saveMutation.isPending}
           onSubmit={submit}
-        />
-
-        <EditSequenceMenu
-          getAnchor={() => sectionRef.current}
-          options={BOOKING_SEQUENCE_FIELDS}
-          prompt="Jump to which field?"
-          scope="booking"
+          showShortcuts={showShortcuts}
         />
       </fieldset>
       <DiscardUnsavedChangesDialog

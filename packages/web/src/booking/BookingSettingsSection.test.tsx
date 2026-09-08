@@ -12,7 +12,6 @@ import {
   createMockCalendar,
   createMockConnection,
 } from "@web/__tests__/utils/factories/calendar.factory";
-import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
 import {
   resetProviderAvailabilityForTests,
@@ -26,22 +25,15 @@ import {
 import { BOOKING_CONNECT_EMPTY_ENV_COPY } from "@web/booking/BookingConnectPrompt";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
 import {
-  BOOKING_SAVE_CHANGES_LABEL,
   BOOKING_SAVE_DRAFT_LABEL,
   BOOKING_TURN_OFF_LABEL,
   BOOKING_TURN_ON_LABEL,
 } from "@web/booking/BookingSaveBar";
-import {
-  BOOKING_SETTINGS_HINT_PARTS,
-  BookingSettingsSection,
-} from "@web/booking/BookingSettingsSection";
+import { BookingSettingsSection } from "@web/booking/BookingSettingsSection";
 import { BOOKING_SAVE_ERROR_COPY } from "@web/booking/booking.query";
 import { BOOKING_APPLE_DESTINATION_HINT } from "@web/booking/booking-conference.copy";
 import {
-  BOOKING_FIELD_BY_KEY,
-  BOOKING_SEQUENCE_FIELDS,
   bookingFieldAttrs,
-  bookingFieldKey,
   focusBookingField,
 } from "@web/booking/booking-sequence.fields";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
@@ -52,12 +44,7 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import { useSettingsShortcuts } from "@web/settings/useSettingsShortcuts";
-import {
-  clearAppLockReasons,
-  isAppLocked,
-  setAppLockReason,
-} from "@web/shortcuts/app-lock";
-import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
+import { clearAppLockReasons } from "@web/shortcuts/app-lock";
 import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -334,10 +321,6 @@ describe("BookingSettingsSection", () => {
     });
     const stickyBar = findStickyAncestor(save);
     expect(stickyBar).not.toBeNull();
-    expect(
-      screen.getByText(getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS)),
-    ).toBeInTheDocument();
-    expect(stickyBar).not.toHaveTextContent("then a letter to jump to a field");
 
     await user.selectOptions(screen.getByLabelText("Duration"), "30");
     await user.click(
@@ -357,106 +340,6 @@ describe("BookingSettingsSection", () => {
     const openLink = screen.getByRole("link", { name: "Open meeting page" });
     expect(openLink).toHaveAttribute("href", bookingUrl);
     expect(openLink).toHaveAttribute("target", "_blank");
-  });
-
-  it("renders the keyboard hint above the public link, outside the sticky save bar", async () => {
-    userMetadataActions.set(healthyGoogleMetadata);
-    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(
-          ctx.json({
-            id: createObjectIdString(),
-            slug: "hostuser",
-            hostUserId: createObjectIdString(),
-            enabled: true,
-            durationMinutes: 30,
-            destinationCalendarId: writableCalendar.id,
-            blockingCalendarIds: [writableCalendar.id],
-            timeZone: "America/New_York",
-            weeklyAvailability: [],
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl,
-          }),
-        ),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-
-    const hint = await screen.findByText(
-      getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS),
-    );
-    const publicLink = screen.getByLabelText("Meeting link");
-    const save = screen.getByRole("button", {
-      name: BOOKING_SAVE_CHANGES_LABEL,
-    });
-    const lastControl = screen.getByRole("checkbox", {
-      name: "Guest can invite others",
-    });
-
-    expect(
-      hint.compareDocumentPosition(publicLink) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-
-    const stickyBar = findStickyAncestor(save);
-    expect(stickyBar).not.toBeNull();
-    expect(stickyBar!.contains(save)).toBe(true);
-    expect(stickyBar!.contains(hint)).toBe(false);
-    expect(stickyBar!.contains(lastControl)).toBe(false);
-    expect(within(save).getByText("Enter")).toBeInTheDocument();
-    expect(
-      lastControl.compareDocumentPosition(save) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-  });
-
-  it("exposes a complete screen-reader name for the keyboard hint, with aria-hidden chips", async () => {
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-
-    const accessibleName = getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS);
-    const accessible = await screen.findByText(accessibleName);
-    expect(accessible).toHaveClass("sr-only");
-    expect(accessible.textContent).toBe(accessibleName);
-    expect(accessibleName).toMatch(/Cmd\+E|Ctrl\+E/);
-    expect(accessibleName).not.toMatch(/Press e then/);
-
-    const visualHint = accessible.nextElementSibling;
-    expect(visualHint).toHaveAttribute("aria-hidden");
-    expect(visualHint).toHaveTextContent("then a letter to jump to a field");
-    expect(visualHint).toHaveTextContent("saves");
   });
 
   it("saves again after the first save, sending only PUT input keys", async () => {
@@ -921,32 +804,6 @@ describe("BookingSettingsSection", () => {
     expect(warning).toHaveAttribute("role", "status");
   });
 
-  it("jumps to the page address with e then a", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-
-    await user.keyboard("e");
-    await user.keyboard("a");
-
-    expect(document.activeElement).toBe(screen.getByLabelText("Page address"));
-  });
-
   it("fires booking_settings_opened when the connect prompt mounts", () => {
     setProviderAvailabilityForTests("google", "available", "connect");
     userMetadataActions.set({
@@ -1131,135 +988,7 @@ describe("BookingSettingsSection", () => {
     });
   });
 
-  it("jumps to a field with the e leader, under the Settings app lock", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-    // The Settings modal holds the lock in the real app, and the leader must
-    // still work underneath it - that is exactly what ignoreAppLock buys.
-    setAppLockReason("settingsModal", true);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-    expect(isAppLocked()).toBe(true);
-
-    await user.keyboard("e");
-    await user.keyboard("h");
-
-    expect(document.activeElement).toBe(screen.getByLabelText("Monday"));
-  });
-
-  it("jumps to welcome text with e then w", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-
-    await user.keyboard("e");
-    await user.keyboard("w");
-
-    expect(document.activeElement).toBe(screen.getByLabelText("Welcome text"));
-  });
-
-  it("jumps to the timezone trigger with e then z", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-
-    await user.keyboard("e");
-    await user.keyboard("z");
-
-    expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: /^Meeting timezone:/ }),
-    );
-  });
-
-  it("does not jump out of the nested timezone dialog", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(unconfiguredPage())),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
-
-    await user.click(
-      screen.getByRole("button", { name: /^Meeting timezone:/ }),
-    );
-    const search = await screen.findByRole("combobox", {
-      name: "Search meeting timezones",
-    });
-    await waitFor(() => expect(search).toHaveFocus());
-
-    // Mod+E is the in-field leader; ignoreAppLock would otherwise arm it
-    // here and jump to Monday behind the dialog.
-    const modInit: KeyboardEventInit =
-      resolveModifier("Mod") === "Meta" ? { metaKey: true } : { ctrlKey: true };
-    pressKey("e", { keyDownInit: modInit, keyUpInit: modInit }, search);
-    pressKey("h", {}, search);
-
-    expect(search).toHaveFocus();
-    expect(
-      screen.getByRole("combobox", { name: "Search meeting timezones" }),
-    ).toBeInTheDocument();
-  });
-
-  it("does not arm the leader while the caret is in a field", async () => {
+  it("types a bare e in a weekly-hours field", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
 
@@ -1438,8 +1167,7 @@ describe("BookingSettingsSection", () => {
     expect(within(save).getByText("Enter")).toBeInTheDocument();
 
     const durationLabel = screen.getByText("Duration");
-    expect(within(durationLabel).queryByText("D")).not.toBeInTheDocument();
-    expect(within(durationLabel).queryByText("E")).not.toBeInTheDocument();
+    expect(within(durationLabel).queryByText("5")).not.toBeInTheDocument();
   });
 
   it("copies the booking link after a save that returns one", async () => {
@@ -2293,8 +2021,7 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps More options closed by default and opens it on e then w", async () => {
-    const user = userEvent.setup({ delay: null });
+  it("keeps More options closed by default", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
@@ -2315,12 +2042,6 @@ describe("BookingSettingsSection", () => {
     const details = summary.closest("details");
     expect(details).not.toBeNull();
     expect(details).not.toHaveAttribute("open");
-
-    await user.keyboard("e");
-    await user.keyboard("w");
-
-    expect(details).toHaveAttribute("open");
-    expect(document.activeElement).toBe(screen.getByLabelText("Welcome text"));
   });
 
   it("opens More options when a field inside the collapsed group becomes invalid", async () => {
@@ -2394,28 +2115,6 @@ describe("BookingSettingsSection", () => {
         screen.getByRole("combobox", { name: "Destination calendar" }),
       );
     });
-  });
-});
-
-describe("BOOKING_SEQUENCE_FIELDS", () => {
-  it("assigns every field a unique key", () => {
-    const keys = BOOKING_SEQUENCE_FIELDS.map((entry) => entry.key);
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-
-  it("leaves Settings' own booking-page keys alone", () => {
-    // Save is Mod+Enter; `s` stays free so it can type in hours and welcome.
-    // Digits are Settings nav.
-    const keys = BOOKING_SEQUENCE_FIELDS.map((entry) => entry.key);
-    expect(keys).not.toContain("s");
-    for (const key of keys) expect(key).not.toMatch(/^\d$/);
-  });
-
-  it("maps every key back to its field", () => {
-    for (const { key, field } of BOOKING_SEQUENCE_FIELDS) {
-      expect(BOOKING_FIELD_BY_KEY[key]).toBe(field);
-      expect(bookingFieldKey(field)).toBe(key);
-    }
   });
 });
 
