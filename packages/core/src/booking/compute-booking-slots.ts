@@ -19,8 +19,6 @@ export interface ComputeBookingSlotsInput {
   weeklyAvailability: WeeklyAvailability;
   minNoticeHours: number;
   maxHorizonDays: number;
-  bufferMinutes: number | null;
-  maxBookingsPerDay: number | null;
   busyIntervals: readonly BookingBusyInterval[];
   confirmedReservationStarts: readonly Date[];
   now: Date;
@@ -65,26 +63,14 @@ const slotOverlapsBlockedInterval = (
   slotEnd: Date,
   blockedStart: Date,
   blockedEnd: Date,
-  bufferMinutes: number,
-): boolean => {
-  if (bufferMinutes <= 0) {
-    return (
-      slotStart.getTime() < blockedEnd.getTime() &&
-      slotEnd.getTime() > blockedStart.getTime()
-    );
-  }
-
-  const bufferMs = bufferMinutes * 60_000;
-  const expandedStart = blockedStart.getTime() - bufferMs;
-  const expandedEnd = blockedEnd.getTime() + bufferMs;
-  return slotStart.getTime() < expandedEnd && slotEnd.getTime() > expandedStart;
-};
+): boolean =>
+  slotStart.getTime() < blockedEnd.getTime() &&
+  slotEnd.getTime() > blockedStart.getTime();
 
 const isSlotBlocked = (
   slotStart: Date,
   slotEnd: Date,
   blockedIntervals: readonly BookingBusyInterval[],
-  bufferMinutes: number,
 ): boolean =>
   blockedIntervals.some((interval) =>
     slotOverlapsBlockedInterval(
@@ -92,29 +78,8 @@ const isSlotBlocked = (
       slotEnd,
       interval.start,
       interval.end,
-      bufferMinutes,
     ),
   );
-
-const localDateKey = (instant: Date, timeZone: string): string =>
-  dayjs(instant).tz(timeZone).format("YYYY-MM-DD");
-
-/**
- * Reservations tallied by their local date, in one pass. The day loop below
- * would otherwise re-scan every reservation - and pay a timezone conversion
- * for each - once per day in the window.
- */
-const countReservationsByLocalDate = (
-  reservationStarts: readonly Date[],
-  timeZone: string,
-): Map<string, number> => {
-  const counts = new Map<string, number>();
-  for (const start of reservationStarts) {
-    const localDate = localDateKey(start, timeZone);
-    counts.set(localDate, (counts.get(localDate) ?? 0) + 1);
-  }
-  return counts;
-};
 
 const availabilityForWeekday = (
   weeklyAvailability: WeeklyAvailability,
@@ -122,8 +87,8 @@ const availabilityForWeekday = (
 ) => weeklyAvailability.filter((interval) => interval.weekday === weekday);
 
 /**
- * Pure slot engine: weekly hours, busy/reservation buffers, min notice,
- * horizon, and max-per-day caps. Returns UTC instants valid as slot starts.
+ * Pure slot engine: weekly hours, busy/reservation overlap, min notice,
+ * and horizon. Returns UTC instants valid as slot starts.
  */
 export const computeBookingSlots = (
   input: ComputeBookingSlotsInput,
@@ -134,8 +99,6 @@ export const computeBookingSlots = (
     weeklyAvailability,
     minNoticeHours,
     maxHorizonDays,
-    bufferMinutes,
-    maxBookingsPerDay,
     busyIntervals,
     confirmedReservationStarts,
     now,
@@ -150,7 +113,6 @@ export const computeBookingSlots = (
   const durationMs = durationMinutes * 60_000;
   const minNoticeMs = minNoticeHours * 60 * 60_000;
   const horizonEnd = dayjs(now).add(maxHorizonDays, "day").toDate();
-  const buffer = bufferMinutes ?? 0;
 
   const reservationIntervals: BookingBusyInterval[] =
     confirmedReservationStarts.map((start) => ({
@@ -163,11 +125,6 @@ export const computeBookingSlots = (
     ...reservationIntervals,
   ]);
 
-  const reservationsPerLocalDate =
-    maxBookingsPerDay === null
-      ? null
-      : countReservationsByLocalDate(confirmedReservationStarts, timeZone);
-
   const slots: string[] = [];
   const seenStarts = new Set<number>();
 
@@ -178,14 +135,6 @@ export const computeBookingSlots = (
     const weekday = toIsoWeekday(dayCursor);
     const localDate = dayCursor.format("YYYY-MM-DD");
     const dayAvailability = availabilityForWeekday(weeklyAvailability, weekday);
-
-    if (
-      maxBookingsPerDay !== null &&
-      (reservationsPerLocalDate?.get(localDate) ?? 0) >= maxBookingsPerDay
-    ) {
-      dayCursor = dayCursor.add(1, "day");
-      continue;
-    }
 
     for (const interval of dayAvailability) {
       const intervalStartMinutes = localTimeToMinutes(interval.start);
@@ -215,7 +164,7 @@ export const computeBookingSlots = (
           slotStartMs < windowEnd.getTime() &&
           slotStartMs >= now.getTime() + minNoticeMs &&
           slotStartMs < horizonEnd.getTime() &&
-          !isSlotBlocked(slotStart, slotEnd, blockedIntervals, buffer) &&
+          !isSlotBlocked(slotStart, slotEnd, blockedIntervals) &&
           !seenStarts.has(slotStartMs)
         ) {
           seenStarts.add(slotStartMs);

@@ -82,31 +82,6 @@ test("clearing the horizon field shows an inline error and blocks save", async (
   expect(captured.putBodies[0]).toMatchObject({ maxHorizonDays: 30 });
 });
 
-test("saves welcome text", async ({ page }) => {
-  const bookingUrl = "https://compasscalendar.com/meet/hostuser";
-  const captured = await prepareSignedInBookingSettingsPage(page, {
-    bookingUrl,
-  });
-
-  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  await openMoreOptions(settingsDialog);
-  await dispatchFill(
-    settingsDialog.getByLabel("Welcome text"),
-    "30 minutes to talk through Compass.",
-  );
-  await dispatchClick(
-    settingsDialog.getByRole("button", { name: "Save changes" }),
-  );
-
-  await expect.poll(() => captured.putBodies.length).toBe(1);
-  expect(captured.putBodies[0]).toMatchObject({
-    welcomeText: "30 minutes to talk through Compass.",
-  });
-  await expect(
-    settingsDialog.getByRole("link", { name: "Open meeting page" }),
-  ).toHaveAttribute("href", bookingUrl);
-});
-
 test("keyboard hint sits in the nav column and the last control stays above Save", async ({
   page,
 }) => {
@@ -119,9 +94,7 @@ test("keyboard hint sits in the nav column and the last control stays above Save
   const hint = settingsDialog.locator("nav p", {
     hasText: "to see shortcuts.",
   });
-  const lastControl = settingsDialog.getByRole("checkbox", {
-    name: "Guest can invite others",
-  });
+  const lastControl = settingsDialog.getByLabel("Maximum horizon (days)");
   const save = settingsDialog.getByRole("button", {
     name: "Save changes",
   });

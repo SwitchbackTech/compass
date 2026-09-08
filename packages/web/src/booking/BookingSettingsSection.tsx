@@ -33,7 +33,6 @@ import { BookingAddressSetup } from "@web/booking/BookingAddressSetup";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectPrompt } from "@web/booking/BookingConnectPrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
-import { BookingLimitsFieldset } from "@web/booking/BookingLimitsFieldset";
 import { BookingMoreOptions } from "@web/booking/BookingMoreOptions";
 import { BookingNumberField } from "@web/booking/BookingNumberField";
 import { BookingSaveBar } from "@web/booking/BookingSaveBar";
@@ -52,12 +51,9 @@ import {
   isBookingSettingsFormDirty,
   isPlaceholderDestinationCalendar,
   isUnconfiguredBookingPage,
-  isWelcomeTextTooLong,
   slugFromAdminBookingPage,
   toBookingPageInput,
   validateBookingForm,
-  WELCOME_TEXT_MAX_LENGTH,
-  WELCOME_TEXT_TOO_LONG_MESSAGE,
 } from "@web/booking/booking.util";
 import {
   bookingDestinationConferenceHint,
@@ -87,10 +83,8 @@ const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 const MORE_OPTIONS_FIELDS = new Set<BookingField>([
   "address",
   "blocking",
-  "welcome",
   "notice",
   "horizon",
-  "options",
 ]);
 
 const BOOKING_SELECT_CLASS_NAME =
@@ -502,7 +496,6 @@ export function BookingSettingsSection({
   };
 
   const forceOpenMoreOptions =
-    isWelcomeTextTooLong(form.welcomeText) ||
     minNoticeInvalid ||
     horizonInvalid ||
     (saveError?.field != null && MORE_OPTIONS_FIELDS.has(saveError.field));
@@ -656,35 +649,6 @@ export function BookingSettingsSection({
             onToggle={toggleBlockingCalendar}
           />
 
-          <div>
-            <BookingFieldLabel htmlFor="booking-welcome">
-              Welcome text
-            </BookingFieldLabel>
-            <textarea
-              {...bookingFieldAttrs("welcome")}
-              aria-invalid={
-                isWelcomeTextTooLong(form.welcomeText) ? true : undefined
-              }
-              className="c-focus-ring min-h-20 w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text aria-invalid:border-error"
-              id="booking-welcome"
-              maxLength={WELCOME_TEXT_MAX_LENGTH}
-              onChange={(event) =>
-                updateForm({
-                  welcomeText:
-                    event.target.value.trim() === ""
-                      ? null
-                      : event.target.value,
-                })
-              }
-              value={form.welcomeText ?? ""}
-            />
-            {isWelcomeTextTooLong(form.welcomeText) ? (
-              <p className="text-error text-xs" role="alert">
-                {WELCOME_TEXT_TOO_LONG_MESSAGE}
-              </p>
-            ) : null}
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <BookingNumberField
               field="notice"
@@ -721,13 +685,6 @@ export function BookingSettingsSection({
               value={horizonText}
             />
           </div>
-
-          <BookingLimitsFieldset
-            bufferMinutes={form.bufferMinutes}
-            guestsCanInviteOthers={form.guestsCanInviteOthers}
-            maxBookingsPerDay={form.maxBookingsPerDay}
-            onChange={updateForm}
-          />
         </BookingMoreOptions>
 
         <BookingSaveBar

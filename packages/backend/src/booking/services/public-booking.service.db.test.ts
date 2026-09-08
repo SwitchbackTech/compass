@@ -144,9 +144,6 @@ const samplePutInput = (overrides: Record<string, unknown> = {}) => {
     weeklyAvailability: [{ weekday: 1, start: "09:00", end: "17:00" }],
     minNoticeHours: 0,
     maxHorizonDays: 60,
-    bufferMinutes: null,
-    maxBookingsPerDay: null,
-    guestsCanInviteOthers: true,
     ...overrides,
   });
 };
@@ -353,7 +350,7 @@ describe("PublicBookingService", () => {
     expect(createBookingEvent).toHaveBeenCalledTimes(1);
     expect(createBookingEvent.mock.calls[0]?.[1]).toMatchObject({
       guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
-      guestsCanInviteOthers: true,
+      guestsCanInviteOthers: false,
     });
     expect(response.reservationId).toBeTruthy();
     expect(response.cancelUrl).toContain("token=");
@@ -714,16 +711,12 @@ describe("PublicBookingService", () => {
     expect(createBookingEvent).not.toHaveBeenCalled();
   });
 
-  it("returns welcome text on the public page without date overrides", async () => {
-    const { slug } = await enableBookingPage("Welcome Host", {
-      welcomeText: "30 minutes to talk through Compass Calendar.",
-    });
+  it("does not expose removed public page fields", async () => {
+    const { slug } = await enableBookingPage("Public Host");
 
     const page = await service.getPublicPage(slug);
 
-    expect(page.welcomeText).toBe(
-      "30 minutes to talk through Compass Calendar.",
-    );
+    expect(page).not.toHaveProperty("welcomeText");
     expect(page).not.toHaveProperty("dateOverrides");
   });
 
@@ -1255,10 +1248,8 @@ describe("PublicBookingService", () => {
     }
   });
 
-  it("still blocks the adjacent slot when a reservation sits just outside the window inside the buffer", async () => {
-    const { slug, pageId } = await enableBookingPage("Buffer Host", {
-      bufferMinutes: 15,
-    });
+  it("offers the slot adjacent to a confirmed reservation", async () => {
+    const { slug, pageId } = await enableBookingPage("Adjacent Host");
     await seedConfirmedReservation(
       pageId,
       `${BOOKING_MONDAY}T09:00:00.000Z`,
@@ -1271,53 +1262,29 @@ describe("PublicBookingService", () => {
       timeZone: "UTC",
     });
 
-    expect(response.slots.map((slot) => slot.slotStart)).not.toContain(
+    expect(response.slots.map((slot) => slot.slotStart)).toContain(
       `${BOOKING_MONDAY}T09:30:00Z`,
     );
-    expect(response.slots.map((slot) => slot.slotStart)).toContain(
-      `${BOOKING_MONDAY}T09:45:00Z`,
-    );
   });
 
-  it("still blocks the last slot when a buffered reservation starts after local midnight", async () => {
-    const { slug, pageId } = await enableBookingPage("Late Buffer Host", {
-      bufferMinutes: 30,
-      weeklyAvailability: [{ weekday: 1, start: "21:00", end: "23:59" }],
-    });
+  it("accepts a reservation directly adjacent to an existing one", async () => {
+    const { slug, pageId } = await enableBookingPage("Touching Host");
     await seedConfirmedReservation(
       pageId,
-      `${BOOKING_TUESDAY}T00:10:00.000Z`,
-      `${BOOKING_TUESDAY}T00:40:00.000Z`,
+      `${BOOKING_MONDAY}T09:00:00.000Z`,
+      `${BOOKING_MONDAY}T09:30:00.000Z`,
     );
 
-    const response = await service.getSlots(slug, {
-      start: `${BOOKING_MONDAY}T21:00:00.000Z`,
-      end: `${BOOKING_MONDAY}T23:30:00.000Z`,
-      timeZone: "UTC",
+    const created = await service.createReservation(slug, {
+      slotStart: `${BOOKING_MONDAY}T09:30:00.000Z`,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
     });
 
-    const starts = response.slots.map((slot) => slot.slotStart);
-    expect(starts).toContain(`${BOOKING_MONDAY}T21:00:00Z`);
-    expect(starts).not.toContain(`${BOOKING_MONDAY}T23:15:00Z`);
-  });
-
-  it("still applies max bookings per day when the only reservation is earlier the same local day", async () => {
-    const { slug, pageId } = await enableBookingPage("Cap Host", {
-      maxBookingsPerDay: 1,
-    });
-    await seedConfirmedReservation(
-      pageId,
-      `${BOOKING_MONDAY}T10:00:00.000Z`,
-      `${BOOKING_MONDAY}T10:30:00.000Z`,
-    );
-
-    const response = await service.getSlots(slug, {
-      start: `${BOOKING_MONDAY}T14:00:00.000Z`,
-      end: `${BOOKING_MONDAY}T17:00:00.000Z`,
-      timeZone: "UTC",
-    });
-
-    expect(response.slots).toEqual([]);
+    expect(created.slotStart).toBe(`${BOOKING_MONDAY}T09:30:00.000Z`);
+    expect(createBookingEvent).toHaveBeenCalledTimes(1);
   });
 
   it("accepts a second non-overlapping booking on the same page", async () => {
@@ -1457,10 +1424,10 @@ describe("PublicBookingService", () => {
     expect(deleteBookingEvent).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the cancel URL out of the event description when invitees are allowed", async () => {
+  it("includes cancel and reschedule URLs in the event description", async () => {
     const { slug } = await enableBookingPage();
 
-    await service.createReservation(slug, {
+    const created = await service.createReservation(slug, {
       slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
       guestName: "Ada Lovelace",
       guestEmail: "ada@example.com",
@@ -1471,32 +1438,14 @@ describe("PublicBookingService", () => {
 
     const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
       description: string;
+      guestsCanInviteOthers: boolean;
     };
     expect(eventInput.description).toContain("bring coffee");
-    expect(eventInput.description).not.toContain("Cancel:");
-    expect(eventInput.description).not.toContain("Reschedule:");
-  });
-
-  it("includes the cancel URL in the event description when invitees are off", async () => {
-    const { slug } = await enableBookingPage("Private Host", {
-      guestsCanInviteOthers: false,
-    });
-
-    const created = await service.createReservation(slug, {
-      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
-      guestName: "Ada Lovelace",
-      guestEmail: "ada@example.com",
-      guestTimeZone: "Europe/London",
-      durationMinutes: 30,
-    });
-
-    const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
-      description: string;
-    };
     expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
     expect(eventInput.description).toContain(
       `Reschedule: ${created.rescheduleUrl}`,
     );
+    expect(eventInput.guestsCanInviteOthers).toBe(false);
   });
 
   it("asks Sync to mint Meet on confirm and does not invent a conference URL", async () => {
@@ -1554,8 +1503,13 @@ describe("PublicBookingService", () => {
     expect(updateBookingEvent).toHaveBeenCalledTimes(1);
     expect(updateBookingEvent.mock.calls[0]?.[1]).toMatchObject({
       title: "Grace Hopper and Host User",
-      description: "bring tea",
     });
+    const description = (
+      updateBookingEvent.mock.calls[0]?.[1] as { description: string }
+    ).description;
+    expect(description).toContain("bring tea");
+    expect(description).toContain("Cancel:");
+    expect(description).toContain("Reschedule:");
     const stored = await bookingReservationRepository.findById(reservationId);
     expect(stored?.guestName).toBe("Grace Hopper");
     expect(stored?.notes).toBe("bring tea");

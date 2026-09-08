@@ -25,12 +25,8 @@ export const mapBookingPageRecordToWire = (
     blockingCalendarIds: record.blockingCalendarIds,
     timeZone: record.timeZone,
     weeklyAvailability: record.weeklyAvailability,
-    welcomeText: record.welcomeText ?? null,
     minNoticeHours: record.minNoticeHours,
     maxHorizonDays: record.maxHorizonDays,
-    bufferMinutes: record.bufferMinutes,
-    maxBookingsPerDay: record.maxBookingsPerDay,
-    guestsCanInviteOthers: record.guestsCanInviteOthers,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });
@@ -56,12 +52,8 @@ export const mapBookingPageRecordToSetupResponse = (
     | "blockingCalendarIds"
     | "timeZone"
     | "weeklyAvailability"
-    | "welcomeText"
     | "minNoticeHours"
     | "maxHorizonDays"
-    | "bufferMinutes"
-    | "maxBookingsPerDay"
-    | "guestsCanInviteOthers"
   >,
   suggestedSlug: string,
 ): AdminGetBookingPageSetupResponse => ({

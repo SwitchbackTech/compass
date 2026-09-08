@@ -11,10 +11,8 @@ export const BOOKING_FIELDS = [
   "timezone",
   "hours",
   "more",
-  "welcome",
   "notice",
   "horizon",
-  "options",
   "link",
 ] as const;
 

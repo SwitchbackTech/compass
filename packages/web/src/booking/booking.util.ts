@@ -108,9 +108,7 @@ export function weekdayShortLabel(weekday: IsoWeekday) {
  * Pick the fields explicitly so a response-only key can never ride along.
  */
 export function toBookingPageInput(
-  page: Omit<AdminPutBookingPageInput, "welcomeText"> & {
-    welcomeText?: AdminPutBookingPageInput["welcomeText"];
-  },
+  page: AdminPutBookingPageInput,
 ): AdminPutBookingPageInput {
   return pickAdminPutBookingPageInput(page);
 }
@@ -166,13 +164,6 @@ export function slugFromAdminBookingPage(
   return page.slug;
 }
 
-export const WELCOME_TEXT_MAX_LENGTH = 500;
-export const WELCOME_TEXT_TOO_LONG_MESSAGE = `Welcome text must be ${WELCOME_TEXT_MAX_LENGTH} characters or fewer.`;
-
-export const isWelcomeTextTooLong = (
-  welcomeText: string | null | undefined,
-): boolean => (welcomeText?.length ?? 0) > WELCOME_TEXT_MAX_LENGTH;
-
 const BOOKING_SLUG_FALLBACK_MESSAGE =
   "Use 3 to 32 lowercase letters, digits, or hyphens";
 
@@ -212,9 +203,6 @@ export function validateBookingForm({
   const slugMessage = bookingSlugParseMessage(form.slug);
   if (slugMessage) {
     return { field: "address", message: slugMessage };
-  }
-  if (isWelcomeTextTooLong(form.welcomeText)) {
-    return { field: "welcome", message: WELCOME_TEXT_TOO_LONG_MESSAGE };
   }
   if (minNoticeInvalid) {
     return {
