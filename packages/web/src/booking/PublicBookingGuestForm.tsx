@@ -171,7 +171,7 @@ export function PublicBookingGuestForm({
         aria-busy={disabled || undefined}
         className="c-button c-button-primary"
       >
-        {disabled ? "Confirming..." : "Confirm booking"}
+        {disabled ? "Confirming..." : "Confirm meeting"}
       </button>
     </form>
   );

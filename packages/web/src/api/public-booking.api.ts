@@ -27,7 +27,7 @@ import { getErrorStatus } from "@web/api/util/api.util";
 
 export class PublicBookingNotFoundError extends Error {
   constructor() {
-    super("Booking page not found");
+    super("Meeting page not found");
     this.name = "PublicBookingNotFoundError";
   }
 }

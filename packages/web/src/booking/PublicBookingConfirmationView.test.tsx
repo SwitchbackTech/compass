@@ -29,7 +29,7 @@ describe("PublicBookingConfirmationView", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      screen.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Name")).toBeInTheDocument();
     expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe("PublicBookingConfirmationView", () => {
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(screen.queryByText(cancelUrl)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this meeting" }),
     ).toHaveAttribute("href", cancelUrl);
     expect(
       screen.getByRole("button", { name: "Copy cancel link" }),
@@ -72,17 +72,17 @@ describe("PublicBookingConfirmationView", () => {
     );
 
     const heading = screen.getByRole("heading", {
-      name: "You are booked with Tyler Dane",
+      name: "You're meeting with Tyler Dane",
     });
     expect(screen.queryByText(rescheduleUrl)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Reschedule this booking" }),
+      screen.getByRole("link", { name: "Reschedule this meeting" }),
     ).toHaveAttribute("href", rescheduleUrl);
     expect(
       screen.getByRole("button", { name: "Copy reschedule link" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("group", { name: "Booking actions" }),
+      screen.getByRole("group", { name: "Meeting actions" }),
     ).toBeInTheDocument();
 
     heading.focus();
@@ -92,7 +92,7 @@ describe("PublicBookingConfirmationView", () => {
     ).toHaveFocus();
     await user.tab();
     expect(
-      screen.getByRole("link", { name: "Cancel this booking" }),
+      screen.getByRole("link", { name: "Cancel this meeting" }),
     ).toHaveFocus();
     await user.tab();
     expect(
@@ -185,13 +185,13 @@ describe("PublicBookingConfirmationView", () => {
       screen.queryByRole("button", { name: "Copy reschedule link" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "cancel this booking" }),
+      screen.queryByRole("link", { name: "cancel this meeting" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Cancel this booking" }),
+      screen.queryByRole("link", { name: "Cancel this meeting" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Reschedule this booking" }),
+      screen.queryByRole("link", { name: "Reschedule this meeting" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText("A Google Meet invite is on its way to your email."),

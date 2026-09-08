@@ -125,13 +125,13 @@ test.describe("booking v1.5 escape and self-service", () => {
     const captured = await preparePublicBookingCancelPage(page);
 
     await expect(
-      page.getByRole("heading", { name: "Cancel this booking?" }),
+      page.getByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeFocused();
 
     await page.keyboard.press("Escape");
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expect(page).toHaveURL(
       /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
@@ -152,7 +152,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     });
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(page).toHaveURL(
       /\/meet\/confirmed\/000000000000000000000099\?token=abc$/,
@@ -163,7 +163,7 @@ test.describe("booking v1.5 escape and self-service", () => {
       page.getByRole("button", { name: "Copy cancel link" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Cancel this booking" }),
+      page.getByRole("link", { name: "Cancel this meeting" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Edit details" }).click();
@@ -182,7 +182,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     await page.getByRole("button", { name: "Save details" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByText("Grace Hopper")).toBeVisible();
     await expect(page.getByText("bring tea")).toBeVisible();
@@ -210,7 +210,7 @@ test.describe("booking v1.5 escape and self-service", () => {
     await page.keyboard.press("Escape");
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expect(page.getByText("Ada Lovelace")).toBeVisible();
     await expect(page.getByText("Grace Hopper")).toHaveCount(0);
