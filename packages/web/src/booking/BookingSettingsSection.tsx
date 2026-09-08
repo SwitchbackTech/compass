@@ -67,7 +67,6 @@ import {
 import {
   type BookingField,
   bookingFieldAttrs,
-  bookingJumpKeys,
   focusBookingField,
 } from "@web/booking/booking-sequence.fields";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -173,7 +172,6 @@ const buildInitialForm = (
 };
 
 interface BookingSettingsSectionProps {
-  showShortcuts: boolean;
   /**
    * Settings OverlayPanel owns Escape. When this returns true, Settings must
    * not dismiss: the booking form is dirty and the discard dialog is open.
@@ -184,7 +182,6 @@ interface BookingSettingsSectionProps {
 }
 
 export function BookingSettingsSection({
-  showShortcuts,
   dismissGuardRef,
   onDiscardUnsaved,
 }: BookingSettingsSectionProps) {
@@ -496,11 +493,11 @@ export function BookingSettingsSection({
             wasLive
               ? {
                   onCopy: "Saved. Meeting link copied.",
-                  onFail: "Saved. Press Mod U to copy your link.",
+                  onFail: "Saved. Use Copy to share your link.",
                 }
               : {
                   onCopy: "Your meeting page is live. Link copied.",
-                  onFail: "Live. Press Mod U to copy your link.",
+                  onFail: "Live. Use Copy to share your link.",
                 },
           );
         },
@@ -547,16 +544,11 @@ export function BookingSettingsSection({
           isLive={isLive}
           isPending={saveMutation.isPending}
           onToggle={(next) => submit(next)}
-          showShortcuts={showShortcuts}
         />
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <BookingFieldLabel
-              field="duration"
-              htmlFor="booking-duration"
-              showShortcuts={showShortcuts}
-            >
+            <BookingFieldLabel htmlFor="booking-duration">
               Duration
             </BookingFieldLabel>
             <select
@@ -583,9 +575,6 @@ export function BookingSettingsSection({
           <div {...bookingFieldAttrs("timezone")}>
             <BookingTimezoneField
               onChange={(timeZone) => updateForm({ timeZone })}
-              shortcutKeys={
-                showShortcuts ? bookingJumpKeys("timezone") : undefined
-              }
               timeZone={form.timeZone}
             />
           </div>
@@ -598,17 +587,12 @@ export function BookingSettingsSection({
             }
             onDraftDirtyChange={setHoursDraftDirty}
             onValidityChange={setAreHoursValid}
-            shortcutKeys={showShortcuts ? bookingJumpKeys("hours") : undefined}
             value={form.weeklyAvailability}
           />
         </div>
 
         <div>
-          <BookingFieldLabel
-            field="destination"
-            htmlFor="booking-destination-calendar"
-            showShortcuts={showShortcuts}
-          >
+          <BookingFieldLabel htmlFor="booking-destination-calendar">
             Destination calendar
           </BookingFieldLabel>
           <select
@@ -662,16 +646,12 @@ export function BookingSettingsSection({
           ) : null}
         </div>
 
-        <BookingMoreOptions
-          forceOpen={forceOpenMoreOptions}
-          showShortcuts={showShortcuts}
-        >
+        <BookingMoreOptions forceOpen={forceOpenMoreOptions}>
           <BookingAddressField
             bookingUrl={savedPage?.bookingUrl ?? null}
             forceInvalid={saveError?.field === "address"}
             onChange={(nextSlug) => updateForm({ slug: nextSlug })}
             savedSlug={savedSlug}
-            showShortcuts={showShortcuts}
             slug={form.slug ?? ""}
           />
 
@@ -680,15 +660,10 @@ export function BookingSettingsSection({
             blockingCalendarIds={form.blockingCalendarIds}
             connections={connections}
             onToggle={toggleBlockingCalendar}
-            showShortcuts={showShortcuts}
           />
 
           <div>
-            <BookingFieldLabel
-              field="welcome"
-              htmlFor="booking-welcome"
-              showShortcuts={showShortcuts}
-            >
+            <BookingFieldLabel htmlFor="booking-welcome">
               Welcome text
             </BookingFieldLabel>
             <textarea
@@ -732,7 +707,6 @@ export function BookingSettingsSection({
                   updateForm({ minNoticeHours: parsed });
                 }
               }}
-              showShortcuts={showShortcuts}
               value={minNoticeText}
             />
             <BookingNumberField
@@ -750,7 +724,6 @@ export function BookingSettingsSection({
                   updateForm({ maxHorizonDays: parsed });
                 }
               }}
-              showShortcuts={showShortcuts}
               value={horizonText}
             />
           </div>
@@ -760,7 +733,6 @@ export function BookingSettingsSection({
             guestsCanInviteOthers={form.guestsCanInviteOthers}
             maxBookingsPerDay={form.maxBookingsPerDay}
             onChange={updateForm}
-            showShortcuts={showShortcuts}
           />
         </BookingMoreOptions>
 

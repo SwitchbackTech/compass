@@ -28,7 +28,7 @@ Use this guide to validate:
 - toggling event-jump chips (`H`); the mouse is permanently inert (Compass is keyboard-only)
 - toggling the sidebar (])
 - undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
-- jumping Meeting settings sections with hold-Mod (`Mod+4` through `Mod+9`, `Mod+U`)
+- confirming Settings > Meeting hold-Mod reveals only sidebar digits and Save Enter
 - confirming that shortcuts do not fire while typing in inputs
 
 Do not use this guide to validate:
@@ -482,25 +482,25 @@ With a grid event focused (form closed, not typing in an input), Cmd+C (Mac) or 
 
 ---
 
-## Scenario 18: Jump Meeting Settings With Hold-Mod
+## Scenario 18: Settings Meeting Hold-Mod Chips
 
 ### UX
 
-Settings > Meeting uses hold-Mod section chords. Settings nav still owns digits `1` / `2` / `3`. `Mod+4` through `Mod+9` jump to on or off, Duration, Timezone, Weekly hours, Destination calendar, and More options. `Mod+U` copies the meeting link. Save is Mod+Enter. Meeting settings do not use a letter leader.
+Settings > Meeting hold-Mod reveals only sidebar digits `1` / `2` / `3` and Enter on Save. `Mod+4` through `Mod+9` and `Mod+U` do nothing. Save is Mod+Enter. Meeting settings do not use a letter leader.
 
 ### Steps
 
 1. Open Settings and go to Meeting with the page already configured and live.
-2. Hold Mod until the section chips appear.
+2. Hold Mod until the chips appear.
 3. Press `5`.
 4. Press `U` while Mod is still held.
 
 ### Expected Results
 
-- Chips `4` through `9` and `U` appear while Mod is held. The nav hint **Hold Mod to see shortcuts.** hides while chips are visible.
-- `Mod+5` focuses Duration.
-- `Mod+U` copies the meeting link.
-- Releasing Mod hides the chips and restores the nav hint.
+- Chips `1`, `2` (when billing is present), `3`, and the save bar's `Enter` appear while Mod is held. The nav hint **Hold Mod to see shortcuts.** hides while chips are visible. No Meeting field, legend, summary, or icon button shows a chip.
+- `Mod+5` changes focus to nothing and toggles nothing.
+- `Mod+U` does not write to the clipboard.
+- Releasing Mod hides the nav chips and restores the nav hint.
 
 ---
 
@@ -529,4 +529,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 19. `Z` opens time travel in Day and Week view; Cmd+Z / Ctrl+Z still undoes and does not open the picker.
 20. On Day view, hold Mod then a column digit (2+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
 21. Cmd+C / Ctrl+C copies a focused event; Cmd+V / Ctrl+V pastes a duplicate at the original time without requiring focus. A later copy replaces the clipboard. Empty paste is a no-op. Copy/paste do not fire while typing in an input (native text clipboard). Cmd+D is unchanged.
-22. In Settings > Meeting, hold Mod to reveal chips `4`–`9` and `U`; `Mod+5` focuses Duration; `Mod+U` copies the meeting link.
+22. In Settings > Meeting, hold Mod to reveal chips `1`/`2`/`3` and Enter; `Mod+5` focuses nothing; `Mod+U` does not copy.

@@ -1,8 +1,5 @@
 import { BookingCopyLink } from "@web/booking/BookingCopyLink";
-import {
-  bookingFieldAttrs,
-  bookingJumpKeys,
-} from "@web/booking/booking-sequence.fields";
+import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 import { Switch } from "@web/components/Switch/Switch";
 
 interface BookingStatusHeaderProps {
@@ -11,7 +8,6 @@ interface BookingStatusHeaderProps {
   onToggle: (next: boolean) => void;
   bookingUrl: string | null;
   addressPreview: string | null;
-  showShortcuts?: boolean;
 }
 
 export function BookingStatusHeader({
@@ -20,7 +16,6 @@ export function BookingStatusHeader({
   onToggle,
   bookingUrl,
   addressPreview,
-  showShortcuts = false,
 }: BookingStatusHeaderProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -31,17 +26,11 @@ export function BookingStatusHeader({
         id="booking-meeting-page"
         label="Meeting page"
         onCheckedChange={onToggle}
-        shortcutKeys={showShortcuts ? bookingJumpKeys("enabled") : undefined}
       />
       {isLive ? (
         <>
           <p className="text-sm text-text">Live at</p>
-          {bookingUrl ? (
-            <BookingCopyLink
-              bookingUrl={bookingUrl}
-              showShortcuts={showShortcuts}
-            />
-          ) : null}
+          {bookingUrl ? <BookingCopyLink bookingUrl={bookingUrl} /> : null}
         </>
       ) : (
         <>

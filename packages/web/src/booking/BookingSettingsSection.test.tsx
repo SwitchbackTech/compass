@@ -134,18 +134,14 @@ const healthyGoogleMetadata = {
   },
 };
 
-function BookingSettingsWithShortcuts({
-  showShortcuts = false,
-}: {
-  showShortcuts?: boolean;
-}) {
+function BookingSettingsWithShortcuts() {
   useSettingsShortcuts({
     enabled: true,
     hasBilling: false,
     hasBooking: true,
     page: "booking",
   });
-  return <BookingSettingsSection showShortcuts={showShortcuts} />;
+  return <BookingSettingsSection />;
 }
 
 function findStickyAncestor(element: HTMLElement): HTMLElement | null {
@@ -188,7 +184,7 @@ describe("BookingSettingsSection", () => {
     const { wrapper } = createStoreWrapper();
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -216,7 +212,7 @@ describe("BookingSettingsSection", () => {
     const { wrapper } = createStoreWrapper();
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -262,7 +258,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -314,7 +310,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -388,7 +384,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -459,7 +455,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -533,7 +529,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -580,7 +576,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -604,7 +600,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -661,7 +657,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -714,7 +710,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -751,7 +747,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -833,7 +829,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -872,7 +868,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -917,7 +913,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -953,7 +949,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     const view = render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -998,7 +994,7 @@ describe("BookingSettingsSection", () => {
     live.queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper: live.wrapper },
     );
@@ -1023,7 +1019,7 @@ describe("BookingSettingsSection", () => {
     const { wrapper } = createStoreWrapper();
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1067,7 +1063,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1110,7 +1106,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1180,7 +1176,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1210,7 +1206,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1246,7 +1242,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1285,7 +1281,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1359,7 +1355,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1375,6 +1371,131 @@ describe("BookingSettingsSection", () => {
 
     const durationLabel = screen.getByText("Duration");
     expect(within(durationLabel).queryByText("5")).not.toBeInTheDocument();
+  });
+
+  it("does not render shortcut chips on field labels, legends, or More options", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json({ ...savedOffPage(), enabled: true })),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByText(BOOKING_MORE_OPTIONS_LABEL));
+
+    for (const caption of [
+      "Duration",
+      "Meeting timezone",
+      "Weekly hours",
+      "Destination calendar",
+      "Page address",
+      "Blocking calendars",
+      "Welcome text",
+      "Minimum notice (hours)",
+      "Maximum horizon (days)",
+      "Buffer and limits",
+    ]) {
+      const node = screen.getByText(caption);
+      expect(within(node).queryByText("4", { exact: true })).toBeNull();
+      expect(within(node).queryByText("5", { exact: true })).toBeNull();
+      expect(within(node).queryByText("6", { exact: true })).toBeNull();
+      expect(within(node).queryByText("7", { exact: true })).toBeNull();
+      expect(within(node).queryByText("8", { exact: true })).toBeNull();
+      expect(within(node).queryByText("9", { exact: true })).toBeNull();
+      expect(within(node).queryByText("U", { exact: true })).toBeNull();
+    }
+    expect(
+      within(screen.getByText(BOOKING_MORE_OPTIONS_LABEL)).queryByText("9", {
+        exact: true,
+      }),
+    ).toBeNull();
+  });
+
+  it("does not copy the meeting link with Mod+U", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json({ ...savedOffPage(), enabled: true })),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsWithShortcuts />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("button", { name: "Copy meeting link" });
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}u{/${modKey}}`);
+
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it("toasts Use Copy to share your link when the clipboard fails after going live", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const writeText = mock(() => Promise.reject(new Error("denied")));
+    setClipboard({ writeText });
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
+
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("switch", { name: "Meeting page" }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledWith(
+        "Live. Use Copy to share your link.",
+        expect.any(Object),
+      );
+    });
   });
 
   it("copies the booking link after a save that returns one", async () => {
@@ -1408,7 +1529,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1451,7 +1572,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1494,7 +1615,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1535,7 +1656,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1584,7 +1705,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1639,7 +1760,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1672,7 +1793,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1711,7 +1832,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1745,7 +1866,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1782,7 +1903,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1819,7 +1940,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1888,7 +2009,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1941,7 +2062,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -1986,7 +2107,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2038,7 +2159,7 @@ describe("BookingSettingsSection", () => {
 
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2102,7 +2223,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2173,7 +2294,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2217,7 +2338,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2272,7 +2393,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2291,7 +2412,7 @@ describe("BookingSettingsSection", () => {
     ).toHaveAttribute("aria-checked", "false");
   });
 
-  it("Mod+4 focuses the switch without toggling it", async () => {
+  it("does not focus or toggle the switch with Mod+4", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
     server.use(
@@ -2317,7 +2438,7 @@ describe("BookingSettingsSection", () => {
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
     await user.keyboard(`{${modKey}>}4{/${modKey}}`);
 
-    expect(control).toHaveFocus();
+    expect(control).not.toHaveFocus();
     expect(control).toHaveAttribute("aria-checked", "false");
   });
 
@@ -2333,7 +2454,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2357,7 +2478,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );
@@ -2395,7 +2516,7 @@ describe("BookingSettingsSection", () => {
     queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
     render(
       <HotkeysProvider>
-        <BookingSettingsSection showShortcuts={false} />
+        <BookingSettingsSection />
       </HotkeysProvider>,
       { wrapper },
     );

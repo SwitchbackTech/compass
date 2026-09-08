@@ -2,19 +2,14 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type SyncConnectionSummary } from "@core/types/user.types";
 import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
-import {
-  bookingFieldAttrs,
-  bookingJumpKeys,
-} from "@web/booking/booking-sequence.fields";
+import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 import { groupCalendarsByAccount } from "@web/calendars/calendar.util";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface BookingBlockingCalendarsFieldProps {
   availabilityCalendars: Calendar[];
   blockingCalendarIds: readonly CalendarId[];
   connections: SyncConnectionSummary[];
   onToggle: (calendarId: CalendarId, checked: boolean) => void;
-  showShortcuts: boolean;
 }
 
 export function BookingBlockingCalendarsField({
@@ -22,7 +17,6 @@ export function BookingBlockingCalendarsField({
   blockingCalendarIds,
   connections,
   onToggle,
-  showShortcuts,
 }: BookingBlockingCalendarsFieldProps) {
   const blockingSet = new Set(blockingCalendarIds);
   const { groups, ungrouped } = groupCalendarsByAccount(
@@ -45,12 +39,7 @@ export function BookingBlockingCalendarsField({
       className="flex flex-col gap-2"
       {...bookingFieldAttrs("blocking")}
     >
-      <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-        Blocking calendars
-        {showShortcuts ? (
-          <ShortcutKeys keys={bookingJumpKeys("blocking")} />
-        ) : null}
-      </legend>
+      <legend className="mb-1 text-sm text-text">Blocking calendars</legend>
       {availabilityCalendars.length === 0 ? (
         <p className="text-sm text-text-muted">No calendars available.</p>
       ) : (

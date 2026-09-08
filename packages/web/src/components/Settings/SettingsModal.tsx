@@ -268,7 +268,6 @@ export const SettingsModal: FC = () => {
               <BookingSettingsSection
                 dismissGuardRef={bookingDismissGuardRef}
                 onDiscardUnsaved={dismissToPalette}
-                showShortcuts={areHintsVisible}
               />
             </Suspense>
           ) : (

@@ -266,14 +266,12 @@ time inputs per weekday.
   unassigned. A weekday belongs to at most one row. Days in no row are
   unavailable. The parser reuses `parseUserTime` with an explicit
   PM-correction rule.
-- **Jump:** hold Mod to see section chips. `Mod+4` through `Mod+9`
-  jump to on or off, Duration, Timezone, Weekly hours, Destination
-  calendar, and More options (`Mod+9` opens the group and focuses the
-  first control inside). `Mod+U` copies the meeting link (click, not
-  only focus). Save stays Mod+Enter. Fields inside More options have
-  no chord. Settings nav still owns digits `1/2/3`. Focus uses
-  `data-booking-field` and does not click, so jumping onto a checkbox
-  does not toggle it. Before focusing, the helper opens any ancestor
+- **Jump:** hold Mod to see sidebar digits `1/2/3` and Enter on Save
+  (or Continue). Meeting fields, legends, summaries, and the Copy
+  button have no shortcut chips. `Mod+4` through `Mod+9` and `Mod+U`
+  do nothing. Save stays Mod+Enter. Save-error focus still uses
+  `data-booking-field` and does not click, so focusing a checkbox does
+  not toggle it. Before focusing, the helper opens any ancestor
   `<details>`. The Settings nav shows one hint, **Hold Mod to see
   shortcuts.**, while chips are hidden.
 - **Turn on / Save:** going live is one click on the Meeting page
@@ -283,12 +281,12 @@ time inputs per weekday.
   bar and focus the offending field. A failed enable leaves the switch
   off.
 - **Toasts:** turning on copies the link (`Your meeting page is live.
-  Link copied.`, or `Live. Press Mod U to copy your link.` if the
-  clipboard fails). Save changes while on copies the link with Saved
-  copy. Turn off says `Meeting page turned off.` Save changes while
-  off says `Saved. Turn on your meeting page to share the link.`
-  Safari can drop a copy that follows the save round trip; the Copy
-  button stays.
+  Link copied.`, or `Live. Use Copy to share your link.` if the
+  clipboard fails). Save changes while on copies the link, or
+  `Saved. Use Copy to share your link.` if the clipboard fails. Turn
+  off says `Meeting page turned off.` Save changes while off says
+  `Saved. Turn on your meeting page to share the link.` Safari can
+  drop a copy that follows the save round trip; the Copy button stays.
 - **Open meeting page** sits next to Copy and opens the public URL in a
   new tab. There is no authenticated preview iframe.
 - **Discard:** Escape on a dirty Booking form opens **Discard unsaved
@@ -544,11 +542,6 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
-- **Letter pool is hand-maintained.** `SETTINGS_MOD_LETTER_POOL` in
-  `packages/web/src/booking/booking-sequence.fields.ts` is a comment-backed
-  exclusion list, not derived from the keymap. Adding a Meeting chord
-  means checking that list by hand so it does not collide with editing,
-  find, OS, browser, or app-owned letters.
 
 ## Related docs
 

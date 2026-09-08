@@ -1256,12 +1256,29 @@ export const releaseSettingsMod = async (page: Page) => {
   await page.keyboard.up("Control");
 };
 
-const MEETING_SHORTCUT_CHIPS = ["4", "5", "6", "7", "8", "9", "U"] as const;
+const MEETING_NAV_CHIPS = ["1", "3"] as const;
+const REMOVED_MEETING_SECTION_CHIPS = [
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "U",
+] as const;
 
-/** Assert hold-Mod chips for Meeting sections (`4`–`9`) and copy-link (`U`). */
+/** Assert hold-Mod chips are only sidebar digits and the save bar Enter. */
 export const expectMeetingShortcutChips = async (settingsDialog: Locator) => {
-  for (const key of MEETING_SHORTCUT_CHIPS) {
+  for (const key of MEETING_NAV_CHIPS) {
     await expect(settingsDialog.getByText(key, { exact: true })).toBeVisible();
+  }
+  await expect(
+    settingsDialog
+      .getByRole("button", { name: "Save changes" })
+      .getByText("Enter"),
+  ).toBeVisible();
+  for (const key of REMOVED_MEETING_SECTION_CHIPS) {
+    await expect(settingsDialog.getByText(key, { exact: true })).toHaveCount(0);
   }
 };
 

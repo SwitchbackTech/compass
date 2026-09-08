@@ -1,28 +1,20 @@
 import { ArrowSquareOut, Check, Copy } from "@phosphor-icons/react";
 import { track } from "@web/auth/posthog/track";
-import {
-  bookingFieldAttrs,
-  bookingJumpKeys,
-} from "@web/booking/booking-sequence.fields";
+import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 import { useCopiedFlag } from "@web/booking/use-copied-flag";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import IconButton, {
   iconButtonClassName,
 } from "@web/components/IconButton/IconButton";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface BookingCopyLinkProps {
   bookingUrl: string;
-  showShortcuts?: boolean;
 }
 
 const ICON_SIZE = 18;
 
-export function BookingCopyLink({
-  bookingUrl,
-  showShortcuts = false,
-}: BookingCopyLinkProps) {
+export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
   const { copied, copy } = useCopiedFlag(bookingUrl, (didCopy) => {
     if (didCopy) {
       track("booking_link_copied", { source: "button" });
@@ -55,9 +47,6 @@ export function BookingCopyLink({
             {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
           </IconButton>
         </TooltipWrapper>
-        {showShortcuts ? (
-          <ShortcutKeys className="ml-1" keys={bookingJumpKeys("link")} />
-        ) : null}
         <TooltipWrapper description="Open meeting page">
           <a
             aria-label="Open meeting page"
