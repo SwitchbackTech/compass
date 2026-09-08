@@ -55,7 +55,7 @@ import {
 } from "@web/shortcuts/app-lock";
 import { getPartsPlainText } from "@web/shortcuts/tips/shortcut-tips.data";
 import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
 const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
   .useAppAccess;
@@ -65,8 +65,22 @@ mock.module("@web/billing/useAppAccess", () => ({
     isAppAccessMocked ? { kind: "open" as const } : actualUseAppAccess(...args),
 }));
 
+const mockTrack = mock();
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
+let isTrackMocked = true;
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (...args: Parameters<typeof actualTrack.track>) =>
+    isTrackMocked ? mockTrack(...args) : actualTrack.track(...args),
+}));
+
+afterAll(() => {
+  isTrackMocked = false;
+});
+
 afterEach(() => {
   isAppAccessMocked = true;
+  mockTrack.mockClear();
   setPinnedTimeZone(null);
   clearAppLockReasons();
   setClipboard(originalClipboard);
@@ -901,6 +915,190 @@ describe("BookingSettingsSection", () => {
     await user.keyboard("a");
 
     expect(document.activeElement).toBe(screen.getByLabelText("Page address"));
+  });
+
+  it("fires booking_settings_opened when the connect prompt mounts", () => {
+    setProviderAvailabilityForTests("google", "available", "connect");
+    userMetadataActions.set({
+      google: {
+        connectionState: "NOT_CONNECTED",
+        connections: [],
+      },
+    });
+
+    const { wrapper } = createStoreWrapper();
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(mockTrack).toHaveBeenCalledWith("booking_settings_opened", {
+      has_connection: false,
+      is_live: false,
+    });
+  });
+
+  it("fires booking_settings_opened for a live connected page", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: true,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "America/New_York",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByLabelText("Page address");
+    expect(mockTrack).toHaveBeenCalledWith("booking_settings_opened", {
+      has_connection: true,
+      is_live: true,
+    });
+  });
+
+  it("fires booking_page_enabled with first_time true and copies from save", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    const slug = "hostuser";
+    const bookingUrl = `https://compasscalendar.com/book/${slug}`;
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug,
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
+        first_time: true,
+      });
+    });
+    expect(mockTrack).toHaveBeenCalledWith("booking_link_copied", {
+      source: "save",
+    });
+  });
+
+  it("fires booking_page_enabled with first_time false when a saved page turns on", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            enabled: false,
+            durationMinutes: 30,
+            destinationCalendarId: writableCalendar.id,
+            blockingCalendarIds: [writableCalendar.id],
+            timeZone: "America/New_York",
+            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+            minNoticeHours: 4,
+            maxHorizonDays: 60,
+            bufferMinutes: null,
+            maxBookingsPerDay: null,
+            guestsCanInviteOthers: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) =>
+        res(
+          ctx.json({
+            ...((await req.json()) as Record<string, unknown>),
+            id: createObjectIdString(),
+            slug: "hostuser",
+            hostUserId: createObjectIdString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            bookingUrl,
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection showShortcuts={false} />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
+        first_time: false,
+      });
+    });
   });
 
   it("jumps to a field with the e leader, under the Settings app lock", async () => {

@@ -1,4 +1,5 @@
 import { ArrowSquareOut, Check, Copy } from "@phosphor-icons/react";
+import { track } from "@web/auth/posthog/track";
 import { useCopiedFlag } from "@web/booking/use-copied-flag";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import IconButton, {
@@ -14,6 +15,9 @@ const ICON_SIZE = 18;
 
 export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
   const { copied, copy } = useCopiedFlag(bookingUrl, (didCopy) => {
+    if (didCopy) {
+      track("booking_link_copied", { source: "button" });
+    }
     showStatusToast(
       "booking-link-copied",
       didCopy

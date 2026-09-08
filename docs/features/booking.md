@@ -466,6 +466,20 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
 
+### Analytics
+
+PostHog product events for the nothing-to-live funnel. No guest name, email,
+notes, or reservation id. Autocapture already runs on public `/book/*`
+routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
+
+| Event | Properties | When |
+| --- | --- | --- |
+| `booking_settings_opened` | `has_connection: boolean`, `is_live: boolean` | Settings > Booking mounts (after the page is known, or immediately on the connect prompt) |
+| `booking_page_enabled` | `first_time: boolean` | Turn-on save succeeds. `first_time` is true when the page had no `bookingUrl` before this save |
+| `booking_link_copied` | `source: "button" \| "save"` | Successful copy from the Copy button, or auto-copy after a successful turn-on / save |
+| `booking_page_viewed` | `duration_minutes: number` | Public page query succeeds with `enabled: true`, once per slug |
+| `booking_reservation_created` | `duration_minutes: number` | Guest confirm mutation succeeds |
+
 ### Named warts
 
 - **Public booking rate limits are per process.** `express-rate-limit`

@@ -17,6 +17,7 @@ import {
 } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, TimeZoneSchema } from "@core/types/domain-primitives";
+import { track } from "@web/auth/posthog/track";
 import {
   selectGoogleConnectionState,
   selectSyncConnections,
@@ -383,6 +384,42 @@ export function BookingSettingsSection({
     };
   }, [dismissGuardRef]);
 
+  const settingsOpenedRef = useRef(false);
+  useEffect(() => {
+    if (settingsOpenedRef.current) return;
+    if (!hasHealthyConnection) {
+      settingsOpenedRef.current = true;
+      track("booking_settings_opened", {
+        has_connection: false,
+        is_live: false,
+      });
+      return;
+    }
+    if (
+      isPending ||
+      calendarsPending ||
+      waitingForHostCalendars ||
+      (serverPage != null && seededPageRef.current !== serverPage)
+    ) {
+      return;
+    }
+    settingsOpenedRef.current = true;
+    const isLive =
+      serverPage != null &&
+      "bookingUrl" in serverPage &&
+      serverPage.enabled === true;
+    track("booking_settings_opened", {
+      has_connection: true,
+      is_live: isLive,
+    });
+  }, [
+    calendarsPending,
+    hasHealthyConnection,
+    isPending,
+    serverPage,
+    waitingForHostCalendars,
+  ]);
+
   if (!hasHealthyConnection) {
     return <BookingConnectGooglePrompt />;
   }
@@ -475,8 +512,14 @@ export function BookingSettingsSection({
         },
         onSuccess: (page) => {
           if (enabled && !wasLive) {
+            track("booking_page_enabled", {
+              first_time: savedPage == null,
+            });
             if (!("bookingUrl" in page)) return;
             void copyText(page.bookingUrl).then((didCopy) => {
+              if (didCopy) {
+                track("booking_link_copied", { source: "save" });
+              }
               showStatusToast(
                 "booking-link-copied",
                 didCopy
@@ -499,6 +542,9 @@ export function BookingSettingsSection({
           }
           if (!("bookingUrl" in page)) return;
           void copyText(page.bookingUrl).then((didCopy) => {
+            if (didCopy) {
+              track("booking_link_copied", { source: "save" });
+            }
             showStatusToast(
               "booking-link-copied",
               didCopy
