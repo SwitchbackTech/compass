@@ -366,12 +366,12 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     const address = settingsDialog.getByLabel("Page address");
-    await dispatchFill(address, "ab");
+    await address.fill("ab");
     await address.blur();
     await expect(
-      settingsDialog.getByText(
-        "Use 3 to 32 lowercase letters, digits, or hyphens",
-      ),
+      settingsDialog.getByRole("alert").filter({
+        hasText: "Use 3 to 32 lowercase letters, digits, or hyphens",
+      }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking address error",

@@ -52,7 +52,9 @@ export function BookingAddressField({
       >
         Page address
       </BookingFieldLabel>
-      <div className="flex overflow-hidden rounded border border-border bg-surface-overlay text-sm text-text">
+      <div
+        className={`flex overflow-hidden rounded border bg-surface-overlay text-sm text-text ${showInlineError ? "border-error" : "border-border"}`}
+      >
         <span className="shrink-0 border-border border-r bg-surface-panel px-2 py-1 text-text-muted">
           {prefix}
         </span>
@@ -61,7 +63,7 @@ export function BookingAddressField({
           aria-describedby={showInlineError ? errorId : undefined}
           aria-invalid={showInlineError || undefined}
           autoCapitalize="none"
-          className="c-focus-ring min-w-0 flex-1 bg-transparent px-2 py-1 aria-invalid:text-error"
+          className="c-focus-ring min-w-0 flex-1 bg-transparent px-2 py-1"
           id="booking-address"
           onBlur={() => setBlurred(true)}
           onChange={(event) => onChange(event.target.value.toLowerCase())}
@@ -71,12 +73,19 @@ export function BookingAddressField({
       </div>
       <p className="mt-1 text-text-muted text-xs">{BOOKING_ADDRESS_HELPER}</p>
       {showInlineError && errorMessage ? (
-        <p className="text-error text-xs" id={errorId} role="alert">
+        <p
+          className="rounded border border-error/40 bg-surface-panel px-2 py-1 text-sm text-text"
+          id={errorId}
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
       {showWarning ? (
-        <p className="mt-1 text-sm text-warning" role="status">
+        <p
+          className="mt-1 rounded border border-warning/40 bg-warning/10 px-2 py-1 text-sm text-text"
+          role="status"
+        >
           {BOOKING_ADDRESS_CHANGE_WARNING}
         </p>
       ) : null}
