@@ -1,5 +1,5 @@
 import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
-import { ISO_WEEKDAYS } from "@web/booking/booking.util";
+import { type IsoWeekday } from "@web/booking/booking.util";
 import {
   availabilityFromRows,
   claimWeekday,
@@ -100,8 +100,8 @@ describe("availabilityFromRows", () => {
 describe("claimWeekday", () => {
   test("removes the day from its previous row", () => {
     const rows = [
-      { weekdays: new Set(ISO_WEEKDAYS.slice(0, 5)), text: "9am-5pm" },
-      { weekdays: new Set(), text: "" },
+      { weekdays: new Set<IsoWeekday>([1, 2, 3, 4, 5]), text: "9am-5pm" },
+      { weekdays: new Set<IsoWeekday>(), text: "" },
     ];
     const next = claimWeekday(rows, 1, 1);
     expect(next[0]!.weekdays.has(1)).toBe(false);
