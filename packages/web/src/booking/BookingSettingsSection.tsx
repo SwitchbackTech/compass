@@ -29,6 +29,7 @@ import {
   BookingAddressField,
   bookingAddressPrefix,
 } from "@web/booking/BookingAddressField";
+import { BookingAddressSetup } from "@web/booking/BookingAddressSetup";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectPrompt } from "@web/booking/BookingConnectPrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -45,6 +46,7 @@ import {
   useSaveBookingPageMutation,
 } from "@web/booking/booking.query";
 import {
+  bookingSlugParseMessage,
   defaultBlockingCalendarIdsForDestination,
   getAvailabilityReadableCalendars,
   isBookingSettingsFormDirty,
@@ -84,6 +86,7 @@ import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardU
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
 const MORE_OPTIONS_FIELDS = new Set<BookingField>([
+  "address",
   "blocking",
   "welcome",
   "notice",
@@ -273,6 +276,7 @@ export function BookingSettingsSection({
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
+  const focusSwitchAfterSetupRef = useRef(false);
   // The settings fieldset is disabled while a save is in flight, so focusing
   // from onError is a no-op. Wait until the mutation settles and the field
   // is enabled again.
@@ -280,6 +284,13 @@ export function BookingSettingsSection({
     if (saveMutation.isPending || saveError?.field == null) return;
     focusBookingField(saveError.field);
   }, [saveError, saveMutation.isPending]);
+  useLayoutEffect(() => {
+    if (!focusSwitchAfterSetupRef.current) return;
+    if (serverPage && isUnconfiguredBookingPage(serverPage)) return;
+    if (focusBookingField("enabled")) {
+      focusSwitchAfterSetupRef.current = false;
+    }
+  });
   const sectionRef = useRef<HTMLFieldSetElement>(null);
   const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
@@ -381,6 +392,8 @@ export function BookingSettingsSection({
     return <p className="text-sm text-text-muted">Loading meeting settings…</p>;
   }
 
+  const isSetup = serverPage != null && isUnconfiguredBookingPage(serverPage);
+
   const savedPage = isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
   const savedSlug =
@@ -435,7 +448,7 @@ export function BookingSettingsSection({
     setSaveError(null);
   };
 
-  const submit = (enabled: boolean) => {
+  const submit = (enabled: boolean, options?: { silent?: boolean }) => {
     const error = validateBookingForm({
       areHoursValid,
       enabling: enabled,
@@ -450,21 +463,26 @@ export function BookingSettingsSection({
     }
     setSaveError(null);
     const wasLive = isLive;
+    const silent = options?.silent === true;
+    if (silent) focusSwitchAfterSetupRef.current = true;
     saveMutation.mutate(
       { ...form, enabled },
       {
         onError: (mutationError) => {
+          if (silent) focusSwitchAfterSetupRef.current = false;
           const inline = bookingSaveErrorInline(mutationError);
           if (inline) setSaveError(inline);
         },
         onSuccess: (page) => {
           if (!enabled) {
-            showStatusToast(
-              "booking-link-copied",
-              wasLive
-                ? "Meeting page turned off."
-                : "Saved. Turn on your meeting page to share the link.",
-            );
+            if (!silent) {
+              showStatusToast(
+                "booking-link-copied",
+                wasLive
+                  ? "Meeting page turned off."
+                  : "Saved. Turn on your meeting page to share the link.",
+              );
+            }
             return;
           }
           if (!wasLive) {
@@ -496,6 +514,26 @@ export function BookingSettingsSection({
     horizonInvalid ||
     (saveError?.field != null && MORE_OPTIONS_FIELDS.has(saveError.field));
 
+  if (isSetup) {
+    const parseMessage = bookingSlugParseMessage(form.slug);
+    const setupError =
+      saveError?.field === "address" &&
+      (parseMessage == null || saveError.message !== parseMessage)
+        ? saveError.message
+        : null;
+    return (
+      <BookingAddressSetup
+        bookingUrl={null}
+        error={setupError}
+        forceInvalid={saveError?.field === "address"}
+        isPending={saveMutation.isPending}
+        onChange={(nextSlug) => updateForm({ slug: nextSlug })}
+        onContinue={() => submit(false, { silent: true })}
+        slug={form.slug ?? ""}
+      />
+    );
+  }
+
   return (
     <>
       <fieldset
@@ -510,15 +548,6 @@ export function BookingSettingsSection({
           isPending={saveMutation.isPending}
           onToggle={(next) => submit(next)}
           showShortcuts={showShortcuts}
-        />
-
-        <BookingAddressField
-          bookingUrl={savedPage?.bookingUrl ?? null}
-          forceInvalid={saveError?.field === "address"}
-          onChange={(nextSlug) => updateForm({ slug: nextSlug })}
-          savedSlug={savedSlug}
-          showShortcuts={showShortcuts}
-          slug={form.slug ?? ""}
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -637,6 +666,15 @@ export function BookingSettingsSection({
           forceOpen={forceOpenMoreOptions}
           showShortcuts={showShortcuts}
         >
+          <BookingAddressField
+            bookingUrl={savedPage?.bookingUrl ?? null}
+            forceInvalid={saveError?.field === "address"}
+            onChange={(nextSlug) => updateForm({ slug: nextSlug })}
+            savedSlug={savedSlug}
+            showShortcuts={showShortcuts}
+            slug={form.slug ?? ""}
+          />
+
           <BookingBlockingCalendarsField
             availabilityCalendars={availabilityCalendars}
             blockingCalendarIds={form.blockingCalendarIds}

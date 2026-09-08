@@ -386,6 +386,7 @@ test.describe("settings booking section", () => {
   }) => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByText("More options", { exact: true }).click();
     const address = settingsDialog.getByLabel("Page address");
     await address.click();
     await dispatchFill(address, "ab");
@@ -406,6 +407,7 @@ test.describe("settings booking section", () => {
   }) => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await settingsDialog.getByText("More options", { exact: true }).click();
     await dispatchFill(
       settingsDialog.getByLabel("Page address"),
       "new-address",
@@ -449,7 +451,6 @@ test.describe("settings booking section", () => {
     page,
   }) => {
     await prepareSignedInBookingSettingsPage(page, {
-      configured: false,
       enabled: false,
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
@@ -474,6 +475,58 @@ test.describe("settings booking section", () => {
     await expect(settingsDialog.getByLabel("Welcome text")).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking more options",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run address setup has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(
+      settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run address",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run taken-address error has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    await page.route("**/api/booking/page", async (route) => {
+      if (route.request().method() === "PUT") {
+        return route.fulfill({
+          status: 409,
+          contentType: "application/json",
+          body: JSON.stringify({
+            code: "SLUG_TAKEN",
+            message: "taken",
+          }),
+        });
+      }
+      return route.fallback();
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    );
+    await expect(
+      settingsDialog.getByRole("alert").filter({
+        hasText: "That address is already taken",
+      }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run slug taken",
       include: "[role='dialog']",
     });
   });

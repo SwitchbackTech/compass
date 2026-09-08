@@ -71,10 +71,13 @@ Reserved slugs (never allocated): `week`, `day`, `life`, `auth`, `api`,
 
 Compass users have `name` and `email`, not a username
 (`packages/core/src/types/user.types.ts`). When the host opens Booking
-Settings, the setup response includes a `suggestedSlug` derived from their
-account so the address is visible before the page is first enabled. The
-host may replace it on any save; a draft keeps its chosen address even
-while disabled.
+Settings for the first time, a guided screen shows the suggested address
+from `suggestedSlug` under the `.../meet/` prefix. **Continue**
+(Mod+Enter) saves a draft (`PUT` with `enabled: false` and the seeded
+defaults) so "That address is already taken" shows on that screen.
+Reopening Settings later lands on the normal page with the switch off.
+The host may replace the address later under More options; a draft keeps
+its chosen address even while disabled.
 
 When no slug is stored yet and the host enables without choosing one,
 allocate `bookingSlug` once:
@@ -240,13 +243,19 @@ time inputs per weekday.
   live. When on, it shows "Live at" and the meeting link with Copy and
   **Open meeting page**. When off, it shows "Off. Turn it on to share
   your link." and the address the page will use.
-- **Essentials:** Page address, duration, meeting timezone, weekly hours, and
+- **Essentials:** duration, meeting timezone, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
 - **More options:** an uncontrolled native `<details>` that starts
-  collapsed. It holds blocking calendars, welcome text, notice and
-  horizon, and buffer and limits. Jumping to a field inside it, or an
-  invalid field in the group, opens it. Do not control the `open` prop
-  from React: the jump-key code opens the element imperatively.
+  collapsed. It holds page address (with "Links using your old address
+  will stop working." when the slug changes), blocking calendars,
+  welcome text, notice and horizon, and buffer and limits. Jumping to a
+  field inside it, or an invalid field in the group, opens it. Do not
+  control the `open` prop from React: the jump-key code opens the
+  element imperatively.
+- **First run:** before any draft exists, the Meeting tab is only the
+  address screen: heading "Your meeting page", one sentence, the address
+  field, the helper, and **Continue**. There is no switch, duration, or
+  hours editor until Continue saves the draft.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
 - **Weekly hours** are grouped rows of day pills plus one typed range
