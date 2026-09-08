@@ -30,7 +30,7 @@ export const BOOKING_DESTINATION_CONFERENCE_SUFFIX: Record<
 };
 
 export const BOOKING_APPLE_DESTINATION_HINT =
-  "Bookings on an iCloud calendar are created without a video link. Add one in the booking notes if you need it.";
+  "Meetings on an iCloud calendar are created without a video link. Add one in the meeting notes if you need it.";
 
 export const BOOKING_NO_CONFERENCE_WARNING: Record<CalendarProvider, string> = {
   local:

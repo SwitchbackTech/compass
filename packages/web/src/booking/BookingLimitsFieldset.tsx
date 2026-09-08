@@ -52,7 +52,7 @@ export function BookingLimitsFieldset({
           })
         }
       >
-        Max bookings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
+        Max meetings per day ({DEFAULT_MAX_BOOKINGS_PER_DAY})
       </BookingCheckboxRow>
 
       <BookingCheckboxRow

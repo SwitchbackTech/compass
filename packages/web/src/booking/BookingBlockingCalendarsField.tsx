@@ -67,7 +67,7 @@ export function BookingBlockingCalendarsField({
         </>
       )}
       <p className="text-text-muted text-xs">
-        Pending, maybe, and declined invites do not hold booking times. Accepted
+        Pending, maybe, and declined invites do not hold meeting times. Accepted
         invites and events the host organizes do.
       </p>
     </fieldset>

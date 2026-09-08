@@ -22,7 +22,7 @@ describe("toBookingErrorResponse", () => {
     const { status, body } = toBookingErrorResponse(
       bookingError(
         "AVAILABILITY_REQUIRED",
-        "Add weekly hours before turning on your booking page",
+        "Add weekly hours before turning on your meeting page",
       ),
     );
     expect(status).toBe(Status.BAD_REQUEST);
@@ -33,7 +33,7 @@ describe("toBookingErrorResponse", () => {
     const next = toBookingErrorResponse(
       bookingError(
         "CALENDAR_NOT_CONNECTED",
-        "Connect a healthy calendar account before enabling booking",
+        "Connect a healthy calendar account before enabling your meeting page",
       ),
     );
     const alias = toBookingErrorResponse(

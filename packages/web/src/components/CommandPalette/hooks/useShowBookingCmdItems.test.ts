@@ -53,7 +53,7 @@ describe("useShowBookingCmdItems", () => {
   it("opens Settings on Booking from the command palette item", () => {
     const { result } = renderHook(() => useShowBookingCmdItems());
 
-    expect(result.current[0].label).toBe("Booking settings");
+    expect(result.current[0].label).toBe("Meeting settings");
     expect(result.current[0].icon).toBe(CalendarIcon);
     expect(result.current[0].keywords).toContain("availability");
     expect(result.current[0].keywords).toContain("meeting link");

@@ -194,7 +194,7 @@ describe("BookingSettingsSection", () => {
     );
 
     expect(
-      screen.getByText(/Connect a Google account to enable your booking page/),
+      screen.getByText(/Connect a Google account to enable your meeting page/),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: CONNECT_CALENDAR_LABEL.google }),
@@ -270,7 +270,7 @@ describe("BookingSettingsSection", () => {
     expect(await screen.findByLabelText("Duration")).toBeInTheDocument();
     expect(
       screen.queryByText(
-        /Connect a Google account to enable your booking page/,
+        /Connect a Google account to enable your meeting page/,
       ),
     ).not.toBeInTheDocument();
   });
@@ -351,10 +351,10 @@ describe("BookingSettingsSection", () => {
       });
     });
 
-    expect(await screen.findByLabelText("Public booking link")).toHaveValue(
+    expect(await screen.findByLabelText("Meeting link")).toHaveValue(
       bookingUrl,
     );
-    const openLink = screen.getByRole("link", { name: "Open booking page" });
+    const openLink = screen.getByRole("link", { name: "Open meeting page" });
     expect(openLink).toHaveAttribute("href", bookingUrl);
     expect(openLink).toHaveAttribute("target", "_blank");
   });
@@ -402,7 +402,7 @@ describe("BookingSettingsSection", () => {
     const hint = await screen.findByText(
       getPartsPlainText(BOOKING_SETTINGS_HINT_PARTS),
     );
-    const publicLink = screen.getByLabelText("Public booking link");
+    const publicLink = screen.getByLabelText("Meeting link");
     const save = screen.getByRole("button", {
       name: BOOKING_SAVE_CHANGES_LABEL,
     });
@@ -590,7 +590,7 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Pending, maybe, and declined invites do not hold booking times. Accepted invites and events the host organizes do.",
+        "Pending, maybe, and declined invites do not hold meeting times. Accepted invites and events the host organizes do.",
       ),
     ).toBeInTheDocument();
 
@@ -643,9 +643,9 @@ describe("BookingSettingsSection", () => {
     );
 
     const trigger = await screen.findByRole("button", {
-      name: /^Booking timezone:/,
+      name: /^Meeting timezone:/,
     });
-    expect(trigger).toHaveAccessibleName("Booking timezone: Chicago (CDT)");
+    expect(trigger).toHaveAccessibleName("Meeting timezone: Chicago (CDT)");
   });
 
   it("keeps a configured page's stored timezone even when it is UTC", async () => {
@@ -686,9 +686,9 @@ describe("BookingSettingsSection", () => {
     );
 
     const trigger = await screen.findByRole("button", {
-      name: /^Booking timezone:/,
+      name: /^Meeting timezone:/,
     });
-    expect(trigger).toHaveAccessibleName("Booking timezone: UTC (UTC)");
+    expect(trigger).toHaveAccessibleName("Meeting timezone: UTC (UTC)");
   });
 
   it("shows the suggested address before the page is live and is not dirty", async () => {
@@ -1214,7 +1214,7 @@ describe("BookingSettingsSection", () => {
     await user.keyboard("z");
 
     expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: /^Booking timezone:/ }),
+      screen.getByRole("button", { name: /^Meeting timezone:/ }),
     );
   });
 
@@ -1239,10 +1239,10 @@ describe("BookingSettingsSection", () => {
     await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
 
     await user.click(
-      screen.getByRole("button", { name: /^Booking timezone:/ }),
+      screen.getByRole("button", { name: /^Meeting timezone:/ }),
     );
     const search = await screen.findByRole("combobox", {
-      name: "Search booking timezones",
+      name: "Search meeting timezones",
     });
     await waitFor(() => expect(search).toHaveFocus());
 
@@ -1255,7 +1255,7 @@ describe("BookingSettingsSection", () => {
 
     expect(search).toHaveFocus();
     expect(
-      screen.getByRole("combobox", { name: "Search booking timezones" }),
+      screen.getByRole("combobox", { name: "Search meeting timezones" }),
     ).toBeInTheDocument();
   });
 
@@ -1832,7 +1832,7 @@ describe("BookingSettingsSection", () => {
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Choose a destination calendar before enabling booking.",
+      "Choose a destination calendar before enabling your meeting page.",
     );
   });
 
@@ -1874,7 +1874,7 @@ describe("BookingSettingsSection", () => {
 
     const hoursAlert = screen.getByRole("alert");
     expect(hoursAlert).toHaveTextContent(
-      "Add weekly hours before turning on your booking page.",
+      "Add weekly hours before turning on your meeting page.",
     );
     expect(findStickyAncestor(hoursAlert)).not.toBeNull();
     expect(putCount).toBe(0);
@@ -1942,7 +1942,7 @@ describe("BookingSettingsSection", () => {
           ctx.json({
             code: "CALENDAR_NOT_CONNECTED",
             message:
-              "Connect a healthy calendar account before enabling booking",
+              "Connect a healthy calendar account before enabling your meeting page",
           }),
         ),
       ),
@@ -1968,7 +1968,7 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(mocks.error).toHaveBeenCalledWith(
-        "Could not save booking settings. Please try again.",
+        "Could not save meeting settings. Please try again.",
         expect.any(Object),
       );
     });
@@ -2205,7 +2205,7 @@ describe("BookingSettingsSection", () => {
     });
     expect(writeText).toHaveBeenCalledWith(bookingUrl);
     expect(mocks.toast).toHaveBeenCalledWith(
-      "Your booking page is live. Link copied.",
+      "Your meeting page is live. Link copied.",
       expect.any(Object),
     );
   });

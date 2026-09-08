@@ -60,7 +60,7 @@ import { getSyncServiceClient } from "@backend/common/services/sync-service/sync
 const logger = Logger("app:booking.public");
 
 const GUEST_PAGE_NOT_ACCEPTING_BOOKINGS =
-  "This page is not accepting bookings.";
+  "This page is not accepting meetings.";
 
 const isBillingRequiredError = (error: unknown): boolean =>
   error instanceof BaseError && error.code === "BILLING_REQUIRED";
@@ -158,7 +158,7 @@ const resolveEnabledPage = async (
 ): Promise<BookingPageRecord & { bookingSlug: string }> => {
   const record = await bookingPageRepository.findBySlug(slug);
   if (!record?.bookingSlug || !record.enabled) {
-    throw bookingError("PAGE_NOT_FOUND", "Booking page not found");
+    throw bookingError("PAGE_NOT_FOUND", "Meeting page not found");
   }
   return { ...record, bookingSlug: record.bookingSlug };
 };
@@ -170,7 +170,7 @@ const getHostDisplayName = async (userId: ObjectId): Promise<string> => {
   );
   const name = user?.name?.trim();
   if (!name) {
-    throw bookingError("PAGE_NOT_FOUND", "Booking page not found");
+    throw bookingError("PAGE_NOT_FOUND", "Meeting page not found");
   }
   return name;
 };
@@ -556,7 +556,7 @@ export class PublicBookingService {
     if (!availability.bookable) {
       throw bookingError(
         "SLOT_UNAVAILABLE",
-        "Booking is temporarily unavailable",
+        "Meeting is temporarily unavailable",
       );
     }
 

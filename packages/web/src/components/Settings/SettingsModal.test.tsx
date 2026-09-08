@@ -673,13 +673,13 @@ describe("SettingsModal", () => {
   it("shows Booking for a signed-in user", () => {
     renderSettings({ authenticated: true });
 
-    expect(screen.getByRole("button", { name: "Booking" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Meeting" })).toBeInTheDocument();
   });
 
   it("hides Booking for a signed-out session", () => {
     renderSettings({ authenticated: false });
 
-    expect(screen.queryByRole("button", { name: "Booking" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Meeting" })).toBeNull();
   });
 
   it.each([
@@ -964,7 +964,7 @@ describe("SettingsModal", () => {
     renderSettings({ authenticated: true, page: "booking" });
 
     expect(
-      await screen.findByText("Loading booking settings\u2026"),
+      await screen.findByText("Loading meeting settings\u2026"),
     ).toBeInTheDocument();
   });
 
