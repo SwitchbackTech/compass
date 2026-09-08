@@ -80,10 +80,17 @@ em-dashes in any user-facing string.
 
 ## Validate
 
-Run the WP's verify commands and `bun run verify --strict`. The final
-line must be `VERDICT: PASS` before you label the PR; `INCOMPLETE` means
-Chromium is missing (`bunx playwright install chromium`, rerun). Retry at
-most twice.
+Run the WP's verify commands and `bun run verify --strict`. `INCOMPLETE`
+means Chromium is missing (`bunx playwright install chromium`, rerun).
+Retry at most twice.
+
+The local verdict is evidence; CI is the gate. A sandbox slow enough to
+blow Playwright's 30s budget fails specs the diff cannot reach, and that
+is the sandbox failing, not the change. When every failure is a timeout
+(`page.goto`, `waitForLoadState`, axe `frame.evaluate`) rather than an
+assertion, and none lands in a file the diff can affect, name the specs
+and that evidence in the PR and ship anyway. Anything you cannot show is
+environmental is a real failure and blocks.
 
 ## CI rules
 
@@ -106,15 +113,19 @@ Open a **draft** PR against `main`. Body:
 - `Fixes #<issue>`
 - Filled `.github/PULL_REQUEST_TEMPLATE.md` from executed evidence
 
-After `bun run verify` is PASS, mark the PR ready (`gh pr ready`) and
-add the label `agent-automerge`, then stop. Copilot review runs on
-ready PRs only (`review_draft_pull_requests: false` on ruleset 8388539).
-Do not leave the PR draft waiting for a human look.
+Once Validate is satisfied, mark the PR ready (`gh pr ready`), add the
+label `agent-automerge`, and enable auto-merge yourself
+(`gh pr merge --auto --squash`). Copilot review runs on ready PRs only
+(`review_draft_pull_requests: false` on ruleset 8388539). Do not leave the
+PR draft waiting for a human look.
 
-The merge guard checks size and that `main` is not red, then enables GitHub
-auto-merge; GitHub squash-merges when the required checks pass, and the
-merge launches the next WP. Do not merge the PR yourself and do not wait
-for CI.
+`main` takes changes only through the merge queue, so a direct merge is
+refused by rule; the queue squash-merges when the required checks pass, and
+the merge launches the next WP. The merge guard's size rails and its
+main-is-not-red check are the gate, and they stay. Path prefixes are not a
+gate: no denylist exists in this repo, so do not look for one or hold a PR
+because you cannot find it. Do not wait for CI, and do not wait for a human
+on a PR that is green and mergeable.
 
 ## Staging (`https://staging.compasscalendar.com`)
 
