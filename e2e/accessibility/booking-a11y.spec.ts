@@ -4,12 +4,15 @@ import {
   dispatchBlur,
   dispatchClick,
   dispatchFill,
+  expectMeetingShortcutChips,
   formatSlotButtonLabel,
+  holdSettingsMod,
   preparePublicBookingCancelPage,
   preparePublicBookingConfirmedPage,
   preparePublicBookingPage,
   preparePublicBookingReschedulePage,
   prepareSignedInBookingSettingsPage,
+  releaseSettingsMod,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
@@ -445,6 +448,27 @@ test.describe("settings booking section", () => {
       checkpoint: "settings booking connect pills",
       include: "[role='dialog']",
     });
+  });
+
+  test("hold-Mod chips have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(
+      settingsDialog.getByRole("switch", { name: "Meeting page" }),
+    ).toHaveAttribute("aria-checked", "true");
+
+    await holdSettingsMod(page);
+    try {
+      await expectMeetingShortcutChips(settingsDialog);
+      await expectNoAxeViolations(page, {
+        checkpoint: "settings booking hold-mod chips",
+        include: "[role='dialog']",
+      });
+    } finally {
+      await releaseSettingsMod(page);
+    }
   });
 
   test("not-live status has no automatically detectable accessibility violations", async ({

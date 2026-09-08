@@ -6,7 +6,10 @@ import {
   dispatchBlur,
   dispatchClick,
   dispatchFill,
+  expectMeetingShortcutChips,
+  holdSettingsMod,
   prepareSignedInBookingSettingsPage,
+  releaseSettingsMod,
 } from "./booking-harness";
 
 test.use({ viewport: { width: 1600, height: 900 } });
@@ -179,6 +182,79 @@ test("turns on a not-live page in one click", async ({ page }) => {
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({ enabled: true });
+});
+
+test("first visit: address, hours, switch on", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const captured = await prepareSignedInBookingSettingsPage(page, {
+    configured: false,
+    enabled: false,
+  });
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(
+    settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+  ).toBeVisible();
+  await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
+    "hostuser",
+  );
+
+  await dispatchClick(settingsDialog.getByRole("button", { name: /Continue/ }));
+
+  await expect.poll(() => captured.putBodies.length).toBe(1);
+  expect(captured.putBodies[0]).toMatchObject({
+    enabled: false,
+    slug: "hostuser",
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+  });
+
+  const meetingSwitch = settingsDialog.getByRole("switch", {
+    name: "Meeting page",
+  });
+  await expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
+
+  const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
+  await dispatchFill(hours, "10-6");
+  await dispatchBlur(hours);
+  await expect(hours).toHaveValue("10am-6pm");
+
+  const editedHours = ([1, 2, 3, 4, 5] as const).map((weekday) => ({
+    weekday,
+    start: "10:00",
+    end: "18:00",
+  }));
+
+  await dispatchClick(meetingSwitch);
+
+  await expect.poll(() => captured.putBodies.length).toBe(2);
+  expect(captured.putBodies[1]).toMatchObject({
+    enabled: true,
+    weeklyAvailability: editedHours,
+  });
+
+  await expect(settingsDialog.getByText("Live at")).toBeVisible();
+  await expect(
+    page.getByText("Your meeting page is live. Link copied."),
+  ).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toHaveValue("https://compasscalendar.com/meet/hostuser");
+  await expect
+    .poll(async () => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe("https://compasscalendar.com/meet/hostuser");
+
+  await holdSettingsMod(page);
+  try {
+    await expectMeetingShortcutChips(settingsDialog);
+  } finally {
+    await releaseSettingsMod(page);
+  }
+
+  await page.goto("/book/hostuser?token=abc", {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(page).toHaveURL(/\/meet\/hostuser/);
+  expect(new URL(page.url()).searchParams.get("token")).toBe("abc");
 });
 
 test("turns a not-live unconfigured page on in one click", async ({ page }) => {
