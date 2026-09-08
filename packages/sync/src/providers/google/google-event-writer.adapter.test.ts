@@ -252,6 +252,23 @@ describe("GoogleEventWriter", () => {
     );
   });
 
+  it("maps a 400 on create to unsupportedCapability with Google's status and reason", async () => {
+    const api = new FakeEventsApi({ insert: gError(400, "invalid") });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .createEvent(baseCreate)
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error).toBeInstanceOf(ProviderWriteError);
+    expect(error.reason).toBe("unsupportedCapability");
+    expect((error.cause as Error)?.message).toContain("HTTP 400");
+    expect((error.cause as Error)?.message).toContain("invalid");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+  });
+
   it("emits intended attendees on create, omitting a null displayName", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
@@ -532,6 +549,23 @@ describe("GoogleEventWriter", () => {
     expect(error.reason).toBe("readOnlyCalendar");
   });
 
+  it("maps a 400 on patch to unsupportedCapability with Google's status and reason", async () => {
+    const api = new FakeEventsApi({ patch: gError(400, "invalid") });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .patchEvent(basePatch)
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error).toBeInstanceOf(ProviderWriteError);
+    expect(error.reason).toBe("unsupportedCapability");
+    expect((error.cause as Error)?.message).toContain("HTTP 400");
+    expect((error.cause as Error)?.message).toContain("invalid");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+  });
+
   it("maps a quota 403 to transient (retryable)", async () => {
     const api = new FakeEventsApi({ patch: gError(403, "rateLimitExceeded") });
     const { writer } = writerWith(api);
@@ -631,6 +665,7 @@ describe("GoogleEventWriter", () => {
 
     expect(error).toBeInstanceOf(ProviderWriteError);
     expect(error.reason).toBe("unsupportedCapability");
+    expect((error.cause as Error)?.message).toContain("HTTP 400");
   });
 
   it("still surfaces a precondition failure on delete", async () => {

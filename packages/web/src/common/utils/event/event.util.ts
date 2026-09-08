@@ -217,14 +217,15 @@ const CATCHALL_TOAST_MESSAGE =
 // Curated copy for backend-authored mutation failures the user can act on.
 // Codes without an entry fall back to the catch-all — backend messages are
 // written for the API contract, not for a toast, so they are never shown
-// verbatim. UNSUPPORTED_OPERATION exists because a Google birthday-event
-// occurrence delete used to surface as the catch-all with nothing telling
-// the user why it would never work.
+// verbatim. UNSUPPORTED_OPERATION exists because a provider declining a
+// patch or delete (events created from an email, birthdays, holidays) used
+// to surface as the catch-all with nothing telling the user why it would
+// never work.
 const MUTATION_ERROR_TOAST_MESSAGES: Partial<
   Record<EventMutationError["code"], string>
 > = {
   UNSUPPORTED_OPERATION:
-    "This calendar doesn't allow this change for this event (like birthdays or holidays). Try deleting the entire series, or manage it in your calendar.",
+    "Google doesn't allow this change for this event (for example events created from an email, birthdays, or holidays). Delete it or manage it in your calendar.",
   CALENDAR_READ_ONLY:
     "This calendar is read-only, so its events can't be changed from Compass.",
   RECURRENCE_CONFLICT:
