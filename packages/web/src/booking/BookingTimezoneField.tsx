@@ -39,11 +39,12 @@ export function BookingTimezoneField({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={`Meeting timezone: ${label}`}
-        className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-left text-sm text-text hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60"
+        className="c-focus-ring w-full truncate rounded border border-border bg-surface-overlay px-2 py-1 text-left text-sm text-text hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60"
         disabled={disabled}
         id="booking-timezone"
         onClick={() => setIsOpen(true)}
         ref={triggerRef}
+        title={label}
         type="button"
       >
         {label}

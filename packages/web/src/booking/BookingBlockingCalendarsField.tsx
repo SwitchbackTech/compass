@@ -23,6 +23,10 @@ export function BookingBlockingCalendarsField({
     availabilityCalendars,
     connections,
   );
+  const groupsWithCalendars = groups.filter(
+    (group) => group.calendars.length > 0,
+  );
+  const showAccountCaptions = groupsWithCalendars.length > 1;
 
   const renderBlockingCalendar = (calendar: Calendar) => (
     <BookingCheckboxRow
@@ -44,14 +48,14 @@ export function BookingBlockingCalendarsField({
         <p className="text-sm text-text-muted">No calendars available.</p>
       ) : (
         <>
-          {groups
-            .filter((group) => group.calendars.length > 0)
-            .map((group) => (
-              <div className="flex flex-col gap-1" key={group.accountEmail}>
+          {groupsWithCalendars.map((group) => (
+            <div className="flex flex-col gap-1" key={group.accountEmail}>
+              {showAccountCaptions ? (
                 <p className="text-text-muted text-xs">{group.accountEmail}</p>
-                {group.calendars.map(renderBlockingCalendar)}
-              </div>
-            ))}
+              ) : null}
+              {group.calendars.map(renderBlockingCalendar)}
+            </div>
+          ))}
           {ungrouped.map(renderBlockingCalendar)}
         </>
       )}

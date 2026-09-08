@@ -773,6 +773,124 @@ describe("BookingSettingsSection", () => {
     });
   });
 
+  it("shows the bare slug in Page address with a preview link below", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.click(screen.getByText(BOOKING_MORE_OPTIONS_LABEL));
+
+    const address = screen.getByLabelText("Page address");
+    expect(address).toHaveValue("hostuser");
+    expect(
+      screen.getByText("Your link: https://compasscalendar.com/meet/hostuser"),
+    ).toBeInTheDocument();
+
+    await user.clear(address);
+    await user.type(address, "new-slug");
+    expect(address).toHaveValue("new-slug");
+    expect(
+      screen.getByText("Your link: https://compasscalendar.com/meet/new-slug"),
+    ).toBeInTheDocument();
+  });
+
+  it("hides blocking account captions when only one account has calendars", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+    const blockingFieldset = screen
+      .getByText("Blocking calendars")
+      .closest("fieldset");
+    expect(blockingFieldset).not.toBeNull();
+    expect(
+      within(blockingFieldset as HTMLElement).queryByText("host@example.com"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Work" })).toBeInTheDocument();
+  });
+
+  it("shows blocking account captions when two accounts have calendars", async () => {
+    const user = userEvent.setup({ delay: null });
+    const secondCalendar = createMockCalendar({
+      id: CalendarIdSchema.parse(createObjectIdString()),
+      name: "Personal",
+      accountEmail: "other@example.com",
+    });
+
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY" as const,
+        connections: [
+          createMockConnection("host@example.com"),
+          createMockConnection("other@example.com"),
+        ],
+      },
+    });
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      writableCalendar,
+      secondCalendar,
+    ]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+    const blockingFieldset = screen
+      .getByText("Blocking calendars")
+      .closest("fieldset");
+    expect(blockingFieldset).not.toBeNull();
+    const blockingScope = within(blockingFieldset as HTMLElement);
+    expect(blockingScope.getByText("host@example.com")).toBeInTheDocument();
+    expect(blockingScope.getByText("other@example.com")).toBeInTheDocument();
+    expect(
+      blockingScope.getByRole("checkbox", { name: "Work" }),
+    ).toBeInTheDocument();
+    expect(
+      blockingScope.getByRole("checkbox", { name: "Personal" }),
+    ).toBeInTheDocument();
+  });
+
   it("PUTs slug when the host edits the page address", async () => {
     const user = userEvent.setup({ delay: null });
     let savedBody: unknown;

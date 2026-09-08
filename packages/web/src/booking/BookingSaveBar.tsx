@@ -23,9 +23,11 @@ export function BookingSaveBar({
   const pendingLabel = isPending ? "Saving…" : BOOKING_SAVE_CHANGES_LABEL;
 
   return (
-    <div className={BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME}>
+    <div
+      className={`${BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME} flex flex-wrap items-center justify-end gap-3`}
+    >
       {error ? (
-        <p className="mb-2 font-medium text-sm text-text" role="alert">
+        <p className="min-w-0 font-medium text-sm text-text" role="alert">
           {error}
         </p>
       ) : null}

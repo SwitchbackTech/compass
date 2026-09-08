@@ -536,7 +536,7 @@ export function BookingSettingsSection({
         />
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
+          <div className="min-w-0">
             <BookingFieldLabel htmlFor="booking-duration">
               Duration
             </BookingFieldLabel>
@@ -561,7 +561,7 @@ export function BookingSettingsSection({
             </select>
           </div>
 
-          <div {...bookingFieldAttrs("timezone")}>
+          <div className="min-w-0" {...bookingFieldAttrs("timezone")}>
             <BookingTimezoneField
               onChange={(timeZone) => updateForm({ timeZone })}
               timeZone={form.timeZone}
@@ -650,40 +650,44 @@ export function BookingSettingsSection({
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <BookingNumberField
-              field="notice"
-              id="booking-min-notice"
-              invalid={minNoticeInvalid}
-              invalidMessage={`Enter 0 to ${BOOKING_MAX_MIN_NOTICE_HOURS} hours.`}
-              label="Minimum notice (hours)"
-              max={BOOKING_MAX_MIN_NOTICE_HOURS}
-              min={0}
-              onChange={(raw) => {
-                setMinNoticeText(raw);
-                const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
-                if (parsed !== null) {
-                  updateForm({ minNoticeHours: parsed });
-                }
-              }}
-              value={minNoticeText}
-            />
-            <BookingNumberField
-              field="horizon"
-              id="booking-max-horizon"
-              invalid={horizonInvalid}
-              invalidMessage={`Enter 1 to ${BOOKING_MAX_HORIZON_DAYS} days.`}
-              label="Maximum horizon (days)"
-              max={BOOKING_MAX_HORIZON_DAYS}
-              min={1}
-              onChange={(raw) => {
-                setHorizonText(raw);
-                const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
-                if (parsed !== null) {
-                  updateForm({ maxHorizonDays: parsed });
-                }
-              }}
-              value={horizonText}
-            />
+            <div className="min-w-0">
+              <BookingNumberField
+                field="notice"
+                id="booking-min-notice"
+                invalid={minNoticeInvalid}
+                invalidMessage={`Enter 0 to ${BOOKING_MAX_MIN_NOTICE_HOURS} hours.`}
+                label="Minimum notice (hours)"
+                max={BOOKING_MAX_MIN_NOTICE_HOURS}
+                min={0}
+                onChange={(raw) => {
+                  setMinNoticeText(raw);
+                  const parsed = parseBookingCount(raw, MIN_NOTICE_BOUNDS);
+                  if (parsed !== null) {
+                    updateForm({ minNoticeHours: parsed });
+                  }
+                }}
+                value={minNoticeText}
+              />
+            </div>
+            <div className="min-w-0">
+              <BookingNumberField
+                field="horizon"
+                id="booking-max-horizon"
+                invalid={horizonInvalid}
+                invalidMessage={`Enter 1 to ${BOOKING_MAX_HORIZON_DAYS} days.`}
+                label="Maximum horizon (days)"
+                max={BOOKING_MAX_HORIZON_DAYS}
+                min={1}
+                onChange={(raw) => {
+                  setHorizonText(raw);
+                  const parsed = parseBookingCount(raw, HORIZON_BOUNDS);
+                  if (parsed !== null) {
+                    updateForm({ maxHorizonDays: parsed });
+                  }
+                }}
+                value={horizonText}
+              />
+            </div>
           </div>
         </BookingMoreOptions>
 

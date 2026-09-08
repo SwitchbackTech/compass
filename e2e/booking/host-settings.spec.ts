@@ -340,3 +340,40 @@ test("essentials fit without scrolling at 1440x900", async ({ page }) => {
     dialogBox!.y + dialogBox!.height,
   );
 });
+
+test("never scrolls horizontally", async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+  ] as const) {
+    await page.setViewportSize(viewport);
+    await prepareSignedInBookingSettingsPage(page);
+
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await openMoreOptions(settingsDialog);
+
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /^Meeting timezone:/ }),
+    );
+    const timezonePanel = page.getByRole("dialog", {
+      name: "Meeting timezone",
+    });
+    const timezoneSearch = timezonePanel.getByRole("combobox");
+    await dispatchFill(timezoneSearch, "buenos aires");
+    await timezoneSearch.press("Enter");
+
+    await expect(
+      settingsDialog.getByRole("button", {
+        name: /Meeting timezone: Buenos Aires/,
+      }),
+    ).toBeVisible();
+
+    const scrollMetrics = await settingsDialog.evaluate((el) => ({
+      clientWidth: el.clientWidth,
+      scrollWidth: el.scrollWidth,
+    }));
+    expect(scrollMetrics.scrollWidth).toBeLessThanOrEqual(
+      scrollMetrics.clientWidth,
+    );
+  }
+});
