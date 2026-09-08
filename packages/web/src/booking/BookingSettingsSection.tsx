@@ -507,6 +507,8 @@ export function BookingSettingsSection({
           addressPreview={addressPreview}
           bookingUrl={savedPage?.bookingUrl ?? null}
           isLive={isLive}
+          isPending={saveMutation.isPending}
+          onToggle={(next) => submit(next)}
           showShortcuts={showShortcuts}
         />
 
@@ -726,11 +728,8 @@ export function BookingSettingsSection({
 
         <BookingSaveBar
           error={saveError?.message ?? null}
-          isDirty={isDirty}
-          isLive={isLive}
           isPending={saveMutation.isPending}
-          onSubmit={submit}
-          showShortcuts={showShortcuts}
+          onSubmit={() => submit(savedPage?.enabled ?? false)}
         />
       </fieldset>
       <DiscardUnsavedChangesDialog

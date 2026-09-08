@@ -20,7 +20,6 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
-import { BOOKING_TURN_ON_LABEL } from "@web/booking/BookingSaveBar";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -989,7 +988,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     const monday = screen.getByLabelText("Monday");
     await user.clear(monday);
     await user.type(monday, "9");
@@ -1013,7 +1012,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
 
@@ -1035,7 +1034,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Discard" }));
@@ -1054,7 +1053,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     await user.selectOptions(screen.getByLabelText("Duration"), "45");
     await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
@@ -1077,7 +1076,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     await user.keyboard("{Escape}");
 
     expect(
@@ -1097,14 +1096,14 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
     await user.keyboard(`{${modKey}>}`);
 
     const settings = screen.getByRole("dialog", { name: "Settings" });
     expect(
       within(
-        screen.getByRole("button", { name: BOOKING_TURN_ON_LABEL }),
+        screen.getByText("Meeting page").closest("label") as HTMLElement,
       ).getByText("4", { exact: true }),
     ).toBeInTheDocument();
     expect(
@@ -1142,7 +1141,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
     await user.keyboard(`{${modKey}>}5{/${modKey}}`);
 
@@ -1158,7 +1157,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     const summary = screen.getByText(BOOKING_MORE_OPTIONS_LABEL);
     const details = summary.closest("details");
     expect(details).not.toHaveAttribute("open");
@@ -1253,7 +1252,7 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await screen.findByRole("button", { name: BOOKING_TURN_ON_LABEL });
+    await screen.findByRole("switch", { name: "Meeting page" });
     await user.click(
       screen.getByRole("button", { name: /^Meeting timezone:/ }),
     );
