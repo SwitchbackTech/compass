@@ -798,7 +798,11 @@ describe("BookingSettingsSection", () => {
       );
     });
     expect(mocks.error).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(screen.getByLabelText("Page address"));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Page address"),
+      );
+    });
   });
 
   it("warns when a saved address changes, not on an unconfigured page", async () => {
@@ -2157,9 +2161,11 @@ describe("BookingSettingsSection", () => {
       );
     });
     expect(mocks.error).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(
-      screen.getByRole("combobox", { name: "Destination calendar" }),
-    );
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole("combobox", { name: "Destination calendar" }),
+      );
+    });
   });
 });
 
