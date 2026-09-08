@@ -1,4 +1,4 @@
-# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5 / v1.6)
+# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5 / v1.6 / v1.7)
 
 Locked product spec for public scheduling on Compass Cloud
 (`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
@@ -8,21 +8,24 @@ Escape paths, guest edit-details after confirm, confirmation permalink
 tokens, and the audit fixes on milestone Booking v1.5. v1.3 (guest
 reschedule) is specified here and implemented. v1.6 shipped one-click
 turn on, Essentials / More options, editable address, default hours,
-branded connect pills, and funnel analytics. The production gate stays
-off.
+branded connect pills, and funnel analytics. v1.7 shipped the Meeting
+page redesign: `/meet` URLs, meeting copy, hold-Mod section chords, the
+on/off switch, grouped weekly hours rows, and the first-run address
+screen. The production gate stays off.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1, v1.1, v1.3, v1.5, and v1.6 are implemented in the Compass monorepo
-(public `/book/:username`, host Settings, backend APIs, guest cancel,
-guest reschedule, edit-details, one-click turn on, Essentials / More
-options, editable address, default hours, branded connect pills, and
-funnel analytics). Booking is enabled in development and staging
-(`runtime.nodeEnv` other than `production`) and disabled in production.
-Do not flip `isBookingEnabled`.
+v1, v1.1, v1.3, v1.5, v1.6, and v1.7 are implemented in the Compass
+monorepo (public `/meet/:username`, host Settings, backend APIs, guest
+cancel, guest reschedule, edit-details, one-click turn on, Essentials /
+More options, editable address, default hours, branded connect pills,
+funnel analytics, meeting copy, hold-Mod section chords, the on/off
+switch, grouped weekly hours, and the first-run address screen). Booking
+is enabled in development and staging (`runtime.nodeEnv` other than
+`production`) and disabled in production. Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
 deployable) is **explicitly deferred**. The seams below are the
 extraction path; they are not a second service in v1.
@@ -33,15 +36,15 @@ extraction path; they are not a second service in v1.
 
 Example: `https://compasscalendar.com/meet/tyler-dane`
 
-The username is a `bookingSlug` on the host's booking page. Hosts choose it
+The username is a `bookingSlug` on the host's Meeting page. Hosts choose it
 in Settings before or after enabling. Interior hyphens are allowed (for
 example `tyler-dane`). Changing the address overwrites the stored slug;
 old slug links stop working and there are no slug redirects.
 
-Old `/book/:username`, `/book/cancel/:id`, `/book/reschedule/:id`, and
-`/book/confirmed/:id` links still work through client-side redirect
-routes that keep the search params (`?token=` rides on cancel and
-reschedule links). API paths stay `/api/booking/*`.
+Legacy `/book` username, cancel, reschedule, and confirmed links still
+work through client-side redirect routes that keep the search params
+(`?token=` rides on cancel and reschedule links). API paths stay
+`/api/booking/*`.
 
 The guest's selection lives in `/meet/:slug` search params
 (`?month=&date=&slot=&tz=`): Back returns from the details step to the
@@ -97,7 +100,7 @@ Store the slug on a booking-owned profile row keyed by Compass user id
 
 ## Product shape
 
-v1 is **one booking page per Compass user**, with one duration. Multiple
+v1 is **one Meeting page per Compass user**, with one duration. Multiple
 appointment types are a later collection, not a v1 field.
 
 ### Host
@@ -107,8 +110,8 @@ writable calendar connection. Anonymous IndexedDB users do not get a
 booking link. Password-only users see a connect-Google prompt in
 Settings, not a broken public page.
 
-Host administration lives in Settings as a Booking page
-(`SettingsPage` includes `"booking"` in
+Host administration lives in Settings as Meeting. The internal name
+remains Booking page (`SettingsPage` includes `"booking"` in
 `packages/web/src/settings/settings.store.ts`). There is no dedicated
 `/booking` host app in v1.
 
@@ -165,10 +168,9 @@ focus uses the accent ring. Intended Tab order on the picker:
    each state change. Tab then reaches **Cancel this meeting**.
 8. Reschedule (`/meet/reschedule/:id`) focuses **Reschedule your meeting
    with {host}** on load and after each state change. Tab then reaches
-   the picker (same month grid and slot list as the public page), then
-   **Confirm**. A 409 conflict focuses the alert. Missing or invalid
-   token focuses the not-found heading. This path is v1.3 and is not
-   shipped.
+  the picker (same month grid and slot list as the public page), then
+  **Confirm**. A 409 conflict focuses the alert. Missing or invalid
+  token focuses the not-found heading.
 
 The month grid stays in the DOM ahead of the slot list. The skip link
 exists so keyboard users are not forced through every day cell before
@@ -344,7 +346,7 @@ There is no host reservation inbox.
   to cancel when history state has `rescheduleUrl`. Cold permalink has
   neither reschedule secret. Cancel and edit use `?token=` on the
   confirmation URL (see Guest cancel and edit details).
-- `/book/reschedule/:id?token=` reuses the public month/slot picker. Do
+- `/meet/reschedule/:id?token=` reuses the public month/slot picker. Do
   not re-collect name, email, or notes. Confirm and reschedule both pin
   `durationMinutes` from the page the guest saw: a mismatch with the
   current page duration is `409`.
@@ -373,7 +375,7 @@ flowchart LR
   calendar[Calendar app interface]
   sync[Sync service]
 
-  guest -->|"public /book/:slug"| api
+  guest -->|"public /meet/:slug"| api
   host -->|authenticated admin| api
   api --> booking
   booking -->|"getAvailability / createEvent / updateEvent / deleteEvent"| calendar
@@ -386,7 +388,7 @@ flowchart LR
 - **Persistence:** Booking-owned Mongo collections (page config,
   reservations). Calendar collections stay Calendar/Sync-owned.
   Cross-domain references are stable ids only.
-- **Web:** same Compass Web deploy. Public `/book/$username` routes do
+- **Web:** same Compass Web deploy. Public `/meet/$username` routes do
   **not** sit under the authenticated layout and must lazy-load a small
   booking bundle so the keyboard-first calendar does not boot.
 - Native iOS/desktop later call the same Booking HTTP contracts. They do
@@ -484,7 +486,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `BookingLimitsFieldset.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingAddressSetup.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `BookingLimitsFieldset.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
@@ -492,12 +494,12 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 ### Analytics
 
 PostHog product events for the nothing-to-live funnel. No guest name, email,
-notes, or reservation id. Autocapture already runs on public `/book/*`
+notes, or reservation id. Autocapture already runs on public `/meet/*`
 routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
 
 | Event | Properties | When |
 | --- | --- | --- |
-| `booking_settings_opened` | `has_connection: boolean`, `is_live: boolean` | Settings > Booking mounts (after the page is known, or immediately on the connect prompt) |
+| `booking_settings_opened` | `has_connection: boolean`, `is_live: boolean` | Settings > Meeting mounts (after the page is known, or immediately on the connect prompt) |
 | `booking_page_enabled` | `first_time: boolean` | Turn-on save succeeds. `first_time` is true when the page had no `bookingUrl` before this save |
 | `booking_link_copied` | `source: "button" \| "save"` | Successful copy from the Copy button, or auto-copy after a successful turn-on / save |
 | `booking_page_viewed` | `duration_minutes: number` | Public page query succeeds with `enabled: true`, once per slug |
@@ -512,8 +514,8 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   reconnects to a different replica resets its bucket. Accepted for v1
   while `isBookingEnabled` stays false in production.
 - **Cancel, edit, and reschedule tokens travel in the query string.** The
-  bearer lives in `?token=` on `/book/confirmed/:id`, `/book/cancel/:id`,
-  and `/book/reschedule/:id`, so it can appear in browser history, Referer
+  bearer lives in `?token=` on `/meet/confirmed/:id`, `/meet/cancel/:id`,
+  and `/meet/reschedule/:id`, so it can appear in browser history, Referer
   headers, and access logs. Accepted for v1: a fragment or POST landing
   page would break the confirmation permalink. Tokens stop working at
   `slotEnd`.
@@ -534,6 +536,11 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
+- **Letter pool is hand-maintained.** `SETTINGS_MOD_LETTER_POOL` in
+  `packages/web/src/booking/booking-sequence.fields.ts` is a comment-backed
+  exclusion list, not derived from the keymap. Adding a Meeting chord
+  means checking that list by hand so it does not collide with editing,
+  find, OS, browser, or app-owned letters.
 
 ## Related docs
 

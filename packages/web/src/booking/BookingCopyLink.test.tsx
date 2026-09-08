@@ -113,8 +113,8 @@ describe("copyText", () => {
     const writeText = mock(() => Promise.resolve());
     setClipboard({ writeText });
 
-    expect(await copyText("https://example.com/book/tyler")).toBe(true);
-    expect(writeText).toHaveBeenCalledWith("https://example.com/book/tyler");
+    expect(await copyText("https://example.com/meet/tyler")).toBe(true);
+    expect(writeText).toHaveBeenCalledWith("https://example.com/meet/tyler");
   });
 
   it("reports failure instead of rejecting when permission is denied", async () => {

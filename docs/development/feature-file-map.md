@@ -68,7 +68,9 @@ Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
 - Occupancy: `packages/sync/src/domain/occurrence-projection.ts`,
   `packages/sync/src/domain/busy-query.service.ts`,
   `POST /internal/availability/busy`
-- Host Settings: `packages/web/src/booking/BookingSettingsSection.tsx`
+- Host Settings: `packages/web/src/booking/BookingSettingsSection.tsx`,
+  `BookingAddressSetup.tsx`, `weekly-hours.rows.ts`,
+  `packages/web/src/components/Switch/Switch.tsx`
 - Public guest UI: `packages/web/src/booking/PublicBookingPage.tsx`,
   `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`
 - Web API client: `packages/web/src/api/public-booking.api.ts`

@@ -34,12 +34,18 @@ guest, without turning Compass into Calendly.
   one-click turn on, Essentials / More options split, editable address,
   default hours, funnel events) unless you show a regression in current
   main.
+- Re-propose closed Booking v1.7 Meeting page work unless you show a
+  regression in current main: public `/meet/:slug` (legacy `/book`
+  redirects), meeting copy, hold-Mod section chords (no letter leader on
+  Meeting settings), the on/off Meeting page switch, grouped weekly hours
+  rows, the first-run address screen, or user-facing "Meeting page" copy
+  (internal `SettingsPage` stays `"booking"`).
 - Recommend flipping `isBookingEnabled` in production, Compass-sent
   email/SMS, paid booking, team/round-robin pages, a standalone booking
   brand/domain, or `guestsCanModify` unless you have concrete evidence
   it is the bottleneck **and** you label the item `deferred / human`.
 - Enter credentials or complete Google OAuth on staging. Public
-  `/book/...` needs no login.
+  `/meet/...` needs no login.
 - Retarget `BOOKING_LOOP_MILESTONE`.
 - Invent findings. If you did not read the code or exercise the path,
   say so.
@@ -65,17 +71,18 @@ from **at least one** of: source, tests, e2e, or a public staging
 page. Prefer code that a guest or host can feel over cleanup.
 
 1. **Guest path (anonymous).** Trace
-   `/book/:slug` → details → confirm → `/book/confirmed/:id` →
-   `/book/cancel/:id`. Note what v1.3 will add (`/book/reschedule/:id`)
-   so you do not duplicate it. Use
-   `https://staging.compasscalendar.com/book/...` when a known staging
+   `/meet/:slug` → details → confirm → `/meet/confirmed/:id` →
+   `/meet/cancel/:id`. Note that guest reschedule (`/meet/reschedule/:id`)
+   already shipped in v1.3 so you do not duplicate it. Use
+   `https://staging.compasscalendar.com/meet/...` when a known staging
    slug exists; otherwise reason from `e2e/booking/` and
    `packages/web/src/booking/`.
-2. **Host path.** Settings Booking page
-   (`BookingSettingsSection.tsx`): enable, duration, destination,
-   blocking calendars, weekly hours, welcome, notice, horizon, buffer,
-   max per day, guest permissions, copy/open link. Do not attempt
-   login if the signed-in profile is not already present.
+2. **Host path.** Settings Meeting page
+   (`BookingSettingsSection.tsx`): first-run address, Continue, switch,
+   duration, destination, blocking calendars, weekly hours rows, welcome,
+   notice, horizon, buffer, max per day, guest permissions, copy/open
+   link. Do not attempt login if the signed-in profile is not already
+   present.
 3. **Honesty.** Slot engine, occupancy (`occupies-booking-slot.ts`),
    fail-closed `bookable: false`, unique `(pageId, slotStart)`, rate
    limits, cancel token hashing, public JSON that must not leak
@@ -87,7 +94,7 @@ page. Prefer code that a guest or host can feel over cleanup.
    coverage around booking; `e2e/booking/`; `e2e/accessibility/booking-a11y.spec.ts`.
    A missing test is not a feature. Only call it out when a real
    behavior is unprotected.
-6. **Keyboard and copy.** Public booking and Settings Booking are
+6. **Keyboard and copy.** Public booking and Settings Meeting are
    keyboard-first. No em-dashes in user-facing strings.
 
 You may run **read-only** git and `gh` commands. You may start

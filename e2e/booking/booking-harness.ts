@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 
 /** ObjectId-shaped id for stubbed Google calendar in host settings e2e. */
@@ -1242,6 +1242,27 @@ export const dispatchBlur = async (
   await locator.evaluate((el) => {
     el.dispatchEvent(new Event("focusout", { bubbles: true }));
   });
+};
+
+/**
+ * Settings hold-Mod chips appear on the initial Mod press (`holdMs: 0`).
+ * This VM resolves Mod to Control; a second modifier cancels the hold.
+ */
+export const holdSettingsMod = async (page: Page) => {
+  await page.keyboard.down("Control");
+};
+
+export const releaseSettingsMod = async (page: Page) => {
+  await page.keyboard.up("Control");
+};
+
+const MEETING_SHORTCUT_CHIPS = ["4", "5", "6", "7", "8", "9", "U"] as const;
+
+/** Assert hold-Mod chips for Meeting sections (`4`–`9`) and copy-link (`U`). */
+export const expectMeetingShortcutChips = async (settingsDialog: Locator) => {
+  for (const key of MEETING_SHORTCUT_CHIPS) {
+    await expect(settingsDialog.getByText(key, { exact: true })).toBeVisible();
+  }
 };
 
 export function formatSlotButtonLabel(
