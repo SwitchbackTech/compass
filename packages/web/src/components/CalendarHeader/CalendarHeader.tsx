@@ -1,9 +1,7 @@
 import { type FC } from "react";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { LiveUpdatesStatus } from "@web/components/CalendarHeader/LiveUpdatesStatus";
-import { UpdateAvailableButton } from "@web/components/CalendarHeader/UpdateAvailableButton";
+import { HeaderRefreshButton } from "@web/components/CalendarHeader/HeaderRefreshButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
-import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { SidebarToggleButton } from "@web/components/Sidebar/SidebarToggleButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -37,8 +35,6 @@ export const CalendarHeader: FC<Props> = ({
   nextLabel = "Next",
   showNavigation = true,
 }) => {
-  const { isUpdateAvailable } = useVersionCheck();
-
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
       {/* min-w-0 lets the title cluster shrink so the sidebar toggle stays in
@@ -64,8 +60,7 @@ export const CalendarHeader: FC<Props> = ({
           </div>
         )}
         <SelectView label={label} onToday={onToday} />
-        <LiveUpdatesStatus />
-        {isUpdateAvailable ? <UpdateAvailableButton /> : null}
+        <HeaderRefreshButton />
       </div>
 
       <div className="z-2 flex shrink-0 items-center pr-5">

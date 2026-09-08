@@ -45,8 +45,8 @@ another one.
 The SSE alert samples a trailing 60-minute window once an hour, so a burst
 that straddles two checks can be under-counted. Widen the insight's window to
 90 minutes if that bites; 15-minute evaluation needs a PostHog add-on. The
-web app shows its own "Reconnecting…" header badge for the same condition
-(`LiveUpdatesStatus`), with a reload prompt after 30 seconds.
+web app offers a header Refresh control for the same condition
+(`HeaderRefreshButton`) after the stream has been down for 30 seconds.
 
 ## During launch
 
