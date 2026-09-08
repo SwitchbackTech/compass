@@ -20,7 +20,6 @@ interface BookingAddressFieldProps {
   forceInvalid?: boolean;
   onChange: (slug: string) => void;
   savedSlug: string | null;
-  showShortcuts: boolean;
   slug: string;
 }
 
@@ -29,7 +28,6 @@ export function BookingAddressField({
   forceInvalid = false,
   onChange,
   savedSlug,
-  showShortcuts,
   slug,
 }: BookingAddressFieldProps) {
   const [blurred, setBlurred] = useState(false);
@@ -50,11 +48,7 @@ export function BookingAddressField({
 
   return (
     <div>
-      <BookingFieldLabel
-        field="address"
-        htmlFor="booking-address"
-        showShortcuts={showShortcuts}
-      >
+      <BookingFieldLabel htmlFor="booking-address">
         Page address
       </BookingFieldLabel>
       <div

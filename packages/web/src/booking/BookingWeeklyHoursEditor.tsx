@@ -19,7 +19,6 @@ import {
   textForRow,
   unassignedWeekdays,
 } from "@web/booking/weekly-hours.rows";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface BookingWeeklyHoursEditorProps {
   value: WeeklyAvailability;
@@ -29,8 +28,6 @@ interface BookingWeeklyHoursEditorProps {
   onValidityChange?: (isValid: boolean) => void;
   /** True while a row's typed text has not been committed into `value`. */
   onDraftDirtyChange?: (isDirty: boolean) => void;
-  /** Jump keys to reveal beside the legend while hold-Mod hints are up. */
-  shortcutKeys?: readonly string[];
 }
 
 interface EditorRow extends HoursRow {
@@ -63,7 +60,6 @@ export function BookingWeeklyHoursEditor({
   disabled = false,
   onValidityChange,
   onDraftDirtyChange,
-  shortcutKeys,
 }: BookingWeeklyHoursEditorProps) {
   const hintId = useId();
   const idRef = useRef(1);
@@ -174,10 +170,7 @@ export function BookingWeeklyHoursEditor({
 
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
-      <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-        Weekly hours
-        {shortcutKeys ? <ShortcutKeys keys={[...shortcutKeys]} /> : null}
-      </legend>
+      <legend className="mb-1 text-sm text-text">Weekly hours</legend>
       <p className="text-text-muted text-xs" id={hintId}>
         Type a range like 9-5, or 9-12, 1-5 for a break.
       </p>

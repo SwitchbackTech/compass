@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { type TimeZone } from "@core/types/domain-primitives";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { TimezoneCombobox } from "@web/timezone/TimezoneCombobox";
 import { timeZoneCityName } from "@web/timezone/timezone-catalog";
@@ -10,8 +9,6 @@ interface BookingTimezoneFieldProps {
   timeZone: TimeZone;
   onChange: (timeZone: TimeZone) => void;
   disabled?: boolean;
-  /** Jump keys to reveal beside the caption while hold-Mod hints are up. */
-  shortcutKeys?: readonly string[];
 }
 
 /**
@@ -26,7 +23,6 @@ export function BookingTimezoneField({
   timeZone,
   onChange,
   disabled = false,
-  shortcutKeys,
 }: BookingTimezoneFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -36,12 +32,8 @@ export function BookingTimezoneField({
 
   return (
     <div>
-      <p
-        className="mb-1 flex items-center gap-1 text-sm text-text"
-        id="booking-timezone-label"
-      >
+      <p className="mb-1 text-sm text-text" id="booking-timezone-label">
         Meeting timezone
-        {shortcutKeys ? <ShortcutKeys keys={[...shortcutKeys]} /> : null}
       </p>
       <button
         aria-expanded={isOpen}

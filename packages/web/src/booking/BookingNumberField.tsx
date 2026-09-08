@@ -14,7 +14,6 @@ interface BookingNumberFieldProps {
   invalidMessage: string;
   min: number;
   max?: number;
-  showShortcuts: boolean;
 }
 
 /**
@@ -34,18 +33,11 @@ export function BookingNumberField({
   invalidMessage,
   min,
   max,
-  showShortcuts,
 }: BookingNumberFieldProps) {
   const errorId = `${id}-error`;
   return (
     <div>
-      <BookingFieldLabel
-        field={field}
-        htmlFor={id}
-        showShortcuts={showShortcuts}
-      >
-        {label}
-      </BookingFieldLabel>
+      <BookingFieldLabel htmlFor={id}>{label}</BookingFieldLabel>
       <input
         {...bookingFieldAttrs(field)}
         aria-describedby={invalid ? errorId : undefined}

@@ -2,7 +2,6 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
-import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
@@ -20,6 +19,7 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UpgradeConfirmationProvider } from "@web/billing/UpgradeConfirmation/UpgradeConfirmationProvider";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { BOOKING_MORE_OPTIONS_LABEL } from "@web/booking/BookingMoreOptions";
+import { BOOKING_SAVE_CHANGES_LABEL } from "@web/booking/BookingSaveBar";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -28,7 +28,6 @@ import {
   GOOGLE_REVOKED_TOAST_ID,
 } from "@web/common/constants/toast.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   registerToastPort,
   resetToastPort,
@@ -1087,7 +1086,7 @@ describe("SettingsModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("reveals meeting section chips 4 through 9 while Mod is held", async () => {
+  it("reveals sidebar digits and Save Enter while Mod is held on Meeting", async () => {
     const user = userEvent.setup({ delay: null });
     const calendar = createMockCalendar({ name: "Work" });
     renderSettings({
@@ -1102,38 +1101,58 @@ describe("SettingsModal", () => {
 
     const settings = screen.getByRole("dialog", { name: "Settings" });
     expect(
+      within(screen.getByRole("button", { name: "Accounts" })).getByText("1", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Billing" })).toBeNull();
+    expect(
+      within(screen.getByRole("button", { name: "Meeting" })).getByText("3", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
       within(
-        screen.getByText("Meeting page").closest("label") as HTMLElement,
-      ).getByText("4", { exact: true }),
+        screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
+      ).getByText("Enter"),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByText("Duration")).getByText("5", { exact: true }),
-    ).toBeInTheDocument();
+      within(screen.getByText("Duration")).queryByText("5", { exact: true }),
+    ).toBeNull();
     expect(
-      within(screen.getByText("Meeting timezone")).getByText("6", {
+      within(screen.getByText("Meeting timezone")).queryByText("6", {
         exact: true,
       }),
-    ).toBeInTheDocument();
+    ).toBeNull();
     expect(
-      within(screen.getByText("Weekly hours")).getByText("7", { exact: true }),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByText("Destination calendar")).getByText("8", {
+      within(screen.getByText("Weekly hours")).queryByText("7", {
         exact: true,
       }),
-    ).toBeInTheDocument();
+    ).toBeNull();
     expect(
-      within(screen.getByText(BOOKING_MORE_OPTIONS_LABEL)).getByText("9", {
+      within(screen.getByText("Destination calendar")).queryByText("8", {
         exact: true,
       }),
-    ).toBeInTheDocument();
+    ).toBeNull();
+    expect(
+      within(screen.getByText(BOOKING_MORE_OPTIONS_LABEL)).queryByText("9", {
+        exact: true,
+      }),
+    ).toBeNull();
     expect(within(settings).queryByText("U", { exact: true })).toBeNull();
+    expect(within(settings).queryByText("4", { exact: true })).toBeNull();
 
     await user.keyboard(`{/${modKey}}`);
   });
 
-  it("jumps to Duration with Mod+5", async () => {
+  it("reveals Billing 2 while Mod is held when billing is present", async () => {
     const user = userEvent.setup({ delay: null });
+    access = {
+      kind: "server",
+      status: "active",
+      isReadOnly: false,
+      trialEndsAt: null,
+    };
     const calendar = createMockCalendar({ name: "Work" });
     renderSettings({
       authenticated: true,
@@ -1143,130 +1162,65 @@ describe("SettingsModal", () => {
 
     await screen.findByRole("switch", { name: "Meeting page" });
     const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-    await user.keyboard(`{${modKey}>}5{/${modKey}}`);
+    await user.keyboard(`{${modKey}>}`);
 
-    expect(screen.getByLabelText("Duration")).toHaveFocus();
-  });
-
-  it("opens More options with Mod+9 and focuses the first control", async () => {
-    const user = userEvent.setup({ delay: null });
-    const calendar = createMockCalendar({ name: "Work" });
-    renderSettings({
-      authenticated: true,
-      calendars: [calendar],
-      page: "booking",
-    });
-
-    await screen.findByRole("switch", { name: "Meeting page" });
-    const summary = screen.getByText(BOOKING_MORE_OPTIONS_LABEL);
-    const details = summary.closest("details");
-    expect(details).not.toHaveAttribute("open");
-
-    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-    await user.keyboard(`{${modKey}>}9{/${modKey}}`);
-
-    expect(details).toHaveAttribute("open");
-    expect(screen.getByLabelText("Page address")).toHaveFocus();
-  });
-
-  it("copies the meeting link with Mod+U", async () => {
-    const user = userEvent.setup({ delay: null });
-    const calendar = createMockCalendar({ name: "Work" });
-    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
-    const originalClipboard = navigator.clipboard;
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: { writeText: mock(() => Promise.resolve()) },
-    });
-    const { port, mocks } = createTestToastPort();
-    registerToastPort(port);
-
-    server.use(
-      rest.get(`${ENV_WEB.API_BASEURL}/booking/page`, (_req, res, ctx) =>
-        res(
-          ctx.json({
-            id: createObjectIdString(),
-            slug: "hostuser",
-            hostUserId: createObjectIdString(),
-            enabled: true,
-            durationMinutes: 30,
-            destinationCalendarId: calendar.id,
-            blockingCalendarIds: [calendar.id],
-            timeZone: "America/New_York",
-            weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-            minNoticeHours: 4,
-            maxHorizonDays: 60,
-            bufferMinutes: null,
-            maxBookingsPerDay: null,
-            guestsCanInviteOthers: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl,
-          }),
-        ),
-      ),
-    );
-
-    try {
-      renderSettings({
-        authenticated: true,
-        calendars: [calendar],
-        page: "booking",
-      });
-
-      await screen.findByRole("button", { name: "Copy meeting link" });
-      const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-      await user.keyboard(`{${modKey}>}u{/${modKey}}`);
-
-      await waitFor(() => {
-        expect(mocks.toast).toHaveBeenCalledWith(
-          "Meeting link copied",
-          expect.any(Object),
-        );
-      });
-
-      await user.keyboard(`{${modKey}>}`);
-      const linkRow = screen.getByRole("textbox", {
-        name: "Meeting link",
-      }).parentElement;
-      if (!linkRow) throw new Error("missing meeting link row");
-      expect(
-        within(linkRow).getByText("U", { exact: true }),
-      ).toBeInTheDocument();
-      await user.keyboard(`{/${modKey}}`);
-    } finally {
-      Object.defineProperty(navigator, "clipboard", {
-        configurable: true,
-        value: originalClipboard,
-      });
-      resetToastPort();
-    }
-  });
-
-  it("does not jump behind an open timezone panel with Mod+5", async () => {
-    const user = userEvent.setup({ delay: null });
-    const calendar = createMockCalendar({ name: "Work" });
-    renderSettings({
-      authenticated: true,
-      calendars: [calendar],
-      page: "booking",
-    });
-
-    await screen.findByRole("switch", { name: "Meeting page" });
-    await user.click(
-      screen.getByRole("button", { name: /^Meeting timezone:/ }),
-    );
-    const search = await screen.findByRole("combobox", {
-      name: "Search meeting timezones",
-    });
-    await waitFor(() => expect(search).toHaveFocus());
-
-    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
-    await user.keyboard(`{${modKey}>}5{/${modKey}}`);
-
-    expect(search).toHaveFocus();
     expect(
-      screen.getByRole("combobox", { name: "Search meeting timezones" }),
+      within(screen.getByRole("button", { name: "Billing" })).getByText("2", {
+        exact: true,
+      }),
     ).toBeInTheDocument();
+
+    await user.keyboard(`{/${modKey}}`);
   });
-});
+
+  it("does not jump or toggle anything with Mod+5", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    const meetingSwitch = await screen.findByRole("switch", {
+      name: "Meeting page",
+    });
+    meetingSwitch.focus();
+    const before = document.activeElement;
+    const checked = meetingSwitch.getAttribute("aria-checked");
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}5{/${modKey}}`);
+
+    expect(document.activeElement).toBe(before);
+    expect(screen.getByLabelText("Duration")).not.toHaveFocus();
+    expect(screen.getByRole("switch", { name: "Meeting page" })).toHaveAttribute(
+      "aria-checked",
+      checked,
+    );
+  });
+
+  it("saves with Mod+Enter on the Meeting page", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    let savedBody: unknown;
+    server.use(
+      rest.put(`${ENV_WEB.API_BASEURL}/booking/page`, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(ctx.json(savedBody as object));
+      }),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByRole("switch", { name: "Meeting page" });
+    await user.selectOptions(screen.getByLabelText("Duration"), "45");
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}{Enter}{/${modKey}}`);
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({ durationMinutes: 45 });
+    });
+  });

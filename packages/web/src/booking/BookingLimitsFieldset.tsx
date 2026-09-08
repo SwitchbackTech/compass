@@ -1,10 +1,6 @@
 import { type AdminPutBookingPageInput } from "@core/types/booking.contracts";
 import { BookingCheckboxRow } from "@web/booking/BookingCheckboxRow";
-import {
-  bookingFieldAttrs,
-  bookingJumpKeys,
-} from "@web/booking/booking-sequence.fields";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 
 const DEFAULT_BUFFER_MINUTES = 30;
 const DEFAULT_MAX_BOOKINGS_PER_DAY = 4;
@@ -14,7 +10,6 @@ interface BookingLimitsFieldsetProps {
   guestsCanInviteOthers: boolean;
   maxBookingsPerDay: AdminPutBookingPageInput["maxBookingsPerDay"];
   onChange: (patch: Partial<AdminPutBookingPageInput>) => void;
-  showShortcuts: boolean;
 }
 
 export function BookingLimitsFieldset({
@@ -22,16 +17,10 @@ export function BookingLimitsFieldset({
   guestsCanInviteOthers,
   maxBookingsPerDay,
   onChange,
-  showShortcuts,
 }: BookingLimitsFieldsetProps) {
   return (
     <fieldset className="flex flex-col gap-2" {...bookingFieldAttrs("options")}>
-      <legend className="mb-1 flex items-center gap-1 text-sm text-text">
-        Buffer and limits
-        {showShortcuts ? (
-          <ShortcutKeys keys={bookingJumpKeys("options")} />
-        ) : null}
-      </legend>
+      <legend className="mb-1 text-sm text-text">Buffer and limits</legend>
 
       <BookingCheckboxRow
         checked={bufferMinutes !== null}

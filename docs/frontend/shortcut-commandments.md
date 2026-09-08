@@ -80,12 +80,10 @@ Billing: `U` Update card,
 `C` Cancel subscription, `R` Resume subscription. Accounts: `A` Add account,
 `E` Export, `D` Delete account, `O` Log out. `B` (trial badge / Start
 Premium) is registered by `UpgradeConfirmationProvider` and keeps working
-while Settings is open. Meeting page uses hold-Mod section chords:
-`Mod+4` through `Mod+9` jump to on or off, Duration, Timezone, Weekly
-hours, Destination calendar, and More options; `Mod+U` copies the meeting
-link. Letters come from `SETTINGS_MOD_LETTER_POOL`. Meeting settings do
-not use an `e` leader. The `?` overlay remains the catalog; hold-Mod still
-reveals the chips.
+while Settings is open. Meeting settings reveal only sidebar digits
+`Mod+1/2/3` and Enter on Save or Continue. Meeting settings do not use an
+`e` leader. The `?` overlay remains the catalog; hold-Mod still reveals
+the chips.
 
 ## 7. Leaders wait, then teach
 
@@ -122,5 +120,5 @@ Form field digits live in
 order, 1–9). Page-area digits live in
 `packages/web/src/shortcuts/page-jump/page-jump.targets.ts`. Day-view
 calendar columns are built by `buildDayPageJumpTargets` in left-to-right
-order (view, columns, sidebar). Meeting settings sections live in
+order (view, columns, sidebar). Meeting save-error field anchors live in
 `packages/web/src/booking/booking-sequence.fields.ts`.

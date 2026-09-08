@@ -42,7 +42,6 @@ export function BookingAddressSetup({
         forceInvalid={forceInvalid}
         onChange={onChange}
         savedSlug={null}
-        showShortcuts={false}
         slug={slug}
       />
       {error ? (
