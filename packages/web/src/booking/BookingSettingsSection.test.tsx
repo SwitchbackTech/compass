@@ -619,7 +619,7 @@ describe("BookingSettingsSection", () => {
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("textbox", { name: /Hours/ }),
+      screen.queryByRole("combobox", { name: /Start for/ }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("switch", { name: "Meeting page" }),
@@ -1190,75 +1190,6 @@ describe("BookingSettingsSection", () => {
         first_time: false,
       });
     });
-  });
-
-  it("types a bare e in a weekly-hours field", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json({ ...savedOffPage(), weeklyAvailability: [] })),
-      ),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("switch", { name: "Meeting page" });
-
-    // "9-5, then 11-2" is not real input, but any typed letter would be: a
-    // bare `e` must reach the field, not swallow the next keystroke.
-    const hours = screen.getByRole("textbox", { name: /^Hours/ });
-    await user.click(hours);
-    await user.keyboard("eh");
-
-    expect(hours).toHaveValue("eh");
-    expect(document.activeElement).toBe(hours);
-  });
-
-  it("blocks the save while a weekly-hours row cannot be read", async () => {
-    const user = userEvent.setup({ delay: null });
-    userMetadataActions.set(healthyGoogleMetadata);
-    let putCount = 0;
-
-    server.use(
-      rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(ctx.json(savedOffPage())),
-      ),
-      rest.put(bookingPageUrl, async (req, res, ctx) => {
-        putCount += 1;
-        return res(ctx.json(await req.json()));
-      }),
-    );
-
-    const { wrapper, queryClient } = createStoreWrapper();
-    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
-
-    render(
-      <HotkeysProvider>
-        <BookingSettingsSection />
-      </HotkeysProvider>,
-      { wrapper },
-    );
-    await screen.findByRole("switch", { name: "Meeting page" });
-
-    await user.type(
-      screen.getByRole("textbox", { name: /Hours for/ }),
-      "whenever",
-    );
-    await user.tab();
-    await user.click(screen.getByRole("switch", { name: "Meeting page" }));
-
-    expect(putCount).toBe(0);
-    expect(
-      screen.getByText("Fix the weekly hours that could not be read."),
-    ).toBeInTheDocument();
   });
 
   it("saves welcome text", async () => {
@@ -1909,9 +1840,15 @@ describe("BookingSettingsSection", () => {
     );
 
     await screen.findByRole("switch", { name: "Meeting page" });
-    const hours = screen.getByRole("textbox", { name: /Hours for/ });
-    await user.clear(hours);
-    await user.tab();
+    for (const name of [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ]) {
+      await user.click(screen.getByRole("button", { name }));
+    }
     await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     const hoursAlert = screen.getByRole("alert");
@@ -1972,9 +1909,12 @@ describe("BookingSettingsSection", () => {
       "aria-pressed",
       "false",
     );
-    expect(screen.getByRole("textbox", { name: /Hours for/ })).toHaveValue(
-      "9am-5pm",
-    );
+    expect(
+      screen.getByRole("combobox", { name: /Start for/ }),
+    ).toHaveDisplayValue("9:00 AM");
+    expect(
+      screen.getByRole("combobox", { name: /End for/ }),
+    ).toHaveDisplayValue("5:00 PM");
   });
 
   it("shows an error on PUT 403 without crashing Settings", async () => {

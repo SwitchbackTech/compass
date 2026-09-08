@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
   buildBookableSlot,
-  dispatchBlur,
   dispatchClick,
   dispatchFill,
   expectMeetingShortcutChips,
@@ -348,9 +347,15 @@ test.describe("settings booking section", () => {
       enabled: false,
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-    const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
-    await dispatchFill(hours, "");
-    await dispatchBlur(hours);
+    for (const name of [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ]) {
+      await dispatchClick(settingsDialog.getByRole("button", { name }));
+    }
     await dispatchClick(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
     );
@@ -365,21 +370,22 @@ test.describe("settings booking section", () => {
     });
   });
 
-  test("hours row errors have no automatically detectable accessibility violations", async ({
+  test("weekly hours menus have no automatically detectable accessibility violations", async ({
     page,
   }) => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(
+      settingsDialog.getByRole("combobox", { name: /Start for/ }),
+    ).toBeVisible();
     await dispatchClick(
       settingsDialog.getByRole("button", { name: "Add hours" }),
     );
-    const hoursInputs = settingsDialog.getByRole("textbox", { name: /Hours/ });
-    await expect(hoursInputs).toHaveCount(2);
-    await dispatchFill(hoursInputs.nth(0), "whenever");
-    await dispatchBlur(hoursInputs.nth(0));
-    await expect(settingsDialog.getByRole("alert")).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("button", { name: "Add hours" }),
+    ).toBeDisabled();
     await expectNoAxeViolations(page, {
-      checkpoint: "settings booking hours row error",
+      checkpoint: "settings booking weekly hours menus",
       include: "[role='dialog']",
     });
   });

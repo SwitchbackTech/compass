@@ -197,14 +197,12 @@ export type BookingFormValidationError = {
 };
 
 export function validateBookingForm({
-  areHoursValid,
   enabling,
   form,
   horizonInvalid,
   minNoticeInvalid,
   writableCalendars,
 }: {
-  areHoursValid: boolean;
   enabling: boolean;
   form: AdminPutBookingPageInput;
   horizonInvalid: boolean;
@@ -214,12 +212,6 @@ export function validateBookingForm({
   const slugMessage = bookingSlugParseMessage(form.slug);
   if (slugMessage) {
     return { field: "address", message: slugMessage };
-  }
-  if (!areHoursValid) {
-    return {
-      field: "hours",
-      message: "Fix the weekly hours that could not be read.",
-    };
   }
   if (isWelcomeTextTooLong(form.welcomeText)) {
     return { field: "welcome", message: WELCOME_TEXT_TOO_LONG_MESSAGE };

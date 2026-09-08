@@ -141,12 +141,7 @@ export const ZOD_V3_ALLOWLIST: ConstraintAllow[] = [
 ];
 
 /** Non-test web source that legitimately contains an em-dash outside a comment. */
-export const EM_DASH_ALLOWLIST: ConstraintAllow[] = [
-  {
-    glob: "packages/web/src/booking/weekly-hours.parse.ts",
-    reason: "RANGE_SEPARATOR parses dashes a user may type",
-  },
-];
+export const EM_DASH_ALLOWLIST: ConstraintAllow[] = [];
 
 /**
  * Raw keydown listeners outside packages/web/src/shortcuts/. Each existing one
