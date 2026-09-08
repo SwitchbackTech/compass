@@ -223,7 +223,8 @@ export function validateBookingForm({
   if (enabling && !canEnableBookingPage(form, writableCalendars)) {
     return {
       field: "destination",
-      message: "Choose a destination calendar before enabling booking.",
+      message:
+        "Choose a destination calendar before enabling your meeting page.",
     };
   }
   if (enabling && form.blockingCalendarIds.length === 0) {
@@ -235,7 +236,7 @@ export function validateBookingForm({
   if (enabling && form.weeklyAvailability.length === 0) {
     return {
       field: "hours",
-      message: "Add weekly hours before turning on your booking page.",
+      message: "Add weekly hours before turning on your meeting page.",
     };
   }
   return null;

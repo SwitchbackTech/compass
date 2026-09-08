@@ -21,33 +21,33 @@ export function BookingCopyLink({ bookingUrl }: BookingCopyLinkProps) {
     showStatusToast(
       "booking-link-copied",
       didCopy
-        ? "Booking link copied"
+        ? "Meeting link copied"
         : "Could not copy. Select the link to copy it.",
     );
   });
 
   return (
     <div>
-      <p className="mb-1 text-sm text-text">Public booking link</p>
+      <p className="mb-1 text-sm text-text">Meeting link</p>
       <div className="flex items-center gap-1">
         <input
-          aria-label="Public booking link"
+          aria-label="Meeting link"
           className="c-focus-ring min-w-0 flex-1 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
           readOnly
           value={bookingUrl}
         />
-        <TooltipWrapper description={copied ? "Copied" : "Copy booking link"}>
+        <TooltipWrapper description={copied ? "Copied" : "Copy meeting link"}>
           <IconButton
-            aria-label="Copy booking link"
+            aria-label="Copy meeting link"
             onClick={copy}
             size="small"
           >
             {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
           </IconButton>
         </TooltipWrapper>
-        <TooltipWrapper description="Open booking page">
+        <TooltipWrapper description="Open meeting page">
           <a
-            aria-label="Open booking page"
+            aria-label="Open meeting page"
             className={iconButtonClassName("small")}
             href={bookingUrl}
             rel="noreferrer"

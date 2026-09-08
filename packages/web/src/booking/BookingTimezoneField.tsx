@@ -15,7 +15,7 @@ interface BookingTimezoneFieldProps {
 }
 
 /**
- * The booking page's timezone, picked through the same searchable combobox as
+ * The meeting page's timezone, picked through the same searchable combobox as
  * time travel and the default-timezone dialog. It was a native <select> over
  * the whole IANA catalog: ~420 options in raw id order, where the browser's
  * type-ahead matches the rendered city text, so typing "America" or "US" found
@@ -40,13 +40,13 @@ export function BookingTimezoneField({
         className="mb-1 flex items-center gap-1 text-sm text-text"
         id="booking-timezone-label"
       >
-        Booking timezone
+        Meeting timezone
         {shortcutKeys ? <ShortcutKeys keys={[...shortcutKeys]} /> : null}
       </p>
       <button
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        aria-label={`Booking timezone: ${label}`}
+        aria-label={`Meeting timezone: ${label}`}
         className="c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-left text-sm text-text hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60"
         disabled={disabled}
         id="booking-timezone"
@@ -63,7 +63,7 @@ export function BookingTimezoneField({
           initialFocusRef={searchRef}
           onDismiss={() => setIsOpen(false)}
           restoreFocus={() => triggerRef.current?.focus()}
-          title="Booking timezone"
+          title="Meeting timezone"
           variant="modal"
           widthClassName="w-[480px]"
         >
@@ -73,7 +73,7 @@ export function BookingTimezoneField({
               if (nextTimeZone) onChange(nextTimeZone as TimeZone);
               setIsOpen(false);
             }}
-            searchLabel="Search booking timezones"
+            searchLabel="Search meeting timezones"
             value={timeZone}
           />
         </OverlayPanel>

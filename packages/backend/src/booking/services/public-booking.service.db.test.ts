@@ -465,7 +465,7 @@ describe("PublicBookingService", () => {
 
     expect(error).toMatchObject({
       bookingCode: "SLOT_UNAVAILABLE",
-      message: "This page is not accepting bookings.",
+      message: "This page is not accepting meetings.",
     });
     expect(JSON.stringify(error)).not.toMatch(
       /billing|plan|payment|paid|subscription/i,
@@ -507,7 +507,7 @@ describe("PublicBookingService", () => {
 
     expect(error).toMatchObject({
       bookingCode: "SLOT_UNAVAILABLE",
-      message: "This page is not accepting bookings.",
+      message: "This page is not accepting meetings.",
     });
     expect(JSON.stringify(error)).not.toMatch(
       /billing|plan|payment|paid|subscription/i,

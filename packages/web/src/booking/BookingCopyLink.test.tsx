@@ -48,7 +48,7 @@ describe("BookingCopyLink", () => {
     const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     render(<BookingCopyLink bookingUrl={bookingUrl} />);
 
-    fireEvent.click(screen.getByLabelText("Copy booking link"));
+    fireEvent.click(screen.getByLabelText("Copy meeting link"));
 
     await waitFor(() => {
       expect(mockWriteText).toHaveBeenCalledWith(bookingUrl);
@@ -62,7 +62,7 @@ describe("BookingCopyLink", () => {
     const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     render(<BookingCopyLink bookingUrl={bookingUrl} />);
 
-    const openLink = screen.getByRole("link", { name: "Open booking page" });
+    const openLink = screen.getByRole("link", { name: "Open meeting page" });
     expect(openLink).toHaveAttribute("href", bookingUrl);
     expect(openLink).toHaveAttribute("target", "_blank");
     expect(openLink).toHaveAttribute("rel", "noreferrer");
@@ -74,9 +74,9 @@ describe("BookingCopyLink", () => {
       <BookingCopyLink bookingUrl="https://compasscalendar.com/meet/hostuser" />,
     );
 
-    await user.hover(screen.getByRole("button", { name: "Copy booking link" }));
+    await user.hover(screen.getByRole("button", { name: "Copy meeting link" }));
     expect((await screen.findByRole("tooltip")).textContent).toBe(
-      "Copy booking link",
+      "Copy meeting link",
     );
   });
 
@@ -86,9 +86,9 @@ describe("BookingCopyLink", () => {
       <BookingCopyLink bookingUrl="https://compasscalendar.com/meet/hostuser" />,
     );
 
-    await user.hover(screen.getByRole("link", { name: "Open booking page" }));
+    await user.hover(screen.getByRole("link", { name: "Open meeting page" }));
     expect((await screen.findByRole("tooltip")).textContent).toBe(
-      "Open booking page",
+      "Open meeting page",
     );
   });
 });

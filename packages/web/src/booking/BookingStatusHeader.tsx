@@ -16,7 +16,7 @@ export function BookingStatusHeader({
     return (
       <div className="flex flex-col gap-2">
         <p className="font-medium text-sm text-text">
-          Your booking page is live
+          Your meeting page is live
         </p>
         {bookingUrl ? (
           <div {...bookingFieldAttrs("link")}>
@@ -30,7 +30,7 @@ export function BookingStatusHeader({
   return (
     <div className="flex flex-col gap-1">
       <p className="font-medium text-sm text-text">
-        Your booking page is not live yet
+        Your meeting page is not live yet
       </p>
       {addressPreview ? (
         <p className="text-sm text-text-muted">

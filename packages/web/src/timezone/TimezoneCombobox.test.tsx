@@ -105,7 +105,7 @@ describe("BookingTimezoneField", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: /^Booking timezone:/ }),
+      screen.getByRole("button", { name: /^Meeting timezone:/ }),
     );
     await user.type(screen.getByRole("combobox"), "berlin");
     await user.keyboard("{Enter}");
@@ -122,7 +122,7 @@ describe("BookingTimezoneField", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /^Booking timezone: Pacific/ }),
+      screen.getByRole("button", { name: /^Meeting timezone: Pacific/ }),
     ).toBeInTheDocument();
   });
 });

@@ -5,10 +5,10 @@ import {
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { settingsShortcutAttrs } from "@web/settings/useSettingsShortcuts";
 
-export const BOOKING_TURN_ON_LABEL = "Turn on booking page";
+export const BOOKING_TURN_ON_LABEL = "Turn on meeting page";
 export const BOOKING_SAVE_DRAFT_LABEL = "Save draft";
 export const BOOKING_SAVE_CHANGES_LABEL = "Save changes";
-export const BOOKING_TURN_OFF_LABEL = "Turn off booking page";
+export const BOOKING_TURN_OFF_LABEL = "Turn off meeting page";
 
 export const BOOKING_SETTINGS_SAVE_BAR_CLASS_NAME =
   "sticky -bottom-8 z-10 border-border border-t bg-surface-panel pt-3 pb-8";

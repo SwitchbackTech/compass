@@ -12,19 +12,19 @@
  * than the event form's Mod+digit jump.
  */
 export const BOOKING_SEQUENCE_FIELDS = [
-  { key: "e", field: "enabled", label: "Booking page on or off" },
+  { key: "e", field: "enabled", label: "Meeting page on or off" },
   { key: "a", field: "address", label: "Page address" },
   { key: "d", field: "duration", label: "Duration" },
   { key: "c", field: "destination", label: "Destination calendar" },
   { key: "b", field: "blocking", label: "Blocking calendars" },
-  { key: "z", field: "timezone", label: "Booking timezone" },
+  { key: "z", field: "timezone", label: "Meeting timezone" },
   { key: "h", field: "hours", label: "Weekly hours" },
   { key: "m", field: "more", label: "More options" },
   { key: "w", field: "welcome", label: "Welcome text" },
   { key: "n", field: "notice", label: "Minimum notice" },
   { key: "x", field: "horizon", label: "Maximum horizon" },
   { key: "o", field: "options", label: "Buffer and limits" },
-  { key: "l", field: "link", label: "Booking link" },
+  { key: "l", field: "link", label: "Meeting link" },
 ] as const satisfies readonly {
   key: string;
   field: string;
