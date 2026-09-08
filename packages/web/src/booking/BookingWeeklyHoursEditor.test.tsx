@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { act, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   DEFAULT_WEEKLY_AVAILABILITY,
@@ -23,16 +23,21 @@ const renderEditor = (
 const lastCall = (onChange: ReturnType<typeof renderEditor>) =>
   onChange.mock.calls[onChange.mock.calls.length - 1]?.[0];
 
-const hoursInput = () => screen.getByRole("textbox", { name: /Hours/ });
+const startSelect = () => screen.getByRole("combobox", { name: /Start for/ });
+
+const endSelect = () => screen.getByRole("combobox", { name: /End for/ });
 
 const dayPill = (name: string) => screen.getByRole("button", { name });
 
 describe("BookingWeeklyHoursEditor", () => {
-  it("shows one Mon-Fri row at 9am-5pm by default", () => {
+  it("shows one Mon-Fri row at 9:00 AM to 5:00 PM by default", () => {
     renderEditor();
 
-    expect(screen.getAllByRole("textbox", { name: /Hours/ })).toHaveLength(1);
-    expect(hoursInput()).toHaveValue("9am-5pm");
+    expect(screen.getAllByRole("combobox", { name: /Start for/ })).toHaveLength(
+      1,
+    );
+    expect(startSelect()).toHaveDisplayValue("9:00 AM");
+    expect(endSelect()).toHaveDisplayValue("5:00 PM");
     for (const name of [
       "Monday",
       "Tuesday",
@@ -49,46 +54,69 @@ describe("BookingWeeklyHoursEditor", () => {
     ).toBeInTheDocument();
   });
 
-  it("emits two intervals for each pressed day after typing a break", async () => {
+  it("emits 17:15 for every selected day when End is 5:15 PM", async () => {
     const user = userEvent.setup({ delay: null });
     const onChange = renderEditor();
 
-    await user.clear(hoursInput());
-    await user.type(hoursInput(), "9-12, 1-5");
-    await user.tab();
+    await user.selectOptions(endSelect(), "17:15");
 
     expect(lastCall(onChange)).toEqual([
-      { weekday: 1, start: "09:00", end: "12:00" },
-      { weekday: 1, start: "13:00", end: "17:00" },
-      { weekday: 2, start: "09:00", end: "12:00" },
-      { weekday: 2, start: "13:00", end: "17:00" },
-      { weekday: 3, start: "09:00", end: "12:00" },
-      { weekday: 3, start: "13:00", end: "17:00" },
-      { weekday: 4, start: "09:00", end: "12:00" },
-      { weekday: 4, start: "13:00", end: "17:00" },
-      { weekday: 5, start: "09:00", end: "12:00" },
-      { weekday: 5, start: "13:00", end: "17:00" },
+      { weekday: 1, start: "09:00", end: "17:15" },
+      { weekday: 2, start: "09:00", end: "17:15" },
+      { weekday: 3, start: "09:00", end: "17:15" },
+      { weekday: 4, start: "09:00", end: "17:15" },
+      { weekday: 5, start: "09:00", end: "17:15" },
     ]);
-    expect(hoursInput()).toHaveValue("9am-12pm, 1pm-5pm");
   });
 
-  it("adds Saturday intervals from a second row", async () => {
+  it("seeds Saturday and Sunday from Add hours, then disables it", async () => {
     const user = userEvent.setup({ delay: null });
-    const onChange = renderEditor();
+    renderEditor();
 
     await user.click(screen.getByRole("button", { name: "Add hours" }));
     const groups = screen.getAllByRole("group", { name: "Days" });
     expect(groups).toHaveLength(2);
-    const secondInput = screen.getAllByRole("textbox", { name: /Hours/ })[1]!;
-    await user.type(secondInput, "10-2");
-    await user.tab();
-
-    expect(lastCall(onChange)).toEqual(
-      expect.arrayContaining([
-        { weekday: 6, start: "10:00", end: "14:00" },
-        { weekday: 1, start: "09:00", end: "17:00" },
-      ]),
+    expect(
+      within(groups[1]!).getByRole("button", { name: "Saturday" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(groups[1]!).getByRole("button", { name: "Sunday" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Add hours" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add hours" })).toHaveAttribute(
+      "title",
+      "Every day already has hours",
     );
+  });
+
+  it("never lists an End time at or before Start", () => {
+    renderEditor();
+
+    const options = within(endSelect())
+      .getAllByRole("option")
+      .map((option) => (option as HTMLOptionElement).value);
+    expect(options).not.toContain("09:00");
+    expect(options.some((value) => value <= "09:00")).toBe(false);
+    expect(options[0]).toBe("09:15");
+  });
+
+  it("never shows Choose at least one day", () => {
+    renderEditor([]);
+
+    expect(
+      screen.queryByText("Choose at least one day."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves focus between day pills with arrow keys", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderEditor();
+
+    dayPill("Monday").focus();
+    await user.keyboard("{ArrowRight}");
+    expect(dayPill("Tuesday")).toHaveFocus();
+    await user.keyboard("{ArrowLeft}");
+    expect(dayPill("Monday")).toHaveFocus();
   });
 
   it("moves Monday onto the second row", async () => {
@@ -107,9 +135,9 @@ describe("BookingWeeklyHoursEditor", () => {
     expect(
       within(groups[1]!).getByRole("button", { name: "Monday" }),
     ).toHaveAttribute("aria-pressed", "true");
-    expect(lastCall(onChange)?.filter((entry) => entry.weekday === 1)).toEqual(
-      [],
-    );
+    expect(lastCall(onChange)?.filter((entry) => entry.weekday === 1)).toEqual([
+      { weekday: 1, start: "09:00", end: "17:00" },
+    ]);
   });
 
   it("leaves a removed row's days unavailable", async () => {
@@ -117,9 +145,6 @@ describe("BookingWeeklyHoursEditor", () => {
     const onChange = renderEditor();
 
     await user.click(screen.getByRole("button", { name: "Add hours" }));
-    const secondInput = screen.getAllByRole("textbox", { name: /Hours/ })[1]!;
-    await user.type(secondInput, "10-2");
-    await user.tab();
     await user.click(screen.getAllByRole("button", { name: "Remove" })[1]!);
 
     expect(lastCall(onChange)?.some((entry) => entry.weekday === 6)).toBe(
@@ -129,61 +154,5 @@ describe("BookingWeeklyHoursEditor", () => {
     expect(
       screen.queryByRole("button", { name: "Remove" }),
     ).not.toBeInTheDocument();
-  });
-
-  it("commits the input's current value on focusout even if React state lags", () => {
-    const onChange = renderEditor();
-    const input = hoursInput();
-    const setter = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )?.set;
-    setter?.call(input, "");
-    act(() => {
-      input.dispatchEvent(new Event("focusout", { bubbles: true }));
-    });
-
-    expect(lastCall(onChange)).toEqual([]);
-  });
-
-  it("keeps an unreadable range, shows the alert, and reports invalid", async () => {
-    const user = userEvent.setup({ delay: null });
-    const onValidityChange = mock((_valid: boolean) => {});
-    render(
-      <BookingWeeklyHoursEditor
-        onChange={() => {}}
-        onValidityChange={onValidityChange}
-        value={DEFAULT_WEEKLY_AVAILABILITY}
-      />,
-    );
-
-    await user.clear(hoursInput());
-    await user.type(hoursInput(), "whenever");
-    await user.tab();
-
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      'Could not read "whenever". Try 9-5.',
-    );
-    expect(hoursInput()).toHaveValue("whenever");
-    expect(onValidityChange).toHaveBeenLastCalledWith(false);
-  });
-
-  it("costs two tab stops per row plus Remove", async () => {
-    const user = userEvent.setup({ delay: null });
-    renderEditor();
-    await user.click(screen.getByRole("button", { name: "Add hours" }));
-
-    const groups = screen.getAllByRole("group", { name: "Days" });
-    const inputs = screen.getAllByRole("textbox", { name: /Hours/ });
-    const remove = screen.getAllByRole("button", { name: "Remove" });
-    expect(groups).toHaveLength(2);
-    expect(inputs).toHaveLength(2);
-    expect(remove).toHaveLength(2);
-
-    const firstGroupButtons = within(groups[0]!).getAllByRole("button");
-    const tabStops = firstGroupButtons.filter(
-      (button) => button.tabIndex === 0,
-    );
-    expect(tabStops).toHaveLength(1);
   });
 });

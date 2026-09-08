@@ -260,12 +260,13 @@ time inputs per weekday.
   hours editor until Continue saves the draft.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
-- **Weekly hours** are grouped rows of day pills plus one typed range
-  (`9-5`, or `9-12, 1-5` for a break). The default is one row, Mon-Fri,
-  9am-5pm. **Add hours** starts a row with the days that are still
-  unassigned. A weekday belongs to at most one row. Days in no row are
-  unavailable. The parser reuses `parseUserTime` with an explicit
-  PM-correction rule.
+- **Weekly hours** are grouped rows of day pills, a Start menu, the
+  word "to", and an End menu. Menus step by 15 minutes with 12-hour
+  labels (`9:00 AM`). The default is one row, Mon-Fri, 9:00 AM to
+  5:00 PM. **Add hours** starts a row with the days that are still
+  unassigned, and is disabled once every day has hours. A weekday
+  belongs to at most one row. Days in no row are unavailable. Loading a
+  stored day with two intervals keeps only the first.
 - **Jump:** hold Mod to see sidebar digits `1/2/3` and Enter on Save
   (or Continue). Meeting fields, legends, summaries, and the Copy
   button have no shortcut chips. `Mod+4` through `Mod+9` and `Mod+U`
@@ -542,6 +543,10 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
+- **Weekly hours keep only the first interval per weekday.** Loading a
+  stored day that has two intervals (for example 09:00-12:00 and
+  13:00-17:00) shows one Start and End from the first interval. Saving
+  drops the rest. Booking is not on production. Accepted for v1.8.
 
 ## Related docs
 

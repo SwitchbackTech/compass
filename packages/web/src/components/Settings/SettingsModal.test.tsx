@@ -978,30 +978,6 @@ describe("SettingsModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("asks before discarding uncommitted weekly hours on Escape", async () => {
-    const user = userEvent.setup({ delay: null });
-    const calendar = createMockCalendar({ name: "Work" });
-    renderSettings({
-      authenticated: true,
-      calendars: [calendar],
-      page: "booking",
-    });
-
-    await screen.findByRole("switch", { name: "Meeting page" });
-    const monday = screen.getByRole("textbox", { name: /Hours for/ });
-    await user.clear(monday);
-    await user.type(monday, "9");
-    await user.keyboard("{Escape}");
-
-    expect(
-      screen.getByRole("dialog", { name: "Discard unsaved changes?" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("dialog", { name: "Settings" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /Hours for/ })).toHaveValue("9");
-  });
-
   it("asks before discarding unsaved booking edits on Escape", async () => {
     const user = userEvent.setup({ delay: null });
     const calendar = createMockCalendar({ name: "Work" });

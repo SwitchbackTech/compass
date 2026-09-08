@@ -3,7 +3,6 @@ import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import {
   BOOKING_CALENDAR_ID,
   COMPASS_CALENDAR_ID,
-  dispatchBlur,
   dispatchClick,
   dispatchFill,
   expectMeetingShortcutChips,
@@ -213,10 +212,12 @@ test("first visit: address, hours, switch on", async ({ page, context }) => {
   });
   await expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
 
-  const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
-  await dispatchFill(hours, "10-6");
-  await dispatchBlur(hours);
-  await expect(hours).toHaveValue("10am-6pm");
+  await settingsDialog
+    .getByRole("combobox", { name: /Start for/ })
+    .selectOption("10:00");
+  await settingsDialog
+    .getByRole("combobox", { name: /End for/ })
+    .selectOption("18:00");
 
   const editedHours = ([1, 2, 3, 4, 5] as const).map((weekday) => ({
     weekday,
@@ -314,9 +315,9 @@ test("blocks turn on with empty hours", async ({ page }) => {
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
-  await dispatchFill(hours, "");
-  await dispatchBlur(hours);
+  for (const name of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]) {
+    await dispatchClick(settingsDialog.getByRole("button", { name }));
+  }
   await dispatchClick(
     settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );

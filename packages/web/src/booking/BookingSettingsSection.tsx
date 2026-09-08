@@ -264,7 +264,6 @@ export function BookingSettingsSection({
     message: string;
     field?: BookingField;
   } | null>(null);
-  const [areHoursValid, setAreHoursValid] = useState(true);
   const [minNoticeText, setMinNoticeText] = useState(() =>
     String(form.minNoticeHours),
   );
@@ -272,7 +271,6 @@ export function BookingSettingsSection({
     String(form.maxHorizonDays),
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [hoursDraftDirty, setHoursDraftDirty] = useState(false);
   const focusSwitchAfterSetupRef = useRef(false);
   // The settings fieldset is disabled while a save is in flight, so focusing
   // from onError is a no-op. Wait until the mutation settles and the field
@@ -339,14 +337,13 @@ export function BookingSettingsSection({
     (serverPage != null && seededPageRef.current !== serverPage);
 
   const isDirty =
-    (baselineFormRef.current !== null &&
-      isBookingSettingsFormDirty({
-        baseline: baselineFormRef.current,
-        form,
-        horizonText,
-        minNoticeText,
-      })) ||
-    hoursDraftDirty;
+    baselineFormRef.current !== null &&
+    isBookingSettingsFormDirty({
+      baseline: baselineFormRef.current,
+      form,
+      horizonText,
+      minNoticeText,
+    });
 
   if (dismissGuardRef) {
     dismissGuardRef.current = () => {
@@ -447,7 +444,6 @@ export function BookingSettingsSection({
 
   const submit = (enabled: boolean, options?: { silent?: boolean }) => {
     const error = validateBookingForm({
-      areHoursValid,
       enabling: enabled,
       form,
       horizonInvalid,
@@ -585,8 +581,6 @@ export function BookingSettingsSection({
             onChange={(weeklyAvailability) =>
               updateForm({ weeklyAvailability })
             }
-            onDraftDirtyChange={setHoursDraftDirty}
-            onValidityChange={setAreHoursValid}
             value={form.weeklyAvailability}
           />
         </div>
