@@ -19,6 +19,7 @@ export const BOOKING_RESERVED_SLUGS = [
   "api",
   "cleanup",
   "book",
+  "meet",
   "cancel",
   "reschedule",
   "confirmed",

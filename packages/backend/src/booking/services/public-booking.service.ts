@@ -138,7 +138,7 @@ const buildGuestActionUrl = (
   token: string,
 ): string =>
   new URL(
-    `/book/${action}/${reservationId}?token=${encodeURIComponent(token)}`,
+    `/meet/${action}/${reservationId}?token=${encodeURIComponent(token)}`,
     CONFIG.FRONTEND_URL,
   ).href;
 

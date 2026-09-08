@@ -298,7 +298,7 @@ describe("PublicBookingPage", () => {
   });
 
   it("shows a generic not-found state for an unknown slug", async () => {
-    renderBookingRoute("/book/unknown-host");
+    renderBookingRoute("/meet/unknown-host");
 
     expect(
       await screen.findByRole("heading", { name: "Booking page not found" }),
@@ -314,7 +314,7 @@ describe("PublicBookingPage", () => {
 
   it("fires booking_page_viewed once for an enabled page", async () => {
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -336,7 +336,7 @@ describe("PublicBookingPage", () => {
           ),
       ),
     );
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Booking page not found" }),
@@ -350,7 +350,7 @@ describe("PublicBookingPage", () => {
   it("skips the month grid to the slot list", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
@@ -396,7 +396,7 @@ describe("PublicBookingPage", () => {
       slotsInWindow([currentSlot]),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -420,7 +420,7 @@ describe("PublicBookingPage", () => {
       slotsInWindow([currentSlot]),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -442,7 +442,7 @@ describe("PublicBookingPage", () => {
       slotsInWindow([currentSlot]),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -472,16 +472,16 @@ describe("PublicBookingPage", () => {
               slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -610,16 +610,16 @@ describe("PublicBookingPage", () => {
               slotEnd: slot.slotEnd,
               guestTimeZone: overrideZone,
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
       ),
     );
 
-    renderBookingRoute("/book/tzhost");
+    renderBookingRoute("/meet/tzhost");
 
     expect(
       await screen.findByText(/Times shown in your timezone/),
@@ -722,7 +722,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tzpersist");
+    renderBookingRoute("/meet/tzpersist");
 
     await screen.findByRole("button", {
       name: slotButtonName(currentSlot.slotStart, guestTimeZone),
@@ -790,7 +790,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", {
@@ -815,7 +815,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     await user.click(
@@ -874,7 +874,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     expect(screen.queryByText(/Keyboard shortcuts/i)).not.toBeInTheDocument();
@@ -914,7 +914,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await waitFor(() => {
       expect(events).toContain("page-start");
@@ -942,7 +942,7 @@ describe("PublicBookingPage", () => {
       }),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     expect(
@@ -1007,7 +1007,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -1031,7 +1031,7 @@ describe("PublicBookingPage", () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot, nextMonthSlot]));
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("button", {
@@ -1072,7 +1072,7 @@ describe("PublicBookingPage", () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([nextMonthSlot]));
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     expect(
@@ -1113,7 +1113,7 @@ describe("PublicBookingPage", () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([]));
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Book with Tyler Dane" });
     expect(
@@ -1147,7 +1147,7 @@ describe("PublicBookingPage", () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot, laterCurrentSlot]));
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await user.click(
       await screen.findByRole("button", {
@@ -1220,16 +1220,16 @@ describe("PublicBookingPage", () => {
               slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           );
         },
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await user.click(
       await screen.findByRole("button", {
@@ -1276,7 +1276,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -1323,7 +1323,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/retryhost");
+    renderBookingRoute("/meet/retryhost");
 
     expect(
       await screen.findByRole("heading", { name: "Book with Tyler Dane" }),
@@ -1383,7 +1383,7 @@ describe("PublicBookingPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     expect(
       await screen.findByRole("heading", { name: "Pick a time" }),
@@ -1421,7 +1421,7 @@ describe("PublicBookingPage", () => {
   it("returns to the picker on Escape from Your details", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await user.click(
       await screen.findByRole("button", {
@@ -1446,7 +1446,7 @@ describe("PublicBookingPage", () => {
   it("moves focus from a slot to the selected day on Escape", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Pick a time" });
     const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
@@ -1467,7 +1467,7 @@ describe("PublicBookingPage", () => {
   it("closes the timezone panel on Escape without leaving Your details", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
 
     await user.click(
       await screen.findByRole("button", {
@@ -1498,7 +1498,7 @@ describe("PublicBookingPage", () => {
   it("does not navigate away when Escape is pressed on the month grid", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(pageHandler(), slotsInWindow([currentSlot]));
-    const { router } = renderBookingRoute("/book/tylerdane");
+    const { router } = renderBookingRoute("/meet/tylerdane");
 
     await screen.findByRole("heading", { name: "Pick a time" });
     const dateKey = formatBookingDateKey(currentSlot.slotStart, guestTimeZone);
@@ -1523,7 +1523,7 @@ describe("PublicBookingPage", () => {
 describe("PublicBookingConfirmedPage", () => {
   it("shows booking details from the public GET", async () => {
     server.use(reservationGetHandler());
-    renderBookingRoute("/book/confirmed/000000000000000000000099");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
       await screen.findByRole("heading", {
@@ -1556,7 +1556,7 @@ describe("PublicBookingConfirmedPage", () => {
 
   it("offers cancel and edit on a cold permalink with a token", async () => {
     server.use(reservationGetHandler());
-    renderBookingRoute("/book/confirmed/000000000000000000000099?token=abc");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099?token=abc");
 
     expect(
       await screen.findByRole("heading", {
@@ -1576,13 +1576,13 @@ describe("PublicBookingConfirmedPage", () => {
       screen.getByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute(
       "href",
-      `${window.location.origin}/book/cancel/000000000000000000000099?token=abc`,
+      `${window.location.origin}/meet/cancel/000000000000000000000099?token=abc`,
     );
     expect(
       screen.getByRole("link", { name: "Reschedule this booking" }),
     ).toHaveAttribute(
       "href",
-      `${window.location.origin}/book/reschedule/000000000000000000000099?token=abc`,
+      `${window.location.origin}/meet/reschedule/000000000000000000000099?token=abc`,
     );
     expect(
       screen.getByText("A Google Meet invite is on its way to your email."),
@@ -1594,7 +1594,7 @@ describe("PublicBookingConfirmedPage", () => {
 
   it("promises a calendar invite when the reservation cannot mint Meet", async () => {
     server.use(reservationGetHandler({ createsGoogleMeet: false }));
-    renderBookingRoute("/book/confirmed/000000000000000000000099");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
       await screen.findByRole("heading", {
@@ -1620,7 +1620,7 @@ describe("PublicBookingConfirmedPage", () => {
       reservationGetHandler(),
     );
     const { router } = renderBookingRoute(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
 
     await screen.findByRole("heading", {
@@ -1634,14 +1634,14 @@ describe("PublicBookingConfirmedPage", () => {
     await waitFor(() => {
       expect(heading).toHaveFocus();
     });
-    expect(router.state.location.pathname).toBe("/book/tylerdane");
+    expect(router.state.location.pathname).toBe("/meet/tylerdane");
   });
 
   it("does not navigate on Escape when the confirmation has no slug", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(reservationGetHandler({ status: "cancelled" }));
     const { router } = renderBookingRoute(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
 
     const heading = await screen.findByRole("heading", {
@@ -1651,7 +1651,7 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(heading).toHaveFocus();
     expect(router.state.location.pathname).toBe(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
   });
 
@@ -1664,7 +1664,7 @@ describe("PublicBookingConfirmedPage", () => {
       ),
     );
     const { router } = renderBookingRoute(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
 
     const heading = await screen.findByRole("heading", {
@@ -1674,13 +1674,13 @@ describe("PublicBookingConfirmedPage", () => {
 
     expect(heading).toHaveFocus();
     expect(router.state.location.pathname).toBe(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
   });
 
   it("shows a calm state for a cancelled reservation", async () => {
     server.use(reservationGetHandler({ status: "cancelled" }));
-    renderBookingRoute("/book/confirmed/000000000000000000000099");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
       await screen.findByRole("heading", {
@@ -1705,7 +1705,7 @@ describe("PublicBookingConfirmedPage", () => {
         (_req, res, ctx) => res(ctx.status(Status.NOT_FOUND), ctx.json({})),
       ),
     );
-    renderBookingRoute("/book/confirmed/000000000000000000000099");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
       await screen.findByRole("heading", { name: "Booking not found" }),
@@ -1720,7 +1720,7 @@ describe("PublicBookingConfirmedPage", () => {
           res(ctx.status(Status.INTERNAL_SERVER), ctx.json({})),
       ),
     );
-    renderBookingRoute("/book/confirmed/000000000000000000000099");
+    renderBookingRoute("/meet/confirmed/000000000000000000000099");
 
     expect(
       await screen.findByRole("heading", { name: "Could not load booking" }),
@@ -1754,15 +1754,15 @@ describe("PublicBookingConfirmedPage", () => {
               slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           ),
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
     await user.click(
       await screen.findByRole("button", {
         name: slotButtonName(currentSlot.slotStart),
@@ -1775,17 +1775,17 @@ describe("PublicBookingConfirmedPage", () => {
       await screen.findByRole("link", { name: "Cancel this booking" }),
     ).toHaveAttribute(
       "href",
-      "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
     );
     expect(
       screen.getByRole("link", { name: "Reschedule this booking" }),
     ).toHaveAttribute(
       "href",
-      "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+      "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
     );
     expect(
       screen.queryByRole("link", {
-        name: "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        name: "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
       }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/token=abc/)).not.toBeInTheDocument();
@@ -1794,7 +1794,7 @@ describe("PublicBookingConfirmedPage", () => {
     );
 
     expect(written).toEqual([
-      "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
     ]);
     expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Copied");
@@ -1822,9 +1822,9 @@ describe("PublicBookingConfirmedPage", () => {
               slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           ),
       ),
@@ -1850,7 +1850,7 @@ describe("PublicBookingConfirmedPage", () => {
       ),
     );
 
-    renderBookingRoute("/book/tylerdane");
+    renderBookingRoute("/meet/tylerdane");
     await user.click(
       await screen.findByRole("button", {
         name: slotButtonName(currentSlot.slotStart),
@@ -1918,15 +1918,15 @@ describe("PublicBookingConfirmedPage", () => {
               slotEnd: currentSlot.slotEnd,
               guestTimeZone: "UTC",
               cancelUrl:
-                "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
               rescheduleUrl:
-                "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+                "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
             }),
           ),
       ),
     );
 
-    const { router } = renderBookingRoute("/book/tylerdane");
+    const { router } = renderBookingRoute("/meet/tylerdane");
     await user.click(
       await screen.findByRole("button", {
         name: slotButtonName(currentSlot.slotStart),
@@ -1947,7 +1947,7 @@ describe("PublicBookingConfirmedPage", () => {
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
-      "/book/confirmed/000000000000000000000099",
+      "/meet/confirmed/000000000000000000000099",
     );
   });
 });

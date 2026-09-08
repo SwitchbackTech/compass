@@ -65,8 +65,8 @@ const resolveCancelPageView = (
 };
 
 export function PublicBookingCancelPage() {
-  const { reservationId } = useParams({ from: "/book/cancel/$reservationId" });
-  const search = useSearch({ from: "/book/cancel/$reservationId" });
+  const { reservationId } = useParams({ from: ROOT_ROUTES.BOOK_CANCEL });
+  const search = useSearch({ from: ROOT_ROUTES.BOOK_CANCEL });
   const navigate = useNavigate();
   const token = search.token ?? "";
   const canLoad = Boolean(reservationId && token);
@@ -153,7 +153,7 @@ export function PublicBookingCancelPage() {
         ) : null}
         {showRebook && bookingSlug ? (
           <a
-            href={`/book/${bookingSlug}`}
+            href={`/meet/${bookingSlug}`}
             className="c-focus-ring mt-4 inline-block text-accent text-sm underline"
           >
             Book another time

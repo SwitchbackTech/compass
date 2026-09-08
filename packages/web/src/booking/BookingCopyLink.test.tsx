@@ -45,7 +45,7 @@ describe("BookingCopyLink", () => {
   });
 
   it("copies the booking link", async () => {
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     render(<BookingCopyLink bookingUrl={bookingUrl} />);
 
     fireEvent.click(screen.getByLabelText("Copy booking link"));
@@ -59,7 +59,7 @@ describe("BookingCopyLink", () => {
   });
 
   it("opens the public booking page in a new tab", () => {
-    const bookingUrl = "https://compasscalendar.com/book/hostuser";
+    const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     render(<BookingCopyLink bookingUrl={bookingUrl} />);
 
     const openLink = screen.getByRole("link", { name: "Open booking page" });
@@ -71,7 +71,7 @@ describe("BookingCopyLink", () => {
   it("explains the copy icon in a tooltip", async () => {
     const user = userEvent.setup({ delay: null });
     render(
-      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/meet/hostuser" />,
     );
 
     await user.hover(screen.getByRole("button", { name: "Copy booking link" }));
@@ -83,7 +83,7 @@ describe("BookingCopyLink", () => {
   it("explains the open-page icon in a tooltip", async () => {
     const user = userEvent.setup({ delay: null });
     render(
-      <BookingCopyLink bookingUrl="https://compasscalendar.com/book/hostuser" />,
+      <BookingCopyLink bookingUrl="https://compasscalendar.com/meet/hostuser" />,
     );
 
     await user.hover(screen.getByRole("link", { name: "Open booking page" }));

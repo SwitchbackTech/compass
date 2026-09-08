@@ -56,8 +56,8 @@ RSVP](../features/attendees.md).
 
 Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
 
-- Public URL: `/book/:username`, confirmation `/book/confirmed/:id`,
-  cancel `/book/cancel/:id` (guest routes outside the calendar shell)
+- Public URL: `/meet/:username`, confirmation `/meet/confirmed/:id`,
+  cancel `/meet/cancel/:id` (guest routes outside the calendar shell)
 - Shared contracts: `packages/core/src/types/booking.contracts.ts`
 - Slot engine: `packages/core/src/booking/compute-booking-slots.ts`
 - Backend admin: `packages/backend/src/booking/controllers/booking.controller.ts`,

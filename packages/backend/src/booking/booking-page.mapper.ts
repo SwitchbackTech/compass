@@ -10,7 +10,7 @@ import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { CONFIG } from "@backend/common/constants/config.constants";
 
 export const buildBookingUrl = (slug: string): string =>
-  new URL(`/book/${slug}`, CONFIG.FRONTEND_URL).href;
+  new URL(`/meet/${slug}`, CONFIG.FRONTEND_URL).href;
 
 export const mapBookingPageRecordToWire = (
   record: BookingPageRecord & { bookingSlug: string },

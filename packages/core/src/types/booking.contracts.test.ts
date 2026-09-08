@@ -89,8 +89,8 @@ describe("BookingSlugSchema", () => {
     expect(BookingSlugSchema.safeParse("").success).toBe(false);
   });
 
-  it("rejects reserved slug week", () => {
-    expect(BookingSlugSchema.safeParse("week").success).toBe(false);
+  it("rejects reserved slug meet", () => {
+    expect(BookingSlugSchema.safeParse("meet").success).toBe(false);
   });
 
   it("rejects every reserved word", () => {
@@ -102,6 +102,7 @@ describe("BookingSlugSchema", () => {
       "api",
       "cleanup",
       "book",
+      "meet",
       "cancel",
       "reschedule",
       "confirmed",
@@ -428,7 +429,7 @@ describe("HTTP booking contracts", () => {
     expect(
       AdminGetBookingPageResponseSchema.safeParse({
         ...admin,
-        bookingUrl: "https://compasscalendar.com/book/tylerdane",
+        bookingUrl: "https://compasscalendar.com/meet/tylerdane",
       }).success,
     ).toBe(true);
   });
@@ -617,9 +618,9 @@ describe("HTTP booking contracts", () => {
       slotEnd: "2026-09-01T15:30:00.000Z",
       guestTimeZone: "Europe/London",
       cancelUrl:
-        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
       rescheduleUrl:
-        "https://compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+        "https://compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
     };
     expect(
       CreateBookingReservationResponseSchema.safeParse(created).success,

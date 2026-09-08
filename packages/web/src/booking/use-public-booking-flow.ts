@@ -48,10 +48,10 @@ const SLOT_CONFLICT_ALERT =
  * selection, and the link is shareable. The page component only renders.
  */
 export function usePublicBookingFlow() {
-  const { username } = useParams({ from: "/book/$username" });
+  const { username } = useParams({ from: ROOT_ROUTES.BOOK });
   const slug = username ?? "";
   const navigate = useNavigate();
-  const search: PublicBookingSearch = useSearch({ from: "/book/$username" });
+  const search: PublicBookingSearch = useSearch({ from: ROOT_ROUTES.BOOK });
   const queryClient = useQueryClient();
 
   const browserTimeZone = useMemo(getBrowserTimeZone, []);

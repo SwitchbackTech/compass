@@ -94,19 +94,19 @@ describe("tokenFromGuestActionUrl", () => {
   it("reads token from an absolute cancel URL", () => {
     expect(
       tokenFromGuestActionUrl(
-        "https://compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+        "https://compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
       ),
     ).toBe("abc");
   });
 
   it("reads token from a relative URL", () => {
-    expect(tokenFromGuestActionUrl("/book/cancel/99?token=secret")).toBe(
+    expect(tokenFromGuestActionUrl("/meet/cancel/99?token=secret")).toBe(
       "secret",
     );
   });
 
   it("returns empty when token is missing or the URL is unusable", () => {
-    expect(tokenFromGuestActionUrl("/book/cancel/99")).toBe("");
+    expect(tokenFromGuestActionUrl("/meet/cancel/99")).toBe("");
     expect(tokenFromGuestActionUrl("://bad")).toBe("");
   });
 });
@@ -120,7 +120,7 @@ describe("publicCancelUrlForReservation", () => {
         "https://staging.compasscalendar.com",
       ),
     ).toBe(
-      "https://staging.compasscalendar.com/book/cancel/000000000000000000000099?token=abc",
+      "https://staging.compasscalendar.com/meet/cancel/000000000000000000000099?token=abc",
     );
   });
 });
@@ -134,7 +134,7 @@ describe("publicRescheduleUrlForReservation", () => {
         "https://staging.compasscalendar.com",
       ),
     ).toBe(
-      "https://staging.compasscalendar.com/book/reschedule/000000000000000000000099?token=abc",
+      "https://staging.compasscalendar.com/meet/reschedule/000000000000000000000099?token=abc",
     );
   });
 });

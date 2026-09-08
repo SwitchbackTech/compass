@@ -156,13 +156,14 @@ Browsers connect with `GET /api/events/stream`.
 
 **Booking page**:
 The one v1 scheduling page owned by a Compass user. Settings configure
-it; guests open it at `/book/:username`.
+it; guests open it at `/meet/:username`. Old `/book/:username` links
+redirect client-side.
 _Avoid_: event type (v1 has one duration per user, not Calendly-style
 multiple event types)
 
 **Booking slug**:
 The immutable-in-v1 public username segment in
-`/book/:username`. Allocated from the host's display name. Not a
+`/meet/:username`. Allocated from the host's display name. Not a
 SuperTokens username and not the Google email.
 _Avoid_: username, handle (until slug editing ships)
 

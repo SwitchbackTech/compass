@@ -1,9 +1,9 @@
 export const ROOT_ROUTES = {
   API: "/api",
-  BOOK: "/book/$username",
-  BOOK_CANCEL: "/book/cancel/$reservationId",
-  BOOK_RESCHEDULE: "/book/reschedule/$reservationId",
-  BOOK_CONFIRMED: "/book/confirmed/$reservationId",
+  BOOK: "/meet/$username",
+  BOOK_CANCEL: "/meet/cancel/$reservationId",
+  BOOK_RESCHEDULE: "/meet/reschedule/$reservationId",
+  BOOK_CONFIRMED: "/meet/confirmed/$reservationId",
   CLEANUP: "/cleanup",
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
   PROVIDER_AUTH_CALLBACK: "/auth/$provider/callback",
@@ -15,6 +15,11 @@ export const ROOT_ROUTES = {
   DAY: "/day",
   DAY_DATE: "/day/$dateString",
 } as const;
+
+export const LEGACY_BOOK = "/book/$username";
+export const LEGACY_BOOK_CANCEL = "/book/cancel/$reservationId";
+export const LEGACY_BOOK_RESCHEDULE = "/book/reschedule/$reservationId";
+export const LEGACY_BOOK_CONFIRMED = "/book/confirmed/$reservationId";
 
 export const DEFAULT_CALENDAR_ROUTE = ROOT_ROUTES.WEEK;
 
