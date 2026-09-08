@@ -989,7 +989,7 @@ describe("SettingsModal", () => {
     });
 
     await screen.findByRole("switch", { name: "Meeting page" });
-    const monday = screen.getByLabelText("Monday");
+    const monday = screen.getByRole("textbox", { name: /Hours for/ });
     await user.clear(monday);
     await user.type(monday, "9");
     await user.keyboard("{Escape}");
@@ -1000,7 +1000,7 @@ describe("SettingsModal", () => {
     expect(
       screen.getByRole("dialog", { name: "Settings" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Monday")).toHaveValue("9");
+    expect(screen.getByRole("textbox", { name: /Hours for/ })).toHaveValue("9");
   });
 
   it("asks before discarding unsaved booking edits on Escape", async () => {

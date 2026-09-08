@@ -342,9 +342,13 @@ test.describe("settings booking section", () => {
   }) => {
     await prepareSignedInBookingSettingsPage(page, {
       enabled: false,
-      weeklyAvailability: [],
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
+    await dispatchFill(hours, "");
+    await hours.evaluate((el) => {
+      el.dispatchEvent(new Event("blur", { bubbles: true }));
+    });
     await dispatchClick(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
     );
@@ -355,6 +359,27 @@ test.describe("settings booking section", () => {
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking inline save error",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("hours row errors have no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page);
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: "Add hours" }),
+    );
+    const hoursInputs = settingsDialog.getByRole("textbox", { name: /Hours/ });
+    await expect(hoursInputs).toHaveCount(2);
+    await dispatchFill(hoursInputs.nth(0), "whenever");
+    await hoursInputs.nth(0).evaluate((el) => {
+      el.dispatchEvent(new Event("blur", { bubbles: true }));
+    });
+    await expect(settingsDialog.getByRole("alert")).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking hours row error",
       include: "[role='dialog']",
     });
   });

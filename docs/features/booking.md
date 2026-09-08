@@ -218,7 +218,7 @@ One booking-page record per user.
 | Duration | `15` / `30` / `45` / `60` minutes. Default `30`. Custom minutes later. |
 | Destination calendar | Writable calendar (`canWriteEvents`) on a healthy connection. Receives the created event. |
 | Blocking calendars | Calendars whose busy intervals occupy slots. Any calendar the host can read availability for, including `freeBusyReader`. Default: every imported calendar on the destination account. |
-| General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default Mon-Fri 09:00-17:00. Turning on requires at least one window (`AVAILABILITY_REQUIRED`). Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
+| General availability | Weekly intervals in the **host booking timezone**. Empty weekday = unavailable. Default Mon-Fri 09:00-17:00, shown as one grouped hours row. Turning on requires at least one window (`AVAILABILITY_REQUIRED`). Default timezone: the timezone currently in the host's calendar view when they first enable booking, not UTC. An unconfigured admin GET uses the host's primary calendar timezone. |
 | Welcome text | Optional host-authored line (max 500 characters) shown under the public name. |
 | Scheduling window | Minimum notice default **4 hours**, capped at **1440 hours** (the 60-day horizon in hours). Maximum horizon default **60 days**. Buffer default off, capped at **1440 minutes** (one working day). The 60-day cap matches Sync's busy-query bound (`BUSY_QUERY_MAX_WINDOW_MS` in `packages/core/src/types/sync/availability.contracts.ts`). |
 | Buffer | Off by default. When on, **30 minutes between appointments**, applied to both sides of a booked slot so two meetings cannot sit adjacent. |
@@ -249,9 +249,12 @@ time inputs per weekday.
   from React: the jump-key code opens the element imperatively.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
-- **Weekly hours** are one typed range per weekday (`9-5`, or `9-12, 1-5`
-  for a break). A blank day is unavailable. The parser reuses
-  `parseUserTime` with an explicit PM-correction rule.
+- **Weekly hours** are grouped rows of day pills plus one typed range
+  (`9-5`, or `9-12, 1-5` for a break). The default is one row, Mon-Fri,
+  9am-5pm. **Add hours** starts a row with the days that are still
+  unassigned. A weekday belongs to at most one row. Days in no row are
+  unavailable. The parser reuses `parseUserTime` with an explicit
+  PM-correction rule.
 - **Jump:** hold Mod to see section chips. `Mod+4` through `Mod+9`
   jump to on or off, Duration, Timezone, Weekly hours, Destination
   calendar, and More options (`Mod+9` opens the group and focuses the

@@ -222,10 +222,14 @@ test("turns a not-live unconfigured page on in one click", async ({ page }) => {
 test("blocks turn on with empty hours", async ({ page }) => {
   const captured = await prepareSignedInBookingSettingsPage(page, {
     enabled: false,
-    weeklyAvailability: [],
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const hours = settingsDialog.getByRole("textbox", { name: /Hours for/ });
+  await dispatchFill(hours, "");
+  await hours.evaluate((el) => {
+    el.dispatchEvent(new Event("blur", { bubbles: true }));
+  });
   await dispatchClick(
     settingsDialog.getByRole("switch", { name: "Meeting page" }),
   );

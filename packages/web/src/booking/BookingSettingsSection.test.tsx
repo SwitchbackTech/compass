@@ -1000,12 +1000,12 @@ describe("BookingSettingsSection", () => {
 
     // "9-5, then 11-2" is not real input, but any typed letter would be: a
     // bare `e` must reach the field, not swallow the next keystroke.
-    const monday = screen.getByLabelText("Monday");
-    await user.click(monday);
+    const hours = screen.getByRole("textbox", { name: /^Hours/ });
+    await user.click(hours);
     await user.keyboard("eh");
 
-    expect(monday).toHaveValue("eh");
-    expect(document.activeElement).toBe(monday);
+    expect(hours).toHaveValue("eh");
+    expect(document.activeElement).toBe(hours);
   });
 
   it("blocks the save while a weekly-hours row cannot be read", async () => {
@@ -1034,7 +1034,10 @@ describe("BookingSettingsSection", () => {
     );
     await screen.findByRole("switch", { name: "Meeting page" });
 
-    await user.type(screen.getByLabelText("Monday"), "whenever");
+    await user.type(
+      screen.getByRole("textbox", { name: /Hours for/ }),
+      "whenever",
+    );
     await user.tab();
     await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
@@ -1557,12 +1560,7 @@ describe("BookingSettingsSection", () => {
 
     server.use(
       rest.get(bookingPageUrl, (_req, res, ctx) =>
-        res(
-          ctx.json({
-            ...unconfiguredPage(),
-            weeklyAvailability: [],
-          }),
-        ),
+        res(ctx.json(unconfiguredPage())),
       ),
       rest.put(bookingPageUrl, (_req, res, ctx) => {
         putCount += 1;
@@ -1581,6 +1579,9 @@ describe("BookingSettingsSection", () => {
     );
 
     await screen.findByRole("switch", { name: "Meeting page" });
+    const hours = screen.getByRole("textbox", { name: /Hours for/ });
+    await user.clear(hours);
+    await user.tab();
     await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
     const hoursAlert = screen.getByRole("alert");
@@ -1614,13 +1615,36 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    expect(await screen.findByLabelText("Monday")).toHaveValue("9am-5pm");
-    expect(screen.getByLabelText("Tuesday")).toHaveValue("9am-5pm");
-    expect(screen.getByLabelText("Wednesday")).toHaveValue("9am-5pm");
-    expect(screen.getByLabelText("Thursday")).toHaveValue("9am-5pm");
-    expect(screen.getByLabelText("Friday")).toHaveValue("9am-5pm");
-    expect(screen.getByLabelText("Saturday")).toHaveValue("");
-    expect(screen.getByLabelText("Sunday")).toHaveValue("");
+    expect(
+      await screen.findByRole("button", { name: "Monday" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Tuesday" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Wednesday" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Thursday" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Friday" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Saturday" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Sunday" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("textbox", { name: /Hours for/ })).toHaveValue(
+      "9am-5pm",
+    );
   });
 
   it("shows an error on PUT 403 without crashing Settings", async () => {

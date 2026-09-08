@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import { type WeeklyAvailability } from "@core/types/booking.contracts";
 import {
-  type WeeklyAvailability,
-  type WeeklyAvailabilityInterval,
-} from "@core/types/booking.contracts";
-import { ISO_WEEKDAYS, weekdayLabel } from "@web/booking/booking.util";
+  ISO_WEEKDAYS,
+  type IsoWeekday,
+  weekdayLabel,
+  weekdayShortLabel,
+} from "@web/booking/booking.util";
 import {
   formatHoursRanges,
   parseHoursRanges,
 } from "@web/booking/weekly-hours.parse";
+import {
+  availabilityFromRows,
+  claimWeekday,
+  type HoursRow,
+  hoursInputLabel,
+  rowsFromAvailability,
+  textForRow,
+  unassignedWeekdays,
+} from "@web/booking/weekly-hours.rows";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-
-type Weekday = WeeklyAvailabilityInterval["weekday"];
-
-const WEEKDAYS: readonly Weekday[] = [1, 2, 3, 4, 5];
 
 interface BookingWeeklyHoursEditorProps {
   value: WeeklyAvailability;
@@ -26,23 +33,29 @@ interface BookingWeeklyHoursEditorProps {
   shortcutKeys?: readonly string[];
 }
 
-const textForWeekday = (value: WeeklyAvailability, weekday: Weekday): string =>
-  formatHoursRanges(value.filter((entry) => entry.weekday === weekday));
+interface EditorRow extends HoursRow {
+  id: number;
+}
 
-const textsFromAvailability = (
+const emptyRow = (): HoursRow => ({
+  weekdays: new Set<IsoWeekday>(),
+  text: "",
+});
+
+const toEditorRows = (
   value: WeeklyAvailability,
-): Record<Weekday, string> =>
-  Object.fromEntries(
-    ISO_WEEKDAYS.map((weekday) => [weekday, textForWeekday(value, weekday)]),
-  ) as Record<Weekday, string>;
+  nextId: () => number,
+): EditorRow[] => {
+  const grouped = rowsFromAvailability(value);
+  const source = grouped.length > 0 ? grouped : [emptyRow()];
+  return source.map((row) => ({ ...row, id: nextId() }));
+};
+
+const pillClassName =
+  "c-focus-ring min-h-8 min-w-8 rounded border border-border px-1.5 text-xs text-text hover:bg-surface-panel aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent";
 
 /**
- * One typed range per day - "9-5", or "9-12, 1-5", or blank for unavailable.
- *
- * This replaced a checkbox plus two native <input type="time"> per day: 21 tab
- * stops, each time input itself a multi-segment widget. Blankness is now the
- * unavailable state, so the checkboxes are gone, and the parser is the same
- * one behind the event form's time field.
+ * Grouped day-pill rows: one typed range shared by the days in that row.
  */
 export function BookingWeeklyHoursEditor({
   value,
@@ -52,94 +65,114 @@ export function BookingWeeklyHoursEditor({
   onDraftDirtyChange,
   shortcutKeys,
 }: BookingWeeklyHoursEditorProps) {
-  // Raw text per row so a half-typed value is never yanked out from under the
-  // user; it only becomes availability once it parses.
-  const [texts, setTexts] = useState<Record<Weekday, string>>(() =>
-    textsFromAvailability(value),
+  const hintId = useId();
+  const idRef = useRef(1);
+  const allocId = () => {
+    const id = idRef.current;
+    idRef.current += 1;
+    return id;
+  };
+  const [rows, setRows] = useState<EditorRow[]>(() =>
+    toEditorRows(value, allocId),
   );
-  const [errors, setErrors] = useState<Partial<Record<Weekday, string>>>({});
+  const [errors, setErrors] = useState<ReadonlyMap<number, string>>(new Map());
   const [announcement, setAnnouncement] = useState("");
-  // What we last handed upward. Anything else arriving in `value` came from
-  // outside - the server response seeding the form - so the rows resync,
-  // without yanking a half-typed value out from under the user.
+  const [rover, setRover] = useState<Record<number, IsoWeekday>>({});
   const emittedRef = useRef<WeeklyAvailability>(value);
   const draftDirtyRef = useRef(false);
 
   useEffect(() => {
     if (value === emittedRef.current) return;
     emittedRef.current = value;
-    setTexts(textsFromAvailability(value));
-    setErrors({});
+    setRows(
+      toEditorRows(value, () => {
+        const id = idRef.current;
+        idRef.current += 1;
+        return id;
+      }),
+    );
+    setErrors(new Map());
   }, [value]);
 
   useEffect(() => {
-    onValidityChange?.(Object.keys(errors).length === 0);
+    onValidityChange?.(errors.size === 0);
   }, [errors, onValidityChange]);
 
   useEffect(() => {
     if (!onDraftDirtyChange) return;
-    const dirty = ISO_WEEKDAYS.some(
-      (weekday) => (texts[weekday] ?? "") !== textForWeekday(value, weekday),
-    );
+    const dirty = rows.some((row) => row.text !== textForRow(value, row));
     if (draftDirtyRef.current === dirty) return;
     draftDirtyRef.current = dirty;
     onDraftDirtyChange(dirty);
-  }, [onDraftDirtyChange, texts, value]);
+  }, [onDraftDirtyChange, rows, value]);
 
-  const commit = (nextTexts: Record<Weekday, string>) => {
-    const nextErrors: Partial<Record<Weekday, string>> = {};
-    const intervals: WeeklyAvailabilityInterval[] = [];
-
-    for (const weekday of ISO_WEEKDAYS) {
-      const result = parseHoursRanges(nextTexts[weekday] ?? "");
-      if (!result.ok) {
-        nextErrors[weekday] = result.error;
-        continue;
-      }
-      for (const range of result.ranges) {
-        intervals.push({ weekday, start: range.start, end: range.end });
-      }
+  const commitRows = (nextRows: EditorRow[], liveAnnouncement?: string) => {
+    const result = availabilityFromRows(nextRows);
+    setRows(nextRows);
+    if (!result.ok) {
+      setErrors(result.errors);
+      if (liveAnnouncement) setAnnouncement(liveAnnouncement);
+      return;
     }
-
-    setErrors(nextErrors);
-    emittedRef.current = intervals;
-    onChange(intervals);
+    setErrors(new Map());
+    emittedRef.current = result.value;
+    onChange(result.value);
+    if (liveAnnouncement) setAnnouncement(liveAnnouncement);
   };
 
-  const setText = (weekday: Weekday, text: string) => {
-    setTexts((current) => ({ ...current, [weekday]: text }));
-  };
-
-  const commitRow = (weekday: Weekday) => {
-    const result = parseHoursRanges(texts[weekday] ?? "");
-    const nextTexts = result.ok
-      ? { ...texts, [weekday]: formatHoursRanges(result.ranges) }
-      : texts;
-    setTexts(nextTexts);
-    commit(nextTexts);
-  };
-
-  const applyToWeekdays = () => {
-    const source = texts[1] ?? "";
-    const nextTexts = { ...texts };
-    for (const weekday of WEEKDAYS) nextTexts[weekday] = source;
-    setTexts(nextTexts);
-    commit(nextTexts);
-    setAnnouncement(
-      source.trim() === ""
-        ? "Cleared Monday through Friday"
-        : `Set Monday through Friday to ${source}`,
+  const setRowText = (id: number, text: string) => {
+    setRows((current) =>
+      current.map((row) => (row.id === id ? { ...row, text } : row)),
     );
   };
 
-  const clearAll = () => {
-    const nextTexts = Object.fromEntries(
-      ISO_WEEKDAYS.map((weekday) => [weekday, ""]),
-    ) as Record<Weekday, string>;
-    setTexts(nextTexts);
-    commit(nextTexts);
-    setAnnouncement("Cleared every day");
+  const commitText = (id: number) => {
+    const current = rows.find((row) => row.id === id);
+    if (!current) return;
+    const parsed = parseHoursRanges(current.text);
+    const snapped = parsed.ok ? formatHoursRanges(parsed.ranges) : current.text;
+    const nextRows = rows.map((row) =>
+      row.id === id ? { ...row, text: snapped } : row,
+    );
+    commitRows(nextRows);
   };
+
+  const toggleDay = (rowIndex: number, weekday: IsoWeekday) => {
+    const next = claimWeekday(rows, rowIndex, weekday).map((row, index) => ({
+      ...row,
+      id: rows[index]?.id ?? allocId(),
+    }));
+    const pressed = next[rowIndex]?.weekdays.has(weekday) === true;
+    commitRows(
+      next,
+      pressed
+        ? `Added ${weekdayLabel(weekday)}`
+        : `Removed ${weekdayLabel(weekday)}`,
+    );
+  };
+
+  const addRow = () => {
+    const seeded = new Set(unassignedWeekdays(rows));
+    const next: EditorRow[] = [
+      ...rows,
+      { id: allocId(), weekdays: seeded, text: "" },
+    ];
+    commitRows(next, "Added hours row");
+  };
+
+  const removeRow = (id: number) => {
+    if (rows.length < 2) return;
+    commitRows(
+      rows.filter((row) => row.id !== id),
+      "Removed hours row",
+    );
+  };
+
+  const unavailable = unassignedWeekdays(rows);
+  const unavailableCopy =
+    unavailable.length > 0
+      ? `Unavailable: ${unavailable.map(weekdayLabel).join(", ")}`
+      : null;
 
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
@@ -147,66 +180,138 @@ export function BookingWeeklyHoursEditor({
         Weekly hours
         {shortcutKeys ? <ShortcutKeys keys={[...shortcutKeys]} /> : null}
       </legend>
-      <p className="text-text-muted text-xs" id="booking-hours-hint">
-        Type a range like 9-5, or 9-12, 1-5 for a break. Leave a day blank to be
-        unavailable.
+      <p className="text-text-muted text-xs" id={hintId}>
+        Type a range like 9-5, or 9-12, 1-5 for a break.
       </p>
+      {unavailableCopy ? (
+        <p className="text-sm text-text-muted">{unavailableCopy}</p>
+      ) : null}
 
       <span aria-live="polite" className="sr-only" role="status">
         {announcement}
       </span>
 
-      {ISO_WEEKDAYS.map((weekday) => (
-        <div className="flex flex-col gap-1" key={weekday}>
-          <div className="flex items-center gap-2">
-            <label
-              className="w-28 shrink-0 text-sm text-text"
-              htmlFor={`booking-hours-${weekday}`}
-            >
-              {weekdayLabel(weekday)}
-            </label>
-            <input
-              aria-describedby="booking-hours-hint"
-              aria-invalid={errors[weekday] ? true : undefined}
-              className="c-focus-ring w-40 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
-              id={`booking-hours-${weekday}`}
-              onBlur={() => commitRow(weekday)}
-              onChange={(event) => setText(weekday, event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") commitRow(weekday);
-              }}
-              placeholder="9-5"
-              type="text"
-              value={texts[weekday] ?? ""}
-            />
-            {(texts[weekday] ?? "").trim() === "" && !errors[weekday] ? (
-              <span className="text-sm text-text-muted">Unavailable</span>
+      {rows.map((row, rowIndex) => {
+        const error = errors.get(rowIndex);
+        const errorId = error ? `booking-hours-row-${row.id}-error` : undefined;
+        const tabStop = roverDay(row, rover[row.id]);
+        return (
+          <div className="flex flex-col gap-1" key={row.id}>
+            <div className="flex flex-wrap items-center gap-2">
+              <fieldset
+                className="flex flex-wrap gap-1"
+                onKeyDown={(event) =>
+                  handleDayGroupKeyDown(event, tabStop, (weekday) => {
+                    setRover((current) => ({ ...current, [row.id]: weekday }));
+                    const pill = event.currentTarget.querySelector<HTMLElement>(
+                      `[aria-label="${weekdayLabel(weekday)}"]`,
+                    );
+                    pill?.focus();
+                  })
+                }
+              >
+                <legend className="sr-only">Days</legend>
+                {ISO_WEEKDAYS.map((weekday) => (
+                  <button
+                    aria-label={weekdayLabel(weekday)}
+                    aria-pressed={row.weekdays.has(weekday)}
+                    className={pillClassName}
+                    key={weekday}
+                    onClick={() => toggleDay(rowIndex, weekday)}
+                    onFocus={() =>
+                      setRover((current) => ({ ...current, [row.id]: weekday }))
+                    }
+                    tabIndex={weekday === tabStop ? 0 : -1}
+                    type="button"
+                  >
+                    {weekdayShortLabel(weekday)}
+                  </button>
+                ))}
+              </fieldset>
+              <input
+                aria-describedby={errorId ? `${hintId} ${errorId}` : hintId}
+                aria-invalid={error ? true : undefined}
+                aria-label={hoursInputLabel(row)}
+                className="c-focus-ring min-w-40 flex-1 rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text"
+                id={`booking-hours-row-${row.id}`}
+                onBlur={() => commitText(row.id)}
+                onChange={(event) => setRowText(row.id, event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitText(row.id);
+                  }
+                }}
+                placeholder="9-5"
+                type="text"
+                value={row.text}
+              />
+              {rows.length > 1 ? (
+                <button
+                  className="c-focus-ring rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+                  onClick={() => removeRow(row.id)}
+                  type="button"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+            {error ? (
+              <p className="text-error text-xs" id={errorId} role="alert">
+                {error}
+              </p>
             ) : null}
           </div>
-          {errors[weekday] ? (
-            <p className="pl-30 text-error text-xs" role="alert">
-              {errors[weekday]}
-            </p>
-          ) : null}
-        </div>
-      ))}
+        );
+      })}
 
-      <div className="mt-1 flex gap-2">
-        <button
-          className="c-focus-ring rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
-          onClick={applyToWeekdays}
-          type="button"
-        >
-          Apply Monday to weekdays
-        </button>
-        <button
-          className="c-focus-ring rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
-          onClick={clearAll}
-          type="button"
-        >
-          Clear all
-        </button>
-      </div>
+      <button
+        className="c-focus-ring self-start rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+        onClick={addRow}
+        type="button"
+      >
+        Add hours
+      </button>
     </fieldset>
   );
 }
+
+const roverDay = (
+  row: HoursRow,
+  focused: IsoWeekday | undefined,
+): IsoWeekday => {
+  if (focused != null && ISO_WEEKDAYS.includes(focused)) return focused;
+  return (
+    ISO_WEEKDAYS.find((weekday) => row.weekdays.has(weekday)) ?? ISO_WEEKDAYS[0]
+  );
+};
+
+const handleDayGroupKeyDown = (
+  event: KeyboardEvent<HTMLFieldSetElement>,
+  current: IsoWeekday,
+  move: (weekday: IsoWeekday) => void,
+) => {
+  const index = ISO_WEEKDAYS.indexOf(current);
+  if (index < 0) return;
+  let nextIndex: number | null = null;
+  switch (event.key) {
+    case "ArrowRight":
+      nextIndex = Math.min(index + 1, ISO_WEEKDAYS.length - 1);
+      break;
+    case "ArrowLeft":
+      nextIndex = Math.max(index - 1, 0);
+      break;
+    case "Home":
+      nextIndex = 0;
+      break;
+    case "End":
+      nextIndex = ISO_WEEKDAYS.length - 1;
+      break;
+    default:
+      return;
+  }
+  const next = ISO_WEEKDAYS[nextIndex];
+  if (next == null || next === current) return;
+  event.preventDefault();
+  move(next);
+};
