@@ -300,11 +300,11 @@ export function usePublicBookingRescheduleFlow() {
         error instanceof PublicBookingNotFoundError ||
         getErrorStatus(error) === 404
       ) {
-        setAlertMessage("This booking is no longer available.");
+        setAlertMessage("This meeting is no longer available.");
         await reservationQuery.refetch();
         return;
       }
-      setAlertMessage("Could not reschedule this booking. Please try again.");
+      setAlertMessage("Could not reschedule this meeting. Please try again.");
     } finally {
       submitInFlightRef.current = false;
     }

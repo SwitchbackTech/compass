@@ -30,23 +30,23 @@ import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 const BOOKING_LOADING = {
-  title: "Loading booking",
+  title: "Loading meeting",
   description: "One moment while we load this confirmation.",
 } as const;
 
 const BOOKING_NOT_FOUND = {
-  title: "Booking not found",
+  title: "Meeting not found",
   description:
     "This confirmation link may be incorrect or no longer available.",
 } as const;
 
 const BOOKING_LOAD_FAILED = {
-  title: "Could not load booking",
+  title: "Could not load meeting",
   description: "Please refresh and try again.",
 } as const;
 
 const BOOKING_CANCELED = {
-  title: "This booking was canceled",
+  title: "This meeting was canceled",
   description:
     "The appointment is no longer on the host calendar. You can close this page.",
 } as const;
@@ -110,7 +110,7 @@ export function PublicBookingConfirmedPage() {
     usePatchPublicBookingReservationMutation(reservationId);
   const [isEditing, setIsEditing] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  useBookingDocumentTitle("Booking confirmed");
+  useBookingDocumentTitle("Meeting confirmed");
   const navigate = useNavigate();
 
   const view = resolveConfirmedPageView(reservationQuery);
@@ -170,7 +170,7 @@ export function PublicBookingConfirmedPage() {
               onError: (error) => {
                 setSaveError(
                   getErrorStatus(error) === 404
-                    ? "This booking could not be updated. Use the link in your invite."
+                    ? "This meeting could not be updated. Use the link in your invite."
                     : "Could not save your details. Please try again.",
                 );
               },

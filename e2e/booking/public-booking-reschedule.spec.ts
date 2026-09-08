@@ -28,20 +28,20 @@ test.describe("public booking reschedule", () => {
       .click();
     await page.getByLabel("Name").fill("Guest User");
     await page.getByLabel("Email").fill("guest@example.com");
-    await page.getByRole("button", { name: "Confirm booking" }).click();
+    await page.getByRole("button", { name: "Confirm meeting" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeFocused();
     await expect(
       page.getByText(formatSlotWhenLabel(first.slotStart, timeZone)),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Reschedule this booking" }),
+      page.getByRole("link", { name: "Reschedule this meeting" }),
     ).toBeVisible();
 
     const rescheduleHref = await page
-      .getByRole("link", { name: "Reschedule this booking" })
+      .getByRole("link", { name: "Reschedule this meeting" })
       .getAttribute("href");
     expect(rescheduleHref).toContain(
       "/meet/reschedule/000000000000000000000099?token=abc",
@@ -56,7 +56,7 @@ test.describe("public booking reschedule", () => {
     );
     await expect(
       page.getByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toBeFocused();
 
@@ -66,7 +66,7 @@ test.describe("public booking reschedule", () => {
     await page.getByRole("button", { name: "Confirm" }).click();
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expect(
       page.getByText(formatSlotWhenLabel(second.slotStart, timeZone)),
@@ -88,7 +88,7 @@ test.describe("public booking reschedule", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toBeFocused();
 
@@ -110,7 +110,7 @@ test.describe("public booking reschedule", () => {
     await page.keyboard.press("Enter");
 
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     expect(captured.reschedulePosts).toHaveLength(1);
     expect(captured.reschedulePosts[0]).toMatchObject({
@@ -128,11 +128,11 @@ test.describe("public booking reschedule", () => {
     });
 
     await expect(
-      page.getByRole("heading", { name: "Booking not found" }),
+      page.getByRole("heading", { name: "Meeting not found" }),
     ).toBeFocused();
     await expect(
       page.getByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toHaveCount(0);
     expect(captured.reservationSlotGets).toBe(0);

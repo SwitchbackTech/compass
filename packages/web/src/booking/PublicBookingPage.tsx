@@ -62,14 +62,14 @@ export function PublicBookingPage() {
 
   useBookingDocumentTitle(
     pageQuery.data?.enabled
-      ? `Book with ${pageQuery.data.hostDisplayName}`
+      ? `Meet with ${pageQuery.data.hostDisplayName}`
       : null,
   );
 
   if (pageQuery.isLoading) {
     return (
       <PublicBookingStatusMessage
-        title="Loading booking page"
+        title="Loading meeting page"
         description="One moment while we load available times."
       />
     );
@@ -81,8 +81,8 @@ export function PublicBookingPage() {
   ) {
     return (
       <PublicBookingStatusMessage
-        title="Booking page not found"
-        description="This link may be incorrect or the host has turned booking off."
+        title="Meeting page not found"
+        description="This link may be incorrect or the host has turned this meeting page off."
       />
     );
   }
@@ -90,7 +90,7 @@ export function PublicBookingPage() {
   if (pageQuery.isError || !pageQuery.isSuccess || !pageQuery.data) {
     return (
       <PublicBookingStatusMessage
-        title="Could not load booking page"
+        title="Could not load meeting"
         description="Please refresh and try again."
       />
     );
@@ -101,8 +101,8 @@ export function PublicBookingPage() {
   if (slotsQuery.data && !slotsQuery.data.bookable) {
     return (
       <PublicBookingStatusMessage
-        title="Booking temporarily unavailable"
-        description="The host calendar is not ready for new bookings. Please try again later."
+        title="Meeting temporarily unavailable"
+        description="The host calendar is not ready for new meetings. Please try again later."
       />
     );
   }
@@ -125,7 +125,7 @@ export function PublicBookingPage() {
           ref={headingRef}
           tabIndex={-1}
         >
-          Book with {page.hostDisplayName}
+          Meet with {page.hostDisplayName}
         </h1>
         <p className="text-sm text-text-muted">
           {formatBookingDurationWithConference(

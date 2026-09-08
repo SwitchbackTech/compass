@@ -74,16 +74,16 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+      await screen.findByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeInTheDocument();
     expect(cancelPosts).toBe(0);
 
     await user.click(
-      screen.getByRole("button", { name: "Cancel this booking" }),
+      screen.getByRole("button", { name: "Cancel this meeting" }),
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
     expect(cancelPosts).toBe(1);
   });
@@ -111,7 +111,7 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
     await user.click(
       await screen.findByRole("button", { name: "Canceling..." }),
@@ -119,7 +119,7 @@ describe("PublicBookingCancelPage", () => {
     expect(cancelPosts).toBe(1);
     release();
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
   });
 
@@ -130,7 +130,7 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     const heading = await screen.findByRole("heading", {
-      name: "Cancel this booking?",
+      name: "Cancel this meeting?",
     });
     await waitFor(() => {
       expect(heading).toHaveFocus();
@@ -138,7 +138,7 @@ describe("PublicBookingCancelPage", () => {
 
     await user.tab();
     expect(
-      screen.getByRole("button", { name: "Cancel this booking" }),
+      screen.getByRole("button", { name: "Cancel this meeting" }),
     ).toHaveFocus();
   });
 
@@ -157,14 +157,14 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Could not cancel booking" }),
+      await screen.findByRole("heading", { name: "Could not cancel meeting" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "Booking canceled" }),
+      screen.queryByRole("heading", { name: "Meeting canceled" }),
     ).not.toBeInTheDocument();
   });
 
@@ -184,7 +184,7 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(`/meet/cancel/${reservationId}`);
 
     expect(
-      await screen.findByRole("heading", { name: "Booking not found" }),
+      await screen.findByRole("heading", { name: "Meeting not found" }),
     ).toBeInTheDocument();
     expect(cancelPosts).toBe(0);
   });
@@ -195,10 +195,10 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+      await screen.findByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("You are canceling a booking with Tyler Dane."),
+      screen.getByText("You are canceling a meeting with Tyler Dane."),
     ).toBeInTheDocument();
     expect(screen.getByText("When")).toBeInTheDocument();
     expect(screen.getByText("Duration")).toBeInTheDocument();
@@ -222,10 +222,10 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Cancel this booking" }),
+      screen.queryByRole("button", { name: "Cancel this meeting" }),
     ).not.toBeInTheDocument();
     expect(cancelPosts).toBe(0);
   });
@@ -247,13 +247,13 @@ describe("PublicBookingCancelPage", () => {
     const { router } = renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+      await screen.findByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeInTheDocument();
     await user.keyboard("{Escape}");
 
     expect(
       await screen.findByRole("heading", {
-        name: "You are booked with Tyler Dane",
+        name: "You're meeting with Tyler Dane",
       }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
@@ -292,7 +292,7 @@ describe("PublicBookingCancelPage", () => {
     const { router } = renderCancelRoute(cancelPath);
 
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
     expect(
       await screen.findByRole("button", { name: "Canceling..." }),
@@ -300,7 +300,7 @@ describe("PublicBookingCancelPage", () => {
     await user.keyboard("{Escape}");
 
     expect(
-      screen.getByRole("heading", { name: "Cancel this booking?" }),
+      screen.getByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
       `/meet/cancel/${reservationId}`,
@@ -309,7 +309,7 @@ describe("PublicBookingCancelPage", () => {
 
     release();
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
     expect(cancelPosts).toBe(1);
   });
@@ -319,7 +319,7 @@ describe("PublicBookingCancelPage", () => {
     const { router } = renderCancelRoute(`/meet/cancel/${reservationId}`);
 
     const heading = await screen.findByRole("heading", {
-      name: "Booking not found",
+      name: "Meeting not found",
     });
     await waitFor(() => {
       expect(heading).toHaveFocus();
@@ -327,7 +327,7 @@ describe("PublicBookingCancelPage", () => {
     await user.keyboard("{Escape}");
 
     expect(
-      screen.getByRole("heading", { name: "Booking not found" }),
+      screen.getByRole("heading", { name: "Meeting not found" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(
       `/meet/cancel/${reservationId}`,
@@ -357,23 +357,23 @@ describe("PublicBookingCancelPage", () => {
 
     renderCancelRoute(cancelPath);
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Could not cancel booking" }),
+      await screen.findByRole("heading", { name: "Could not cancel meeting" }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(
-      await screen.findByRole("heading", { name: "Cancel this booking?" }),
+      await screen.findByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeInTheDocument();
     expect(screen.getByText("When")).toBeInTheDocument();
     expect(screen.getByText("Duration")).toBeInTheDocument();
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     await user.click(
-      screen.getByRole("button", { name: "Cancel this booking" }),
+      screen.getByRole("button", { name: "Cancel this meeting" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
     expect(tokens).toEqual(["abc", "abc"]);
   });
@@ -394,10 +394,10 @@ describe("PublicBookingCancelPage", () => {
 
     renderCancelRoute(cancelPath);
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
     expect(
-      await screen.findByRole("heading", { name: "Booking not found" }),
+      await screen.findByRole("heading", { name: "Meeting not found" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Retry" }),
@@ -405,7 +405,7 @@ describe("PublicBookingCancelPage", () => {
     expect(cancelPosts).toBe(1);
   });
 
-  it("links Book another time after cancel when bookingSlug is present", async () => {
+  it("links Meet another time after cancel when bookingSlug is present", async () => {
     const user = userEvent.setup({ delay: null });
     server.use(
       reservationGetHandler(),
@@ -417,30 +417,30 @@ describe("PublicBookingCancelPage", () => {
 
     renderCancelRoute(cancelPath);
     await user.click(
-      await screen.findByRole("button", { name: "Cancel this booking" }),
+      await screen.findByRole("button", { name: "Cancel this meeting" }),
     );
     const rebook = await screen.findByRole("link", {
-      name: "Book another time",
+      name: "Meet another time",
     });
     expect(rebook).toHaveAttribute("href", "/meet/tylerdane");
     expect(rebook.getAttribute("href")).not.toContain("token");
   });
 
-  it("shows Book another time on an already-cancelled reservation", async () => {
+  it("shows Meet another time on an already-cancelled reservation", async () => {
     server.use(reservationGetHandler({ status: "cancelled" }));
 
     renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
-    const rebook = screen.getByRole("link", { name: "Book another time" });
+    const rebook = screen.getByRole("link", { name: "Meet another time" });
     expect(rebook).toHaveAttribute("href", "/meet/tylerdane");
     expect(rebook.getAttribute("href")).not.toContain("token");
     expect(rebook.getAttribute("href")).not.toContain(reservationId);
   });
 
-  it("hides Book another time when bookingSlug is missing", async () => {
+  it("hides Meet another time when bookingSlug is missing", async () => {
     server.use(
       rest.get(
         `${ENV_WEB.API_BASEURL}/booking/reservations/${reservationId}`,
@@ -463,10 +463,10 @@ describe("PublicBookingCancelPage", () => {
     renderCancelRoute(cancelPath);
 
     expect(
-      await screen.findByRole("heading", { name: "Booking canceled" }),
+      await screen.findByRole("heading", { name: "Meeting canceled" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: "Book another time" }),
+      screen.queryByRole("link", { name: "Meet another time" }),
     ).not.toBeInTheDocument();
   });
 });

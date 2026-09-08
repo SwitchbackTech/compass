@@ -85,7 +85,7 @@ test("the public booking conflict alert has no automatically detectable accessib
     .click();
   await page.getByLabel("Name").fill("Guest User");
   await page.getByLabel("Email").fill("guest@example.com");
-  await page.getByRole("button", { name: "Confirm booking" }).click();
+  await page.getByRole("button", { name: "Confirm meeting" }).click();
 
   await expect(page.getByRole("alert")).toBeVisible();
   await expectNoAxeViolations(page, { checkpoint: "public booking conflict" });
@@ -97,7 +97,7 @@ test.describe("public booking confirmation page", () => {
   }) => {
     await preparePublicBookingConfirmedPage(page);
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking confirmation permalink",
@@ -109,7 +109,7 @@ test.describe("public booking confirmation page", () => {
   }) => {
     await preparePublicBookingConfirmedPage(page, { token: "abc" });
     await expect(
-      page.getByRole("heading", { name: "You are booked with Tyler Dane" }),
+      page.getByRole("heading", { name: "You're meeting with Tyler Dane" }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Edit details" }),
@@ -144,7 +144,7 @@ test.describe("public booking confirmation page", () => {
       reservationStatus: "cancelled",
     });
     await expect(
-      page.getByRole("heading", { name: "This booking was canceled" }),
+      page.getByRole("heading", { name: "This meeting was canceled" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking confirmation cancelled",
@@ -158,7 +158,7 @@ test.describe("public booking confirmation page", () => {
       reservationNotFound: true,
     });
     await expect(
-      page.getByRole("heading", { name: "Booking not found" }),
+      page.getByRole("heading", { name: "Meeting not found" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking confirmation not found",
@@ -172,7 +172,7 @@ test.describe("public booking confirmation page", () => {
       reservationGetStatus: 500,
     });
     await expect(
-      page.getByRole("heading", { name: "Could not load booking" }),
+      page.getByRole("heading", { name: "Could not load meeting" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking confirmation load error",
@@ -186,7 +186,7 @@ test.describe("public booking cancel page", () => {
   }) => {
     await preparePublicBookingCancelPage(page);
     await expect(
-      page.getByRole("heading", { name: "Cancel this booking?" }),
+      page.getByRole("heading", { name: "Cancel this meeting?" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel confirm" });
   });
@@ -199,14 +199,14 @@ test.describe("public booking cancel page", () => {
       release = resolve;
     });
     await preparePublicBookingCancelPage(page, { holdCancel });
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await page.getByRole("button", { name: "Cancel this meeting" }).click();
     await expect(
       page.getByRole("button", { name: "Canceling..." }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel in-flight" });
     release();
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "Meeting canceled" }),
     ).toBeVisible();
   });
 
@@ -214,9 +214,9 @@ test.describe("public booking cancel page", () => {
     page,
   }) => {
     await preparePublicBookingCancelPage(page);
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await page.getByRole("button", { name: "Cancel this meeting" }).click();
     await expect(
-      page.getByRole("heading", { name: "Booking canceled" }),
+      page.getByRole("heading", { name: "Meeting canceled" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel success" });
   });
@@ -226,7 +226,7 @@ test.describe("public booking cancel page", () => {
   }) => {
     await preparePublicBookingCancelPage(page, { token: "" });
     await expect(
-      page.getByRole("heading", { name: "Booking not found" }),
+      page.getByRole("heading", { name: "Meeting not found" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel not found" });
   });
@@ -235,9 +235,9 @@ test.describe("public booking cancel page", () => {
     page,
   }) => {
     await preparePublicBookingCancelPage(page, { cancelStatus: 500 });
-    await page.getByRole("button", { name: "Cancel this booking" }).click();
+    await page.getByRole("button", { name: "Cancel this meeting" }).click();
     await expect(
-      page.getByRole("heading", { name: "Could not cancel booking" }),
+      page.getByRole("heading", { name: "Could not cancel meeting" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, { checkpoint: "cancel error" });
   });
@@ -250,7 +250,7 @@ test.describe("public booking reschedule page", () => {
     await preparePublicBookingReschedulePage(page);
     await expect(
       page.getByRole("heading", {
-        name: "Reschedule your booking with Tyler Dane",
+        name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toBeVisible();
     await expect(
@@ -266,7 +266,7 @@ test.describe("public booking reschedule page", () => {
   }) => {
     await preparePublicBookingReschedulePage(page, { token: "" });
     await expect(
-      page.getByRole("heading", { name: "Booking not found" }),
+      page.getByRole("heading", { name: "Meeting not found" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking reschedule not found",
@@ -280,7 +280,7 @@ test.describe("public booking reschedule page", () => {
       reservationStatus: "cancelled",
     });
     await expect(
-      page.getByRole("heading", { name: "This booking was canceled" }),
+      page.getByRole("heading", { name: "This meeting was canceled" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "booking reschedule canceled",
