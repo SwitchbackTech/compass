@@ -180,6 +180,20 @@ describe("assembleEventInstances", () => {
     expect(instance && "providerManaged" in instance).toBe(false);
   });
 
+  it("overlays customizations.title onto assembled instance content", () => {
+    const event = makeEvent({
+      content: { ...baseContent, title: "Provider title" },
+      customizations: { title: "Compass title" },
+    });
+    const occurrence = makeOccurrence({ eventId: event._id });
+
+    const [instance] = assembleEventInstances([occurrence], byId(event));
+
+    expect(instance?.content.title).toBe("Compass title");
+    expect(instance?.content.description).toBe(baseContent.description);
+    expect(instance?.content.location).toBe(baseContent.location);
+  });
+
   it("maps a single event to one single row carrying full content", () => {
     const event = makeEvent({ recurrence: { kind: "single" } });
     const occurrence = makeOccurrence({ eventId: event._id });

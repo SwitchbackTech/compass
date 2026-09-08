@@ -236,6 +236,7 @@ export class GoogleEventWriter implements ProviderEventWriter {
           input.schedule,
           input.recurrence,
           input.attendees,
+          input.providerManaged,
         ),
         sendUpdates: toSendUpdates(input.invitation),
         ifMatch,
@@ -349,7 +350,14 @@ function toGoogleBody(
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
   attendees?: readonly Attendee[],
+  providerManaged?: true,
 ): gSchema$Event {
+  if (providerManaged) {
+    return {
+      ...googleColorIdFields(content.color),
+      ...attendeesField(attendees),
+    };
+  }
   return {
     summary: content.title,
     description: content.description,

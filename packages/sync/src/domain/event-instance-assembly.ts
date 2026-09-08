@@ -44,7 +44,7 @@ export function assembleEventInstances(
     const event = eventsById.get(occurrence.eventId);
     if (!event) continue;
 
-    const content = toInstanceContent(event.content);
+    const content = toInstanceContent(event);
     const timestamps = {
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
@@ -120,7 +120,7 @@ export function assembleEventInstances(
       SyncEventInstanceSchema.parse({
         eventId: master._id,
         calendarId: master.calendarId,
-        content: toInstanceContent(master.content),
+        content: toInstanceContent(master),
         schedule: master.schedule,
         recurrence: { kind: "series", rules: master.recurrence.rules },
         createdAt: master.createdAt.toISOString(),
@@ -148,14 +148,20 @@ const toProviderManaged = (event: EventRecord): { providerManaged?: true } => {
     : {};
 };
 
-const toInstanceContent = (content: EventRecord["content"]) => ({
-  title: content.title,
-  description: content.description,
-  location: content.location,
-  organizer: content.organizer,
-  attendees: content.attendees,
-  conference: content.conference,
-  // Heal rows that persisted write-command `color: null`.
-  ...withColor(content.color ?? undefined),
-  ...withColorHex(content.colorHex),
-});
+const toInstanceContent = (event: EventRecord) => {
+  const { content, customizations } = event;
+  return {
+    title: customizations?.title ?? content.title,
+    description: customizations?.description ?? content.description,
+    location:
+      customizations?.location !== undefined
+        ? customizations.location
+        : content.location,
+    organizer: content.organizer,
+    attendees: content.attendees,
+    conference: content.conference,
+    // Heal rows that persisted write-command `color: null`.
+    ...withColor(content.color ?? undefined),
+    ...withColorHex(content.colorHex),
+  };
+};

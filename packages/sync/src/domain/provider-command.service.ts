@@ -460,6 +460,22 @@ export async function executeProviderUpdate(
   // fallback) — except a single→series conversion, which writes real rules.
   const intendedRecurrence = intendedSeriesRecurrence(input.recurrence, event);
 
+  if (current.providerManaged) {
+    return executeProviderManagedUpdate(
+      deps,
+      command,
+      event,
+      current,
+      content,
+      input,
+      intendedRecurrence,
+      intendedAttendees,
+      location,
+      connectionId,
+      now,
+    );
+  }
+
   // Replay: the provider already holds this edit, so confirm at its version
   // rather than writing again.
   if (
@@ -521,6 +537,10 @@ async function commitProviderUpdate(
   content: SyncEventContent,
   providerVersion: string,
   now: () => Date,
+  commitOptions?: {
+    schedule?: EventSchedule;
+    customizations?: EventRecord["customizations"];
+  },
 ): Promise<CommandRecord> {
   if (command.input.kind !== "update") {
     throw new Error("commitProviderUpdate requires an update command");
@@ -529,13 +549,16 @@ async function commitProviderUpdate(
   const updated: EventRecord = {
     ...event,
     content,
-    schedule: input.schedule,
+    schedule: commitOptions?.schedule ?? input.schedule,
     recurrence: storedSeriesRecurrence(input.recurrence, event),
     providerVersion: providerVersion as ProviderEventVersion,
     providerUpdatedAt: null,
     deliveryState: "confirmed",
     updatedAt: now(),
   };
+  if (commitOptions && "customizations" in commitOptions) {
+    updated.customizations = commitOptions.customizations;
+  }
   const applied = await deps.events.replaceExisting(updated);
   if (!applied) return command;
   await reprojectOccurrences(deps.occurrences, updated, now);
@@ -554,6 +577,178 @@ async function commitProviderUpdate(
   return confirmed ?? command;
 }
 
+// Provider-managed events keep syncing from the provider; Compass overlays
+// title, description, and location as customizations and writes only color and
+// guest-list changes the provider accepts.
+async function executeProviderManagedUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  current: ProviderEvent,
+  mergedContent: SyncEventContent,
+  input: Extract<CommandRecord["input"], { kind: "update" }>,
+  intendedRecurrence: ProviderWriteRecurrence,
+  intendedAttendees: readonly Attendee[] | undefined,
+  location: {
+    accessToken: string;
+    calendarId: string;
+    providerEventId: string;
+  },
+  connectionId: ConnectionId,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (
+    !deepEqual(input.schedule, current.schedule) ||
+    intendedRecurrence.kind !== "single"
+  ) {
+    return failCommand(deps, command, "unsupportedCapability", connectionId);
+  }
+
+  const customizations = computeEventCustomizations(
+    current.content,
+    mergedContent,
+  );
+  const storedContent = managedStoredContent(
+    current.content,
+    mergedContent,
+    intendedAttendees,
+  );
+  const commitOptions = {
+    schedule: current.schedule,
+    customizations,
+  };
+
+  if (
+    matchesManagedIntendedEdit(
+      current,
+      event,
+      mergedContent,
+      customizations,
+      intendedAttendees,
+    )
+  ) {
+    return commitProviderUpdate(
+      deps,
+      command,
+      event,
+      storedContent,
+      current.providerVersion,
+      now,
+      commitOptions,
+    );
+  }
+
+  if (!managedProviderSideChange(current, mergedContent, intendedAttendees)) {
+    return commitProviderUpdate(
+      deps,
+      command,
+      event,
+      storedContent,
+      current.providerVersion,
+      now,
+      commitOptions,
+    );
+  }
+
+  const patchResult = await runProviderWrite(() =>
+    deps.writer.patchEvent({
+      ...location,
+      expectedVersion: command.expectedVersion,
+      providerManaged: true,
+      content: mergedContent,
+      schedule: current.schedule,
+      recurrence: { kind: "single" },
+      invitation: input.invitation,
+      ...(intendedAttendees ? { attendees: intendedAttendees } : {}),
+    }),
+  );
+  if (!patchResult.ok) {
+    if (patchResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, patchResult.stop.reason, connectionId);
+  }
+
+  return commitProviderUpdate(
+    deps,
+    command,
+    event,
+    storedContent,
+    patchResult.value.providerVersion,
+    now,
+    commitOptions,
+  );
+}
+
+function computeEventCustomizations(
+  providerContent: SyncEventContent,
+  intended: SyncEventContent,
+): EventRecord["customizations"] {
+  const customizations: {
+    title?: string;
+    description?: string;
+    location?: string | null;
+  } = {};
+  if (intended.title !== providerContent.title) {
+    customizations.title = intended.title;
+  }
+  if (intended.description !== providerContent.description) {
+    customizations.description = intended.description;
+  }
+  if (intended.location !== providerContent.location) {
+    customizations.location = intended.location;
+  }
+  return Object.keys(customizations).length === 0 ? null : customizations;
+}
+
+function managedStoredContent(
+  providerContent: SyncEventContent,
+  intended: SyncEventContent,
+  intendedAttendees: readonly Attendee[] | undefined,
+): SyncEventContent {
+  let stored = omitNullColor(
+    mergeUpdateContent(providerContent, {
+      ...providerContent,
+      color: intended.color,
+    }),
+  );
+  if (intendedAttendees) {
+    stored = { ...stored, attendees: intendedAttendees };
+  }
+  return stored;
+}
+
+function customizationsEqual(
+  left: EventRecord["customizations"],
+  right: EventRecord["customizations"],
+): boolean {
+  const normalize = (value: EventRecord["customizations"]) =>
+    value === undefined || value === null ? null : value;
+  return deepEqual(normalize(left), normalize(right));
+}
+
+function managedProviderSideChange(
+  current: ProviderEvent,
+  content: SyncEventContent,
+  intendedAttendees: readonly Attendee[] | undefined,
+): boolean {
+  const intendedColor = content.color === null ? undefined : content.color;
+  const currentColor =
+    current.content.color === null ? undefined : current.content.color;
+  if (intendedColor !== currentColor) return true;
+  if (intendedAttendees === undefined) return false;
+  return !attendeesMatchIntent(current.content.attendees, intendedAttendees);
+}
+
+function matchesManagedIntendedEdit(
+  current: ProviderEvent,
+  event: EventRecord,
+  mergedContent: SyncEventContent,
+  customizations: EventRecord["customizations"],
+  intendedAttendees: readonly Attendee[] | undefined,
+): boolean {
+  if (!customizationsEqual(event.customizations, customizations)) return false;
+  return !managedProviderSideChange(current, mergedContent, intendedAttendees);
+}
+
 // Apply a Compass-initiated scope-"all" edit to a provider-linked recurring
 // series — Google's "edit all events in the series". The master is patched with
 // the new content, schedule, AND recurrence rules, and its per-instance
@@ -561,6 +756,10 @@ async function commitProviderUpdate(
 // local commit is series-aware: it discards override exceptions but preserves
 // cancelled tombstones (a deletion must survive an edit) and reprojects the
 // master excluding their instants.
+//
+// Provider-managed events are single-only today (Google Gmail events), so this
+// path is unreachable for them; managed customizations live in the single-event
+// update path instead.
 //
 // Replay safety mirrors the single-event path: fetch the provider's current
 // master first; if it already carries this edit (content, schedule, and rules),
@@ -878,6 +1077,10 @@ async function commitProviderSeriesUpdate(
 // provider-linked series: resolve the instance's own provider identity, then
 // patch IT (never the master) — mirrors executeProviderUpdate's replay-safe
 // fetch-then-compare, but against the resolved instance's location.
+//
+// Provider-managed events are single-only today, so this occurrence path is
+// unreachable for them; managed customizations live in the single-event update
+// path instead.
 export async function executeProviderOccurrenceUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,

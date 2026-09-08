@@ -372,6 +372,38 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.patch[0].requestBody).not.toHaveProperty("attendees");
   });
 
+  it("sends only colorId and attendees for a provider-managed patch", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      providerManaged: true,
+      content: content({ color: "coral" }),
+      attendees: [
+        {
+          email: "guest@example.com",
+          displayName: null,
+          responseStatus: "needsAction",
+        },
+      ],
+    });
+
+    const body = api.calls.patch.at(-1)?.requestBody;
+    expect(body).toEqual({
+      colorId: expect.any(String),
+      attendees: [
+        { email: "guest@example.com", responseStatus: "needsAction" },
+      ],
+    });
+    expect(body).not.toHaveProperty("summary");
+    expect(body).not.toHaveProperty("description");
+    expect(body).not.toHaveProperty("location");
+    expect(body).not.toHaveProperty("start");
+    expect(body).not.toHaveProperty("end");
+    expect(body).not.toHaveProperty("recurrence");
+  });
+
   it("adds Meet createRequest and guestsCanInviteOthers on booking create only", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
