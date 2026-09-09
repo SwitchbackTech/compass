@@ -520,11 +520,57 @@ test.describe("settings booking section", () => {
       enabled: false,
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
     await expect(
-      settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+      settingsDialog.getByRole("heading", { name: "Pick your address" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run address",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run duration step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    );
+    await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+    await page.keyboard.press("k");
+    await expect(
+      settingsDialog.getByRole("heading", { name: "How long is a meeting?" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run duration",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run go-live step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    );
+    await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+    await page.keyboard.press("k");
+    await page.keyboard.press("k");
+    await expect(
+      settingsDialog.getByRole("heading", { name: "Ready to go live" }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run go live",
       include: "[role='dialog']",
     });
   });
@@ -550,6 +596,7 @@ test.describe("settings booking section", () => {
       return route.fallback();
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
     await dispatchClick(
       settingsDialog.getByRole("button", { name: /Continue/ }),
     );

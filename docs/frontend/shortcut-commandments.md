@@ -81,7 +81,9 @@ Billing: `U` Update card,
 `E` Export, `D` Delete account, `O` Log out. `B` (trial badge / Start
 Premium) is registered by `UpgradeConfirmationProvider` and keeps working
 while Settings is open. Meeting settings reveal only sidebar digits
-`Mod+1/2/3` and Enter on Save or Continue. Meeting settings do not use an
+`Mod+1/2/3` and Enter on Save or Continue. Inside the Meeting setup wizard,
+`j` and `k` step back and forward because the calendar period keys are
+locked out by the modal. Meeting settings do not use an
 `e` leader. The `?` overlay remains the catalog; hold-Mod still reveals
 the chips.
 

@@ -10,7 +10,7 @@ reschedule) is specified here and implemented. v1.6 shipped one-click
 turn on, Essentials / More options, editable address, default hours,
 branded connect pills, and funnel analytics. v1.7 shipped the Meeting
 page redesign: `/meet` URLs, meeting copy, hold-Mod section chords, the
-on/off switch, grouped weekly hours rows, and the first-run address
+on/off switch, grouped weekly hours rows, and the guided first-run setup
 screen. The production gate stays off.
 
 Compass never sends email itself. Google emails the guest when Compass
@@ -23,7 +23,7 @@ monorepo (public `/meet/:username`, host Settings, backend APIs, guest
 cancel, guest reschedule, edit-details, one-click turn on, Essentials /
 More options, editable address, default hours, branded connect pills,
 funnel analytics, meeting copy, hold-Mod section chords, the on/off
-switch, grouped weekly hours, and the first-run address screen). Booking
+switch, grouped weekly hours, and the guided first-run setup wizard). Booking
 is enabled in development and staging (`runtime.nodeEnv` other than
 `production`) and disabled in production. Do not flip `isBookingEnabled`.
 A standalone Compass Booking product (separate brand, domain, or
@@ -246,10 +246,16 @@ time inputs per weekday.
   minimum notice, and maximum horizon. Jumping to a field inside it, or
   an invalid field in the group, opens it. Do not control the `open`
   prop from React: the jump-key code opens the element imperatively.
-- **First run:** before any draft exists, the Meeting tab is only the
-  address screen: heading "Your meeting page", one sentence, the address
-  field, the helper, and **Continue**. There is no switch, duration, or
-  hours editor until Continue saves the draft.
+- **First run:** before any draft exists, Meeting settings open a guided
+  setup wizard: one question per screen with "Step N of M", a title, one
+  sentence, and **Continue** (Mod+Enter). Steps are address, weekly hours,
+  duration, destination calendar (only when more than one writable calendar
+  exists), then go live. Plain Enter continues from the address input or the
+  Continue button; `k` continues and `j` goes back when focus is not in an
+  editable target; Esc goes back one step (on step 1 it closes Settings).
+  Address **Continue** saves a disabled draft so the slug is reserved.
+  **Turn on and copy link** on the last step saves with `enabled: true`,
+  copies the link, and then shows the full form with the switch focused.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
 - **Weekly hours** are grouped rows of day pills, a Start menu, the
@@ -484,7 +490,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `BookingAddressSetup.tsx`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/booking/setup/`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |

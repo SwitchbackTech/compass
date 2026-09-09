@@ -156,7 +156,10 @@ test("turns on a not-live page in one click", async ({ page }) => {
   expect(captured.putBodies[0]).toMatchObject({ enabled: true });
 });
 
-test("first visit: address, hours, switch on", async ({ page, context }) => {
+test("first visit: keyboard setup wizard through go live", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const captured = await prepareSignedInBookingSettingsPage(page, {
     configured: false,
@@ -164,14 +167,16 @@ test("first visit: address, hours, switch on", async ({ page, context }) => {
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
   await expect(
-    settingsDialog.getByRole("heading", { name: "Your meeting page" }),
+    settingsDialog.getByRole("heading", { name: "Pick your address" }),
   ).toBeVisible();
   await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
     "hostuser",
   );
 
-  await dispatchClick(settingsDialog.getByRole("button", { name: /Continue/ }));
+  await dispatchFill(settingsDialog.getByLabel("Page address"), "hostuser");
+  await settingsDialog.getByLabel("Page address").press("Enter");
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({
@@ -180,30 +185,20 @@ test("first visit: address, hours, switch on", async ({ page, context }) => {
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
 
-  const meetingSwitch = settingsDialog.getByRole("switch", {
-    name: "Meeting page",
-  });
-  await expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
+  await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+  await page.keyboard.press("k");
+  await expect(settingsDialog.getByText(/Step 3 of/)).toBeVisible();
+  await page.keyboard.press("k");
+  await expect(settingsDialog.getByText(/Step 4 of/)).toBeVisible();
 
-  await settingsDialog
-    .getByRole("combobox", { name: /Start for/ })
-    .selectOption("10:00");
-  await settingsDialog
-    .getByRole("combobox", { name: /End for/ })
-    .selectOption("18:00");
-
-  const editedHours = ([1, 2, 3, 4, 5] as const).map((weekday) => ({
-    weekday,
-    start: "10:00",
-    end: "18:00",
-  }));
-
-  await dispatchClick(meetingSwitch);
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: /Turn on and copy link/ }),
+  );
 
   await expect.poll(() => captured.putBodies.length).toBe(2);
   expect(captured.putBodies[1]).toMatchObject({
     enabled: true,
-    weeklyAvailability: editedHours,
+    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
 
   await expect(settingsDialog.getByText("Live at")).toBeVisible();
@@ -229,57 +224,6 @@ test("first visit: address, hours, switch on", async ({ page, context }) => {
   });
   await expect(page).toHaveURL(/\/meet\/hostuser/);
   expect(new URL(page.url()).searchParams.get("token")).toBe("abc");
-});
-
-test("turns a not-live unconfigured page on in one click", async ({ page }) => {
-  const captured = await prepareSignedInBookingSettingsPage(page, {
-    configured: false,
-    enabled: false,
-  });
-
-  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  await expect(
-    settingsDialog.getByRole("heading", { name: "Your meeting page" }),
-  ).toBeVisible();
-  await expect(settingsDialog.getByLabel("Page address")).toHaveValue(
-    "hostuser",
-  );
-
-  await dispatchClick(settingsDialog.getByRole("button", { name: /Continue/ }));
-
-  await expect.poll(() => captured.putBodies.length).toBe(1);
-  expect(captured.putBodies[0]).toMatchObject({
-    enabled: false,
-    slug: "hostuser",
-    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-  });
-
-  const meetingSwitch = settingsDialog.getByRole("switch", {
-    name: "Meeting page",
-  });
-  await expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
-  await expect(
-    settingsDialog.getByText("Off. Turn it on to share your link."),
-  ).toBeVisible();
-
-  await dispatchClick(meetingSwitch);
-
-  await expect.poll(() => captured.putBodies.length).toBe(2);
-  expect(captured.putBodies[1]).toMatchObject({
-    enabled: true,
-    weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
-  });
-
-  await expect(settingsDialog.getByText("Live at")).toBeVisible();
-  await expect(
-    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
-  ).toHaveValue("https://compasscalendar.com/meet/hostuser");
-  await expect(
-    settingsDialog.getByRole("button", { name: "Copy meeting link" }),
-  ).toBeVisible();
-  await expect(
-    settingsDialog.getByRole("link", { name: "Open meeting page" }),
-  ).toHaveAttribute("href", "https://compasscalendar.com/meet/hostuser");
 });
 
 test("blocks turn on with empty hours", async ({ page }) => {

@@ -2,7 +2,12 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
+import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
 import { type Calendar } from "@core/types/calendar.contracts";
+import {
+  type CalendarId,
+  CalendarIdSchema,
+} from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
@@ -28,6 +33,7 @@ import {
   GOOGLE_REVOKED_TOAST_ID,
 } from "@web/common/constants/toast.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   registerToastPort,
   resetToastPort,
@@ -185,6 +191,44 @@ const renderSettings = ({
       </HotkeysProvider>,
       { wrapper },
     ),
+  };
+};
+
+const bookingPageUrl = `${ENV_WEB.API_BASEURL}/booking/page`;
+
+const unconfiguredBookingPage = (calendarId: CalendarId) => ({
+  enabled: false,
+  durationMinutes: 30,
+  destinationCalendarId: calendarId,
+  blockingCalendarIds: [calendarId],
+  timeZone: "UTC",
+  weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+  minNoticeHours: 4,
+  maxHorizonDays: 60,
+  isConfigured: false,
+  suggestedSlug: "hostuser",
+});
+
+const putSavedBookingPage = (
+  calendarId: CalendarId,
+  body: Record<string, unknown>,
+) => {
+  const slug = typeof body.slug === "string" ? body.slug : "hostuser";
+  return {
+    id: createObjectIdString(),
+    slug,
+    hostUserId: createObjectIdString(),
+    enabled: body.enabled === true,
+    durationMinutes: body.durationMinutes ?? 30,
+    destinationCalendarId: body.destinationCalendarId ?? calendarId,
+    blockingCalendarIds: body.blockingCalendarIds ?? [calendarId],
+    timeZone: body.timeZone ?? "UTC",
+    weeklyAvailability: body.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY,
+    minNoticeHours: body.minNoticeHours ?? 4,
+    maxHorizonDays: body.maxHorizonDays ?? 60,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    bookingUrl: `https://compasscalendar.com/meet/${slug}`,
   };
 };
 
@@ -1198,5 +1242,128 @@ describe("SettingsModal", () => {
     await waitFor(() => {
       expect(savedBody).toMatchObject({ durationMinutes: 45 });
     });
+  });
+
+  it("continues the setup wizard with Mod+Enter on the address step", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    const calendarId = CalendarIdSchema.parse(calendar.id);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredBookingPage(calendarId))),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = (await req.json()) as Record<string, unknown>;
+        return res(ctx.json(putSavedBookingPage(calendarId, body)));
+      }),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByText("Step 1 of 4");
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}{Enter}{/${modKey}}`);
+
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("reveals nav chips and Continue Enter while Mod is held during setup", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    const calendarId = CalendarIdSchema.parse(calendar.id);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredBookingPage(calendarId))),
+      ),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByText("Step 1 of 4");
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}`);
+
+    const settings = screen.getByRole("dialog", { name: "Settings" });
+    expect(
+      within(screen.getByRole("button", { name: "Accounts" })).getByText("1", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("button", { name: "Meeting" })).getByText("3", {
+        exact: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("button", { name: /^Continue/ })).getByText(
+        "Enter",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
+    ).toBeNull();
+    expect(within(settings).queryByText("4", { exact: true })).toBeNull();
+
+    await user.keyboard(`{/${modKey}}`);
+  });
+
+  it("steps back on Escape during setup without closing Settings", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    const calendarId = CalendarIdSchema.parse(calendar.id);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredBookingPage(calendarId))),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = (await req.json()) as Record<string, unknown>;
+        return res(ctx.json(putSavedBookingPage(calendarId, body)));
+      }),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+    await user.keyboard("k");
+    expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+  });
+
+  it("closes Settings on Escape from the first setup step", async () => {
+    const user = userEvent.setup({ delay: null });
+    const calendar = createMockCalendar({ name: "Work" });
+    const calendarId = CalendarIdSchema.parse(calendar.id);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredBookingPage(calendarId))),
+      ),
+    );
+    renderSettings({
+      authenticated: true,
+      calendars: [calendar],
+      page: "booking",
+    });
+
+    await screen.findByText("Step 1 of 4");
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("dialog", { name: "Settings" }),
+    ).not.toBeInTheDocument();
   });
 });
