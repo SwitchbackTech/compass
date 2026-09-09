@@ -521,14 +521,10 @@
   overflow: clip;
   overflow-clip-margin: 4px;
   block-size: auto;
-  opacity: 1;
-  transition:
-    block-size 200ms ease-out,
-    opacity 200ms ease-out;
+  transition: block-size 200ms ease-out;
 
   @starting-style {
     block-size: 0;
-    opacity: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -536,7 +532,6 @@
 
     @starting-style {
       block-size: auto;
-      opacity: 1;
     }
   }
 }
