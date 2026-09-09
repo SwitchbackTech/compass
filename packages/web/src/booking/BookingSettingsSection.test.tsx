@@ -601,10 +601,101 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const trigger = await screen.findByRole("button", {
+    await userEvent
+      .setup({ delay: null })
+      .click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+    const trigger = screen.getByRole("button", {
       name: /^Meeting timezone:/,
     });
     expect(trigger).toHaveAccessibleName("Meeting timezone: UTC (UTC)");
+  });
+
+  it("describes weekly hours from the muted timezone line and keeps the trigger in More options", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.json({
+            ...savedOffPage(),
+            timeZone: "America/Denver",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    const mondayStart = await screen.findByRole("combobox", {
+      name: "Monday start",
+    });
+    expect(mondayStart).toHaveAccessibleDescription(/Times in/);
+    expect(mondayStart).toHaveAccessibleDescription(/More options/);
+
+    await user.click(screen.getByText(BOOKING_MORE_OPTIONS_LABEL));
+    const address = screen.getByLabelText("Page address");
+    const trigger = screen.getByRole("button", {
+      name: /^Meeting timezone:/,
+    });
+    expect(
+      address.compareDocumentPosition(trigger) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("opens More options and focuses the timezone trigger on a TIMEZONE_REQUIRED save error", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+      rest.put(bookingPageUrl, (_req, res, ctx) =>
+        res(
+          ctx.status(400),
+          ctx.json({
+            code: "TIMEZONE_REQUIRED",
+            message: "Timezone is required",
+          }),
+        ),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(
+      await screen.findByRole("switch", { name: "Meeting page" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        BOOKING_SAVE_ERROR_COPY.TIMEZONE_REQUIRED,
+      );
+    });
+    expect(mocks.error).not.toHaveBeenCalled();
+    const trigger = screen.getByRole("button", {
+      name: /^Meeting timezone:/,
+    });
+    expect(trigger.closest("details")).toHaveAttribute("open");
+    await waitFor(() => {
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 
   it("shows step 1 of 4 on an unconfigured page with the address input focused", async () => {

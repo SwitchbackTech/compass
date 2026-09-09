@@ -316,6 +316,9 @@ test("settings dialog never scrolls horizontally with more options open", async 
   await prepareSignedInBookingSettingsPage(page);
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(
+    settingsDialog.getByRole("button", { name: /Meeting timezone:/ }),
+  ).toHaveCount(0);
   await openMoreOptions(settingsDialog);
   await settingsDialog
     .getByRole("button", { name: /Meeting timezone:/ })
