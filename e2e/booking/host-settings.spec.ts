@@ -220,7 +220,9 @@ test("first visit: keyboard setup wizard through go live", async ({
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
 
-  await expect(settingsDialog.getByText("Live at")).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("textbox", { name: "Meeting link" }),
+  ).toBeVisible();
   await expect(
     settingsDialog.getByRole("switch", { name: "Meeting page" }),
   ).toBeFocused();

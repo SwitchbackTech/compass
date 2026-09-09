@@ -242,15 +242,16 @@ the top of the viewport and grows downward; More options animates
 open over about 200 ms, and reduced motion disables the animation.
 
 - **Status:** a **Meeting page** switch reflects whether the page is
-  live. When on, it shows "Live at" and the meeting link with Copy and
+  live. When on, it shows the meeting link with Copy and
   **Open meeting page**. When off, it shows "Off. Turn it on to share
   your link." and the address the page will use.
 - **Essentials:** duration, meeting timezone, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
 - **More options:** an uncontrolled native `<details>` that starts
-  collapsed. It holds page address (with "Links using your old address
-  will stop working." when the slug changes), blocking calendars,
-  minimum notice, and maximum horizon. Jumping to a field inside it, or
+  collapsed. It holds page address (the slug rule appears only as an
+  error; "Links using your old address will stop working." when the
+  slug changes), blocking calendars, minimum notice, and maximum
+  horizon. Jumping to a field inside it, or
   an invalid field in the group, opens it. Do not control the `open`
   prop from React: the jump-key code opens the element imperatively.
 - **First run:** before any draft exists, Meeting settings open a guided

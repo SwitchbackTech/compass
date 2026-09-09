@@ -28,10 +28,9 @@ export function BookingStatusHeader({
         onCheckedChange={onToggle}
       />
       {isLive ? (
-        <>
-          <p className="text-sm text-text">Live at</p>
-          {bookingUrl ? <BookingCopyLink bookingUrl={bookingUrl} /> : null}
-        </>
+        bookingUrl ? (
+          <BookingCopyLink bookingUrl={bookingUrl} />
+        ) : null
       ) : (
         <>
           <p className="text-sm text-text">
