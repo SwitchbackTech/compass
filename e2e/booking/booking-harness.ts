@@ -964,6 +964,12 @@ export async function preparePublicBookingReschedulePage(
     waitUntil: "domcontentloaded",
   });
 
+  if (options.bookable === false) {
+    await expect(
+      page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+    ).toBeVisible({ timeout: 15000 });
+  }
+
   return captured;
 }
 
