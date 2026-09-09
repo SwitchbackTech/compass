@@ -19,6 +19,10 @@ interface BookingTimezoneFieldProps {
  * nothing. Now it is one tab stop, and the trigger renders whatever zone is
  * stored - including a non-canonical alias, which had no <option> at all.
  */
+export function formatBookingTimezoneLabel(timeZone: TimeZone): string {
+  return `${timeZoneCityName(timeZone)} (${formatTimeZoneAbbreviation(timeZone)})`;
+}
+
 export function BookingTimezoneField({
   timeZone,
   onChange,
@@ -27,8 +31,7 @@ export function BookingTimezoneField({
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  const label = `${timeZoneCityName(timeZone)} (${formatTimeZoneAbbreviation(timeZone)})`;
+  const label = formatBookingTimezoneLabel(timeZone);
 
   return (
     <div>

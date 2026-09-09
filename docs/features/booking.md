@@ -245,12 +245,12 @@ open over about 200 ms, and reduced motion disables the animation.
   live. When on, it shows "Live at" and the meeting link with Copy and
   **Open meeting page**. When off, it shows "Off. Turn it on to share
   your link." and the address the page will use.
-- **Essentials:** duration, meeting timezone, weekly hours, and
+- **Essentials:** duration, weekly hours, and
   destination calendar. These fit without scrolling at 1440x900.
 - **More options:** an uncontrolled native `<details>` that starts
   collapsed. It holds page address (with "Links using your old address
-  will stop working." when the slug changes), blocking calendars,
-  minimum notice, and maximum horizon. Jumping to a field inside it, or
+  will stop working." when the slug changes), meeting timezone,
+  blocking calendars, minimum notice, and maximum horizon. Jumping to a field inside it, or
   an invalid field in the group, opens it. Do not control the `open`
   prop from React: the jump-key code opens the element imperatively.
 - **First run:** before any draft exists, Meeting settings open a guided
@@ -265,6 +265,9 @@ open over about 200 ms, and reduced motion disables the animation.
   copies the link, and then shows the full form with the switch focused.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
+  Under weekly hours a muted line reads the city and abbreviation and
+  points to More options. Every Start and End menu is described by that
+  line.
 - **Weekly hours** are a list of the seven ISO weekdays, Monday first.
   Each line is a checkbox named with the full weekday, the short label,
   a Start menu, the word "to", an End menu, and one action cell. Menus

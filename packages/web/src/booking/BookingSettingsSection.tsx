@@ -36,7 +36,10 @@ import { BookingMoreOptions } from "@web/booking/BookingMoreOptions";
 import { BookingNumberField } from "@web/booking/BookingNumberField";
 import { BookingSaveBar } from "@web/booking/BookingSaveBar";
 import { BookingStatusHeader } from "@web/booking/BookingStatusHeader";
-import { BookingTimezoneField } from "@web/booking/BookingTimezoneField";
+import {
+  BookingTimezoneField,
+  formatBookingTimezoneLabel,
+} from "@web/booking/BookingTimezoneField";
 import { BookingWeeklyHoursEditor } from "@web/booking/BookingWeeklyHoursEditor";
 import {
   bookingSaveErrorInline,
@@ -88,6 +91,7 @@ const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
 
 const MORE_OPTIONS_FIELDS = new Set<BookingField>([
   "address",
+  "timezone",
   "blocking",
   "notice",
   "horizon",
@@ -638,47 +642,43 @@ export function BookingSettingsSection({
           onToggle={(next) => submit(next)}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="min-w-0">
-            <BookingFieldLabel htmlFor="booking-duration">
-              Duration
-            </BookingFieldLabel>
-            <select
-              {...bookingFieldAttrs("duration")}
-              className={BOOKING_SELECT_CLASS_NAME}
-              id="booking-duration"
-              onChange={(event) =>
-                updateForm({
-                  durationMinutes: Number(
-                    event.target.value,
-                  ) as BookingDurationMinutes,
-                })
-              }
-              value={form.durationMinutes}
-            >
-              {DURATION_OPTIONS.map((minutes) => (
-                <option key={minutes} value={minutes}>
-                  {minutes} minutes
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="min-w-0" {...bookingFieldAttrs("timezone")}>
-            <BookingTimezoneField
-              onChange={(timeZone) => updateForm({ timeZone })}
-              timeZone={form.timeZone}
-            />
-          </div>
+        <div className="max-w-[50%]">
+          <BookingFieldLabel htmlFor="booking-duration">
+            Duration
+          </BookingFieldLabel>
+          <select
+            {...bookingFieldAttrs("duration")}
+            className={BOOKING_SELECT_CLASS_NAME}
+            id="booking-duration"
+            onChange={(event) =>
+              updateForm({
+                durationMinutes: Number(
+                  event.target.value,
+                ) as BookingDurationMinutes,
+              })
+            }
+            value={form.durationMinutes}
+          >
+            {DURATION_OPTIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes} minutes
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex flex-col gap-1" {...bookingFieldAttrs("hours")}>
           <BookingWeeklyHoursEditor
+            describedBy="booking-hours-timezone"
             onChange={(weeklyAvailability) =>
               updateForm({ weeklyAvailability })
             }
             value={form.weeklyAvailability}
           />
+          <p className="text-sm text-text-muted" id="booking-hours-timezone">
+            Times in {formatBookingTimezoneLabel(form.timeZone)}. Change it
+            under More options.
+          </p>
         </div>
 
         <div>
@@ -744,6 +744,13 @@ export function BookingSettingsSection({
             savedSlug={savedSlug}
             slug={form.slug ?? ""}
           />
+
+          <div className="min-w-0" {...bookingFieldAttrs("timezone")}>
+            <BookingTimezoneField
+              onChange={(timeZone) => updateForm({ timeZone })}
+              timeZone={form.timeZone}
+            />
+          </div>
 
           <BookingBlockingCalendarsField
             availabilityCalendars={availabilityCalendars}
