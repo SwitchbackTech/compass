@@ -1,4 +1,7 @@
-import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
+import {
+  DEFAULT_WEEKLY_AVAILABILITY,
+  type WeeklyAvailability,
+} from "@core/types/booking.contracts";
 import { type IsoWeekday } from "@web/booking/booking.util";
 import {
   addBlock,
@@ -40,8 +43,10 @@ describe("addBlock", () => {
   });
 
   test("after a block ending 23:00 returns the input unchanged", () => {
-    const value = [{ weekday: 1, start: "22:00", end: "23:00" }];
-    expect(addBlock(value, 1)).toBe(value);
+    const value: WeeklyAvailability = [
+      { weekday: 1 as IsoWeekday, start: "22:00", end: "23:00" },
+    ];
+    expect(addBlock(value, 1 as IsoWeekday)).toBe(value);
   });
 });
 

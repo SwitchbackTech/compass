@@ -147,6 +147,7 @@ export function BookingWeeklyHoursEditor({
                 {available ? (
                   <IconButton
                     aria-label={`Add hours to ${weekdayLabel(weekday)}`}
+                    className="size-8 text-text"
                     disabled={!canAddBlock(value, weekday)}
                     onClick={() => onChange(addBlock(value, weekday))}
                     size="small"
@@ -167,6 +168,7 @@ export function BookingWeeklyHoursEditor({
                     <div className="flex w-8 justify-center">
                       <IconButton
                         aria-label={`Remove ${weekdayLabel(weekday)} ${formatTimeLabel(block.start)} to ${formatTimeLabel(block.end)}`}
+                        className="size-8 text-text"
                         onClick={() =>
                           onChange(removeBlock(value, weekday, index))
                         }

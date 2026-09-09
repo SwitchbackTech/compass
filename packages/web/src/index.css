@@ -517,26 +517,27 @@
 }
 
 @utility c-grow-in {
-  display: grid;
-  grid-template-rows: 1fr;
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  block-size: auto;
   opacity: 1;
   transition:
-    grid-template-rows 200ms ease-out,
+    block-size 200ms ease-out,
     opacity 200ms ease-out;
 
   @starting-style {
-    grid-template-rows: 0fr;
+    block-size: 0;
     opacity: 0;
-  }
-
-  & > * {
-    min-height: 0;
-    overflow: clip;
-    overflow-clip-margin: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+
+    @starting-style {
+      block-size: auto;
+      opacity: 1;
+    }
   }
 }
 
