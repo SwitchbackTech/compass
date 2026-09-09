@@ -981,6 +981,8 @@ export interface HostBookingSettingsStubOptions {
     start: string;
     end: string;
   }>;
+  /** When set, PUT /api/booking/page returns this error instead of 200. */
+  putError?: { status: number; body: Record<string, unknown> };
 }
 
 export interface CapturedHostBookingRequests {
@@ -999,6 +1001,7 @@ export async function prepareSignedInBookingSettingsPage(
   const enabled = options.enabled ?? configured;
   const weeklyAvailability =
     options.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY;
+  const putError = options.putError;
   const captured: CapturedHostBookingRequests = { putBodies: [] };
 
   await page.addInitScript((accountEmail) => {
@@ -1089,6 +1092,9 @@ export async function prepareSignedInBookingSettingsPage(
     if (path.endsWith("/api/booking/page") && request.method() === "PUT") {
       const body = request.postDataJSON() as Record<string, unknown>;
       captured.putBodies.push(body);
+      if (putError) {
+        return route.fulfill(jsonResponse(putError.body, putError.status));
+      }
       const nextSlug =
         typeof body.slug === "string" && body.slug.length > 0
           ? body.slug
