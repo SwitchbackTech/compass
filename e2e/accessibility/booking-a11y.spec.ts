@@ -571,6 +571,9 @@ test.describe("settings booking section", () => {
       }),
     ).toBeVisible();
     await expect(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    ).toBeEnabled();
+    await expect(
       settingsDialog.getByRole("combobox", { name: /Start for/ }),
     ).toHaveAccessibleDescription(/Start and End apply to every selected day/);
     await expectNoAxeViolations(page, {

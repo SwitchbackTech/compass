@@ -603,6 +603,12 @@ export async function preparePublicBookingPage(
     ).toBeVisible({ timeout: 15000 });
     return captured;
   }
+  if (options.bookable === false) {
+    await expect(
+      page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+    ).toBeVisible({ timeout: 15000 });
+    return captured;
+  }
   await expect(
     page.getByRole("heading", { name: "Meet with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
