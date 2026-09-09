@@ -94,6 +94,18 @@ test("the public booking conflict alert has no automatically detectable accessib
   await expectNoAxeViolations(page, { checkpoint: "public booking conflict" });
 });
 
+test("the public booking unbookable state has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingPage(page, { bookable: false });
+  await expect(
+    page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, {
+    checkpoint: "public booking unbookable",
+  });
+});
+
 test.describe("public booking confirmation page", () => {
   test("confirmed state has no automatically detectable accessibility violations", async ({
     page,
@@ -520,12 +532,43 @@ test.describe("settings booking section", () => {
       enabled: false,
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 1 of \d+$/ }),
+    ).toBeVisible();
     await expect(
       settingsDialog.getByRole("heading", { name: "Pick your address" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run address",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run hours step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    );
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 2 of \d+$/ }),
+    ).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeVisible();
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run hours",
       include: "[role='dialog']",
     });
   });
@@ -541,7 +584,11 @@ test.describe("settings booking section", () => {
     await dispatchClick(
       settingsDialog.getByRole("button", { name: /Continue/ }),
     );
-    await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 2 of \d+$/ }),
+    ).toBeVisible();
     await page.keyboard.press("k");
     await expect(
       settingsDialog.getByRole("heading", { name: "How long is a meeting?" }),
@@ -563,7 +610,11 @@ test.describe("settings booking section", () => {
     await dispatchClick(
       settingsDialog.getByRole("button", { name: /Continue/ }),
     );
-    await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 2 of \d+$/ }),
+    ).toBeVisible();
     await page.keyboard.press("k");
     await page.keyboard.press("k");
     await expect(
@@ -596,7 +647,11 @@ test.describe("settings booking section", () => {
       return route.fallback();
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 1 of \d+$/ }),
+    ).toBeVisible();
     await dispatchClick(
       settingsDialog.getByRole("button", { name: /Continue/ }),
     );

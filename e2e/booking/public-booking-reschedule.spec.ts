@@ -138,4 +138,29 @@ test.describe("public booking reschedule", () => {
     expect(captured.reservationSlotGets).toBe(0);
     expect(captured.reschedulePosts).toHaveLength(0);
   });
+
+  test("shows unavailable when reservation slots are not bookable", async ({
+    page,
+  }) => {
+    await preparePublicBookingReschedulePage(page, { bookable: false });
+
+    const heading = page.getByRole("heading", {
+      name: "Meeting temporarily unavailable",
+    });
+    await expect(heading).toBeVisible();
+    await expect(heading).toBeFocused();
+    await expect(
+      page.getByText(
+        "The host calendar is not ready for new meetings. Please try again later.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", {
+        name: "Reschedule your meeting with Tyler Dane",
+      }),
+    ).toHaveCount(0);
+  });
 });

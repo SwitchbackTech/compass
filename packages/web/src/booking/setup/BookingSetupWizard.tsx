@@ -153,7 +153,10 @@ export function BookingSetupWizard({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a wizard-scoped shortcut layer, not an interactive element in its own right
     <div className="flex flex-col gap-4" onKeyDown={handleKeyDown}>
-      <p aria-live="polite" className="text-sm text-text-muted">
+      <p aria-live="polite" className="sr-only">
+        {stepMeta.title}. Step {current} of {total}.
+      </p>
+      <p className="text-sm text-text-muted">
         Step {current} of {total}
       </p>
       <div className="flex flex-col gap-2">

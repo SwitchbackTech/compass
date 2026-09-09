@@ -151,18 +151,30 @@ export function BookingWeeklyHoursEditor({
       : null;
   const everyDayHasHours = unavailable.length === 0;
   const hoursSummary = summarizeHoursRows(rows);
+  const hoursFieldDescriptionIds = [
+    unavailableCopy ? "booking-hours-unavailable" : null,
+    hoursSummary ? "booking-hours-summary" : null,
+  ]
+    .filter((id): id is string => id != null)
+    .join(" ");
 
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
       <legend className="mb-1 text-sm text-text">Weekly hours</legend>
       {unavailableCopy ? (
-        <p className="text-sm text-text-muted">{unavailableCopy}</p>
+        <p className="text-sm text-text-muted" id="booking-hours-unavailable">
+          {unavailableCopy}
+        </p>
       ) : null}
 
       <span aria-live="polite" className="sr-only" role="status">
         {announcement}
       </span>
-      {hoursSummary ? <p className="sr-only">{hoursSummary}</p> : null}
+      {hoursSummary ? (
+        <p className="sr-only" id="booking-hours-summary">
+          {hoursSummary}
+        </p>
+      ) : null}
 
       {rows.map((row, rowIndex) => {
         const tabStop = roverDay(row, rover[row.id]);
@@ -201,6 +213,11 @@ export function BookingWeeklyHoursEditor({
                 ))}
               </fieldset>
               <select
+                aria-describedby={
+                  hoursFieldDescriptionIds.length > 0
+                    ? hoursFieldDescriptionIds
+                    : undefined
+                }
                 aria-label={hoursSelectLabel("Start", row)}
                 className={BOOKING_SELECT_CLASS_NAME}
                 onChange={(event) =>
@@ -216,6 +233,11 @@ export function BookingWeeklyHoursEditor({
               </select>
               <span className="text-sm text-text">to</span>
               <select
+                aria-describedby={
+                  hoursFieldDescriptionIds.length > 0
+                    ? hoursFieldDescriptionIds
+                    : undefined
+                }
                 aria-label={hoursSelectLabel("End", row)}
                 className={BOOKING_SELECT_CLASS_NAME}
                 onChange={(event) =>

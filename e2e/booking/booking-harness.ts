@@ -603,6 +603,12 @@ export async function preparePublicBookingPage(
     ).toBeVisible({ timeout: 15000 });
     return captured;
   }
+  if (options.bookable === false) {
+    await expect(
+      page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+    ).toBeVisible({ timeout: 15000 });
+    return captured;
+  }
   await expect(
     page.getByRole("heading", { name: "Meet with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
@@ -612,11 +618,7 @@ export async function preparePublicBookingPage(
   // race that request: the skip link finds no target and focus goes nowhere.
   // Wait for the picker itself unless the test is deliberately observing the
   // pending, failed, or unavailable state.
-  if (
-    options.bookable !== false &&
-    !options.slotFailGate &&
-    !options.holdFirstSlots
-  ) {
+  if (!options.slotFailGate && !options.holdFirstSlots) {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
     ).toBeVisible();
@@ -1181,9 +1183,11 @@ export async function prepareSignedInBookingSettingsPage(
       settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
     ).toBeVisible({ timeout: 15000 });
   } else if (!configured) {
-    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 1 of \d+$/ }),
+    ).toBeVisible({ timeout: 15000 });
   } else {
     await expect(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
