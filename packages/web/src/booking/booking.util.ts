@@ -11,6 +11,9 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import { type BookingField } from "@web/booking/booking-sequence.fields";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
 
+export const BOOKING_AVAILABILITY_REQUIRED_MESSAGE =
+  "Add weekly hours before turning on your meeting page.";
+
 export function getAvailabilityReadableCalendars(
   calendars: Calendar[],
 ): Calendar[] {
@@ -232,7 +235,7 @@ export function validateBookingForm({
   if (enabling && form.weeklyAvailability.length === 0) {
     return {
       field: "hours",
-      message: "Add weekly hours before turning on your meeting page.",
+      message: BOOKING_AVAILABILITY_REQUIRED_MESSAGE,
     };
   }
   return null;

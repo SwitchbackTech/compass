@@ -8,6 +8,15 @@ export interface PublicBookingStatusCopy {
   description: string;
 }
 
+export const PUBLIC_BOOKING_UNBOOKABLE: PublicBookingStatusCopy = {
+  title: "Meeting temporarily unavailable",
+  description:
+    "The host calendar is not ready for new meetings. Please try again later.",
+};
+
+export const PUBLIC_BOOKING_SLOT_CONFLICT =
+  "This time is no longer available. Pick another slot.";
+
 /**
  * What a guest page should render once the reservation query has settled:
  * either a terminal status message, or the reservation itself.

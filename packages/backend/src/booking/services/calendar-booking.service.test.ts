@@ -165,7 +165,6 @@ describe("CalendarBookingService", () => {
       end: "2026-09-01T15:30:00.000Z",
       timeZone: "America/Denver",
       guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
-      guestsCanInviteOthers: true,
       createConference: true,
     });
 
@@ -176,7 +175,7 @@ describe("CalendarBookingService", () => {
       invitation: "all",
       attendeesEdit: "replace",
       createConference: true,
-      guestsCanInviteOthers: true,
+      guestsCanInviteOthers: false,
     });
     expect(request.input.content.attendees).toEqual([
       {
@@ -209,7 +208,6 @@ describe("CalendarBookingService", () => {
       end: "2026-09-01T15:30:00.000Z",
       timeZone: "America/Denver",
       guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
-      guestsCanInviteOthers: true,
       createConference: false,
     });
 
@@ -241,7 +239,6 @@ describe("CalendarBookingService", () => {
         end: "2026-09-01T15:30:00.000Z",
         timeZone: "America/Denver",
         guest: { email: "   ", displayName: null },
-        guestsCanInviteOthers: false,
         createConference: true,
       }),
     ).rejects.toMatchObject({ code: "INVALID_INPUT" });

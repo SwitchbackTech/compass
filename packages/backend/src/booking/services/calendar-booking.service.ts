@@ -56,7 +56,7 @@ const toBookingCreateSubmitRequest = (
       invitation: "all",
       attendeesEdit: "replace",
       createConference: input.createConference,
-      guestsCanInviteOthers: input.guestsCanInviteOthers,
+      guestsCanInviteOthers: false,
       content: {
         title: input.title,
         description: input.description,

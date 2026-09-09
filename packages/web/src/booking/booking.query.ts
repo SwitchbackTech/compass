@@ -14,6 +14,7 @@ import { BookingApi } from "@web/api/booking.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import { billingPreviewActions } from "@web/billing/billing-preview.store";
+import { BOOKING_AVAILABILITY_REQUIRED_MESSAGE } from "@web/booking/booking.util";
 import { type BookingField } from "@web/booking/booking-sequence.fields";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
@@ -42,8 +43,7 @@ export const BOOKING_SAVE_ERROR_COPY: Record<string, string> = {
   DESTINATION_NOT_WRITABLE:
     "The destination calendar can't accept new events. Choose a different calendar and save again.",
   TIMEZONE_REQUIRED: "Choose a meeting timezone before enabling.",
-  AVAILABILITY_REQUIRED:
-    "Add weekly hours before turning on your meeting page.",
+  AVAILABILITY_REQUIRED: BOOKING_AVAILABILITY_REQUIRED_MESSAGE,
   SLUG_TAKEN: "That address is already taken. Try another.",
   INVALID_INPUT:
     "Some settings couldn't be saved. Check the highlighted fields and try again.",

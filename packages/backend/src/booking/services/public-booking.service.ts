@@ -28,6 +28,7 @@ import {
 import {
   type CalendarConference,
   conferenceForDestination,
+  createsGoogleMeetFromConference,
 } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
 import {
@@ -42,6 +43,7 @@ import {
   guestActionTokenAuthorizes,
   hashCancelToken,
 } from "@backend/booking/booking-cancel-token";
+import { guestActionUrls } from "@backend/booking/booking-page.mapper";
 import { type BookingPageRecord } from "@backend/booking/booking-page.record";
 import { bookingPageRepository } from "@backend/booking/booking-page.repository";
 import { type BookingReservationRecord } from "@backend/booking/booking-reservation.record";
@@ -52,7 +54,6 @@ import {
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
@@ -144,21 +145,6 @@ export const publicBookingSlotsLog = {
     logger.warn("Public booking slots unbookable", meta);
   },
 };
-
-const buildGuestActionUrl = (
-  action: "cancel" | "reschedule",
-  reservationId: string,
-  token: string,
-): string =>
-  new URL(
-    `/meet/${action}/${reservationId}?token=${encodeURIComponent(token)}`,
-    CONFIG.FRONTEND_URL,
-  ).href;
-
-const guestActionUrls = (reservationId: string, token: string) => ({
-  cancelUrl: buildGuestActionUrl("cancel", reservationId, token),
-  rescheduleUrl: buildGuestActionUrl("reschedule", reservationId, token),
-});
 
 const assertGuestEmail = (email: string): void => {
   if (!isGuestEmail(email)) {
@@ -305,7 +291,7 @@ const presentReservation = async (
     bookingSlug: page.bookingSlug,
     guestName: reservation.guestName,
     notes: reservation.notes,
-    createsGoogleMeet: conference === "meet",
+    createsGoogleMeet: createsGoogleMeetFromConference(conference),
     conference,
   });
 };
@@ -634,7 +620,6 @@ export class PublicBookingService {
             email: input.guestEmail,
             displayName: input.guestName,
           },
-          guestsCanInviteOthers: false,
           createConference: conference !== "none",
         },
       );

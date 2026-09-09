@@ -60,6 +60,7 @@ import {
   formatBookingDestinationOptionLabel,
   resolveBookingConference,
 } from "@web/booking/booking-conference.copy";
+import { BOOKING_SELECT_CLASS_NAME } from "@web/booking/booking-form.styles";
 import {
   type BookingField,
   bookingFieldAttrs,
@@ -86,9 +87,6 @@ const MORE_OPTIONS_FIELDS = new Set<BookingField>([
   "notice",
   "horizon",
 ]);
-
-const BOOKING_SELECT_CLASS_NAME =
-  "c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel";
 
 /** Copy the public link, then report whichever of the two outcomes happened. */
 const copyBookingLinkThenToast = (
@@ -280,7 +278,6 @@ export function BookingSettingsSection({
       focusSwitchAfterSetupRef.current = false;
     }
   });
-  const sectionRef = useRef<HTMLFieldSetElement>(null);
   const baselineFormRef = useRef<AdminPutBookingPageInput | null>(null);
 
   const minNoticeInvalid =
@@ -525,7 +522,6 @@ export function BookingSettingsSection({
       <fieldset
         className="flex flex-col gap-2"
         disabled={isReadOnly || saveMutation.isPending}
-        ref={sectionRef}
       >
         <BookingStatusHeader
           addressPreview={addressPreview}

@@ -6,6 +6,7 @@ import {
   CONFERENCE_BY_PROVIDER,
   conferenceForDestination,
   conferenceForProvider,
+  createsGoogleMeetFromConference,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 
@@ -79,6 +80,14 @@ describe("Calendar Contracts", () => {
     it("returns none when the calendar cannot create a conference", () => {
       expect(conferenceForProvider("google", false)).toBe("none");
       expect(conferenceForProvider("microsoft", false)).toBe("none");
+    });
+  });
+
+  describe("createsGoogleMeetFromConference", () => {
+    it("is true only for Meet destinations", () => {
+      expect(createsGoogleMeetFromConference("meet")).toBe(true);
+      expect(createsGoogleMeetFromConference("teams")).toBe(false);
+      expect(createsGoogleMeetFromConference("none")).toBe(false);
     });
   });
 

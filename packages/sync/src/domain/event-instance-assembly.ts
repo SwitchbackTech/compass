@@ -3,6 +3,7 @@ import {
   type SyncEventInstance,
   SyncEventInstanceSchema,
 } from "@core/types/sync/event.contracts";
+import { isProviderManagedMetadata } from "@sync/domain/provider-managed-metadata";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
 
@@ -143,7 +144,7 @@ const toIcalUid = (event: EventRecord): { icalUid?: string } => {
 };
 
 const toProviderManaged = (event: EventRecord): { providerManaged?: true } => {
-  return event.providerMetadata?.["providerManaged"] === "true"
+  return isProviderManagedMetadata(event.providerMetadata)
     ? { providerManaged: true }
     : {};
 };

@@ -1,6 +1,7 @@
 import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { occurrenceScheduleAt } from "@sync/domain/occurrence-projection";
+import { providerManagedMetadataEntry } from "@sync/domain/provider-managed-metadata";
 import {
   type ReprojectBatchEntry,
   reprojectOccurrencesBatch,
@@ -32,7 +33,7 @@ function providerMetadataFor(
   const metadata = {
     ...(read.busy ? {} : { transparency: "transparent" }),
     ...(read.icalUid ? { iCalUID: read.icalUid } : {}),
-    ...(read.providerManaged ? { providerManaged: "true" } : {}),
+    ...providerManagedMetadataEntry(read.providerManaged),
     ...(read.resourceHref ? { href: read.resourceHref } : {}),
   };
   return Object.keys(metadata).length > 0 ? metadata : null;

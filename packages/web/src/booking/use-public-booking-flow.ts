@@ -23,6 +23,7 @@ import {
   usePublicBookingPageQuery,
   usePublicBookingSlotsQuery,
 } from "@web/booking/public-booking.query";
+import { PUBLIC_BOOKING_SLOT_CONFLICT } from "@web/booking/public-booking.view";
 import {
   type PublicBookingSearch,
   tokenFromGuestActionUrl,
@@ -37,9 +38,6 @@ const EMPTY_GUEST_DETAILS: PublicBookingGuestDetails = {
   guestEmail: "",
   notes: "",
 };
-
-const SLOT_CONFLICT_ALERT =
-  "This time is no longer available. Pick another slot.";
 
 /**
  * All state and behavior of the guest booking flow. The URL is the source of
@@ -140,7 +138,7 @@ export function usePublicBookingFlow() {
   // 409 only: keep typed details while they pick another slot. Other alerts
   // (empty horizon, confirm failure) must not open the guest form.
   const showConflictForm =
-    !showDetailsStep && alertMessage === SLOT_CONFLICT_ALERT;
+    !showDetailsStep && alertMessage === PUBLIC_BOOKING_SLOT_CONFLICT;
   const slotsHasData = Boolean(slotsQuery.data);
   const slotsFetching =
     !slotsHasData && (slotsQuery.isPending || slotsQuery.isFetching);
@@ -301,7 +299,7 @@ export function usePublicBookingFlow() {
       });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {
-        setAlertMessage(SLOT_CONFLICT_ALERT);
+        setAlertMessage(PUBLIC_BOOKING_SLOT_CONFLICT);
         setChangingTime(false);
         updateSearch({ slot: undefined });
         await slotsQuery.refetch();

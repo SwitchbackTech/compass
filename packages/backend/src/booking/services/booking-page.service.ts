@@ -191,17 +191,7 @@ class BookingPageService {
       };
     }
 
-    if (record.enabled && record.bookingSlug) {
-      return mapBookingPageRecordToAdminResponse({
-        ...record,
-        bookingSlug: record.bookingSlug,
-      });
-    }
-
-    return mapBookingPageRecordToSetupResponse(
-      record,
-      await resolveSuggestedSlug(userId, record.bookingSlug),
-    );
+    return toAdminResult(userId, record);
   }
 
   async putAdminPage(

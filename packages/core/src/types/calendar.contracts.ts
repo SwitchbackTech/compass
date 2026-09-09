@@ -74,6 +74,12 @@ export function conferenceForDestination(
   );
 }
 
+export function createsGoogleMeetFromConference(
+  conference: CalendarConference,
+): boolean {
+  return conference === "meet";
+}
+
 export const CalendarAccessSchema = z.enum([
   "owner",
   "writer",
