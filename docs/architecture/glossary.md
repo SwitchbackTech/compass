@@ -180,7 +180,8 @@ Google event organizer field
 **Guest** (booking):
 The unauthenticated person who picks a day and time on a public booking
 page (month grid plus that day's slots), then confirms. Times show in
-their timezone.
+their timezone. When Sync reports the host calendar is not ready, the
+page shows Meeting temporarily unavailable instead of slots.
 _Avoid_: attendee when you mean the public booking user rather than a
 calendar guest-list row (the created event does add them as an
 attendee)

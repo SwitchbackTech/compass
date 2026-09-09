@@ -603,6 +603,12 @@ export async function preparePublicBookingPage(
     ).toBeVisible({ timeout: 15000 });
     return captured;
   }
+  if (options.bookable === false) {
+    await expect(
+      page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+    ).toBeVisible({ timeout: 15000 });
+    return captured;
+  }
   await expect(
     page.getByRole("heading", { name: "Meet with Tyler Dane" }),
   ).toBeVisible({ timeout: 15000 });
@@ -611,12 +617,8 @@ export async function preparePublicBookingPage(
   // A test that starts typing right away (Tab to the skip link, Enter) would
   // race that request: the skip link finds no target and focus goes nowhere.
   // Wait for the picker itself unless the test is deliberately observing the
-  // pending, failed, or unavailable state.
-  if (
-    options.bookable !== false &&
-    !options.slotFailGate &&
-    !options.holdFirstSlots
-  ) {
+  // pending or failed state.
+  if (!options.slotFailGate && !options.holdFirstSlots) {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
     ).toBeVisible();
@@ -963,6 +965,12 @@ export async function preparePublicBookingReschedulePage(
   await page.goto(`/meet/reschedule/${reservationId}${search}`, {
     waitUntil: "domcontentloaded",
   });
+
+  if (options.bookable === false) {
+    await expect(
+      page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+    ).toBeVisible({ timeout: 15000 });
+  }
 
   return captured;
 }

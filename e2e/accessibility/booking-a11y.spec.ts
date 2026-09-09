@@ -77,6 +77,30 @@ test("the public booking slots error has no automatically detectable accessibili
   });
 });
 
+test("the unbookable public page has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingPage(page, { bookable: false });
+  await expect(
+    page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, {
+    checkpoint: "public booking unbookable",
+  });
+});
+
+test("the unbookable reschedule page has no automatically detectable accessibility violations", async ({
+  page,
+}) => {
+  await preparePublicBookingReschedulePage(page, { bookable: false });
+  await expect(
+    page.getByRole("heading", { name: "Meeting temporarily unavailable" }),
+  ).toBeVisible();
+  await expectNoAxeViolations(page, {
+    checkpoint: "public booking reschedule unbookable",
+  });
+});
+
 test("the public booking conflict alert has no automatically detectable accessibility violations", async ({
   page,
 }) => {
@@ -526,6 +550,34 @@ test.describe("settings booking section", () => {
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run address",
+      include: "[role='dialog']",
+    });
+  });
+
+  test("first-run hours step has no automatically detectable accessibility violations", async ({
+    page,
+  }) => {
+    await prepareSignedInBookingSettingsPage(page, {
+      configured: false,
+      enabled: false,
+    });
+    const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+    await dispatchClick(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    );
+    await expect(
+      settingsDialog.getByRole("heading", {
+        name: "When can people meet with you?",
+      }),
+    ).toBeVisible();
+    await expect(
+      settingsDialog.getByRole("button", { name: /Continue/ }),
+    ).toBeEnabled();
+    await expect(
+      settingsDialog.getByRole("combobox", { name: /Start for/ }),
+    ).toHaveAccessibleDescription(/Start and End apply to every selected day/);
+    await expectNoAxeViolations(page, {
+      checkpoint: "settings booking first-run hours",
       include: "[role='dialog']",
     });
   });

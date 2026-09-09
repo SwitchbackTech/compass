@@ -1,4 +1,4 @@
-# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5 / v1.6 / v1.7)
+# Compass Calendar Booking (v1 / v1.1 / v1.3 / v1.5 / v1.6 / v1.7 / v1.8)
 
 Locked product spec for public scheduling on Compass Cloud
 (`https://compasscalendar.com`). Approved 2026-08-30. v1.1 shipped
@@ -10,15 +10,16 @@ reschedule) is specified here and implemented. v1.6 shipped one-click
 turn on, Essentials / More options, editable address, default hours,
 branded connect pills, and funnel analytics. v1.7 shipped the Meeting
 page redesign: `/meet` URLs, meeting copy, hold-Mod section chords, the
-on/off switch, grouped weekly hours rows, and the guided first-run setup
-screen. The production gate stays off.
+on/off switch, grouped weekly hours rows, and the first-run address
+screen. v1.8 replaced that screen with a guided setup wizard and dropped
+host knobs that are no longer in Settings. The production gate stays off.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
 
 ## Status
 
-v1, v1.1, v1.3, v1.5, v1.6, and v1.7 are implemented in the Compass
+v1, v1.1, v1.3, v1.5, v1.6, v1.7, and v1.8 are implemented in the Compass
 monorepo (public `/meet/:username`, host Settings, backend APIs, guest
 cancel, guest reschedule, edit-details, one-click turn on, Essentials /
 More options, editable address, default hours, branded connect pills,
@@ -58,7 +59,7 @@ the permalink so a reload, bookmark, or self-sent link keeps cancel and
 edit. The public reservation GET does not return `cancelUrl` or the
 token. A permalink without `token` still shows the booking from GET,
 with no cancel or edit actions. Cancel and reschedule links always appear in
-the event description because guests cannot invite others.
+the event description because guests cannot add other attendees.
 Reschedule copy stays history-only (v1.3).
 
 Cancel: `/meet/cancel/:reservationId?token=…`.
@@ -208,7 +209,7 @@ Reschedule links stay history state only (v1.3).
 **Event title:** `{Guest name} and {Host name}`.
 
 **Event description:** guest notes (if any), plus cancel and reschedule
-URLs. Guests cannot invite others, so those URLs are safe in the
+URLs. Guests cannot add other attendees, so those URLs are safe in the
 description every invitee sees.
 
 ## Host inputs
@@ -225,14 +226,14 @@ One booking-page record per user.
 
 **Slot grid:** 15-minute starts in the host timezone, filtered so a slot
 of `duration` fits inside an availability interval after busy blocks.
-Back-to-back meetings are allowed; there is no buffer or per-day cap.
+Back-to-back meetings are allowed.
 
 ### Host Settings controls
 
 The Settings **Meeting** page is keyboard-first. It is split into a
 status header, an Essentials group, and a collapsed **More options**
-group. It is not a native timezone `<select>` plus a checkbox and two
-time inputs per weekday.
+group. Hours use grouped day pills with Start and End menus, not a
+checkbox and typed times for each weekday.
 
 - **Status:** a **Meeting page** switch reflects whether the page is
   live. When on, it shows "Live at" and the meeting link with Copy and
@@ -267,8 +268,8 @@ time inputs per weekday.
   stored day with two intervals keeps only the first.
 - **Jump:** hold Mod to see sidebar digits `1/2/3` and Enter on Save
   (or Continue). Meeting fields, legends, summaries, and the Copy
-  button have no shortcut chips. `Mod+4` through `Mod+9` and `Mod+U`
-  do nothing. Save stays Mod+Enter. Save-error focus still uses
+  button have no shortcut chips. Save stays Mod+Enter. Save-error focus
+  still uses
   `data-booking-field` and does not click, so focusing a checkbox does
   not toggle it. Before focusing, the helper opens any ancestor
   `<details>`. The Settings nav shows one hint, **Hold Mod to see
@@ -358,8 +359,8 @@ There is no host reservation inbox.
 - In-place Google PATCH of the existing event: same `calendarEventId`,
   same Meet URL, same attendees. `invitation: "all"`,
   `attendeesEdit: "preserve"`. Compass still sends no email.
-- While choosing a new time, this reservation must not occupy slots or
-  count toward max-per-day. Other overlapping host events still occupy.
+- While choosing a new time, this reservation must not occupy slots.
+  Other overlapping host events still occupy.
   Tokenized slots: `GET /api/booking/reservations/:id/slots`.
 - Status stays `confirmed`; mutate `slotStart` / `slotEnd`. Same slot is
   an idempotent success (no second Google write). Cancelled or bad token

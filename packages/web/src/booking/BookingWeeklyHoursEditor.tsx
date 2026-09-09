@@ -28,6 +28,7 @@ interface BookingWeeklyHoursEditorProps {
   value: WeeklyAvailability;
   onChange: (value: WeeklyAvailability) => void;
   disabled?: boolean;
+  describedBy?: string;
 }
 
 interface EditorRow extends HoursRow {
@@ -55,6 +56,8 @@ const toEditorRows = (
 const pillClassName =
   "c-focus-ring min-h-8 min-w-8 rounded border border-border px-1.5 text-xs text-text hover:bg-surface-panel aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent";
 
+const HOURS_RANGE_HINT_ID = "booking-hours-range-hint";
+
 /**
  * Grouped day-pill rows: one Start and End menu shared by the days in that row.
  */
@@ -62,6 +65,7 @@ export function BookingWeeklyHoursEditor({
   value,
   onChange,
   disabled = false,
+  describedBy,
 }: BookingWeeklyHoursEditorProps) {
   const idRef = useRef(1);
   const allocId = () => {
@@ -151,6 +155,9 @@ export function BookingWeeklyHoursEditor({
       : null;
   const everyDayHasHours = unavailable.length === 0;
   const hoursSummary = summarizeHoursRows(rows);
+  const selectDescribedBy = [HOURS_RANGE_HINT_ID, describedBy]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
@@ -159,6 +166,9 @@ export function BookingWeeklyHoursEditor({
         <p className="text-sm text-text-muted">{unavailableCopy}</p>
       ) : null}
 
+      <p className="sr-only" id={HOURS_RANGE_HINT_ID}>
+        Start and End apply to every selected day in their row.
+      </p>
       <span aria-live="polite" className="sr-only" role="status">
         {announcement}
       </span>
@@ -201,6 +211,7 @@ export function BookingWeeklyHoursEditor({
                 ))}
               </fieldset>
               <select
+                aria-describedby={selectDescribedBy}
                 aria-label={hoursSelectLabel("Start", row)}
                 className={BOOKING_SELECT_CLASS_NAME}
                 onChange={(event) =>
@@ -216,6 +227,7 @@ export function BookingWeeklyHoursEditor({
               </select>
               <span className="text-sm text-text">to</span>
               <select
+                aria-describedby={selectDescribedBy}
                 aria-label={hoursSelectLabel("End", row)}
                 className={BOOKING_SELECT_CLASS_NAME}
                 onChange={(event) =>
