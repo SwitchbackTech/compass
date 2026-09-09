@@ -516,6 +516,26 @@
   }
 }
 
+@utility c-grow-in {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+  block-size: auto;
+  transition: block-size 200ms ease-out;
+
+  @starting-style {
+    block-size: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    @starting-style {
+      block-size: auto;
+    }
+  }
+}
+
 @utility c-text-gradient {
   color: transparent;
   background: linear-gradient(var(--accent), var(--accent-strong));

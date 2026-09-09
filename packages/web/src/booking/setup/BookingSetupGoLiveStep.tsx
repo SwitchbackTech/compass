@@ -5,10 +5,7 @@ import {
 import { type Calendar } from "@core/types/calendar.contracts";
 import { bookingAddressPrefix } from "@web/booking/BookingAddressField";
 import { formatBookingDestinationOptionLabel } from "@web/booking/booking-conference.copy";
-import {
-  rowsFromAvailability,
-  summarizeHoursRows,
-} from "@web/booking/weekly-hours.rows";
+import { summarizeAvailability } from "@web/booking/weekly-hours";
 
 interface BookingSetupGoLiveStepProps {
   bookingUrl: string | null;
@@ -26,9 +23,7 @@ export function BookingSetupGoLiveStep({
   weeklyAvailability,
 }: BookingSetupGoLiveStepProps) {
   const prefix = bookingAddressPrefix(bookingUrl);
-  const hoursSummary = summarizeHoursRows(
-    rowsFromAvailability(weeklyAvailability),
-  );
+  const hoursSummary = summarizeAvailability(weeklyAvailability);
   const destinationLabel = destinationCalendar
     ? formatBookingDestinationOptionLabel(destinationCalendar)
     : "No writable calendars";

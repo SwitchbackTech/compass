@@ -236,8 +236,8 @@ Back-to-back meetings are allowed.
 
 The Settings **Meeting** page is keyboard-first. It is split into a
 status header, an Essentials group, and a collapsed **More options**
-group. Hours use grouped day pills with Start and End menus, not a
-checkbox and typed times for each weekday. Settings is anchored to
+group. Hours are a per-day list: a checkbox, short label, Start and
+End menus, and an action cell. Settings is anchored to
 the top of the viewport and grows downward; More options animates
 open over about 200 ms, and reduced motion disables the animation.
 
@@ -265,13 +265,16 @@ open over about 200 ms, and reduced motion disables the animation.
   copies the link, and then shows the full form with the switch focused.
 - **Timezone** uses the same searchable combobox as time travel. The
   trigger is one tab stop and still renders a stored non-canonical alias.
-- **Weekly hours** are grouped rows of day pills, a Start menu, the
-  word "to", and an End menu. Menus step by 15 minutes with 12-hour
-  labels (`9:00 AM`). The default is one row, Mon-Fri, 9:00 AM to
-  5:00 PM. **Add hours** starts a row with the days that are still
-  unassigned, and is disabled once every day has hours. A weekday
-  belongs to at most one row. Days in no row are unavailable. Loading a
-  stored day with two intervals keeps only the first.
+- **Weekly hours** are a list of the seven ISO weekdays, Monday first.
+  Each line is a checkbox named with the full weekday, the short label,
+  a Start menu, the word "to", an End menu, and one action cell. Menus
+  step by 15 minutes with 12-hour labels (`9:00 AM`). An unchecked day
+  shows only the checkbox and label and keeps the same line height.
+  The default is Monday to Friday, 9:00 AM to 5:00 PM. **Add hours to
+  Monday** on a day's first line adds a second block under that day;
+  each extra line's action cell removes that block. Start and End
+  options are bounded by neighbouring blocks so an overlap cannot be
+  produced. A newly added line eases in; reduced motion disables that.
 - **Jump:** hold Mod to see sidebar digits `1/2/3` and Enter on Save
   (or Continue). Meeting fields, legends, summaries, and the Copy
   button have no shortcut chips. Sidebar digits above `3` and letter
@@ -498,7 +501,7 @@ Guest reschedule is **in scope for v1.3**, not v1 / v1.1.
 | Reservations + cancel tokens | `packages/backend/src/booking/booking-reservation.repository.ts`, `booking-cancel-token.ts` |
 | Calendar application port | `packages/backend/src/booking/services/calendar-booking.port.ts` (`updateBookingEvent`), `services/calendar-booking.service.ts` |
 | Sync busy occupancy | `packages/sync/src/domain/occurrence-projection.ts`, `busy-query.service.ts`, `booking-occupancy-facts.ts` |
-| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/booking/setup/`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.rows.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
+| Host Settings UI | `packages/web/src/booking/BookingSettingsSection.tsx`, `packages/web/src/booking/setup/`, `BookingStatusHeader.tsx`, `BookingMoreOptions.tsx`, `BookingSaveBar.tsx`, `BookingAddressField.tsx`, `BookingBlockingCalendarsField.tsx`, `weekly-hours.ts`, `packages/web/src/components/Switch/Switch.tsx`, `packages/web/src/components/Settings/SettingsModal.tsx` |
 | Public guest UI | `packages/web/src/booking/PublicBookingPage.tsx`, `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`, `PublicBookingReschedulePage.tsx`, `PublicBookingCopyGuestAction.tsx`, `PublicBookingEditDetailsForm.tsx` |
 | Public web API client | `packages/web/src/api/public-booking.api.ts` |
 | E2e | `e2e/booking/`, `e2e/booking/public-booking-reschedule.spec.ts`, `e2e/accessibility/booking-a11y.spec.ts` |
@@ -548,10 +551,6 @@ routes; these are the named events in `packages/web/src/auth/posthog/track.ts`.
   host edit can be overwritten. Accepted for v1.3.
 - **Confirm is fail-closed.** When Sync reports `bookable: false`, slots
   disappear and confirm returns `409`.
-- **Weekly hours keep only the first interval per weekday.** Loading a
-  stored day that has two intervals (for example 09:00-12:00 and
-  13:00-17:00) shows one Start and End from the first interval. Saving
-  drops the rest. Booking is not on production. Accepted for v1.8.
 - **Removed host settings may linger on old Mongo documents.** Buffer,
   max meetings per day, welcome text, and guest-invite permission were
   removed in Booking v1.8. Zod strips those keys on read; they are not

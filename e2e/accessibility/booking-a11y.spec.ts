@@ -390,7 +390,7 @@ test.describe("settings booking section", () => {
       "Thursday",
       "Friday",
     ]) {
-      await dispatchClick(settingsDialog.getByRole("button", { name }));
+      await dispatchClick(settingsDialog.getByRole("checkbox", { name }));
     }
     await dispatchClick(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),
@@ -411,15 +411,12 @@ test.describe("settings booking section", () => {
   }) => {
     await prepareSignedInBookingSettingsPage(page);
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-    await expect(
-      settingsDialog.getByRole("combobox", { name: /Start for/ }),
-    ).toBeVisible();
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: "Add hours" }),
+      settingsDialog.getByRole("button", { name: "Add hours to Monday" }),
     );
     await expect(
-      settingsDialog.getByRole("button", { name: "Add hours" }),
-    ).toBeDisabled();
+      settingsDialog.getByRole("combobox", { name: "Monday start 2" }),
+    ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking weekly hours menus",
       include: "[role='dialog']",
@@ -595,8 +592,8 @@ test.describe("settings booking section", () => {
       settingsDialog.getByRole("button", { name: /Continue/ }),
     ).toBeEnabled();
     await expect(
-      settingsDialog.getByRole("combobox", { name: /Start for/ }),
-    ).toHaveAccessibleDescription(/Start and End apply to every selected day/);
+      settingsDialog.getByRole("combobox", { name: "Monday start" }),
+    ).toHaveAccessibleDescription(/Times are in/);
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run hours",
       include: "[role='dialog']",
