@@ -50,7 +50,7 @@ export function BookingBlockingCalendarsField({
         <>
           {groupsWithCalendars.map((group) => (
             <div
-              className="flex min-w-0 flex-col gap-1"
+              className="flex min-w-0 flex-col gap-2"
               key={group.accountEmail}
             >
               {showAccountCaption ? (

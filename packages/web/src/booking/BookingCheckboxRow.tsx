@@ -18,7 +18,7 @@ export function BookingCheckboxRow({
   onChange,
 }: BookingCheckboxRowProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-text">
+    <label className="flex min-h-8 items-center gap-2 text-sm text-text">
       <input
         checked={checked}
         className="c-all-day-checkbox"
