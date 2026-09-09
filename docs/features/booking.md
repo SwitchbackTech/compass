@@ -237,7 +237,9 @@ Back-to-back meetings are allowed.
 The Settings **Meeting** page is keyboard-first. It is split into a
 status header, an Essentials group, and a collapsed **More options**
 group. Hours use grouped day pills with Start and End menus, not a
-checkbox and typed times for each weekday.
+checkbox and typed times for each weekday. Settings is anchored to
+the top of the viewport and grows downward; More options animates
+open over about 200 ms, and reduced motion disables the animation.
 
 - **Status:** a **Meeting page** switch reflects whether the page is
   live. When on, it shows "Live at" and the meeting link with Copy and

@@ -248,6 +248,16 @@ describe("SettingsModal", () => {
     ).toBeInTheDocument();
   });
 
+  it("anchors the Settings dialog to the top of the viewport", () => {
+    renderSettings();
+
+    const backdrop = screen.getByRole("dialog", {
+      name: "Settings",
+    }).parentElement;
+    expect(backdrop).toHaveClass("items-start");
+    expect(backdrop).not.toHaveClass("items-center");
+  });
+
   it("lists every connected account with its own status", () => {
     renderSettings({
       connections: [

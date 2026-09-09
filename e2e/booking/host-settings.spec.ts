@@ -90,7 +90,10 @@ test("keyboard hint sits in the nav column and the last control stays above Save
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  const topBefore = (await settingsDialog.boundingBox())?.y;
   await openMoreOptions(settingsDialog);
+  const topAfter = (await settingsDialog.boundingBox())?.y;
+  expect(topAfter).toBe(topBefore);
   const hint = settingsDialog.locator("nav p", {
     hasText: "to see shortcuts.",
   });

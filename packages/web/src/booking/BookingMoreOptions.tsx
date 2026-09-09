@@ -21,7 +21,10 @@ export function BookingMoreOptions({
   }, [forceOpen]);
 
   return (
-    <details className="flex flex-col gap-4" ref={detailsRef}>
+    <details
+      className="c-details-animated flex flex-col gap-4"
+      ref={detailsRef}
+    >
       <summary className="c-focus-ring cursor-pointer list-inside font-medium text-sm text-text">
         {BOOKING_MORE_OPTIONS_LABEL}
       </summary>
