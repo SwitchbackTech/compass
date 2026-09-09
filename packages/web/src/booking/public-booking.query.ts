@@ -214,37 +214,13 @@ export function usePrefetchAdjacentBookingMonths(
   maxHorizonDays: number | undefined,
   enabled: boolean,
 ) {
-  const queryClient = useQueryClient();
-  const previousMonthKey = shiftBookingMonthKey(monthKey, -1, timeZone);
-  const nextMonthKey = shiftBookingMonthKey(monthKey, 1, timeZone);
-
-  useEffect(() => {
-    if (!enabled || maxHorizonDays == null || !slug) {
-      return;
-    }
-    void prefetchPublicBookingMonth(
-      queryClient,
-      slug,
-      previousMonthKey,
-      timeZone,
-      maxHorizonDays,
-    );
-    void prefetchPublicBookingMonth(
-      queryClient,
-      slug,
-      nextMonthKey,
-      timeZone,
-      maxHorizonDays,
-    );
-  }, [
-    enabled,
-    maxHorizonDays,
-    nextMonthKey,
-    previousMonthKey,
-    queryClient,
-    slug,
+  usePrefetchAdjacentPublicMonths(
+    { kind: "page", slug },
+    monthKey,
     timeZone,
-  ]);
+    maxHorizonDays,
+    enabled && Boolean(slug),
+  );
 }
 
 export function usePrefetchAdjacentReservationMonths(
@@ -255,40 +231,13 @@ export function usePrefetchAdjacentReservationMonths(
   maxHorizonDays: number | undefined,
   enabled: boolean,
 ) {
-  const queryClient = useQueryClient();
-  const previousMonthKey = shiftBookingMonthKey(monthKey, -1, timeZone);
-  const nextMonthKey = shiftBookingMonthKey(monthKey, 1, timeZone);
-
-  useEffect(() => {
-    if (!enabled || maxHorizonDays == null || !reservationId || !token) {
-      return;
-    }
-    void prefetchPublicBookingReservationMonth(
-      queryClient,
-      reservationId,
-      token,
-      previousMonthKey,
-      timeZone,
-      maxHorizonDays,
-    );
-    void prefetchPublicBookingReservationMonth(
-      queryClient,
-      reservationId,
-      token,
-      nextMonthKey,
-      timeZone,
-      maxHorizonDays,
-    );
-  }, [
-    enabled,
-    maxHorizonDays,
-    nextMonthKey,
-    previousMonthKey,
-    queryClient,
-    reservationId,
+  usePrefetchAdjacentPublicMonths(
+    { kind: "reservation", reservationId, token },
+    monthKey,
     timeZone,
-    token,
-  ]);
+    maxHorizonDays,
+    enabled && Boolean(reservationId && token),
+  );
 }
 
 /**
@@ -412,6 +361,77 @@ export function isPublicBookingConflictError(error: unknown): boolean {
 }
 
 type BookingQueryClient = ReturnType<typeof useQueryClient>;
+
+type AdjacentMonthPrefetch =
+  | { kind: "page"; slug: string }
+  | { kind: "reservation"; reservationId: string; token: string };
+
+function usePrefetchAdjacentPublicMonths(
+  target: AdjacentMonthPrefetch,
+  monthKey: string,
+  timeZone: string,
+  maxHorizonDays: number | undefined,
+  enabled: boolean,
+) {
+  const queryClient = useQueryClient();
+  const previousMonthKey = shiftBookingMonthKey(monthKey, -1, timeZone);
+  const nextMonthKey = shiftBookingMonthKey(monthKey, 1, timeZone);
+  const slug = target.kind === "page" ? target.slug : "";
+  const reservationId =
+    target.kind === "reservation" ? target.reservationId : "";
+  const token = target.kind === "reservation" ? target.token : "";
+
+  useEffect(() => {
+    if (!enabled || maxHorizonDays == null) {
+      return;
+    }
+    if (slug) {
+      void prefetchPublicBookingMonth(
+        queryClient,
+        slug,
+        previousMonthKey,
+        timeZone,
+        maxHorizonDays,
+      );
+      void prefetchPublicBookingMonth(
+        queryClient,
+        slug,
+        nextMonthKey,
+        timeZone,
+        maxHorizonDays,
+      );
+      return;
+    }
+    if (reservationId && token) {
+      void prefetchPublicBookingReservationMonth(
+        queryClient,
+        reservationId,
+        token,
+        previousMonthKey,
+        timeZone,
+        maxHorizonDays,
+      );
+      void prefetchPublicBookingReservationMonth(
+        queryClient,
+        reservationId,
+        token,
+        nextMonthKey,
+        timeZone,
+        maxHorizonDays,
+      );
+    }
+  }, [
+    enabled,
+    maxHorizonDays,
+    nextMonthKey,
+    previousMonthKey,
+    queryClient,
+    reservationId,
+    slug,
+    timeZone,
+    token,
+  ]);
+}
 
 function publicBookingMonthSlotsQueryOptions(
   queryKey: readonly unknown[],

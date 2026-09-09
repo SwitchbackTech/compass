@@ -4,6 +4,7 @@ import {
   CalendarSchema,
   conferenceForDestination,
   conferenceKindsForConference,
+  createsGoogleMeetFromConference,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { HexColorSchema } from "@core/types/domain-primitives";
@@ -88,7 +89,7 @@ const syncCalendarToBrowser = (
     isPrimary: calendar.primary,
     isVisible: true,
     isActive: calendar.active,
-    createsGoogleMeet: conference === "meet",
+    createsGoogleMeet: createsGoogleMeetFromConference(conference),
     conference,
     ...(accountEmail ? { accountEmail } : {}),
   });

@@ -350,7 +350,6 @@ describe("PublicBookingService", () => {
     expect(createBookingEvent).toHaveBeenCalledTimes(1);
     expect(createBookingEvent.mock.calls[0]?.[1]).toMatchObject({
       guest: { email: "ada@example.com", displayName: "Ada Lovelace" },
-      guestsCanInviteOthers: false,
     });
     expect(response.reservationId).toBeTruthy();
     expect(response.cancelUrl).toContain("token=");
@@ -1438,14 +1437,12 @@ describe("PublicBookingService", () => {
 
     const eventInput = createBookingEvent.mock.calls[0]?.[1] as {
       description: string;
-      guestsCanInviteOthers: boolean;
     };
     expect(eventInput.description).toContain("bring coffee");
     expect(eventInput.description).toContain(`Cancel: ${created.cancelUrl}`);
     expect(eventInput.description).toContain(
       `Reschedule: ${created.rescheduleUrl}`,
     );
-    expect(eventInput.guestsCanInviteOthers).toBe(false);
   });
 
   it("asks Sync to mint Meet on confirm and does not invent a conference URL", async () => {

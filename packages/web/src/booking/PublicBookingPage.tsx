@@ -21,6 +21,7 @@ import {
 } from "@web/booking/PublicBookingStatusMessage";
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import { formatDurationMinutes } from "@web/booking/public-booking.format";
+import { PUBLIC_BOOKING_UNBOOKABLE } from "@web/booking/public-booking.view";
 import { useBookingDocumentTitle } from "@web/booking/use-booking-document-title";
 import {
   isPublicBookingPageHeadingFocusPending,
@@ -99,12 +100,7 @@ export function PublicBookingPage() {
   const page = pageQuery.data;
 
   if (slotsQuery.data && !slotsQuery.data.bookable) {
-    return (
-      <PublicBookingStatusMessage
-        title="Meeting temporarily unavailable"
-        description="The host calendar is not ready for new meetings. Please try again later."
-      />
-    );
+    return <PublicBookingStatusMessage {...PUBLIC_BOOKING_UNBOOKABLE} />;
   }
 
   return (

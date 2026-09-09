@@ -20,6 +20,7 @@ import {
   usePublicBookingReservationSlotsQuery,
   useReschedulePublicBookingReservationMutation,
 } from "@web/booking/public-booking.query";
+import { PUBLIC_BOOKING_SLOT_CONFLICT } from "@web/booking/public-booking.view";
 import {
   type PublicBookingRescheduleSearch,
   publicCancelUrlForReservation,
@@ -29,9 +30,6 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { getBrowserTimeZone } from "@web/timezone/browser-timezone";
-
-const SLOT_CONFLICT_ALERT =
-  "This time is no longer available. Pick another slot.";
 
 export function usePublicBookingRescheduleFlow() {
   const { reservationId } = useParams({
@@ -291,7 +289,7 @@ export function usePublicBookingRescheduleFlow() {
       });
     } catch (error) {
       if (isPublicBookingConflictError(error)) {
-        setAlertMessage(SLOT_CONFLICT_ALERT);
+        setAlertMessage(PUBLIC_BOOKING_SLOT_CONFLICT);
         updateSearch({ slot: undefined });
         await slotsQuery.refetch();
         return;

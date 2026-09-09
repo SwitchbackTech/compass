@@ -10,6 +10,10 @@ import {
   weekdayShortLabel,
 } from "@web/booking/booking.util";
 import {
+  BOOKING_OUTLINE_BUTTON_CLASS_NAME,
+  BOOKING_SELECT_CLASS_NAME,
+} from "@web/booking/booking-form.styles";
+import {
   availabilityFromRows,
   claimWeekday,
   DEFAULT_HOURS_ROW,
@@ -34,9 +38,6 @@ interface BookingWeeklyHoursEditorProps {
 interface EditorRow extends HoursRow {
   id: number;
 }
-
-const BOOKING_SELECT_CLASS_NAME =
-  "c-focus-ring w-full rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel";
 
 const emptyEditorRow = (): HoursRow => ({
   weekdays: new Set<IsoWeekday>(),
@@ -243,7 +244,7 @@ export function BookingWeeklyHoursEditor({
               </select>
               {rows.length > 1 ? (
                 <button
-                  className="c-focus-ring rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+                  className={BOOKING_OUTLINE_BUTTON_CLASS_NAME}
                   onClick={() => removeRow(row.id)}
                   type="button"
                 >
@@ -256,7 +257,7 @@ export function BookingWeeklyHoursEditor({
       })}
 
       <button
-        className="c-focus-ring self-start rounded border border-border bg-surface-overlay px-2 py-1 text-sm text-text hover:bg-surface-panel"
+        className={`${BOOKING_OUTLINE_BUTTON_CLASS_NAME} self-start`}
         disabled={everyDayHasHours}
         onClick={addRow}
         title={everyDayHasHours ? "Every day already has hours" : undefined}

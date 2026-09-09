@@ -12,6 +12,21 @@ import { CONFIG } from "@backend/common/constants/config.constants";
 export const buildBookingUrl = (slug: string): string =>
   new URL(`/meet/${slug}`, CONFIG.FRONTEND_URL).href;
 
+export const buildGuestActionUrl = (
+  action: "cancel" | "reschedule",
+  reservationId: string,
+  token: string,
+): string =>
+  new URL(
+    `/meet/${action}/${reservationId}?token=${encodeURIComponent(token)}`,
+    CONFIG.FRONTEND_URL,
+  ).href;
+
+export const guestActionUrls = (reservationId: string, token: string) => ({
+  cancelUrl: buildGuestActionUrl("cancel", reservationId, token),
+  rescheduleUrl: buildGuestActionUrl("reschedule", reservationId, token),
+});
+
 export const mapBookingPageRecordToWire = (
   record: BookingPageRecord & { bookingSlug: string },
 ): BookingPage =>

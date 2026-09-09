@@ -1,6 +1,7 @@
 import {
   type Calendar,
   conferenceForProvider,
+  createsGoogleMeetFromConference,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
@@ -21,7 +22,7 @@ export const mapCalendarRecord = (record: CalendarRecord): Calendar => {
     isPrimary: record.isPrimary,
     isVisible: record.isVisible,
     isActive: record.isActive,
-    createsGoogleMeet: conference === "meet",
+    createsGoogleMeet: createsGoogleMeetFromConference(conference),
     conference,
   };
 };

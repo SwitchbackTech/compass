@@ -14,6 +14,7 @@ import {
 import { PublicBookingTimezoneControl } from "@web/booking/PublicBookingTimezoneControl";
 import { type usePublicBookingReservationQuery } from "@web/booking/public-booking.query";
 import {
+  PUBLIC_BOOKING_UNBOOKABLE,
   type PublicBookingReservationView,
   resolvePublicBookingReservationView,
 } from "@web/booking/public-booking.view";
@@ -90,12 +91,7 @@ export function PublicBookingReschedulePage() {
   const busy = flow.rescheduleReservation.isPending;
 
   if (slotsQuery.data && !slotsQuery.data.bookable) {
-    return (
-      <PublicBookingStatusMessage
-        title="Meeting temporarily unavailable"
-        description="The host calendar is not ready for new meetings. Please try again later."
-      />
-    );
+    return <PublicBookingStatusMessage {...PUBLIC_BOOKING_UNBOOKABLE} />;
   }
 
   return (

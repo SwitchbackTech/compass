@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import {
   type CalendarConference,
   CalendarConferenceSchema,
+  createsGoogleMeetFromConference,
 } from "@core/types/calendar.contracts";
 import {
   CalendarIdSchema,
@@ -220,7 +221,7 @@ export const toPublicBookingPage = (
     enabled: page.enabled,
     maxHorizonDays: page.maxHorizonDays,
     conference,
-    createsGoogleMeet: conference === "meet",
+    createsGoogleMeet: createsGoogleMeetFromConference(conference),
   });
 
 export const BookingReservationStatusSchema = z.enum([
