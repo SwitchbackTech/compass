@@ -29,7 +29,6 @@ import {
   BookingAddressField,
   bookingAddressPrefix,
 } from "@web/booking/BookingAddressField";
-import { BookingAddressSetup } from "@web/booking/BookingAddressSetup";
 import { BookingBlockingCalendarsField } from "@web/booking/BookingBlockingCalendarsField";
 import { BookingConnectPrompt } from "@web/booking/BookingConnectPrompt";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
@@ -65,6 +64,12 @@ import {
   bookingFieldAttrs,
   focusBookingField,
 } from "@web/booking/booking-sequence.fields";
+import { BookingSetupWizard } from "@web/booking/setup/BookingSetupWizard";
+import {
+  nextSetupStep,
+  prevSetupStep,
+  type SetupStepId,
+} from "@web/booking/setup/setup-steps";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -265,6 +270,8 @@ export function BookingSettingsSection({
     String(form.maxHorizonDays),
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [setupStep, setSetupStep] = useState<SetupStepId | null>(null);
+  const setupContinueRef = useRef<HTMLButtonElement>(null);
   const focusSwitchAfterSetupRef = useRef(false);
   // The settings fieldset is disabled while a save is in flight, so focusing
   // from onError is a no-op. Wait until the mutation settles and the field
@@ -296,6 +303,7 @@ export function BookingSettingsSection({
   );
   useEffect(() => {
     if (!serverPage || seededPageRef.current === serverPage) return;
+    if (setupStep != null) return;
     // The week-view cache can still be the anonymous local calendar after
     // e2e (or a fresh login) flips authenticated. Seeding against that empty
     // writable list sticks a placeholder destination that the identity guard
@@ -317,6 +325,7 @@ export function BookingSettingsSection({
     calendarsPending,
     effectiveTimeZone,
     serverPage,
+    setupStep,
     waitingForHostCalendars,
     writableCalendars,
   ]);
@@ -325,10 +334,17 @@ export function BookingSettingsSection({
   // this server page. The analytics effect and the render guard must read the
   // same value, or "settings opened" fires against a form the host cannot see.
   const isSeedingForm =
-    isPending ||
-    calendarsPending ||
-    waitingForHostCalendars ||
-    (serverPage != null && seededPageRef.current !== serverPage);
+    setupStep == null &&
+    (isPending ||
+      calendarsPending ||
+      waitingForHostCalendars ||
+      (serverPage != null && seededPageRef.current !== serverPage));
+
+  useEffect(() => {
+    if (isSeedingForm) return;
+    if (serverPage == null || !isUnconfiguredBookingPage(serverPage)) return;
+    setSetupStep((current) => current ?? "address");
+  }, [isSeedingForm, serverPage]);
 
   const isDirty =
     baselineFormRef.current !== null &&
@@ -341,6 +357,12 @@ export function BookingSettingsSection({
 
   if (dismissGuardRef) {
     dismissGuardRef.current = () => {
+      if (setupStep != null) {
+        if (setupStep === "address") return false;
+        const previous = prevSetupStep(setupStep, writableCalendars.length);
+        if (previous != null) setSetupStep(previous);
+        return true;
+      }
       if (!isDirty) return false;
       setIsConfirmOpen(true);
       return true;
@@ -379,8 +401,6 @@ export function BookingSettingsSection({
   if (isSeedingForm) {
     return <p className="text-sm text-text-muted">Loading meeting settings…</p>;
   }
-
-  const isSetup = serverPage != null && isUnconfiguredBookingPage(serverPage);
 
   const savedPage = isSavedBookingPage(serverPage) ? serverPage : null;
   const isLive = savedPage?.enabled === true;
@@ -436,7 +456,10 @@ export function BookingSettingsSection({
     setSaveError(null);
   };
 
-  const submit = (enabled: boolean, options?: { silent?: boolean }) => {
+  const submit = (
+    enabled: boolean,
+    options?: { silent?: boolean; fromSetupGoLive?: boolean },
+  ) => {
     const error = validateBookingForm({
       enabling: enabled,
       form,
@@ -451,12 +474,14 @@ export function BookingSettingsSection({
     setSaveError(null);
     const wasLive = isLive;
     const silent = options?.silent === true;
-    if (silent) focusSwitchAfterSetupRef.current = true;
+    if (silent && setupStep == null) focusSwitchAfterSetupRef.current = true;
     saveMutation.mutate(
       { ...form, enabled },
       {
         onError: (mutationError) => {
-          if (silent) focusSwitchAfterSetupRef.current = false;
+          if (silent && setupStep == null) {
+            focusSwitchAfterSetupRef.current = false;
+          }
           const inline = bookingSaveErrorInline(mutationError);
           if (inline) setSaveError(inline);
         },
@@ -474,8 +499,13 @@ export function BookingSettingsSection({
           }
           if (!wasLive) {
             track("booking_page_enabled", {
-              first_time: savedPage == null,
+              first_time:
+                savedPage == null || options?.fromSetupGoLive === true,
             });
+          }
+          if (setupStep != null) {
+            setSetupStep(null);
+            focusSwitchAfterSetupRef.current = true;
           }
           if (!isSavedBookingPage(page)) return;
           copyBookingLinkThenToast(
@@ -500,22 +530,99 @@ export function BookingSettingsSection({
     horizonInvalid ||
     (saveError?.field != null && MORE_OPTIONS_FIELDS.has(saveError.field));
 
-  if (isSetup) {
+  const handleSetupBack = () => {
+    setSetupStep((current) => {
+      if (current == null) return current;
+      return prevSetupStep(current, writableCalendars.length) ?? current;
+    });
+    setSaveError(null);
+  };
+
+  const advanceSetupStep = () => {
+    setSetupStep((current) => {
+      if (current == null) return current;
+      return nextSetupStep(current, writableCalendars.length) ?? current;
+    });
+  };
+
+  const handleSetupContinue = () => {
+    if (setupStep == null || saveMutation.isPending) return;
+    setSaveError(null);
+
+    if (setupStep === "address") {
+      const parseMessage = bookingSlugParseMessage(form.slug);
+      if (parseMessage) {
+        setSaveError({ field: "address", message: parseMessage });
+        return;
+      }
+      void saveMutation
+        .mutateAsync({ ...form, enabled: false })
+        .then((page) => {
+          seededPageRef.current = page;
+          advanceSetupStep();
+        })
+        .catch((mutationError) => {
+          const inline = bookingSaveErrorInline(mutationError);
+          if (inline) setSaveError(inline);
+        });
+      return;
+    }
+
+    if (setupStep === "hours") {
+      if (form.weeklyAvailability.length === 0) {
+        setSaveError({
+          field: "hours",
+          message: "Add weekly hours before turning on your meeting page.",
+        });
+        return;
+      }
+      advanceSetupStep();
+      return;
+    }
+
+    if (setupStep === "duration" || setupStep === "destination") {
+      advanceSetupStep();
+      return;
+    }
+
+    if (setupStep === "live") {
+      submit(true, { fromSetupGoLive: true });
+      return;
+    }
+  };
+
+  if (setupStep != null) {
     const parseMessage = bookingSlugParseMessage(form.slug);
-    const setupError =
+    const addressSetupError =
+      setupStep === "address" &&
       saveError?.field === "address" &&
       (parseMessage == null || saveError.message !== parseMessage)
         ? saveError.message
         : null;
+    const wizardSetupError =
+      setupStep !== "address" ? (saveError?.message ?? null) : null;
+
     return (
-      <BookingAddressSetup
-        bookingUrl={null}
-        error={setupError}
-        forceInvalid={saveError?.field === "address"}
+      <BookingSetupWizard
+        bookingUrl={savedPage?.bookingUrl ?? null}
+        continueRef={setupContinueRef}
+        destinationCalendar={destinationCalendar}
+        forceAddressInvalid={saveError?.field === "address"}
+        form={form}
         isPending={saveMutation.isPending}
-        onChange={(nextSlug) => updateForm({ slug: nextSlug })}
-        onContinue={() => submit(false, { silent: true })}
-        slug={form.slug ?? ""}
+        onAddressChange={(nextSlug) => updateForm({ slug: nextSlug })}
+        onBack={handleSetupBack}
+        onContinue={handleSetupContinue}
+        onDestinationChange={handleDestinationChange}
+        onDurationChange={(durationMinutes) => updateForm({ durationMinutes })}
+        onHoursChange={(weeklyAvailability) =>
+          updateForm({ weeklyAvailability })
+        }
+        setupError={addressSetupError ?? wizardSetupError}
+        setupStep={setupStep}
+        syncConnections={connections}
+        writableCalendarCount={writableCalendars.length}
+        writableCalendars={writableCalendars}
       />
     );
   }

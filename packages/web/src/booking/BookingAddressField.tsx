@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type RefCallback, useState } from "react";
 import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import { bookingSlugParseMessage } from "@web/booking/booking.util";
 import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
@@ -18,6 +18,7 @@ export function bookingAddressPrefix(bookingUrl: string | null): string {
 interface BookingAddressFieldProps {
   bookingUrl: string | null;
   forceInvalid?: boolean;
+  inputRef?: RefCallback<HTMLInputElement | null>;
   onChange: (slug: string) => void;
   savedSlug: string | null;
   slug: string;
@@ -26,6 +27,7 @@ interface BookingAddressFieldProps {
 export function BookingAddressField({
   bookingUrl,
   forceInvalid = false,
+  inputRef,
   onChange,
   savedSlug,
   slug,
@@ -61,6 +63,7 @@ export function BookingAddressField({
         }`}
         id="booking-address"
         onBlur={() => setBlurred(true)}
+        ref={inputRef}
         onChange={(event) => onChange(event.target.value.toLowerCase())}
         spellCheck={false}
         value={slug}

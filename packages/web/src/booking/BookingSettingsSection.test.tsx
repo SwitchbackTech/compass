@@ -121,6 +121,23 @@ const savedOffPage = () => ({
   bookingUrl: "https://compasscalendar.com/meet/hostuser",
 });
 
+const putSavedPage = (body: Record<string, unknown>) => {
+  const slug = typeof body.slug === "string" ? body.slug : "hostuser";
+  return {
+    ...savedOffPage(),
+    enabled: body.enabled === true,
+    durationMinutes: body.durationMinutes ?? 30,
+    destinationCalendarId: body.destinationCalendarId ?? writableCalendar.id,
+    blockingCalendarIds: body.blockingCalendarIds ?? [writableCalendar.id],
+    timeZone: body.timeZone ?? "UTC",
+    weeklyAvailability: body.weeklyAvailability ?? DEFAULT_WEEKLY_AVAILABILITY,
+    minNoticeHours: body.minNoticeHours ?? 4,
+    maxHorizonDays: body.maxHorizonDays ?? 60,
+    slug,
+    bookingUrl: `https://compasscalendar.com/meet/${slug}`,
+  };
+};
+
 const healthyGoogleMetadata = {
   google: {
     connectionState: "HEALTHY" as const,
@@ -148,21 +165,6 @@ function findStickyAncestor(element: HTMLElement): HTMLElement | null {
     current = current.parentElement;
   }
   return null;
-}
-
-function dispatchModKey(target: HTMLElement, key: string) {
-  const modifierKey = resolveModifier("Mod");
-  const isControl = modifierKey === "Control";
-  target.dispatchEvent(
-    new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      ctrlKey: isControl,
-      key,
-      metaKey: !isControl,
-    }),
-  );
 }
 
 describe("BookingSettingsSection", () => {
@@ -482,17 +484,7 @@ describe("BookingSettingsSection", () => {
       ),
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         const body = (await req.json()) as Record<string, unknown>;
-        return res(
-          ctx.json({
-            ...body,
-            id: createObjectIdString(),
-            slug: body.slug,
-            hostUserId: createObjectIdString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl: `https://compasscalendar.com/meet/${body.slug}`,
-          }),
-        );
+        return res(ctx.json(putSavedPage(body)));
       }),
     );
 
@@ -508,12 +500,14 @@ describe("BookingSettingsSection", () => {
 
     await userEvent
       .setup({ delay: null })
-      .click(await screen.findByRole("button", { name: "Continue" }));
+      .click(await screen.findByRole("button", { name: /^Continue/ }));
 
-    const trigger = await screen.findByRole("button", {
-      name: /^Meeting timezone:/,
-    });
-    expect(trigger).toHaveAccessibleName("Meeting timezone: Chicago (CDT)");
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Times are in Chicago \(CDT\)\. You can change this later\./,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("keeps a configured page's stored timezone even when it is UTC", async () => {
@@ -556,7 +550,7 @@ describe("BookingSettingsSection", () => {
     expect(trigger).toHaveAccessibleName("Meeting timezone: UTC (UTC)");
   });
 
-  it("shows the first-run address screen on an unconfigured page", async () => {
+  it("shows step 1 of 4 on an unconfigured page with the address input focused", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
 
     server.use(
@@ -574,34 +568,26 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
+    expect(await screen.findByText("Step 1 of 4")).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Your meeting page" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Pick the address people will use to book time with you. You can change it later.",
-      ),
+      await screen.findByRole("heading", { name: "Pick your address" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Page address")).toHaveValue("hostuser");
+    expect(screen.getByLabelText("Page address")).toHaveFocus();
     expect(
       screen.getByText(`Your link: ${window.location.origin}/meet/hostuser`),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Continue" }),
+      screen.getByRole("button", { name: /^Continue/ }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("combobox", { name: /Start for/ }),
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("switch", { name: "Meeting page" }),
     ).not.toBeInTheDocument();
   });
 
-  it("Continue PUTs a disabled draft with the typed slug and does not toast", async () => {
+  it("Enter on the address input saves a draft and shows step 2 of 4", async () => {
     const user = userEvent.setup({ delay: null });
-    const { port, mocks } = createTestToastPort();
-    registerToastPort(port);
     let savedBody: unknown;
     userMetadataActions.set(healthyGoogleMetadata);
 
@@ -612,15 +598,7 @@ describe("BookingSettingsSection", () => {
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
         return res(
-          ctx.json({
-            ...(savedBody as object),
-            id: createObjectIdString(),
-            slug: (savedBody as { slug: string }).slug,
-            hostUserId: createObjectIdString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl: `https://compasscalendar.com/meet/${(savedBody as { slug: string }).slug}`,
-          }),
+          ctx.json(putSavedPage(savedBody as Record<string, unknown>)),
         );
       }),
     );
@@ -634,7 +612,49 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const address = await screen.findByLabelText("Page address");
+    await screen.findByText("Step 1 of 4");
+    const address = screen.getByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "my-slug");
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({
+        enabled: false,
+        slug: "my-slug",
+      });
+    });
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("Continue saves a disabled draft with the typed slug and shows step 2 of 4", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = await req.json();
+        return res(
+          ctx.json(putSavedPage(savedBody as Record<string, unknown>)),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByText("Step 1 of 4");
+    const address = screen.getByLabelText("Page address");
     await user.clear(address);
     await user.type(address, "my-page");
     await user.click(screen.getByRole("button", { name: /^Continue/ }));
@@ -643,26 +663,12 @@ describe("BookingSettingsSection", () => {
       expect(savedBody).toMatchObject({
         enabled: false,
         slug: "my-page",
-        durationMinutes: 30,
-        weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
       });
     });
-    expect(mocks.toast).not.toHaveBeenCalled();
-    expect(mocks.success).not.toHaveBeenCalled();
-    const meetingSwitch = await screen.findByRole("switch", {
-      name: "Meeting page",
-    });
-    expect(meetingSwitch).toHaveAttribute("aria-checked", "false");
-    expect(meetingSwitch).toHaveFocus();
-    expect(
-      screen.getByText("Off. Turn it on to share your link."),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { name: "Your meeting page" }),
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
   });
 
-  it("keeps the setup screen and shows SLUG_TAKEN under the field", async () => {
+  it("keeps step 1 and shows SLUG_TAKEN under the field", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
 
@@ -689,9 +695,7 @@ describe("BookingSettingsSection", () => {
 
     await user.click(await screen.findByRole("button", { name: /^Continue/ }));
 
-    expect(
-      await screen.findByRole("heading", { name: "Your meeting page" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Step 1 of 4")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       BOOKING_SAVE_ERROR_COPY.SLUG_TAKEN,
     );
@@ -724,18 +728,24 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const address = await screen.findByLabelText("Page address");
+    await screen.findByText("Step 1 of 4");
+    const address = screen.getByLabelText("Page address");
     await user.clear(address);
     await user.type(address, "ab");
     await user.click(screen.getByRole("button", { name: /^Continue/ }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Use 3 to 32 lowercase letters, digits, or hyphens",
-    );
+    await waitFor(() => {
+      expect(screen.getByLabelText("Page address")).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+    });
     expect(putCount).toBe(0);
+    expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
   });
 
-  it("Continue runs on Mod+Enter from the setup screen", async () => {
+  it("Mod+Enter on the address step saves a draft", async () => {
+    const user = userEvent.setup({ delay: null });
     let savedBody: unknown;
     userMetadataActions.set(healthyGoogleMetadata);
 
@@ -746,15 +756,7 @@ describe("BookingSettingsSection", () => {
       rest.put(bookingPageUrl, async (req, res, ctx) => {
         savedBody = await req.json();
         return res(
-          ctx.json({
-            ...(savedBody as object),
-            id: createObjectIdString(),
-            slug: "hostuser",
-            hostUserId: createObjectIdString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            bookingUrl: "https://compasscalendar.com/meet/hostuser",
-          }),
+          ctx.json(putSavedPage(savedBody as Record<string, unknown>)),
         );
       }),
     );
@@ -768,12 +770,232 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const address = await screen.findByLabelText("Page address");
-    dispatchModKey(address, "Enter");
+    await screen.findByLabelText("Page address");
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}{Enter}{/${modKey}}`);
 
     await waitFor(() => {
       expect(savedBody).toMatchObject({ enabled: false, slug: "hostuser" });
     });
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("k on the hours step advances and j returns", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = await req.json();
+        return res(ctx.json(putSavedPage(body as Record<string, unknown>)));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+
+    await user.keyboard("k");
+    expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
+
+    await user.keyboard("j");
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
+  it("Enter inside the duration radiogroup does not advance while Space selects", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = await req.json();
+        return res(ctx.json(putSavedPage(body as Record<string, unknown>)));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.keyboard("k");
+    expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
+
+    const durationGroup = screen.getByRole("radiogroup", {
+      name: "Meeting duration",
+    });
+    const firstDuration = within(durationGroup).getByRole("radio", {
+      name: "15 min",
+    });
+    firstDuration.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Step 3 of 4")).toBeInTheDocument();
+
+    await user.keyboard(" ");
+    expect(firstDuration).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("Step 3 of 4")).toBeInTheDocument();
+  });
+
+  it("go live PUTs enabled true, focuses the switch, and toasts live copy", async () => {
+    const user = userEvent.setup({ delay: null });
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const writeText = mock(() => Promise.resolve());
+    setClipboard({ writeText });
+    const savedBodies: unknown[] = [];
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = await req.json();
+        savedBodies.push(body);
+        return res(ctx.json(putSavedPage(body as Record<string, unknown>)));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.keyboard("k");
+    await user.keyboard("k");
+    await user.click(
+      await screen.findByRole("button", { name: /Turn on and copy link/ }),
+    );
+
+    await waitFor(() => {
+      expect(savedBodies.at(-1)).toMatchObject({
+        enabled: true,
+        durationMinutes: 30,
+        weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
+      });
+    });
+    expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
+      first_time: true,
+    });
+    expect(mocks.toast).toHaveBeenCalledWith(
+      "Your meeting page is live. Link copied.",
+      expect.any(Object),
+    );
+    const meetingSwitch = await screen.findByRole("switch", {
+      name: "Meeting page",
+    });
+    await waitFor(() => {
+      expect(meetingSwitch).toHaveFocus();
+    });
+  });
+
+  it("shows step 4 of 5 with the destination select for two writable calendars", async () => {
+    const user = userEvent.setup({ delay: null });
+    const secondCalendar = createMockCalendar({
+      id: CalendarIdSchema.parse(createObjectIdString()),
+      name: "Personal",
+      accountEmail: "host@example.com",
+    });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = await req.json();
+        return res(ctx.json(putSavedPage(body as Record<string, unknown>)));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [
+      writableCalendar,
+      secondCalendar,
+    ]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.keyboard("k");
+    await user.keyboard("k");
+    expect(await screen.findByText("Step 4 of 5")).toBeInTheDocument();
+    expect(screen.getByLabelText("Destination calendar")).toBeInTheDocument();
+  });
+
+  it("keeps the go-live step visible when enable fails", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(unconfiguredPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        const body = (await req.json()) as { enabled?: boolean };
+        if (body.enabled === true) {
+          return res(
+            ctx.status(400),
+            ctx.json({
+              code: "AVAILABILITY_REQUIRED",
+              message: "Add weekly hours before turning on your meeting page.",
+            }),
+          );
+        }
+        return res(ctx.json(putSavedPage(body as Record<string, unknown>)));
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.keyboard("k");
+    await user.keyboard("k");
+    await user.click(
+      await screen.findByRole("button", { name: /Turn on and copy link/ }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      BOOKING_SAVE_ERROR_COPY.AVAILABILITY_REQUIRED,
+    );
+    expect(screen.getByText("Step 4 of 4")).toBeInTheDocument();
+    await user.keyboard("j");
+    expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
   });
 
   it("PUTs slug when the host edits the page address", async () => {
@@ -930,7 +1152,8 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    const draftAddress = await screen.findByLabelText("Page address");
+    await screen.findByText("Step 1 of 4");
+    const draftAddress = screen.getByLabelText("Page address");
     await user.clear(draftAddress);
     await user.type(draftAddress, "new-draft");
     expect(
@@ -938,6 +1161,7 @@ describe("BookingSettingsSection", () => {
     ).not.toBeInTheDocument();
 
     view.unmount();
+    mockTrack.mockClear();
 
     const bookingUrl = "https://compasscalendar.com/meet/hostuser";
     server.use(
@@ -972,10 +1196,12 @@ describe("BookingSettingsSection", () => {
       { wrapper: live.wrapper },
     );
 
-    const liveAddress = await screen.findByLabelText("Page address");
-    await user.clear(liveAddress);
-    await user.type(liveAddress, "new-address");
-    const warning = screen.getByText(BOOKING_ADDRESS_CHANGE_WARNING);
+    const liveSummary = await screen.findByText(BOOKING_MORE_OPTIONS_LABEL);
+    await user.click(liveSummary);
+    const liveAddressField = await screen.findByLabelText("Page address");
+    await user.clear(liveAddressField);
+    await user.type(liveAddressField, "new-address");
+    const warning = await screen.findByText(BOOKING_ADDRESS_CHANGE_WARNING);
     expect(warning).toBeInTheDocument();
     expect(warning).toHaveAttribute("role", "status");
   });
@@ -1045,7 +1271,7 @@ describe("BookingSettingsSection", () => {
     });
   });
 
-  it("fires booking_page_enabled after Continue, then turn on, with first_time false", async () => {
+  it("fires booking_page_enabled after wizard go live with first_time true", async () => {
     const user = userEvent.setup({ delay: null });
     userMetadataActions.set(healthyGoogleMetadata);
     const slug = "hostuser";
@@ -1081,14 +1307,16 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: "Continue" }));
+    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.keyboard("k");
+    await user.keyboard("k");
     await user.click(
-      await screen.findByRole("switch", { name: "Meeting page" }),
+      await screen.findByRole("button", { name: /Turn on and copy link/ }),
     );
 
     await waitFor(() => {
       expect(mockTrack).toHaveBeenCalledWith("booking_page_enabled", {
-        first_time: false,
+        first_time: true,
       });
     });
     expect(mockTrack).toHaveBeenCalledWith("booking_link_copied", {
