@@ -189,8 +189,16 @@ export const isEditableKeyboardTarget = (
   if (isContentEditableElement(target)) return true;
 
   const tagName = target.tagName.toLowerCase();
-
-  return tagName === "input" || tagName === "textarea" || tagName === "select";
+  if (tagName === "textarea" || tagName === "select") return true;
+  if (tagName !== "input") return false;
+  const type = (target as HTMLInputElement).type || "text";
+  return (
+    type !== "checkbox" &&
+    type !== "radio" &&
+    type !== "button" &&
+    type !== "submit" &&
+    type !== "reset"
+  );
 };
 
 /**

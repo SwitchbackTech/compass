@@ -3,7 +3,10 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { rest } from "msw";
-import { DEFAULT_WEEKLY_AVAILABILITY } from "@core/types/booking.contracts";
+import {
+  DEFAULT_WEEKLY_AVAILABILITY,
+  type WeeklyAvailability,
+} from "@core/types/booking.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
@@ -1960,7 +1963,7 @@ describe("BookingSettingsSection", () => {
       "Thursday",
       "Friday",
     ]) {
-      await user.click(screen.getByRole("button", { name }));
+      await user.click(screen.getByRole("checkbox", { name }));
     }
     await user.click(screen.getByRole("switch", { name: "Meeting page" }));
 
@@ -1996,38 +1999,73 @@ describe("BookingSettingsSection", () => {
     );
 
     expect(
-      await screen.findByRole("button", { name: "Monday" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Tuesday" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Wednesday" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Thursday" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Friday" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "Saturday" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-    expect(screen.getByRole("button", { name: "Sunday" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
+      await screen.findByRole("checkbox", { name: "Monday" }),
+    ).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Tuesday" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Wednesday" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Thursday" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Friday" })).toBeChecked();
     expect(
-      screen.getByRole("combobox", { name: /Start for/ }),
+      screen.getByRole("checkbox", { name: "Saturday" }),
+    ).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
+    expect(
+      screen.getByRole("combobox", { name: "Monday start" }),
     ).toHaveDisplayValue("9:00 AM");
     expect(
-      screen.getByRole("combobox", { name: /End for/ }),
+      screen.getByRole("combobox", { name: "Monday end" }),
     ).toHaveDisplayValue("5:00 PM");
+  });
+
+  it("saves two Tuesday intervals when a second block is added", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: { weeklyAvailability?: WeeklyAvailability } | undefined;
+
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
+      ),
+      rest.put(bookingPageUrl, async (req, res, ctx) => {
+        savedBody = (await req.json()) as {
+          weeklyAvailability?: WeeklyAvailability;
+        };
+        return res(
+          ctx.json({
+            ...savedOffPage(),
+            ...savedBody,
+          }),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByRole("checkbox", { name: "Tuesday" });
+    await user.click(
+      screen.getByRole("button", { name: "Add hours to Tuesday" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
+    );
+
+    await waitFor(() => {
+      expect(
+        savedBody?.weeklyAvailability?.filter((entry) => entry.weekday === 2),
+      ).toEqual([
+        { weekday: 2, start: "09:00", end: "17:00" },
+        { weekday: 2, start: "18:00", end: "19:00" },
+      ]);
+    });
   });
 
   it("shows an error on PUT 403 without crashing Settings", async () => {

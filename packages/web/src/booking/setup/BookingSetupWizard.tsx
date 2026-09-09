@@ -56,7 +56,7 @@ const focusStepFirstControl = (
       root.querySelector<HTMLElement>("#booking-address")?.focus();
       break;
     case "hours":
-      root.querySelector<HTMLElement>("button, select")?.focus();
+      root.querySelector<HTMLElement>("input, select, button")?.focus();
       break;
     case "duration":
       root.querySelector<HTMLElement>('[role="radio"][tabindex="0"]')?.focus();

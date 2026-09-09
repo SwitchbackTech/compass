@@ -21,7 +21,7 @@ export function BookingSetupHoursStep({
   value,
 }: BookingSetupHoursStepProps) {
   const rootRef = useCallback((node: HTMLDivElement | null) => {
-    node?.querySelector<HTMLElement>("button, select")?.focus();
+    node?.querySelector<HTMLElement>("input, select, button")?.focus();
   }, []);
 
   return (

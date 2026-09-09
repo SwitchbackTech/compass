@@ -255,7 +255,7 @@ test("blocks turn on with empty hours", async ({ page }) => {
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   for (const name of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]) {
-    await dispatchClick(settingsDialog.getByRole("button", { name }));
+    await dispatchClick(settingsDialog.getByRole("checkbox", { name }));
   }
   await dispatchClick(
     settingsDialog.getByRole("switch", { name: "Meeting page" }),

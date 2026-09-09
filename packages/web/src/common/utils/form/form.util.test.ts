@@ -47,10 +47,11 @@ describe("form.util", () => {
     const createEvent = (element: HTMLElement | null) =>
       ({ target: element }) as unknown as KeyboardEvent;
 
-    it("treats inputs as editable", () => {
+    it("does not treat checkboxes as editable", () => {
       const input = document.createElement("input");
+      input.type = "checkbox";
 
-      expect(isEditableKeyboardTarget(createEvent(input))).toBe(true);
+      expect(isEditableKeyboardTarget(createEvent(input))).toBe(false);
     });
 
     it("treats textareas as editable", () => {

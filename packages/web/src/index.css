@@ -516,6 +516,30 @@
   }
 }
 
+@utility c-grow-in {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 200ms ease-out,
+    opacity 200ms ease-out;
+
+  @starting-style {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  & > * {
+    min-height: 0;
+    overflow: clip;
+    overflow-clip-margin: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
 @utility c-text-gradient {
   color: transparent;
   background: linear-gradient(var(--accent), var(--accent-strong));
