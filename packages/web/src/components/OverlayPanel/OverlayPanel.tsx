@@ -65,6 +65,11 @@ interface Props {
   /** Extra classes for the backdrop (e.g. overflow for tall dialogs) */
   backdropClassName?: string;
   /**
+   * Backdrop cross-axis alignment. `"top"` pins the panel under a 5vh inset
+   * so height changes grow downward instead of recentering.
+   */
+  anchor?: "center" | "top";
+  /**
    * Replaces the modal variant's default gap/background/shadow so callers can
    * keep a surface-specific look without fighting those utilities.
    */
@@ -93,6 +98,7 @@ export const OverlayPanel = ({
   backdropClassName,
   panelClassName,
   closing = false,
+  anchor = "center",
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -126,7 +132,8 @@ export const OverlayPanel = ({
   }, [initialFocusRef, restoreFocus, role, skipFocusRestoreRef]);
 
   const backdropClasses = classNames(
-    "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
+    "fixed inset-0 flex justify-center bg-background/85 backdrop-blur-sm",
+    anchor === "top" ? "items-start pt-[5vh]" : "items-center",
     variant === "modal" &&
       "transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none",
     backdropClassName,

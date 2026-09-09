@@ -31,6 +31,27 @@ describe("OverlayPanel", () => {
     expect(dialog.className).toContain("overflow-y-auto");
   });
 
+  it("centers the backdrop by default", () => {
+    render(<OverlayPanel title="Confirm" onDismiss={() => {}} />);
+
+    const backdrop = screen.getByRole("dialog", {
+      name: "Confirm",
+    }).parentElement;
+    expect(backdrop).toHaveClass("items-center");
+    expect(backdrop).not.toHaveClass("items-start");
+  });
+
+  it("anchors the backdrop to the top when requested", () => {
+    render(<OverlayPanel anchor="top" title="Confirm" onDismiss={() => {}} />);
+
+    const backdrop = screen.getByRole("dialog", {
+      name: "Confirm",
+    }).parentElement;
+    expect(backdrop).toHaveClass("items-start");
+    expect(backdrop).toHaveClass("pt-[5vh]");
+    expect(backdrop).not.toHaveClass("items-center");
+  });
+
   it("keeps the app locked when multiple panels are stacked", () => {
     const { unmount: unmountFirst } = render(
       <OverlayPanel title="First" onDismiss={() => {}} />,

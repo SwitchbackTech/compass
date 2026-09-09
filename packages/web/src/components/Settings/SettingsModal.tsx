@@ -195,6 +195,7 @@ export const SettingsModal: FC = () => {
   return (
     <OverlayPanel
       align="start"
+      anchor="top"
       initialFocusRef={initialFocusRef}
       onDismiss={handleDismiss}
       skipFocusRestoreRef={skipFocusRestoreRef}

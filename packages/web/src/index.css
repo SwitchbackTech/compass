@@ -493,6 +493,29 @@
   }
 }
 
+/* Progressive: browsers without ::details-content ignore this and keep the instant toggle. */
+@utility c-details-animated {
+  interpolate-size: allow-keywords;
+
+  &::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 200ms ease-out,
+      content-visibility 200ms allow-discrete;
+  }
+
+  &[open]::details-content {
+    block-size: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::details-content {
+      transition: none;
+    }
+  }
+}
+
 @utility c-text-gradient {
   color: transparent;
   background: linear-gradient(var(--accent), var(--accent-strong));
