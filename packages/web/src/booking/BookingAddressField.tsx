@@ -3,8 +3,6 @@ import { BookingFieldLabel } from "@web/booking/BookingFieldLabel";
 import { bookingSlugParseMessage } from "@web/booking/booking.util";
 import { bookingFieldAttrs } from "@web/booking/booking-sequence.fields";
 
-export const BOOKING_ADDRESS_HELPER =
-  "3 to 32 lowercase letters, digits, or hyphens.";
 export const BOOKING_ADDRESS_CHANGE_WARNING =
   "Links using your old address will stop working.";
 
@@ -37,11 +35,9 @@ export function BookingAddressField({
   const parseMessage = bookingSlugParseMessage(slug);
   const showError = (blurred || forceInvalid) && parseMessage != null;
   const showWarning = savedSlug != null && slug !== savedSlug;
-  const helperId = "booking-address-helper";
   const errorId = "booking-address-error";
   const warningId = "booking-address-warning";
   const describedBy = [
-    helperId,
     showError ? errorId : null,
     showWarning ? warningId : null,
   ]
@@ -55,7 +51,7 @@ export function BookingAddressField({
       </BookingFieldLabel>
       <input
         {...bookingFieldAttrs("address")}
-        aria-describedby={describedBy}
+        aria-describedby={describedBy || undefined}
         aria-invalid={showError || undefined}
         autoCapitalize="none"
         className={`c-focus-ring w-full min-w-0 rounded border bg-surface-overlay px-2 py-1 text-sm text-text ${
@@ -71,9 +67,6 @@ export function BookingAddressField({
       <p className="break-all text-text-muted text-xs">
         Your link: {prefix}
         {slug}
-      </p>
-      <p className="text-text-muted text-xs" id={helperId}>
-        {BOOKING_ADDRESS_HELPER}
       </p>
       {showError ? (
         <p className="font-medium text-sm text-text" id={errorId} role="alert">

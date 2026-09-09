@@ -50,7 +50,7 @@ export function BookingBlockingCalendarsField({
         <>
           {groupsWithCalendars.map((group) => (
             <div
-              className="flex min-w-0 flex-col gap-1"
+              className="flex min-w-0 flex-col gap-2"
               key={group.accountEmail}
             >
               {showAccountCaption ? (
@@ -62,10 +62,6 @@ export function BookingBlockingCalendarsField({
           {ungrouped.map(renderBlockingCalendar)}
         </>
       )}
-      <p className="text-text-muted text-xs">
-        Pending, maybe, and declined invites do not hold meeting times. Accepted
-        invites and events the host organizes do.
-      </p>
     </fieldset>
   );
 }

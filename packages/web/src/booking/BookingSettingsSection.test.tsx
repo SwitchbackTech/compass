@@ -454,10 +454,64 @@ describe("BookingSettingsSection", () => {
       screen.queryByRole("checkbox", { name: "Guest can invite others" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Pending, maybe, and declined invites do not hold meeting times. Accepted invites and events the host organizes do.",
+      screen.queryByText(/Pending, maybe, and declined/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the slug rule only as an error, not as standing helper copy", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json(savedOffPage())),
       ),
-    ).toBeInTheDocument();
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+    expect(
+      screen.queryByText(/3 to 32 lowercase letters, digits, or hyphens\./),
+    ).not.toBeInTheDocument();
+
+    const address = screen.getByLabelText("Page address");
+    await user.clear(address);
+    await user.type(address, "ab");
+    await user.tab();
+
+    expect(
+      screen.getByText("Use 3 to 32 lowercase letters, digits, or hyphens"),
+    ).toHaveAttribute("role", "alert");
+  });
+
+  it("renders a live page with the Meeting link field and no Live at line", async () => {
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      rest.get(bookingPageUrl, (_req, res, ctx) =>
+        res(ctx.json({ ...savedOffPage(), enabled: true })),
+      ),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    expect(await screen.findByLabelText("Meeting link")).toBeInTheDocument();
+    expect(screen.queryByText("Live at")).not.toBeInTheDocument();
   });
 
   it("seeds the booking timezone from the user's zone when never configured", async () => {
