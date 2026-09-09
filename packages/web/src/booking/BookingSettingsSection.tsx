@@ -402,12 +402,14 @@ export function BookingSettingsSection({
     });
   }, [hasHealthyConnection, isSeedingForm, serverPage]);
 
-  useEffect(() => {
-    if (setupStep != null) return;
-    if (serverPage != null && isUnconfiguredBookingPage(serverPage)) {
-      setSetupStep("address");
-    }
-  }, [serverPage, setupStep]);
+  if (
+    setupStep === null &&
+    !isSeedingForm &&
+    serverPage != null &&
+    isUnconfiguredBookingPage(serverPage)
+  ) {
+    setSetupStep("address");
+  }
 
   if (!hasHealthyConnection) {
     return <BookingConnectPrompt />;
