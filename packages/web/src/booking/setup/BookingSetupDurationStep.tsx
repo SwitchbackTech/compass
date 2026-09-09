@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent } from "react";
 import { type BookingDurationMinutes } from "@core/types/booking.contracts";
 
 const DURATION_OPTIONS: BookingDurationMinutes[] = [15, 30, 45, 60];
@@ -15,11 +15,8 @@ export function BookingSetupDurationStep({
   onChange,
   value,
 }: BookingSetupDurationStepProps) {
-  const [focusedMinutes, setFocusedMinutes] =
-    useState<BookingDurationMinutes>(value);
-
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const index = DURATION_OPTIONS.indexOf(focusedMinutes);
+    const index = DURATION_OPTIONS.indexOf(value);
     if (index < 0) return;
 
     let nextIndex: number | null = null;
@@ -40,21 +37,19 @@ export function BookingSetupDurationStep({
         break;
       case " ":
         event.preventDefault();
-        onChange(focusedMinutes);
+        onChange(value);
         return;
       default:
         return;
     }
 
     const next = DURATION_OPTIONS[nextIndex ?? index];
-    if (next == null || next === focusedMinutes) return;
+    if (next == null || next === value) return;
     event.preventDefault();
-    setFocusedMinutes(next);
     onChange(next);
-    const button = event.currentTarget.querySelector<HTMLElement>(
-      `[data-duration="${next}"]`,
-    );
-    button?.focus();
+    const radios =
+      event.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]');
+    radios[nextIndex ?? index]?.focus();
   };
 
   return (
@@ -69,15 +64,10 @@ export function BookingSetupDurationStep({
         <button
           aria-checked={value === minutes}
           className={pillClassName}
-          data-duration={minutes}
           key={minutes}
-          onClick={() => {
-            setFocusedMinutes(minutes);
-            onChange(minutes);
-          }}
-          onFocus={() => setFocusedMinutes(minutes)}
+          onClick={() => onChange(minutes)}
           role="radio"
-          tabIndex={minutes === focusedMinutes ? 0 : -1}
+          tabIndex={minutes === value ? 0 : -1}
           type="button"
         >
           {minutes} min

@@ -11,10 +11,10 @@ turn on, Essentials / More options, editable address, default hours,
 branded connect pills, and funnel analytics. v1.7 shipped the Meeting
 page redesign: `/meet` URLs, meeting copy, hold-Mod section chords, the
 on/off switch, grouped weekly hours rows, and the first-run address
-screen. v1.8 shipped the guided setup wizard (address, hours, duration,
-optional destination, go live), Start and End menus for weekly hours,
-fewer host scheduling knobs, sidebar-only Mod chords, no horizontal
-scroll, and the stale-holiday-calendar booking gate fix. The production gate stays off.
+screen. v1.8 replaced that screen with a guided setup wizard, Start and End
+menus for weekly hours, fewer host scheduling knobs, sidebar-only Mod chords,
+no horizontal scroll, and the stale-holiday-calendar booking gate fix. The
+production gate stays off.
 
 Compass never sends email itself. Google emails the guest when Compass
 creates the calendar event with `invitation: "all"`.
@@ -62,7 +62,7 @@ the permalink so a reload, bookmark, or self-sent link keeps cancel and
 edit. The public reservation GET does not return `cancelUrl` or the
 token. A permalink without `token` still shows the booking from GET,
 with no cancel or edit actions. Cancel and reschedule links always appear in
-the event description because guests cannot send their own invitations.
+the event description because guests cannot add other attendees.
 Reschedule copy stays history-only (v1.3).
 
 Cancel: `/meet/cancel/:reservationId?token=…`.
@@ -213,7 +213,7 @@ Reschedule links stay history state only (v1.3).
 **Event title:** `{Guest name} and {Host name}`.
 
 **Event description:** guest notes (if any), plus cancel and reschedule
-URLs. Guests cannot send their own invitations, so those URLs are safe in the
+URLs. Guests cannot add other attendees, so those URLs are safe in the
 description every invitee sees.
 
 ## Host inputs
@@ -230,15 +230,14 @@ One booking-page record per user.
 
 **Slot grid:** 15-minute starts in the host timezone, filtered so a slot
 of `duration` fits inside an availability interval after busy blocks.
-Back-to-back meetings are allowed; there is no gap between meetings and
-no daily cap.
+Back-to-back meetings are allowed.
 
 ### Host Settings controls
 
 The Settings **Meeting** page is keyboard-first. It is split into a
 status header, an Essentials group, and a collapsed **More options**
-group. It is not a native timezone `<select>` plus a checkbox and two
-time inputs per weekday.
+group. Hours use grouped day pills with Start and End menus, not a
+checkbox and typed times for each weekday.
 
 - **Status:** a **Meeting page** switch reflects whether the page is
   live. When on, it shows "Live at" and the meeting link with Copy and
@@ -274,7 +273,8 @@ time inputs per weekday.
 - **Jump:** hold Mod to see sidebar digits `1/2/3` and Enter on Save
   (or Continue). Meeting fields, legends, summaries, and the Copy
   button have no shortcut chips. Sidebar digits above `3` and letter
-  chords do nothing on Meeting settings. Save stays Mod+Enter. Save-error focus still uses
+  chords do nothing on Meeting settings. Save stays Mod+Enter. Save-error focus
+  still uses
   `data-booking-field` and does not click, so focusing a checkbox does
   not toggle it. Before focusing, the helper opens any ancestor
   `<details>`. The Settings nav shows one hint, **Hold Mod to see

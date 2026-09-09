@@ -139,7 +139,7 @@ test.describe("public booking reschedule", () => {
     expect(captured.reschedulePosts).toHaveLength(0);
   });
 
-  test("shows unavailable when reservation slots are not bookable", async ({
+  test("shows unavailable when the host calendar is not bookable", async ({
     page,
   }) => {
     await preparePublicBookingReschedulePage(page, { bookable: false });
@@ -149,10 +149,9 @@ test.describe("public booking reschedule", () => {
     });
     await expect(heading).toBeVisible();
     await expect(heading).toBeFocused();
+    await expect(heading).toHaveAttribute("id", "booking-status-heading");
     await expect(
-      page.getByText(
-        "The host calendar is not ready for new meetings. Please try again later.",
-      ),
+      page.getByText("The host calendar is not ready for new meetings."),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
@@ -162,5 +161,11 @@ test.describe("public booking reschedule", () => {
         name: "Reschedule your meeting with Tyler Dane",
       }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Previous month" }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Next month" })).toHaveCount(
+      0,
+    );
   });
 });

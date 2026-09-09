@@ -486,7 +486,7 @@ With a grid event focused (form closed, not typing in an input), Cmd+C (Mac) or 
 
 ### UX
 
-Settings > Meeting hold-Mod reveals only sidebar digits `1` / `2` / `3` and Enter on Save. Digit `5` and letter `U` (while Mod is held) do nothing on Meeting settings. Save is Mod+Enter. Meeting settings do not use a letter leader.
+Settings > Meeting hold-Mod reveals only sidebar digits `1` / `2` / `3` and Enter on Save. Extra digit chords and the Accounts copy chord do nothing. Save is Mod+Enter. Meeting settings do not use a letter leader.
 
 ### Steps
 
@@ -498,8 +498,8 @@ Settings > Meeting hold-Mod reveals only sidebar digits `1` / `2` / `3` and Ente
 ### Expected Results
 
 - Chips `1`, `2` (when billing is present), `3`, and the save bar's `Enter` appear while Mod is held. The nav hint **Hold Mod to see shortcuts.** hides while chips are visible. No Meeting field, legend, summary, or icon button shows a chip.
-- Digit `5` changes focus to nothing and toggles nothing.
-- Letter `U` does not write to the clipboard.
+- Extra digit chords change focus to nothing and toggle nothing.
+- Holding Mod and pressing U does not write to the clipboard.
 - Releasing Mod hides the nav chips and restores the nav hint.
 
 ---
@@ -529,4 +529,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 19. `Z` opens time travel in Day and Week view; Cmd+Z / Ctrl+Z still undoes and does not open the picker.
 20. On Day view, hold Mod then a column digit (2+) focuses that writable calendar column; Shift+Arrow / `C` seed a draft there.
 21. Cmd+C / Ctrl+C copies a focused event; Cmd+V / Ctrl+V pastes a duplicate at the original time without requiring focus. A later copy replaces the clipboard. Empty paste is a no-op. Copy/paste do not fire while typing in an input (native text clipboard). Cmd+D is unchanged.
-22. In Settings > Meeting, hold Mod to reveal chips `1`/`2`/`3` and Enter; digit `5` focuses nothing; letter `U` does not copy.
+22. In Settings > Meeting, hold Mod to reveal chips `1`/`2`/`3` and Enter; extra digits focus nothing; U with Mod held does not copy.

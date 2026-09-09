@@ -72,7 +72,8 @@ Product spec: [Compass Calendar Booking](../features/booking.md).
   `packages/web/src/booking/setup/`, `weekly-hours.rows.ts`,
   `packages/web/src/components/Switch/Switch.tsx`
 - Public guest UI: `packages/web/src/booking/PublicBookingPage.tsx`,
-  `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`
+  `PublicBookingConfirmedPage.tsx`, `PublicBookingCancelPage.tsx`,
+  `PublicBookingReschedulePage.tsx`
 - Web API client: `packages/web/src/api/public-booking.api.ts`
 - E2e: `e2e/booking/`, `e2e/accessibility/booking-a11y.spec.ts`
 - Architecture: [Product Suite Boundaries](../architecture/product-suite-boundaries.md)

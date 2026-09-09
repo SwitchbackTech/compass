@@ -219,6 +219,9 @@ test("first visit: keyboard setup wizard through go live", async ({
 
   await expect(settingsDialog.getByText("Live at")).toBeVisible();
   await expect(
+    settingsDialog.getByRole("switch", { name: "Meeting page" }),
+  ).toBeFocused();
+  await expect(
     page.getByText("Your meeting page is live. Link copied."),
   ).toBeVisible();
   await expect(

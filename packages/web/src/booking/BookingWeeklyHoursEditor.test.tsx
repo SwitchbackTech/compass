@@ -52,6 +52,12 @@ describe("BookingWeeklyHoursEditor", () => {
     expect(
       screen.getByText("Unavailable: Saturday, Sunday"),
     ).toBeInTheDocument();
+    expect(startSelect()).toHaveAccessibleDescription(
+      /Start and End apply to every selected day in their row/,
+    );
+    expect(endSelect()).toHaveAccessibleDescription(
+      /Start and End apply to every selected day in their row/,
+    );
   });
 
   it("emits 17:15 for every selected day when End is 5:15 PM", async () => {
@@ -154,5 +160,25 @@ describe("BookingWeeklyHoursEditor", () => {
     expect(
       screen.queryByRole("button", { name: "Remove" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("wires an extra description onto Start and End", () => {
+    const onChange = mock((_next: WeeklyAvailability) => {});
+    render(
+      <>
+        <p id="hours-extra-hint">Times are in Chicago (CST).</p>
+        <BookingWeeklyHoursEditor
+          describedBy="hours-extra-hint"
+          onChange={onChange}
+          value={DEFAULT_WEEKLY_AVAILABILITY}
+        />
+      </>,
+    );
+
+    expect(startSelect()).toHaveAccessibleDescription(
+      /Start and End apply to every selected day in their row/,
+    );
+    expect(startSelect()).toHaveAccessibleDescription(/Times are in Chicago/);
+    expect(endSelect()).toHaveAccessibleDescription(/Times are in Chicago/);
   });
 });

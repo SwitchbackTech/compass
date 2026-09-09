@@ -26,8 +26,12 @@ export function BookingSetupHoursStep({
 
   return (
     <div className="flex flex-col gap-2" ref={rootRef}>
-      <BookingWeeklyHoursEditor onChange={onChange} value={value} />
-      <p className="text-sm text-text-muted">
+      <BookingWeeklyHoursEditor
+        describedBy="booking-setup-hours-timezone"
+        onChange={onChange}
+        value={value}
+      />
+      <p className="text-sm text-text-muted" id="booking-setup-hours-timezone">
         Times are in {formatBookingSetupTimezoneLabel(timeZone)}. You can change
         this later.
       </p>
