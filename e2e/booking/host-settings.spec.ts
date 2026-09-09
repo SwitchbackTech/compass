@@ -167,7 +167,11 @@ test("first visit: keyboard setup wizard through go live", async ({
   });
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
-  await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible();
+  await expect(
+    settingsDialog
+      .locator("p.text-text-muted")
+      .filter({ hasText: /^Step 1 of \d+$/ }),
+  ).toBeVisible();
   await expect(
     settingsDialog.getByRole("heading", { name: "Pick your address" }),
   ).toBeVisible();
@@ -185,11 +189,23 @@ test("first visit: keyboard setup wizard through go live", async ({
     weeklyAvailability: DEFAULT_WEEKLY_AVAILABILITY,
   });
 
-  await expect(settingsDialog.getByText(/Step 2 of/)).toBeVisible();
+  await expect(
+    settingsDialog
+      .locator("p.text-text-muted")
+      .filter({ hasText: /^Step 2 of \d+$/ }),
+  ).toBeVisible();
   await page.keyboard.press("k");
-  await expect(settingsDialog.getByText(/Step 3 of/)).toBeVisible();
+  await expect(
+    settingsDialog
+      .locator("p.text-text-muted")
+      .filter({ hasText: /^Step 3 of \d+$/ }),
+  ).toBeVisible();
   await page.keyboard.press("k");
-  await expect(settingsDialog.getByText(/Step 4 of/)).toBeVisible();
+  await expect(
+    settingsDialog
+      .locator("p.text-text-muted")
+      .filter({ hasText: /^Step 4 of \d+$/ }),
+  ).toBeVisible();
 
   await dispatchClick(
     settingsDialog.getByRole("button", { name: /Turn on and copy link/ }),

@@ -617,7 +617,7 @@ export async function preparePublicBookingPage(
   // A test that starts typing right away (Tab to the skip link, Enter) would
   // race that request: the skip link finds no target and focus goes nowhere.
   // Wait for the picker itself unless the test is deliberately observing the
-  // pending or failed state.
+  // pending, failed, or unavailable state.
   if (!options.slotFailGate && !options.holdFirstSlots) {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
@@ -1189,9 +1189,11 @@ export async function prepareSignedInBookingSettingsPage(
       settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
     ).toBeVisible({ timeout: 15000 });
   } else if (!configured) {
-    await expect(settingsDialog.getByText(/Step 1 of/)).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(
+      settingsDialog
+        .locator("p.text-text-muted")
+        .filter({ hasText: /^Step 1 of \d+$/ }),
+    ).toBeVisible({ timeout: 15000 });
   } else {
     await expect(
       settingsDialog.getByRole("switch", { name: "Meeting page" }),

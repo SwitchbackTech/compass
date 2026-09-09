@@ -84,6 +84,31 @@ test.describe("public booking page", () => {
     ).toHaveCount(0);
   });
 
+  test("shows unavailable when the host calendar is not bookable", async ({
+    page,
+  }) => {
+    await preparePublicBookingPage(page, { bookable: false });
+
+    const heading = page.getByRole("heading", {
+      name: "Meeting temporarily unavailable",
+    });
+    await expect(heading).toBeVisible();
+    await expect(heading).toBeFocused();
+    await expect(heading).toHaveAttribute("id", "booking-status-heading");
+    await expect(
+      page.getByText("The host calendar is not ready for new meetings."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Pick a time" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Previous month" }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Next month" })).toHaveCount(
+      0,
+    );
+  });
+
   test("loads without login and shows the host heading", async ({ page }) => {
     await preparePublicBookingPage(page);
 
@@ -113,31 +138,6 @@ test.describe("public booking page", () => {
     await expect(
       page.getByRole("heading", { name: "Pick a time" }),
     ).toBeVisible();
-  });
-
-  test("shows unavailable when the host calendar is not bookable", async ({
-    page,
-  }) => {
-    await preparePublicBookingPage(page, { bookable: false });
-
-    const heading = page.getByRole("heading", {
-      name: "Meeting temporarily unavailable",
-    });
-    await expect(heading).toBeVisible();
-    await expect(heading).toBeFocused();
-    await expect(heading).toHaveAttribute("id", "booking-status-heading");
-    await expect(
-      page.getByText("The host calendar is not ready for new meetings."),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Pick a time" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: "Previous month" }),
-    ).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Next month" })).toHaveCount(
-      0,
-    );
   });
 
   test("shows Saturday times when Saturday has bookable slots", async ({

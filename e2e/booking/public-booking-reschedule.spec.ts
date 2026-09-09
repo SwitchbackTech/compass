@@ -157,6 +157,11 @@ test.describe("public booking reschedule", () => {
       page.getByRole("heading", { name: "Pick a time" }),
     ).toHaveCount(0);
     await expect(
+      page.getByRole("heading", {
+        name: "Reschedule your meeting with Tyler Dane",
+      }),
+    ).toHaveCount(0);
+    await expect(
       page.getByRole("button", { name: "Previous month" }),
     ).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Next month" })).toHaveCount(

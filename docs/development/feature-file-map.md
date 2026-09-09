@@ -52,9 +52,9 @@ RSVP](../features/attendees.md).
 - Sync Google writer/people adapters: `packages/sync/src/providers/google/google-event-writer.adapter.ts`, `packages/sync/src/providers/google/google-people.adapter.ts`
 - E2e coverage: `e2e/attendees/`
 
-## Booking (v1)
+## Booking (v1 / v1.8)
 
-Product spec: [Compass Calendar Booking (v1)](../features/booking.md).
+Product spec: [Compass Calendar Booking](../features/booking.md).
 
 - Public URL: `/meet/:username`, confirmation `/meet/confirmed/:id`,
   cancel `/meet/cancel/:id` (guest routes outside the calendar shell)
