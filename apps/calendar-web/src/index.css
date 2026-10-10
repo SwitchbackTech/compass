@@ -1475,10 +1475,21 @@
   & .react-datepicker__day:focus-visible {
     outline: none;
   }
+  /* Inset ring on the row: an exterior outline + offset is clipped by
+     .calendar { overflow: hidden } and painted under neighboring weeks. */
   & .react-datepicker__week:has(.react-datepicker__day:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
+    position: relative;
+    z-index: 1;
+    outline: none;
+  }
+  & .react-datepicker__week:has(.react-datepicker__day:focus-visible)::after {
+    position: absolute;
+    inset: 0 -3px;
+    z-index: 20;
     border-radius: var(--radius-default);
+    box-shadow: inset 0 0 0 2px var(--accent);
+    content: "";
+    pointer-events: none;
   }
 }
 

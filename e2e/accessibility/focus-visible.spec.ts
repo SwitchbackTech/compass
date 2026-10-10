@@ -33,12 +33,16 @@ test("the 'i' shortcut moves focus to a visibly-focused sidebar day", async ({
     const s = getComputedStyle(el);
     const row = el.closest(".react-datepicker__week");
     const rowOutline = row ? getComputedStyle(row).outlineStyle : "none";
+    const rowAfterShadow = row
+      ? getComputedStyle(row, "::after").boxShadow
+      : "none";
     return {
       matchesFocusVisible: el.matches(":focus-visible"),
       painted:
         s.outlineStyle !== "none" ||
         s.boxShadow !== "none" ||
-        rowOutline !== "none",
+        rowOutline !== "none" ||
+        rowAfterShadow !== "none",
     };
   };
   const indicator = await focused.evaluate(readIndicator);
@@ -54,4 +58,42 @@ test("the 'i' shortcut moves focus to a visibly-focused sidebar day", async ({
   await expect(nextFocused).not.toHaveAttribute("aria-label", landedOn ?? "");
   const stillVisible = await nextFocused.evaluate(readIndicator);
   expect(stillVisible.painted).toBe(true);
+});
+
+test("week-mode month picker draws an inset focus ring on the week row", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await ensureSidebarOpen(page);
+
+  await page.locator("#mainGrid").focus();
+  await page.keyboard.press("i");
+
+  const focused = page.locator(".react-datepicker__day:focus");
+  await expect(focused).toBeVisible();
+
+  const weekRing = await focused.evaluate((el) => {
+    const row = el.closest(".react-datepicker__week");
+    if (!row) return null;
+    const afterStyle = getComputedStyle(row, "::after");
+    return {
+      afterContent: afterStyle.content,
+      afterBoxShadow: afterStyle.boxShadow,
+    };
+  });
+  expect(weekRing).not.toBeNull();
+  expect(weekRing?.afterContent).not.toBe("none");
+  expect(weekRing?.afterBoxShadow).toMatch(/inset/);
+
+  await page.keyboard.press("ArrowDown");
+  const nextFocused = page.locator(".react-datepicker__day:focus");
+  await expect(nextFocused).toBeVisible();
+
+  const middleWeekRing = await nextFocused.evaluate((el) => {
+    const row = el.closest(".react-datepicker__week");
+    if (!row) return null;
+    const afterStyle = getComputedStyle(row, "::after");
+    return afterStyle.boxShadow;
+  });
+  expect(middleWeekRing).not.toBe("none");
 });
