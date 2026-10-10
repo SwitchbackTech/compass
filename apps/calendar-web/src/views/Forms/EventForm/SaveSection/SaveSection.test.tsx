@@ -13,6 +13,15 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 const track = mock();
 mockModuleForFile("@web/auth/posthog/track", trackModule, { track });
 
+describe("SaveSection layout", () => {
+  it("renders a full-width primary Save control in the footer", () => {
+    render(<SaveSection onSubmit={mock()} />);
+
+    const save = screen.getByRole("button", { name: /save/i });
+    expect(save).toHaveClass("w-full", "c-button-primary", "c-button-elevated");
+  });
+});
+
 describe("SaveSection pointer teach", () => {
   beforeEach(() => {
     track.mockClear();

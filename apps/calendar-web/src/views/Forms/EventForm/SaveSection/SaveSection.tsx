@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback } from "react";
-import { Btn, SaveButton } from "@web/components/Button/Button";
+import { Btn } from "@web/components/Button/Button";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
@@ -21,30 +21,34 @@ export const SaveSection: React.FC<Props> = ({
   return (
     // Pinned footer bar: EventForm renders this outside its scrollable body,
     // so it stays visible while the fields scroll.
-    <div className="flex items-center justify-start gap-3 border-border border-t px-4 py-3">
+    <div className="flex w-full flex-col items-stretch gap-3 border-border border-t px-4 py-3">
       {/* onClick lives on the buttons, not the tooltip wrapper div: keyboard
           activation targets the button itself, and the wrapper only worked
           for it by event bubbling. */}
       {onCancel && (
-        <TooltipWrapper description={cancelText}>
-          <Btn onClick={onCancel} title={cancelText}>
+        <TooltipWrapper asChild description={cancelText} onClick={onCancel}>
+          <Btn
+            className="c-button c-button-secondary h-10 w-full rounded-xs"
+            title={cancelText}
+          >
             {cancelText}
           </Btn>
         </TooltipWrapper>
       )}
 
       <TooltipWrapper
+        asChild
         description={saveText}
+        onClick={onSave}
         shortcut={["Mod", "Enter"]}
         shortcutId="edit-save"
       >
-        <SaveButton
+        <Btn
           aria-keyshortcuts="Meta+Enter"
-          minWidth={110}
-          onClick={onSave}
+          className="c-button c-button-primary c-button-elevated h-10 w-full rounded-xs"
         >
           {saveText}
-        </SaveButton>
+        </Btn>
       </TooltipWrapper>
     </div>
   );
