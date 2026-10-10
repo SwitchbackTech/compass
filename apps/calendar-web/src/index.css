@@ -1480,6 +1480,7 @@
   & .react-datepicker__week:has(.react-datepicker__day:focus-visible) {
     position: relative;
     z-index: 1;
+    outline: none;
   }
   & .react-datepicker__week:has(.react-datepicker__day:focus-visible)::after {
     position: absolute;

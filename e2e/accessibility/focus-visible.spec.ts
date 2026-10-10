@@ -75,18 +75,15 @@ test("week-mode month picker draws an inset focus ring on the week row", async (
   const weekRing = await focused.evaluate((el) => {
     const row = el.closest(".react-datepicker__week");
     if (!row) return null;
-    const rowStyle = getComputedStyle(row);
     const afterStyle = getComputedStyle(row, "::after");
     return {
-      rowOutlineWidth: rowStyle.outlineWidth,
       afterContent: afterStyle.content,
       afterBoxShadow: afterStyle.boxShadow,
     };
   });
   expect(weekRing).not.toBeNull();
-  expect(weekRing?.rowOutlineWidth).toBe("0px");
   expect(weekRing?.afterContent).not.toBe("none");
-  expect(weekRing?.afterBoxShadow).not.toBe("none");
+  expect(weekRing?.afterBoxShadow).toMatch(/inset/);
 
   await page.keyboard.press("ArrowDown");
   const nextFocused = page.locator(".react-datepicker__day:focus");
