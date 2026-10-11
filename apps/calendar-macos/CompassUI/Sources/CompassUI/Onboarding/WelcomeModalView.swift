@@ -136,5 +136,6 @@ struct WelcomeModalView: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .keyboardShortcut(.defaultAction)
     }
 }

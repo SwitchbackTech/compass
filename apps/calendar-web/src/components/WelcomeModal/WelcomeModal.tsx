@@ -26,6 +26,7 @@ import { WelcomeFaqList } from "./WelcomeFaqList";
 import { WelcomeLinks } from "./WelcomeLinks";
 import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
+import { shouldDelegateEnterToWelcomePrimary } from "./welcome-modal-enter.util";
 
 /** Commit (1) → learn (2) → choose how to start (3). */
 type WelcomeStep = 1 | 2 | 3;
@@ -238,6 +239,19 @@ export function WelcomeModal() {
       e.preventDefault();
       return;
     }
+    if (
+      e.key === "Enter" &&
+      (step === 1 || step === 2) &&
+      shouldDelegateEnterToWelcomePrimary(
+        document.activeElement,
+        primaryRef.current,
+      )
+    ) {
+      if (isAuthShortcutBlocked() || closing) return;
+      e.preventDefault();
+      advance();
+      return;
+    }
     if (isAuthShortcutBlocked()) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const key = keyboardKey(e).toLowerCase();
@@ -271,14 +285,14 @@ export function WelcomeModal() {
       closing={closing}
       initialFocusRef={primaryRef}
       onDismiss={goBack}
+      onKeyDown={handleShortcutKey}
       skipFocusRestoreRef={skipFocusRestoreRef}
       widthClassName="w-120"
     >
       {/* The welcome overlay is the one calendar surface where the mouse
           works: a landing page should behave like a normal site. Keyboard-only
           starts once the visitor enters the calendar. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
-      <div className="flex w-full flex-col gap-6" onKeyDown={handleShortcutKey}>
+      <div className="flex w-full flex-col gap-6">
         {/* Top row: pirate top-left, Log in top-right, on every screen so a
             returning user is never walked through the pitch. Back sits
             beside Log in once there is a previous screen. */}
