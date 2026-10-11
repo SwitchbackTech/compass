@@ -7,6 +7,7 @@ import { emailSendRepository } from "@backend/email/email-send.repository";
 import { isEmailSequenceStopped } from "@backend/email/email-unsubscribe";
 import {
   buildWelcomeEnrollmentRows,
+  isWelcomeStepKey,
   type ScheduleProfile,
   WELCOME_SEQUENCE,
   type WelcomeSequenceUser,
@@ -218,6 +219,12 @@ interface PreviewGenerationState {
   /** Every step of the sequence reached a terminal sent / skipped state. */
   isComplete: boolean;
   lastSentAt: Date | null;
+  /**
+   * The generation was enrolled under an older step list (it holds a step key
+   * the sequence no longer has). It can never collect every current step, so
+   * once it drains it is complete and the next generation starts right away.
+   */
+  isStale: boolean;
 }
 
 /**
@@ -234,7 +241,7 @@ async function readPreviewGenerationState(
       previewLoopRecipientFilter(recipientEmail, {
         previewLoopGeneration: generation,
       }),
-      { projection: { status: 1, sentAt: 1 } },
+      { projection: { status: 1, sentAt: 1, stepKey: 1 } },
     )
     .toArray();
 
@@ -242,11 +249,19 @@ async function readPreviewGenerationState(
     row.status === "sent" && row.sentAt ? [row.sentAt.getTime()] : [],
   );
 
+  const isStale = rows.some((row) => !isWelcomeStepKey(row.stepKey));
+  const allTerminal = rows.every(
+    (row) =>
+      row.status === "sent" ||
+      row.status === "skipped" ||
+      (isStale && row.status !== "queued"),
+  );
+
   return {
     hasQueuedRows: rows.some((row) => row.status === "queued"),
+    isStale,
     isComplete:
-      rows.length >= WELCOME_SEQUENCE.length &&
-      rows.every((row) => row.status === "sent" || row.status === "skipped"),
+      (isStale || rows.length >= WELCOME_SEQUENCE.length) && allTerminal,
     lastSentAt: sentTimes.length > 0 ? new Date(Math.max(...sentTimes)) : null,
   };
 }
@@ -303,6 +318,10 @@ export async function ensurePreviewLoopForRecipient(
     latestGeneration,
   );
   if (generation.hasQueuedRows || !generation.isComplete) {
+    return;
+  }
+  if (generation.isStale) {
+    await enqueuePreviewLoopGeneration(normalized, latestGeneration + 1, now);
     return;
   }
   if (!generation.lastSentAt) {

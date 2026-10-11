@@ -7,7 +7,7 @@ import { describe, expect, it } from "bun:test";
 describe("renderWelcomeEmail", () => {
   it("renders list-unsubscribe footer links when unsubscribe urls are provided", () => {
     const rendered = renderWelcomeEmail(
-      "welcome",
+      "cmd-k",
       {
         subject: "Hello",
         preheader: "Preview line",
@@ -28,7 +28,7 @@ describe("renderWelcomeEmail", () => {
   });
 
   it("renders html and text parts with utm-tagged links", () => {
-    const rendered = renderWelcomeEmail("welcome", {
+    const rendered = renderWelcomeEmail("cmd-k", {
       subject: "Hello",
       preheader: "Preview line",
       heading: "Heading",
@@ -47,7 +47,7 @@ describe("renderWelcomeEmail", () => {
     for (const link of links) {
       expect(link).toContain("utm_source=email");
       expect(link).toContain("utm_campaign=welcome");
-      expect(link).toContain("utm_content=welcome");
+      expect(link).toContain("utm_content=cmd-k");
     }
   });
 });

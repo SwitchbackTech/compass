@@ -20,7 +20,7 @@ describe("emailAnalytics.capture", () => {
       emailAnalytics.capture({
         event: "email_sent",
         userId: "u1",
-        step: "welcome",
+        step: "cmd-k",
       }),
     ).resolves.toBe(false);
     expect(calls).toBe(0);
@@ -44,7 +44,7 @@ describe("emailAnalytics.capture", () => {
       emailAnalytics.capture({
         event: "email_skipped",
         userId: "u1",
-        step: "connect-calendar",
+        step: "trial-ending",
       }),
     ).resolves.toBe(true);
 
@@ -57,7 +57,7 @@ describe("emailAnalytics.capture", () => {
           event: "email_skipped",
           properties: {
             environment: "test",
-            step: "connect-calendar",
+            step: "trial-ending",
             $lib: "compass-backend",
           },
         },
@@ -75,7 +75,7 @@ describe("emailAnalytics.capture", () => {
       emailAnalytics.capture({
         event: "email_failed",
         userId: "u1",
-        step: "welcome",
+        step: "cmd-k",
       }),
     ).resolves.toBe(false);
   });

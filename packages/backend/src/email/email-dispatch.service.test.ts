@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const baseRow = (overrides: Partial<EmailSendRecord> = {}): EmailSendRecord => {
   const userId = overrides.userId ?? new ObjectId();
-  const stepKey = overrides.stepKey ?? "welcome";
+  const stepKey = overrides.stepKey ?? "cmd-k";
   const now = new Date("2026-01-01T00:00:00.000Z");
   return {
     _id: overrides._id ?? `${userId.toHexString()}:${stepKey}`,
@@ -46,7 +46,7 @@ describe("EmailDispatchService", () => {
     CONFIG.EMAIL_ALLOWLIST = [];
     CONFIG.EMAIL_UNSUBSCRIBE_SECRET = "unsub-secret";
     const row = baseRow({
-      stepKey: "connect-calendar",
+      stepKey: "trial-ending",
       _id: "preview-loop:abc:1:connect-calendar",
       previewLoop: true,
       recipientEmail: "founder@example.com",
@@ -79,7 +79,7 @@ describe("EmailDispatchService", () => {
 
   it("marks skipIf steps as skipped without calling the provider", async () => {
     CONFIG.EMAIL_PROVIDER = "log";
-    const row = baseRow({ stepKey: "connect-calendar" });
+    const row = baseRow({ stepKey: "trial-ending" });
     const send = mock(async () => ({ messageId: "msg-1" }));
     spyOn(emailClient, "buildEmailProvider").mockReturnValue({
       send,
@@ -200,12 +200,12 @@ describe("EmailDispatchService", () => {
 
     expect(markSent).toHaveBeenCalledWith(row._id, "provider-123");
     const sendInput = send.mock.calls[0]?.[0];
-    expect(sendInput?.template?.id).toBe("compass-welcome");
+    expect(sendInput?.template?.id).toBe("04-cmdk");
     expect(sendInput?.template?.variables.CTA_URL).toContain(
       "utm_source=email",
     );
     expect(sendInput?.template?.variables.CTA_URL).toContain(
-      "utm_content=welcome",
+      "utm_content=cmd-k",
     );
     expect(sendInput?.template?.variables.UNSUBSCRIBE_URL).toContain("token=");
     expect(sendInput?.headers["List-Unsubscribe"]).toContain("mailto:");

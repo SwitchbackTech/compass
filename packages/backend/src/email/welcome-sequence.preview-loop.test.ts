@@ -25,11 +25,11 @@ describe("welcome sequence preview loop helpers", () => {
     const first = previewLoopSyntheticUserId("Founder@Example.com");
     const second = previewLoopSyntheticUserId("founder@example.com");
     expect(first.equals(second)).toBe(true);
-    expect(previewLoopRowId("founder@example.com", 1, "welcome")).toBe(
-      previewLoopRowId("founder@example.com", 1, "welcome"),
+    expect(previewLoopRowId("founder@example.com", 1, "cmd-k")).toBe(
+      previewLoopRowId("founder@example.com", 1, "cmd-k"),
     );
-    expect(previewLoopRowId("founder@example.com", 2, "welcome")).not.toBe(
-      previewLoopRowId("founder@example.com", 1, "welcome"),
+    expect(previewLoopRowId("founder@example.com", 2, "cmd-k")).not.toBe(
+      previewLoopRowId("founder@example.com", 1, "cmd-k"),
     );
   });
 
@@ -47,7 +47,7 @@ describe("welcome sequence preview loop helpers", () => {
   });
 
   it("sends skipIf-gated steps during preview loop", () => {
-    const connectStep = findWelcomeStep("connect-calendar");
+    const connectStep = findWelcomeStep("trial-ending");
     const trialStep = findWelcomeStep("trial-ending");
     const user = {
       hasConnectedCalendar: true,
@@ -64,7 +64,7 @@ describe("welcome sequence preview loop helpers", () => {
   });
 
   it("keeps skipIf behavior for non-preview sends", () => {
-    const connectStep = findWelcomeStep("connect-calendar");
+    const connectStep = findWelcomeStep("trial-ending");
     const user = { hasConnectedCalendar: true };
     expect(connectStep?.skipIf?.(welcomeUserForSkipIf(user, false))).toBe(true);
     expect(new ObjectId().toHexString().length).toBe(24);

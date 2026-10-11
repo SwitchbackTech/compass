@@ -32,10 +32,10 @@ describe("processEmailWebhookEvent db", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "sent",
         sendAt: now,
         nextAttemptAt: now,
@@ -58,10 +58,10 @@ describe("processEmailWebhookEvent db", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "sent",
         sendAt: now,
         nextAttemptAt: now,
@@ -98,10 +98,10 @@ describe("processEmailWebhookEvent db", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: now,
         nextAttemptAt: now,
@@ -136,10 +136,10 @@ describe("processEmailWebhookEvent db", () => {
     });
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: now,
         nextAttemptAt: now,

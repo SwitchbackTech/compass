@@ -17,10 +17,8 @@ export type WelcomeEmailContentEntry = {
 
 const appUrl = (): string => CONFIG.FRONTEND_URL.replace(/\/$/, "");
 
-const settingsHref = (page: "accounts" | "billing"): string =>
+const settingsHref = (page: "billing"): string =>
   `${appUrl()}/?settings=${page}`;
-
-const meetingSetupHref = (): string => `${appUrl()}/?meetingSetup=1`;
 
 // TODO(copy): replace placeholder welcome drip copy before launch.
 /**
@@ -36,56 +34,65 @@ export const WELCOME_SEQUENCE_CONTENT: Record<
   WelcomeStepKey,
   WelcomeEmailContentEntry
 > = {
-  welcome: {
-    subject: "Welcome to Compass Calendar",
-    preheader: "Your calendar, organized.",
+  "cmd-k": {
+    subject: "Welcome to Compass Calendar (0/4)",
+    preheader: "Tip 1: Cmd/Ctrl + K opens the command palette.",
     heading: "Welcome aboard",
     paragraphs: [
-      "Compass Calendar keeps your days clear and your meetings under control.",
-      "Open the app to see your week at a glance.",
+      "Compass is designed to be driven with the keyboard.",
+      "Press Cmd/Ctrl + K to open the command palette.",
     ],
     cta: {
       label: "Open Compass",
       href: appUrl(),
     },
   },
-  shortcuts: {
-    subject: "Keyboard shortcuts that save time",
-    preheader: "Move faster with a few keys.",
-    heading: "Work at the speed of thought",
+  "shortcut-list": {
+    subject: '"?" (1/4)',
+    preheader: "Tip 2: type ? to search every shortcut.",
+    heading: "Forgot a shortcut?",
     paragraphs: [
-      "Jump between days, create events, and search without leaving the keyboard.",
-      "Press ? in the app to see the full list.",
+      "Type ? to open the master shortcut list, then type to filter it.",
     ],
     cta: {
-      label: "Try shortcuts",
+      label: "Try it",
       href: appUrl(),
     },
   },
-  "connect-calendar": {
-    subject: "Connect your calendar",
-    preheader: "Bring Google or Microsoft into Compass.",
-    heading: "See everything in one place",
+  "jump-around": {
+    subject: "Jumping (CMD/CTRL, f) (2/4)",
+    preheader: "Tip 3: jump straight to any event.",
+    heading: "Jump around",
     paragraphs: [
-      "Link the account you already use so Compass stays in sync.",
-      "You can add more calendars later from Settings.",
+      "Hold Cmd/Ctrl to reveal shortcuts, or type f to flash jump keys.",
     ],
     cta: {
-      label: "Connect a calendar",
-      href: settingsHref("accounts"),
+      label: "Try it now",
+      href: appUrl(),
     },
   },
-  booking: {
-    subject: "Share your availability",
-    preheader: "Let guests book time with you.",
-    heading: "Booking pages in minutes",
+  "adjusting-times": {
+    subject: "Repositioning (SHIFT+↑↓←→) (3/4)",
+    preheader: "Tip 4: move events without opening them.",
+    heading: "Adjust times fast",
     paragraphs: [
-      "Create a booking link with the hours you want to offer.",
-      "Guests pick a slot and you both get a calendar event.",
+      "While focused on an event, type Shift + arrow keys to move it.",
     ],
     cta: {
-      label: "Set up booking",
-      href: meetingSetupHref(),
+      label: "Lay down some blocks",
+      href: appUrl(),
+    },
+  },
+  roundup: {
+    subject: "Roundup (4/4)",
+    preheader: "The last tip email: advanced tactics.",
+    heading: "Roundup",
+    paragraphs: [
+      'Type g to go to a date, Cmd/Ctrl + Z to undo, and "meet" in the palette for your meeting page.',
+    ],
+    cta: {
+      label: "Open Compass",
+      href: appUrl(),
     },
   },
   "trial-ending": {

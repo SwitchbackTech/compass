@@ -1057,10 +1057,10 @@ describe("UserService", () => {
 
       await mongoService.emailSend.insertMany([
         {
-          _id: `${userId}:welcome`,
+          _id: `${userId}:cmd-k`,
           userId: user._id,
           sequence: "welcome",
-          stepKey: "welcome",
+          stepKey: "cmd-k",
           status: "queued",
           sendAt: new Date(),
           attemptCount: 0,

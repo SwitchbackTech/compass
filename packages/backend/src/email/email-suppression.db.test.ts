@@ -43,10 +43,10 @@ describe("email suppression", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: now,
         nextAttemptAt: now,
@@ -55,7 +55,7 @@ describe("email suppression", () => {
         _id: `${userId.toHexString()}:shortcuts`,
         userId,
         sequence: "welcome",
-        stepKey: "shortcuts",
+        stepKey: "shortcut-list",
         status: "sent",
         sendAt: now,
         nextAttemptAt: now,
@@ -67,14 +67,14 @@ describe("email suppression", () => {
     await markUserUnsubscribed(userId);
 
     const rows = await mongoService.emailSend.find({ userId }).toArray();
-    const welcome = rows.find((row) => row.stepKey === "welcome");
-    const shortcuts = rows.find((row) => row.stepKey === "shortcuts");
+    const welcome = rows.find((row) => row.stepKey === "cmd-k");
+    const shortcuts = rows.find((row) => row.stepKey === "shortcut-list");
     expect(welcome?.status).toBe("canceled");
     expect(shortcuts?.status).toBe("sent");
     // The canceled row is now the most recently updated; analytics must
     // still attribute to the last email actually sent.
     expect(await emailSendRepository.findLastSentStepKey(userId)).toBe(
-      "shortcuts",
+      "shortcut-list",
     );
     const user = await mongoService.user.findOne({ _id: userId });
     expect(user?.emailPreferences?.unsubscribedAt).toBeInstanceOf(Date);
@@ -93,10 +93,10 @@ describe("email suppression", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: now,
         nextAttemptAt: now,
