@@ -86,6 +86,19 @@ export const DatePickers: FC<Props> = ({
         }
         break;
       }
+      case e.key === "Enter" && (e.metaKey || e.ctrlKey): {
+        const input = e.target as HTMLInputElement;
+        const val = input.value;
+        if (val !== undefined && dateIsValid(val)) {
+          const date = getDateFromInput(val);
+          if (picker === "start") {
+            onSelectStartDate(date);
+          } else {
+            onSelectEndDate(date);
+          }
+        }
+        break;
+      }
       case e.key === "Enter": {
         e.stopPropagation();
         e.preventDefault();

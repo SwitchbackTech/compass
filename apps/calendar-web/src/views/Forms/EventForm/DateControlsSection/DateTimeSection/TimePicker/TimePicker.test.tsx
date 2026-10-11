@@ -1,10 +1,14 @@
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { type SelectOption } from "@web/common/types/component.types";
 import { getTimeOptions } from "@web/common/utils/datetime/web.date.util";
+import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { TimePicker } from "./TimePicker";
-import { describe, expect, it } from "bun:test";
+import { commitFocusedTimePickerDraft } from "./timePickerCommitDraft";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const intervalOptions: SelectOption<string>[] = [
   { value: "1:00 PM", label: "1 PM" },
@@ -16,14 +20,70 @@ const onePm = { label: "1 PM", value: "1:00 PM" };
 const fiveThirty = { label: "5:30 PM", value: "5:30 PM" };
 const nineFortyFive = { label: "9:45 AM", value: "9:45 AM" };
 
+function dispatchModEnter(target: HTMLElement) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+  target.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ctrlKey: isControl,
+      key: "Enter",
+      metaKey: !isControl,
+    }),
+  );
+}
+
+/** Matches EventForm: commit the picker draft, then fire the save shortcut. */
+function dispatchFormModEnter(activeElement: HTMLElement) {
+  commitFocusedTimePickerDraft(activeElement);
+  dispatchModEnter(document.body);
+}
+
+function FormShortcuts({
+  enabled,
+  onFormClose,
+  onFormSave,
+}: {
+  enabled: boolean;
+  onFormClose: () => void;
+  onFormSave: () => void;
+}) {
+  useAppShortcut(
+    "Mod+Enter",
+    (event) => {
+      event.preventDefault();
+      onFormSave();
+    },
+    { enabled, ignoreInputs: false },
+  );
+  useAppShortcut(
+    "Escape",
+    (event) => {
+      if (isFloatingLayerOpen()) return;
+      event.preventDefault();
+      onFormClose();
+    },
+    { enabled, ignoreInputs: false },
+  );
+  return null;
+}
+
 function Harness({
   initialValue = intervalOptions[0],
   options = intervalOptions,
   freshOptions = false,
+  onFormClose = mock(),
+  onFormSave = mock(),
+  withFormShortcuts = false,
 }: {
   initialValue?: SelectOption<string>;
   options?: SelectOption<string>[];
   freshOptions?: boolean;
+  onFormClose?: () => void;
+  onFormSave?: () => void;
+  withFormShortcuts?: boolean;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
@@ -31,6 +91,11 @@ function Harness({
 
   return (
     <div>
+      <FormShortcuts
+        enabled={withFormShortcuts}
+        onFormClose={onFormClose}
+        onFormSave={onFormSave}
+      />
       <button type="button">Title</button>
       <TimePicker
         aria-label="Start time"
@@ -47,6 +112,14 @@ function Harness({
 }
 
 describe("TimePicker", () => {
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+  });
+
+  afterEach(() => {
+    HotkeyManager.resetInstance();
+  });
+
   it("closes its menu when focus moves elsewhere in the form, instead of staying open forever", async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -104,6 +177,81 @@ describe("TimePicker", () => {
     expect(screen.getByText("1:15 PM")).toBeInTheDocument();
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Description" })).toHaveFocus();
+  });
+
+  it("closes the menu on Escape before the form close shortcut runs", async () => {
+    const user = userEvent.setup();
+    const onFormClose = mock();
+    render(
+      <Harness withFormShortcuts onFormClose={onFormClose} freshOptions />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "1:30");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(isFloatingLayerOpen()).toBe(true);
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(isFloatingLayerOpen()).toBe(false);
+    expect(onFormClose).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    expect(onFormClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not swallow Escape when the menu is already closed", async () => {
+    const user = userEvent.setup();
+    const onFormClose = mock();
+    render(
+      <Harness withFormShortcuts onFormClose={onFormClose} freshOptions />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(onFormClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("submits the form on Mod+Enter while the menu is closed", async () => {
+    const user = userEvent.setup();
+    const onFormSave = mock();
+    render(<Harness withFormShortcuts onFormSave={onFormSave} freshOptions />);
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+    dispatchFormModEnter(combobox);
+    expect(onFormSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("commits a typed draft then submits on Mod+Enter while the menu is open", async () => {
+    const user = userEvent.setup();
+    const onFormSave = mock();
+    render(
+      <Harness
+        withFormShortcuts
+        onFormSave={onFormSave}
+        initialValue={nineFortyFive}
+        freshOptions
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(combobox);
+    await user.type(combobox, "12:45");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+
+    dispatchFormModEnter(combobox);
+
+    expect(screen.getByText("12:45 AM")).toBeInTheDocument();
+    expect(onFormSave).toHaveBeenCalledTimes(1);
   });
 
   it("discards typed filter on Escape instead of committing", async () => {

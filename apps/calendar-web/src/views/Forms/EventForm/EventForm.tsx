@@ -76,6 +76,7 @@ import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
+import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
@@ -726,6 +727,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       "Mod+Enter",
       (e) => {
         e.preventDefault();
+        commitFocusedTimePickerDraft(document.activeElement);
         onSubmitForm();
       },
       { ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS, shortcutId: "edit-save" },

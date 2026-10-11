@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useId, useRef } from "react";
+import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -11,6 +12,7 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
+import { TIME_PICKER_COMMIT_DRAFT_EVENT } from "./timePickerCommitDraft";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   complementaryTime?: string;
@@ -146,9 +148,35 @@ export const TimePicker = ({
 
   const commitFocusedOption = () => {
     if (!userAdjustedRef.current) return;
-    const option = focusedMenuOption();
+    const option =
+      focusedMenuOption() ??
+      (() => {
+        const input = containerRef.current?.querySelector("input");
+        const draft = input?.value?.trim();
+        return draft ? parseInput(draft) : undefined;
+      })();
     if (option) _onChange(option);
   };
+
+  const commitFocusedOptionRef = useRef(commitFocusedOption);
+  commitFocusedOptionRef.current = commitFocusedOption;
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const onCommitDraft = () => {
+      flushSync(() => {
+        commitFocusedOptionRef.current();
+      });
+      setIsMenuOpen(false);
+    };
+
+    root.addEventListener(TIME_PICKER_COMMIT_DRAFT_EVENT, onCommitDraft);
+    return () => {
+      root.removeEventListener(TIME_PICKER_COMMIT_DRAFT_EVENT, onCommitDraft);
+    };
+  }, [setIsMenuOpen]);
 
   // Jump ids live on this visible wrapper. react-select's dummy input is
   // often 2px (hidden behind the selected value), which fails the hold-Mod
@@ -187,12 +215,14 @@ export const TimePicker = ({
         }}
         onKeyDown={(e) => {
           const key = e.key;
-
           if (MENU_NAV_KEYS.has(key)) {
             userAdjustedRef.current = true;
           }
 
-          if (key === "Enter" || key === "Backspace") {
+          if (
+            (key === "Enter" && !e.metaKey && !e.ctrlKey) ||
+            key === "Backspace"
+          ) {
             e.stopPropagation();
           }
 
@@ -212,7 +242,8 @@ export const TimePicker = ({
             e.stopPropagation();
           }
 
-          if (key === "Escape") {
+          if (key === "Escape" && isMenuOpen) {
+            userAdjustedRef.current = false;
             setIsMenuOpen(false);
             e.stopPropagation();
           }

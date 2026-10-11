@@ -1,3 +1,4 @@
+import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
@@ -8,9 +9,61 @@ import {
   scheduleDatesFromDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
+import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { getFormDates } from "../form.datetime.util";
 import { TimePickers } from "./TimePickers";
-import { describe, expect, it } from "bun:test";
+import { commitFocusedTimePickerDraft } from "./timePickerCommitDraft";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+
+function dispatchModEnter(target: HTMLElement) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+  target.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ctrlKey: isControl,
+      key: "Enter",
+      metaKey: !isControl,
+    }),
+  );
+}
+
+function dispatchFormModEnter(activeElement: HTMLElement) {
+  commitFocusedTimePickerDraft(activeElement);
+  dispatchModEnter(document.body);
+}
+
+function FormShortcuts({
+  enabled,
+  onFormClose,
+  onFormSave,
+}: {
+  enabled: boolean;
+  onFormClose: () => void;
+  onFormSave: () => void;
+}) {
+  useAppShortcut(
+    "Mod+Enter",
+    (event) => {
+      event.preventDefault();
+      onFormSave();
+    },
+    { enabled, ignoreInputs: false },
+  );
+  useAppShortcut(
+    "Escape",
+    (event) => {
+      if (isFloatingLayerOpen()) return;
+      event.preventDefault();
+      onFormClose();
+    },
+    { enabled, ignoreInputs: false },
+  );
+  return null;
+}
 
 const START_DATE = new Date("2026-04-24T14:00:00.000Z");
 const END_DATE = new Date("2026-04-24T15:00:00.000Z");
@@ -22,9 +75,15 @@ const END_DATE = new Date("2026-04-24T15:00:00.000Z");
 function Harness({
   start = START_DATE,
   end = END_DATE,
+  onFormClose = mock(),
+  onFormSave = mock(),
+  withFormShortcuts = false,
 }: {
   start?: Date;
   end?: Date;
+  onFormClose?: () => void;
+  onFormSave?: () => void;
+  withFormShortcuts?: boolean;
 }) {
   const [draft, setDraft] = useState<GridEventDraft>(
     createGridEventDraft(timedGridSchedule(start, end)),
@@ -35,6 +94,11 @@ function Harness({
 
   return (
     <>
+      <FormShortcuts
+        enabled={withFormShortcuts}
+        onFormClose={onFormClose}
+        onFormSave={onFormSave}
+      />
       <TimePickers
         endTime={formDates.endTime}
         onScheduleChange={(schedule) => {
@@ -67,6 +131,14 @@ const expectDraft = (startDate: string, endDate: string) =>
   ).toBeInTheDocument();
 
 describe("TimePickers", () => {
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+  });
+
+  afterEach(() => {
+    HotkeyManager.resetInstance();
+  });
+
   it("gives the start and end pickers distinct accessible names", () => {
     render(<Harness />);
 
@@ -212,6 +284,75 @@ describe("TimePickers", () => {
     expect(screen.getByText("11:45 AM")).toBeInTheDocument();
     expect(screen.queryByText("11:45 PM")).not.toBeInTheDocument();
   });
+
+  it("submits on Mod+Enter from the start picker after typing a new time", async () => {
+    const user = userEvent.setup();
+    const onFormSave = mock();
+    render(
+      <Harness
+        withFormShortcuts
+        onFormSave={onFormSave}
+        start={new Date("2026-04-24T09:45:00.000Z")}
+        end={new Date("2026-04-24T10:45:00.000Z")}
+      />,
+    );
+
+    const start = screen.getByRole("combobox", { name: "Start time" });
+    await user.click(start);
+    await user.type(start, "12:45");
+    dispatchFormModEnter(start);
+
+    expectDraft("2026-04-24T00:45:00+00:00", "2026-04-24T10:45:00+00:00");
+    expect(onFormSave).toHaveBeenCalledTimes(1);
+
+    onFormSave.mockClear();
+    await user.click(start);
+    await user.keyboard("{Enter}");
+    dispatchFormModEnter(start);
+    expect(onFormSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("submits on Mod+Enter from the end picker after typing a new time", async () => {
+    const user = userEvent.setup();
+    const onFormSave = mock();
+    render(
+      <Harness
+        withFormShortcuts
+        onFormSave={onFormSave}
+        start={new Date("2026-04-24T11:30:00.000Z")}
+        end={new Date("2026-04-24T12:30:00.000Z")}
+      />,
+    );
+
+    const end = screen.getByRole("combobox", { name: "End time" });
+    await user.click(end);
+    await user.type(end, "1145");
+    dispatchFormModEnter(end);
+
+    expectDraft("2026-04-24T11:30:00+00:00", "2026-04-24T11:45:00+00:00");
+    expect(onFormSave).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Start time", "End time"] as const)(
+    "closes the %s menu on Escape before the form close shortcut",
+    async (pickerLabel) => {
+      const user = userEvent.setup();
+      const onFormClose = mock();
+      render(<Harness withFormShortcuts onFormClose={onFormClose} />);
+
+      const combobox = screen.getByRole("combobox", { name: pickerLabel });
+      await user.click(combobox);
+      await user.type(combobox, "3");
+      expect(isFloatingLayerOpen()).toBe(true);
+
+      await user.keyboard("{Escape}");
+      expect(isFloatingLayerOpen()).toBe(false);
+      expect(onFormClose).not.toHaveBeenCalled();
+
+      await user.keyboard("{Escape}");
+      expect(onFormClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("does not reject a later overnight end just because the clock is before start", async () => {
     const user = userEvent.setup();
