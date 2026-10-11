@@ -106,7 +106,7 @@ describe("assertBillingAllowsWrites", () => {
     });
   });
 
-  it("allows trialing rows without a Stripe subscription id", async () => {
+  it("allows an in-window card-less local trial without a Stripe subscription id", async () => {
     using _env = mockEnv(stripeConfigured);
     const localTrial = await insertUser({
       subscriptionStatus: "trialing",
@@ -117,6 +117,21 @@ describe("assertBillingAllowsWrites", () => {
     await expect(
       assertBillingAllowsWrites(localTrial),
     ).resolves.toBeUndefined();
+  });
+
+  it("rejects an expired card-less local trial", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const expiredLocalTrial = await insertUser({
+      subscriptionStatus: "trialing",
+      trialStartedAt: new Date("2026-09-15T00:00:00.000Z"),
+      trialEndsAt: new Date("2026-09-22T00:00:00.000Z"),
+    });
+
+    await expect(
+      assertBillingAllowsWrites(expiredLocalTrial),
+    ).rejects.toMatchObject({
+      mutationCode: "BILLING_REQUIRED",
+    });
   });
 
   it("allows a bypassed account that would otherwise be gated", async () => {

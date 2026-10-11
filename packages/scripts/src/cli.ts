@@ -34,6 +34,13 @@ export default class CompassCLI {
         await runBackfillBilling();
         break;
       }
+      case cmd === "backfill-expired-local-trials": {
+        const { runBackfillExpiredLocalTrials } = await import(
+          "@scripts/commands/backfill-expired-local-trials"
+        );
+        await runBackfillExpiredLocalTrials();
+        break;
+      }
       case cmd === "backfill-identities": {
         const { runBackfillIdentities } = await import(
           "@scripts/commands/backfill-identities"
@@ -121,6 +128,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "stamp awaiting_checkout on accounts with no billing status (--apply to write)",
+      );
+
+    program
+      .command("backfill-expired-local-trials")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "expire stale card-less local trials still stored as trialing (--apply to write)",
       );
 
     program
