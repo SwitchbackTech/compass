@@ -53,8 +53,7 @@ export function resolveGooglePopupReminderMinutes(
     return GOOGLE_ACCOUNT_DEFAULT_POPUP_REMINDER_MINUTES;
   }
 
-  const popup = popupMinutesFromOverrides(reminders.overrides ?? []);
-  return popup;
+  return popupMinutesFromOverrides(reminders.overrides ?? []);
 }
 
 const POPUP_REMINDERS_NONE = "none";

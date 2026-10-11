@@ -1,5 +1,5 @@
+import { DEFAULT_POPUP_REMINDER_MINUTES } from "@core/notifications/google-popup-reminders.util";
 import {
-  DEFAULT_POPUP_REMINDER_MINUTES,
   notificationKey,
   type RemindableEvent,
 } from "@core/notifications/upcoming-event-reminders.util";
