@@ -6,10 +6,11 @@ import { getWelcomeEmailContent } from "@backend/email/welcome-sequence.content"
 
 /** Resend published template alias per welcome drip step. */
 export const WELCOME_STEP_TEMPLATE_ALIAS: Record<WelcomeStepKey, string> = {
-  welcome: "compass-welcome",
-  shortcuts: "compass-shortcuts",
-  "connect-calendar": "compass-connect-calendar",
-  booking: "compass-booking",
+  "cmd-k": "04-cmdk",
+  "shortcut-list": "14-",
+  "jump-around": "24-jump-around",
+  "adjusting-times": "34-adjusting-times",
+  roundup: "44-roundup",
   "trial-ending": "compass-trial-ending",
 };
 

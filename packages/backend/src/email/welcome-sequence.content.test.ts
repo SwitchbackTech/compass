@@ -5,27 +5,18 @@ import { describe, expect, it } from "bun:test";
 const appUrl = CONFIG.FRONTEND_URL.replace(/\/$/, "");
 
 // Settings is a modal in calendar-web, not a route, so every CTA must use a
-// URL the app actually handles: the root, `?settings=<page>`, or
-// `?meetingSetup=1`. A `/settings/...` path renders the 404 view.
+// URL the app actually handles: the root or `?settings=<page>`. A `/settings/...` path renders the 404 view.
 describe("welcome sequence content links", () => {
-  it("sends the welcome email to the app root", () => {
-    expect(WELCOME_SEQUENCE_CONTENT["welcome"]?.cta.href).toBe(appUrl);
-  });
-
-  it("sends the shortcuts email to the app root", () => {
-    expect(WELCOME_SEQUENCE_CONTENT["shortcuts"]?.cta.href).toBe(appUrl);
-  });
-
-  it("opens Settings > Accounts from the connect-calendar email", () => {
-    expect(WELCOME_SEQUENCE_CONTENT["connect-calendar"]?.cta.href).toBe(
-      `${appUrl}/?settings=accounts`,
-    );
-  });
-
-  it("opens meeting setup from the booking email", () => {
-    expect(WELCOME_SEQUENCE_CONTENT["booking"]?.cta.href).toBe(
-      `${appUrl}/?meetingSetup=1`,
-    );
+  it("sends every tip email to the app root", () => {
+    for (const key of [
+      "cmd-k",
+      "shortcut-list",
+      "jump-around",
+      "adjusting-times",
+      "roundup",
+    ] as const) {
+      expect(WELCOME_SEQUENCE_CONTENT[key].cta.href).toBe(appUrl);
+    }
   });
 
   it("opens Settings > Billing from the trial-ending email", () => {

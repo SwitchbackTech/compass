@@ -41,10 +41,10 @@ describe("computeEmailSendHeartbeat", () => {
     const newerSendAt = new Date("2026-09-14T11:00:00.000Z");
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: olderSendAt,
         nextAttemptAt: olderSendAt,
@@ -53,7 +53,7 @@ describe("computeEmailSendHeartbeat", () => {
         _id: `${userId.toHexString()}:connect-calendar`,
         userId,
         sequence: "welcome",
-        stepKey: "connect-calendar",
+        stepKey: "trial-ending",
         status: "queued",
         sendAt: newerSendAt,
         nextAttemptAt: newerSendAt,
@@ -62,10 +62,10 @@ describe("computeEmailSendHeartbeat", () => {
     const failedUser = new ObjectId();
     await emailSendRepository.insertMany([
       {
-        _id: `${failedUser.toHexString()}:welcome`,
+        _id: `${failedUser.toHexString()}:cmd-k`,
         userId: failedUser,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "failed",
         sendAt: newerSendAt,
         nextAttemptAt: newerSendAt,

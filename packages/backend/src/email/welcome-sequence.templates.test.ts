@@ -60,12 +60,12 @@ describe("welcome sequence Resend templates", () => {
   });
 
   it("tags CTA URLs with welcome drip utm params", () => {
-    const base = getWelcomeStepCtaBaseHref("connect-calendar");
+    const base = getWelcomeStepCtaBaseHref("trial-ending");
     expect(base).toBeTruthy();
-    const ctaUrl = appendWelcomeEmailUtm(base!, "connect-calendar");
+    const ctaUrl = appendWelcomeEmailUtm(base!, "trial-ending");
     expect(ctaUrl).toContain("utm_source=email");
     expect(ctaUrl).toContain("utm_campaign=welcome");
-    expect(ctaUrl).toContain("utm_content=connect-calendar");
-    expect(ctaUrl).toContain("settings=accounts");
+    expect(ctaUrl).toContain("utm_content=trial-ending");
+    expect(ctaUrl).toContain("settings=billing");
   });
 });

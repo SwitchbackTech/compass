@@ -45,10 +45,10 @@ describe("EmailUnsubscribeController db", () => {
     const now = new Date();
     await emailSendRepository.insertMany([
       {
-        _id: `${userId.toHexString()}:welcome`,
+        _id: `${userId.toHexString()}:cmd-k`,
         userId,
         sequence: "welcome",
-        stepKey: "welcome",
+        stepKey: "cmd-k",
         status: "queued",
         sendAt: now,
         nextAttemptAt: now,

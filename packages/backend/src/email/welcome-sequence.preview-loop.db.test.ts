@@ -90,6 +90,45 @@ describe("welcome sequence preview loop", () => {
     expect(generationTwo).toBe(WELCOME_SEQUENCE.length);
   });
 
+  it("starts a fresh generation right away when the last one used retired steps", async () => {
+    CONFIG.EMAIL_PREVIEW_LOOP_GAP_DAYS = 30;
+    const anchor = new Date("2026-01-01T00:00:00.000Z");
+    await enqueuePreviewLoopGeneration(previewEmail, 1, anchor);
+    const userId = (await mongoService.emailSend.findOne({
+      previewLoop: true,
+      recipientEmail: previewEmail,
+    }))!.userId;
+    await mongoService.emailSend.deleteMany({ previewLoop: true });
+    // A generation enrolled under the old step list, already drained.
+    await mongoService.emailSend.insertMany(
+      ["welcome", "shortcuts"].map((stepKey) => ({
+        _id: previewLoopRowId(previewEmail, 1, stepKey),
+        userId,
+        sequence: "welcome" as const,
+        stepKey,
+        status: "skipped" as const,
+        sendAt: anchor,
+        nextAttemptAt: anchor,
+        previewLoop: true as const,
+        recipientEmail: previewEmail,
+        previewLoopGeneration: 1,
+      })),
+    );
+
+    await ensurePreviewLoopForRecipient(previewEmail, new Date());
+
+    const generationTwo = await mongoService.emailSend
+      .find({
+        previewLoop: true,
+        recipientEmail: previewEmail,
+        previewLoopGeneration: 2,
+      })
+      .toArray();
+    expect(generationTwo.map((row) => row.stepKey)).toEqual(
+      WELCOME_SEQUENCE.map((step) => step.key),
+    );
+  });
+
   it("defers sends when the daily cap is reached", async () => {
     CONFIG.EMAIL_PREVIEW_LOOP_MAX_PER_DAY = 2;
     const now = new Date("2026-01-01T12:00:00.000Z");

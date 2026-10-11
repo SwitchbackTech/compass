@@ -27,14 +27,13 @@ export type EmailStep = {
  * hand-maintained copies of the same five strings.
  */
 export const WELCOME_SEQUENCE = [
-  { key: "welcome", delayDays: 0 },
-  { key: "shortcuts", delayDays: 2 },
-  {
-    key: "connect-calendar",
-    delayDays: 5,
-    skipIf: (user) => user.hasConnectedCalendar,
-  },
-  { key: "booking", delayDays: 9 },
+  // Five daily keyboard tips, the first right at signup (day 0-4).
+  { key: "cmd-k", delayDays: 0 },
+  { key: "shortcut-list", delayDays: 1 },
+  { key: "jump-around", delayDays: 2 },
+  { key: "adjusting-times", delayDays: 3 },
+  { key: "roundup", delayDays: 4 },
+  // Trial is BILLING_PLAN.TRIAL_LENGTH_DAYS (7): heads-up two days before it converts.
   {
     key: "trial-ending",
     delayDays: 5,

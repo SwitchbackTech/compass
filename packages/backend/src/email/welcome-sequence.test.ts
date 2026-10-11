@@ -25,12 +25,24 @@ describe("welcome sequence scheduling", () => {
     }
   });
 
-  it("spaces real profile sendAt values by whole days", () => {
-    const welcome = computeSendAt(signedUpAt, WELCOME_SEQUENCE[0]!, "real");
-    const shortcuts = computeSendAt(signedUpAt, WELCOME_SEQUENCE[1]!, "real");
-
-    expect(welcome.toISOString()).toBe("2026-01-01T12:00:00.000Z");
-    expect(shortcuts.toISOString()).toBe("2026-01-03T12:00:00.000Z");
+  it("sends one tip a day for the first five days, starting at signup", () => {
+    const tips = WELCOME_SEQUENCE.slice(0, 5);
+    expect(tips.map((step) => step.key)).toEqual([
+      "cmd-k",
+      "shortcut-list",
+      "jump-around",
+      "adjusting-times",
+      "roundup",
+    ]);
+    expect(
+      tips.map((step) => computeSendAt(signedUpAt, step, "real").toISOString()),
+    ).toEqual([
+      "2026-01-01T12:00:00.000Z",
+      "2026-01-02T12:00:00.000Z",
+      "2026-01-03T12:00:00.000Z",
+      "2026-01-04T12:00:00.000Z",
+      "2026-01-05T12:00:00.000Z",
+    ]);
   });
 
   it("spaces fast profile sendAt values by minutes", () => {
@@ -38,7 +50,7 @@ describe("welcome sequence scheduling", () => {
     const shortcuts = computeSendAt(signedUpAt, WELCOME_SEQUENCE[1]!, "fast");
 
     expect(welcome.toISOString()).toBe("2026-01-01T12:00:00.000Z");
-    expect(shortcuts.toISOString()).toBe("2026-01-01T12:02:00.000Z");
+    expect(shortcuts.toISOString()).toBe("2026-01-01T12:01:00.000Z");
   });
 
   it("schedules trial-ending on day 5", () => {
