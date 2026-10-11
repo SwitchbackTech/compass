@@ -146,7 +146,13 @@ export const TimePicker = ({
 
   const commitFocusedOption = () => {
     if (!userAdjustedRef.current) return;
-    const option = focusedMenuOption();
+    const option =
+      focusedMenuOption() ??
+      (() => {
+        const input = containerRef.current?.querySelector("input");
+        const draft = input?.value?.trim();
+        return draft ? parseInput(draft) : undefined;
+      })();
     if (option) _onChange(option);
   };
 
@@ -187,13 +193,26 @@ export const TimePicker = ({
         }}
         onKeyDown={(e) => {
           const key = e.key;
+          const isModEnter =
+            key === "Enter" &&
+            (e.metaKey || e.ctrlKey) &&
+            !e.nativeEvent.isComposing;
 
           if (MENU_NAV_KEYS.has(key)) {
             userAdjustedRef.current = true;
           }
 
-          if (key === "Enter" || key === "Backspace") {
+          if (
+            (key === "Enter" && !e.metaKey && !e.ctrlKey) ||
+            key === "Backspace"
+          ) {
             e.stopPropagation();
+          }
+
+          if (isModEnter) {
+            commitFocusedOption();
+            setIsMenuOpen(false);
+            return;
           }
 
           if (key === "Enter" && !e.nativeEvent.isComposing) {
@@ -212,7 +231,8 @@ export const TimePicker = ({
             e.stopPropagation();
           }
 
-          if (key === "Escape") {
+          if (key === "Escape" && isMenuOpen) {
+            userAdjustedRef.current = false;
             setIsMenuOpen(false);
             e.stopPropagation();
           }

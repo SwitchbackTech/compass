@@ -108,6 +108,41 @@ const pressShortcut = async (
   );
 };
 
+/** Mod+Enter on the focused element (time pickers swallow Playwright's chord). */
+export const pressModEnterOnFocusedElement = async (page: Page) => {
+  await page.evaluate(() => {
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+    const target = document.activeElement ?? document;
+    const init = {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      metaKey: isMac,
+      ctrlKey: !isMac,
+    };
+    target.dispatchEvent(new KeyboardEvent("keydown", init));
+  });
+};
+
+/** Escape on the focused element (matches keyboard users in combobox fields). */
+export const pressEscapeOnFocusedElement = async (page: Page) => {
+  await page.evaluate(() => {
+    const target = document.activeElement ?? document;
+    target.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
+    );
+  });
+};
+
+export const getEventFormTitleInput = (page: Page) =>
+  page.getByRole("form").getByPlaceholder("Title");
+
 /**
  * The header's date title doubles as the Day/Week switcher trigger, so it's
  * the sole button inside the page's one <h1> regardless of which view or
