@@ -29,27 +29,15 @@ public enum UserDateParsing {
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
         guard !collapsed.isEmpty else { return nil }
 
-        if let match = firstMatch(collapsed, pattern: #"^(\d{4})-(\d{1,2})-(\d{1,2})$"#) {
+        if let match = firstMatch(
+            collapsed,
+            pattern: #"^(\d{4})([-/.])(\d{1,2})(?:\2(\d{1,2}))?$"#)
+        {
+            let day = match.count > 3 && !match[3].isEmpty ? Int(match[3])! : 1
             return calendarDate(
                 year: Int(match[0])!,
-                month: Int(match[1])!,
-                day: Int(match[2])!)
-        }
-
-        if let match = firstMatch(collapsed, pattern: #"^(\d{4})-(\d{1,2})$"#) {
-            return calendarDate(
-                year: Int(match[0])!,
-                month: Int(match[1])!,
-                day: 1)
-        }
-
-        if let match = firstMatch(collapsed, pattern: #"^(\d{4})[/.](\d{1,2})(?:[/.](\d{1,2}))?$"#) {
-            let year = Int(match[0])!
-            let month = Int(match[1])!
-            if match.count > 2, !match[2].isEmpty {
-                return calendarDate(year: year, month: month, day: Int(match[2])!)
-            }
-            return calendarDate(year: year, month: month, day: 1)
+                month: Int(match[2])!,
+                day: day)
         }
 
         if let match = firstMatch(
@@ -76,34 +64,38 @@ public enum UserDateParsing {
 
         let monthYear = "^(\(monthNamePattern))\\s+(\\d{4})$"
         if let match = firstMatch(normalized, pattern: monthYear) {
-            guard let month = monthNameToIndex[match[0]] else { return nil }
-            return calendarDate(year: Int(match[1])!, month: month, day: 1)
+            return namedMonthDate(
+                monthName: match[0],
+                dayText: nil,
+                yearText: match[1],
+                now: now)
         }
 
         let yearMonthName = "^(\\d{4})\\s+(\(monthNamePattern))$"
         if let match = firstMatch(normalized, pattern: yearMonthName) {
-            guard let month = monthNameToIndex[match[1]] else { return nil }
-            return calendarDate(year: Int(match[0])!, month: month, day: 1)
+            return namedMonthDate(
+                monthName: match[1],
+                dayText: nil,
+                yearText: match[0],
+                now: now)
         }
 
         let monthFirst = "^(\(monthNamePattern))(?:\\s+|\\s*,\\s*)(\\d{1,2})(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$"
         if let match = firstMatch(normalized, pattern: monthFirst) {
-            guard let month = monthNameToIndex[match[0]] else { return nil }
-            let day = Int(match[1])!
-            if match.count > 2, !match[2].isEmpty {
-                return calendarDate(year: Int(match[2])!, month: month, day: day)
-            }
-            return dateWithInferredYear(month: month, day: day, now: now)
+            return namedMonthDate(
+                monthName: match[0],
+                dayText: match[1],
+                yearText: match.count > 2 ? match[2] : nil,
+                now: now)
         }
 
         let dayFirst = "^(\\d{1,2})(?:\\s+|\\s*,\\s*)(\(monthNamePattern))(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$"
         if let match = firstMatch(normalized, pattern: dayFirst) {
-            let day = Int(match[0])!
-            guard let month = monthNameToIndex[match[1]] else { return nil }
-            if match.count > 2, !match[2].isEmpty {
-                return calendarDate(year: Int(match[2])!, month: month, day: day)
-            }
-            return dateWithInferredYear(month: month, day: day, now: now)
+            return namedMonthDate(
+                monthName: match[1],
+                dayText: match[0],
+                yearText: match.count > 2 ? match[2] : nil,
+                now: now)
         }
 
         return nil
@@ -160,16 +152,29 @@ public enum UserDateParsing {
         year >= 100 ? year : 2000 + year
     }
 
+    private static func namedMonthDate(
+        monthName: String,
+        dayText: String?,
+        yearText: String?,
+        now: Date
+    ) -> Date? {
+        guard let month = monthNameToIndex[monthName] else { return nil }
+        if let dayText, !dayText.isEmpty {
+            let day = Int(dayText)!
+            if let yearText, !yearText.isEmpty {
+                return calendarDate(year: Int(yearText)!, month: month, day: day)
+            }
+            return dateWithInferredYear(month: month, day: day, now: now)
+        }
+        guard let yearText, !yearText.isEmpty else { return nil }
+        return calendarDate(year: Int(yearText)!, month: month, day: 1)
+    }
+
     private static func resolveMonthDayOrder(first: Int, second: Int) -> (month: Int, day: Int)? {
         guard first >= 1, second >= 1, first <= 31, second <= 31 else { return nil }
         if first > 12, second > 12 { return nil }
-        if first > 12 {
-            guard second <= 12 else { return nil }
-            return (month: second, day: first)
-        }
-        if second > 12 {
-            return (month: first, day: second)
-        }
+        if first > 12 { return (month: second, day: first) }
+        if second > 12 { return (month: first, day: second) }
         return (month: first, day: second)
     }
 

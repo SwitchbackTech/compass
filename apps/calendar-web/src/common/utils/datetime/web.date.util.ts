@@ -312,17 +312,43 @@ const resolveMonthDayOrder = (
 ): { month: number; day: number } | null => {
   if (first < 1 || second < 1 || first > 31 || second > 31) return null;
   if (first > 12 && second > 12) return null;
-  if (first > 12) {
-    if (second > 12) return null;
-    return { month: second, day: first };
-  }
-  if (second > 12) {
-    return { month: first, day: second };
-  }
+  if (first > 12) return { month: second, day: first };
+  if (second > 12) return { month: first, day: second };
   return { month: first, day: second };
 };
 
+/** Same separator for every part so `2026-10/03` stays rejected. */
+const YEAR_FIRST_DATE_PATTERN = /^(\d{4})([-/.])(\d{1,2})(?:\2(\d{1,2}))?$/;
 const NUMERIC_DATE_PATTERN = /^(\d{1,2})[-/.](\d{1,2})(?:[-/.](\d{2}|\d{4}))?$/;
+const MONTH_YEAR_PATTERN = new RegExp(`^(${MONTH_NAME_PATTERN})\\s+(\\d{4})$`);
+const YEAR_MONTH_NAME_PATTERN = new RegExp(
+  `^(\\d{4})\\s+(${MONTH_NAME_PATTERN})$`,
+);
+const MONTH_FIRST_PATTERN = new RegExp(
+  `^(${MONTH_NAME_PATTERN})(?:\\s+|\\s*,\\s*)(\\d{1,2})(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$`,
+);
+const DAY_FIRST_PATTERN = new RegExp(
+  `^(\\d{1,2})(?:\\s+|\\s*,\\s*)(${MONTH_NAME_PATTERN})(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$`,
+);
+
+const namedMonthDate = (
+  monthName: string | undefined,
+  dayText: string | undefined,
+  yearText: string | undefined,
+  now: Dayjs,
+): Dayjs | null => {
+  const month = monthName ? MONTH_NAME_TO_INDEX[monthName] : undefined;
+  if (month === undefined) return null;
+  if (dayText === undefined) {
+    return yearText === undefined
+      ? null
+      : calendarDate(Number(yearText), month, 1);
+  }
+  const day = Number(dayText);
+  return yearText === undefined
+    ? dateWithInferredYear(month, day, now)
+    : calendarDate(Number(yearText), month, day);
+};
 
 /** Parses a typed calendar date. Month-first for `M/D`. English month names only. */
 export const parseUserDate = (text: string, now: Dayjs): Dayjs | null => {
@@ -331,28 +357,13 @@ export const parseUserDate = (text: string, now: Dayjs): Dayjs | null => {
   const collapsed = text.trim().toLowerCase().replace(/\s+/g, " ");
   if (!collapsed) return null;
 
-  const isoFull = collapsed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (isoFull) {
-    return calendarDate(
-      Number(isoFull[1]),
-      Number(isoFull[2]),
-      Number(isoFull[3]),
-    );
-  }
-
-  const isoMonth = collapsed.match(/^(\d{4})-(\d{1,2})$/);
-  if (isoMonth) {
-    return calendarDate(Number(isoMonth[1]), Number(isoMonth[2]), 1);
-  }
-
-  const yearFirst = collapsed.match(/^(\d{4})[/.](\d{1,2})(?:[/.](\d{1,2}))?$/);
+  const yearFirst = collapsed.match(YEAR_FIRST_DATE_PATTERN);
   if (yearFirst) {
-    const year = Number(yearFirst[1]);
-    const month = Number(yearFirst[2]);
-    if (yearFirst[3] === undefined) {
-      return calendarDate(year, month, 1);
-    }
-    return calendarDate(year, month, Number(yearFirst[3]));
+    return calendarDate(
+      Number(yearFirst[1]),
+      Number(yearFirst[3]),
+      yearFirst[4] === undefined ? 1 : Number(yearFirst[4]),
+    );
   }
 
   const numeric = collapsed.match(NUMERIC_DATE_PATTERN);
@@ -362,64 +373,35 @@ export const parseUserDate = (text: string, now: Dayjs): Dayjs | null => {
       Number(numeric[2]),
     );
     if (!resolved) return null;
-    if (numeric[3] !== undefined) {
-      return calendarDate(
-        expandTwoDigitYear(Number(numeric[3])),
-        resolved.month,
-        resolved.day,
-      );
-    }
-    return dateWithInferredYear(resolved.month, resolved.day, now);
+    return numeric[3] === undefined
+      ? dateWithInferredYear(resolved.month, resolved.day, now)
+      : calendarDate(
+          expandTwoDigitYear(Number(numeric[3])),
+          resolved.month,
+          resolved.day,
+        );
   }
 
   const normalized = collapsed.replace(/\./g, "");
 
-  const monthYear = normalized.match(
-    new RegExp(`^(${MONTH_NAME_PATTERN})\\s+(\\d{4})$`),
-  );
+  const monthYear = normalized.match(MONTH_YEAR_PATTERN);
   if (monthYear) {
-    const month = MONTH_NAME_TO_INDEX[monthYear[1] ?? ""];
-    if (month === undefined) return null;
-    return calendarDate(Number(monthYear[2]), month, 1);
+    return namedMonthDate(monthYear[1], undefined, monthYear[2], now);
   }
 
-  const yearMonthName = normalized.match(
-    new RegExp(`^(\\d{4})\\s+(${MONTH_NAME_PATTERN})$`),
-  );
+  const yearMonthName = normalized.match(YEAR_MONTH_NAME_PATTERN);
   if (yearMonthName) {
-    const month = MONTH_NAME_TO_INDEX[yearMonthName[2] ?? ""];
-    if (month === undefined) return null;
-    return calendarDate(Number(yearMonthName[1]), month, 1);
+    return namedMonthDate(yearMonthName[2], undefined, yearMonthName[1], now);
   }
 
-  const monthFirst = normalized.match(
-    new RegExp(
-      `^(${MONTH_NAME_PATTERN})(?:\\s+|\\s*,\\s*)(\\d{1,2})(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$`,
-    ),
-  );
+  const monthFirst = normalized.match(MONTH_FIRST_PATTERN);
   if (monthFirst) {
-    const month = MONTH_NAME_TO_INDEX[monthFirst[1] ?? ""];
-    if (month === undefined) return null;
-    const day = Number(monthFirst[2]);
-    if (monthFirst[3] !== undefined) {
-      return calendarDate(Number(monthFirst[3]), month, day);
-    }
-    return dateWithInferredYear(month, day, now);
+    return namedMonthDate(monthFirst[1], monthFirst[2], monthFirst[3], now);
   }
 
-  const dayFirst = normalized.match(
-    new RegExp(
-      `^(\\d{1,2})(?:\\s+|\\s*,\\s*)(${MONTH_NAME_PATTERN})(?:(?:\\s+|\\s*,\\s*)(\\d{4}))?$`,
-    ),
-  );
+  const dayFirst = normalized.match(DAY_FIRST_PATTERN);
   if (dayFirst) {
-    const month = MONTH_NAME_TO_INDEX[dayFirst[2] ?? ""];
-    if (month === undefined) return null;
-    const day = Number(dayFirst[1]);
-    if (dayFirst[3] !== undefined) {
-      return calendarDate(Number(dayFirst[3]), month, day);
-    }
-    return dateWithInferredYear(month, day, now);
+    return namedMonthDate(dayFirst[2], dayFirst[1], dayFirst[3], now);
   }
 
   return null;
