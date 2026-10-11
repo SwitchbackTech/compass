@@ -75,6 +75,8 @@ interface Props {
   panelClassName?: string;
   /** When true, applies dismiss-transition `data-closing` styles before unmount */
   closing?: boolean;
+  /** Bubbled keydown from the backdrop (dialog shell or any focused descendant). */
+  onKeyDown?: (e: React.KeyboardEvent) => void;
 }
 
 export const OverlayPanel = ({
@@ -98,6 +100,7 @@ export const OverlayPanel = ({
   panelClassName,
   closing = false,
   anchor = "center",
+  onKeyDown,
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -117,7 +120,9 @@ export const OverlayPanel = ({
     if (!panel) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const [firstFocusable] = getFocusableElements(panel);
-    const initialFocus = initialFocusRef?.current ?? firstFocusable ?? panel;
+    const backdrop = panel.parentElement;
+    const initialFocus =
+      initialFocusRef?.current ?? firstFocusable ?? backdrop ?? panel;
     initialFocus.focus();
     return () => {
       // Read at unmount so callers can suppress restore for dialog handoffs.
@@ -143,7 +148,7 @@ export const OverlayPanel = ({
     align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
       widthClassName,
-      "max-h-[90vh] max-w-[90vw] overflow-hidden rounded-xl will-change-transform",
+      "max-h-[90vh] max-w-[90vw] overflow-hidden rounded-xl outline-none will-change-transform",
       "transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none",
       panelClassName ??
         "gap-6 bg-surface-panel shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
@@ -194,6 +199,7 @@ export const OverlayPanel = ({
       onModEnter();
       return;
     }
+    onKeyDown?.(e);
     if (e.key !== "Tab" || !panelRef.current) return;
     const focusables = getFocusableElements(panelRef.current);
     if (focusables.length === 0) return;

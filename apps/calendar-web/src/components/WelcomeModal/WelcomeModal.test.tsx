@@ -294,6 +294,33 @@ describe("WelcomeModal", () => {
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
+  it("advances with Enter after clicking non-button modal content", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    const dialog = screen.getByRole("dialog", WELCOME_DIALOG);
+    await user.click(
+      screen.getByRole("heading", { name: "The Keyboard Calendar" }),
+    );
+    expect(dialog).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Step 2 of 3")).toBeTruthy();
+  });
+
+  it("does not advance with Enter when Log in is focused", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.tab({ shift: true });
+    const logIn = screen.getByRole("button", { name: "Log in" });
+    expect(logIn).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(screen.getByText("Step 1 of 3")).toBeTruthy();
+  });
+
   it("advances with Enter or a click, and Escape steps back", async () => {
     const user = userEvent.setup();
     render(<WelcomeModal />);
