@@ -112,7 +112,7 @@ const pressShortcut = async (
 export const pressModEnterOnFocusedElement = async (page: Page) => {
   await page.evaluate(() => {
     const isMac = navigator.platform.toLowerCase().includes("mac");
-    const target = document.activeElement ?? document;
+    const target = (document.activeElement ?? document) as Element;
     target
       .closest(".c-time-picker")
       ?.dispatchEvent(
