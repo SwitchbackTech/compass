@@ -317,11 +317,26 @@ export async function ensurePreviewLoopForRecipient(
     normalized,
     latestGeneration,
   );
-  if (generation.hasQueuedRows || !generation.isComplete) {
+  if (generation.isStale) {
+    // Rows from a retired step list can sit queued for days (their sendAt is
+    // still in the future). Retire them now so the new sequence starts fresh.
+    await mongoService.emailSend.updateMany(
+      previewLoopRecipientFilter(normalized, {
+        previewLoopGeneration: latestGeneration,
+        status: "queued",
+      }),
+      {
+        $set: {
+          status: "skipped",
+          lastError: "Retired welcome step list",
+          updatedAt: now,
+        },
+      },
+    );
+    await enqueuePreviewLoopGeneration(normalized, latestGeneration + 1, now);
     return;
   }
-  if (generation.isStale) {
-    await enqueuePreviewLoopGeneration(normalized, latestGeneration + 1, now);
+  if (generation.hasQueuedRows || !generation.isComplete) {
     return;
   }
   if (!generation.lastSentAt) {
