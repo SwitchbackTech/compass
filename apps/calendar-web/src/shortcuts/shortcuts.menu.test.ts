@@ -245,13 +245,13 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus month picker" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["h"], label: "Toggle event jump keys" },
+        { keys: ["f"], label: "Flash jump keys" },
         {
           keys: ["Shift", "m"],
           label:
             "Focus a day's events (Shift + M T W R F, Shift + S then U or A)",
         },
-        { keys: ["f"], label: "Focus latest notice" },
+        { keys: ["p"], label: "Focus latest notice" },
         {
           keys: ["1-9"],
           label: "Show or hide a calendar by number (in the focused list)",
@@ -268,13 +268,13 @@ describe("shortcut menu sections", () => {
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus month picker" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["h"], label: "Toggle event jump keys" },
+        { keys: ["f"], label: "Flash jump keys" },
         {
           keys: ["Shift", "m"],
           label:
             "Focus a day's events (Shift + M T W R F, Shift + S then U or A)",
         },
-        { keys: ["f"], label: "Focus latest notice" },
+        { keys: ["p"], label: "Focus latest notice" },
         {
           keys: ["1-9"],
           label: "Show or hide a calendar by number (in the focused list)",

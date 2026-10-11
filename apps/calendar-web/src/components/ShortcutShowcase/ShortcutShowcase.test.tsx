@@ -77,7 +77,7 @@ const playWinningRun = async () => {
   pressKey("?", { shiftKey: true });
   pressKey("Escape");
   // jump-to-kickoff: reveal jump letters, take the kickoff one
-  pressKey("h");
+  pressKey("f");
   pressKey("s");
   // page-jump-peek: hold Mod for the reveal, then Mod+1
   await holdModForReveal();
@@ -199,7 +199,7 @@ describe("ShortcutShowcase", () => {
     for (let i = 0; i < 7; i += 1) pressKey("Escape");
     expect(screen.getByText("Fly across the board")).toBeTruthy();
     expect(screen.getByText("A")).toBeTruthy();
-    pressKey("h");
+    pressKey("f");
     // The chips on the blocks join the one already on the card.
     expect(screen.getAllByText("A").length).toBe(2);
 

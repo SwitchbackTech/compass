@@ -102,8 +102,8 @@ const clearTheQueue = async (page: Page) => {
   await page.keyboard.press("Escape");
   await expect(showcase).toContainText("Task 8/11");
 
-  // jump-to-kickoff: H reveals jump letters, S is on Team kickoff.
-  await page.keyboard.press("h");
+  // jump-to-kickoff: F reveals jump letters, S is on Team kickoff.
+  await page.keyboard.press("f");
   await page.keyboard.press("s");
   await expect(showcase).toContainText("Task 9/11");
 

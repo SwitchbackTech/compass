@@ -114,7 +114,7 @@ Welcome → signup → first-event contract:
 - the Shortcut Showcase is **Block Party**: a practice-only game whose state
   never reaches real calendar storage. A run clears a fixed queue of
   scheduling tasks (create, typed quick-times, nudge, edge resize, delete,
-  undo, plus discovery beats for the `?` legend, `H` event jump, Mod-hold
+  undo, plus discovery beats for the `?` legend, `F` flash jump keys, Mod-hold
   page jump, and `Mod+K` palette, all simulated inside the arena) against a
   ghost target slot, with scoring and streaks; task keycaps derive from the
   application's keymap and the exact next key pulses on the task card. The

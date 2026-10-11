@@ -62,7 +62,7 @@ extension NativeCalendarRootModel {
         }
         if event.modifiers.isEmpty, case .character(let char) = event.key {
             if char == "c" { return .create }
-            if char == "h" { return .jump }
+            if char == "f" { return .jump }
             if char == "?" { return .legend }
             if char.isNumber { return .digit(String(char)) }
             if char.isLetter { return .letter(String(char)) }

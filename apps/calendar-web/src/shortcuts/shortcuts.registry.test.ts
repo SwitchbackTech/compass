@@ -99,7 +99,7 @@ describe("shortcuts.registry", () => {
         week.map((shortcut) => [shortcut.id, shortcut]),
       );
 
-      expect(byId["focus-notice"]?.keys).toEqual(["f"]);
+      expect(byId["focus-notice"]?.keys).toEqual(["p"]);
       expect(byId["edit-menu"]?.keys).toEqual(["m"]);
       expect(byId["edit-menu"]?.label).toBe("Open event menu");
       expect(byId["edit-hide"]?.keys).toEqual(["x"]);
@@ -119,7 +119,7 @@ describe("shortcuts.registry", () => {
       }
     });
 
-    it("lists h event jump toggle in day and week focus sections", () => {
+    it("lists f flash jump keys toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
           view,

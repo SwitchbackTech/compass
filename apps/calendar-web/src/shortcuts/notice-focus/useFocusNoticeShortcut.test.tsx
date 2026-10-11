@@ -10,10 +10,10 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 // Real keydowns target the focused element; isEditableKeyboardTarget reads
 // event.target, so dispatch from wherever focus is.
-const pressF = () => {
+const pressP = () => {
   (document.activeElement ?? document).dispatchEvent(
     new KeyboardEvent("keydown", {
-      key: "f",
+      key: "p",
       bubbles: true,
       cancelable: true,
     }),
@@ -44,18 +44,18 @@ describe("useFocusNoticeShortcut", () => {
     document.body.innerHTML = "";
   });
 
-  it("focuses the first notice action on f and cycles on repeat", () => {
+  it("focuses the first notice action on p and cycles on repeat", () => {
     renderHook(() => useFocusNoticeShortcut());
     const first = addNotice("notice-1", "Sign up");
     const second = addNotice("notice-2", "Switch");
 
-    pressF();
+    pressP();
     expect(document.activeElement).toBe(first.button);
 
-    pressF();
+    pressP();
     expect(document.activeElement).toBe(second.button);
 
-    pressF();
+    pressP();
     expect(document.activeElement).toBe(first.button);
   });
 
@@ -63,7 +63,7 @@ describe("useFocusNoticeShortcut", () => {
     renderHook(() => useFocusNoticeShortcut());
     const before = document.activeElement;
 
-    pressF();
+    pressP();
     expect(document.activeElement).toBe(before);
   });
 
@@ -74,17 +74,17 @@ describe("useFocusNoticeShortcut", () => {
     const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();
-    pressF();
+    pressP();
     expect(document.activeElement).toBe(input);
 
     input.blur();
     setAppLockReason("commandPalette", true);
-    pressF();
+    pressP();
     expect(document.activeElement).not.toBe(button);
     clearAppLockReasons();
 
     eventJumpActions.setActive(true);
-    pressF();
+    pressP();
     expect(document.activeElement).not.toBe(button);
   });
 });

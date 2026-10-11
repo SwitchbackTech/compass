@@ -276,7 +276,7 @@ describe("useDayEventNudgeShortcuts", () => {
     const { rendered } = renderEditShortcuts();
 
     act(() => {
-      pressKey("h");
+      pressKey("f");
     });
 
     // Compare ids, never the nodes: a failed toEqual on a jsdom element

@@ -1,5 +1,5 @@
 /**
- * Pure-ish DOM queries behind the `f` focus-notice shortcut. Notices are
+ * Pure-ish DOM queries behind the `p` focus-notice shortcut. Notices are
  * elements marked `data-notice`: action toasts and banners. There is no
  * registry or store - the DOM is the source of truth for what is on screen.
  */

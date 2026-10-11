@@ -194,15 +194,15 @@ final class KeyboardEngineTests: XCTestCase {
     func testEventJumpHoldReusesHoldEngine() {
         let timer = DispatchTimer()
         var digits: [Character] = []
-        let holdH = HoldModifierDetectorFactory.eventJumpHold(timer: timer) { digit in
+        let holdF = HoldModifierDetectorFactory.eventJumpHold(timer: timer) { digit in
             digits.append(digit)
         }
 
-        _ = holdH.handleKeyDown(KeyEvent(character: "h"))
-        holdH.advanceTime(by: 0.25)
-        XCTAssertEqual(holdH.phase, .hintsVisible)
+        _ = holdF.handleKeyDown(KeyEvent(character: "f"))
+        holdF.advanceTime(by: 0.25)
+        XCTAssertEqual(holdF.phase, .hintsVisible)
 
-        _ = holdH.handleKeyDown(KeyEvent(character: "2"))
+        _ = holdF.handleKeyDown(KeyEvent(character: "2"))
         XCTAssertEqual(digits, ["2"])
     }
 

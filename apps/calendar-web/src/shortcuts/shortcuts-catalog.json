@@ -135,7 +135,7 @@
       {
         "id": "create-typed-time",
         "keys": ["1130"],
-        "label": "Create draft at a typed time (press H to see open slots)",
+        "label": "Create draft at a typed time (press F to see open slots)",
         "section": "create",
         "requiresWrite": true
       },
@@ -165,8 +165,8 @@
       },
       {
         "id": "focus-shift-hold",
-        "keys": ["h"],
-        "label": "Toggle event jump keys",
+        "keys": ["f"],
+        "label": "Flash jump keys",
         "section": "focus"
       },
       {
@@ -177,7 +177,7 @@
       },
       {
         "id": "focus-notice",
-        "keys": ["f"],
+        "keys": ["p"],
         "label": "Focus latest notice",
         "section": "focus"
       },

@@ -67,7 +67,7 @@ const blurActive = (page: CalendarPage) =>
     }
   });
 
-test("tap h shows day-prefix jump keys and focuses the assigned event", async ({
+test("tap f shows day-prefix jump keys and focuses the assigned event", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -96,7 +96,7 @@ test("tap h shows day-prefix jump keys and focuses the assigned event", async ({
     .getByRole("button", { name: secondTitle });
 
   await blurActive(page);
-  await page.keyboard.press("h");
+  await page.keyboard.press("f");
 
   const overlay = shiftHintOverlay(page);
   await expect(overlay.locator(":scope > span")).toHaveCount(3);
@@ -128,7 +128,7 @@ test("tap h shows day-prefix jump keys and focuses the assigned event", async ({
   await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
-test("Shift and the day letter focuses an event without first pressing h", async ({
+test("Shift and the day letter focuses an event without first pressing f", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

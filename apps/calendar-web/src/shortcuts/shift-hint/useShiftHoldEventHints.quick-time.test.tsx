@@ -183,7 +183,7 @@ describe("typed-time ownership", () => {
     const { createAt, type } = mountOwner();
 
     type(["1", "1"]);
-    const event = dispatch(keydown("h"));
+    const event = dispatch(keydown("f"));
 
     expect(event.defaultPrevented).toBe(true);
     expect(createAt).not.toHaveBeenCalled();
@@ -306,7 +306,7 @@ describe("typed-time ownership", () => {
 
   it("keeps digit precedence while event jump is active with no day prefix", () => {
     mountOwner();
-    dispatch(keydown("h"));
+    dispatch(keydown("f"));
 
     const event = dispatch(digit("1"));
 
@@ -433,7 +433,7 @@ describe("typed-time deferred commit", () => {
       );
     });
 
-    it("still toggles jump off with h after a half-typed column time", () => {
+    it("still toggles jump off with f after a half-typed column time", () => {
       const { createAt, type } = mountColumn();
 
       act(() => {
@@ -443,7 +443,7 @@ describe("typed-time deferred commit", () => {
           }),
         );
         type(["9"]);
-        dispatch(keydown("h"));
+        dispatch(keydown("f"));
       });
 
       expect(createAt).not.toHaveBeenCalled();

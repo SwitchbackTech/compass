@@ -6,7 +6,7 @@ public enum HoldModifierPhase: Equatable, Sendable {
     case hintsVisible
 }
 
-/// Hold-to-reveal chips for Mod page jumps and hold-H event jumps.
+/// Hold-to-reveal chips for Mod page jumps and hold-F flash jump keys.
 public final class HoldModifierDetector: @unchecked Sendable {
     public static let defaultHoldMs: TimeInterval = 0.25
 
@@ -114,7 +114,7 @@ public enum HoldModifierDetectorFactory {
         onDigitDuringHold: @escaping (Character) -> Void
     ) -> HoldModifierDetector {
         HoldModifierDetector(
-            holdKey: .character("h"),
+            holdKey: .character("f"),
             timer: timer,
             onDigitDuringHold: onDigitDuringHold)
     }
