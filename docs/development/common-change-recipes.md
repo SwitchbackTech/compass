@@ -82,11 +82,11 @@ consistent.
    - day/week view keys: `apps/calendar-web/src/grid/shortcuts/useCalendarViewShortcuts.ts`
      (behavior in `useWeekShortcutOwner.ts` / `DayCalendarGrid.tsx`)
    - shared grid edit/focus: `apps/calendar-web/src/grid/shortcuts/`
-   - event jump (`H`): `apps/calendar-web/src/shortcuts/shift-hint/`
+   - event jump (`F`): `apps/calendar-web/src/shortcuts/shift-hint/`
    - Pointer suppression (mouse permanently inert): `apps/calendar-web/src/shortcuts/keyboard-only/`
 4. Respect `app-lock`, `escape-ownership`, and “do not fire while typing in
    inputs” (use the existing `useAppShortcut` helpers; do not attach bare
-   `window` listeners for new app shortcuts). Bare-letter shortcuts (`H`, `F`,
+   `window` listeners for new app shortcuts). Bare-letter shortcuts (`F`, `P`,
    `M`, `E`…) must yield to an armed edit sequence.
 5. Add or update registry/data tests and the owning hook tests. Update
    [Shortcuts acceptance](../acceptance/shortcuts.md) when user-visible

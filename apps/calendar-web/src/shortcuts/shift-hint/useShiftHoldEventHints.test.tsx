@@ -125,7 +125,7 @@ describe("useShiftHoldEventHints", () => {
     return { focus, result, elements, ids };
   };
 
-  it("toggles hints on h and focuses via day prefix", () => {
+  it("toggles hints on f and focuses via day prefix", () => {
     const { focus, result, elements } = mountHints();
 
     act(() => {
@@ -380,7 +380,7 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-04"]);
   });
 
-  it("leaves bare f to notice focus while a notice is visible", () => {
+  it("leaves bare p to notice focus while a notice is visible", () => {
     const { focus } = mountHints([
       timedFixture(EVENT_A, "2026-08-07T09:00:00.000Z"),
     ]);
@@ -395,7 +395,7 @@ describe("useShiftHoldEventHints", () => {
       bubbles: true,
       cancelable: true,
       composed: true,
-      key: "f",
+      key: "p",
     });
     act(() => {
       document.dispatchEvent(event);
@@ -783,7 +783,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("toggles off with a second h", () => {
+  it("toggles off with a second f", () => {
     const { result } = mountHints();
 
     act(() => {

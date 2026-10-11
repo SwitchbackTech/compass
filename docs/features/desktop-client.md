@@ -158,7 +158,7 @@ feeds `ShortcutDispatcher` in CompassKit. It holds a scope stack
 (`modal > form > grid > global`), gates bare letters when a text field is
 first responder, runs the `e` leader state machine (armed with a timeout,
 drives the which-key panel), and a hold-modifier detector (Mod held shows
-page-jump chips, hold-H shows event-jump chips). Bindings come only from the
+page-jump chips, hold-F shows event-jump chips). Bindings come only from the
 generated `shortcuts.json`; a test asserts that the set of handler ids equals
 the registry ids. Rules: `docs/frontend/shortcut-commandments.md`.
 

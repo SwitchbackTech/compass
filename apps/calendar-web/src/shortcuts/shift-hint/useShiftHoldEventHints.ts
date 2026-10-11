@@ -90,7 +90,7 @@ const focusedColumnDay = (): Dayjs | null => {
 
 /**
  * Day columns are entered with Shift so they never race the bare-letter
- * commands they used to lose to (`t` today, `f` notice focus, `m` event menu).
+ * commands they used to lose to (`t` today, `p` notice focus, `m` event menu).
  */
 const isShiftedSingleChar = (event: KeyboardEvent) => {
   const key = keyboardKey(event);
@@ -394,7 +394,7 @@ export function useShiftHoldEventHints({
     };
 
     // Activates even with nothing to label: the quick-time slot placeholders
-    // are the whole point of `h` on an empty day.
+    // are the whole point of `f` on an empty day.
     const activate = () => {
       if (isAppLocked()) return;
       const assignments = rebuildAssignments();
@@ -600,6 +600,18 @@ export function useShiftHoldEventHints({
       }
 
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
+        deactivate();
+        return;
+      }
+
+      // The flash letter is also Friday's day prefix; bare F toggles off instead
+      // of jumping to Friday (Shift+F still enters Friday from idle).
+      if (
+        isBareLetterKey(event, KEYMAP.eventJump.bareLetter) &&
+        !isShiftedSingleChar(event)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
         deactivate();
         return;
       }

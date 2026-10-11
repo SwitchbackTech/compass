@@ -26,7 +26,7 @@ describe("getHintPlainText", () => {
     expect(plainTextById["create-event"]).toBe("C creates an event");
     expect(plainTextById["page-jump"]).toBe(`Hold ${mod} to see jump targets`);
     expect(plainTextById["event-jump"]).toBe(
-      "H shows event and open-time shortcuts",
+      "F shows event and open-time shortcuts",
     );
     expect(plainTextById["week-day-focus"]).toBe("Shift+M jumps to Monday");
     expect(plainTextById.nudge).toBe("Shift and an arrow moves the event");

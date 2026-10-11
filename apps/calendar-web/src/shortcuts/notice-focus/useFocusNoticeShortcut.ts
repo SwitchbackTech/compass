@@ -14,7 +14,7 @@ export { FOCUS_NOTICE_LETTER };
  * activates, Escape dismisses toasts (useEscapeToDismissToast).
  *
  * Stands down with the other bare letters: app-locked, typing, an `e`…
- * sequence armed, or event jump chips owning letters (`f` is a jump key for
+ * sequence armed, or event jump chips owning letters (`p` can be a jump key for
  * Friday).
  */
 export function useFocusNoticeShortcut() {

@@ -222,7 +222,7 @@
       "keys": [
         "1130"
       ],
-      "label": "Create draft at a typed time (press H to see open slots)",
+      "label": "Create draft at a typed time (press F to see open slots)",
       "section": "create",
       "requiresWrite": true
     },
@@ -253,9 +253,9 @@
     {
       "id": "focus-shift-hold",
       "keys": [
-        "h"
+        "f"
       ],
-      "label": "Toggle event jump keys",
+      "label": "Flash jump keys",
       "section": "focus"
     },
     {
@@ -270,7 +270,7 @@
     {
       "id": "focus-notice",
       "keys": [
-        "f"
+        "p"
       ],
       "label": "Focus latest notice",
       "section": "focus"
@@ -868,14 +868,14 @@
       "u"
     ],
     "focus-shift-hold": [
-      "h"
+      "f"
     ],
     "focus-week-day": [
       "Shift",
       "m"
     ],
     "focus-notice": [
-      "f"
+      "p"
     ],
     "focus-calendar-digit": [
       "1-9"
@@ -1081,9 +1081,9 @@
       ]
     },
     "eventJump": {
-      "bareLetter": "h",
+      "bareLetter": "f",
       "keycaps": [
-        "H"
+        "F"
       ]
     },
     "moveEvent": {

@@ -242,7 +242,7 @@ final class NativeGridKeyboardRouter {
             return false
         }
 
-        if case .character(let char) = keyEvent.key, char == "h", keyEvent.modifiers.isEmpty {
+        if case .character(let char) = keyEvent.key, char == "f", keyEvent.modifiers.isEmpty {
             eventJumpHold.handleModifierDown(isRepeat: keyEvent.isRepeat)
             if !keyEvent.isRepeat {
                 Task { @MainActor [weak self] in

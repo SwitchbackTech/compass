@@ -57,7 +57,7 @@ const canHandleNoticeAction = (event: KeyboardEvent) =>
 /**
  * Runs a mounted notice CTA (banner or toast) from a bare key. Yields to
  * typing, app-lock, event-jump, and an armed `e`… sequence — the same
- * stand-down as toast `S` and focus-notice `f`.
+ * stand-down as toast `S` and focus-notice `p`.
  */
 export function useNoticeActionShortcut(
   key: NoticeActionKey | undefined,

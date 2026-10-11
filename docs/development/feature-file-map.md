@@ -160,7 +160,7 @@ Product rules (hold-Mod discovery, "chip the field", typing always types):
 - Sidebar tip progress (demonstrated primitives): `apps/calendar-web/src/shortcuts/tips/shortcut-tips.progress.store.ts`
 - Sidebar tip mute (`compass.shortcuts.tips-muted`): `apps/calendar-web/src/shortcuts/tips/shortcut-tips-muted.store.ts`, `ShortcutTipIndicator.tsx`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `apps/calendar-web/src/shortcuts/useGlobalShortcuts.ts`
-- Event-jump chips (`H`): `apps/calendar-web/src/shortcuts/shift-hint/`
+- Event-jump chips (`F`): `apps/calendar-web/src/shortcuts/shift-hint/`
 - Hide/show focused event (`x`): `apps/calendar-web/src/shortcuts/hide-event/useHideEventShortcut.ts`
 - Palette pointer-hint store and grid bridge: `apps/calendar-web/src/shortcuts/keyboard-only/`
 - Pointer intent (grid tracker, teach policy, chrome pulse): `apps/calendar-web/src/views/Week/pointer-intent/`, `apps/calendar-web/src/shortcuts/pointer-intent/`, `apps/calendar-web/src/shortcuts/context-menu/context-menu-pointer-hint.ts`; product rules in [Contextual Pointer Guidance](../frontend/contextual-pointer-guidance.md)

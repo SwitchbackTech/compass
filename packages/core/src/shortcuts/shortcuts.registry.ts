@@ -181,7 +181,7 @@ export const SHORTCUTS_REGISTRY = [
   {
     id: "create-typed-time",
     keys: ["1130"],
-    label: "Create draft at a typed time (press H to see open slots)",
+    label: "Create draft at a typed time (press F to see open slots)",
     section: "create",
     requiresWrite: true,
   },
@@ -208,7 +208,7 @@ export const SHORTCUTS_REGISTRY = [
   {
     id: "focus-shift-hold",
     keys: [KEYMAP.eventJump.bareLetter],
-    label: "Toggle event jump keys",
+    label: "Flash jump keys",
     section: "focus",
   },
   {

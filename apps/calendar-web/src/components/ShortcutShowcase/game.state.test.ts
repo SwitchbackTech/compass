@@ -397,7 +397,7 @@ describe("keycap progress", () => {
     expect(getNextKeycapIndex(task, state)).toBe(1);
   });
 
-  it("shows the jump target's live letter on the card and pulses it after H", () => {
+  it("shows the jump target's live letter on the card and pulses it after F", () => {
     let state = playKeys(
       startRun(createInitialGameState(), T0),
       WINNING_SCRIPT.slice(0, 14),
@@ -408,7 +408,7 @@ describe("keycap progress", () => {
     >;
     expect(task.id).toBe("jump-to-kickoff");
     // The full sequence is on the card up front: H, then kickoff's letter.
-    expect(getDisplayKeycaps(task, state)).toEqual(["H", "S"]);
+    expect(getDisplayKeycaps(task, state)).toEqual(["F", "S"]);
     expect(getNextKeycapIndex(task, state)).toBe(0);
 
     state = handleGameKey(state, key.jump, T0);
