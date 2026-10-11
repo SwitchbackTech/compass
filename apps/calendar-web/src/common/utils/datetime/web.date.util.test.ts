@@ -668,13 +668,21 @@ describe("filterTimeOption", () => {
   const twelveFortyFivePm = { label: "12:45 PM", value: "12:45 PM" };
 
   it("keeps only the parsed time when input parses", () => {
-    expect(filterTimeOption(twoAm, "2", "9:45 AM")).toBe(true);
-    expect(filterTimeOption(twelveAm, "2", "9:45 AM")).toBe(false);
+    expect(filterTimeOption(twoAm, "2", { currentValue: "9:45 AM" })).toBe(
+      true,
+    );
+    expect(filterTimeOption(twelveAm, "2", { currentValue: "9:45 AM" })).toBe(
+      false,
+    );
   });
 
   it("matches glued meridiem like 8p to 8 PM", () => {
-    expect(filterTimeOption(eightPm, "8p", "1:00 PM")).toBe(true);
-    expect(filterTimeOption(twoAm, "8p", "1:00 PM")).toBe(false);
+    expect(filterTimeOption(eightPm, "8p", { currentValue: "1:00 PM" })).toBe(
+      true,
+    );
+    expect(filterTimeOption(twoAm, "8p", { currentValue: "1:00 PM" })).toBe(
+      false,
+    );
   });
 
   it("falls back to substring when input does not parse", () => {
@@ -693,7 +701,11 @@ describe("filterTimeOption", () => {
 
   it("matches digits with a spaced meridiem", () => {
     const fourThirtyAm = { label: "4:30 AM", value: "4:30 AM" };
-    expect(filterTimeOption(fourThirtyAm, "430 am", "5:30 PM")).toBe(true);
+    expect(
+      filterTimeOption(fourThirtyAm, "430 am", {
+        currentValue: "5:30 PM",
+      }),
+    ).toBe(true);
   });
 
   it("shows every option when the filter is empty", () => {

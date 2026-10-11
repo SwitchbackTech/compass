@@ -2,9 +2,6 @@ import {
   DEFAULT_POPUP_REMINDER_MINUTES,
   decodePopupReminderMinutes,
 } from "@core/notifications/google-popup-reminders.util";
-
-export { DEFAULT_POPUP_REMINDER_MINUTES } from "@core/notifications/google-popup-reminders.util";
-
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 /** How far back a visibility catch-up may still fire a missed popup reminder. */

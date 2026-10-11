@@ -212,48 +212,43 @@ async function findLatestPreviewGeneration(
   return row?.previewLoopGeneration ?? null;
 }
 
-async function generationHasQueuedRows(
-  recipientEmail: string,
-  generation: number,
-): Promise<boolean> {
-  const queued = await mongoService.emailSend.findOne(
-    previewLoopRecipientFilter(recipientEmail, {
-      previewLoopGeneration: generation,
-      status: "queued",
-    }),
-  );
-  return queued !== null;
+interface PreviewGenerationState {
+  /** A step is still waiting to send, so the generation is mid-flight. */
+  hasQueuedRows: boolean;
+  /** Every step of the sequence reached a terminal sent / skipped state. */
+  isComplete: boolean;
+  lastSentAt: Date | null;
 }
 
-async function generationIsComplete(
+/**
+ * One read of the generation's rows answers every question the loop asks of
+ * it. Asking Mongo separately re-read the same handful of documents three
+ * times per recipient per tick.
+ */
+async function readPreviewGenerationState(
   recipientEmail: string,
   generation: number,
-): Promise<boolean> {
+): Promise<PreviewGenerationState> {
   const rows = await mongoService.emailSend
     .find(
       previewLoopRecipientFilter(recipientEmail, {
         previewLoopGeneration: generation,
       }),
+      { projection: { status: 1, sentAt: 1 } },
     )
     .toArray();
-  if (rows.length < WELCOME_SEQUENCE.length) {
-    return false;
-  }
-  return rows.every((row) => row.status === "sent" || row.status === "skipped");
-}
 
-async function lastSentAtForGeneration(
-  recipientEmail: string,
-  generation: number,
-): Promise<Date | null> {
-  const row = await mongoService.emailSend.findOne(
-    previewLoopRecipientFilter(recipientEmail, {
-      previewLoopGeneration: generation,
-      status: "sent",
-    }),
-    { sort: { sentAt: -1 }, projection: { sentAt: 1 } },
+  const sentTimes = rows.flatMap((row) =>
+    row.status === "sent" && row.sentAt ? [row.sentAt.getTime()] : [],
   );
-  return row?.sentAt ?? null;
+
+  return {
+    hasQueuedRows: rows.some((row) => row.status === "queued"),
+    isComplete:
+      rows.length >= WELCOME_SEQUENCE.length &&
+      rows.every((row) => row.status === "sent" || row.status === "skipped"),
+    lastSentAt: sentTimes.length > 0 ? new Date(Math.max(...sentTimes)) : null,
+  };
 }
 
 export async function enqueuePreviewLoopGeneration(
@@ -287,9 +282,10 @@ export async function ensurePreviewLoopForRecipient(
     return;
   }
 
-  const userId = await resolvePreviewLoopUserId(normalized);
+  // The preview user document is upserted with this address, so one lookup by
+  // email is enough to see whether the recipient unsubscribed.
   const user = await mongoService.user.findOne(
-    { _id: userId },
+    { email: normalized },
     { projection: { emailPreferences: 1 } },
   );
   if (user && isEmailSequenceStopped(user.emailPreferences)) {
@@ -302,24 +298,19 @@ export async function ensurePreviewLoopForRecipient(
     return;
   }
 
-  if (await generationHasQueuedRows(normalized, latestGeneration)) {
-    return;
-  }
-
-  if (!(await generationIsComplete(normalized, latestGeneration))) {
-    return;
-  }
-
-  const lastSentAt = await lastSentAtForGeneration(
+  const generation = await readPreviewGenerationState(
     normalized,
     latestGeneration,
   );
-  if (!lastSentAt) {
+  if (generation.hasQueuedRows || !generation.isComplete) {
+    return;
+  }
+  if (!generation.lastSentAt) {
     return;
   }
 
-  const nextStartAt = new Date(lastSentAt.getTime() + previewLoopGapMs());
-  if (now.getTime() < nextStartAt.getTime()) {
+  const nextStartAt = generation.lastSentAt.getTime() + previewLoopGapMs();
+  if (now.getTime() < nextStartAt) {
     return;
   }
 

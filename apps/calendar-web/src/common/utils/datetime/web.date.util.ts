@@ -25,33 +25,20 @@ interface SelectedDates {
   isAllDay: boolean;
 }
 
-export const dateIsValid = (date: string) => {
-  const notNaN = !Number.isNaN(new Date(date).getTime());
+export const dateIsValid = (date: string) =>
+  !Number.isNaN(new Date(date).getTime());
 
-  const isValid = notNaN;
-
-  return isValid;
-};
-
-export const getColorsByHour = (currentHour: number) => {
-  const colors: string[] = [];
-
-  [...(new Array(24) as number[])].map((_, index) => {
-    // CSS variables (not hex) so the labels land in inline styles that
-    // resolve against the active [data-theme].
-    const isCurrentHour = currentHour - 1 === index;
-    const color = isCurrentHour ? "var(--accent)" : "var(--text-muted)";
-
-    colors.push(color);
-
-    return dayjs()
-      .startOf("day")
-      .add(index + 1, "hour")
-      .format(HOURS_AM_SHORT_FORMAT);
-  });
-
-  return colors;
-};
+/**
+ * One color per hour label, accenting the label for the current hour.
+ *
+ * Labels run 1 AM through midnight, so the hour at index `i` is `i + 1` and
+ * `currentHour` matches at `currentHour - 1`. CSS variables (not hex) so the
+ * colors land in inline styles that resolve against the active [data-theme].
+ */
+export const getColorsByHour = (currentHour: number): string[] =>
+  Array.from({ length: 24 }, (_, index) =>
+    currentHour - 1 === index ? "var(--accent)" : "var(--text-muted)",
+  );
 
 export const getDayjsByTimeValue = (timeValue: string) => {
   return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
@@ -61,9 +48,9 @@ export const getHourLabels = (includeMidnight = false) => {
   const day = dayjs().startOf("day");
   const hours = includeMidnight ? 24 : 23;
 
-  return [...(new Array(hours) as number[])].map((_, index) => {
-    return day.add(index + 1, "hour").format(HOURS_AM_SHORT_FORMAT);
-  });
+  return Array.from({ length: hours }, (_, index) =>
+    day.add(index + 1, "hour").format(HOURS_AM_SHORT_FORMAT),
+  );
 };
 
 const getTimeLabel = (value: string) => value.replace(":00", "");
@@ -419,14 +406,11 @@ export const goToDateAnnouncement = (
     : `Showing week of ${date.format("dddd, MMMM D, YYYY")}`;
 
 export const filterTimeOption = (
-  option: { label: string; value: string },
+  option: TimeOption,
   input: string,
-  context?: string | ParseUserTimeOptions,
+  context?: ParseUserTimeOptions,
 ): boolean => {
-  const parsed = parseUserTime(
-    input,
-    typeof context === "string" ? { currentValue: context } : context,
-  );
+  const parsed = parseUserTime(input, context);
   if (parsed) {
     return option.value === parsed.value || option.label === parsed.label;
   }
@@ -591,17 +575,12 @@ export const computeCurrentEventDateRange = (
 ): CompassEvent => {
   const reference = dayjs(weekViewRange.startDate);
 
-  let start: Dayjs;
-  let end: Dayjs;
-
-  if (to.duration === "week") {
-    start = dayjs(weekViewRange.startDate);
-    end = dayjs(weekViewRange.endDate);
-  } else {
-    // duration is month
-    start = reference.startOf("month");
-    end = reference.endOf("month");
-  }
+  // A week is already the range the grid is showing; a month is derived from
+  // the week it contains.
+  const { start, end } =
+    to.duration === "week"
+      ? { start: reference, end: dayjs(weekViewRange.endDate) }
+      : { start: reference.startOf("month"), end: reference.endOf("month") };
 
   return {
     ...event,
@@ -618,36 +597,10 @@ export const computeRelativeEventDateRange = (
   event: CompassEvent,
 ): CompassEvent => {
   const reference = dayjs(event.startDate);
-
-  let start: Dayjs;
-  let end: Dayjs;
-
-  if (to.duration === "week") {
-    // For prev/next, use the provided week range as reference if available
-    const weekRef = reference;
-    start = weekRef.startOf("week");
-    end = weekRef.endOf("week");
-
-    if (to.direction === "prev") {
-      start = start.subtract(1, "week");
-      end = end.subtract(1, "week");
-    } else if (to.direction === "next") {
-      start = start.add(1, "week");
-      end = end.add(1, "week");
-    }
-  } else {
-    // duration is month
-    start = reference.startOf("month");
-    end = reference.endOf("month");
-
-    if (to.direction === "prev") {
-      start = start.subtract(1, "month");
-      end = end.subtract(1, "month");
-    } else if (to.direction === "next") {
-      start = start.add(1, "month");
-      end = end.add(1, "month");
-    }
-  }
+  const unit = to.duration;
+  const shift = to.direction === "prev" ? -1 : 1;
+  const start = reference.startOf(unit).add(shift, unit);
+  const end = reference.endOf(unit).add(shift, unit);
 
   return {
     ...event,
