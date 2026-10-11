@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useId, useRef } from "react";
+import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -11,6 +12,7 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
+import { TIME_PICKER_COMMIT_DRAFT_EVENT } from "./timePickerCommitDraft";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   complementaryTime?: string;
@@ -156,6 +158,26 @@ export const TimePicker = ({
     if (option) _onChange(option);
   };
 
+  const commitFocusedOptionRef = useRef(commitFocusedOption);
+  commitFocusedOptionRef.current = commitFocusedOption;
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const onCommitDraft = () => {
+      flushSync(() => {
+        commitFocusedOptionRef.current();
+      });
+      setIsMenuOpen(false);
+    };
+
+    root.addEventListener(TIME_PICKER_COMMIT_DRAFT_EVENT, onCommitDraft);
+    return () => {
+      root.removeEventListener(TIME_PICKER_COMMIT_DRAFT_EVENT, onCommitDraft);
+    };
+  }, [setIsMenuOpen]);
+
   // Jump ids live on this visible wrapper. react-select's dummy input is
   // often 2px (hidden behind the selected value), which fails the hold-Mod
   // hint-chip visibility check. `inputId` without a separate `id` is the
@@ -193,11 +215,6 @@ export const TimePicker = ({
         }}
         onKeyDown={(e) => {
           const key = e.key;
-          const isModEnter =
-            key === "Enter" &&
-            (e.metaKey || e.ctrlKey) &&
-            !e.nativeEvent.isComposing;
-
           if (MENU_NAV_KEYS.has(key)) {
             userAdjustedRef.current = true;
           }
@@ -207,12 +224,6 @@ export const TimePicker = ({
             key === "Backspace"
           ) {
             e.stopPropagation();
-          }
-
-          if (isModEnter) {
-            commitFocusedOption();
-            setIsMenuOpen(false);
-            return;
           }
 
           if (key === "Enter" && !e.nativeEvent.isComposing) {

@@ -33,7 +33,7 @@ test("Mod+Enter from the start time picker commits a typed time and saves", asyn
   await expectTimedEventVisible(page, title);
 
   const [saved] = await getSavedEventsByTitle(page, title);
-  expect(saved?.startDate).toContain("T12:45:00");
+  expect(saved?.startDate).toMatch(/T00:45:00/);
 });
 
 test("Mod+Enter from the end time picker commits a typed time and saves", async ({

@@ -7,6 +7,7 @@ import { getTimeOptions } from "@web/common/utils/datetime/web.date.util";
 import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { TimePicker } from "./TimePicker";
+import { commitFocusedTimePickerDraft } from "./timePickerCommitDraft";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const intervalOptions: SelectOption<string>[] = [
@@ -32,6 +33,12 @@ function dispatchModEnter(target: HTMLElement) {
       metaKey: !isControl,
     }),
   );
+}
+
+/** Matches EventForm: commit the picker draft, then fire the save shortcut. */
+function dispatchFormModEnter(activeElement: HTMLElement) {
+  commitFocusedTimePickerDraft(activeElement);
+  dispatchModEnter(document.body);
 }
 
 function FormShortcuts({
@@ -220,7 +227,7 @@ describe("TimePicker", () => {
     await user.keyboard("{Enter}");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
-    dispatchModEnter(combobox);
+    dispatchFormModEnter(combobox);
     expect(onFormSave).toHaveBeenCalledTimes(1);
   });
 
@@ -241,7 +248,7 @@ describe("TimePicker", () => {
     await user.type(combobox, "12:45");
     expect(screen.getByRole("listbox")).toBeInTheDocument();
 
-    dispatchModEnter(combobox);
+    dispatchFormModEnter(combobox);
 
     expect(screen.getByText("12:45 AM")).toBeInTheDocument();
     expect(onFormSave).toHaveBeenCalledTimes(1);

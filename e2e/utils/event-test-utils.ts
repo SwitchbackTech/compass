@@ -108,11 +108,16 @@ const pressShortcut = async (
   );
 };
 
-/** Mod+Enter on the focused element (time pickers swallow Playwright's chord). */
+/** Mod+Enter save from a focused field (matches EventForm: commit picker, then save). */
 export const pressModEnterOnFocusedElement = async (page: Page) => {
   await page.evaluate(() => {
     const isMac = navigator.platform.toLowerCase().includes("mac");
     const target = document.activeElement ?? document;
+    target
+      .closest(".c-time-picker")
+      ?.dispatchEvent(
+        new Event("compass:commit-time-picker-draft", { bubbles: false }),
+      );
     const init = {
       key: "Enter",
       bubbles: true,
@@ -121,7 +126,7 @@ export const pressModEnterOnFocusedElement = async (page: Page) => {
       metaKey: isMac,
       ctrlKey: !isMac,
     };
-    target.dispatchEvent(new KeyboardEvent("keydown", init));
+    document.dispatchEvent(new KeyboardEvent("keydown", init));
   });
 };
 

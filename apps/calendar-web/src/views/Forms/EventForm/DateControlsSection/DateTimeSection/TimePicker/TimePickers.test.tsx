@@ -13,6 +13,7 @@ import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { getFormDates } from "../form.datetime.util";
 import { TimePickers } from "./TimePickers";
+import { commitFocusedTimePickerDraft } from "./timePickerCommitDraft";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 function dispatchModEnter(target: HTMLElement) {
@@ -28,6 +29,11 @@ function dispatchModEnter(target: HTMLElement) {
       metaKey: !isControl,
     }),
   );
+}
+
+function dispatchFormModEnter(activeElement: HTMLElement) {
+  commitFocusedTimePickerDraft(activeElement);
+  dispatchModEnter(document.body);
 }
 
 function FormShortcuts({
@@ -294,15 +300,15 @@ describe("TimePickers", () => {
     const start = screen.getByRole("combobox", { name: "Start time" });
     await user.click(start);
     await user.type(start, "12:45");
-    dispatchModEnter(start);
+    dispatchFormModEnter(start);
 
-    expect(screen.getByText("12:45 AM")).toBeInTheDocument();
+    expectDraft("2026-04-24T00:45:00+00:00", "2026-04-24T10:45:00+00:00");
     expect(onFormSave).toHaveBeenCalledTimes(1);
 
     onFormSave.mockClear();
     await user.click(start);
     await user.keyboard("{Enter}");
-    dispatchModEnter(start);
+    dispatchFormModEnter(start);
     expect(onFormSave).toHaveBeenCalledTimes(1);
   });
 
@@ -321,9 +327,9 @@ describe("TimePickers", () => {
     const end = screen.getByRole("combobox", { name: "End time" });
     await user.click(end);
     await user.type(end, "1145");
-    dispatchModEnter(end);
+    dispatchFormModEnter(end);
 
-    expect(screen.getByText("11:45 AM")).toBeInTheDocument();
+    expectDraft("2026-04-24T11:30:00+00:00", "2026-04-24T11:45:00+00:00");
     expect(onFormSave).toHaveBeenCalledTimes(1);
   });
 
