@@ -16,8 +16,17 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { formCardFieldTextStartX } from "@web/views/Forms/EventForm/FormCardIconRow";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+/** Visible text start (placeholder or value) for layout parity. */
+function formCardFieldTextStartX(field: HTMLElement): number {
+  const rect = field.getBoundingClientRect();
+  const style = getComputedStyle(field);
+  const pad =
+    Number.parseFloat(style.paddingLeft) +
+    Number.parseFloat(style.textIndent || "0");
+  return rect.left + pad;
+}
 
 const makeCalendar = (): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
