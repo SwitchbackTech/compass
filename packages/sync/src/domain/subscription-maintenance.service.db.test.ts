@@ -234,6 +234,43 @@ describe("maintainSubscription", () => {
     // Only push receipt, not a pending change: nothing is owed to a pull.
     expect(saved?.changeNotifiedAt).toBeNull();
   });
+  it("preserves pushLastReceivedAt when renewing a channel", async () => {
+    const cal = calendar(objectId());
+    const priorPushAt = new Date("2026-07-01T12:00:00.000Z");
+    const resource = await seedResource(cal, {
+      expiresAt: new Date("2026-07-10T01:00:00.000Z"),
+    });
+    await resources.updateSubscription(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      {
+        subscriptionId: "old-channel",
+        subscriptionResourceId: "old-resource",
+        subscriptionToken: "old-token",
+        subscriptionExpiresAt: new Date("2026-07-10T01:00:00.000Z"),
+        pushLastReceivedAt: priorPushAt,
+      },
+    );
+    const notifications = new FakeNotifications({
+      channel: {
+        channelId: "",
+        resourceId: "res-renewed",
+        expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+      },
+    });
+
+    await maintainSubscription(
+      maintenanceDeps(notifications),
+      cal,
+      resource,
+      now,
+    );
+
+    const saved = await reload(resource);
+    expect(saved?.pushLastReceivedAt).toEqual(priorPushAt);
+  });
+
   it("renews and stops the old channel when it is near expiry", async () => {
     const cal = calendar(objectId());
     // Expires in 1 hour: inside the default 24h renew window.

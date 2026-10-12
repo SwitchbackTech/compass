@@ -201,6 +201,23 @@ describe("POST /sync/notifications/google", () => {
     expect(await jobCount(`incrementalPull:${resourceId}`)).toBe(0);
   });
 
+  it("records push delivery on the initial sync handshake without a change marker", async () => {
+    const { _id: resourceId } = await seedSubscription();
+    await startService();
+
+    const res = await post(
+      NOTIFICATIONS_PATH,
+      googHeaders({ "x-goog-resource-state": "sync" }),
+    );
+
+    expect(res.status).toBe(200);
+    const stored = await mongo.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne(stringIdFilter(resourceId));
+    expect(stored?.["changeNotifiedAt"]).toBeNull();
+    expect(stored?.["pushLastReceivedAt"]).toBeInstanceOf(Date);
+  });
+
   it("rejects a spoofed token: accepts the request but enqueues nothing", async () => {
     const { _id: resourceId } = await seedSubscription();
     await startService();

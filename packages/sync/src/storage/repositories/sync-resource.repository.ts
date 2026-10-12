@@ -308,6 +308,18 @@ export class SyncResourceRepository {
     });
   }
 
+  // Record that the provider reached this push endpoint without implying a
+  // calendar change (Google's post-watch `sync` handshake). Does not enqueue a
+  // pull and does not touch changeNotifiedAt.
+  async markPushReceived(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
+    await this.#patch(tenantId, principalId, id, { pushLastReceivedAt: at });
+  }
+
   // Clear the change marker a pull has now served, but only if it still holds
   // `expected` — the value read when that pull started. Returns false when the
   // marker moved mid-pull, meaning a notification arrived after the pull had

@@ -424,13 +424,13 @@ function buildHealthSnapshotSweep(
         // very deploy that FIXED this. Requiring an hour of consecutive
         // samples costs nothing against a nine-day outage.
         //
-        // "Never notified" also counts the provider's own proof of reaching
-        // the endpoint: Google's initial `sync` callback, and for a provider
-        // that validates the callback URL before opening a channel, the
-        // watch itself (NotificationChannel.callbackVerified). Without the
-        // latter, staging fired this for Microsoft after every restart on
-        // four idle subscriptions whose creation had already proven the
-        // route.
+        // "Never notified" counts pushLastReceivedAt on live channels. Google
+        // records that on the initial `sync` handshake (see
+        // processNotification); providers that validate the callback URL before
+        // opening a channel record it on watch
+        // (NotificationChannel.callbackVerified). Without the latter, staging
+        // fired this for Microsoft after every restart on four idle
+        // subscriptions whose creation had already proven the route.
         for (const snapshot of snapshots) {
           if (
             !registry
