@@ -66,6 +66,7 @@ function parseWebhookPayload(rawBody: Buffer): EmailWebhookEvent[] {
 export function createResendEmailProvider(options: {
   apiKey: string;
   from: string;
+  replyTo?: string;
   webhookSecret: string;
 }): EmailProvider {
   return {
@@ -73,6 +74,7 @@ export function createResendEmailProvider(options: {
       type ResendSendBody = {
         from: string;
         to: string;
+        reply_to?: string;
         headers: Record<string, string>;
         subject?: string;
         html?: string;
@@ -85,6 +87,9 @@ export function createResendEmailProvider(options: {
         to: input.to,
         headers: input.headers,
       };
+      if (options.replyTo) {
+        body.reply_to = options.replyTo;
+      }
 
       if (input.template) {
         body.template = {

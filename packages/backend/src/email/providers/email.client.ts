@@ -22,6 +22,7 @@ export function buildEmailProvider(env: EmailConfigSlice): EmailProvider {
     return createResendEmailProvider({
       apiKey: env.EMAIL_API_KEY,
       from: withSenderDisplayName(env.EMAIL_FROM, EMAIL_SENDER_DISPLAY_NAME),
+      replyTo: EMAIL_REPLY_TO,
       webhookSecret: env.EMAIL_WEBHOOK_SECRET,
     });
   }
@@ -30,6 +31,9 @@ export function buildEmailProvider(env: EmailConfigSlice): EmailProvider {
 
 /** Display name on every outgoing email; the address still comes from EMAIL_FROM. */
 export const EMAIL_SENDER_DISPLAY_NAME = "Tyler from Compass";
+
+/** Replies to any outgoing email land in Tyler's inbox instead of the Resend-only sending domain. */
+export const EMAIL_REPLY_TO = "tyler@keepsoftwaresimple.com";
 
 /** Replace any display name in `from` ("Name <a@b>" or "a@b") with `displayName`. */
 export function withSenderDisplayName(

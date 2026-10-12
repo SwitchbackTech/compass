@@ -22,6 +22,7 @@ describe("createResendEmailProvider", () => {
       expect(body.html).toBeUndefined();
       expect(body.text).toBeUndefined();
       expect(body.from).toBe("Compass <hello@example.com>");
+      expect(body.reply_to).toBe("tyler@keepsoftwaresimple.com");
       return new Response(JSON.stringify({ id: "re_123" }), { status: 200 });
     });
     globalThis.fetch = fetchMock as typeof fetch;
@@ -29,6 +30,7 @@ describe("createResendEmailProvider", () => {
     const provider = createResendEmailProvider({
       apiKey: "re_test",
       from: "Compass <hello@example.com>",
+      replyTo: "tyler@keepsoftwaresimple.com",
       webhookSecret: "whsec_test",
     });
 
@@ -55,6 +57,7 @@ describe("createResendEmailProvider", () => {
       expect(body.subject).toBe("Hello");
       expect(body.html).toBe("<p>Hi</p>");
       expect(body.template).toBeUndefined();
+      expect(body.reply_to).toBeUndefined();
       return new Response(JSON.stringify({ id: "re_456" }), { status: 200 });
     });
     globalThis.fetch = fetchMock as typeof fetch;
