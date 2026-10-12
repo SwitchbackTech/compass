@@ -553,97 +553,36 @@ done
 REMOTE
 }
 
-validate_production_email_config_file() {
-  local config=$1
-
-  if [ ! -f "$config" ]; then
-    printf 'missing %s\n' "$config" >&2
-    return 1
-  fi
-  if ! grep -Eq '^email:[[:space:]]*$' "$config"; then
-    printf 'compass.yaml has no email: block (welcome drip disabled)\n' >&2
-    return 1
-  fi
-  if ! awk '
-    /^email:[[:space:]]*$/ { in_email=1; next }
-    in_email && /^[^[:space:]]/ { in_email=0; allowlist_mode=0 }
-    in_email && /^[[:space:]]+provider:[[:space:]]+resend[[:space:]]*$/ { found_provider=1 }
-    END { exit found_provider ? 0 : 1 }
-  ' "$config"; then
-    printf 'compass.yaml email.provider is not resend\n' >&2
-    return 1
-  fi
-  if ! awk '
-    BEGIN {
-      founder = "tyler@tylerdane.com"
-      invalid = 0
-    }
-    function note_email(raw,    cleaned, lower) {
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", raw)
-      gsub(/^["'"'"']|["'"'"']$/, "", raw)
-      cleaned = raw
-      if (cleaned == "") {
-        return
-      }
-      if (index(cleaned, "*") > 0) {
-        invalid = 1
-        return
-      }
-      lower = tolower(cleaned)
-      if (lower != founder) {
-        invalid = 1
-      }
-    }
-    /^email:[[:space:]]*$/ { in_email=1; next }
-    in_email && /^[^[:space:]]/ { in_email=0; allowlist_mode=0 }
-    in_email && /^[[:space:]]+allowlist:/ {
-      has_allowlist = 1
-      if ($0 ~ /\*/) {
-        invalid = 1
-      }
-      if ($0 ~ /^[[:space:]]+allowlist:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) {
-        next
-      }
-      if ($0 ~ /^[[:space:]]+allowlist:[[:space:]]*\[/) {
-        line = $0
-        while (match(line, /"[^"]+"/)) {
-          note_email(substr(line, RSTART + 1, RLENGTH - 2))
-          line = substr(line, RSTART + RLENGTH)
-        }
-        next
-      }
-      if ($0 ~ /^[[:space:]]+allowlist:[[:space:]]*$/) {
-        allowlist_mode = 1
-        next
-      }
-      sub(/^[[:space:]]+allowlist:[[:space:]]*/, "")
-      note_email($0)
-      next
-    }
-    in_email && allowlist_mode && /^[[:space:]]+-[[:space:]]+/ {
-      line = $0
-      sub(/^[[:space:]]+-[[:space:]]+/, "", line)
-      note_email(line)
-      next
-    }
-    in_email && allowlist_mode && /^[[:space:]]+[[:alpha:]]/ {
-      allowlist_mode = 0
-    }
-    END { exit invalid ? 1 : 0 }
-  ' "$config"; then
-    printf 'compass.yaml email.allowlist must be unset or founder-only (tyler@tylerdane.com)\n' >&2
-    return 1
-  fi
-}
-
 remote_check_production_email_config() {
-  local remote_validate
-  remote_validate=$(declare -f validate_production_email_config_file)
-
-  ssh_remote "bash -se" <<REMOTE
+  ssh_remote "bash -se" <<'REMOTE'
 set -euo pipefail
-${remote_validate}
-validate_production_email_config_file "\$HOME/compass/compass.yaml"
+config="$HOME/compass/compass.yaml"
+if [ ! -f "$config" ]; then
+  printf 'missing %s\n' "$config" >&2
+  exit 1
+fi
+if ! grep -Eq '^email:[[:space:]]*$' "$config"; then
+  printf 'compass.yaml has no email: block (welcome drip disabled)\n' >&2
+  exit 1
+fi
+if ! awk '
+  /^email:[[:space:]]*$/ { in_email=1; next }
+  in_email && /^[^[:space:]]/ { in_email=0 }
+  in_email && /^[[:space:]]+provider:[[:space:]]+resend[[:space:]]*$/ { found=1 }
+  END { exit found ? 0 : 1 }
+' "$config"; then
+  printf 'compass.yaml email.provider is not resend\n' >&2
+  exit 1
+fi
+if awk '
+  /^email:[[:space:]]*$/ { in_email=1; next }
+  in_email && /^[^[:space:]]/ { in_email=0 }
+  in_email && /^[[:space:]]+allowlist:/ { found=1 }
+  END { exit found ? 0 : 1 }
+' "$config"; then
+  printf 'compass.yaml email.allowlist must be unset in production\n' >&2
+  exit 1
+fi
 REMOTE
 }
 
