@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const HEALTH_CHECK_SCRIPT = ".github/scripts/deploy-health-check.sh";
 
@@ -70,5 +72,65 @@ describe("deploy health check script contract", () => {
     } finally {
       server.stop(true);
     }
+  });
+
+  it("accepts production email config without an allowlist", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "compass-health-email-"));
+    const config = join(dir, "compass.yaml");
+    writeFileSync(
+      config,
+      `email:
+  provider: resend
+  apiKey: re_test
+`,
+      "utf8",
+    );
+
+    const result = await runHealthScriptFunction(
+      `validate_production_email_config_file ${JSON.stringify(config)}; exit $?`,
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+  });
+
+  it("accepts founder-only production email allowlist", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "compass-health-email-"));
+    const config = join(dir, "compass.yaml");
+    writeFileSync(
+      config,
+      `email:
+  provider: resend
+  allowlist: ["tyler@tylerdane.com"]
+`,
+      "utf8",
+    );
+
+    const result = await runHealthScriptFunction(
+      `validate_production_email_config_file ${JSON.stringify(config)}; exit $?`,
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+  });
+
+  it("rejects production email allowlist with non-founder addresses", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "compass-health-email-"));
+    const config = join(dir, "compass.yaml");
+    writeFileSync(
+      config,
+      `email:
+  provider: resend
+  allowlist: ["qa@example.com"]
+`,
+      "utf8",
+    );
+
+    const result = await runHealthScriptFunction(
+      `validate_production_email_config_file ${JSON.stringify(config)}; exit $?`,
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("founder-only");
   });
 });
