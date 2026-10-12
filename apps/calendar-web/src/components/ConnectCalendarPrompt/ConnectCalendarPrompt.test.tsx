@@ -6,6 +6,11 @@ import { createMockConnection } from "@web/__tests__/utils/factories/calendar.fa
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import {
+  resetConnectAppleStoreForTests,
+  useConnectAppleStore,
+} from "@web/auth/providers/connect-apple.store";
+import { CONNECT_OTHER_ICLOUD_LINK } from "@web/auth/providers/connect-icloud-fallback.copy";
+import {
   missingPermissionsActions,
   resetMissingPermissionsStoreForTests,
 } from "@web/auth/providers/missing-permissions.store";
@@ -131,6 +136,7 @@ describe("ConnectCalendarPromptGate", () => {
   afterEach(() => {
     userMetadataActions.clear();
     resetMissingPermissionsStoreForTests();
+    resetConnectAppleStoreForTests();
   });
 
   it("renders for a signed-in user with zero connections", () => {
@@ -240,9 +246,10 @@ describe("ConnectCalendarPromptGate", () => {
     expect(mockConnectMicrosoft).toHaveBeenCalledTimes(1);
 
     await user.click(
-      screen.getByRole("button", { name: buttonLabelByKind.apple }),
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
     );
-    expect(mockConnectApple).toHaveBeenCalledTimes(1);
+    expect(useConnectAppleStore.getState().isOpen).toBe(true);
+    expect(mockConnectApple).not.toHaveBeenCalled();
   });
 
   it("records a snooze timestamp when the user skips for now", async () => {
