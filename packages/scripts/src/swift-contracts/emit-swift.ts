@@ -245,9 +245,7 @@ function emitTypeCore(
     if (schema.enum.some((value) => typeof value !== "string")) {
       throw new SwiftEmitError(path, "only string enums are supported");
     }
-    const enumName = `${toPascalCase(path.split(".").pop() ?? "Value")}Enum`;
-    ensureStringEnum(enumName, schema.enum as string[], ctx);
-    return enumName;
+    return ensureStringEnum(path, schema.enum as string[], ctx);
   }
 
   if (schema.oneOf || schema.anyOf) {
@@ -341,18 +339,14 @@ function emitPrimitiveUnion(
     .map((branch) => branch.const)
     .filter((value): value is number => typeof value === "number");
   if (literalNumbers.length === variants.length && literalNumbers.length > 0) {
-    const enumName = `${toPascalCase(path.split(".").pop() ?? "Value")}Enum`;
-    ensureIntEnum(enumName, literalNumbers, ctx);
-    return enumName;
+    return ensureIntEnum(path, literalNumbers, ctx);
   }
   const stringLiterals = variants
     .filter(isSchemaObject)
     .map((branch) => branch.const)
     .filter((value): value is string => typeof value === "string");
   if (stringLiterals.length === variants.length && stringLiterals.length > 0) {
-    const enumName = `${toPascalCase(path.split(".").pop() ?? "Value")}Enum`;
-    ensureStringEnum(enumName, stringLiterals, ctx);
-    return enumName;
+    return ensureStringEnum(path, stringLiterals, ctx);
   }
   return null;
 }
@@ -373,43 +367,76 @@ function isWireDateOrStringBranch(branch: JsonSchema): boolean {
   return false;
 }
 
-function ensureIntEnum(name: string, values: number[], ctx: EmitContext): void {
-  if (ctx.emitted.has(name)) {
-    return;
+/**
+ * Enums are named after their property (`connectionState` ->
+ * `ConnectionStateEnum`) and shared when the cases match. Two different enums
+ * under one property name would otherwise silently share the first one's
+ * cases, so a later one with other cases gets a path-qualified name.
+ */
+function emitEnum(
+  path: string,
+  body: (name: string) => string,
+  ctx: EmitContext,
+): string {
+  const shortName = `${toPascalCase(path.split(".").pop() ?? "Value")}Enum`;
+  const existing = ctx.emitted.get(shortName);
+  if (existing === undefined || existing === body(shortName)) {
+    if (existing === undefined) {
+      assertSwiftPublicTypeName(shortName, "generated enum");
+      ctx.emitted.set(shortName, body(shortName));
+    }
+    return shortName;
   }
-  assertSwiftPublicTypeName(name, "generated enum");
+  const qualifiedName = `${toPascalCase(path.replace(/\./g, "_"))}Enum`;
+  const qualifiedExisting = ctx.emitted.get(qualifiedName);
+  if (qualifiedExisting === undefined) {
+    assertSwiftPublicTypeName(qualifiedName, "generated enum");
+    ctx.emitted.set(qualifiedName, body(qualifiedName));
+  } else if (qualifiedExisting !== body(qualifiedName)) {
+    throw new SwiftEmitError(path, `enum name collision: ${qualifiedName}`);
+  }
+  return qualifiedName;
+}
+
+function ensureIntEnum(
+  path: string,
+  values: number[],
+  ctx: EmitContext,
+): string {
   const cases = [...values]
     .sort((left, right) => left - right) // numeric
     .map((value) => `    case v${value} = ${value}`)
     .join("\n");
-  ctx.emitted.set(
-    name,
-    `public enum ${name}: Int, Codable, Hashable, Sendable, CaseIterable {
+  return emitEnum(
+    path,
+    (
+      name,
+    ) => `public enum ${name}: Int, Codable, Hashable, Sendable, CaseIterable {
 ${cases}
 }
 `,
+    ctx,
   );
 }
 
 function ensureStringEnum(
-  name: string,
+  path: string,
   values: string[],
   ctx: EmitContext,
-): void {
-  if (ctx.emitted.has(name)) {
-    return;
-  }
-  assertSwiftPublicTypeName(name, "generated enum");
+): string {
   const cases = [...values]
     .sort(compareAscii)
     .map((value) => `    case ${swiftEnumCaseName(value)} = "${value}"`)
     .join("\n");
-  ctx.emitted.set(
-    name,
-    `public enum ${name}: String, Codable, Hashable, Sendable, CaseIterable {
+  return emitEnum(
+    path,
+    (
+      name,
+    ) => `public enum ${name}: String, Codable, Hashable, Sendable, CaseIterable {
 ${cases}
 }
 `,
+    ctx,
   );
 }
 

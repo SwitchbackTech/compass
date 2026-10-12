@@ -407,15 +407,15 @@ public struct BookingOperationEvent: Codable, Hashable, Sendable {
     public let duration_minutes: DurationMinutesEnum?
     public let environment: String
     public let latency_ms: Int?
-    public let operation: OperationEnum
+    public let operation: BookingOperationEventOperationEnum
     public let outcome: OutcomeEnum
     public let phase: PhaseEnum
-    public let reason: ReasonEnum?
+    public let reason: BookingOperationEventReasonEnum?
     public let service: String
     public let source: SourceEnum
     public let version: String
 
-    public init(duration_minutes: DurationMinutesEnum? = nil, environment: String, latency_ms: Int? = nil, operation: OperationEnum, outcome: OutcomeEnum, phase: PhaseEnum, reason: ReasonEnum? = nil, service: String, source: SourceEnum, version: String) {
+    public init(duration_minutes: DurationMinutesEnum? = nil, environment: String, latency_ms: Int? = nil, operation: BookingOperationEventOperationEnum, outcome: OutcomeEnum, phase: PhaseEnum, reason: BookingOperationEventReasonEnum? = nil, service: String, source: SourceEnum, version: String) {
         self.duration_minutes = duration_minutes
         self.environment = environment
         self.latency_ms = latency_ms
@@ -427,6 +427,25 @@ public struct BookingOperationEvent: Codable, Hashable, Sendable {
         self.source = source
         self.version = version
     }
+}
+
+public enum BookingOperationEventOperationEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case cancel = "cancel"
+    case create = "create"
+    case edit = "edit"
+    case reschedule = "reschedule"
+}
+
+public enum BookingOperationEventReasonEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case invalidInput = "invalid_input"
+    case providerFailure = "provider_failure"
+    case rateLimited = "rate_limited"
+    case reservationConflict = "reservation_conflict"
+    case retryExhausted = "retry_exhausted"
+    case slotUnavailable = "slot_unavailable"
+    case storageFailure = "storage_failure"
+    case syncUnavailable = "sync_unavailable"
+    case unknown = "unknown"
 }
 
 public struct BookingOperationHeartbeat: Codable, Hashable, Sendable {
@@ -1412,13 +1431,24 @@ public enum ResponseStatusEnum: String, Codable, Hashable, Sendable, CaseIterabl
 }
 
 public struct RsvpEventInput: Codable, Hashable, Sendable {
-    public let responseStatus: ResponseStatusEnum
-    public let scope: ScopeEnum
+    public let responseStatus: RsvpEventInputResponseStatusEnum
+    public let scope: RsvpEventInputScopeEnum
 
-    public init(responseStatus: ResponseStatusEnum, scope: ScopeEnum) {
+    public init(responseStatus: RsvpEventInputResponseStatusEnum, scope: RsvpEventInputScopeEnum) {
         self.responseStatus = responseStatus
         self.scope = scope
     }
+}
+
+public enum RsvpEventInputResponseStatusEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case accepted = "accepted"
+    case declined = "declined"
+    case tentative = "tentative"
+}
+
+public enum RsvpEventInputScopeEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case all = "all"
+    case single = "single"
 }
 
 public enum ScopeEnum: String, Codable, Hashable, Sendable, CaseIterable {
@@ -1509,13 +1539,19 @@ public enum ServerMessageSyncStatusChangedSync: Codable, Hashable, Sendable {
     }
 }
 
+public enum ServerMessageSyncStatusChangedSyncAttentionCodeEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case cONNECTION_REVOKED = "CONNECTION_REVOKED"
+    case iMPORT_FAILED = "IMPORT_FAILED"
+    case wATCH_REPAIR_FAILED = "WATCH_REPAIR_FAILED"
+}
+
 public struct ServerMessageSyncStatusChangedSync_AttentionPayload: Codable, Hashable, Sendable {
-    public let code: CodeEnum
+    public let code: ServerMessageSyncStatusChangedSyncAttentionCodeEnum
     public let connectionId: ConnectionId?
     public let retryable: Bool
     public let status: String
 
-    public init(code: CodeEnum, connectionId: ConnectionId? = nil, retryable: Bool, status: String) {
+    public init(code: ServerMessageSyncStatusChangedSyncAttentionCodeEnum, connectionId: ConnectionId? = nil, retryable: Bool, status: String) {
         self.code = code
         self.connectionId = connectionId
         self.retryable = retryable
@@ -1635,7 +1671,7 @@ public struct UserMetadata: Codable, Hashable, Sendable {
 public struct UserMetadataConnections: Codable, Hashable, Sendable {
     public let accountEmail: String?
     public let canSuggestContacts: Bool
-    public let connectionState: ConnectionStateEnum
+    public let connectionState: UserMetadataConnectionsConnectionStateEnum
     public let id: String
     public let lastHealthyAt: String?
     public let lastSyncedAt: String?
@@ -1643,7 +1679,7 @@ public struct UserMetadataConnections: Codable, Hashable, Sendable {
     public let state: String
     public let stateReason: String?
 
-    public init(accountEmail: String?, canSuggestContacts: Bool, connectionState: ConnectionStateEnum, id: String, lastHealthyAt: String?, lastSyncedAt: String?, provider: ProviderEnum? = nil, state: String, stateReason: String?) {
+    public init(accountEmail: String?, canSuggestContacts: Bool, connectionState: UserMetadataConnectionsConnectionStateEnum, id: String, lastHealthyAt: String?, lastSyncedAt: String?, provider: ProviderEnum? = nil, state: String, stateReason: String?) {
         self.accountEmail = accountEmail
         self.canSuggestContacts = canSuggestContacts
         self.connectionState = connectionState
@@ -1654,6 +1690,14 @@ public struct UserMetadataConnections: Codable, Hashable, Sendable {
         self.state = state
         self.stateReason = stateReason
     }
+}
+
+public enum UserMetadataConnectionsConnectionStateEnum: String, Codable, Hashable, Sendable, CaseIterable {
+    case aTTENTION = "ATTENTION"
+    case hEALTHY = "HEALTHY"
+    case iMPORTING = "IMPORTING"
+    case nOT_CONNECTED = "NOT_CONNECTED"
+    case rECONNECT_REQUIRED = "RECONNECT_REQUIRED"
 }
 
 public struct UserMetadataSync: Codable, Hashable, Sendable {

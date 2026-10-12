@@ -6,7 +6,7 @@ public enum BookingConnectionHealth {
     }
 
     public static func isHealthySummary(_ connection: UserMetadataConnections) -> Bool {
-        connection.connectionState == .healthy
+        connection.connectionState == .hEALTHY
     }
 
     public static func reconnectRequiredConnections(
@@ -16,12 +16,11 @@ public enum BookingConnectionHealth {
     }
 
     public static func isReconnectRequired(_ connection: UserMetadataConnections) -> Bool {
-        connection.connectionState == .actionRequired
-            || connection.connectionState == .disconnected
+        connection.connectionState == .rECONNECT_REQUIRED
     }
 
     public static func isImporting(connections: [UserMetadataConnections]) -> Bool {
-        connections.contains { $0.connectionState == .importing || $0.connectionState == .connecting }
+        connections.contains { $0.connectionState == .iMPORTING }
     }
 }
 
