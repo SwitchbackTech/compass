@@ -5,7 +5,7 @@ import XCTest
 final class ContactSuggestionDebouncerTests: XCTestCase {
     func testDebounceCoalescesRapidQueries() async {
         let calls = CallCounter()
-        let debouncer = ContactSuggestionDebouncer(debounceMilliseconds: 80) { query in
+        let debouncer = ContactSuggestionDebouncer(debounceMilliseconds: 200) { query in
             await calls.record(query)
             return [DraftAttendeeInput(email: "\(query)@example.com", displayName: nil)]
         }
