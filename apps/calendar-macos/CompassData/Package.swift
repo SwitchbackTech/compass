@@ -18,6 +18,9 @@ let package = Package(
                 "CompassKit",
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
+            linkerSettings: [
+                .linkedFramework("EventKit"),
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
             ]

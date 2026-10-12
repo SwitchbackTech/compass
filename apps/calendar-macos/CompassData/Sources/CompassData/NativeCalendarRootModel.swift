@@ -264,6 +264,12 @@ public final class NativeCalendarRootModel {
     }
 
     public func connectCalendar(provider: SignInProviderKind) async {
+        if provider == .apple {
+            await syncConnectionsStore.connectAppleViaEventKit()
+            await reloadCalendars()
+            await refreshVisibleRange()
+            return
+        }
         await syncConnectionsStore.connect(provider: provider.calendarConnectProvider)
         await syncConnectionsStore.reloadFromMetadata()
     }
@@ -1060,8 +1066,15 @@ public final class NativeCalendarRootModel {
         }
         do {
             let remote = try await environment.apiClient.calendars.list()
-            let mapped = remote
-            try calendarRepository.upsert(calendars: mapped)
+            var merged = remote
+            if SystemCalendarConnectionStore.isConnected {
+                let cached = try calendarRepository.fetchAll()
+                let systemCalendars = cached.filter {
+                    $0.id.hasPrefix(SystemCalendarMapper.calendarIdPrefix)
+                }
+                merged.append(contentsOf: systemCalendars)
+            }
+            try calendarRepository.upsert(calendars: merged)
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()
         } catch {}
