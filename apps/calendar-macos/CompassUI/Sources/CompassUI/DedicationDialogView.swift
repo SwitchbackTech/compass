@@ -29,14 +29,9 @@ public struct DedicationDialogView: View {
                     .font(.rubik(20))
                     .foregroundStyle(theme.textColor)
                 }
-                .padding(24)
+                .padding(OverlayPanelChrome.padding)
                 .frame(maxWidth: 520)
-                .background(theme.surfaceColor)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(theme.borderColor, lineWidth: 1)
-                )
+                .overlayPanelChrome()
                 .accessibilityIdentifier("compass-dedication-dialog")
             }
             .transition(.opacity)

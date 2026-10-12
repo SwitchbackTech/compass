@@ -93,10 +93,9 @@ private struct BillingDialogPanel: View {
                         .foregroundStyle(theme.textMutedColor)
                 }
             }
-            .padding(20)
+            .padding(OverlayPanelChrome.padding)
             .frame(maxWidth: 440)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlayPanelChrome()
         }
     }
 }
