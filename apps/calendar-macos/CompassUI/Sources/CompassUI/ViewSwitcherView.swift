@@ -40,7 +40,6 @@ struct ViewSwitcherView: View {
                     .font(.rubik(18))
                     .foregroundStyle(theme.textColor)
                     .lineLimit(1)
-                    .accessibilityIdentifier("compass-native-header-title")
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(theme.textMutedColor)
@@ -61,7 +60,9 @@ struct ViewSwitcherView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(model.headerTitle), change view")
+        .accessibilityLabel(model.headerTitle)
+        .accessibilityHint("Change view")
+        .accessibilityIdentifier("compass-native-header-title")
         .popover(isPresented: $isOpen, arrowEdge: .bottom) {
             menu
         }
