@@ -33,8 +33,8 @@ Environment secrets:
 |---|---|
 | `SMOKE_GOOGLE_REFRESH_TOKEN` | Refresh token for the Google test account that owns `compass-smoke` |
 | `SMOKE_MICROSOFT_REFRESH_TOKEN` | Refresh token for the Microsoft test account |
-| `SMOKE_APPLE_EMAIL` | iCloud email for the Apple test account |
-| `SMOKE_APPLE_APP_PASSWORD` | iCloud app-specific password |
+| `SMOKE_APPLE_EMAIL` | iCloud email for the Apple test account (also used by the opt-in `apple-live-credential-smoke.test.ts` in CI when exported on the job) |
+| `SMOKE_APPLE_APP_PASSWORD` | iCloud app-specific password generated at [appleid.apple.com](https://appleid.apple.com) for that account |
 | `GOOGLE_CLIENT_SECRET` | Same Google OAuth client secret as staging |
 | `MICROSOFT_CLIENT_SECRET` | Same Entra client secret as staging |
 | `DISCORD_ERRORS_WEBHOOK_URL` | Discord errors webhook (duplicate of the repo secret so this Environment does not read repo secrets) |
