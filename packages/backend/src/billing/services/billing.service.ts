@@ -1,4 +1,7 @@
-import { resolveSubscriptionStatus } from "@core/billing/resolve-subscription-status";
+import {
+  isStaleLocalTrialingRow,
+  resolveSubscriptionStatus,
+} from "@core/billing/resolve-subscription-status";
 import { type BillingStatusResponse } from "@core/types/billing.types";
 import { type Schema_UserBilling } from "@core/types/user.types";
 import { WRITE_ACCESS_BY_STATUS } from "@backend/billing/billing.constants";
@@ -92,9 +95,7 @@ async function persistResolvedLocalTrial(
   billing: Schema_UserBilling | undefined,
   resolvedStatus: BillingStatusResponse["subscriptionStatus"],
 ): Promise<void> {
-  if (billing?.subscriptionStatus !== "trialing") return;
-  if (billing.stripeSubscriptionId) return;
-  if (resolvedStatus === "trialing") return;
+  if (!billing || !isStaleLocalTrialingRow(billing)) return;
 
   await mongoService.user.updateOne(
     {
