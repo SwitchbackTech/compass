@@ -14,6 +14,11 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
+import { ConnectICloudFallbackLink } from "@web/auth/providers/ConnectICloudFallbackLink";
+import {
+  primaryConnectProviderKinds,
+  showsICloudCredentialFallback,
+} from "@web/auth/providers/connect-provider-visibility.util";
 import { openingProviderLabel } from "@web/auth/providers/connection-provider.util";
 import { PROVIDER_LOGO } from "@web/auth/providers/ProviderMark";
 import {
@@ -70,8 +75,10 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const kinds = authenticated ? available : signIn.available;
+  const primaryKinds = primaryConnectProviderKinds(kinds);
+  const iCloudFallback = showsICloudCredentialFallback(kinds);
   const connectingKind = authenticated
-    ? available.find((kind) => byKind[kind].isConnecting)
+    ? kinds.find((kind) => byKind[kind].isConnecting)
     : signIn.loadingKind;
   const isConnecting = connectingKind != null;
   const firstItemRef = useRef<HTMLButtonElement>(null);
@@ -93,6 +100,11 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
   }, [menuOpen]);
 
   if (kinds.length === 0) return null;
+  if (primaryKinds.length === 0 && !iCloudFallback) return null;
+
+  if (primaryKinds.length === 0 && iCloudFallback && variant !== "prompt") {
+    return <ConnectICloudFallbackLink disabled={isConnecting} />;
+  }
 
   const runConnect = (kind: ProviderKind) => {
     setMenuOpen(false);
@@ -153,18 +165,25 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
 
   if (variant === "prompt") {
     return (
-      <SignInProviderButtons
-        available={kinds}
-        busyLabel={openingProviderLabel}
-        labels={
-          authenticated
-            ? CONNECT_CALENDAR_LABEL
-            : ANONYMOUS_TRIAL_CONNECT_CALENDAR_LABEL
-        }
-        loadingKind={connectingKind ?? null}
-        onSignIn={runConnect}
-        shortcutKeys={null}
-      />
+      <div className="flex w-full flex-col gap-3">
+        {primaryKinds.length > 0 ? (
+          <SignInProviderButtons
+            available={primaryKinds}
+            busyLabel={openingProviderLabel}
+            labels={
+              authenticated
+                ? CONNECT_CALENDAR_LABEL
+                : ANONYMOUS_TRIAL_CONNECT_CALENDAR_LABEL
+            }
+            loadingKind={connectingKind ?? null}
+            onSignIn={runConnect}
+            shortcutKeys={null}
+          />
+        ) : null}
+        {iCloudFallback ? (
+          <ConnectICloudFallbackLink disabled={isConnecting} />
+        ) : null}
+      </div>
     );
   }
 
@@ -172,8 +191,8 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
     ? openingProviderLabel(connectingKind ?? "google")
     : idleLabel;
 
-  if (kinds.length === 1) {
-    const kind = kinds[0];
+  if (primaryKinds.length === 1 && !iCloudFallback) {
+    const kind = primaryKinds[0];
     if (kind === undefined) return null;
     const singleLabel = isConnecting
       ? buttonLabel
@@ -217,7 +236,7 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
       onKeyDown={onMenuKeyDown}
       role="menu"
     >
-      {kinds.map((kind, index) => {
+      {primaryKinds.map((kind, index) => {
         const Icon = PROVIDER_LOGO[kind];
         return (
           <button
@@ -237,53 +256,63 @@ export const ConnectProviderChooser: FC<ConnectProviderChooserProps> = ({
     </div>
   ) : null;
 
+  const iCloudFallbackLink = iCloudFallback ? (
+    <ConnectICloudFallbackLink disabled={isConnecting} />
+  ) : null;
+
   if (variant === "sidebar-primary") {
     return (
-      <div className="relative" ref={rootRef}>
-        <button
-          aria-busy={isConnecting || undefined}
-          aria-controls={menuId}
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-          className={classNames(
-            SIDEBAR_PRIMARY_CLASSNAME,
-            "inline-flex items-center gap-1",
-          )}
-          disabled={isConnecting}
-          onClick={() => setMenuOpen((open) => !open)}
-          onKeyDown={onTriggerKeyDown}
-          type="button"
-          {...shortcutAttrs}
-        >
-          {buttonLabel}
-          <CaretDownIcon aria-hidden size={12} />
-        </button>
-        {menu}
+      <div className="flex flex-col gap-2">
+        <div className="relative" ref={rootRef}>
+          <button
+            aria-busy={isConnecting || undefined}
+            aria-controls={menuId}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            className={classNames(
+              SIDEBAR_PRIMARY_CLASSNAME,
+              "inline-flex items-center gap-1",
+            )}
+            disabled={isConnecting}
+            onClick={() => setMenuOpen((open) => !open)}
+            onKeyDown={onTriggerKeyDown}
+            type="button"
+            {...shortcutAttrs}
+          >
+            {buttonLabel}
+            <CaretDownIcon aria-hidden size={12} />
+          </button>
+          {menu}
+        </div>
+        {iCloudFallbackLink}
       </div>
     );
   }
 
   return (
-    <div className="relative" ref={rootRef}>
-      <OverlayPanelActionButton
-        aria-busy={isConnecting || undefined}
-        aria-controls={menuId}
-        aria-expanded={menuOpen}
-        aria-haspopup="menu"
-        disabled={isConnecting}
-        onClick={() => setMenuOpen((open) => !open)}
-        onKeyDown={onTriggerKeyDown}
-        shortcut={shortcut}
-        showShortcut={showShortcut}
-        variant="primary"
-        {...shortcutAttrs}
-      >
-        <span className="inline-flex items-center gap-1">
-          {buttonLabel}
-          <CaretDownIcon aria-hidden size={12} />
-        </span>
-      </OverlayPanelActionButton>
-      {menu}
+    <div className="flex w-full flex-col gap-2">
+      <div className="relative" ref={rootRef}>
+        <OverlayPanelActionButton
+          aria-busy={isConnecting || undefined}
+          aria-controls={menuId}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          disabled={isConnecting}
+          onClick={() => setMenuOpen((open) => !open)}
+          onKeyDown={onTriggerKeyDown}
+          shortcut={shortcut}
+          showShortcut={showShortcut}
+          variant="primary"
+          {...shortcutAttrs}
+        >
+          <span className="inline-flex items-center gap-1">
+            {buttonLabel}
+            <CaretDownIcon aria-hidden size={12} />
+          </span>
+        </OverlayPanelActionButton>
+        {menu}
+      </div>
+      {iCloudFallbackLink}
     </div>
   );
 };
