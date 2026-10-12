@@ -220,6 +220,9 @@ public struct RootView: View {
             } else {
                 sidebarBody
             }
+            SidebarSyncStatusLine(model: model)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
             ShortcutSidebarFooter(levelsStore: model.levelsStore)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -272,6 +275,7 @@ public struct RootView: View {
             ) {
                 model.toggleShortcutsLegend()
             }
+            SidebarRefreshButton(model: model)
             Spacer()
             sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
                 model.settingsStore.open()
