@@ -9,6 +9,12 @@ import {
   registerUseStartProviderAuthorizationForTests,
   resetUseStartProviderAuthorizationForTests,
 } from "@web/auth/providers/authorization/useStartProviderAuthorization";
+import {
+  connectAppleActions,
+  resetConnectAppleStoreForTests,
+  useConnectAppleStore,
+} from "@web/auth/providers/connect-apple.store";
+import { CONNECT_OTHER_ICLOUD_LINK } from "@web/auth/providers/connect-icloud-fallback.copy";
 import * as realAvailableProviders from "@web/auth/providers/useAvailableConnectProviders";
 import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import {
@@ -94,6 +100,7 @@ describe("ConnectProviderChooser", () => {
     cleanup();
     resetUseStartProviderAuthorizationForTests();
     resetProviderAvailabilityForTests();
+    resetConnectAppleStoreForTests();
   });
 
   it("renders a single Google button and no chooser menu when only Google is available", () => {
@@ -152,10 +159,14 @@ describe("ConnectProviderChooser", () => {
 
     await user.click(screen.getByRole("button", { name: /Add account/ }));
 
-    for (const name of ["Google", "Microsoft", "Apple"] as const) {
+    for (const name of ["Google", "Microsoft"] as const) {
       const item = screen.getByRole("menuitem", { name });
       expect(item.innerHTML).toContain("<svg");
     }
+    expect(screen.queryByRole("menuitem", { name: "Apple" })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
+    ).toBeInTheDocument();
   });
 
   it("renders branded connect pills for the prompt variant", async () => {
@@ -171,7 +182,10 @@ describe("ConnectProviderChooser", () => {
       screen.getByRole("button", { name: "Connect Microsoft Calendar" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Connect Apple Calendar" }),
+      screen.queryByRole("button", { name: "Connect Apple Calendar" }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
     ).toBeInTheDocument();
 
     await user.click(
@@ -180,6 +194,12 @@ describe("ConnectProviderChooser", () => {
     expect(mockConnectMicrosoft).toHaveBeenCalledTimes(1);
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(mockConnectApple).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
+    );
+    expect(useConnectAppleStore.getState().isOpen).toBe(true);
+    connectAppleActions.close();
   });
 
   it("relabels the connecting prompt pill and disables the others", () => {
@@ -195,7 +215,7 @@ describe("ConnectProviderChooser", () => {
       screen.getByRole("button", { name: "Connect Google Calendar" }),
     ).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Connect Apple Calendar" }),
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
     ).toBeDisabled();
   });
 
