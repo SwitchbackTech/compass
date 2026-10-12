@@ -176,6 +176,17 @@ async function processNotification(
             : resourceJob(resource, "incrementalPull", now);
         await new JobRepository(deps.mongo.db).enqueue(job);
       }
+    } else if (
+      verdict.status === "ignore" &&
+      resource &&
+      notification.state === "initialSync"
+    ) {
+      await resources.markPushReceived(
+        resource.tenantId,
+        resource.principalId,
+        resource._id,
+        now,
+      );
     }
     return true;
   } catch (error) {

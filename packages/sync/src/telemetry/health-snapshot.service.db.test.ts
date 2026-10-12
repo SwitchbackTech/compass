@@ -322,6 +322,37 @@ describe("computeHealthSnapshot", () => {
   // within seconds. That made a fleet with perfectly healthy push delivery
   // report ~100% "never notified", so the number said the same thing whether
   // push worked or was completely dead (2026-08-23).
+  it("does not count a live channel that only received the google sync handshake", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const googleConnection = await seedConnection("google", "healthy");
+    const connectionId = googleConnection._id as ConnectionId;
+    const resource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId,
+      resourceKind: "events",
+      calendarId: objectId() as never,
+    });
+    await resources.updateSubscription(tenantId, principalId, resource._id, {
+      subscriptionId: "ch-handshake",
+      subscriptionResourceId: "res-handshake",
+      subscriptionToken: "tok-handshake",
+      subscriptionExpiresAt: new Date(
+        NOW.getTime() + HEALTH_SUBSCRIPTION_RENEW_BEFORE_MS + 60_000,
+      ),
+    });
+    await resources.markPushReceived(
+      tenantId,
+      principalId,
+      resource._id,
+      new Date(NOW.getTime() - 60_000),
+    );
+
+    const snapshot = await computeHealthSnapshotForProvider(deps(), "google");
+    expect(snapshot.subscriptions.neverNotified).toBe(0);
+  });
+
   it("does not count a resource whose push was received and then served", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
