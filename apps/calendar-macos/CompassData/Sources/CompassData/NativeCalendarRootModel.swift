@@ -48,8 +48,12 @@ public final class NativeCalendarRootModel {
     public private(set) var paletteEventSearchHits: [CommandPaletteEventHit] = []
     var paletteSearchTask: Task<Void, Never>?
     public var dedicationDialogVisible = false
-    /// Right-hand sidebar, toggled with `]` like the web.
-    public var isSidebarOpen = true
+    /// Right-hand sidebar, toggled with `]` like the web. Kept between launches.
+    public var isSidebarOpen = CompassDevicePreferences.readSidebarOpen() {
+        didSet { CompassDevicePreferences.writeSidebarOpen(isSidebarOpen) }
+    }
+    /// Sidebar width in points, dragged between 240 and 480 like the web.
+    public private(set) var sidebarWidth = CompassDevicePreferences.readSidebarWidth()
     /// Month picker day holding keyboard focus after `i`, like the web's
     /// focused datepicker day. Nil when the picker does not have focus.
     public internal(set) var monthPickerFocusDate: Date?
@@ -104,6 +108,15 @@ public final class NativeCalendarRootModel {
 
     var demoEventIds: Set<String> {
         cachedDemoEventIds.union(demoPresentation?.demoEventIds ?? [])
+    }
+
+    public func resizeSidebar(to width: Double) {
+        sidebarWidth = CompassDevicePreferences.clampSidebarWidth(width)
+    }
+
+    /// Saves the width once a drag ends, not on every frame.
+    public func saveSidebarWidth() {
+        CompassDevicePreferences.writeSidebarWidth(sidebarWidth)
     }
 
     public var showsDemoEventsBanner: Bool {

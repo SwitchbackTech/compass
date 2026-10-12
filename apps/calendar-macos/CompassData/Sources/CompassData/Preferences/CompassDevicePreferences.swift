@@ -101,4 +101,46 @@ public enum CompassDevicePreferences {
         }
         return true
     }
+
+    /// Web `SIDEBAR_MIN_WIDTH`, `SIDEBAR_DEFAULT_WIDTH`, and `SIDEBAR_MAX_WIDTH`.
+    public static let sidebarWidthRange: ClosedRange<Double> = 240...480
+    public static let defaultSidebarWidth: Double = 345
+
+    public static func clampSidebarWidth(_ width: Double) -> Double {
+        min(sidebarWidthRange.upperBound, max(sidebarWidthRange.lowerBound, width))
+    }
+
+    /// Open unless stored as "false", like the web's `readSidebarOpen`.
+    public static func readSidebarOpen(
+        from storage: CompassDevicePreferencesStorage = UserDefaults.standard
+    ) -> Bool {
+        storage.string(forKey: CompassStorageKeys.sidebarOpen) != "false"
+    }
+
+    public static func writeSidebarOpen(
+        _ isOpen: Bool,
+        to storage: CompassDevicePreferencesStorage = UserDefaults.standard
+    ) {
+        storage.set(isOpen ? "true" : "false", forKey: CompassStorageKeys.sidebarOpen)
+    }
+
+    /// Stored as a rounded number string like the web; missing or invalid
+    /// values fall back to the default, and stored values are clamped.
+    public static func readSidebarWidth(
+        from storage: CompassDevicePreferencesStorage = UserDefaults.standard
+    ) -> Double {
+        guard let raw = storage.string(forKey: CompassStorageKeys.sidebarWidth),
+              let width = Double(raw), width.isFinite
+        else {
+            return defaultSidebarWidth
+        }
+        return clampSidebarWidth(width.rounded())
+    }
+
+    public static func writeSidebarWidth(
+        _ width: Double,
+        to storage: CompassDevicePreferencesStorage = UserDefaults.standard
+    ) {
+        storage.set(String(Int(clampSidebarWidth(width).rounded())), forKey: CompassStorageKeys.sidebarWidth)
+    }
 }
