@@ -1,3 +1,4 @@
+import AppKit
 import CompassData
 import CompassKit
 import SwiftUI
@@ -6,9 +7,9 @@ public struct RootView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable public var model: NativeCalendarRootModel
     @State private var titleBarLeadingInset: CGFloat = 72
-    /// Web `SIDEBAR_DEFAULT_WIDTH` and `SIDEBAR_DIVIDER_WIDTH`.
-    private let sidebarWidth: CGFloat = 345
+    /// Web `SIDEBAR_DIVIDER_WIDTH`: the resize handle's column.
     private let sidebarDividerWidth: CGFloat = 32
+    @State private var sidebarDragStartWidth: Double?
     /// Web main column `pl-8`.
     private let contentLeadingInset: CGFloat = 32
     public init(model: NativeCalendarRootModel) {
@@ -32,8 +33,7 @@ public struct RootView: View {
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.
                 if model.isSidebarOpen || model.isEventFormVisible {
-                    Color.clear
-                        .frame(width: sidebarDividerWidth)
+                    sidebarResizeHandle
                     sidebar
                 }
             }
@@ -183,6 +183,34 @@ public struct RootView: View {
         }
     }
 
+    /// Web `ResizableSidebarPanel`: drag the divider column to resize. The
+    /// sidebar sits on the right, so dragging left widens it.
+    private var sidebarResizeHandle: some View {
+        Color.clear
+            .frame(width: sidebarDividerWidth)
+            .contentShape(Rectangle())
+            .onHover { inside in
+                if inside {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .onChanged { value in
+                        let start = sidebarDragStartWidth ?? model.sidebarWidth
+                        sidebarDragStartWidth = start
+                        model.resizeSidebar(to: start - value.translation.width)
+                    }
+                    .onEnded { _ in
+                        sidebarDragStartWidth = nil
+                        model.saveSidebarWidth()
+                    }
+            )
+            .accessibilityLabel("Resize sidebar")
+    }
+
     /// Mirrors the web sidebar: month picker, Up Next, accounts, then the
     /// status line and the actions bar pinned to the bottom.
     private var sidebar: some View {
@@ -198,7 +226,7 @@ public struct RootView: View {
             sidebarActions
         }
         .pageJumpChipAnchor(id: "calendars")
-        .frame(width: sidebarWidth)
+        .frame(width: model.sidebarWidth)
         .frame(maxHeight: .infinity)
         .background(theme.surfacePanelColor)
         .overlay(alignment: .leading) {

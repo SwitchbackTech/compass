@@ -42,4 +42,32 @@ final class CompassDevicePreferencesTests: XCTestCase {
         XCTAssertTrue(CompassDevicePreferences.writeTimeTravelTimeZone(nil, to: defaults))
         XCTAssertNil(CompassDevicePreferences.readTimeTravelTimeZone(from: defaults))
     }
+
+    func testSidebarOpenDefaultsToOpenAndRoundTrips() {
+        XCTAssertTrue(CompassDevicePreferences.readSidebarOpen(from: defaults))
+        CompassDevicePreferences.writeSidebarOpen(false, to: defaults)
+        XCTAssertEqual(defaults.string(forKey: CompassStorageKeys.sidebarOpen), "false")
+        XCTAssertFalse(CompassDevicePreferences.readSidebarOpen(from: defaults))
+        CompassDevicePreferences.writeSidebarOpen(true, to: defaults)
+        XCTAssertTrue(CompassDevicePreferences.readSidebarOpen(from: defaults))
+    }
+
+    func testSidebarWidthDefaultsClampsAndRounds() {
+        XCTAssertEqual(CompassDevicePreferences.readSidebarWidth(from: defaults), 345)
+        defaults.set("invalid", forKey: CompassStorageKeys.sidebarWidth)
+        XCTAssertEqual(CompassDevicePreferences.readSidebarWidth(from: defaults), 345)
+        defaults.set("239", forKey: CompassStorageKeys.sidebarWidth)
+        XCTAssertEqual(CompassDevicePreferences.readSidebarWidth(from: defaults), 240)
+        defaults.set("481", forKey: CompassStorageKeys.sidebarWidth)
+        XCTAssertEqual(CompassDevicePreferences.readSidebarWidth(from: defaults), 480)
+        defaults.set("400.5", forKey: CompassStorageKeys.sidebarWidth)
+        XCTAssertEqual(CompassDevicePreferences.readSidebarWidth(from: defaults), 401)
+    }
+
+    func testSidebarWidthWritesRoundedClampedString() {
+        CompassDevicePreferences.writeSidebarWidth(400.5, to: defaults)
+        XCTAssertEqual(defaults.string(forKey: CompassStorageKeys.sidebarWidth), "401")
+        CompassDevicePreferences.writeSidebarWidth(900, to: defaults)
+        XCTAssertEqual(defaults.string(forKey: CompassStorageKeys.sidebarWidth), "480")
+    }
 }
