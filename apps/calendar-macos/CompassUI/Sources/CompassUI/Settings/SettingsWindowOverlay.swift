@@ -26,9 +26,7 @@ public struct SettingsWindowOverlay: View {
                     content
                 }
                 .frame(width: 640, height: 620)
-                .background(theme.surfaceColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(theme.borderColor))
+                .overlayPanelChrome()
             }
             .accessibilityIdentifier("compass-native-settings")
         }
