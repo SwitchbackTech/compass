@@ -214,9 +214,12 @@ PostHog's `before_send` runs four filters, in order:
   and replay/autocapture/exceptions on those pages are dropped because the
   DOM and error messages cannot be rewritten onto the allowlist
 
-Neither the exception nor the dead-click filter touches `$rageclick`: repeated
-clicking is real frustration whatever the DOM did. Rageclicks on public
-booking pages are still dropped by the booking filter.
+Calendar grid clicks are intentional keyboard-teaching gestures, not failed
+UI. Timed and all-day grids carry `ph-no-rageclick`, `capture_dead_clicks`
+ignores the same selectors, and `posthog-grid-gesture-filter.util.ts` drops
+any `$dead_click`, `$dead_swipe`, or `$rageclick` whose element chain still
+lands on the grid. Rageclicks on public booking pages are still dropped by
+the booking filter.
 
 `calendar_connected` has two sources, distinguished by a `source` property:
 `signup_google` from `GoogleAuthCallback` (a new user whose Google grant

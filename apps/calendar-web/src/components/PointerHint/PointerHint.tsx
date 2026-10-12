@@ -55,11 +55,21 @@ export const PointerHint: FC = () => {
 
   if (!body) return null;
 
+  const isGridSlotHint =
+    attempt.source === "pointer" &&
+    typeof attempt.message === "string" &&
+    attempt.message.startsWith("Type ");
+
   return (
     <div
       aria-live="polite"
-      className="fixed top-4 left-1/2 flex max-w-[min(100vw-2rem,36rem)] -translate-x-1/2 starting:translate-y-1 items-start gap-2 rounded-lg border border-border bg-surface-panel/90 px-3 py-1.5 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-200 ease-out motion-reduce:transition-none"
+      className={
+        isGridSlotHint
+          ? "fixed top-3 left-1/2 flex max-w-[min(100vw-2rem,32rem)] -translate-x-1/2 starting:translate-y-1 items-start gap-2 rounded-md border border-border/80 bg-surface-panel/75 px-2.5 py-1 text-text-muted text-xs starting:opacity-0 shadow-md backdrop-blur-sm transition-all duration-200 ease-out motion-reduce:transition-none"
+          : "fixed top-4 left-1/2 flex max-w-[min(100vw-2rem,36rem)] -translate-x-1/2 starting:translate-y-1 items-start gap-2 rounded-lg border border-border bg-surface-panel/90 px-3 py-1.5 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-200 ease-out motion-reduce:transition-none"
+      }
       data-pointer-hint=""
+      data-pointer-hint-grid-slot={isGridSlotHint ? "" : undefined}
       role="status"
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >

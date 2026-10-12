@@ -2,6 +2,7 @@ import cn from "classnames";
 import { type FC, type ReactNode, type RefCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { CALENDAR_GRID_PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import {
   DATA_TIMED_GRID_ROW,
   ID_GRID_COLUMNS_TIMED,
@@ -69,7 +70,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
       // EventGrid renders the visible focus ring as a sibling overlay so it
       // wraps the all-day row and timed grid together and is not clipped by
       // this section's overflow-y-auto.
-      className="peer c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline-none"
+      className={`peer c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline-none ${CALENDAR_GRID_PH_NO_RAGECLICK_CLASS}`}
       id={timedGridId}
       ref={timedGridRef}
     >

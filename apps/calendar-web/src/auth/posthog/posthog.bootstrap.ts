@@ -1,9 +1,11 @@
 import { type PostHog } from "posthog-js";
 import * as posthogUtil from "@web/auth/posthog/posthog.util";
 import { filterPosthogBookingTelemetry } from "@web/auth/posthog/posthog-booking-filter.util";
+import { CALENDAR_GRID_DEAD_CLICK_IGNORE_SELECTORS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import { filterPosthogDeadClick } from "@web/auth/posthog/posthog-dead-click-filter.util";
 import { resolvePosthogEnvironment } from "@web/auth/posthog/posthog-environment.util";
 import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
+import { filterPosthogCalendarGridGestures } from "@web/auth/posthog/posthog-grid-gesture-filter.util";
 import { filterPosthogWebVitals } from "@web/auth/posthog/posthog-web-vitals-filter.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
@@ -52,9 +54,13 @@ export function initPosthog(): PostHog | undefined {
     // mis-scores on our static onboarding overlays, then the web vitals that
     // report a zero where a timing should be, then booking URL/token/PII
     // redaction (and dropping replay/autocapture/exceptions on /meet).
+    capture_dead_clicks: {
+      css_selector_ignorelist: [...CALENDAR_GRID_DEAD_CLICK_IGNORE_SELECTORS],
+    },
     before_send: [
       filterPosthogBeforeSend,
       filterPosthogDeadClick,
+      filterPosthogCalendarGridGestures,
       filterPosthogWebVitals,
       filterPosthogBookingTelemetry,
     ],

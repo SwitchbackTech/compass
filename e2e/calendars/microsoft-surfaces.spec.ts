@@ -141,7 +141,7 @@ test("Add account starts Microsoft OAuth from the chooser", async ({
   expect(beginBody).toMatchObject({ provider: "microsoft" });
 });
 
-test("Add account menu shows a logo for Google, Microsoft, and Apple", async ({
+test("Add account menu shows a logo for Google and Microsoft plus Other / iCloud", async ({
   page,
 }) => {
   await prepareSignedInBookingSettingsPage(page, {
@@ -156,9 +156,12 @@ test("Add account menu shows a logo for Google, Microsoft, and Apple", async ({
   const menu = settingsDialog.getByRole("menu");
   await expect(menu).toBeVisible();
 
-  for (const name of ["Google", "Microsoft", "Apple"] as const) {
+  for (const name of ["Google", "Microsoft"] as const) {
     const item = settingsDialog.getByRole("menuitem", { name });
     await expect(item).toBeVisible();
     await expect(item.locator("svg")).toHaveCount(1);
   }
+  await expect(
+    settingsDialog.getByRole("button", { name: "Other / iCloud" }),
+  ).toBeVisible();
 });

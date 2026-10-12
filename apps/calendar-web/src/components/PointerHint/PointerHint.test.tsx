@@ -32,6 +32,21 @@ describe("PointerHint", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Next time, press");
   });
 
+  it("marks grid slot teaching with a subtler layout", () => {
+    const { rerender } = render(<PointerHint />);
+
+    pointerHintActions.pulse({
+      source: "pointer",
+      shortcutKey: ["1400"],
+      message: "Type 1400 to create at 2:00 PM, or press {1}.",
+      keys: [["1400"], ["C"]],
+    });
+    rerender(<PointerHint />);
+    const hint = screen.getByRole("status");
+    expect(hint).toHaveAttribute("data-pointer-hint-grid-slot");
+    expect(hint).toHaveTextContent("Type 1400");
+  });
+
   it("renders pointer teaching with shortcutKey only", () => {
     pointerHintActions.pulse({
       source: "pointer",

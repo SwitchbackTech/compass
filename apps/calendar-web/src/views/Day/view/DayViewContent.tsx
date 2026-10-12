@@ -34,6 +34,7 @@ import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNaviga
 import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { useToday } from "@web/views/Week/hooks/useToday";
+import { useAttachPointerIntentTracker } from "@web/views/Week/pointer-intent/useAttachPointerIntentTracker";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -62,6 +63,7 @@ export const DayViewContent = memo(() => {
 
   useFocusSidebarShortcut();
   useSidebarShortcuts();
+  useAttachPointerIntentTracker();
   const isTrialing = useIsTrialing();
   const shortcutSections = useMemo(
     () =>

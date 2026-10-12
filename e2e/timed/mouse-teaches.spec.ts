@@ -76,10 +76,33 @@ test("a card click teaches Enter and Enter opens the event", async ({
   await expect(getFormTitleInput(page)).toHaveValue(title);
 });
 
+test("day view slot click teaches typed time digits", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
+    localStorage.setItem(
+      "compass.onboarding.has-seen-shortcut-showcase",
+      "true",
+    );
+    localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+  });
+  await prepareCalendarPage(page);
+  await page.goto("/day", { waitUntil: "domcontentloaded" });
+  await page.waitForURL((url) => url.pathname.startsWith("/day"));
+
+  const clickPoint = await getTimedColumnClickPoint(page);
+  await page.mouse.click(clickPoint.x, clickPoint.y);
+
+  const hint = pointerHint(page);
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText("Type");
+});
+
 test("a slot click teaches typed time digits and typing opens create", async ({
   page,
 }) => {
   await prepareTeachingWeek(page);
+
+  await expect(page.locator("#mainGrid")).toHaveClass(/ph-no-rageclick/);
 
   const clickPoint = await getTimedColumnClickPoint(page);
   await page.mouse.click(clickPoint.x, clickPoint.y);
