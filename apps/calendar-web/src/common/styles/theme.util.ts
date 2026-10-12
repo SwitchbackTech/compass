@@ -4,7 +4,7 @@ import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { brighten, darken } from "./color.utils";
 
 // Flat neutral fill shared by every event surface (grid cards, event form
-// accents, save button), one value per theme. Title/time text is picked per
+// accents), one value per theme. Title/time text is picked per
 // fill by theme.getContrastText, so each base just has to sit clearly on one
 // side of the mid-tone dead zone.
 //   Dark Abyss:  muted steel-blue, light enough for dark text (>= 4.5:1) — a
@@ -59,21 +59,12 @@ interface EventPalette {
    * to suit one palette's lightness. */
   hover: string;
   gradient: string;
-  saveButtonBg: string;
-  /** The c-button-elevated underside, a step deeper than the button fill. */
-  saveButtonShadow: string;
 }
 
 const buildEventPaletteFromBase = (base: string): EventPalette => ({
   base,
   hover: brighten(base),
   gradient: `linear-gradient(90deg, ${darken(base, 15)}, ${darken(base, 30)})`,
-  // Undarkened: darken(base) sat right at the mid-tone dead zone (see
-  // getContrastText above), leaving Save's text only ~5:1 against its own
-  // fill. The plain base clears 6.5:1+ in both themes; saveButtonShadow
-  // still carries the "elevated" depth cue.
-  saveButtonBg: base,
-  saveButtonShadow: darken(base, 25),
 });
 
 const buildEventPalette = (theme: ThemeName): EventPalette =>
