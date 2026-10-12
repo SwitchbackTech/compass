@@ -64,6 +64,11 @@ interface Window {
       setLoading: () => void;
       clear: () => void;
     };
+    checkoutCelebration?: {
+      celebrate: () => void;
+      dismiss: () => void;
+      getState: () => import("@web/billing/checkout-celebration.store").CheckoutCelebrationState;
+    };
   };
   /** Session test hooks exposed by SessionProvider for e2e auth control. */
   __COMPASS_E2E_HOOKS__?: {

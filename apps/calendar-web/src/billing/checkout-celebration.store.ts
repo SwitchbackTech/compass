@@ -32,3 +32,14 @@ export const checkoutCelebrationActions = {
 
 export const selectIsCelebrating = (state: CheckoutCelebrationState) =>
   state.isCelebrating;
+
+if (typeof window !== "undefined") {
+  window.__COMPASS_E2E_STORE__ = {
+    ...window.__COMPASS_E2E_STORE__,
+    checkoutCelebration: {
+      celebrate: checkoutCelebrationActions.celebrate,
+      dismiss: checkoutCelebrationActions.dismiss,
+      getState: useCheckoutCelebrationStore.getState,
+    },
+  };
+}
