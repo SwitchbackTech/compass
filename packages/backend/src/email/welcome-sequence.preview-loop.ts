@@ -65,7 +65,6 @@ export function welcomeUserForSkipIf(
   }
   return {
     ...user,
-    hasConnectedCalendar: false,
     billing: {
       subscriptionStatus: "trialing",
       stripeSubscriptionId:
@@ -221,8 +220,8 @@ interface PreviewGenerationState {
   lastSentAt: Date | null;
   /**
    * The generation was enrolled under an older step list (it holds a step key
-   * the sequence no longer has). It can never collect every current step, so
-   * once it drains it is complete and the next generation starts right away.
+   * the sequence no longer has). Queued rows are retired and the next
+   * generation starts immediately.
    */
   isStale: boolean;
 }
@@ -248,20 +247,14 @@ async function readPreviewGenerationState(
   const sentTimes = rows.flatMap((row) =>
     row.status === "sent" && row.sentAt ? [row.sentAt.getTime()] : [],
   );
-
   const isStale = rows.some((row) => !isWelcomeStepKey(row.stepKey));
-  const allTerminal = rows.every(
-    (row) =>
-      row.status === "sent" ||
-      row.status === "skipped" ||
-      (isStale && row.status !== "queued"),
-  );
 
   return {
     hasQueuedRows: rows.some((row) => row.status === "queued"),
     isStale,
     isComplete:
-      (isStale || rows.length >= WELCOME_SEQUENCE.length) && allTerminal,
+      rows.length >= WELCOME_SEQUENCE.length &&
+      rows.every((row) => row.status === "sent" || row.status === "skipped"),
     lastSentAt: sentTimes.length > 0 ? new Date(Math.max(...sentTimes)) : null,
   };
 }

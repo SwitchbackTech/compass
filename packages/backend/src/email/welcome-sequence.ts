@@ -9,7 +9,6 @@ export type ScheduleProfile = "real" | "fast";
 
 export type WelcomeSequenceUser = {
   firstName?: string;
-  hasConnectedCalendar: boolean;
   billing?: Schema_UserBilling;
   emailPreferences?: Schema_User["emailPreferences"];
 };
