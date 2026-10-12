@@ -130,7 +130,7 @@ test("the signed-in connect-calendar prompt has no automatically detectable acce
   });
 });
 
-test("the add-account chooser with Google, Microsoft, and Apple has no automatically detectable accessibility violations", async ({
+test("the add-account chooser with Google, Microsoft, and Other / iCloud has no automatically detectable accessibility violations", async ({
   page,
 }) => {
   await prepareSignedInBookingSettingsPage(page, {
@@ -152,7 +152,7 @@ test("the add-account chooser with Google, Microsoft, and Apple has no automatic
     settingsDialog.getByRole("menuitem", { name: "Microsoft" }),
   ).toBeVisible();
   await expect(
-    settingsDialog.getByRole("menuitem", { name: "Apple" }),
+    settingsDialog.getByRole("button", { name: "Other / iCloud" }),
   ).toBeVisible();
 
   await expectNoAxeViolations(page, {

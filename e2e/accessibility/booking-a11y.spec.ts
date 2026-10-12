@@ -520,7 +520,7 @@ test.describe("settings booking section", () => {
       }),
     ).toBeVisible();
     await expect(
-      settingsDialog.getByRole("button", { name: "Connect Apple Calendar" }),
+      settingsDialog.getByRole("button", { name: "Other / iCloud" }),
     ).toBeVisible();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking connect pills",
