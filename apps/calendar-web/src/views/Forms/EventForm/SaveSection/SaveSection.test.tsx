@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as trackModule from "@web/auth/posthog/track";
 import {
@@ -19,6 +19,19 @@ describe("SaveSection layout", () => {
 
     const save = screen.getByRole("button", { name: /save/i });
     expect(save).toHaveClass("w-full", "c-button-primary", "c-button-elevated");
+    expect(save).toHaveClass("h-9", "justify-between");
+  });
+
+  it("shows the save shortcut keycaps inside the button, not in a tooltip", () => {
+    render(<SaveSection onSubmit={mock()} />);
+
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(save).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Meta+Enter Control+Enter",
+    );
+    expect(within(save).getByTestId("enter-icon")).toBeTruthy();
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 });
 

@@ -1,7 +1,10 @@
 import type React from "react";
-import { useCallback } from "react";
+import { type MouseEvent, useCallback } from "react";
 import { Btn } from "@web/components/Button/Button";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { pulseClickTaughtShortcut } from "@web/shortcuts/pointer-intent/pulseClickTaughtShortcut";
+import { isRealMouseClick } from "@web/shortcuts/pointer-intent/real-mouse-click";
 
 interface Props {
   saveText?: string;
@@ -18,13 +21,20 @@ export const SaveSection: React.FC<Props> = ({
 }) => {
   const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
 
+  const onSaveClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (isRealMouseClick(event)) {
+        pulseClickTaughtShortcut("edit-save");
+      }
+      onSave();
+    },
+    [onSave],
+  );
+
   return (
     // Pinned footer bar: EventForm renders this outside its scrollable body,
     // so it stays visible while the fields scroll.
-    <div className="flex w-full flex-col items-stretch gap-3 border-border border-t px-4 py-3">
-      {/* onClick lives on the buttons, not the tooltip wrapper div: keyboard
-          activation targets the button itself, and the wrapper only worked
-          for it by event bubbling. */}
+    <div className="flex w-full flex-col items-stretch gap-3 border-border border-t px-4 py-2.5">
       {onCancel && (
         <TooltipWrapper asChild description={cancelText} onClick={onCancel}>
           <Btn
@@ -36,20 +46,19 @@ export const SaveSection: React.FC<Props> = ({
         </TooltipWrapper>
       )}
 
-      <TooltipWrapper
-        asChild
-        description={saveText}
-        onClick={onSave}
-        shortcut={["Mod", "Enter"]}
-        shortcutId="edit-save"
+      <Btn
+        aria-keyshortcuts="Meta+Enter Control+Enter"
+        aria-label={saveText}
+        className="c-button c-button-primary c-button-elevated h-9 w-full justify-between rounded-xs px-4"
+        onClick={onSaveClick}
+        type="button"
       >
-        <Btn
-          aria-keyshortcuts="Meta+Enter"
-          className="c-button c-button-primary c-button-elevated h-10 w-full rounded-xs"
-        >
-          {saveText}
-        </Btn>
-      </TooltipWrapper>
+        <span>{saveText}</span>
+        <ShortcutKeys
+          className="shrink-0 [&_.c-keycap]:border-on-accent/35 [&_.c-keycap]:bg-on-accent/10 [&_.c-keycap]:text-on-accent"
+          keys={["Mod", "Enter"]}
+        />
+      </Btn>
     </div>
   );
 };
