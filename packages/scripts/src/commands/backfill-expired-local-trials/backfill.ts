@@ -83,14 +83,7 @@ export async function backfillExpiredLocalTrials(
   let modified = 0;
   for (const change of changes) {
     const result = await users.updateOne(
-      {
-        _id: new ObjectId(change.userId),
-        "billing.subscriptionStatus": "trialing",
-        $or: [
-          { "billing.stripeSubscriptionId": { $exists: false } },
-          { "billing.stripeSubscriptionId": null },
-        ],
-      },
+      { _id: new ObjectId(change.userId), ...localTrialFilter() },
       { $set: { "billing.subscriptionStatus": change.toStatus } },
     );
     modified += result.modifiedCount;

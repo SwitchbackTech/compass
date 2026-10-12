@@ -15,9 +15,9 @@ import {
 import { isWelcomeEmailEnabled } from "@backend/email/welcome-sequence.enrollment";
 import { createHash } from "node:crypto";
 
-export const PREVIEW_LOOP_ROW_ID_PREFIX = "preview-loop:" as const;
-export const DEFAULT_PREVIEW_LOOP_GAP_DAYS = 1;
-export const DEFAULT_PREVIEW_LOOP_MAX_PER_DAY = 10;
+const PREVIEW_LOOP_ROW_ID_PREFIX = "preview-loop:" as const;
+const DEFAULT_PREVIEW_LOOP_GAP_DAYS = 1;
+const DEFAULT_PREVIEW_LOOP_MAX_PER_DAY = 10;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -79,7 +79,7 @@ function previewLoopDigest(purpose: "" | "-user", email: string) {
     .digest();
 }
 
-export function previewLoopEmailHash(email: string): string {
+function previewLoopEmailHash(email: string): string {
   return previewLoopDigest("", email).toString("hex").slice(0, 16);
 }
 
