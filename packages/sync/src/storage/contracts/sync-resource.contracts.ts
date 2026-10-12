@@ -137,6 +137,13 @@ export const SyncResourceRecordSchema = z.strictObject({
   // Defaults tolerate rows written before the field — REQUIRED, see
   // watchUnsupportedAt above.
   pushLastReceivedAt: z.date().nullable().default(null),
+  // When a push-stamp self-heal last re-watched a live channel whose
+  // pushLastReceivedAt was still null (Google pre-#4442 channels). Bounds
+  // how often subscriptionMaintain will churn a quiet calendar while waiting
+  // for the post-watch `sync` handshake to stamp push receipt.
+  // Defaults tolerate rows written before the field — REQUIRED, see
+  // watchUnsupportedAt above.
+  pushStampHealAttemptedAt: z.date().nullable().default(null),
   // How many incremental pulls in a row the provider has rejected with an
   // expired cursor, and until when this resource is held off because of it.
   //
