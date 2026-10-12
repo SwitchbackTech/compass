@@ -94,7 +94,9 @@ public final class AuthStore {
         self.eventsStore = eventsStore
     }
 
-    public func bootstrap(forceDemoSignedIn: Bool = false, deferModalUntilWelcomeCompletes: Bool = false) async {
+    /// Like the web, signed-out users keep using local mode. Only a returning
+    /// user whose session is gone gets the login form (web `useLoadProfile`).
+    public func bootstrap(forceDemoSignedIn: Bool = false) async {
         submitError = nil
         if forceDemoSignedIn {
             authenticated = true
@@ -107,7 +109,7 @@ public final class AuthStore {
         if authenticated {
             await identifyAnalyticsUser()
             isModalPresented = false
-        } else if !deferModalUntilWelcomeCompletes {
+        } else if hasUserEverAuthenticated() {
             openModal(.login)
         } else {
             isModalPresented = false
@@ -345,14 +347,18 @@ public final class AuthStore {
         await onAuthenticated?()
     }
 
-    private func refreshRepositorySource() {
-        guard let userMetadataRepository, let eventsStore else { return }
-        let remembered = (try? AuthRememberedState.hasUserEverAuthenticated(
+    private func hasUserEverAuthenticated() -> Bool {
+        guard let userMetadataRepository else { return false }
+        return (try? AuthRememberedState.hasUserEverAuthenticated(
             repository: userMetadataRepository)) ?? false
+    }
+
+    private func refreshRepositorySource() {
+        guard let eventsStore else { return }
         eventsStore.setSource(
             EventRepositorySelection.source(
                 sessionExists: authenticated,
-                hasUserEverAuthenticated: remembered))
+                hasUserEverAuthenticated: hasUserEverAuthenticated()))
     }
 
     private func identifyAnalyticsUser() async {

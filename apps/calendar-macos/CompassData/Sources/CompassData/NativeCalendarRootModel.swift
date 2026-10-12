@@ -295,8 +295,7 @@ public final class NativeCalendarRootModel {
     public func start() async {
         await configStore.load()
         await configureAnalyticsFromConfig()
-        let deferAuthForWelcome = demoPresentation == nil && !onboardingStore.hasSeenWelcome
-        await authStore.bootstrap(deferModalUntilWelcomeCompletes: deferAuthForWelcome)
+        await authStore.bootstrap()
         if demoPresentation != nil {
             authStore.closeModal()
         }
