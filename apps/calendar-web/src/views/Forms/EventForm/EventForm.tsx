@@ -30,6 +30,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -92,6 +93,7 @@ import {
   FORM_CARD_FIELD_INPUT_CLASSNAME,
   FormCardIconRow,
 } from "@web/views/Forms/EventForm/FormCardIconRow";
+import { LocationField } from "@web/views/Forms/EventForm/LocationField/LocationField";
 import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import {
@@ -436,8 +438,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       patchDraftFields({ title: e.target.value });
     };
 
-    const onChangeLocation = (e: React.ChangeEvent<HTMLInputElement>) => {
-      patchDraftFields({ location: e.target.value });
+    const onChangeLocation = (nextLocation: string) => {
+      patchDraftFields({ location: nextLocation });
     };
 
     const onClose = useCallback(() => {
@@ -929,16 +931,13 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     )
                   }
                 >
-                  <Focusable
+                  <LocationField
                     id={EVENT_FORM_LOCATION_ID}
-                    Component="input"
+                    apiKey={ENV_WEB.GOOGLE_PLACES_API_KEY}
                     className={FORM_CARD_FIELD_INPUT_CLASSNAME}
                     disabled={isReadOnly}
                     onChange={onChangeLocation}
                     onKeyDown={handleIgnoredKeys}
-                    placeholder="Location"
-                    aria-label="Location"
-                    name="Event Location"
                     value={location}
                   />
                 </FormCardIconRow>

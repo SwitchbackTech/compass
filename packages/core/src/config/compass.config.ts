@@ -116,6 +116,14 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
+    // Google Places API (New) key for location autocomplete in the web
+    // event form. Ships to the browser, so restrict it to Places API (New)
+    // and your web origins. Omit to keep the plain location input.
+    maps: z
+      .object({
+        placesApiKey: optionalString,
+      })
+      .nullish(),
     // Hosted Stripe billing. All-four-or-none is enforced when this is
     // mapped into backend CONFIG (see config.constants superRefine). Omit
     // the whole block for self-host — billing enforcement then stays off.

@@ -33,6 +33,7 @@ extension NativeCalendarRootModel {
     public func updateDraftFromForm(
         title: String? = nil,
         description: String? = nil,
+        location: String? = nil,
         calendarId: CalendarId? = nil,
         color: EventColorSlot?? = nil,
         schedule: DraftSchedule? = nil
@@ -40,6 +41,7 @@ extension NativeCalendarRootModel {
         guard var draft = draftStore.gridDraft else { return }
         if let title { draft.title = title }
         if let description { draft.description = description }
+        if let location { draft.location = location }
         if let calendarId { draft.calendarId = calendarId }
         if let color { draft.color = color }
         if let schedule { draft.schedule = schedule }

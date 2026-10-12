@@ -43,6 +43,10 @@ const webEnvSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "undefined" ? undefined : val)),
+  GOOGLE_PLACES_API_KEY: z
+    .string()
+    .optional()
+    .transform((val) => (val && val !== "undefined" ? val : undefined)),
 });
 
 export const ENV_WEB = webEnvSchema.parse({
@@ -54,6 +58,7 @@ export const ENV_WEB = webEnvSchema.parse({
   NODE_ENV: readCompassRuntimeNodeEnv(),
   POSTHOG_KEY: process.env.POSTHOG_KEY,
   POSTHOG_HOST: process.env.POSTHOG_HOST,
+  GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);

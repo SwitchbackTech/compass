@@ -116,6 +116,7 @@ database and must not share the backend's database user/data.
 |---|---|---|
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
+| `maps.placesApiKey` | No | Google Places API (New) key injected into the web bundle for location autocomplete in the event form. Restrict it to Places API (New) and your web origins. Omit to keep the plain location input. |
 | `stripe.secretKey` | No | Stripe secret (`sk_test_...` is fine on staging). All four Stripe keys are required together; omit the whole `stripe:` block on self-host. Hosted deploys set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, and `STRIPE_PUBLISHABLE_KEY` on the GitHub Environment; missing any one omits the block. |
 | `stripe.webhookSecret` | No | Stripe webhook signing secret. |
 | `stripe.priceId` | No | Stripe Price id for the hosted subscription. The amount lives on that Price in Stripe. |
