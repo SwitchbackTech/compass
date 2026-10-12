@@ -50,6 +50,11 @@ public final class NativeCalendarRootModel {
     public var dedicationDialogVisible = false
     /// Right-hand sidebar, toggled with `]` like the web.
     public var isSidebarOpen = true
+    /// Month picker day holding keyboard focus after `i`, like the web's
+    /// focused datepicker day. Nil when the picker does not have focus.
+    public internal(set) var monthPickerFocusDate: Date?
+    /// Banner holding keyboard focus after `p`, like the web's `data-notice` focus.
+    public internal(set) var focusedNotice: NativeNotice?
     public var pendingDiscardDraftConfirmation = false
     public var pendingRecurrenceScopePrompt: RecurrenceScopePromptKind? {
         didSet {
@@ -472,6 +477,12 @@ public final class NativeCalendarRootModel {
             toggleShortcutsLegend()
         case .otherSidebar:
             isSidebarOpen.toggle()
+        case .focusSidebar:
+            focusSidebar()
+        case .focusNotice:
+            focusNextNotice()
+        case .otherSubscribe:
+            openUpgradeConfirmation()
         case .navGoToDate:
             toggleCommandPalette(fromGoToDate: true)
         default:

@@ -24,6 +24,7 @@ public struct RootView: View {
                         DemoEventsBannerView {
                             model.dismissDemoEventsBanner()
                         }
+                        .noticeFocusRing(model.focusedNotice == .demoEvents)
                     }
                     content
                         .padding(.leading, contentLeadingInset)
@@ -57,6 +58,7 @@ public struct RootView: View {
                     DesktopUpdateReadyBannerView {
                         model.onDesktopRestartToUpdate?()
                     }
+                    .noticeFocusRing(model.focusedNotice == .updateReady)
                 }
                 UpNextBanner(
                     model: model,
@@ -73,6 +75,7 @@ public struct RootView: View {
                server.status == .pastDue
             {
                 BillingPastDueBannerView(billingStore: model.billingStore)
+                    .noticeFocusRing(model.focusedNotice == .billingPastDue)
             }
         }
         .overlay {
@@ -217,6 +220,7 @@ public struct RootView: View {
                 displayedMonth: $model.monthPickerMonth,
                 selectedDate: model.viewStore.anchorDate,
                 onSelectDate: { model.goToDate($0) },
+                focusedDate: model.monthPickerFocusDate,
                 trailingHeader: {
                     TrialBadgeView(billingStore: model.billingStore)
                 }

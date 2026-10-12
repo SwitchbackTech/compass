@@ -6,17 +6,21 @@ public struct SidebarMonthPicker: View {
     @Binding public var displayedMonth: Date
     public let selectedDate: Date
     public let onSelectDate: (Date) -> Void
+    /// Day holding keyboard focus (`i`), drawn with a ring.
+    public let focusedDate: Date?
     private let trailingHeader: AnyView?
 
     public init(
         displayedMonth: Binding<Date>,
         selectedDate: Date,
         onSelectDate: @escaping (Date) -> Void,
+        focusedDate: Date? = nil,
         trailingHeader: (() -> some View)? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
         self.onSelectDate = onSelectDate
+        self.focusedDate = focusedDate
         if let trailingHeader {
             self.trailingHeader = AnyView(trailingHeader())
         } else {
@@ -51,6 +55,12 @@ public struct SidebarMonthPicker: View {
                                         : Color.clear
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay {
+                                    if let focusedDate, isSameDay(day, focusedDate) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(theme.accentColor, lineWidth: 2)
+                                    }
+                                }
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(dayAccessibilityLabel(day))
