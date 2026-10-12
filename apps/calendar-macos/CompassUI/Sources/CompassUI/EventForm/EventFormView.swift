@@ -2,6 +2,8 @@ import CompassData
 import CompassKit
 import SwiftUI
 
+/// Web `SidebarEventDetails`: the form replaces the sidebar's body while a
+/// draft is open, so `RootView` hosts it in the sidebar column.
 public struct EventFormView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable public var model: NativeCalendarRootModel
@@ -13,12 +15,8 @@ public struct EventFormView: View {
 
     public var body: some View {
         if model.isEventFormVisible, let draft = model.draftStore.gridDraft {
-            HStack(spacing: 0) {
-                Spacer()
-                formPanel(draft: draft)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in
+            formPanel(draft: draft)
+                .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in
                 ModHoldChipsOverlay(
                     targets: model.formFieldDigitTargets(),
                     anchors: anchors,
@@ -110,15 +108,10 @@ public struct EventFormView: View {
                 }
             }
         }
-        .padding(16)
-        .frame(width: 320)
-        .frame(maxHeight: .infinity)
-        .background(theme.surfacePanelColor)
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(theme.borderColor)
-                .frame(width: 1)
-        }
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("compass-event-form")
         .onAppear {

@@ -28,7 +28,9 @@ public struct RootView: View {
                     content
                         .padding(.leading, contentLeadingInset)
                 }
-                if model.isSidebarOpen {
+                // Web: Day/Week keep the panel mounted for event details even
+                // when the sidebar preference is closed.
+                if model.isSidebarOpen || model.isEventFormVisible {
                     Color.clear
                         .frame(width: sidebarDividerWidth)
                     sidebar
@@ -158,9 +160,6 @@ public struct RootView: View {
                 onConfirm: { scope in Task { await model.confirmRsvpScope(scope) } }
             )
         }
-        .overlay {
-            EventFormView(model: model)
-        }
         .background {
             GeometryReader { geometry in
                 Color.clear
@@ -185,25 +184,11 @@ public struct RootView: View {
     /// status line and the actions bar pinned to the bottom.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 24) {
-                SidebarMonthPicker(
-                    displayedMonth: $model.monthPickerMonth,
-                    selectedDate: model.viewStore.anchorDate,
-                    onSelectDate: { model.goToDate($0) },
-                    trailingHeader: {
-                        TrialBadgeView(billingStore: model.billingStore)
-                    }
-                )
-                .pageJumpChipAnchor(id: "month-picker")
-                UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
-                if model.isSignedIn {
-                    SyncAccountsListView(store: model.syncConnectionsStore)
-                }
-                Spacer(minLength: 0)
+            if model.isEventFormVisible {
+                EventFormView(model: model)
+            } else {
+                sidebarBody
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 20)
-            .padding(.bottom, 20)
             ShortcutSidebarFooter(levelsStore: model.levelsStore)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -224,6 +209,26 @@ public struct RootView: View {
                 .accessibilityIdentifier("compass-native-sidebar")
                 .allowsHitTesting(false)
         }
+    }
+
+    private var sidebarBody: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            SidebarMonthPicker(
+                displayedMonth: $model.monthPickerMonth,
+                selectedDate: model.viewStore.anchorDate,
+                onSelectDate: { model.goToDate($0) },
+                trailingHeader: {
+                    TrialBadgeView(billingStore: model.billingStore)
+                }
+            )
+            .pageJumpChipAnchor(id: "month-picker")
+            UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
+            CalendarListView(model: model)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 20)
     }
 
     /// Web `SidebarActions`: shortcuts on the left, settings and palette on the right.

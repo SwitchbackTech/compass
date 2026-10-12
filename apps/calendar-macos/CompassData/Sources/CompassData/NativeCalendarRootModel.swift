@@ -74,6 +74,7 @@ public final class NativeCalendarRootModel {
     let environment: NativeCalendarEnvironment
     let eventsStore: EventsStore
     private let hiddenEventsStore: HiddenEventsStore
+    public let calendarVisibilityStore: CalendarVisibilityStore
     private let calendarRepository: CalendarRepository
     private let demoPresentation: DemoSeedFixture?
     private var cachedDemoEventIds: Set<String> = []
@@ -118,6 +119,7 @@ public final class NativeCalendarRootModel {
         }
         eventsStore = environment.eventsStore
         hiddenEventsStore = environment.hiddenEventsStore
+        calendarVisibilityStore = CalendarVisibilityStore()
         calendarRepository = environment.calendarRepository
         configStore = environment.configStore
         authStore = environment.authStore
@@ -828,7 +830,7 @@ public final class NativeCalendarRootModel {
             visibleDateKeys: visibleDateKeys(),
             referenceNow: referenceNow,
             calendars: visibleCalendars(),
-            events: loadedEvents,
+            events: loadedEvents.filter { calendarVisibilityStore.isVisible($0.calendarId.rawValue) },
             hiddenEventIds: hiddenIds,
             demoEventIds: demoIds
         )
@@ -964,7 +966,23 @@ public final class NativeCalendarRootModel {
     }
 
     public func visibleCalendars() -> [CompassCalendar] {
-        calendars.filter { $0.isVisible && $0.isActive }
+        calendars.filter { $0.isActive && calendarVisibilityStore.isVisible($0.id) }
+    }
+
+    /// Active calendars for the sidebar list, hidden ones included.
+    public var sidebarCalendars: [CompassCalendar] {
+        calendars.filter(\.isActive)
+    }
+
+    /// Web `useCalendarVisibility`: client-only, announced with a toast.
+    public func toggleCalendarVisibility(_ calendar: CompassCalendar) {
+        let visible = !calendarVisibilityStore.isVisible(calendar.id)
+        calendarVisibilityStore.setVisible(calendar.id, visible)
+        rebuildPresentation()
+        statusToastStore.show(
+            id: "calendar-visibility",
+            message: visible ? "Showing \(calendar.name) calendar" : "Hidden \(calendar.name) calendar"
+        )
     }
 
     func defaultTargetCalendarId() -> CalendarId? {
