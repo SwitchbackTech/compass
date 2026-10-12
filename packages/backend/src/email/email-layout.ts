@@ -36,7 +36,6 @@ export function renderWelcomeEmail(
   </head>
   <body style="margin:0;padding:24px;background:#f9fafb;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:32px;">
-      <p style="margin:0 0 8px;font-size:13px;line-height:20px;color:#6b7280;">${escapeHtml(content.preheader)}</p>
       <h1 style="margin:0 0 20px;font-size:24px;line-height:32px;color:#111827;">${escapeHtml(content.heading)}</h1>
       ${paragraphHtml}
       <p style="margin:24px 0 0;">

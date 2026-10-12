@@ -68,4 +68,15 @@ describe("welcome sequence Resend templates", () => {
     expect(ctaUrl).toContain("utm_content=trial-ending");
     expect(ctaUrl).toContain("settings=billing");
   });
+
+  it("sets CTA_LABEL to the bare host while CTA_URL keeps utm params", () => {
+    const url =
+      "https://staging.compasscalendar.com/?utm_source=email&utm_campaign=welcome&utm_content=cmd-k";
+    const variables = buildWelcomeResendTemplateVariables({
+      ctaUrl: url,
+      unsubscribeUrl: "",
+    });
+    expect(variables.CTA_URL).toBe(url);
+    expect(variables.CTA_LABEL).toBe("staging.compasscalendar.com");
+  });
 });

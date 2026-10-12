@@ -99,15 +99,16 @@ describe("welcome sequence preview loop", () => {
       recipientEmail: previewEmail,
     }))!.userId;
     await mongoService.emailSend.deleteMany({ previewLoop: true });
-    // A generation enrolled under the old step list, already drained.
+    // A generation enrolled under the old step list, with a step still queued
+    // far in the future.
     await mongoService.emailSend.insertMany(
       ["welcome", "shortcuts"].map((stepKey) => ({
         _id: previewLoopRowId(previewEmail, 1, stepKey),
         userId,
         sequence: "welcome" as const,
         stepKey,
-        status: "skipped" as const,
-        sendAt: anchor,
+        status: stepKey === "welcome" ? ("sent" as const) : ("queued" as const),
+        sendAt: stepKey === "welcome" ? anchor : new Date("2099-01-01"),
         nextAttemptAt: anchor,
         previewLoop: true as const,
         recipientEmail: previewEmail,
@@ -127,6 +128,10 @@ describe("welcome sequence preview loop", () => {
     expect(generationTwo.map((row) => row.stepKey)).toEqual(
       WELCOME_SEQUENCE.map((step) => step.key),
     );
+    const retired = await mongoService.emailSend.findOne({
+      _id: previewLoopRowId(previewEmail, 1, "shortcuts"),
+    });
+    expect(retired?.status).toBe("skipped");
   });
 
   it("defers sends when the daily cap is reached", async () => {

@@ -9,7 +9,6 @@ export type ScheduleProfile = "real" | "fast";
 
 export type WelcomeSequenceUser = {
   firstName?: string;
-  hasConnectedCalendar: boolean;
   billing?: Schema_UserBilling;
   emailPreferences?: Schema_User["emailPreferences"];
 };
@@ -52,6 +51,17 @@ export type WelcomeStepKey = (typeof WELCOME_SEQUENCE)[number]["key"];
  */
 export const isWelcomeStepKey = (value: string): value is WelcomeStepKey =>
   WELCOME_SEQUENCE.some((step) => step.key === value);
+
+/**
+ * Reads a per-step map (content, Resend alias) with a row's `stepKey`, which
+ * may name a step the sequence has since dropped.
+ */
+export function welcomeStepValue<T>(
+  perStep: Record<WelcomeStepKey, T>,
+  stepKey: string,
+): T | undefined {
+  return isWelcomeStepKey(stepKey) ? perStep[stepKey] : undefined;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;

@@ -16,17 +16,18 @@ const ENTRY_HINT_MS = 5_000;
 export const SecondaryTimezoneExitHint: FC<{
   children: ReactElement;
 }> = ({ children }) => {
+  // Remounted (keyed on the zone) whenever a new second zone is picked, so
+  // the pulse starts from this initial state rather than an effect reset.
   const [entryPulse, setEntryPulse] = useState(true);
 
   useEffect(() => {
-    setEntryPulse(true);
     const timeoutId = setTimeout(() => setEntryPulse(false), ENTRY_HINT_MS);
     return () => clearTimeout(timeoutId);
   }, []);
 
   return (
     <Tooltip
-      open={entryPulse ? true : undefined}
+      open={entryPulse || undefined}
       onOpenChange={(open) => {
         if (!open) {
           setEntryPulse(false);

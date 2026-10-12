@@ -167,14 +167,14 @@ const buildDayJumpAssignments = (
 };
 
 /**
- * Press `h` to show day-prefix jump labels, or Shift+<day letter> to enter
+ * Press `f` to show day-prefix jump labels, or Shift+<day letter> to enter
  * jump mode straight onto that column (`Shift+W`, `Shift+S` then `u`/`a`).
  * Any visible column can be selected, empty ones included, so `c`, `Shift+C`,
  * and typed digits have a day to land on; a column with events also focuses
  * its first one. Shift is what makes the day columns always available: bare
- * `t`, `f`, and `m` keep their own commands. Once jump mode is on, the labels
+ * `t`, `p`, and `m` keep their own commands. Once jump mode is on, the labels
  * are typed bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a
- * second `h` toggles off. `s` is only the Sunday/Saturday prefix. `e` is not
+ * second `f` toggles off. `s` is only the Sunday/Saturday prefix. `e` is not
  * a day prefix: jump yields to an armed (or about-to-arm) edit sequence so
  * `e` then `t` edits the title instead of selecting Tuesday. `c` is left
  * unclaimed too, so the create shortcuts can consume the selected column.
@@ -606,10 +606,7 @@ export function useShiftHoldEventHints({
 
       // The flash letter is also Friday's day prefix; bare F toggles off instead
       // of jumping to Friday (Shift+F still enters Friday from idle).
-      if (
-        isBareLetterKey(event, KEYMAP.eventJump.bareLetter) &&
-        !isShiftedSingleChar(event)
-      ) {
+      if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
         event.preventDefault();
         event.stopPropagation();
         deactivate();
@@ -721,9 +718,6 @@ export function useShiftHoldEventHints({
         event.preventDefault();
         event.stopPropagation();
         keyupSwallow.add(key);
-        if (key === KEYMAP.eventJump.bareLetter) {
-          deactivate();
-        }
         return;
       }
 

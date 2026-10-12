@@ -47,26 +47,21 @@ describe("welcome sequence preview loop helpers", () => {
   });
 
   it("sends skipIf-gated steps during preview loop", () => {
-    const connectStep = findWelcomeStep("trial-ending");
     const trialStep = findWelcomeStep("trial-ending");
     const user = {
-      hasConnectedCalendar: true,
       billing: {
         subscriptionStatus: "active" as const,
         stripeSubscriptionId: "sub_123",
       },
     };
-    expect(connectStep?.skipIf?.(user)).toBe(true);
     expect(trialStep?.skipIf?.(user)).toBe(true);
     const previewUser = welcomeUserForSkipIf(user, true);
-    expect(connectStep?.skipIf?.(previewUser)).toBe(false);
     expect(trialStep?.skipIf?.(previewUser)).toBe(false);
   });
 
   it("keeps skipIf behavior for non-preview sends", () => {
-    const connectStep = findWelcomeStep("trial-ending");
-    const user = { hasConnectedCalendar: true };
-    expect(connectStep?.skipIf?.(welcomeUserForSkipIf(user, false))).toBe(true);
+    const trialStep = findWelcomeStep("trial-ending");
+    expect(trialStep?.skipIf?.(welcomeUserForSkipIf({}, false))).toBe(true);
     expect(new ObjectId().toHexString().length).toBe(24);
   });
 });

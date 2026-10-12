@@ -11,18 +11,10 @@ export async function loadWelcomeSequenceUser(
     return null;
   }
   const typed = user as Schema_User & { _id: ObjectId };
-  const connectedCalendar = await mongoService.calendar.findOne(
-    {
-      userId,
-      "source.provider": { $ne: "local" },
-    },
-    { projection: { _id: 1 } },
-  );
 
   return {
     email: typed.email,
     firstName: typed.firstName,
-    hasConnectedCalendar: connectedCalendar !== null,
     billing: typed.billing,
     emailPreferences: typed.emailPreferences,
   };

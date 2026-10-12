@@ -62,16 +62,14 @@ describe("welcome sequence scheduling", () => {
 
   it("skips trial-ending for active subscribers and accounts without a Stripe subscription", () => {
     const step = findWelcomeStep("trial-ending");
-    expect(step?.skipIf?.({ hasConnectedCalendar: false })).toBe(true);
+    expect(step?.skipIf?.({})).toBe(true);
     expect(
       step?.skipIf?.({
-        hasConnectedCalendar: false,
         billing: { subscriptionStatus: "awaiting_checkout" },
       }),
     ).toBe(true);
     expect(
       step?.skipIf?.({
-        hasConnectedCalendar: false,
         billing: {
           subscriptionStatus: "trialing",
           stripeSubscriptionId: "sub_1",
@@ -80,7 +78,6 @@ describe("welcome sequence scheduling", () => {
     ).toBe(false);
     expect(
       step?.skipIf?.({
-        hasConnectedCalendar: false,
         billing: {
           subscriptionStatus: "active",
           stripeSubscriptionId: "sub_1",

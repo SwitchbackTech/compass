@@ -9,6 +9,10 @@ import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
+type PickerSide = "start" | "end";
+
+const PICKER_SIDES: readonly PickerSide[] = ["start", "end"];
+
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
 };
@@ -46,117 +50,8 @@ export const DatePickers: FC<Props> = ({
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
 }) => {
-  const closeEndDatePicker = () => {
-    setIsEndDatePickerOpen(false);
-  };
-
-  const closeStartDatePicker = () => {
-    setIsStartDatePickerOpen(false);
-  };
-
-  const getDateFromInput = (val: string) => {
-    const date = dayjs(val, MONTH_DAY_YEAR).toDate();
-    return date;
-  };
-
-  const onPickerKeyDown = (
-    picker: "start" | "end",
-    e: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    switch (true) {
-      case e.key === "Backspace": {
-        e.stopPropagation();
-        break;
-      }
-      // Combobox convention: ArrowDown on the closed input opens the
-      // calendar, matching what onInputClick does for the mouse.
-      case e.key === "ArrowDown": {
-        const isOpen =
-          picker === "start" ? isStartDatePickerOpen : isEndDatePickerOpen;
-        if (isOpen) break;
-
-        e.preventDefault();
-        e.stopPropagation();
-        if (picker === "start") {
-          setIsEndDatePickerOpen(false);
-          setIsStartDatePickerOpen(true);
-        } else {
-          setIsStartDatePickerOpen(false);
-          setIsEndDatePickerOpen(true);
-        }
-        break;
-      }
-      case e.key === "Enter" && (e.metaKey || e.ctrlKey): {
-        const input = e.target as HTMLInputElement;
-        const val = input.value;
-        if (val !== undefined && dateIsValid(val)) {
-          const date = getDateFromInput(val);
-          if (picker === "start") {
-            onSelectStartDate(date);
-          } else {
-            onSelectEndDate(date);
-          }
-        }
-        break;
-      }
-      case e.key === "Enter": {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const input = e.target as HTMLInputElement;
-        const val = input.value;
-        const isInvalid = val !== undefined && !dateIsValid(val);
-
-        if (isInvalid) {
-          showErrorToast(
-            `Sorry, IDK what to do with a ${picker} date of '${val}'. Make sure it's in '${MONTH_DAY_YEAR}' and try again`,
-          );
-          return;
-        }
-
-        const date = getDateFromInput(val);
-
-        if (picker === "start") {
-          onSelectStartDate(date);
-        }
-
-        if (picker === "end") {
-          onSelectEndDate(date);
-        }
-
-        break;
-      }
-      case e.key === "Escape": {
-        if (isStartDatePickerOpen) {
-          e.stopPropagation();
-          closeStartDatePicker();
-        }
-        if (isEndDatePickerOpen) {
-          e.stopPropagation();
-          closeEndDatePicker();
-        }
-        break;
-      }
-      case e.key === "Tab": {
-        if (isStartDatePickerOpen) {
-          setIsStartDatePickerOpen(false);
-        }
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
-        }
-        break;
-      }
-      default: {
-        return;
-      }
-    }
-  };
-
-  const formatDate = (date: Date) => {
-    return dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-  };
-
-  const toAllDayDate = (date: Date) => dayjs(formatDate(date)).toDate();
+  const toAllDayDate = (date: Date) =>
+    dayjs(dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)).toDate();
 
   const currentAllDayBounds = () => {
     const { schedule } = draft.values;
@@ -217,6 +112,106 @@ export const DatePickers: FC<Props> = ({
     }
   };
 
+  // One entry per side, so the key handler, the open/close rules and the mouse
+  // handlers below ask "which side?" once instead of branching on it each time.
+  const pickers: Record<
+    PickerSide,
+    {
+      isOpen: boolean;
+      setIsOpen: (isOpen: boolean) => void;
+      onSelect: (date: Date) => void;
+    }
+  > = {
+    start: {
+      isOpen: isStartDatePickerOpen,
+      setIsOpen: setIsStartDatePickerOpen,
+      onSelect: onSelectStartDate,
+    },
+    end: {
+      isOpen: isEndDatePickerOpen,
+      setIsOpen: setIsEndDatePickerOpen,
+      onSelect: onSelectEndDate,
+    },
+  };
+
+  /** Only ever one calendar on screen: opening one side closes the other. */
+  const openOnly = (side: PickerSide) => {
+    for (const other of PICKER_SIDES) {
+      pickers[other].setIsOpen(other === side);
+    }
+  };
+
+  /** Closes whichever calendar is open; true when one was. */
+  const closeOpenPickers = () => {
+    const open = PICKER_SIDES.filter((side) => pickers[side].isOpen);
+    for (const side of open) {
+      pickers[side].setIsOpen(false);
+    }
+    return open.length > 0;
+  };
+
+  /** Commits text typed into the input; false when it is not a date. */
+  const commitTypedDate = (side: PickerSide, value: string) => {
+    if (!dateIsValid(value)) return false;
+    pickers[side].onSelect(dayjs(value, MONTH_DAY_YEAR).toDate());
+    return true;
+  };
+
+  const onPickerKeyDown = (
+    side: PickerSide,
+    e: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    const typedValue = () => (e.target as HTMLInputElement).value;
+
+    switch (true) {
+      case e.key === "Backspace": {
+        e.stopPropagation();
+        break;
+      }
+      // Combobox convention: ArrowDown on the closed input opens the
+      // calendar, matching what onInputClick does for the mouse.
+      case e.key === "ArrowDown": {
+        if (pickers[side].isOpen) break;
+
+        e.preventDefault();
+        e.stopPropagation();
+        openOnly(side);
+        break;
+      }
+      // Mod+Enter saves the form. Commit the typed date first, then let the
+      // event bubble so the form-level shortcut still runs.
+      case e.key === "Enter" && (e.metaKey || e.ctrlKey): {
+        commitTypedDate(side, typedValue());
+        break;
+      }
+      case e.key === "Enter": {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const value = typedValue();
+        if (!commitTypedDate(side, value)) {
+          showErrorToast(
+            `Sorry, IDK what to do with a ${side} date of '${value}'. Make sure it's in '${MONTH_DAY_YEAR}' and try again`,
+          );
+        }
+        break;
+      }
+      case e.key === "Escape": {
+        if (closeOpenPickers()) {
+          e.stopPropagation();
+        }
+        break;
+      }
+      case e.key === "Tab": {
+        closeOpenPickers();
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
+
   return (
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
@@ -229,17 +224,10 @@ export const DatePickers: FC<Props> = ({
           calendarClassName="startDatePicker"
           isOpen={isStartDatePickerOpen}
           monthTextClassName="text-medium"
-          onCalendarClose={closeStartDatePicker}
-          onCalendarOpen={() => {
-            setIsStartDatePickerOpen(true);
-          }}
+          onCalendarClose={() => setIsStartDatePickerOpen(false)}
+          onCalendarOpen={() => setIsStartDatePickerOpen(true)}
           onChange={() => null}
-          onInputClick={() => {
-            if (isEndDatePickerOpen) {
-              setIsEndDatePickerOpen(false);
-            }
-            setIsStartDatePickerOpen(true);
-          }}
+          onInputClick={() => openOnly("start")}
           onKeyDown={(e) => onPickerKeyDown("start", e)}
           onSelect={onSelectStartDate}
           selected={selectedStartDate}
@@ -258,15 +246,10 @@ export const DatePickers: FC<Props> = ({
           calendarClassName="endDatePicker"
           isOpen={isEndDatePickerOpen}
           monthTextClassName="text-medium"
-          onCalendarClose={closeEndDatePicker}
+          onCalendarClose={() => setIsEndDatePickerOpen(false)}
           onCalendarOpen={() => setIsEndDatePickerOpen(true)}
           onChange={() => null}
-          onInputClick={() => {
-            if (isStartDatePickerOpen) {
-              setIsStartDatePickerOpen(false);
-            }
-            setIsEndDatePickerOpen(true);
-          }}
+          onInputClick={() => openOnly("end")}
           onKeyDown={(e) => onPickerKeyDown("end", e)}
           onSelect={onSelectEndDate}
           selected={displayEndDate}

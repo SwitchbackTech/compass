@@ -65,7 +65,6 @@ export function welcomeUserForSkipIf(
   }
   return {
     ...user,
-    hasConnectedCalendar: false,
     billing: {
       subscriptionStatus: "trialing",
       stripeSubscriptionId:
@@ -132,16 +131,15 @@ export async function resolvePreviewLoopUserId(
 }
 
 async function ensurePreviewLoopUserDocument(
-  email: string,
+  normalizedEmail: string,
   userId: ObjectIdType,
 ): Promise<void> {
-  const normalized = normalizeEmail(email);
-  const firstName = previewFirstNameFromEmail(normalized);
+  const firstName = previewFirstNameFromEmail(normalizedEmail);
   await mongoService.user.updateOne(
     { _id: userId },
     {
       $setOnInsert: {
-        email: normalized,
+        email: normalizedEmail,
         firstName,
         lastName: "",
         name: firstName,
@@ -154,19 +152,18 @@ async function ensurePreviewLoopUserDocument(
 }
 
 function buildPreviewLoopEnrollmentRows(
-  email: string,
+  normalizedEmail: string,
   userId: ObjectIdType,
   generation: number,
   anchorAt: Date,
   profile: ScheduleProfile,
 ) {
-  const normalized = normalizeEmail(email);
   const baseRows = buildWelcomeEnrollmentRows(userId, anchorAt, profile);
   return baseRows.map((row) => ({
     ...row,
-    _id: previewLoopRowId(normalized, generation, row.stepKey),
+    _id: previewLoopRowId(normalizedEmail, generation, row.stepKey),
     previewLoop: true as const,
-    recipientEmail: normalized,
+    recipientEmail: normalizedEmail,
     previewLoopGeneration: generation,
   }));
 }
@@ -214,15 +211,16 @@ async function findLatestPreviewGeneration(
 }
 
 interface PreviewGenerationState {
-  /** A step is still waiting to send, so the generation is mid-flight. */
-  hasQueuedRows: boolean;
-  /** Every step of the sequence reached a terminal sent / skipped state. */
+  /**
+   * Every step of the sequence reached a terminal sent / skipped state, so a
+   * queued step still waiting to send leaves this false.
+   */
   isComplete: boolean;
   lastSentAt: Date | null;
   /**
    * The generation was enrolled under an older step list (it holds a step key
-   * the sequence no longer has). It can never collect every current step, so
-   * once it drains it is complete and the next generation starts right away.
+   * the sequence no longer has). Queued rows are retired and the next
+   * generation starts immediately.
    */
   isStale: boolean;
 }
@@ -249,19 +247,11 @@ async function readPreviewGenerationState(
     row.status === "sent" && row.sentAt ? [row.sentAt.getTime()] : [],
   );
 
-  const isStale = rows.some((row) => !isWelcomeStepKey(row.stepKey));
-  const allTerminal = rows.every(
-    (row) =>
-      row.status === "sent" ||
-      row.status === "skipped" ||
-      (isStale && row.status !== "queued"),
-  );
-
   return {
-    hasQueuedRows: rows.some((row) => row.status === "queued"),
-    isStale,
+    isStale: rows.some((row) => !isWelcomeStepKey(row.stepKey)),
     isComplete:
-      (isStale || rows.length >= WELCOME_SEQUENCE.length) && allTerminal,
+      rows.length >= WELCOME_SEQUENCE.length &&
+      rows.every((row) => row.status === "sent" || row.status === "skipped"),
     lastSentAt: sentTimes.length > 0 ? new Date(Math.max(...sentTimes)) : null,
   };
 }
@@ -317,14 +307,26 @@ export async function ensurePreviewLoopForRecipient(
     normalized,
     latestGeneration,
   );
-  if (generation.hasQueuedRows || !generation.isComplete) {
-    return;
-  }
   if (generation.isStale) {
+    // Rows from a retired step list can sit queued for days (their sendAt is
+    // still in the future). Retire them now so the new sequence starts fresh.
+    await mongoService.emailSend.updateMany(
+      previewLoopRecipientFilter(normalized, {
+        previewLoopGeneration: latestGeneration,
+        status: "queued",
+      }),
+      {
+        $set: {
+          status: "skipped",
+          lastError: "Retired welcome step list",
+          updatedAt: now,
+        },
+      },
+    );
     await enqueuePreviewLoopGeneration(normalized, latestGeneration + 1, now);
     return;
   }
-  if (!generation.lastSentAt) {
+  if (!generation.isComplete || !generation.lastSentAt) {
     return;
   }
 

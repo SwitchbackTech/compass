@@ -1,6 +1,6 @@
 import {
-  isWelcomeStepKey,
   type WelcomeStepKey,
+  welcomeStepValue,
 } from "@backend/email/welcome-sequence";
 import { getWelcomeEmailContent } from "@backend/email/welcome-sequence.content";
 
@@ -17,9 +17,7 @@ export const WELCOME_STEP_TEMPLATE_ALIAS: Record<WelcomeStepKey, string> = {
 export function getWelcomeStepTemplateAlias(
   stepKey: string,
 ): string | undefined {
-  return isWelcomeStepKey(stepKey)
-    ? WELCOME_STEP_TEMPLATE_ALIAS[stepKey]
-    : undefined;
+  return welcomeStepValue(WELCOME_STEP_TEMPLATE_ALIAS, stepKey);
 }
 
 export function buildWelcomeResendTemplateVariables(input: {
@@ -29,6 +27,7 @@ export function buildWelcomeResendTemplateVariables(input: {
 }): Record<string, string> {
   const variables: Record<string, string> = {
     CTA_URL: input.ctaUrl,
+    CTA_LABEL: ctaLabelFromUrl(input.ctaUrl),
     UNSUBSCRIBE_URL: input.unsubscribeUrl,
   };
   const trimmedFirstName = input.firstName?.trim();
@@ -41,4 +40,13 @@ export function buildWelcomeResendTemplateVariables(input: {
 /** Base CTA href before UTM params. Same destinations as the preview content. */
 export function getWelcomeStepCtaBaseHref(stepKey: string): string | undefined {
   return getWelcomeEmailContent(stepKey)?.cta.href;
+}
+
+/** Visible CTA link text: the bare host (utm params stay in CTA_URL only). */
+export function ctaLabelFromUrl(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "compasscalendar.com";
+  }
 }

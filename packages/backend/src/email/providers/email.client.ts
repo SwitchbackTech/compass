@@ -21,9 +21,22 @@ export function buildEmailProvider(env: EmailConfigSlice): EmailProvider {
   ) {
     return createResendEmailProvider({
       apiKey: env.EMAIL_API_KEY,
-      from: env.EMAIL_FROM,
+      from: withSenderDisplayName(env.EMAIL_FROM, EMAIL_SENDER_DISPLAY_NAME),
       webhookSecret: env.EMAIL_WEBHOOK_SECRET,
     });
   }
   return createLogEmailProvider();
+}
+
+/** Display name on every outgoing email; the address still comes from EMAIL_FROM. */
+export const EMAIL_SENDER_DISPLAY_NAME = "Tyler from Compass";
+
+/** Replace any display name in `from` ("Name <a@b>" or "a@b") with `displayName`. */
+export function withSenderDisplayName(
+  from: string,
+  displayName: string,
+): string {
+  const match = from.match(/<([^>]+)>/);
+  const address = (match?.[1] ?? from).trim();
+  return `${displayName} <${address}>`;
 }
