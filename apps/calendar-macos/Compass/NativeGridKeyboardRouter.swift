@@ -69,7 +69,15 @@ final class NativeGridKeyboardRouter {
             .otherSettings,
             .otherTimeTravel,
         ]
-        let overlayIds: Set<ShortcutId> = [.otherPalette, .otherShortcuts, .navGoToDate]
+        let overlayIds: Set<ShortcutId> = [
+            .otherPalette,
+            .otherShortcuts,
+            .navGoToDate,
+            .otherSidebar,
+            .focusSidebar,
+            .focusNotice,
+            .otherSubscribe,
+        ]
         let editIds: Set<ShortcutId> = [
             .editDelete,
             .editDuplicate,
@@ -244,6 +252,10 @@ final class NativeGridKeyboardRouter {
 
         if model.isEventFormVisible {
             return false
+        }
+
+        if handleMonthPickerFocusKeys(keyEvent) || handleNoticeFocusKeys(keyEvent) {
+            return true
         }
 
         if case .character(let char) = keyEvent.key, char == "f", keyEvent.modifiers.isEmpty {
@@ -484,6 +496,52 @@ final class NativeGridKeyboardRouter {
         } else if let link = WelcomeLinks.items.first(where: { $0.key == char }) {
             NSWorkspace.shared.open(link.url)
         }
+    }
+
+    /// Arrows move the focused month picker day, Enter goes to it, Escape
+    /// leaves. Any other key drops the focus and runs as usual.
+    private func handleMonthPickerFocusKeys(_ keyEvent: KeyEvent) -> Bool {
+        guard model.monthPickerFocusDate != nil else { return false }
+        guard keyEvent.modifiers.isEmpty else {
+            model.clearMonthPickerFocus()
+            return false
+        }
+        switch keyEvent.key {
+        case .named(.arrowLeft):
+            model.moveMonthPickerFocus(byDays: -1)
+        case .named(.arrowRight):
+            model.moveMonthPickerFocus(byDays: 1)
+        case .named(.arrowUp):
+            model.moveMonthPickerFocus(byDays: -7)
+        case .named(.arrowDown):
+            model.moveMonthPickerFocus(byDays: 7)
+        case .named(.enter):
+            model.commitMonthPickerFocus()
+        case .named(.escape):
+            model.clearMonthPickerFocus()
+        default:
+            model.clearMonthPickerFocus()
+            return false
+        }
+        return true
+    }
+
+    /// Enter runs the focused notice's button, Escape leaves. Any other key
+    /// (including `p`, which cycles) drops the focus and runs as usual.
+    private func handleNoticeFocusKeys(_ keyEvent: KeyEvent) -> Bool {
+        guard model.focusedNotice != nil else { return false }
+        if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.enter) {
+            model.activateFocusedNotice()
+            return true
+        }
+        if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.escape) {
+            model.clearNoticeFocus()
+            return true
+        }
+        if keyEvent.key != .character("p") {
+            model.clearNoticeFocus()
+        }
+        return false
     }
 
     private func performShortcut(_ id: ShortcutId) {

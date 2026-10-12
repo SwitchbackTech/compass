@@ -95,6 +95,8 @@ extension NativeCalendarRootModel {
             authStore.openModal(.signUp)
         case "log-in":
             authStore.openModal(.login)
+        case "subscribe":
+            handleShortcut(.otherSubscribe)
         default:
             if id.hasPrefix("event-") {
                 let eventId = String(id.dropFirst("event-".count))
