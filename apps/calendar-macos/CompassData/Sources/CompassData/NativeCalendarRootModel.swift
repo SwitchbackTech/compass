@@ -52,6 +52,8 @@ public final class NativeCalendarRootModel {
     public var isSidebarOpen = CompassDevicePreferences.readSidebarOpen() {
         didSet { CompassDevicePreferences.writeSidebarOpen(isSidebarOpen) }
     }
+    /// When the live event stream first dropped; nil while it is connected.
+    public internal(set) var streamTroubleSince: Date?
     /// Sidebar width in points, dragged between 240 and 480 like the web.
     public private(set) var sidebarWidth = CompassDevicePreferences.readSidebarWidth()
     /// Month picker day holding keyboard focus after `i`, like the web's
@@ -390,6 +392,7 @@ public final class NativeCalendarRootModel {
         if let eventStream {
             await eventStream.stop()
         }
+        streamTroubleSince = nil
         loadedEvents = []
         sidebandEvents = []
         calendars = []
@@ -1116,8 +1119,15 @@ public final class NativeCalendarRootModel {
                 },
                 onReopen: { [weak self] in
                     Task { @MainActor in
+                        self?.streamTroubleSince = nil
                         try? self?.eventsStore.handleStreamReopen()
                         await self?.refreshAfterStreamChange()
+                    }
+                },
+                onError: { [weak self] in
+                    Task { @MainActor in
+                        guard let self, self.streamTroubleSince == nil else { return }
+                        self.streamTroubleSince = Date()
                     }
                 }
             )
