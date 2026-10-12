@@ -61,6 +61,12 @@ public final class NativeCalendarRootModel {
     public internal(set) var monthPickerFocusDate: Date?
     /// Banner holding keyboard focus after `p`, like the web's `data-notice` focus.
     public internal(set) var focusedNotice: NativeNotice?
+    /// Calendar list whose rows take number keys, like the web's focused
+    /// account section. Nil when no list has focus.
+    public internal(set) var focusedCalendarListKey: String?
+    /// Account sections collapsed in the sidebar, kept between launches.
+    public internal(set) var collapsedAccountKeys = Set(
+        UserDefaults.standard.stringArray(forKey: NativeCalendarRootModel.collapsedAccountsKey) ?? [])
     public var pendingDiscardDraftConfirmation = false
     public var pendingRecurrenceScopePrompt: RecurrenceScopePromptKind? {
         didSet {
@@ -590,6 +596,8 @@ public final class NativeCalendarRootModel {
         switch target.id {
         case "month-picker":
             monthPickerMonth = viewStore.anchorDate
+        case "calendars":
+            focusCalendarList()
         case let id where id.hasPrefix(PageJumpTargets.dayColumnPrefix):
             let calendarId = String(id.dropFirst(PageJumpTargets.dayColumnPrefix.count))
             focusDayColumn(calendarId: calendarId)
@@ -1000,14 +1008,20 @@ public final class NativeCalendarRootModel {
         calendars.filter(\.isActive)
     }
 
-    /// Web `useCalendarVisibility`: client-only, announced with a toast.
+    /// Web `useCalendarVisibility`: client-only, announced with a toast, and
+    /// undoable with Cmd+Z.
     public func toggleCalendarVisibility(_ calendar: CompassCalendar) {
         let visible = !calendarVisibilityStore.isVisible(calendar.id)
-        calendarVisibilityStore.setVisible(calendar.id, visible)
+        setCalendarVisibility(calendarId: calendar.id, label: calendar.name, visible: visible)
+        undoStore.record(.calendarVisibility(calendarId: calendar.id, label: calendar.name, isVisible: visible))
+    }
+
+    func setCalendarVisibility(calendarId: String, label: String, visible: Bool) {
+        calendarVisibilityStore.setVisible(calendarId, visible)
         rebuildPresentation()
         statusToastStore.show(
             id: "calendar-visibility",
-            message: visible ? "Showing \(calendar.name) calendar" : "Hidden \(calendar.name) calendar"
+            message: visible ? "Showing \(label) calendar" : "Hidden \(label) calendar"
         )
     }
 

@@ -9,6 +9,8 @@ public enum UndoHistoryEntry: Sendable, Equatable {
     case delete(event: Event)
     case create(event: Event)
     case hidden(eventId: EventId, hidden: Bool)
+    /// Web `calendarVisibility`: the state the calendar was set to.
+    case calendarVisibility(calendarId: String, label: String, isVisible: Bool)
     case unrecorded
 }
 
