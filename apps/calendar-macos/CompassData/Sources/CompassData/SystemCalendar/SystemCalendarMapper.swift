@@ -52,9 +52,9 @@ enum SystemCalendarMapper {
         if ekEvent.isAllDay {
             schedule = .allDay(
                 EventSchedule_AllDayPayload(
+                    end: allDayDateString(from: end),
                     kind: "allDay",
-                    startDate: allDayDateString(from: start),
-                    endDate: allDayDateString(from: end)))
+                    start: allDayDateString(from: start)))
         } else {
             schedule = .timed(
                 EventSchedule_TimedPayload(
