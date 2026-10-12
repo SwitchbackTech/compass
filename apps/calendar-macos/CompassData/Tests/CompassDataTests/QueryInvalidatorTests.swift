@@ -24,7 +24,7 @@ final class QueryInvalidatorTests: XCTestCase {
             {"type":"syncStatusChanged","sync":{"status":"attention","code":"CONNECTION_REVOKED","retryable":false}}
             """,
             """
-            {"type":"syncStatusChanged","sync":{"status":"attention","code":"PROVIDER_FAILURE","retryable":true}}
+            {"type":"syncStatusChanged","sync":{"status":"attention","code":"IMPORT_FAILED","retryable":true}}
             """,
             """
             {"type":"userMetadataChanged","metadata":{}}
