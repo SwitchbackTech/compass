@@ -186,6 +186,15 @@ lack `billing.subscriptionStatus`. The default `BACKFILL_CUTOFF` is far in
 the future so every such row is included; set it to a past instant to skip
 newer signups.
 
+Accounts that started a card-less local trial at signup (Sep 2026, removed in
+WP-06) can remain stored as `trialing` after `trialEndsAt` with no Stripe
+subscription. `deriveBillingStatus` resolves those rows to `expired` (or
+`awaiting_checkout` when `trialEndsAt` is missing) for gates and
+`GET /api/billing/status`, and `getStatus` persists the resolved status
+lazily. To fix Mongo reporting in bulk, dry-run then apply:
+
+`bun run cli backfill-expired-local-trials` (add `--apply` to write).
+
 `BACKFILL_CUTOFF` is **not** a grandfathering switch. It only decides which
 rows get *stamped*, and `deriveBillingStatus` already gates a missing
 `billing` object through the same `awaiting_checkout` branch — so stamped and
@@ -289,6 +298,8 @@ If Link is enabled, also add `https://link.com` and `https://*.link.com` to
 ## Key files
 
 - Trial length: `packages/core/src/constants/billing.constants.ts`
+- Stored-to-effective status (including legacy card-less local trials):
+  `packages/core/src/billing/resolve-subscription-status.ts`
 - Status derivation: `packages/backend/src/billing/services/billing.service.ts`
 - Checkout and payment-method sessions: `packages/backend/src/billing/services/stripe.service.ts`
 - Webhook: `packages/backend/src/billing/services/billing.webhook.service.ts`

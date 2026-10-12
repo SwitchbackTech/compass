@@ -1,3 +1,4 @@
+import { resolveSubscriptionStatus } from "@core/billing/resolve-subscription-status";
 import { type BillingStatusResponse } from "@core/types/billing.types";
 import { type Schema_UserBilling } from "@core/types/user.types";
 import { WRITE_ACCESS_BY_STATUS } from "@backend/billing/billing.constants";
@@ -16,12 +17,14 @@ import mongoService from "@backend/common/services/mongo.service";
  * Missing billing, a billing object with no `subscriptionStatus`, and
  * `none` surface as `awaiting_checkout` so the Start-trial gate shows.
  *
- * `trialing` with a `stripeSubscriptionId` never self-expires locally —
- * Stripe's webhook is authoritative, so a late `active` event cannot lock
- * out a customer whose card just succeeded.
+ * Stripe-backed `trialing` rows never self-expire locally: webhooks are
+ * authoritative, so a late `active` event cannot lock out a customer whose
+ * card just succeeded. Card-less local trials (legacy signup) resolve through
+ * {@link resolveSubscriptionStatus}.
  */
 export const deriveBillingStatus = (
   billing: Schema_UserBilling | undefined,
+  now: Date = new Date(),
 ): BillingStatusResponse => {
   const storedStatus = billing?.subscriptionStatus;
   if (!billing || !storedStatus || storedStatus === "none") {
@@ -33,10 +36,12 @@ export const deriveBillingStatus = (
     };
   }
 
+  const subscriptionStatus = resolveSubscriptionStatus(billing, now);
+
   return {
-    subscriptionStatus: billing.subscriptionStatus,
+    subscriptionStatus,
     trialEndsAt: billing.trialEndsAt?.toISOString() ?? null,
-    isReadOnly: !WRITE_ACCESS_BY_STATUS[billing.subscriptionStatus],
+    isReadOnly: !WRITE_ACCESS_BY_STATUS[subscriptionStatus],
     cancelAtPeriodEnd: billing.cancelAtPeriodEnd === true,
   };
 };
@@ -71,8 +76,37 @@ class BillingService {
       };
     }
 
-    return deriveBillingStatus(user.billing);
+    const derived = deriveBillingStatus(user.billing);
+    await persistResolvedLocalTrial(
+      userId,
+      user.billing,
+      derived.subscriptionStatus,
+    );
+    return derived;
   };
+}
+
+/** Idempotent write so Mongo reporting matches derived access for legacy rows. */
+async function persistResolvedLocalTrial(
+  userId: string,
+  billing: Schema_UserBilling | undefined,
+  resolvedStatus: BillingStatusResponse["subscriptionStatus"],
+): Promise<void> {
+  if (billing?.subscriptionStatus !== "trialing") return;
+  if (billing.stripeSubscriptionId) return;
+  if (resolvedStatus === "trialing") return;
+
+  await mongoService.user.updateOne(
+    {
+      _id: mongoService.objectId(userId),
+      "billing.subscriptionStatus": "trialing",
+      $or: [
+        { "billing.stripeSubscriptionId": { $exists: false } },
+        { "billing.stripeSubscriptionId": null },
+      ],
+    },
+    { $set: { "billing.subscriptionStatus": resolvedStatus } },
+  );
 }
 
 export default new BillingService();

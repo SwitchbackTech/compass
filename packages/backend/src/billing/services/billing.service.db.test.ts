@@ -87,7 +87,7 @@ describe("BillingService (db)", () => {
     expect(status.subscriptionStatus).toBe("awaiting_checkout");
   });
 
-  it("reports trialing without a Stripe subscription id from stored status", async () => {
+  it("reports an in-window card-less local trial from stored status", async () => {
     const userId = mongoService.objectId();
     const trialEndsAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
     await mongoService.user.insertOne({
@@ -112,5 +112,30 @@ describe("BillingService (db)", () => {
       isReadOnly: false,
       cancelAtPeriodEnd: false,
     });
+  });
+
+  it("reports expired for a stale card-less local trial and persists the status", async () => {
+    const userId = mongoService.objectId();
+    const trialEndsAt = new Date("2026-09-22T00:00:00.000Z");
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "stale-local@example.com",
+      name: "Stale",
+      firstName: "Stale",
+      lastName: "Trial",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "trialing",
+        trialStartedAt: new Date("2026-09-15T00:00:00.000Z"),
+        trialEndsAt,
+      },
+    });
+
+    const status = await billingService.getStatus(userId.toString());
+
+    expect(status.subscriptionStatus).toBe("expired");
+    expect(status.isReadOnly).toBe(true);
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("expired");
   });
 });

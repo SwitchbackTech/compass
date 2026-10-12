@@ -62,6 +62,39 @@ describe("deriveBillingStatus", () => {
     expect(status.isReadOnly).toBe(false);
   });
 
+  it("expires a card-less local trial after trialEndsAt", () => {
+    const now = new Date("2026-10-05T12:00:00.000Z");
+    const status = deriveBillingStatus(
+      {
+        subscriptionStatus: "trialing",
+        trialStartedAt: new Date("2026-09-28T00:00:00.000Z"),
+        trialEndsAt: new Date("2026-10-04T00:00:00.000Z"),
+      },
+      now,
+    );
+
+    expect(status).toEqual({
+      subscriptionStatus: "expired",
+      trialEndsAt: "2026-10-04T00:00:00.000Z",
+      isReadOnly: true,
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  it("maps a card-less trialing row without trialEndsAt to awaiting_checkout", () => {
+    expect(
+      deriveBillingStatus({
+        subscriptionStatus: "trialing",
+        trialStartedAt: new Date("2026-09-01T00:00:00.000Z"),
+      }),
+    ).toEqual({
+      subscriptionStatus: "awaiting_checkout",
+      trialEndsAt: null,
+      isReadOnly: true,
+      cancelAtPeriodEnd: false,
+    });
+  });
+
   const cases: Array<{
     status: BillingSubscriptionStatus;
     isReadOnly: boolean;
