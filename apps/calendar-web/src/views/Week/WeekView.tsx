@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useIsTrialing } from "@web/billing/useIsTrialing";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
@@ -41,7 +41,7 @@ import { useDiscardDraftOnWeekChange } from "@web/views/Week/hooks/useDiscardDra
 import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { attachPointerIntentTracker } from "@web/views/Week/pointer-intent/attachPointerIntentTracker";
+import { useAttachPointerIntentTracker } from "@web/views/Week/pointer-intent/useAttachPointerIntentTracker";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -50,7 +50,7 @@ export const WeekView = () => {
   // untouched and the panel collapses again when the form closes.
   const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
   useSidebarShortcuts();
-  useEffect(() => attachPointerIntentTracker(), []);
+  useAttachPointerIntentTracker();
   const { today } = useToday();
 
   const { trackRef, visibleDayCount } = useVisibleDayCount();
