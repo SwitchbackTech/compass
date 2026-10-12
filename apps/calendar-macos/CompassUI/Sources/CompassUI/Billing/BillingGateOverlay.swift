@@ -50,14 +50,9 @@ public struct BillingGateOverlay: View {
                     .clipShape(Capsule())
                     .disabled(billingStore.isOpeningHostedSession)
                 }
-                .padding(24)
+                .padding(OverlayPanelChrome.padding)
                 .frame(maxWidth: 420)
-                .background(theme.surfaceColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(theme.borderColor, lineWidth: 1)
-                )
+                .overlayPanelChrome()
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-native-billing-gate")
             }

@@ -28,10 +28,9 @@ struct WelcomeGuideModalView: View {
                 .background(theme.accentColor)
                 .clipShape(Capsule())
             }
-            .padding(24)
+            .padding(OverlayPanelChrome.padding)
             .frame(maxWidth: 480)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlayPanelChrome()
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
             .accessibilityLabel("Welcome to Compass Calendar")

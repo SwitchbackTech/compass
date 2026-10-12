@@ -27,10 +27,9 @@ struct ConnectCalendarPromptView: View {
                 .foregroundStyle(theme.textMutedColor)
                 .frame(maxWidth: .infinity)
             }
-            .padding(24)
+            .padding(OverlayPanelChrome.padding)
             .frame(maxWidth: 480)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlayPanelChrome()
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
             .accessibilityLabel("Connect the calendar you use")

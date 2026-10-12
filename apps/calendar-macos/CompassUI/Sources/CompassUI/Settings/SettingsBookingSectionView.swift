@@ -256,9 +256,8 @@ public struct SettingsBookingSectionView: View {
                     }
                 }
             }
-            .padding(20)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(OverlayPanelChrome.padding)
+            .overlayPanelChrome()
         }
     }
 
