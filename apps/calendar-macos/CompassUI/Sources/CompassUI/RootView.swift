@@ -289,31 +289,7 @@ public struct RootView: View {
                 ) {
                     model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
                 }
-                Text(model.headerTitle)
-                    .font(.rubik(15))
-                    .foregroundStyle(theme.textColor)
-                    .lineLimit(1)
-                    .padding(.horizontal, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(theme.accentColor.opacity(model.nowCueHeaderHighlight ? 0.1 : 0))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .strokeBorder(
-                                theme.accentColor.opacity(model.nowCueHeaderHighlight ? 0.45 : 0),
-                                lineWidth: 2
-                            )
-                    )
-                    .accessibilityIdentifier("compass-native-header-title")
-                    .animation(.easeInOut(duration: 0.35), value: model.nowCueHeaderHighlight)
-                headerButton(
-                    label: model.viewStore.view == .life ? "Focus current week" : "Today",
-                    systemImage: nil,
-                    title: model.viewStore.view == .life ? "This week" : "Today"
-                ) {
-                    model.handleShortcut(model.viewStore.view == .life ? .navLifeCurrent : .navToday)
-                }
+                ViewSwitcherView(model: model)
             }
             .padding(.leading, titleBarLeadingInset)
 
@@ -387,27 +363,19 @@ public struct RootView: View {
         }
     }
 
-    @ViewBuilder
     private func headerButton(
         label: String,
-        systemImage: String?,
-        title: String? = nil,
+        systemImage: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Group {
-                if let systemImage {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 12, weight: .semibold))
-                } else if let title {
-                    Text(title)
-                        .font(.rubik(13))
-                }
-            }
-            .foregroundStyle(theme.textMutedColor)
-            .frame(minWidth: 28, minHeight: 28)
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(theme.textMutedColor)
+                .frame(minWidth: 28, minHeight: 28)
         }
         .buttonStyle(.plain)
+        .help(label)
         .accessibilityLabel(label)
     }
 }
