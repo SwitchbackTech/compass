@@ -52,7 +52,7 @@ describe("CheckoutCelebrationModal", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Your 7-day trial has started. Full access, nothing held back.",
+        "Your 7-day trial has started. Full access to all Compass features.",
       ),
     ).toBeInTheDocument();
     expect(

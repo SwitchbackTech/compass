@@ -6,33 +6,37 @@ struct ConnectCalendarPromptView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
 
+    private static let skipTooltip =
+        "You can always connect your calendar later in Settings."
+
     var body: some View {
         ZStack {
             theme.panelBackdropColor
                 .ignoresSafeArea()
             VStack(alignment: .leading, spacing: 16) {
-                Text("Connect the calendar you use")
+                Text("Bring your events")
                     .font(.rubik(22))
                     .foregroundStyle(theme.textColor)
                     .accessibilityAddTraits(.isHeader)
-                Text("Compass stays in sync with your existing calendars.")
+                Text("Connect your calendar so your changes stay in-sync")
                     .font(.rubik(14))
                     .foregroundStyle(theme.textMutedColor)
                 providerButtons
-                Button("Skip for now, my calendar stays empty") {
+                Button("Skip for now") {
                     model.onboardingStore.snoozeConnectCalendarPrompt()
                 }
                 .buttonStyle(.plain)
                 .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
                 .frame(maxWidth: .infinity)
+                .help(Self.skipTooltip)
             }
             .padding(OverlayPanelChrome.padding)
             .frame(maxWidth: 480)
             .overlayPanelChrome()
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
-            .accessibilityLabel("Connect the calendar you use")
+            .accessibilityLabel("Bring your events")
             .accessibilityIdentifier("compass-native-connect-calendar-prompt")
         }
     }

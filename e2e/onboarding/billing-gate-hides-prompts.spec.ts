@@ -110,6 +110,6 @@ test("hides welcome, practice, and first-event prompts while the billing gate is
     page.getByRole("complementary", { name: "Create your first event" }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("dialog", { name: "Connect the calendar you use" }),
+    page.getByRole("dialog", { name: "Bring your events" }),
   ).toHaveCount(0);
 });

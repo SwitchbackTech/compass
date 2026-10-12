@@ -15,11 +15,9 @@ import {
   resetMissingPermissionsStoreForTests,
 } from "@web/auth/providers/missing-permissions.store";
 import {
-  CALENDAR_HOST_EXPLAINER,
-  CONNECT_CALENDAR_BENEFITS,
+  CONNECT_CALENDAR_PROMPT_SUBTITLE,
+  CONNECT_CALENDAR_PROMPT_TITLE,
   CONNECT_CALENDAR_REASSURANCE,
-  CONNECT_CALENDAR_WHY,
-  CONNECT_THE_CALENDAR_YOU_USE,
 } from "@web/auth/providers/provider-copy.util";
 import * as realAvailableProviders from "@web/auth/providers/useAvailableConnectProviders";
 import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
@@ -27,7 +25,10 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
-import { CONNECT_CALENDAR_LATER_LABEL } from "@web/components/ConnectCalendarPrompt/ConnectCalendarPrompt";
+import {
+  CONNECT_CALENDAR_LATER_LABEL,
+  CONNECT_CALENDAR_LATER_TOOLTIP,
+} from "@web/components/ConnectCalendarPrompt/ConnectCalendarPrompt";
 import {
   CONNECT_CALENDAR_SNOOZE_MS,
   isConnectCalendarPromptSnoozed,
@@ -143,16 +144,13 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.getByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.getByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeInTheDocument();
-    expect(screen.getByText(CONNECT_THE_CALENDAR_YOU_USE)).toBeInTheDocument();
-    expect(screen.getByText(CALENDAR_HOST_EXPLAINER)).toBeInTheDocument();
-    // The value case is the point of this step, not decoration.
-    expect(screen.getByText(CONNECT_CALENDAR_WHY)).toBeInTheDocument();
+    expect(screen.getByText(CONNECT_CALENDAR_PROMPT_TITLE)).toBeInTheDocument();
+    expect(
+      screen.getByText(CONNECT_CALENDAR_PROMPT_SUBTITLE),
+    ).toBeInTheDocument();
     expect(screen.getByText(CONNECT_CALENDAR_REASSURANCE)).toBeInTheDocument();
-    for (const benefit of CONNECT_CALENDAR_BENEFITS) {
-      expect(screen.getByText(benefit)).toBeInTheDocument();
-    }
     expect(
       screen.getByRole("button", { name: CONNECT_CALENDAR_LATER_LABEL }),
     ).toBeInTheDocument();
@@ -163,14 +161,14 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.queryByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.queryByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeNull();
   });
 
   it("does not render for an anonymous user", () => {
     renderGate({ authenticated: false });
     expect(
-      screen.queryByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.queryByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeNull();
   });
 
@@ -185,7 +183,7 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.queryByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.queryByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeNull();
   });
 
@@ -200,7 +198,7 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.getByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.getByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeInTheDocument();
   });
 
@@ -218,7 +216,7 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.getByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.getByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeInTheDocument();
   });
 
@@ -227,7 +225,7 @@ describe("ConnectCalendarPromptGate", () => {
     renderGate();
 
     expect(
-      screen.queryByRole("dialog", { name: CONNECT_THE_CALENDAR_YOU_USE }),
+      screen.queryByRole("dialog", { name: CONNECT_CALENDAR_PROMPT_TITLE }),
     ).toBeNull();
   });
 
@@ -250,6 +248,18 @@ describe("ConnectCalendarPromptGate", () => {
     );
     expect(useConnectAppleStore.getState().isOpen).toBe(true);
     expect(mockConnectApple).not.toHaveBeenCalled();
+  });
+
+  it("shows a tooltip when the skip control is focused", async () => {
+    renderGate();
+
+    const skip = screen.getByRole("button", {
+      name: CONNECT_CALENDAR_LATER_LABEL,
+    });
+    skip.focus();
+
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent(CONNECT_CALENDAR_LATER_TOOLTIP);
   });
 
   it("records a snooze timestamp when the user skips for now", async () => {
