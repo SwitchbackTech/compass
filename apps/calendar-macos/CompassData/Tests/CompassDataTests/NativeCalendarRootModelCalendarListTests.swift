@@ -46,6 +46,9 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
         model.focusCalendarList(key)
 
         XCTAssertTrue(model.isAccountCollapsed(key))
+        let stored = UserDefaults.standard.stringArray(forKey: "compass.calendars.collapsed-account-digests") ?? []
+        XCTAssertFalse(stored.isEmpty)
+        XCTAssertFalse(stored.contains(key), "Only digests reach preferences, never account keys")
         XCTAssertFalse(model.pickCalendar(key: "1"))
         XCTAssertTrue(model.calendarVisibilityStore.isVisible(calendar.id))
     }

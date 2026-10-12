@@ -64,8 +64,9 @@ public final class NativeCalendarRootModel {
     /// Calendar list whose rows take number keys, like the web's focused
     /// account section. Nil when no list has focus.
     public internal(set) var focusedCalendarListKey: String?
-    /// Account sections collapsed in the sidebar, kept between launches.
-    public internal(set) var collapsedAccountKeys = Set(
+    /// Digests of the account sections collapsed in the sidebar, kept between
+    /// launches. Digests, not keys, so account emails stay out of preferences.
+    var collapsedAccountDigests = Set(
         UserDefaults.standard.stringArray(forKey: NativeCalendarRootModel.collapsedAccountsKey) ?? [])
     public var pendingDiscardDraftConfirmation = false
     public var pendingRecurrenceScopePrompt: RecurrenceScopePromptKind? {

@@ -1,4 +1,5 @@
 import CompassKit
+import CryptoKit
 import Foundation
 
 /// One account's calendars in the sidebar. Signed-out calendars share a
@@ -12,8 +13,9 @@ public struct CalendarListGroup: Identifiable, Sendable {
 
 /// Web `CalendarList`: grouping, collapse, and number-key picks.
 extension NativeCalendarRootModel {
-    /// Same key as the web's `STORAGE_KEYS.COLLAPSED_ACCOUNTS`.
-    static let collapsedAccountsKey = "compass.calendars.collapsed-accounts"
+    /// Web `STORAGE_KEYS.COLLAPSED_ACCOUNTS` stores raw `provider:email` keys;
+    /// native stores SHA-256 digests under its own key instead.
+    static let collapsedAccountsKey = "compass.calendars.collapsed-account-digests"
     /// Web `PICK_KEY_LABELS`: the first 12 rows of a focused list.
     public static let calendarPickKeys: [Character] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
 
@@ -35,16 +37,21 @@ extension NativeCalendarRootModel {
     }
 
     public func isAccountCollapsed(_ key: String) -> Bool {
-        collapsedAccountKeys.contains(key)
+        collapsedAccountDigests.contains(Self.accountKeyDigest(key))
     }
 
     public func toggleAccountCollapsed(_ key: String) {
-        if collapsedAccountKeys.contains(key) {
-            collapsedAccountKeys.remove(key)
+        let digest = Self.accountKeyDigest(key)
+        if collapsedAccountDigests.contains(digest) {
+            collapsedAccountDigests.remove(digest)
         } else {
-            collapsedAccountKeys.insert(key)
+            collapsedAccountDigests.insert(digest)
         }
-        UserDefaults.standard.set(collapsedAccountKeys.sorted(), forKey: Self.collapsedAccountsKey)
+        UserDefaults.standard.set(collapsedAccountDigests.sorted(), forKey: Self.collapsedAccountsKey)
+    }
+
+    static func accountKeyDigest(_ key: String) -> String {
+        SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     /// The "calendars" page jump or a click focuses a list; nil picks the first.
