@@ -24,6 +24,7 @@ public final class EventsStore {
     private let localEvents: LocalEventRepository
     private let rangeCache: RangeCache
     private let eventsAPI: EventsAPIProtocol
+    private let systemCalendarConnector: SystemCalendarConnector
     public private(set) var source: EventRepositorySource
 
     public init(
@@ -31,12 +32,14 @@ public final class EventsStore {
         localEvents: LocalEventRepository,
         rangeCache: RangeCache,
         eventsAPI: EventsAPIProtocol,
-        source: EventRepositorySource = .remote
+        source: EventRepositorySource = .remote,
+        systemCalendarConnector: SystemCalendarConnector = SystemCalendarConnector()
     ) {
         self.repository = repository
         self.localEvents = localEvents
         self.rangeCache = rangeCache
         self.eventsAPI = eventsAPI
+        self.systemCalendarConnector = systemCalendarConnector
         self.source = source
     }
 
@@ -82,14 +85,31 @@ public final class EventsStore {
             end: key.end
         )
         let events = try await eventsAPI.list(query)
-        try repository.upsert(events: events, isLocal: false)
+        let systemEvents = try systemCalendarEvents(for: key)
+        let merged = events + systemEvents
+        try repository.upsert(events: merged, isLocal: false)
         try repository.pruneRemoteEvents(
             intersectingStart: key.start,
             end: key.end,
-            retaining: Set(events.map(\.id))
+            retaining: Set(merged.map(\.id))
         )
         try rangeCache.markLoaded(key: key)
         return try eventsInRange(key: key)
+    }
+
+    private func systemCalendarEvents(for key: EventRangeQueryKey) throws -> [Event] {
+        guard SystemCalendarConnectionStore.isConnected else { return [] }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var start = formatter.date(from: key.start)
+        var end = formatter.date(from: key.end)
+        if start == nil || end == nil {
+            formatter.formatOptions = [.withInternetDateTime]
+            start = formatter.date(from: key.start)
+            end = formatter.date(from: key.end)
+        }
+        guard let start, let end else { return [] }
+        return systemCalendarConnector.fetchEvents(start: start, end: end)
     }
 
     /// Synchronous optimistic insert for keyboard-place saves (XCUITest must see undo before async work).

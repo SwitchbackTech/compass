@@ -23,14 +23,9 @@ public struct AuthModalOverlay: View {
                     content
                     footer
                 }
-                .padding(24)
+                .padding(OverlayPanelChrome.padding)
                 .frame(maxWidth: 480)
-                .background(theme.surfaceColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(theme.borderColor, lineWidth: 1)
-                )
+                .overlayPanelChrome()
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-native-auth-modal")
             }

@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsAccountsSectionView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var syncStore: SyncConnectionsStore
+    @State private var showCalDavFallback = false
     @State private var appleEmail = ""
     @State private var applePassword = ""
 
@@ -57,19 +58,31 @@ struct SettingsAccountsSectionView: View {
             Button("Connect Microsoft") {
                 Task { await syncStore.connect(provider: .microsoft) }
             }
+            Button("Connect iCloud Calendar") {
+                Task { await syncStore.connectAppleViaEventKit() }
+            }
+            .accessibilityIdentifier("settings-icloud-eventkit-connect")
             Button("Refresh calendars") {
                 Task { await syncStore.refresh() }
             }
-            HStack {
-                TextField("iCloud email", text: $appleEmail)
-                SecureField("App password", text: $applePassword)
+            Button(showCalDavFallback ? "Hide app-specific password" : "Other / iCloud (app password)") {
+                showCalDavFallback.toggle()
             }
-            Button("Connect iCloud (app password)") {
-                Task {
-                    await syncStore.connectAppleCredential(username: appleEmail, secret: applePassword)
+            .font(.rubik(11))
+            if showCalDavFallback {
+                HStack {
+                    TextField("iCloud email", text: $appleEmail)
+                    SecureField("App password", text: $applePassword)
                 }
+                Button("Connect with app password") {
+                    Task {
+                        await syncStore.connectAppleCredential(
+                            username: appleEmail,
+                            secret: applePassword)
+                    }
+                }
+                .accessibilityIdentifier("settings-icloud-connect")
             }
-            .accessibilityIdentifier("settings-icloud-connect")
         }
         .buttonStyle(.plain)
         .font(.rubik(12))

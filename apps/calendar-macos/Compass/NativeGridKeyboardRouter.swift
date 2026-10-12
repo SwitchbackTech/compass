@@ -246,16 +246,22 @@ final class NativeGridKeyboardRouter {
             }
         }
 
+        // Sidebar and banner focus own their keys before the grid's draft keys,
+        // which would read digits as a typed time and Enter as "open event".
+        if !model.isEventFormVisible,
+           handleMonthPickerFocusKeys(keyEvent)
+            || handleNoticeFocusKeys(keyEvent)
+            || handleCalendarListFocusKeys(keyEvent)
+        {
+            return true
+        }
+
         if handleDraftKeys(keyEvent) {
             return true
         }
 
         if model.isEventFormVisible {
             return false
-        }
-
-        if handleMonthPickerFocusKeys(keyEvent) || handleNoticeFocusKeys(keyEvent) {
-            return true
         }
 
         if case .character(let char) = keyEvent.key, char == "f", keyEvent.modifiers.isEmpty {
@@ -541,6 +547,28 @@ final class NativeGridKeyboardRouter {
         if keyEvent.key != .character("p") {
             model.clearNoticeFocus()
         }
+        return false
+    }
+
+    /// Number keys toggle rows in the focused calendar list, Tab moves to the
+    /// next list, Escape leaves. Any other key drops the focus and runs as usual.
+    private func handleCalendarListFocusKeys(_ keyEvent: KeyEvent) -> Bool {
+        guard model.focusedCalendarListKey != nil else { return false }
+        if keyEvent.modifiers.isEmpty, case .character(let char) = keyEvent.key,
+           NativeCalendarRootModel.calendarPickKeys.contains(char)
+        {
+            model.pickCalendar(key: char)
+            return true
+        }
+        if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.tab) {
+            model.focusNextCalendarList()
+            return true
+        }
+        if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.escape) {
+            model.clearCalendarListFocus()
+            return true
+        }
+        model.clearCalendarListFocus()
         return false
     }
 

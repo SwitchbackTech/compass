@@ -46,6 +46,7 @@ targets:
         PRODUCT_NAME: Compass
         PRODUCT_BUNDLE_IDENTIFIER: com.compasscalendar.desktop
         INFOPLIST_FILE: Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/Compass.entitlements
     dependencies:
       - package: CompassKit
       - package: CompassData

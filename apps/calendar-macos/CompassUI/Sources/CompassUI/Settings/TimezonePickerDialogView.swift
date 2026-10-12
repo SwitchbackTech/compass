@@ -64,11 +64,9 @@ struct TimezonePickerDialogView: View {
                 }
                 .frame(height: 240)
             }
-            .padding(20)
+            .padding(OverlayPanelChrome.padding)
             .frame(width: 480)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(theme.borderColor))
+            .overlayPanelChrome()
         }
         .accessibilityIdentifier("compass-native-timezone-dialog")
     }

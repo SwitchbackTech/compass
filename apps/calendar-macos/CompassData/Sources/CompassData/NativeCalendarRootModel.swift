@@ -52,6 +52,8 @@ public final class NativeCalendarRootModel {
     public var isSidebarOpen = CompassDevicePreferences.readSidebarOpen() {
         didSet { CompassDevicePreferences.writeSidebarOpen(isSidebarOpen) }
     }
+    /// When the live event stream first dropped; nil while it is connected.
+    public internal(set) var streamTroubleSince: Date?
     /// Sidebar width in points, dragged between 240 and 480 like the web.
     public private(set) var sidebarWidth = CompassDevicePreferences.readSidebarWidth()
     /// Month picker day holding keyboard focus after `i`, like the web's
@@ -59,6 +61,13 @@ public final class NativeCalendarRootModel {
     public internal(set) var monthPickerFocusDate: Date?
     /// Banner holding keyboard focus after `p`, like the web's `data-notice` focus.
     public internal(set) var focusedNotice: NativeNotice?
+    /// Calendar list whose rows take number keys, like the web's focused
+    /// account section. Nil when no list has focus.
+    public internal(set) var focusedCalendarListKey: String?
+    /// Digests of the account sections collapsed in the sidebar, kept between
+    /// launches. Digests, not keys, so account emails stay out of preferences.
+    var collapsedAccountDigests = Set(
+        UserDefaults.standard.stringArray(forKey: NativeCalendarRootModel.collapsedAccountsKey) ?? [])
     public var pendingDiscardDraftConfirmation = false
     public var pendingRecurrenceScopePrompt: RecurrenceScopePromptKind? {
         didSet {
@@ -264,6 +273,12 @@ public final class NativeCalendarRootModel {
     }
 
     public func connectCalendar(provider: SignInProviderKind) async {
+        if provider == .apple {
+            await syncConnectionsStore.connectAppleViaEventKit()
+            await reloadCalendars()
+            await refreshVisibleRange()
+            return
+        }
         await syncConnectionsStore.connect(provider: provider.calendarConnectProvider)
         await syncConnectionsStore.reloadFromMetadata()
     }
@@ -390,6 +405,7 @@ public final class NativeCalendarRootModel {
         if let eventStream {
             await eventStream.stop()
         }
+        streamTroubleSince = nil
         loadedEvents = []
         sidebandEvents = []
         calendars = []
@@ -587,6 +603,8 @@ public final class NativeCalendarRootModel {
         switch target.id {
         case "month-picker":
             monthPickerMonth = viewStore.anchorDate
+        case "calendars":
+            focusCalendarList()
         case let id where id.hasPrefix(PageJumpTargets.dayColumnPrefix):
             let calendarId = String(id.dropFirst(PageJumpTargets.dayColumnPrefix.count))
             focusDayColumn(calendarId: calendarId)
@@ -997,14 +1015,20 @@ public final class NativeCalendarRootModel {
         calendars.filter(\.isActive)
     }
 
-    /// Web `useCalendarVisibility`: client-only, announced with a toast.
+    /// Web `useCalendarVisibility`: client-only, announced with a toast, and
+    /// undoable with Cmd+Z.
     public func toggleCalendarVisibility(_ calendar: CompassCalendar) {
         let visible = !calendarVisibilityStore.isVisible(calendar.id)
-        calendarVisibilityStore.setVisible(calendar.id, visible)
+        setCalendarVisibility(calendarId: calendar.id, label: calendar.name, visible: visible)
+        undoStore.record(.calendarVisibility(calendarId: calendar.id, label: calendar.name, isVisible: visible))
+    }
+
+    func setCalendarVisibility(calendarId: String, label: String, visible: Bool) {
+        calendarVisibilityStore.setVisible(calendarId, visible)
         rebuildPresentation()
         statusToastStore.show(
             id: "calendar-visibility",
-            message: visible ? "Showing \(calendar.name) calendar" : "Hidden \(calendar.name) calendar"
+            message: visible ? "Showing \(label) calendar" : "Hidden \(label) calendar"
         )
     }
 
@@ -1060,8 +1084,15 @@ public final class NativeCalendarRootModel {
         }
         do {
             let remote = try await environment.apiClient.calendars.list()
-            let mapped = remote
-            try calendarRepository.upsert(calendars: mapped)
+            var merged = remote
+            if SystemCalendarConnectionStore.isConnected {
+                let cached = try calendarRepository.fetchAll()
+                let systemCalendars = cached.filter {
+                    $0.id.hasPrefix(SystemCalendarMapper.calendarIdPrefix)
+                }
+                merged.append(contentsOf: systemCalendars)
+            }
+            try calendarRepository.upsert(calendars: merged)
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()
         } catch {}
@@ -1116,8 +1147,15 @@ public final class NativeCalendarRootModel {
                 },
                 onReopen: { [weak self] in
                     Task { @MainActor in
+                        self?.streamTroubleSince = nil
                         try? self?.eventsStore.handleStreamReopen()
                         await self?.refreshAfterStreamChange()
+                    }
+                },
+                onError: { [weak self] in
+                    Task { @MainActor in
+                        guard let self, self.streamTroubleSince == nil else { return }
+                        self.streamTroubleSince = Date()
                     }
                 }
             )

@@ -102,13 +102,16 @@ public actor ServerEventStream {
         self.randomUnit = randomUnit
     }
 
+    /// `onError` fires when the stream drops unexpectedly, not on the
+    /// planned lifetime rotation. `onReopen` fires on every connect.
     public func start(
         onMessage: @escaping MessageHandler,
-        onReopen: @escaping ReopenHandler = {}
+        onReopen: @escaping ReopenHandler = {},
+        onError: @escaping ReopenHandler = {}
     ) {
         stop()
         task = Task {
-            await runLoop(onMessage: onMessage, onReopen: onReopen)
+            await runLoop(onMessage: onMessage, onReopen: onReopen, onError: onError)
         }
     }
 
@@ -130,7 +133,11 @@ public actor ServerEventStream {
         return ServerEventStreamSchedule(delay: delay, reason: reason)
     }
 
-    private func runLoop(onMessage: @escaping MessageHandler, onReopen: @escaping ReopenHandler) async {
+    private func runLoop(
+        onMessage: @escaping MessageHandler,
+        onReopen: @escaping ReopenHandler,
+        onError: @escaping ReopenHandler
+    ) async {
         while !Task.isCancelled {
             do {
                 try await consumeOnce(onMessage: onMessage, onReopen: onReopen)
@@ -138,6 +145,11 @@ public actor ServerEventStream {
             } catch is CancellationError {
                 return
             } catch {
+                if error as? ServerEventStreamError
+                    != .transport(ServerEventStreamScheduleReason.streamLifetime)
+                {
+                    onError()
+                }
                 errorCount += 1
                 let schedule = nextReconnectSchedule(errorCount: errorCount)
                 retryHint = nil
