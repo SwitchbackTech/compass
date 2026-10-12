@@ -96,6 +96,19 @@ describe("swift contract emitter", () => {
     expect(swift).toContain("metadata: [String: JSONValue]");
   });
 
+  it("names enums by path when one property name carries different cases", () => {
+    const schema = z.object({
+      booking: z.object({ state: z.enum(["healthy", "delayed"]) }),
+      metadata: z.object({ state: z.enum(["HEALTHY", "ATTENTION"]) }),
+      other: z.object({ state: z.enum(["healthy", "delayed"]) }),
+    });
+    const swift = emitSwiftForSchema(schema, "Sample");
+    expect(swift).toContain("public enum StateEnum: String");
+    expect(swift).toContain("public enum SampleMetadataStateEnum: String");
+    expect(swift).toContain('case hEALTHY = "HEALTHY"');
+    expect(swift.match(/public enum \w*StateEnum/g)).toHaveLength(2);
+  });
+
   it("fails on unsupported constructs with the schema path", () => {
     expect(() =>
       emitSwiftForSchema(z.union([z.number(), z.boolean()]), "Bad"),
